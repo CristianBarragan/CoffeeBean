@@ -1,17 +1,16 @@
-﻿// using CoffeeBeanery.GraphQL.Configuration;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Database.Entity;
 
-public class Account : Process
+public partial class Account : Process
 {
     public Account()
     {
         Schema = Entity.Schema.Account;
     }
     
-    public int? Id { get; set; }
+    public int Id { get; set; }
     
     public Guid AccountKey { get; set; }
 

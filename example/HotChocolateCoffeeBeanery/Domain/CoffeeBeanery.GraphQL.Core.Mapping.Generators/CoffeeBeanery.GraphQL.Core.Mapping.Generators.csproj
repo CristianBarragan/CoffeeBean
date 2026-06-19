@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <EnableReleaseTracking>false</EnableReleaseTracking>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <RootNamespace>CoffeeBeanery.GraphQL.Core.Mapping.Generators</RootNamespace>
+
+        <!-- Correct hooks to ensure dependencies are resolved and packed -->
+        <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);GetDependencyTargetPaths</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+
+    <!-- Target to pack 3rd-party dependencies used by the generator -->
+    <Target Name="GetDependencyTargetPaths" AfterTargets="ResolvePackageDependenciesForBuild">
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="@(ResolvedCompileFileDefinitions)"
+                                    Condition="'%(ResolvedCompileFileDefinitions.NuGetSourceType)' == 'Package'"
+                                    PackagePath="analyzers/dotnet/cs" />
+        </ItemGroup>
+    </Target>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
+    </ItemGroup>
+
+</Project>

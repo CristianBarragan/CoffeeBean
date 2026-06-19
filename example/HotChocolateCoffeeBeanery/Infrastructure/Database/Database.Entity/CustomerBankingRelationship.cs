@@ -4,14 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Database.Entity;
 
-public class CustomerBankingRelationship : Process
+public partial class CustomerBankingRelationship : Process
 {
     public CustomerBankingRelationship()
     {
         Schema = Entity.Schema.Banking;
     }
     
-    public int? Id { get; set; }
+    public int Id { get; set; }
 
     public Guid CustomerBankingRelationshipKey { get; set; }
 

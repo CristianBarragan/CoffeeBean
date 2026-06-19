@@ -4,24 +4,17 @@ namespace Domain.Shared.Mapping
 {
     public class ModelMappingRegistration
     {
-        private static readonly IMappingSet<CustomerMappingType, Domain.Model.Model>[] Sets =
+        private static readonly IMappingSet[] Sets =
         {
             new AccountMappingSet(),
             new ContactPointMappingSet(),
             new ContractMappingSet(),
             new CustomerBankingRelationshipMappingSet(),
-            new CustomerCustomerRelationshipMappingSet(),
-            new InnerCustomerMappingSet(),
-            new OuterCustomerMappingSet(),
+            new CustomerMappingSet(),
             new ProductMappingSet(),
             new TransactionMappingSet(),
-            new CustomerCustomerEdgeMappingSet()
+            new CustomerCustomerEdgeMappingSet(),
+            new WrapperMappingSet()
         };
-    }
-    
-    
-    public enum CustomerMappingType {
-        InnerCustomer,
-        OuterCustomer
     }
 }

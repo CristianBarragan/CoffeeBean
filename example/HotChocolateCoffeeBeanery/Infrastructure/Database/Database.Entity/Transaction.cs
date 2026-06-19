@@ -3,14 +3,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Database.Entity;
 
-public class Transaction : Process
+public partial class Transaction : Process
 {
     public Transaction()
     {
         Schema = Entity.Schema.Lending;
     }
 
-    public int? Id { get; set; }
+    public int Id { get; set; }
     
     public Guid TransactionKey { get; set; }
 

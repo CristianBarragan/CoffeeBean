@@ -4,14 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Database.Entity;
 
-public class Contract : Process
+public partial class Contract : Process
 {
     public Contract()
     {
         Schema = Entity.Schema.Lending;
     }
     
-    public int? Id { get; set; }
+    public int Id { get; set; }
     
     public Guid ContractKey { get; set; }
 

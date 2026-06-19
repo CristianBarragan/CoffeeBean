@@ -5,12 +5,30 @@
         <OutputType>Library</OutputType>
         <PlatformTarget>x64</PlatformTarget>
         <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+<!--        <OutputItemType>Analyzer</OutputItemType>-->
+<!--        <ReferenceOutputAssembly>false</ReferenceOutputAssembly>-->
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
         <Nullable>enable</Nullable>
+        <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
         <RootNamespace>Domain.Shared</RootNamespace>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <IsMappingRoot>true</IsMappingRoot>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="15.0.1" />
+        <CompilerVisibleProperty Include="IsMappingRoot" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\CoffeeBeanery.GraphQL.Core.Mapping.Generators\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
         <PackageReference Include="AWSSDK.Core" Version="4.0.0.19" />
         <PackageReference Include="AWSSDK.RDS" Version="4.0.4.4" />
         <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.1.7" />
@@ -44,9 +62,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Infrastructure\Database\Database.Entity.Banking\Database.Entity.Banking.csproj" />
-      <ProjectReference Include="..\..\Infrastructure\Database\Database.Graph.Banking\Database.Graph.Banking.csproj" />
-      <ProjectReference Include="..\Domain.Model\Domain.Model.csproj" />
+        <ProjectReference Include="..\..\Infrastructure\Database\Database.Entity.Banking\Database.Entity.Banking.csproj" />
+        <ProjectReference Include="..\..\Infrastructure\Database\Database.Graph.Banking\Database.Graph.Banking.csproj" />
+        <ProjectReference Include="..\Domain.Model\Domain.Model.csproj" />
     </ItemGroup>
 
 </Project>

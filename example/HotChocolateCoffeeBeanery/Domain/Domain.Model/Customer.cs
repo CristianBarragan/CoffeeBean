@@ -2,7 +2,7 @@
 
 namespace Domain.Model;
 
-public class Customer : IModel
+public class Customer
 {
     public Guid? CustomerKey { get; set; }
 

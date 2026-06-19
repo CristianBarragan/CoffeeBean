@@ -1,94 +1,58 @@
-﻿namespace CoffeeBeanery.GraphQL.Core.Mapping
+﻿using CoffeeBeanery.GraphQL.Core.Sql;
+
+namespace CoffeeBeanery.GraphQL.Core.Mapping
 {
-    public abstract class BaseMappingRegistration<TModel, TEntity> : IMappingRegistration
+    public abstract class BaseMappingRegistration<TModel> : IMappingRegistration
         where TModel : class
-        where TEntity : class
     {
         protected readonly string Prefix;
         protected readonly string Model;
         protected readonly string RegistrationKey;
 
-        protected BaseMappingRegistration(string alias, string model)
+        // Default path: no manual alias needed. RegistrationKey is just the
+        // canonical model name; per-instance disambiguation (Customer{1}, Customer{2}, ...)
+        // now happens in NodeBuilder via AliasOccurrenceAllocator at tree-build time,
+        // not here at registration time.
+        protected BaseMappingRegistration()
+            : this(alias: null, model: typeof(TModel).Name)
         {
-            Prefix = alias;
-            Model = model;
-            RegistrationKey = string.IsNullOrWhiteSpace(alias)
+        }
+
+        protected BaseMappingRegistration(string? alias, string? model = null)
+        {
+            Prefix = alias ?? string.Empty;
+            Model = model ?? typeof(TModel).Name;
+
+            RegistrationKey = string.IsNullOrWhiteSpace(Prefix)
                 ? typeof(TModel).Name
-                : $"{alias}{typeof(TModel).Name}";
+                : $"{Prefix}{typeof(TModel).Name}";
         }
 
         protected string A(string name) =>
             string.IsNullOrWhiteSpace(Prefix) ? name : $"{Prefix}{name}";
-        
-        protected string A(string appendix,string name) =>
-            string.IsNullOrWhiteSpace(appendix) ? name : $"{appendix}{name}";
-        
+
         protected string G(string graphName) =>
             string.IsNullOrWhiteSpace(Prefix) ? graphName : $"Graph{Prefix}{graphName}";
 
-        protected bool     IsEntity => true;
-        protected bool     IsModel  => true;
-        protected bool     IsGraph  => false;
-        
-        protected EnumMap? EnumMap  => null;
+        public int Id { get; protected set; }
 
         protected abstract NodeMap BuildMap();
+        protected virtual void ApplyGeneratedMappings(NodeMap map) { }
 
         public void Register()
         {
-            var map      = BuildMap();
-            map.IsEntity = IsEntity;
-            map.IsModel  = IsModel;
-            map.IsGraph  = IsGraph;
+            var map = BuildMap();
+            ApplyGeneratedMappings(map);
+
+            map.IsModel = true;
+            map.IsEntity = map.EntityType is not null;
             map.Prefix = Prefix;
-            map.Alias    = RegistrationKey;
-            map.ModelName = string.IsNullOrEmpty(Prefix) ? Model : Prefix;
+            map.Alias = RegistrationKey;
 
-            MappingRegistry.Register(typeof(TModel), typeof(TEntity), map, RegistrationKey);
-        }
-    }
+            if (string.IsNullOrEmpty(map.ModelName))
+                map.ModelName = Model;
 
-    public abstract class BaseModelMappingRegistration<TModel> : IMappingRegistration
-        where TModel : class
-    {
-        protected readonly string Prefix;
-        
-        protected readonly string Model;
-        
-        protected readonly string RegistrationKey;
-        
-        protected virtual EnumMap? EnumMap => null;
-
-        protected abstract NodeMap BuildMap();
-
-        protected BaseModelMappingRegistration(string alias, string model)
-        {
-            Prefix = alias;
-            Model = model;
-            RegistrationKey = string.IsNullOrWhiteSpace(alias)
-                ? typeof(TModel).Name
-                : $"{alias}{typeof(TModel).Name}";
-        }
-
-        protected string A(string name) =>
-            string.IsNullOrWhiteSpace(Prefix) ? name : $"{Prefix}{name}";
-        
-        protected string A(string appendix,string name) =>
-            string.IsNullOrWhiteSpace(appendix) ? name : $"{appendix}{name}";
-        
-        protected string G(string graphName) =>
-            string.IsNullOrWhiteSpace(Prefix) ? graphName : $"Graph{Prefix}{graphName}";
-
-        public void Register()
-        {
-            var map      = BuildMap();
-            map.IsModel  = true;
-            map.IsEntity = false;
-            map.Prefix = Prefix;
-            map.Alias    = RegistrationKey;
-            map.ModelName = string.IsNullOrEmpty(Prefix) ? Model : Prefix;
-
-            MappingRegistry.Register(typeof(TModel), entityType: null, map, RegistrationKey);
+            MappingRegistry.Register(typeof(TModel), map.EntityType, map, RegistrationKey);
         }
     }
 }

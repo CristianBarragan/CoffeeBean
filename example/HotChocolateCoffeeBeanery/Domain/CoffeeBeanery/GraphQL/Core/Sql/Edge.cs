@@ -29,8 +29,3 @@ public enum EdgeRelationshipDirection
     Incoming,
     Undirected
 }
-
-public interface IModel
-{
-    
-}

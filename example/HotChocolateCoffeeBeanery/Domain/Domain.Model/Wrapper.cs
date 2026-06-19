@@ -2,7 +2,7 @@ using CoffeeBeanery.GraphQL.Core.Sql;
 
 namespace Domain.Model;
 
-public class Wrapper : IModel
+public class Wrapper
 {
     public string CacheKey { get; set; }
     

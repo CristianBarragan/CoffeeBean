@@ -2,7 +2,7 @@
 
 namespace Domain.Model;
 
-public class Contract : IModel
+public class Contract
 {
     public Guid? ContractKey { get; set; }
 

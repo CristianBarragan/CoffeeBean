@@ -4,16 +4,16 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Database.Entity;
 
-public class CustomerCustomerRelationship : Process
+public partial class CustomerCustomerRelationship : Process
 {
     public CustomerCustomerRelationship()
     {
         Schema = Entity.Schema.Banking;
     }
     
-    public int? Id { get; set; }
+    public int Id { get; set; }
     
-    public Guid CustomerCustomerRelationshipKey { get; set; }
+    public Guid? CustomerCustomerRelationshipKey { get; set; }
     
     public Guid? OuterCustomerKey { get; set; }
     

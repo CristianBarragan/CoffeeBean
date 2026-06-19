@@ -1,16 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using CoffeeBeanery.GraphQL.Core.Mapping;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Database.Entity;
 
-public class Customer : Process
+public partial class Customer : Process
 {
     public Customer()
     {
         Schema = Entity.Schema.Banking;
     }
     
-    public int? Id { get; set; }
+    public int Id { get; set; }
     
     public Guid CustomerKey { get; set; }
 
@@ -26,8 +27,14 @@ public class Customer : Process
     
     public List<CustomerBankingRelationship>? CustomerBankingRelationship { get; set; }
     
+    [EntityForeignKey(typeof(CustomerCustomerRelationship), 
+        foreignKeyProperty: "OuterCustomerKey", 
+        principalKeyProperty: "CustomerKey")]
     public List<CustomerCustomerRelationship>? OuterCustomerCustomerRelationship { get; set; }
     
+    [EntityForeignKey(typeof(CustomerCustomerRelationship), 
+        foreignKeyProperty: "InnerCustomerKey", 
+        principalKeyProperty: "CustomerKey")]
     public List<CustomerCustomerRelationship>? InnerCustomerCustomerRelationship { get; set; }
 }
 
@@ -58,9 +65,11 @@ public class CustomerEntityConfiguration : IEntityTypeConfiguration<Customer>
 
         builder.HasMany(c => c.CustomerBankingRelationship).WithOne(c => c.Customer).HasForeignKey(c => c.CustomerId);
 
-        builder.HasMany(c => c.OuterCustomerCustomerRelationship).WithOne(c => c.OuterCustomer).HasForeignKey(c => c.OuterCustomerId);
+        builder.HasMany(c => c.OuterCustomerCustomerRelationship).WithOne(c => c.OuterCustomer)
+            .HasForeignKey(c => c.OuterCustomerId);
         
-        builder.HasMany(c => c.InnerCustomerCustomerRelationship).WithOne(c => c.InnerCustomer).HasForeignKey(c => c.InnerCustomerId);
+        builder.HasMany(c => c.InnerCustomerCustomerRelationship).WithOne(c => c.InnerCustomer)
+            .HasForeignKey(c => c.InnerCustomerId);
 
         builder.Property(c => c.ProcessedDateTime).HasDefaultValueSql("(now() at time zone 'utc')");
     }

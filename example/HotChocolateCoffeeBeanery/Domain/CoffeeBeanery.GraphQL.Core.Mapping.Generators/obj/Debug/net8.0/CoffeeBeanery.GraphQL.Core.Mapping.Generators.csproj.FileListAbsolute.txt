@@ -1,0 +1,13 @@
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\bin\Debug\net8.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.deps.json
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\bin\Debug\net8.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.dll
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\bin\Debug\net8.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.pdb
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\obj\Debug\net8.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj.AssemblyReference.cache
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\obj\Debug\net8.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.GeneratedMSBuildEditorConfig.editorconfig
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\obj\Debug\net8.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.AssemblyInfoInputs.cache
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\obj\Debug\net8.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.AssemblyInfo.cs
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\obj\Debug\net8.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj.CoreCompileInputs.cache
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\obj\Debug\net8.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.sourcelink.json
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\obj\Debug\net8.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.dll
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\obj\Debug\net8.0\refint\CoffeeBeanery.GraphQL.Core.Mapping.Generators.dll
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\obj\Debug\net8.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.pdb
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\obj\Debug\net8.0\ref\CoffeeBeanery.GraphQL.Core.Mapping.Generators.dll

@@ -1,0 +1,44 @@
+﻿using System.Linq;
+using Microsoft.CodeAnalysis;
+using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
+using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
+
+namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
+{
+    /// <summary>
+    /// Runs in the entity-defining project itself (e.g. Database.Entity), where
+    /// fluent EF configuration syntax is actually visible, and auto-emits
+    /// [EntityForeignKey] attributes onto generated partial class declarations -
+    /// so MappingNodeGenerator (running separately in e.g. Domain.Shared) can
+    /// resolve ambiguous/inverse navigations via ordinary compiled-symbol
+    /// reflection, without either project needing to reference the other's
+    /// source or duplicate any mapping logic by hand.
+    ///
+    /// Entity classes must be declared 'partial' for the generated attribute
+    /// declaration to merge with the hand-written class.
+    /// </summary>
+    [Generator(LanguageNames.CSharp)]
+    public sealed class EntityForeignKeyEmitterGenerator : IIncrementalGenerator
+    {
+        public void Initialize(IncrementalGeneratorInitializationContext context)
+        {
+            var derivedKeys = context.CompilationProvider
+                .Select(static (compilation, ct) => FluentForeignKeyAttributeConvention.CollectAll(compilation, ct));
+
+            context.RegisterSourceOutput(derivedKeys, static (spc, keys) =>
+            {
+                foreach (var group in keys.GroupBy(k => k.DeclaringEntityType, SymbolEqualityComparer.Default))
+                {
+                    var declaringType = (INamedTypeSymbol)group.Key!;
+                    var list = group.ToList();
+
+                    if (list.Count == 0)
+                        continue;
+
+                    var source = EntityForeignKeyAttributeEmitter.Emit(declaringType, list);
+                    spc.AddSource($"{declaringType.Name}.EntityForeignKeys.g.cs", source);
+                }
+            });
+        }
+    }
+}

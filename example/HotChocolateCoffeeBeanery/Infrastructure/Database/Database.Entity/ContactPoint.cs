@@ -3,14 +3,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Database.Entity;
 
-public class ContactPoint : Process
+public partial class ContactPoint : Process
 {
     public ContactPoint()
     {
         Schema = Entity.Schema.Banking;
     }
     
-    public int? Id { get; set; }
+    public int Id { get; set; }
     
     public Guid ContactPointKey { get; set; }
 

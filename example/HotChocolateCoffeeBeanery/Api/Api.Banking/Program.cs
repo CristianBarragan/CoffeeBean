@@ -2,9 +2,12 @@ using Amazon;
 using Amazon.RDS.Util;
 using Api.Banking.Mutation;
 using Api.Banking.Query;
+using CoffeeBeanery.GraphQL.Core.Sql;
+using Database.Entity.Banking;
 using Domain.Shared.Extension;
 using HotChocolate.AspNetCore;
 using HotChocolate.Types.Pagination;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -24,7 +27,6 @@ public class Program
         app.MapNitroApp("/graphql-ui/").WithOptions(new GraphQLToolOptions()
             { ServeMode = GraphQLToolServeMode.Embedded });
         app.MapControllers();
-
         app.Run();
     }
 
@@ -37,9 +39,7 @@ public class Program
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true).AddEnvironmentVariables()
             .AddCommandLine(args).Build();
 
-        var connectionString = configuration.GetConnectionString("BankingConnectionString");
-
-        services.AddCoffeeBeanery(connectionString);
+        var connectionString = configuration.GetConnectionString("BankingConnectionString");;
         var isRds = false;
 
         if (isRds)
@@ -87,7 +87,16 @@ public class Program
         builder.Services.AddSingleton<
             ISortDefinitionProvider,
             SortDefinitionProvider>();
+        
+        services.AddDbContext<BankingEntityContext>(options =>
+        {
+            options.UseNpgsql(connectionString);
+        });
 
+        services.AddCoffeeBeanery<
+            BankingEntityContext>(
+            connectionString);
+        
         builder.Services.AddSingleton<
             DynamicSortModule>();
         builder.Services.AddGraphQLServer()

@@ -2,19 +2,28 @@
 
 namespace Domain.Model;
 
-public class CustomerCustomerEdge : IModel 
+public class CustomerCustomerEdge
 {
-    public Guid? CustomerCustomerRelationshipKey { get; set; }
+    public Customer? InnerCustomer { get; set; }
     
-    public CustomerCustomerRelationship? CustomerCustomerRelationship { get; set; }
-
-    public Guid? OuterCustomerKey { get; set; }
-
-    public Customer? OuterCustomer { get; set; }
-
     public Guid? InnerCustomerKey { get; set; }
     
-    public Customer? InnerCustomer { get; set; }
+    public Customer? OuterCustomer { get; set; }
+    
+    public Guid? OuterCustomerKey { get; set; }
+
+    public string? CustomerCustomerRelationshipKey { get; set; }
+    
+    public CustomerCustomerRelationshipType? CustomerCustomerRelationshipType { get; set; }
 
     public GraphModel? GraphModel { get; set; }
+}
+
+public enum CustomerCustomerRelationshipType
+{
+    Family,
+    Partner,
+    Widow,
+    Single,
+    Divorced
 }

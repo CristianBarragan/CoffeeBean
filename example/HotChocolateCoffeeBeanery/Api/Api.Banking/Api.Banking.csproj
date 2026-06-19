@@ -6,13 +6,10 @@
         <PlatformTarget>x64</PlatformTarget>
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>latest</LangVersion>
-        <!--        <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>-->
         <Nullable>enable</Nullable>
     </PropertyGroup>
-
+    
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="15.0.1" />
-        <PackageReference Include="AutoMapper.Collection" Version="11.0.0" />
         <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
         <PackageReference Include="HotChocolate" Version="15.1.12" />
         <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.12" />
@@ -31,10 +28,10 @@
     </ItemGroup>
     
     <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.14.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.14.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>

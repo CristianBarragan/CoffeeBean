@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
@@ -6,14 +6,15 @@
         <PlatformTarget>x64</PlatformTarget>
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>latest</LangVersion>
-<!--        <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>-->
+<!--        <OutputItemType>Analyzer</OutputItemType>-->
+<!--        <ReferenceOutputAssembly>false</ReferenceOutputAssembly>-->
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
         <Nullable>enable</Nullable>
-<!--        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>-->
+        <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
     </PropertyGroup>
-
+    
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="15.0.1" />
-        <PackageReference Include="AutoMapper.Collection" Version="11.0.0" />
         <PackageReference Include="AWSSDK.Core" Version="4.0.0.19" />
         <PackageReference Include="AWSSDK.RDS" Version="4.0.4.4" />
         <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.1.7" />
@@ -24,12 +25,9 @@
         <PackageReference Include="HotChocolate.Data" Version="15.1.12" />
         <PackageReference Include="HotChocolate.Types" Version="15.1.12" />
         <PackageReference Include="HotChocolate.Types.Analyzers" Version="15.1.12" />
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
         <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.7">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -43,39 +41,20 @@
         <PackageReference Include="morelinq" Version="4.4.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
-        <PackageReference Include="Z.Dapper.Plus" Version="8.0.1" />
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Remove="GraphQL\CoreLegacy\**" />
-      <Compile Remove="GraphQL\CoreNew\**" />
-      <Compile Remove="GraphQL\CorePrevious\**" />
-      <Compile Remove="GraphQL\CorePrev1\**" />
-      <Compile Remove="GraphQL\CoreBk\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <EmbeddedResource Remove="GraphQL\CoreLegacy\**" />
-      <EmbeddedResource Remove="GraphQL\CoreNew\**" />
-      <EmbeddedResource Remove="GraphQL\CorePrevious\**" />
-      <EmbeddedResource Remove="GraphQL\CorePrev1\**" />
-      <EmbeddedResource Remove="GraphQL\CoreBk\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Content Remove="GraphQL\CoreLegacy\**" />
-      <Content Remove="GraphQL\CoreNew\**" />
-      <Content Remove="GraphQL\CorePrevious\**" />
-      <Content Remove="GraphQL\CorePrev1\**" />
-      <Content Remove="GraphQL\CoreBk\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="GraphQL\CoreLegacy\**" />
-      <None Remove="GraphQL\CoreNew\**" />
-      <None Remove="GraphQL\CorePrevious\**" />
-      <None Remove="GraphQL\CorePrev1\**" />
-      <None Remove="GraphQL\CoreBk\**" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
     </ItemGroup>
     
+    <ItemGroup>
+        <ProjectReference Include="..\CoffeeBeanery.GraphQL.Core.Mapping.Generators\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="GraphQL\Core\Extensions\" />
+    </ItemGroup>
 </Project>
