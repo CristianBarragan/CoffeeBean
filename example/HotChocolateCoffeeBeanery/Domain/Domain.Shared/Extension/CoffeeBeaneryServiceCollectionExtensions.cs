@@ -44,26 +44,27 @@ namespace Domain.Shared.Extension
             // ---- Generated metadata ----
             services.AddSingleton<IEntityMetaProvider, GeneratedEntityMetaProvider>();
             services.AddSingleton<IPlannerRegistry, GeneratedPlannerRegistry>();
-
-            // ---- Adapter lookup ----
-            services.AddSingleton<AdapterLookup>(_ =>
-            {
-                var fieldLinks = Enumerable
-                    .Range(0, EntityId.Count)
-                    .SelectMany(entityId =>
-                        EntityMeta.FieldName[entityId]
-                            .Select((fieldName, fieldId) =>
-                                ((ushort)entityId, fieldName, (ushort)fieldId)));
-
-                var entityNameToId = Enumerable
-                    .Range(0, EntityId.Count)
-                    .ToDictionary(e => EntityMeta.Table[e], e => (ushort)e);
-
-                return AdapterLookup.BuildFromGeneratedMetadata(
-                    AdapterTables.ChildLinks,
-                    fieldLinks,
-                    entityNameToId);
-            });
+            services.AddSingleton(AdapterTables.Build());
+            
+            // // ---- Adapter lookup ----
+            // services.AddSingleton<AdapterLookup>(_ =>
+            // {
+            //     var fieldLinks = Enumerable
+            //         .Range(0, EntityId.Count)
+            //         .SelectMany(entityId =>
+            //             EntityMeta.FieldName[entityId]
+            //                 .Select((fieldName, fieldId) =>
+            //                     ((ushort)entityId, fieldName, (ushort)fieldId)));
+            //
+            //     var entityNameToId = Enumerable
+            //         .Range(0, EntityId.Count)
+            //         .ToDictionary(e => EntityMeta.Table[e], e => (ushort)e);
+            //
+            //     return AdapterLookup.BuildFromGeneratedMetadata(
+            //         AdapterTables.ChildLinks,
+            //         fieldLinks,
+            //         entityNameToId);
+            // });
 
             // ---- SQL writer ----
             services.AddSingleton<PostgresSqlWriter>();

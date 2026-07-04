@@ -157,8 +157,8 @@ public sealed class PostgresSqlWriter
         if (row.Values.IsEmpty)
             return;
 
-        var schema = _meta.Schema[row.EntityId];
-        var table  = _meta.Table[row.EntityId];
+        var schema = row.SchemaOverride ?? _meta.Schema[row.EntityId];
+        var table  = row.TableOverride  ?? _meta.Table[row.EntityId];
 
         sb.Append("INSERT INTO ");
         sb.Append('"').Append(schema).Append('"');

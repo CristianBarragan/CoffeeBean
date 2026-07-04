@@ -87,11 +87,11 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 spc.AddSource("EntityMeta.g.cs", MetadataEmitter.Emit(all));
 
                 // AdapterTables.g.cs
-                spc.AddSource("AdapterTables.g.cs",
-                    AdapterTablesEmitter.Emit(all, rootModelTypes, fluentInverseNav));
+                var rootEntityTypes = ResolveRootEntityTypes(all, rootModelTypes);
+                var source = AdapterEmitter.Emit(all, rootEntityTypes, fluentInverseNav);
+                spc.AddSource("AdapterTables.g.cs", source);
 
                 // Planners.g.cs — *Planner classes + PlannerRegistry
-                var rootEntityTypes = ResolveRootEntityTypes(all, rootModelTypes);
                 spc.AddSource("Planners.g.cs",
                     PlannerEmitter.Emit(all, rootEntityTypes, fluentInverseNav));
             });

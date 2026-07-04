@@ -65,6 +65,12 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine();
         }
 
+        private static bool IsComposite(MappingClassInfo info) =>
+            info.ModelToEntity
+                .Select(k => k.EntityType.Name)
+                .Distinct(System.StringComparer.Ordinal)
+                .Count() > 1;
+
         private static void EmitBuildQuery(
             StringBuilder sb,
             MappingClassInfo info,
@@ -77,17 +83,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             var fieldMappings = ComputeFieldMappings(info).ToList();
             var childLinks = ComputeChildLinks(info, allMappings, navResult).ToList();
 
-            // A model is truly composite only when it spans DISTINCT entity types.
-            // Role-aliased models (e.g. CustomerCustomerEdge → CustomerCustomerRelationship
-            // + Customer×2) are NOT composite — the secondary links are the same entity
-            // type as the navigations and should be handled as join children, not stubs.
-            var distinctEntityTypeCount = info.ModelToEntity
-                .Select(k => k.EntityType.Name)
-                .Distinct(System.StringComparer.Ordinal)
-                .Count();
-            var isComposite = distinctEntityTypeCount > 1;
-
-            if (isComposite)
+            if (IsComposite(info))
             {
                 sb.AppendLine($"            // TODO v2: composite model {info.ModelType.Name} spans multiple distinct entity types.");
                 sb.AppendLine($"            // Full multi-entity join emission is pending.");
@@ -125,14 +121,9 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 sb.AppendLine("                switch (child.EntityId)");
                 sb.AppendLine("                {");
 
-                var byChildEntity = childLinks
-                    .GroupBy(l => l.ChildModelName, System.StringComparer.Ordinal)
-                    .ToList();
-
-                foreach (var group in byChildEntity)
+                foreach (var group in childLinks.GroupBy(l => l.ChildModelName, System.StringComparer.Ordinal))
                 {
                     sb.AppendLine($"                    case EntityId.{group.Key}:");
-
                     var links = group.ToList();
 
                     if (links.Count == 1)
@@ -184,50 +175,117 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine("        public static void BuildMutation(in MutationIR node, ref MutationPlanBuilder builder)");
             sb.AppendLine("        {");
 
-            var fieldMappings = ComputeFieldMappings(info).ToList();
             var childLinks = ComputeChildLinks(info, allMappings, navResult).ToList();
 
-            var distinctEntityTypeCount = info.ModelToEntity
-                .Select(k => k.EntityType.Name)
-                .Distinct(System.StringComparer.Ordinal)
-                .Count();
-            var isComposite = distinctEntityTypeCount > 1;
-
-            if (isComposite)
+            if (IsComposite(info))
             {
-                sb.AppendLine($"            builder.AddRow(EntityId.{info.ModelType.Name}, node.OutputAlias,");
-                sb.AppendLine("                ImmutableArray<FieldValue>.Empty);");
-                sb.AppendLine("        }");
-                return;
-            }
+                // Composite model: group field maps by destination entity and emit
+                // one AddRow per distinct entity type, routing each field correctly.
+                var fieldMappings = ComputeFieldMappings(info).ToList();
 
-            if (fieldMappings.Count > 0)
-            {
-                sb.AppendLine($"            var values = ImmutableArray.CreateBuilder<FieldValue>(node.Values.Length);");
+                var byEntity = fieldMappings
+                    .GroupBy(f => f.EntityTypeName, System.StringComparer.Ordinal)
+                    .ToList();
+
+                if (byEntity.Count == 0)
+                {
+                    // No field maps at all — emit one empty row for the primary entity.
+                    sb.AppendLine($"            builder.AddRow(EntityId.{info.ModelType.Name}, node.OutputAlias,");
+                    sb.AppendLine("                ImmutableArray<FieldValue>.Empty);");
+                }
+                else
+                {
+                    foreach (var entityGroup in byEntity)
+                    {
+                        var entityName = entityGroup.Key;
+                        var fields = entityGroup.ToList();
+
+                        sb.AppendLine($"            {{");
+                        sb.AppendLine($"                var values_{entityName} = ImmutableArray.CreateBuilder<FieldValue>(node.Values.Length);");
+                        sb.AppendLine($"                foreach (var v in node.Values)");
+                        sb.AppendLine($"                {{");
+                        sb.AppendLine($"                    switch (v.FieldId)");
+                        sb.AppendLine($"                    {{");
+
+                        foreach (var fm in fields)
+                        {
+                            sb.AppendLine($"                        case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
+                            sb.AppendLine($"                            values_{entityName}.Add(new FieldValue(");
+                            sb.AppendLine($"                                ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
+                            sb.AppendLine($"                                v.RawValue));");
+                            sb.AppendLine("                            break;");
+                        }
+
+                        sb.AppendLine($"                    }}");
+                        sb.AppendLine($"                }}");
+                        // Look up the schema from the mapping that owns this entity type.
+                // Falls back to the composite model's own schema if not found.
+                var entitySchema = allMappings
+                    .FirstOrDefault(m => m.EntityType != null &&
+                        string.Equals(m.EntityType.Name, entityName, System.StringComparison.Ordinal))
+                    ?.Schema ?? info.Schema;
+
+                sb.AppendLine($"                builder.AddRow(EntityId.{info.ModelType.Name}, node.OutputAlias, values_{entityName}.ToImmutable(), \"{entitySchema}\", \"{entityName}\");");
+                        sb.AppendLine($"            }}");
+                    }
+                }
+
+                // Recurse into children — composite models still have child nodes
+                // (e.g. InnerCustomer, OuterCustomer on CustomerCustomerEdge).
                 sb.AppendLine();
-                sb.AppendLine("            foreach (var v in node.Values)");
+                sb.AppendLine("            foreach (var child in node.Children)");
                 sb.AppendLine("            {");
-                sb.AppendLine("                switch (v.FieldId)");
+                sb.AppendLine("                switch (child.EntityId)");
                 sb.AppendLine("                {");
 
-                foreach (var fm in fieldMappings)
+                var allChildMappings = allMappings
+                    .Where(m => m.IsModel)
+                    .Select(m => m.ModelType.Name)
+                    .Distinct(System.StringComparer.Ordinal)
+                    .OrderBy(n => n, System.StringComparer.Ordinal);
+
+                foreach (var childName in allChildMappings)
                 {
-                    sb.AppendLine($"                    case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
-                    sb.AppendLine($"                        values.Add(new FieldValue(");
-                    sb.AppendLine($"                            ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
-                    sb.AppendLine($"                            v.RawValue));");
+                    sb.AppendLine($"                    case EntityId.{childName}:");
+                    sb.AppendLine($"                        {childName}Planner.BuildMutation(child, ref builder);");
                     sb.AppendLine("                        break;");
                 }
 
                 sb.AppendLine("                }");
                 sb.AppendLine("            }");
-                sb.AppendLine();
-                sb.AppendLine($"            builder.AddRow(EntityId.{info.ModelType.Name}, node.OutputAlias, values.MoveToImmutable());");
             }
             else
             {
-                sb.AppendLine($"            builder.AddRow(EntityId.{info.ModelType.Name}, node.OutputAlias,");
-                sb.AppendLine("                ImmutableArray<FieldValue>.Empty);");
+                var fieldMappings = ComputeFieldMappings(info).ToList();
+
+                if (fieldMappings.Count > 0)
+                {
+                    sb.AppendLine($"            var values = ImmutableArray.CreateBuilder<FieldValue>(node.Values.Length);");
+                    sb.AppendLine();
+                    sb.AppendLine("            foreach (var v in node.Values)");
+                    sb.AppendLine("            {");
+                    sb.AppendLine("                switch (v.FieldId)");
+                    sb.AppendLine("                {");
+
+                    foreach (var fm in fieldMappings)
+                    {
+                        sb.AppendLine($"                    case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
+                        sb.AppendLine($"                        values.Add(new FieldValue(");
+                        sb.AppendLine($"                            ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
+                        sb.AppendLine($"                            v.RawValue));");
+                        sb.AppendLine("                        break;");
+                    }
+
+                    sb.AppendLine("                }");
+                    sb.AppendLine("            }");
+                    sb.AppendLine();
+                    sb.AppendLine($"            builder.AddRow(EntityId.{info.ModelType.Name}, node.OutputAlias, values.ToImmutable());");
+                }
+                else
+                {
+                    sb.AppendLine($"            builder.AddRow(EntityId.{info.ModelType.Name}, node.OutputAlias,");
+                    sb.AppendLine("                ImmutableArray<FieldValue>.Empty);");
+                }
             }
 
             if (childLinks.Count > 0)
@@ -238,11 +296,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 sb.AppendLine("                switch (child.EntityId)");
                 sb.AppendLine("                {");
 
-                var byChildEntity = childLinks
-                    .GroupBy(l => l.ChildModelName, System.StringComparer.Ordinal)
-                    .ToList();
-
-                foreach (var group in byChildEntity)
+                foreach (var group in childLinks.GroupBy(l => l.ChildModelName, System.StringComparer.Ordinal))
                 {
                     sb.AppendLine($"                    case EntityId.{group.Key}:");
                     sb.AppendLine($"                        {group.Key}Planner.BuildMutation(child, ref builder);");
@@ -338,27 +392,36 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
         private static IEnumerable<FieldMapping> ComputeFieldMappings(MappingClassInfo info)
         {
-            if (info.EntityType is null) yield break;
+            if (info.EntityType is null && !IsComposite(info)) yield break;
 
-            // Manual field maps from BuildMap() — these always win and handle
-            // renamed fields (e.g. FirstNaming → FirstName, FullNaming → FullName).
             var manualByField = info.FieldMaps
                 .Where(f => !f.IsGenerated)
                 .GroupBy(f => f.SourceName, System.StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(g => g.Key, g => g.First(),
                     System.StringComparer.OrdinalIgnoreCase);
 
-            // FK columns owned by secondary entities — exclude from auto-reflection.
-            var fkColumns = new HashSet<string>(
-                info.ModelToEntity
-                    .Where(k => !SymbolEqualityComparer.Default.Equals(k.EntityType, info.EntityType))
-                    .Select(k => k.FromColumn ?? string.Empty),
-                System.StringComparer.OrdinalIgnoreCase);
+            // For composite models (EntityType is null), don't exclude FK columns —
+            // they are legitimate fields that need to be written to the database.
+            // For single-entity models, exclude FK columns that belong to secondary
+            // entities since those are handled by their own planner.
+            var fkColumns = IsComposite(info)
+                ? new HashSet<string>(System.StringComparer.OrdinalIgnoreCase)
+                : new HashSet<string>(
+                    info.ModelToEntity
+                        .Where(k => !SymbolEqualityComparer.Default.Equals(k.EntityType, info.EntityType))
+                        .Select(k => k.FromColumn ?? string.Empty),
+                    System.StringComparer.OrdinalIgnoreCase);
 
-            var entityPropsByName = info.EntityType.GetMembers()
-                .OfType<IPropertySymbol>()
-                .Where(p => p.GetMethod is not null && !p.IsStatic)
-                .ToDictionary(p => p.Name, System.StringComparer.OrdinalIgnoreCase);
+            // Build a lookup of entity name → property names for all linked entities.
+            var entityPropsByEntity = info.ModelToEntity
+                .GroupBy(k => k.EntityType.Name, System.StringComparer.Ordinal)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.First().EntityType.GetMembers()
+                        .OfType<IPropertySymbol>()
+                        .Where(p => p.GetMethod is not null && !p.IsStatic)
+                        .ToDictionary(p => p.Name, System.StringComparer.OrdinalIgnoreCase),
+                    System.StringComparer.Ordinal);
 
             foreach (var modelProp in IdEmitter.GetScalarProperties(info.ModelType))
             {
@@ -366,28 +429,27 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
                 if (manualByField.TryGetValue(modelProp.Name, out var manual))
                 {
-                    // Manual map — use the declared destination entity and column name.
-                    // This handles renamed fields like FirstNaming → Customer.FirstName.
-                    var entityTypeName = manual.DestinationEntity ?? info.EntityType.Name;
-                    var columnName = manual.DestinationName ?? modelProp.Name;
-
-                    // Verify the column actually exists on that entity (skip if not —
-                    // the manual map may target an entity not reachable from this planner).
                     yield return new FieldMapping(
                         FieldName: modelProp.Name,
-                        EntityTypeName: entityTypeName,
-                        ColumnName: columnName);
+                        EntityTypeName: manual.DestinationEntity ?? info.EntityType?.Name ?? string.Empty,
+                        ColumnName: manual.DestinationName ?? modelProp.Name);
                     continue;
                 }
 
-                // Auto-reflection: same-named property on primary entity.
-                if (entityPropsByName.TryGetValue(modelProp.Name, out var entityProp) &&
-                    IdEmitter.IsScalarProperty(entityProp.Type))
+                // Auto-reflect: find any linked entity that has a same-named scalar property.
+                foreach (var kvp in entityPropsByEntity)
                 {
-                    yield return new FieldMapping(
-                        FieldName: modelProp.Name,
-                        EntityTypeName: info.EntityType.Name,
-                        ColumnName: entityProp.Name);
+                    var entityName = kvp.Key;
+                    var props = kvp.Value;
+                    if (props.TryGetValue(modelProp.Name, out var entityProp) &&
+                        IdEmitter.IsScalarProperty(entityProp.Type))
+                    {
+                        yield return new FieldMapping(
+                            FieldName: modelProp.Name,
+                            EntityTypeName: entityName,
+                            ColumnName: entityProp.Name);
+                        break; // first match wins
+                    }
                 }
             }
         }

@@ -48,17 +48,14 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Parsing
                         ParseInvocation(invocation, info, semanticModel);
                         break;
 
-                    case ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax }:
-                        // Plain property assignments on `map` (e.g. `map.ModelName = ...;`,
-                        // `map.IsModel = true;`, `map.Schema = ...;`) carry no structural
-                        // information the generator needs beyond what's already inferred
-                        // below from ModelToEntityTypes/AddModelToEntity calls - IsModel is
-                        // unconditionally true for this base class (set above), and IsEntity/
-                        // EntityType are derived from AddModelToEntity's link count, not from
-                        // any assignment statement. Intentionally still a no-op here.
+                    case ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax assign }:
+                        ParseAssignment(assign, info);
                         break;
 
-                    case LocalDeclarationStatementSyntax:
+                    case LocalDeclarationStatementSyntax local:
+                        ParseLocalDeclaration(local, info);
+                        break;
+
                     case ReturnStatementSyntax:
                         break;
 
@@ -72,21 +69,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Parsing
                 }
             }
 
-            // FIX: info.EntityType/IsEntity were never set anywhere in this parser, even
-            // though ParseAddModelToEntity already captures the entity type symbol into
-            // info.ModelToEntityTypes for every `map.AddModelToEntity<TModel, TEntity>(...)`
-            // call found above. NodeTreeEmitter.EmitCoffeeBeanery.GraphQL.Core.Sql.EntityNodeTree gates on
-            // `info.IsEntity && info.EntityType is not null` - without this inference, no
-            // mapping using BaseModelMappingRegistration<T> could ever produce an
-            // CoffeeBeanery.GraphQL.Core.Sql.EntityNodeTree, regardless of how many AddModelToEntity links it had.
-            //
-            // Rule (matches the project's own convention, mirrored from
-            // BaseMappingRegistration<TModel,TEntity> which hardcodes IsEntity = true for the
-            // single-entity case): exactly ONE AddModelToEntity link means this model has a
-            // real single backing entity (e.g. CustomerCustomerEdge -> CustomerCustomerRelationship)
-            // and should get both a ModelNodeTree and an CoffeeBeanery.GraphQL.Core.Sql.EntityNodeTree. Zero or multiple links
-            // means a genuine model-only or multi-entity aggregate (e.g. Product, GraphModel) -
-            // IsEntity stays false, EntityType stays null, and only a ModelNodeTree is emitted.
             if (info.ModelToEntityTypes.Count == 1)
             {
                 info.EntityType = info.ModelToEntityTypes[0];
@@ -94,6 +76,57 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Parsing
             }
 
             return info;
+        }
+        
+        private static void ParseLocalDeclaration(
+            LocalDeclarationStatementSyntax local,
+            MappingClassInfo info)
+        {
+            foreach (var variable in local.Declaration.Variables)
+            {
+                if (variable.Initializer?.Value is not ObjectCreationExpressionSyntax { Initializer: not null } creation)
+                    continue;
+
+                // Don't filter by type name — BuildMap uses `var map = new NodeMap { ... }`
+                // so the declared type is `var`, not `NodeMap`.
+                foreach (var expr in creation.Initializer.Expressions.OfType<AssignmentExpressionSyntax>())
+                {
+                    var propName = (expr.Left as IdentifierNameSyntax)?.Identifier.Text;
+                    var value = EvaluateStringLikeExpression(expr.Right);
+                    if (propName is null || value is null) continue;
+
+                    switch (propName)
+                    {
+                        case "Schema":
+                            info.Schema = value;
+                            break;
+                        case "Prefix":
+                            info.Prefix = value;
+                            break;
+                    }
+                }
+            }
+        }
+        
+        private static void ParseAssignment(
+            AssignmentExpressionSyntax assign,
+            MappingClassInfo info)
+        {
+            if (assign.Left is not MemberAccessExpressionSyntax { Name.Identifier.Text: var propName })
+                return;
+
+            var value = EvaluateStringLikeExpression(assign.Right);
+            if (value is null) return;
+
+            switch (propName)
+            {
+                case "Schema":
+                    info.Schema = value;
+                    break;
+                case "Prefix":
+                    info.Prefix = value;
+                    break;
+            }
         }
 
         private static void ParseInvocation(
