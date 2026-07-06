@@ -20,18 +20,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Parsing
             {
                 ClassSymbol = classSymbol,
                 ModelType = modelType,
-
-                // FIX: every class the generator's predicate matches derives from
-                // BaseModelMappingRegistration<T> (TryGetMappingClass only accepts that base
-                // type by name) - it is unconditionally a model. Previously this was left at
-                // its default (false) and nothing else in this parser ever set it, even when
-                // BuildMap() explicitly wrote `map.IsModel = true;` - that's a plain
-                // AssignmentExpressionSyntax statement, which the switch below silently
-                // ignores (`case ExpressionStatementSyntax { Expression:
-                // AssignmentExpressionSyntax }: break;`). The practical effect: NodeTreeEmitter
-                // .EmitModelNodeTree's `if (!info.IsModel) return;` guard always fired, and a
-                // mapping like CustomerCustomerEdge never got a ModelNodeTree written into
-                // NodeRegistry.ModelTrees at all, despite BuildMap() saying it should.
                 IsModel = true
             };
 
@@ -68,13 +56,32 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Parsing
                         break;
                 }
             }
+            
+            var primaryKey = info.ModelToEntity
+                .FirstOrDefault(k => k.IsPrimary && !string.IsNullOrWhiteSpace(k.ToColumn));
+
+            if (primaryKey is not null)
+            {
+                foreach (var link in info.ModelToEntity
+                             .Where(k => !string.IsNullOrWhiteSpace(k.AliasProperty)))
+                {
+                    info.CteUpdateMeta.Add(new CteUpdateMetaInfo
+                    {
+                        NavigationAlias          = link.AliasProperty!,
+                        ForeignKeyColumn         = link.AliasProperty + "Id",
+                        OwningPrimaryKeyColumn   = primaryKey.ToColumn!,
+                        RelatedEntityTypeName    = link.EntityType.Name,
+                        RelatedSurrogateIdColumn = "Id",
+                        RelatedNaturalKeyColumn  = link.ToColumn ?? string.Empty
+                    });
+                }
+            }
 
             if (info.ModelToEntityTypes.Count == 1)
             {
                 info.EntityType = info.ModelToEntityTypes[0];
                 info.IsEntity = true;
             }
-
             return info;
         }
         

@@ -38,6 +38,48 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public List<AutoChildAttachmentInfo> AutoChildAttachments { get; } = new();
 
         public string Id { get; set; } = "";
+        
+        public List<CteUpdateMetaInfo> CteUpdateMeta { get; } = new();
+    }
+    
+    public sealed class CteUpdateMetaInfo
+    {
+        /// <summary>
+        /// Navigation alias — "InnerCustomer" / "OuterCustomer".
+        /// Matched against MutationCteNode.Alias at runtime.
+        /// </summary>
+        public required string NavigationAlias { get; init; }
+
+        /// <summary>
+        /// FK column on the owning entity — "InnerCustomerId" / "OuterCustomerId".
+        /// From HasForeignKey(c => c.InnerCustomerId).
+        /// </summary>
+        public required string ForeignKeyColumn { get; init; }
+
+        /// <summary>
+        /// PK column on the owning entity — "CustomerCustomerRelationshipKey".
+        /// From the ModelToEntity entry where IsPrimary = true.
+        /// </summary>
+        public required string OwningPrimaryKeyColumn { get; init; }
+
+        /// <summary>
+        /// Simple name of the related entity type — "Customer".
+        /// Used to build the table alias: NavigationAlias + RelatedEntityTypeName.
+        /// </summary>
+        public required string RelatedEntityTypeName { get; init; }
+
+        /// <summary>
+        /// Surrogate Id column on the related entity — "Id".
+        /// SELECTed in the subquery and written into ForeignKeyColumn.
+        /// </summary>
+        public required string RelatedSurrogateIdColumn { get; init; }
+
+        /// <summary>
+        /// Natural key column on the related entity — "CustomerKey".
+        /// Used in the WHERE clause to find the right row.
+        /// From the ModelToEntity entry whose AliasProperty matches NavigationAlias.
+        /// </summary>
+        public required string RelatedNaturalKeyColumn { get; init; }
     }
     
     public sealed class AutoChildAttachmentInfo
@@ -60,6 +102,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public string? ToColumn { get; set; }
         public required INamedTypeSymbol EntityType { get; set; }
         public string? AliasProperty { get; set; }
+        
+        public bool IsPrimary { get; set; } 
     }
 
     public sealed class FieldMapInfo

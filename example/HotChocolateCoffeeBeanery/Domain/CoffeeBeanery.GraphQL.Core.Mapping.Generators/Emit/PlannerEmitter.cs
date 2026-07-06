@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -85,8 +86,77 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
             if (IsComposite(info))
             {
-                sb.AppendLine($"            // TODO v2: composite model {info.ModelType.Name} spans multiple distinct entity types.");
-                sb.AppendLine($"            // Full multi-entity join emission is pending.");
+                if (fieldMappings.Count > 0)
+                {
+                    sb.AppendLine("            foreach (var scalar in node.Scalars)");
+                    sb.AppendLine("            {");
+                    sb.AppendLine("                switch (scalar.FieldId)");
+                    sb.AppendLine("                {");
+
+                    foreach (var fm in fieldMappings)
+                    {
+                        var entityIdName = ResolveEntityIdName(fm.EntityTypeName, allMappings);
+                        sb.AppendLine($"                    case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
+                        sb.AppendLine($"                        builder.AddColumn(");
+                        sb.AppendLine($"                            EntityId.{entityIdName},");
+                        sb.AppendLine($"                            ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
+                        sb.AppendLine($"                            node.OutputAlias, scalar.OutputAlias);");
+                        sb.AppendLine("                        break;");
+                    }
+
+                    sb.AppendLine("                }");
+                    sb.AppendLine("            }");
+                }
+
+                if (childLinks.Count > 0)
+                {
+                    sb.AppendLine();
+                    sb.AppendLine("            foreach (var child in node.Children)");
+                    sb.AppendLine("            {");
+                    sb.AppendLine("                switch (child.EntityId)");
+                    sb.AppendLine("                {");
+
+                    foreach (var group in childLinks.GroupBy(l => l.ChildModelName, System.StringComparer.Ordinal))
+                    {
+                        sb.AppendLine($"                    case EntityId.{group.Key}:");
+                        var links = group.ToList();
+
+                        if (links.Count == 1)
+                        {
+                            var l = links[0];
+                            sb.AppendLine($"                        builder.AddJoin(");
+                            sb.AppendLine($"                            EntityId.{l.ParentEntityName},");
+                            sb.AppendLine($"                            ColumnId.{l.ParentEntityName}.{l.ParentJoinColumn},");
+                            sb.AppendLine($"                            EntityId.{l.ChildModelName},");
+                            sb.AppendLine($"                            ColumnId.{l.ChildEntityName}.{l.ChildJoinColumn},");
+                            sb.AppendLine($"                            JoinKind.Left, child.OutputAlias);");
+                        }
+                        else
+                        {
+                            for (var i = 0; i < links.Count; i++)
+                            {
+                                var l = links[i];
+                                var kw = i == 0 ? "if" : "else if";
+                                sb.AppendLine($"                        {kw} (child.OutputAlias == \"{l.NavigationName}\")");
+                                sb.AppendLine($"                        {{");
+                                sb.AppendLine($"                            builder.AddJoin(");
+                                sb.AppendLine($"                                EntityId.{l.ParentEntityName},");
+                                sb.AppendLine($"                                ColumnId.{l.ParentEntityName}.{l.ParentJoinColumn},");
+                                sb.AppendLine($"                                EntityId.{l.ChildModelName},");
+                                sb.AppendLine($"                                ColumnId.{l.ChildEntityName}.{l.ChildJoinColumn},");
+                                sb.AppendLine($"                                JoinKind.Left, child.OutputAlias);");
+                                sb.AppendLine($"                        }}");
+                            }
+                        }
+
+                        sb.AppendLine($"                        {group.Key}Planner.Build(child, ref builder);");
+                        sb.AppendLine("                        break;");
+                    }
+
+                    sb.AppendLine("                }");
+                    sb.AppendLine("            }");
+                }
+
                 sb.AppendLine("        }");
                 sb.AppendLine();
                 return;
@@ -101,9 +171,10 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
                 foreach (var fm in fieldMappings)
                 {
+                    var entityIdName = ResolveEntityIdName(fm.EntityTypeName, allMappings);
                     sb.AppendLine($"                    case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
                     sb.AppendLine($"                        builder.AddColumn(");
-                    sb.AppendLine($"                            EntityId.{info.ModelType.Name},");
+                    sb.AppendLine($"                            EntityId.{entityIdName},");       // ← model name, not entity type name
                     sb.AppendLine($"                            ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
                     sb.AppendLine($"                            node.OutputAlias, scalar.OutputAlias);");
                     sb.AppendLine("                        break;");
@@ -130,7 +201,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     {
                         var l = links[0];
                         sb.AppendLine($"                        builder.AddJoin(");
-                        sb.AppendLine($"                            EntityId.{info.ModelType.Name},");
+                        sb.AppendLine($"                            EntityId.{l.ParentEntityName},");
                         sb.AppendLine($"                            ColumnId.{l.ParentEntityName}.{l.ParentJoinColumn},");
                         sb.AppendLine($"                            EntityId.{l.ChildModelName},");
                         sb.AppendLine($"                            ColumnId.{l.ChildEntityName}.{l.ChildJoinColumn},");
@@ -145,7 +216,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                             sb.AppendLine($"                        {keyword} (child.OutputAlias == \"{l.NavigationName}\")");
                             sb.AppendLine($"                        {{");
                             sb.AppendLine($"                            builder.AddJoin(");
-                            sb.AppendLine($"                                EntityId.{info.ModelType.Name},");
+                            sb.AppendLine($"                                EntityId.{l.ParentEntityName},");
                             sb.AppendLine($"                                ColumnId.{l.ParentEntityName}.{l.ParentJoinColumn},");
                             sb.AppendLine($"                                EntityId.{l.ChildModelName},");
                             sb.AppendLine($"                                ColumnId.{l.ChildEntityName}.{l.ChildJoinColumn},");
@@ -165,6 +236,19 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine("        }");
             sb.AppendLine();
         }
+        
+        private static string ResolveEntityIdName(
+            string entityTypeName,
+            ImmutableArray<MappingClassInfo> allMappings)
+        {
+            var owningModel = allMappings.FirstOrDefault(m =>
+                m.ModelToEntity.Any(link =>
+                    string.Equals(link.EntityType.Name,
+                        entityTypeName,
+                        StringComparison.Ordinal)));
+
+            return owningModel?.ModelType.Name ?? entityTypeName;
+        }
 
         private static void EmitBuildMutation(
             StringBuilder sb,
@@ -179,72 +263,24 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
             if (IsComposite(info))
             {
-                // Composite model: group field maps by destination entity and emit
-                // one AddRow per distinct entity type, routing each field correctly.
                 var fieldMappings = ComputeFieldMappings(info).ToList();
+                var cteEntries = info.CteUpdateMeta;
+                var primaryEntity = info.ModelToEntity.FirstOrDefault(k => k.IsPrimary);
+                var primaryEntityName = primaryEntity?.EntityType.Name
+                    ?? fieldMappings.FirstOrDefault()?.EntityTypeName
+                    ?? info.ModelType.Name;
 
-                var byEntity = fieldMappings
-                    .GroupBy(f => f.EntityTypeName, System.StringComparer.Ordinal)
-                    .ToList();
-
-                if (byEntity.Count == 0)
-                {
-                    // No field maps at all — emit one empty row for the primary entity.
-                    sb.AppendLine($"            builder.AddRow(EntityId.{info.ModelType.Name}, node.OutputAlias,");
-                    sb.AppendLine("                ImmutableArray<FieldValue>.Empty);");
-                }
-                else
-                {
-                    foreach (var entityGroup in byEntity)
-                    {
-                        var entityName = entityGroup.Key;
-                        var fields = entityGroup.ToList();
-
-                        sb.AppendLine($"            {{");
-                        sb.AppendLine($"                var values_{entityName} = ImmutableArray.CreateBuilder<FieldValue>(node.Values.Length);");
-                        sb.AppendLine($"                foreach (var v in node.Values)");
-                        sb.AppendLine($"                {{");
-                        sb.AppendLine($"                    switch (v.FieldId)");
-                        sb.AppendLine($"                    {{");
-
-                        foreach (var fm in fields)
-                        {
-                            sb.AppendLine($"                        case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
-                            sb.AppendLine($"                            values_{entityName}.Add(new FieldValue(");
-                            sb.AppendLine($"                                ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
-                            sb.AppendLine($"                                v.RawValue));");
-                            sb.AppendLine("                            break;");
-                        }
-
-                        sb.AppendLine($"                    }}");
-                        sb.AppendLine($"                }}");
-                        // Look up the schema from the mapping that owns this entity type.
-                // Falls back to the composite model's own schema if not found.
-                var entitySchema = allMappings
-                    .FirstOrDefault(m => m.EntityType != null &&
-                        string.Equals(m.EntityType.Name, entityName, System.StringComparison.Ordinal))
-                    ?.Schema ?? info.Schema;
-
-                sb.AppendLine($"                builder.AddRow(EntityId.{info.ModelType.Name}, node.OutputAlias, values_{entityName}.ToImmutable(), \"{entitySchema}\", \"{entityName}\");");
-                        sb.AppendLine($"            }}");
-                    }
-                }
-
-                // Recurse into children — composite models still have child nodes
-                // (e.g. InnerCustomer, OuterCustomer on CustomerCustomerEdge).
-                sb.AppendLine();
+                // Step 1: child entity upserts first
                 sb.AppendLine("            foreach (var child in node.Children)");
                 sb.AppendLine("            {");
                 sb.AppendLine("                switch (child.EntityId)");
                 sb.AppendLine("                {");
 
-                var allChildMappings = allMappings
+                foreach (var childName in allMappings
                     .Where(m => m.IsModel)
                     .Select(m => m.ModelType.Name)
                     .Distinct(System.StringComparer.Ordinal)
-                    .OrderBy(n => n, System.StringComparer.Ordinal);
-
-                foreach (var childName in allChildMappings)
+                    .OrderBy(n => n, System.StringComparer.Ordinal))
                 {
                     sb.AppendLine($"                    case EntityId.{childName}:");
                     sb.AppendLine($"                        {childName}Planner.BuildMutation(child, ref builder);");
@@ -253,39 +289,93 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
                 sb.AppendLine("                }");
                 sb.AppendLine("            }");
+                sb.AppendLine();
+
+                // Step 2: edge entity values — v.FieldId/v.RawValue only, never scalar/AddColumn
+                sb.AppendLine("            {");
+                sb.AppendLine($"                var edgeValues = ImmutableArray.CreateBuilder<FieldValue>(node.Values.Length);");
+                sb.AppendLine("                foreach (var v in node.Values)");
+                sb.AppendLine("                {");
+                sb.AppendLine("                    switch (v.FieldId)");
+                sb.AppendLine("                    {");
+
+                foreach (var fm in fieldMappings.Where(f => f.EntityTypeName == primaryEntityName))
+                {
+                    sb.AppendLine($"                        case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
+                    sb.AppendLine($"                            edgeValues.Add(new FieldValue(");
+                    sb.AppendLine($"                                ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
+                    sb.AppendLine($"                                v.RawValue));");
+                    sb.AppendLine("                            break;");
+                }
+
+                sb.AppendLine("                    }");
+                sb.AppendLine("                }");
+                sb.AppendLine();
+
+                // Step 3: FK resolution child nodes
+                sb.AppendLine($"                var cteChildren = ImmutableArray.CreateBuilder<MutationCteNode>({cteEntries.Count});");
+                sb.AppendLine("                foreach (var child in node.Children)");
+                sb.AppendLine("                {");
+
+                foreach (var cte in cteEntries)
+                {
+                    sb.AppendLine($"                    if (child.OutputAlias == \"{cte.NavigationAlias}\")");
+                    sb.AppendLine("                    {");
+                    sb.AppendLine("                        string? nk = null;");
+                    sb.AppendLine("                        foreach (var v in child.Values)");
+                    sb.AppendLine($"                            if (v.FieldId == FieldId.{cte.RelatedEntityTypeName}.{cte.RelatedNaturalKeyColumn})");
+                    sb.AppendLine("                            { nk = v.RawValue; break; }");
+                    sb.AppendLine("                        if (nk != null)");
+                    sb.AppendLine($"                            cteChildren.Add(new MutationCteNode(EntityId.{cte.RelatedEntityTypeName}, \"{cte.NavigationAlias}\",");
+                    sb.AppendLine($"                                ImmutableArray.Create(new FieldValue(ColumnId.{cte.RelatedEntityTypeName}.{cte.RelatedNaturalKeyColumn}, nk)),");
+                    sb.AppendLine("                                ImmutableArray<MutationCteNode>.Empty));");
+                    sb.AppendLine("                    }");
+                }
+
+                sb.AppendLine("                }");
+                sb.AppendLine();
+
+                // Step 4: AddCteRoot — EntityId uses MODEL name not entity type name
+                sb.AppendLine($"                builder.AddCteRoot(new MutationCteNode(");
+                sb.AppendLine($"                    EntityId.{info.ModelType.Name}, node.OutputAlias,");
+                sb.AppendLine($"                    edgeValues.ToImmutable(),");
+                sb.AppendLine($"                    cteChildren.ToImmutable()));");
+                sb.AppendLine("            }");
+                sb.AppendLine("        }");
+                return;
+            }
+
+            // ── Non-composite path ────────────────────────────────────────────────────
+            // Only v.FieldId / v.RawValue / values.Add / builder.AddRow — never scalar/AddColumn
+            var nonCompositeMappings = ComputeFieldMappings(info).ToList();
+
+            if (nonCompositeMappings.Count > 0)
+            {
+                sb.AppendLine($"            var values = ImmutableArray.CreateBuilder<FieldValue>(node.Values.Length);");
+                sb.AppendLine();
+                sb.AppendLine("            foreach (var v in node.Values)");
+                sb.AppendLine("            {");
+                sb.AppendLine("                switch (v.FieldId)");
+                sb.AppendLine("                {");
+
+                foreach (var fm in nonCompositeMappings)
+                {
+                    sb.AppendLine($"                    case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
+                    sb.AppendLine($"                        values.Add(new FieldValue(");
+                    sb.AppendLine($"                            ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
+                    sb.AppendLine($"                            v.RawValue));");
+                    sb.AppendLine("                        break;");
+                }
+
+                sb.AppendLine("                }");
+                sb.AppendLine("            }");
+                sb.AppendLine();
+                sb.AppendLine($"            builder.AddRow(EntityId.{info.ModelType.Name}, node.OutputAlias, values.ToImmutable());");
             }
             else
             {
-                var fieldMappings = ComputeFieldMappings(info).ToList();
-
-                if (fieldMappings.Count > 0)
-                {
-                    sb.AppendLine($"            var values = ImmutableArray.CreateBuilder<FieldValue>(node.Values.Length);");
-                    sb.AppendLine();
-                    sb.AppendLine("            foreach (var v in node.Values)");
-                    sb.AppendLine("            {");
-                    sb.AppendLine("                switch (v.FieldId)");
-                    sb.AppendLine("                {");
-
-                    foreach (var fm in fieldMappings)
-                    {
-                        sb.AppendLine($"                    case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
-                        sb.AppendLine($"                        values.Add(new FieldValue(");
-                        sb.AppendLine($"                            ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
-                        sb.AppendLine($"                            v.RawValue));");
-                        sb.AppendLine("                        break;");
-                    }
-
-                    sb.AppendLine("                }");
-                    sb.AppendLine("            }");
-                    sb.AppendLine();
-                    sb.AppendLine($"            builder.AddRow(EntityId.{info.ModelType.Name}, node.OutputAlias, values.ToImmutable());");
-                }
-                else
-                {
-                    sb.AppendLine($"            builder.AddRow(EntityId.{info.ModelType.Name}, node.OutputAlias,");
-                    sb.AppendLine("                ImmutableArray<FieldValue>.Empty);");
-                }
+                sb.AppendLine($"            builder.AddRow(EntityId.{info.ModelType.Name}, node.OutputAlias,");
+                sb.AppendLine("                ImmutableArray<FieldValue>.Empty);");
             }
 
             if (childLinks.Count > 0)
@@ -400,10 +490,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 .ToDictionary(g => g.Key, g => g.First(),
                     System.StringComparer.OrdinalIgnoreCase);
 
-            // For composite models (EntityType is null), don't exclude FK columns —
-            // they are legitimate fields that need to be written to the database.
-            // For single-entity models, exclude FK columns that belong to secondary
-            // entities since those are handled by their own planner.
             var fkColumns = IsComposite(info)
                 ? new HashSet<string>(System.StringComparer.OrdinalIgnoreCase)
                 : new HashSet<string>(

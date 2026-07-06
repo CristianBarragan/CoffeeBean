@@ -1,0 +1,344 @@
+﻿using System.Collections.Immutable;
+using System.Text;
+using CoffeeBeanery.GraphQL.Core.Runtime;
+
+namespace CoffeeBeanery.GraphQL.Core.Sql;
+
+public sealed class PostgresSqlWriter
+{
+    private readonly IEntityMetaProvider _meta;
+
+    public PostgresSqlWriter(IEntityMetaProvider meta)
+    {
+        _meta = meta;
+    }
+    
+    public string WriteUpsertThenSelect(in MutationPlan mutation, in QueryPlan query)
+    {
+        var sb = new StringBuilder(1024);
+        var arms = CollectUpsertArms(mutation);
+
+        if (arms.Count > 0)
+        {
+            sb.AppendLine("WITH");
+            for (var i = 0; i < arms.Count; i++)
+            {
+                sb.Append("  mut_").Append(i).Append(" AS (");
+                sb.Append(arms[i]);
+                sb.Append(" RETURNING 1)");
+                sb.AppendLine(i < arms.Count - 1 ? "," : "");
+            }
+        }
+
+        AppendSelect(sb, query);
+        return sb.ToString();
+    }
+
+    public string WriteSelect(in QueryPlan plan)
+    {
+        var sb = new StringBuilder(512);
+        AppendSelect(sb, plan);
+        return sb.ToString();
+    }
+
+    public string WriteUpserts(in MutationPlan plan)
+    {
+        var arms = CollectUpsertArms(plan);
+        if (arms.Count == 0) return string.Empty;
+
+        var sb = new StringBuilder();
+        for (var i = 0; i < arms.Count; i++)
+        {
+            if (i > 0) sb.AppendLine(";");
+            sb.Append(arms[i]);
+        }
+        sb.Append(';');
+        return sb.ToString();
+    }
+
+    // ---------------------------------------------------------------
+    // Collect all upsert SQL arms
+    // ---------------------------------------------------------------
+
+    private List<string> CollectUpsertArms(in MutationPlan plan)
+    {
+        var arms = new List<string>();
+
+        foreach (var row in plan.Rows)
+            arms.Add(BuildRegularUpsert(row));
+
+        foreach (var root in plan.CteRoots)
+        {
+            arms.Add(BuildCteNodeUpsert(root));
+            foreach (var child in root.Children)
+            {
+                var fkSql = BuildFkResolution(root, child);
+                if (!string.IsNullOrEmpty(fkSql))
+                    arms.Add(fkSql);
+            }
+        }
+
+        return arms;
+    }
+
+    // ---------------------------------------------------------------
+    // Regular upsert row (simple non-composite models)
+    // ---------------------------------------------------------------
+
+    private string BuildRegularUpsert(in UpsertRow row)
+    {
+        var schema       = row.SchemaOverride ?? _meta.Schema[row.EntityId];
+        var table = row.TableOverride ?? _meta.Table[row.EntityId][0];
+        var cols         = _meta.ColumnName[row.EntityId];
+        var conflictCols = _meta.ConflictColumns[row.EntityId];
+
+        var sb = new StringBuilder();
+        sb.Append("INSERT INTO \"").Append(schema).Append("\".\"").Append(table).Append("\" (");
+
+        for (int c = 0; c < row.Values.Length; c++)
+        {
+            if (c > 0) sb.Append(", ");
+            sb.Append('"').Append(cols[row.Values[c].FieldId]).Append('"');
+        }
+
+        sb.Append(") VALUES (");
+        for (int c = 0; c < row.Values.Length; c++)
+        {
+            if (c > 0) sb.Append(", ");
+            AppendQuotedValue(sb, row.Values[c].RawValue);
+        }
+        sb.Append(')');
+        AppendDoUpdateSet(sb, row.Values, cols, conflictCols);
+        return sb.ToString();
+    }
+
+    // ---------------------------------------------------------------
+    // CTE node upsert (composite model primary entity row)
+    // ---------------------------------------------------------------
+
+    private string BuildCteNodeUpsert(in MutationCteNode node)
+    {
+        var schema       = node.SchemaOverride ?? _meta.Schema[node.EntityId];
+        var table = node.TableOverride ?? _meta.Table[node.EntityId][0];
+        var cols         = _meta.ColumnName[node.EntityId];
+
+        // Use baked-in conflict columns from the node, fall back to EntityMeta
+        var conflictCols = node.ConflictColumns.Length > 0
+            ? node.ConflictColumns.ToArray()
+            : _meta.ConflictColumns[node.EntityId];
+
+        var sb = new StringBuilder();
+        sb.Append("INSERT INTO \"").Append(schema).Append("\".\"").Append(table).Append("\" (");
+
+        for (int c = 0; c < node.Values.Length; c++)
+        {
+            if (c > 0) sb.Append(", ");
+            sb.Append('"').Append(cols[node.Values[c].FieldId]).Append('"');
+        }
+
+        sb.Append(") VALUES (");
+        for (int c = 0; c < node.Values.Length; c++)
+        {
+            if (c > 0) sb.Append(", ");
+            AppendQuotedValue(sb, node.Values[c].RawValue);
+        }
+        sb.Append(')');
+        AppendDoUpdateSetFromNames(sb, node.Values, cols, conflictCols);
+        return sb.ToString();
+    }
+
+    // ---------------------------------------------------------------
+    // FK resolution INSERT...SELECT
+    //
+    // INSERT INTO "Banking"."CustomerCustomerRelationship"
+    //   ("InnerCustomerId", "CustomerCustomerRelationshipKey")
+    // (SELECT InnerCustomerCustomer."Id" AS "InnerCustomerId",
+    //         '5dc...' AS "CustomerCustomerRelationshipKey"
+    //  FROM "Banking"."Customer" InnerCustomerCustomer
+    //  WHERE "CustomerKey" = '2dc...')
+    // ON CONFLICT ("CustomerCustomerRelationshipKey")
+    // DO UPDATE SET "InnerCustomerId" = EXCLUDED."InnerCustomerId"
+    // ---------------------------------------------------------------
+
+    private string BuildFkResolution(in MutationCteNode root, in MutationCteNode child)
+    {
+        var resolutions = _meta.CteResolutions[root.EntityId];
+        var specFound = false;
+        CteResolutionSpec spec = default;
+
+        foreach (var r in resolutions)
+        {
+            if (string.Equals(r.NavigationAlias, child.Alias, StringComparison.OrdinalIgnoreCase))
+            {
+                spec = r;
+                specFound = true;
+                break;
+            }
+        }
+
+        if (!specFound) return string.Empty;
+
+        // Find owning PK value from root values
+        var pkValue = string.Empty;
+        var rootCols = _meta.ColumnName[root.EntityId];
+        foreach (var v in root.Values)
+        {
+            if (string.Equals(rootCols[v.FieldId], spec.OwningPkColumn,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                pkValue = v.RawValue;
+                break;
+            }
+        }
+
+        // Natural key value — first child value
+        var naturalKeyValue = child.Values.Length > 0 ? child.Values[0].RawValue : "NULL";
+
+        var owningSchema = root.SchemaOverride ?? _meta.Schema[root.EntityId];
+        var owningTable  = root.TableOverride ?? _meta.Table[root.EntityId][0];
+        var relatedSchema = _meta.Schema[child.EntityId];
+        var relatedTable  = _meta.Table[child.EntityId];
+
+        var sb = new StringBuilder();
+        sb.Append("INSERT INTO \"").Append(owningSchema).Append("\".\"").Append(owningTable)
+          .Append("\" (\"").Append(spec.ForeignKeyColumn)
+          .Append("\", \"").Append(spec.OwningPkColumn).Append("\") (");
+
+        sb.Append("SELECT ").Append(spec.RelatedTableAlias)
+          .Append(".\"").Append(spec.RelatedSurrogateIdColumn)
+          .Append("\" AS \"").Append(spec.ForeignKeyColumn).Append("\", ");
+        AppendQuotedValue(sb, pkValue);
+        sb.Append(" AS \"").Append(spec.OwningPkColumn)
+          .Append("\" FROM \"").Append(relatedSchema).Append("\".\"").Append(relatedTable)
+          .Append("\" ").Append(spec.RelatedTableAlias)
+          .Append(" WHERE \"").Append(spec.RelatedNaturalKeyColumn).Append("\" = ");
+        AppendQuotedValue(sb, naturalKeyValue);
+        sb.Append(')');
+
+        sb.Append(" ON CONFLICT (\"").Append(spec.OwningPkColumn)
+          .Append("\") DO UPDATE SET \"").Append(spec.ForeignKeyColumn)
+          .Append("\" = EXCLUDED.\"").Append(spec.ForeignKeyColumn).Append('"');
+
+        return sb.ToString();
+    }
+
+    // ---------------------------------------------------------------
+    // SELECT builder
+    // ---------------------------------------------------------------
+
+    private void AppendSelect(StringBuilder sb, in QueryPlan plan)
+    {
+        sb.Append("SELECT DISTINCT");
+
+        var first = true;
+        foreach (var col in plan.Columns)
+        {
+            if (!first) sb.Append(',');
+            first = false;
+            sb.Append("\n    ")
+              .Append('"').Append(col.EntityOutputAlias).Append('"')
+              .Append(".\"").Append(_meta.ColumnName[col.EntityId][col.ColumnId]).Append('"')
+              .Append(" AS \"").Append(col.ColumnOutputAlias).Append('"');
+        }
+
+        if (first) sb.Append("\n    1");
+
+        sb.Append("\nFROM ");
+        AppendQualifiedTable(sb, plan.RootEntityId);
+        sb.Append(" \"").Append(plan.RootOutputAlias).Append('"');
+
+        foreach (var join in plan.Joins)
+        {
+            sb.Append('\n');
+            AppendJoin(sb, join, plan);
+        }
+    }
+
+    private void AppendJoin(StringBuilder sb, in JoinSpec join, in QueryPlan plan)
+    {
+        var keyword = join.Kind == JoinKind.Left ? "LEFT JOIN" : "JOIN";
+        sb.Append(keyword).Append(' ');
+        AppendQualifiedTable(sb, join.ToEntityId);
+        sb.Append(" \"").Append(join.ToOutputAlias).Append('"');
+        sb.Append("\n    ON ");
+
+        var fromAlias   = ResolveOutputAlias(join.FromEntityId, plan);
+        var fromColName = _meta.ColumnName[join.FromEntityId][join.FromColumnId];
+        var toColName   = _meta.ColumnName[join.ToEntityId][join.ToColumnId];
+
+        sb.Append('"').Append(join.ToOutputAlias).Append("\".\"").Append(toColName).Append('"')
+          .Append(" = \"").Append(fromAlias).Append("\".\"").Append(fromColName).Append('"');
+    }
+
+    private string ResolveOutputAlias(ushort entityId, in QueryPlan plan)
+    {
+        if (entityId == plan.RootEntityId) return plan.RootOutputAlias;
+        foreach (var j in plan.Joins)
+            if (j.ToEntityId == entityId) return j.ToOutputAlias;
+        return _meta.Table[plan.RootEntityId][0];
+    }
+
+    private void AppendQualifiedTable(StringBuilder sb, ushort entityId)
+    {
+        sb.Append('"').Append(_meta.Schema[entityId]).Append("\".\"")
+          .Append(_meta.Table[entityId]).Append('"');
+    }
+
+    // ---------------------------------------------------------------
+    // Shared helpers
+    // ---------------------------------------------------------------
+
+    private static void AppendQuotedValue(StringBuilder sb, string value)
+        => sb.Append('\'').Append(value.Replace("'", "''")).Append('\'');
+
+    private static void AppendDoUpdateSet(
+        StringBuilder sb,
+        ImmutableArray<FieldValue> values,
+        string[] cols,
+        string[] conflictCols)
+    {
+        AppendDoUpdateSetFromNames(sb, values, cols, conflictCols);
+    }
+
+    private static void AppendDoUpdateSetFromNames(
+        StringBuilder sb,
+        ImmutableArray<FieldValue> values,
+        string[] cols,
+        string[] conflictCols)
+    {
+        if (conflictCols.Length == 0)
+        {
+            sb.Append(" ON CONFLICT DO NOTHING");
+            return;
+        }
+
+        sb.Append(" ON CONFLICT (");
+        for (int i = 0; i < conflictCols.Length; i++)
+        {
+            if (i > 0) sb.Append(", ");
+            sb.Append('"').Append(conflictCols[i]).Append('"');
+        }
+        sb.Append(") DO UPDATE SET ");
+
+        var firstUpdate = true;
+        for (int c = 0; c < values.Length; c++)
+        {
+            var colName = cols[values[c].FieldId];
+            var isConflict = false;
+            foreach (var cc in conflictCols)
+                if (string.Equals(cc, colName, StringComparison.OrdinalIgnoreCase))
+                { isConflict = true; break; }
+            if (isConflict) continue;
+
+            if (!firstUpdate) sb.Append(", ");
+            firstUpdate = false;
+            sb.Append('"').Append(colName).Append("\" = EXCLUDED.\"").Append(colName).Append('"');
+        }
+
+        if (firstUpdate)
+        {
+            sb.Length -= " DO UPDATE SET ".Length;
+            sb.Append(" DO NOTHING");
+        }
+    }
+}

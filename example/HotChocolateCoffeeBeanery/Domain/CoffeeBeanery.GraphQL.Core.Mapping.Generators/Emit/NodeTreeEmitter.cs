@@ -39,6 +39,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             EmitEntityChildren(sb, info, navResult);
             EmitChildAttachments(sb, info);
             EmitFieldMapsList(sb, info);
+            EmitCteUpdateMeta(sb, info, navResult);
 
             sb.AppendLine("    }");
             sb.AppendLine("}");
@@ -47,6 +48,44 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 sb.AppendLine("}");
 
             return sb.ToString();
+        }
+        
+        private static void EmitCteUpdateMeta(
+            StringBuilder sb,
+            MappingClassInfo info,
+            NavigationResolutionResult navResult)
+        {
+            var fkNavs = navResult.Navigations
+                .Where(n => !n.IsCollection && !string.IsNullOrWhiteSpace(n.ForeignKeyProperty))
+                .ToList();
+
+            if (fkNavs.Count == 0)
+                return;
+
+            var primaryEntry = info.ModelToEntity.FirstOrDefault(k => k.IsPrimary);
+            if (primaryEntry is null || string.IsNullOrWhiteSpace(primaryEntry.ToColumn))
+                return;
+
+            var aliasToNaturalKey = info.ModelToEntity
+                .Where(k => k.AliasProperty != null && !string.IsNullOrWhiteSpace(k.ToColumn))
+                .ToDictionary(k => k.AliasProperty!, k => k);
+
+            foreach (var nav in fkNavs)
+            {
+                if (!aliasToNaturalKey.TryGetValue(nav.NavigationName, out var naturalKeyInfo))
+                    continue;
+
+                // Populate MappingClassInfo so MetadataEmitter can read it
+                info.CteUpdateMeta.Add(new CteUpdateMetaInfo
+                {
+                    NavigationAlias          = nav.NavigationName,
+                    ForeignKeyColumn         = nav.ForeignKeyProperty,
+                    OwningPrimaryKeyColumn   = primaryEntry.ToColumn!,
+                    RelatedEntityTypeName    = nav.RelatedEntityType.Name,
+                    RelatedSurrogateIdColumn = nav.PrincipalKeyProperty,
+                    RelatedNaturalKeyColumn  = naturalKeyInfo.ToColumn!
+                });
+            }
         }
 
         private static void EmitModelToEntityKeys(StringBuilder sb, MappingClassInfo info)

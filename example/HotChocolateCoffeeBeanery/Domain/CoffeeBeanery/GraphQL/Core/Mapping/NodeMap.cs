@@ -110,6 +110,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping
         public string ModelName { get; set; }
 
         public GraphMap? GraphMap { get; set; }
+        
+        public List<CteUpdateMeta> CteUpdateMeta { get; } = new();
 
         public EntityKey AddModelToEntity<TModel, TEntity>(
             Expression<Func<TModel, object?>> fk,
@@ -220,5 +222,42 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping
             throw new ArgumentException(
                 $"Expression '{expression}' does not reference a property.");
         }
+    }
+    
+    public sealed class CteUpdateMeta
+    {
+        /// <summary>The entity table that owns the FK — CustomerCustomerRelationship</summary>
+        public required Type OwningEntityType { get; init; }
+
+        /// <summary>ON CONFLICT column on the owning entity — CustomerCustomerRelationshipKey</summary>
+        public required string OwningPrimaryKeyColumn { get; init; }
+
+        /// <summary>The FK column being resolved — InnerCustomerId / OuterCustomerId</summary>
+        public required string ForeignKeyColumn { get; init; }
+
+        /// <summary>The related entity being looked up — Customer</summary>
+        public required Type RelatedEntityType { get; init; }
+
+        /// <summary>
+        /// Table alias in the SELECT FROM clause.
+        /// Derived as NavigationName + RelatedEntityType.Name → InnerCustomerCustomer
+        /// </summary>
+        public required string RelatedTableAlias { get; init; }
+
+        /// <summary>The surrogate Id column SELECTed from related entity — Id</summary>
+        public required string RelatedSurrogateIdColumn { get; init; }
+
+        /// <summary>
+        /// Natural key column used in the WHERE clause — CustomerKey.
+        /// This is the ToColumn from the ModelToEntity entry whose AliasProperty
+        /// matches the navigation name.
+        /// </summary>
+        public required string RelatedNaturalKeyColumn { get; init; }
+
+        /// <summary>
+        /// The navigation alias — InnerCustomer / OuterCustomer.
+        /// Used at runtime to pull the correct value from the mutation input.
+        /// </summary>
+        public string? NavigationAlias { get; init; }
     }
 }

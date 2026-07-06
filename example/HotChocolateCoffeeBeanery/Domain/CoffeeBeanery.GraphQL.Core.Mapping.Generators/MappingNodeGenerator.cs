@@ -80,18 +80,15 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 if (!isRoot || all.IsEmpty)
                     return;
 
-                // GeneratedIds.g.cs — EntityId.*, ColumnId.*, FieldId.*
-                spc.AddSource("GeneratedIds.g.cs", IdEmitter.Emit(all));
-
-                // EntityMeta.g.cs — Schema[], Table[], ColumnName[][], FieldName[][]
-                spc.AddSource("EntityMeta.g.cs", MetadataEmitter.Emit(all));
-
-                // AdapterTables.g.cs
                 var rootEntityTypes = ResolveRootEntityTypes(all, rootModelTypes);
+                
+                spc.AddSource("GeneratedIds.g.cs", IdEmitter.Emit(all));
+                
+                spc.AddSource("EntityMeta.g.cs", MetadataEmitter.Emit(all, rootEntityTypes, fluentInverseNav));
+                
                 var source = AdapterEmitter.Emit(all, rootEntityTypes, fluentInverseNav);
                 spc.AddSource("AdapterTables.g.cs", source);
-
-                // Planners.g.cs — *Planner classes + PlannerRegistry
+                
                 spc.AddSource("Planners.g.cs",
                     PlannerEmitter.Emit(all, rootEntityTypes, fluentInverseNav));
             });
