@@ -16,11 +16,12 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 .OrderBy(m => m.ModelType.Name, System.StringComparer.Ordinal)
                 .ToList();
 
-            // Collect ALL entity types referenced across all mappings —
-            // both the primary EntityType and every secondary link in ModelToEntity.
-            // This ensures composite-entity models (CustomerCustomerEdge → CustomerCustomerRelationship
-            // + Customer, Product → Account + Contract + Transaction + CustomerBankingRelationship)
-            // produce ColumnId nested classes for every entity they reference, not just the primary.
+            // ALL unique entity types referenced across all mappings —
+            // primary EntityType + every secondary ModelToEntity link.
+            // These are the real DB tables. Used to generate:
+            //   StorageEntityId.* constants
+            //   ColumnId.{EntityName}.* constants
+            //   EntityMeta.EntitySchema/EntityTable/EntityColumnName arrays
             var entityTypes = allMappings
                 .SelectMany(m =>
                 {
@@ -55,9 +56,9 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         private static void EmitEntityIds(StringBuilder sb, List<MappingClassInfo> models)
         {
             sb.AppendLine("    /// <summary>");
-            sb.AppendLine("    /// One ushort constant per registered model.");
-            sb.AppendLine("    /// Used as the primary array index into EntityMeta.*");
-            sb.AppendLine("    /// and as the dispatch key in PlannerRegistry.");
+            sb.AppendLine("    /// One ushort constant per registered MODEL.");
+            sb.AppendLine("    /// Index into model-keyed EntityMeta arrays (Schema, Table, FieldName, etc.)");
+            sb.AppendLine("    /// and dispatch key in PlannerRegistry.");
             sb.AppendLine("    /// </summary>");
             sb.AppendLine("    public static class EntityId");
             sb.AppendLine("    {");
@@ -66,8 +67,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 sb.AppendLine($"        public const ushort {models[i].ModelType.Name} = {i};");
 
             sb.AppendLine();
-            sb.AppendLine($"        /// <summary>Total number of registered entities. EntityMeta arrays are sized to this.</summary>");
-            sb.AppendLine($"        public const ushort Count = {models.Count};");
+            sb.AppendLine("        public const ushort Count = " + models.Count + ";");
             sb.AppendLine("    }");
             sb.AppendLine();
         }
@@ -77,7 +77,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine("    /// <summary>");
             sb.AppendLine("    /// One nested class per entity type, one ushort constant per");
             sb.AppendLine("    /// scalar entity property. Index = alphabetical position.");
-            sb.AppendLine("    /// Used as second index into EntityMeta.ColumnName[entityId][columnId].");
+            sb.AppendLine("    /// Used as: EntityMeta.EntityColumnName[StorageEntityId.{X}][ColumnId.{X}.{Prop}]");
             sb.AppendLine("    /// </summary>");
             sb.AppendLine("    public static class ColumnId");
             sb.AppendLine("    {");

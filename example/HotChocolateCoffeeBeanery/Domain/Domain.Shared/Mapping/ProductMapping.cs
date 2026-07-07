@@ -31,8 +31,7 @@ public sealed partial class ProductMapping : BaseMappingRegistration<Product>
 
         map.AddModelToEntity<Product, DataEntity.Account>(
             m => m.AccountKey,
-            e => e.AccountKey,
-            isPrimary: true);
+            e => e.AccountKey);
 
         map.AddModelToEntity<Product, DataEntity.Contract>(
             m => m.ContractKey,

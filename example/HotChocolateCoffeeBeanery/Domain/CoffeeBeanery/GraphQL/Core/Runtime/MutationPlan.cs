@@ -57,32 +57,17 @@ public readonly struct CteResolutionSpec
 public readonly struct MutationCteNode
 {
     public readonly ushort EntityId;
+    public readonly ushort StorageEntityId;        // ← add
     public readonly string Alias;
     public readonly ImmutableArray<FieldValue> Values;
     public readonly ImmutableArray<MutationCteNode> Children;
-
-    /// <summary>
-    /// For composite models whose EntityId maps to the model (e.g. CustomerCustomerEdge)
-    /// rather than the real DB table (CustomerCustomerRelationship).
-    /// PostgresSqlWriter uses this instead of EntityMeta.Schema[EntityId].
-    /// </summary>
-    public readonly string? SchemaOverride;
-
-    /// <summary>
-    /// For composite models — the real DB table name.
-    /// PostgresSqlWriter uses this instead of EntityMeta.Table[EntityId].
-    /// </summary>
-    public readonly string? TableOverride;
-
-    /// <summary>
-    /// Conflict columns for this specific CTE node.
-    /// When non-empty, PostgresSqlWriter uses these instead of EntityMeta.ConflictColumns[EntityId].
-    /// Baked in at code-generation time from the mapping's UpsertKeys.
-    /// </summary>
-    public readonly ImmutableArray<string> ConflictColumns;
+    public readonly string? SchemaOverride;         // ← add
+    public readonly string? TableOverride;          // ← add
+    public readonly ImmutableArray<string> ConflictColumns; // ← add
 
     public MutationCteNode(
         ushort entityId,
+        ushort storageEntityId,
         string alias,
         ImmutableArray<FieldValue> values,
         ImmutableArray<MutationCteNode> children,
@@ -90,12 +75,13 @@ public readonly struct MutationCteNode
         string? tableOverride = null,
         ImmutableArray<string> conflictColumns = default)
     {
-        EntityId = entityId;
-        Alias = alias;
-        Values = values;
-        Children = children;
-        SchemaOverride = schemaOverride;
-        TableOverride = tableOverride;
+        EntityId        = entityId;
+        StorageEntityId = storageEntityId;
+        Alias           = alias;
+        Values          = values;
+        Children        = children;
+        SchemaOverride  = schemaOverride;
+        TableOverride   = tableOverride;
         ConflictColumns = conflictColumns.IsDefault
             ? ImmutableArray<string>.Empty
             : conflictColumns;

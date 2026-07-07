@@ -62,15 +62,16 @@ public class ProcessService<M> : IProcessService<M>
         string modelName,
         CancellationToken cancellationToken)
     {
-        var rootEntityId = ResolveRootEntityId(modelName);
-        var rootOutputAlias = modelName;
+        var rootEntityId        = ResolveRootEntityId(modelName);
+        var rootStorageEntityId = ResolveRootStorageEntityId(modelName);
+        var rootOutputAlias     = modelName;
 
         var mutationArg = selection.SyntaxNode.Arguments
             .FirstOrDefault(a =>
-                !string.Equals(a.Name.Value, "where", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(a.Name.Value, "order", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(a.Name.Value, "first", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(a.Name.Value, "last", StringComparison.OrdinalIgnoreCase));
+                !string.Equals(a.Name.Value, "where",  StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(a.Name.Value, "order",  StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(a.Name.Value, "first",  StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(a.Name.Value, "last",   StringComparison.OrdinalIgnoreCase));
 
         MutationPlan? mutationPlan = null;
 
@@ -97,7 +98,7 @@ public class ProcessService<M> : IProcessService<M>
         selectionIr = SelectionOptimizer.Optimize(selectionIr);
 
         var queryPlanBuilder = new QueryPlanBuilder();
-        queryPlanBuilder.SetRoot(rootEntityId, rootOutputAlias);
+        queryPlanBuilder.SetRoot(rootEntityId, rootStorageEntityId, rootOutputAlias);
 
         _plannerRegistry.Build(rootEntityId, selectionIr, ref queryPlanBuilder);
 
@@ -106,7 +107,6 @@ public class ProcessService<M> : IProcessService<M>
 
         var queryPlan = queryPlanBuilder.Build();
 
-        // Emit the full single-trip SQL: writable CTEs + SELECT
         var finalSql = mutationPlan.HasValue
             ? _sqlWriter.WriteUpsertThenSelect(mutationPlan.Value, queryPlan)
             : _sqlWriter.WriteSelect(queryPlan);
@@ -131,8 +131,9 @@ public class ProcessService<M> : IProcessService<M>
         string modelName,
         CancellationToken cancellationToken)
     {
-        var rootEntityId = ResolveRootEntityId(modelName);
-        var rootOutputAlias = modelName;
+        var rootEntityId        = ResolveRootEntityId(modelName);
+        var rootStorageEntityId = ResolveRootStorageEntityId(modelName);
+        var rootOutputAlias     = modelName;
 
         var selectionSet = selection.SyntaxNode.SelectionSet
             ?? throw new InvalidOperationException("Selection has no SelectionSet.");
@@ -143,7 +144,7 @@ public class ProcessService<M> : IProcessService<M>
         selectionIr = SelectionOptimizer.Optimize(selectionIr);
 
         var queryPlanBuilder = new QueryPlanBuilder();
-        queryPlanBuilder.SetRoot(rootEntityId, rootOutputAlias);
+        queryPlanBuilder.SetRoot(rootEntityId, rootStorageEntityId, rootOutputAlias);
 
         _plannerRegistry.Build(rootEntityId, selectionIr, ref queryPlanBuilder);
 
@@ -167,6 +168,14 @@ public class ProcessService<M> : IProcessService<M>
         };
     }
 
+    // ---------------------------------------------------------------
+    // Entity ID resolution
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Resolves the model entity ID — used for planner dispatch (EntityId.*).
+    /// Matches against ModelName[i][0].
+    /// </summary>
     private ushort ResolveRootEntityId(string modelName)
     {
         for (ushort i = 0; i < _meta.Count; i++)
@@ -178,6 +187,43 @@ public class ProcessService<M> : IProcessService<M>
         throw new InvalidOperationException(
             $"No entity registered for model '{modelName}'.");
     }
+
+    /// <summary>
+    /// Resolves the storage entity ID — used for SQL emission (schema/table/columns).
+    /// For simple models this equals the entity ID.
+    /// For composite models (e.g. CustomerCustomerEdge) this resolves to the
+    /// primary DB entity (e.g. CustomerCustomerRelationship).
+    /// Matches Table[i][0] against the DB table name of the model's primary entity.
+    /// </summary>
+    private ushort ResolveRootStorageEntityId(string modelName)
+    {
+        // First find the model entity ID
+        for (ushort i = 0; i < _meta.Count; i++)
+        {
+            if (!string.Equals(_meta.ModelName[i][0], modelName, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            // Table[i][0] is the DB table — may differ from ModelName[i][0] for composites
+            var dbTable = _meta.Table[i][0];
+
+            // Find the storage entity whose table matches
+            for (ushort s = 0; s < _meta.Count; s++)
+            {
+                if (string.Equals(_meta.Table[s][0], dbTable, StringComparison.OrdinalIgnoreCase))
+                    return s;
+            }
+
+            // No distinct storage entity found — storage ID equals model ID
+            return i;
+        }
+
+        throw new InvalidOperationException(
+            $"No storage entity registered for model '{modelName}'.");
+    }
+
+    // ---------------------------------------------------------------
+    // Materialization
+    // ---------------------------------------------------------------
 
     private static List<M> MaterializeResults<T>(SqlMapper.GridReader grid, in QueryPlan plan)
         where T : class

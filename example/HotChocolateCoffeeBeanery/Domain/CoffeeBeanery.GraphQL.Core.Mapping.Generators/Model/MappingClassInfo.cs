@@ -7,7 +7,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
     {
         public INamedTypeSymbol ClassSymbol { get; set; } = null!;
         public INamedTypeSymbol ModelType { get; set; } = null!;
-        public INamedTypeSymbol? EntityType { get; set; }
+        public INamedTypeSymbol EntityType { get; set; }
 
         public string ClassName => ClassSymbol.Name;
         public string Namespace => ClassSymbol.ContainingNamespace?.IsGlobalNamespace == false

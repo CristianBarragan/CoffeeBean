@@ -132,11 +132,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping
 
             ModelToEntity.Add(entityKey);
 
-            if (isPrimary || EntityType is null)
-            {
-                EntityType = typeof(TEntity);
-                IsEntity = true;
-            }
+            EntityType = typeof(TEntity);
+            IsEntity = true;
 
             return entityKey;
         }

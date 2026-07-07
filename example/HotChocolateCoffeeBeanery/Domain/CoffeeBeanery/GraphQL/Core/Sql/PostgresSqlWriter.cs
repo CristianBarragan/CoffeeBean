@@ -118,14 +118,12 @@ public sealed class PostgresSqlWriter
 
     private string BuildCteNodeUpsert(in MutationCteNode node)
     {
-        var schema       = node.SchemaOverride ?? _meta.Schema[node.EntityId];
-        var table = node.TableOverride ?? _meta.Table[node.EntityId][0];
-        var cols         = _meta.ColumnName[node.EntityId];
-
-        // Use baked-in conflict columns from the node, fall back to EntityMeta
+        var schema       = node.SchemaOverride ?? _meta.Schema[node.StorageEntityId];
+        var table        = node.TableOverride  ?? _meta.Table[node.StorageEntityId][0];
+        var cols         = _meta.ColumnName[node.StorageEntityId];
         var conflictCols = node.ConflictColumns.Length > 0
             ? node.ConflictColumns.ToArray()
-            : _meta.ConflictColumns[node.EntityId];
+            : _meta.ConflictColumns[node.StorageEntityId];
 
         var sb = new StringBuilder();
         sb.Append("INSERT INTO \"").Append(schema).Append("\".\"").Append(table).Append("\" (");
@@ -148,21 +146,12 @@ public sealed class PostgresSqlWriter
     }
 
     // ---------------------------------------------------------------
-    // FK resolution INSERT...SELECT
-    //
-    // INSERT INTO "Banking"."CustomerCustomerRelationship"
-    //   ("InnerCustomerId", "CustomerCustomerRelationshipKey")
-    // (SELECT InnerCustomerCustomer."Id" AS "InnerCustomerId",
-    //         '5dc...' AS "CustomerCustomerRelationshipKey"
-    //  FROM "Banking"."Customer" InnerCustomerCustomer
-    //  WHERE "CustomerKey" = '2dc...')
-    // ON CONFLICT ("CustomerCustomerRelationshipKey")
-    // DO UPDATE SET "InnerCustomerId" = EXCLUDED."InnerCustomerId"
+    // FK resolution — uses StorageEntityId for owning, child EntityId for related
     // ---------------------------------------------------------------
 
     private string BuildFkResolution(in MutationCteNode root, in MutationCteNode child)
     {
-        var resolutions = _meta.CteResolutions[root.EntityId];
+        var resolutions = _meta.CteResolutions[root.StorageEntityId];
         var specFound = false;
         CteResolutionSpec spec = default;
 
@@ -178,9 +167,9 @@ public sealed class PostgresSqlWriter
 
         if (!specFound) return string.Empty;
 
-        // Find owning PK value from root values
+        // PK value from root — look up against storage entity columns
         var pkValue = string.Empty;
-        var rootCols = _meta.ColumnName[root.EntityId];
+        var rootCols = _meta.ColumnName[root.StorageEntityId];
         foreach (var v in root.Values)
         {
             if (string.Equals(rootCols[v.FieldId], spec.OwningPkColumn,
@@ -191,13 +180,12 @@ public sealed class PostgresSqlWriter
             }
         }
 
-        // Natural key value — first child value
         var naturalKeyValue = child.Values.Length > 0 ? child.Values[0].RawValue : "NULL";
 
-        var owningSchema = root.SchemaOverride ?? _meta.Schema[root.EntityId];
-        var owningTable  = root.TableOverride ?? _meta.Table[root.EntityId][0];
+        var owningSchema  = root.SchemaOverride ?? _meta.Schema[root.StorageEntityId];
+        var owningTable   = root.TableOverride  ?? _meta.Table[root.StorageEntityId][0];
         var relatedSchema = _meta.Schema[child.EntityId];
-        var relatedTable  = _meta.Table[child.EntityId];
+        var relatedTable  = _meta.Table[child.EntityId][0];              // ← [0]
 
         var sb = new StringBuilder();
         sb.Append("INSERT INTO \"").Append(owningSchema).Append("\".\"").Append(owningTable)
@@ -222,10 +210,6 @@ public sealed class PostgresSqlWriter
         return sb.ToString();
     }
 
-    // ---------------------------------------------------------------
-    // SELECT builder
-    // ---------------------------------------------------------------
-
     private void AppendSelect(StringBuilder sb, in QueryPlan plan)
     {
         sb.Append("SELECT DISTINCT");
@@ -235,16 +219,24 @@ public sealed class PostgresSqlWriter
         {
             if (!first) sb.Append(',');
             first = false;
+
+            var colNames = _meta.EntityColumnName[col.StorageEntityId];  // ← EntityColumnName
+            if (col.ColumnId >= colNames.Length)
+                throw new IndexOutOfRangeException(
+                    $"ColumnId {col.ColumnId} out of range for StorageEntityId {col.StorageEntityId} " +
+                    $"({_meta.EntityTable[col.StorageEntityId]}, Length={colNames.Length}), " +
+                    $"ModelId={col.EntityId} ({_meta.ModelName[col.EntityId][0]})");
+
             sb.Append("\n    ")
               .Append('"').Append(col.EntityOutputAlias).Append('"')
-              .Append(".\"").Append(_meta.ColumnName[col.EntityId][col.ColumnId]).Append('"')
+              .Append(".\"").Append(colNames[col.ColumnId]).Append('"')
               .Append(" AS \"").Append(col.ColumnOutputAlias).Append('"');
         }
 
         if (first) sb.Append("\n    1");
 
         sb.Append("\nFROM ");
-        AppendQualifiedTable(sb, plan.RootEntityId);
+        AppendQualifiedTable(sb, plan.RootStorageEntityId);
         sb.Append(" \"").Append(plan.RootOutputAlias).Append('"');
 
         foreach (var join in plan.Joins)
@@ -258,16 +250,22 @@ public sealed class PostgresSqlWriter
     {
         var keyword = join.Kind == JoinKind.Left ? "LEFT JOIN" : "JOIN";
         sb.Append(keyword).Append(' ');
-        AppendQualifiedTable(sb, join.ToEntityId);
+        AppendQualifiedTable(sb, join.ToStorageEntityId);
         sb.Append(" \"").Append(join.ToOutputAlias).Append('"');
         sb.Append("\n    ON ");
 
         var fromAlias   = ResolveOutputAlias(join.FromEntityId, plan);
-        var fromColName = _meta.ColumnName[join.FromEntityId][join.FromColumnId];
-        var toColName   = _meta.ColumnName[join.ToEntityId][join.ToColumnId];
+        var fromColName = _meta.EntityColumnName[join.FromStorageEntityId][join.FromColumnId];
+        var toColName   = _meta.EntityColumnName[join.ToStorageEntityId][join.ToColumnId];
 
         sb.Append('"').Append(join.ToOutputAlias).Append("\".\"").Append(toColName).Append('"')
           .Append(" = \"").Append(fromAlias).Append("\".\"").Append(fromColName).Append('"');
+    }
+
+    private void AppendQualifiedTable(StringBuilder sb, ushort storageEntityId)
+    {
+        sb.Append('"').Append(_meta.EntitySchema[storageEntityId]).Append("\".\"")
+          .Append(_meta.EntityTable[storageEntityId]).Append('"');
     }
 
     private string ResolveOutputAlias(ushort entityId, in QueryPlan plan)
@@ -276,12 +274,6 @@ public sealed class PostgresSqlWriter
         foreach (var j in plan.Joins)
             if (j.ToEntityId == entityId) return j.ToOutputAlias;
         return _meta.Table[plan.RootEntityId][0];
-    }
-
-    private void AppendQualifiedTable(StringBuilder sb, ushort entityId)
-    {
-        sb.Append('"').Append(_meta.Schema[entityId]).Append("\".\"")
-          .Append(_meta.Table[entityId]).Append('"');
     }
 
     // ---------------------------------------------------------------
