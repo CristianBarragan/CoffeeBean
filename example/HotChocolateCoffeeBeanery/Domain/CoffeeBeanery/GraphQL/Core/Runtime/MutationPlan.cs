@@ -5,6 +5,7 @@ namespace CoffeeBeanery.GraphQL.Core.Runtime;
 public readonly struct UpsertRow
 {
     public readonly ushort EntityId;
+    public readonly ushort StorageEntityId;
     public readonly string EntityOutputAlias;
     public readonly ImmutableArray<FieldValue> Values;
     public readonly string? SchemaOverride;
@@ -12,6 +13,7 @@ public readonly struct UpsertRow
 
     public UpsertRow(
         ushort entityId,
+        ushort storageEntityId,
         string entityOutputAlias,
         ImmutableArray<FieldValue> values,
         string? schemaOverride = null,
@@ -120,12 +122,14 @@ public ref struct MutationPlanBuilder
 
     public void AddRow(
         ushort entityId,
+        ushort storageEntityId,
         string outputAlias,
         ImmutableArray<FieldValue> values,
         string? schemaOverride = null,
         string? tableOverride = null)
     {
-        _rows[_rowCount++] = new UpsertRow(entityId, outputAlias, values, schemaOverride, tableOverride);
+        _rows[_rowCount++] = new UpsertRow(
+            entityId, storageEntityId, outputAlias, values, schemaOverride, tableOverride);
     }
 
     public void AddCteRoot(MutationCteNode node)

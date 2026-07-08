@@ -81,15 +81,11 @@ public sealed class PostgresSqlWriter
         return arms;
     }
 
-    // ---------------------------------------------------------------
-    // Regular upsert row (simple non-composite models)
-    // ---------------------------------------------------------------
-
     private string BuildRegularUpsert(in UpsertRow row)
     {
-        var schema       = row.SchemaOverride ?? _meta.Schema[row.EntityId];
-        var table = row.TableOverride ?? _meta.Table[row.EntityId][0];
-        var cols         = _meta.ColumnName[row.EntityId];
+        var schema       = row.SchemaOverride ?? _meta.EntitySchema[row.StorageEntityId];
+        var table        = row.TableOverride  ?? _meta.EntityTable[row.StorageEntityId];
+        var cols         = _meta.EntityColumnName[row.StorageEntityId];      // ← EntityColumnName
         var conflictCols = _meta.ConflictColumns[row.EntityId];
 
         var sb = new StringBuilder();
@@ -112,18 +108,14 @@ public sealed class PostgresSqlWriter
         return sb.ToString();
     }
 
-    // ---------------------------------------------------------------
-    // CTE node upsert (composite model primary entity row)
-    // ---------------------------------------------------------------
-
     private string BuildCteNodeUpsert(in MutationCteNode node)
     {
-        var schema       = node.SchemaOverride ?? _meta.Schema[node.StorageEntityId];
-        var table        = node.TableOverride  ?? _meta.Table[node.StorageEntityId][0];
-        var cols         = _meta.ColumnName[node.StorageEntityId];
+        var schema       = node.SchemaOverride ?? _meta.EntitySchema[node.StorageEntityId];
+        var table        = node.TableOverride  ?? _meta.EntityTable[node.StorageEntityId];
+        var cols         = _meta.EntityColumnName[node.StorageEntityId];     // ← EntityColumnName
         var conflictCols = node.ConflictColumns.Length > 0
             ? node.ConflictColumns.ToArray()
-            : _meta.ConflictColumns[node.StorageEntityId];
+            : _meta.ConflictColumns[node.EntityId];
 
         var sb = new StringBuilder();
         sb.Append("INSERT INTO \"").Append(schema).Append("\".\"").Append(table).Append("\" (");
@@ -145,13 +137,9 @@ public sealed class PostgresSqlWriter
         return sb.ToString();
     }
 
-    // ---------------------------------------------------------------
-    // FK resolution — uses StorageEntityId for owning, child EntityId for related
-    // ---------------------------------------------------------------
-
     private string BuildFkResolution(in MutationCteNode root, in MutationCteNode child)
     {
-        var resolutions = _meta.CteResolutions[root.StorageEntityId];
+        var resolutions = _meta.CteResolutions[root.EntityId];              // ← EntityId not StorageEntityId
         var specFound = false;
         CteResolutionSpec spec = default;
 
@@ -167,9 +155,9 @@ public sealed class PostgresSqlWriter
 
         if (!specFound) return string.Empty;
 
-        // PK value from root — look up against storage entity columns
-        var pkValue = string.Empty;
-        var rootCols = _meta.ColumnName[root.StorageEntityId];
+        // Find PK value using storage entity columns
+        var pkValue  = string.Empty;
+        var rootCols = _meta.EntityColumnName[root.StorageEntityId];         // ← EntityColumnName
         foreach (var v in root.Values)
         {
             if (string.Equals(rootCols[v.FieldId], spec.OwningPkColumn,
@@ -182,10 +170,10 @@ public sealed class PostgresSqlWriter
 
         var naturalKeyValue = child.Values.Length > 0 ? child.Values[0].RawValue : "NULL";
 
-        var owningSchema  = root.SchemaOverride ?? _meta.Schema[root.StorageEntityId];
-        var owningTable   = root.TableOverride  ?? _meta.Table[root.StorageEntityId][0];
-        var relatedSchema = _meta.Schema[child.EntityId];
-        var relatedTable  = _meta.Table[child.EntityId][0];              // ← [0]
+        var owningSchema  = root.SchemaOverride ?? _meta.EntitySchema[root.StorageEntityId];
+        var owningTable   = root.TableOverride  ?? _meta.EntityTable[root.StorageEntityId];
+        var relatedSchema = _meta.EntitySchema[child.StorageEntityId];       // ← EntitySchema
+        var relatedTable  = _meta.EntityTable[child.StorageEntityId];        // ← EntityTable
 
         var sb = new StringBuilder();
         sb.Append("INSERT INTO \"").Append(owningSchema).Append("\".\"").Append(owningTable)

@@ -14,7 +14,7 @@ namespace Domain.Shared.Mapping
             new ProductMappingSet(),
             new TransactionMappingSet(),
             new CustomerCustomerEdgeMappingSet(),
-            new WrapperMappingSet()
+            // new WrapperMappingSet()
         };
     }
 }
