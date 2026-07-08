@@ -1,41 +1,42 @@
 ﻿using CoffeeBeanery.GraphQL.Core.Mapping;
-using CoffeeBeanery.GraphQL.Core.Sql;
 using Domain.Model;
 using DataEntity = Database.Entity;
 
 namespace Domain.Shared.Mapping;
 
-public class CustomerBankingRelationshipMappingSet
-    : IMappingSet
+public partial class CustomerBankingRelationshipMapping : IMappingDefinition
 {
-    public void Register()
+    public MappingDefinition Definition => new()
     {
-        new CustomerBankingRelationshipMapping().Register();
-    }
-}
+        Model = typeof(CustomerBankingRelationship),
 
-public sealed partial class CustomerBankingRelationshipMapping
-    : BaseMappingRegistration<CustomerBankingRelationship>
-{
-    protected override NodeMap BuildMap()
-    {
-        var map = new NodeMap
-        {
-            ModelName = nameof(CustomerBankingRelationship),
-            Schema = nameof(DataEntity.Schema.Banking)
-        };
+        Schema = nameof(DataEntity.Schema.Banking),
 
-        map.AddModelToEntity<CustomerBankingRelationship,
-            DataEntity.CustomerBankingRelationship>(
-            m => m.CustomerBankingRelationshipKey,
-            e => e.CustomerBankingRelationshipKey,
-            isPrimary: true);
+        Entities =
+        [
+            new()
+            {
+                Entity = typeof(DataEntity.CustomerBankingRelationship),
 
-        map.UpsertKeys.Add(
-            new UpsertKey(
-                nameof(DataEntity.CustomerBankingRelationship),
-                nameof(DataEntity.CustomerBankingRelationship.CustomerBankingRelationshipKey)));
+                ModelKey =
+                    nameof(CustomerBankingRelationship.CustomerBankingRelationshipKey),
 
-        return map;
-    }
+                EntityKey =
+                    nameof(DataEntity.CustomerBankingRelationship.CustomerBankingRelationshipKey),
+
+                IsPrimary = true
+            }
+        ],
+
+        UpsertKeys =
+        [
+            new()
+            {
+                Entity = typeof(DataEntity.CustomerBankingRelationship),
+
+                Column =
+                    nameof(DataEntity.CustomerBankingRelationship.CustomerBankingRelationshipKey)
+            }
+        ]
+    };
 }

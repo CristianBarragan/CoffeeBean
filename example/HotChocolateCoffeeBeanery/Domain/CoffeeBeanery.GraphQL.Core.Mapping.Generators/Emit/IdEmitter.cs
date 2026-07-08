@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -9,33 +10,26 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 {
     internal static class IdEmitter
     {
-        public static string Emit(ImmutableArray<MappingClassInfo> allMappings)
+        public static string Emit(ImmutableArray<MappingClassInfo> allMappings,
+            SourceProductionContext context) 
         {
             var models = allMappings
                 .Where(m => m.IsModel)
                 .OrderBy(m => m.ModelType.Name, System.StringComparer.Ordinal)
                 .ToList();
 
-            // ALL unique entity types referenced across all mappings —
-            // primary EntityType + every secondary ModelToEntity link.
-            // These are the real DB tables. Used to generate:
-            //   StorageEntityId.* constants
-            //   ColumnId.{EntityName}.* constants
-            //   EntityMeta.EntitySchema/EntityTable/EntityColumnName arrays
             var entityTypes = allMappings
                 .SelectMany(m =>
-                {
-                    var types = new List<INamedTypeSymbol>();
-                    if (m.EntityType is not null)
-                        types.Add(m.EntityType);
-                    foreach (var link in m.ModelToEntity)
-                        if (link.EntityType is not null)
-                            types.Add(link.EntityType);
-                    return types;
-                })
-                .GroupBy(e => e.Name, System.StringComparer.Ordinal)
+                    m.ModelToEntity
+                        .Where(x => x.EntityType != null)
+                        .Select(x => x.EntityType!))
+                .GroupBy(
+                    e => e.Name,
+                    StringComparer.Ordinal)
                 .Select(g => g.First())
-                .OrderBy(e => e.Name, System.StringComparer.Ordinal)
+                .OrderBy(
+                    e => e.Name,
+                    StringComparer.Ordinal)
                 .ToList();
 
             var sb = new StringBuilder();
@@ -46,8 +40,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine("{");
 
             EmitEntityIds(sb, models);
-            EmitColumnIds(sb, entityTypes);
-            EmitFieldIds(sb, models);
+            EmitColumnIds(sb, entityTypes, context);
+            EmitFieldIds(sb, models, context);
 
             sb.AppendLine("}");
             return sb.ToString();
@@ -72,27 +66,38 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine();
         }
 
-        private static void EmitColumnIds(StringBuilder sb, List<INamedTypeSymbol> entityTypes)
+        private static void EmitColumnIds(
+            StringBuilder sb,
+            List<INamedTypeSymbol> entityTypes,
+            SourceProductionContext context)   // <-- add
         {
-            sb.AppendLine("    /// <summary>");
-            sb.AppendLine("    /// One nested class per entity type, one ushort constant per");
-            sb.AppendLine("    /// scalar entity property. Index = alphabetical position.");
-            sb.AppendLine("    /// Used as: EntityMeta.EntityColumnName[StorageEntityId.{X}][ColumnId.{X}.{Prop}]");
-            sb.AppendLine("    /// </summary>");
             sb.AppendLine("    public static class ColumnId");
             sb.AppendLine("    {");
 
             foreach (var entity in entityTypes)
             {
                 var columns = GetScalarProperties(entity);
-                if (columns.Count == 0) continue;
+
+                if (columns.Count == 0)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        MappingDiagnostics.NoColumnsResolved,
+                        entity.Locations.FirstOrDefault(),
+                        entity.Name));
+
+                    // Emit an empty class + #error so the file itself hard-fails
+                    // and points at the right place instead of "ColumnId.X not found"
+                    sb.AppendLine($"        public static class {entity.Name}");
+                    sb.AppendLine("        {");
+                    sb.AppendLine($"#error CBM003: No scalar properties resolved for storage entity '{entity.Name}'. Check that the entity class is accessible to the generator.");
+                    sb.AppendLine("        }");
+                    continue;
+                }
 
                 sb.AppendLine($"        public static class {entity.Name}");
                 sb.AppendLine("        {");
-
                 for (var i = 0; i < columns.Count; i++)
                     sb.AppendLine($"            public const ushort {columns[i].Name} = {i};");
-
                 sb.AppendLine();
                 sb.AppendLine($"            public const ushort Count = {columns.Count};");
                 sb.AppendLine("        }");
@@ -102,27 +107,36 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine();
         }
 
-        private static void EmitFieldIds(StringBuilder sb, List<MappingClassInfo> models)
+        private static void EmitFieldIds(
+            StringBuilder sb,
+            List<MappingClassInfo> models,
+            SourceProductionContext context)   // <-- add
         {
-            sb.AppendLine("    /// <summary>");
-            sb.AppendLine("    /// One nested class per model type, one ushort constant per");
-            sb.AppendLine("    /// scalar model property (the GraphQL schema side).");
-            sb.AppendLine("    /// The adapter maps selected field names to these constants.");
-            sb.AppendLine("    /// </summary>");
             sb.AppendLine("    public static class FieldId");
             sb.AppendLine("    {");
 
             foreach (var model in models)
             {
                 var fields = GetScalarProperties(model.ModelType);
-                if (fields.Count == 0) continue;
+
+                if (fields.Count == 0)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        MappingDiagnostics.NoFieldsResolved,
+                        model.ModelType.Locations.FirstOrDefault(),
+                        model.ModelType.Name));
+
+                    sb.AppendLine($"        public static class {model.ModelType.Name}");
+                    sb.AppendLine("        {");
+                    sb.AppendLine($"#error CBM004: No scalar properties resolved for model '{model.ModelType.Name}'. Check that the model class is accessible to the generator.");
+                    sb.AppendLine("        }");
+                    continue;
+                }
 
                 sb.AppendLine($"        public static class {model.ModelType.Name}");
                 sb.AppendLine("        {");
-
                 for (var i = 0; i < fields.Count; i++)
                     sb.AppendLine($"            public const ushort {fields[i].Name} = {i};");
-
                 sb.AppendLine();
                 sb.AppendLine($"            public const ushort Count = {fields.Count};");
                 sb.AppendLine("        }");
@@ -139,10 +153,34 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
         internal static bool IsScalarProperty(ITypeSymbol type)
         {
-            var u = UnwrapNullable(type);
-            if (u.TypeKind == TypeKind.Enum) return true;
-            if (u.IsValueType && u.SpecialType != SpecialType.None) return true;
-            return u.Name is "String" or "Guid" or "DateTime" or "DateTimeOffset" or "Decimal";
+            if (type is INamedTypeSymbol named &&
+                named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            {
+                type = named.TypeArguments[0];
+            }
+
+            if (type.TypeKind == TypeKind.Enum)
+                return true;
+
+            return type.SpecialType switch
+            {
+                SpecialType.System_String => true,
+                SpecialType.System_Boolean => true,
+                SpecialType.System_Byte => true,
+                SpecialType.System_SByte => true,
+                SpecialType.System_Int16 => true,
+                SpecialType.System_UInt16 => true,
+                SpecialType.System_Int32 => true,
+                SpecialType.System_UInt32 => true,
+                SpecialType.System_Int64 => true,
+                SpecialType.System_UInt64 => true,
+                SpecialType.System_Decimal => true,
+                SpecialType.System_Double => true,
+                SpecialType.System_Single => true,
+                SpecialType.System_Char => true,
+                SpecialType.System_DateTime => true,
+                _ => type.Name == "Guid" || type.Name == "DateTimeOffset"
+            };
         }
 
         internal static ITypeSymbol UnwrapNullable(ITypeSymbol type) =>

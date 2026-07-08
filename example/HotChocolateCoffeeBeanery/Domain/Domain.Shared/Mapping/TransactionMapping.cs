@@ -1,38 +1,42 @@
 ﻿using CoffeeBeanery.GraphQL.Core.Mapping;
-using CoffeeBeanery.GraphQL.Core.Sql;
 using Domain.Model;
 using DataEntity = Database.Entity;
 
 namespace Domain.Shared.Mapping;
 
-public class TransactionMappingSet : IMappingSet
+public partial class TransactionMapping : IMappingDefinition
 {
-    public void Register()
+    public MappingDefinition Definition => new()
     {
-        new TransactionMapping().Register();
-    }
-}
+        Model = typeof(Transaction),
 
-public sealed partial class TransactionMapping : BaseMappingRegistration<Transaction>
-{
-    protected override NodeMap BuildMap()
-    {
-        var map = new NodeMap
-        {
-            ModelName = nameof(Transaction),
-            Schema = nameof(DataEntity.Schema.Lending)
-        };
+        Schema = nameof(DataEntity.Schema.Lending),
 
-        map.AddModelToEntity<Transaction, DataEntity.Transaction>(
-            m => m.TransactionKey,
-            e => e.TransactionKey,
-            isPrimary: true);
+        Entities =
+        [
+            new()
+            {
+                Entity = typeof(DataEntity.Transaction),
 
-        map.UpsertKeys.Add(
-            new UpsertKey(
-                nameof(DataEntity.Transaction),
-                nameof(DataEntity.Transaction.TransactionKey)));
+                ModelKey =
+                    nameof(Transaction.TransactionKey),
 
-        return map;
-    }
+                EntityKey =
+                    nameof(DataEntity.Transaction.TransactionKey),
+
+                IsPrimary = true
+            }
+        ],
+
+        UpsertKeys =
+        [
+            new()
+            {
+                Entity = typeof(DataEntity.Transaction),
+
+                Column =
+                    nameof(DataEntity.Transaction.TransactionKey)
+            }
+        ]
+    };
 }

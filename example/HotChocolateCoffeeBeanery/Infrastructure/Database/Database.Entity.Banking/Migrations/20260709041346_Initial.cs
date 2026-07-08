@@ -67,7 +67,6 @@ namespace Database.Entity.Banking.Migrations
                     ContactPointKey = table.Column<Guid>(type: "uuid", nullable: false),
                     ContactPointType = table.Column<int>(type: "integer", nullable: true),
                     ContactPointValue = table.Column<string>(type: "text", nullable: true),
-                    CustomerKey = table.Column<Guid>(type: "uuid", nullable: true),
                     CustomerId = table.Column<int>(type: "integer", nullable: true),
                     ProcessedDateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "(now() at time zone 'utc')")
                 },
@@ -90,7 +89,6 @@ namespace Database.Entity.Banking.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     CustomerBankingRelationshipKey = table.Column<Guid>(type: "uuid", nullable: false),
-                    CustomerKey = table.Column<Guid>(type: "uuid", nullable: true),
                     CustomerId = table.Column<int>(type: "integer", nullable: true),
                     ProcessedDateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "(now() at time zone 'utc')")
                 },
@@ -113,9 +111,7 @@ namespace Database.Entity.Banking.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     CustomerCustomerRelationshipKey = table.Column<Guid>(type: "uuid", nullable: true),
-                    OuterCustomerKey = table.Column<Guid>(type: "uuid", nullable: true),
                     OuterCustomerId = table.Column<int>(type: "integer", nullable: true),
-                    InnerCustomerKey = table.Column<Guid>(type: "uuid", nullable: true),
                     InnerCustomerId = table.Column<int>(type: "integer", nullable: true),
                     CustomerCustomerRelationshipType = table.Column<int>(type: "integer", nullable: true),
                     ProcessedDateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "(now() at time zone 'utc')")
@@ -147,9 +143,7 @@ namespace Database.Entity.Banking.Migrations
                     ContractKey = table.Column<Guid>(type: "uuid", nullable: false),
                     ContractType = table.Column<int>(type: "integer", nullable: true),
                     Amount = table.Column<decimal>(type: "numeric", nullable: true),
-                    AccountKey = table.Column<Guid>(type: "uuid", nullable: true),
                     AccountId = table.Column<int>(type: "integer", nullable: true),
-                    CustomerBankingRelationshipKey = table.Column<Guid>(type: "uuid", nullable: true),
                     CustomerBankingRelationshipId = table.Column<int>(type: "integer", nullable: true),
                     ProcessedDateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "(now() at time zone 'utc')")
                 },
@@ -180,9 +174,7 @@ namespace Database.Entity.Banking.Migrations
                     TransactionKey = table.Column<Guid>(type: "uuid", nullable: false),
                     Amount = table.Column<decimal>(type: "numeric", nullable: true),
                     Balance = table.Column<decimal>(type: "numeric", nullable: true),
-                    ContractKey = table.Column<Guid>(type: "uuid", nullable: true),
                     ContractId = table.Column<int>(type: "integer", nullable: true),
-                    AccountKey = table.Column<Guid>(type: "uuid", nullable: true),
                     AccountId = table.Column<int>(type: "integer", nullable: true),
                     ProcessedDateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "(now() at time zone 'utc')")
                 },
@@ -277,16 +269,10 @@ namespace Database.Entity.Banking.Migrations
                 column: "InnerCustomerId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CustomerCustomerRelationship_OuterCustomerId",
+                name: "IX_CustomerCustomerRelationship_OuterCustomerId_InnerCustomerId",
                 schema: "Banking",
                 table: "CustomerCustomerRelationship",
-                column: "OuterCustomerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_CustomerCustomerRelationship_OuterCustomerKey_InnerCustomer~",
-                schema: "Banking",
-                table: "CustomerCustomerRelationship",
-                columns: new[] { "OuterCustomerKey", "InnerCustomerKey" },
+                columns: new[] { "OuterCustomerId", "InnerCustomerId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(

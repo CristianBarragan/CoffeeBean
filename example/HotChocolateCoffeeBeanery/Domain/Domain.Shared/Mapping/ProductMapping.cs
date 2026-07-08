@@ -1,50 +1,62 @@
 ﻿using CoffeeBeanery.GraphQL.Core.Mapping;
-using CoffeeBeanery.GraphQL.Core.Sql;
 using Domain.Model;
 using DataEntity = Database.Entity;
 
 namespace Domain.Shared.Mapping;
 
-public class ProductMappingSet : IMappingSet
+public partial class ProductMapping : IMappingDefinition
 {
-    private static bool _registered;
-
-    public void Register()
+    public MappingDefinition Definition => new()
     {
-        if (_registered)
-            return;
+        Model = typeof(Product),
 
-        new ProductMapping().Register();
+        Entities =
+        [
+            new()
+            {
+                Entity = typeof(DataEntity.Account),
 
-        _registered = true;
-    }
-}
+                ModelKey =
+                    nameof(Product.AccountKey),
 
-public sealed partial class ProductMapping : BaseMappingRegistration<Product>
-{
-    protected override NodeMap BuildMap()
-    {
-        var map = new NodeMap
-        {
-            ModelName = nameof(Product)
-        };
+                EntityKey =
+                    nameof(DataEntity.Account.AccountKey),
 
-        map.AddModelToEntity<Product, DataEntity.Account>(
-            m => m.AccountKey,
-            e => e.AccountKey);
+                IsPrimary = true
+            },
 
-        map.AddModelToEntity<Product, DataEntity.Contract>(
-            m => m.ContractKey,
-            e => e.ContractKey);
+            new()
+            {
+                Entity = typeof(DataEntity.Contract),
 
-        map.AddModelToEntity<Product, DataEntity.Transaction>(
-            m => m.TransactionKey,
-            e => e.TransactionKey);
+                ModelKey =
+                    nameof(Product.ContractKey),
 
-        map.AddModelToEntity<Product, DataEntity.CustomerBankingRelationship>(
-            m => m.CustomerBankingRelationshipKey,
-            e => e.CustomerBankingRelationshipKey);
+                EntityKey =
+                    nameof(DataEntity.Contract.ContractKey)
+            },
 
-        return map;
-    }
+            new()
+            {
+                Entity = typeof(DataEntity.Transaction),
+
+                ModelKey =
+                    nameof(Product.TransactionKey),
+
+                EntityKey =
+                    nameof(DataEntity.Transaction.TransactionKey)
+            },
+
+            new()
+            {
+                Entity = typeof(DataEntity.CustomerBankingRelationship),
+
+                ModelKey =
+                    nameof(Product.CustomerBankingRelationshipKey),
+
+                EntityKey =
+                    nameof(DataEntity.CustomerBankingRelationship.CustomerBankingRelationshipKey)
+            }
+        ]
+    };
 }

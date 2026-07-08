@@ -5,7 +5,7 @@ namespace CoffeeBeanery.Service
 {
     public sealed class ProcessQueryParameters
     {
-        public _SqlCompilationContext Context { get; set; } = new();
+        public SqlCompilationContext Context { get; set; } = new();
         public string Model { get; set; }
     }
 }

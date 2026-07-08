@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace CoffeeBeanery.GraphQL.Core.Sql;
+namespace CoffeeBeanery.GraphQL.Core.Mapping;
 
 public sealed class EfEntityMetadata<TContext>
     where TContext : DbContext

@@ -19,13 +19,9 @@ public partial class Contract : Process
 
     public decimal? Amount { get; set; }
     
-    public Guid? AccountKey { get; set; }
-    
     public int? AccountId { get; set; }
 
     public Account? Account { get; set; }
-    
-    public Guid? CustomerBankingRelationshipKey { get; set; }
 
     public CustomerBankingRelationship? CustomerBankingRelationship { get; set; }
     

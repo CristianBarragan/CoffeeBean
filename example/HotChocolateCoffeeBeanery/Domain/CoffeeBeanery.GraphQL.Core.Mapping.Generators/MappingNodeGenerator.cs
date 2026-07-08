@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -20,15 +21,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 ctx.AddSource("EntityForeignKeyAttribute.g.cs", EntityForeignKeyAttributeSourceText.Value);
             });
 
-            // Set <IsMappingRoot>true</IsMappingRoot> in the ONE .csproj that owns
-            // all mapping classes (e.g. Domain.Shared). That project emits the global
-            // files (GeneratedIds, EntityMeta, AdapterTables, Planners). Every other
-            // project that references the generator as an Analyzer only gets per-class
-            // MappingRegistration files.
-            // Also add to that same .csproj:
-            //   <ItemGroup>
-            //     <CompilerVisibleProperty Include="IsMappingRoot" />
-            //   </ItemGroup>
             var isMappingRoot = context.AnalyzerConfigOptionsProvider
                 .Select(static (opts, _) =>
                     opts.GlobalOptions.TryGetValue("build_property.IsMappingRoot", out var v)
@@ -36,7 +28,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
 
             var mappingClasses = context.SyntaxProvider
                 .CreateSyntaxProvider(
-                    predicate: static (node, _) => node is ClassDeclarationSyntax { BaseList: not null },
+                    predicate: static (node, _) => node is ClassDeclarationSyntax,
                     transform: static (ctx, ct) => TryGetMappingClass(ctx, ct))
                 .Where(static info => info is not null)
                 .Select(static (info, _) => info!);
@@ -60,13 +52,12 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
             context.RegisterSourceOutput(perClassInput, static (spc, data) =>
             {
                 var (((info, all), rootModelTypes), fluentInverseNav) = data;
-                Emit(spc, info, all, rootModelTypes, fluentInverseNav);
+                EmitClass(spc, info, all, rootModelTypes, fluentInverseNav);
             });
 
             // ----------------------------------------------------------------
-            // Global emitters — only the IsMappingRoot project emits these.
-            // Combining everything into one RegisterSourceOutput avoids duplicate
-            // file conflicts when the generator runs across multiple projects.
+            // Global emitters — only the IsMappingRoot project emits these,
+            // and only ONCE per compilation (not once per mapping class).
             // ----------------------------------------------------------------
             var globalInput = allMappings
                 .Combine(rootModelTypes)
@@ -76,83 +67,132 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
             context.RegisterSourceOutput(globalInput, static (spc, data) =>
             {
                 var (((all, rootModelTypes), fluentInverseNav), isRoot) = data;
-
+            
                 if (!isRoot || all.IsEmpty)
                     return;
-
-                var rootEntityTypes = ResolveRootEntityTypes(all, rootModelTypes);
-                
-                spc.AddSource("GeneratedIds.g.cs", IdEmitter.Emit(all));
-                
-                spc.AddSource("EntityMeta.g.cs", MetadataEmitter.Emit(all, rootEntityTypes, fluentInverseNav));
-                
-                var source = AdapterEmitter.Emit(all, rootEntityTypes, fluentInverseNav);
-                spc.AddSource("AdapterTables.g.cs", source);
-                
-                spc.AddSource("Planners.g.cs",
-                    PlannerEmitter.Emit(all, rootEntityTypes, fluentInverseNav));
+            
+                EmitGlobal(spc, all, rootModelTypes, fluentInverseNav);
             });
         }
 
-        private static MappingClassInfo? TryGetMappingClass(GeneratorSyntaxContext ctx, CancellationToken ct)
+        private static MappingClassInfo? TryGetMappingClass(
+            GeneratorSyntaxContext ctx,
+            CancellationToken ct)
         {
             var classDecl = (ClassDeclarationSyntax)ctx.Node;
-            var symbol = ctx.SemanticModel.GetDeclaredSymbol(classDecl, ct) as INamedTypeSymbol;
+
+            var symbol =
+                ctx.SemanticModel.GetDeclaredSymbol(classDecl, ct)
+                    as INamedTypeSymbol;
+
+
             if (symbol is null || symbol.IsAbstract)
                 return null;
 
-            INamedTypeSymbol? baseType = null;
-            for (var current = symbol.BaseType; current is not null; current = current.BaseType)
+
+            var mappingInterface =
+                ctx.SemanticModel.Compilation
+                    .GetTypeByMetadataName(
+                        "CoffeeBeanery.GraphQL.Core.Mapping.IMappingDefinition");
+
+
+            if (mappingInterface is null)
+                return null;
+
+
+            if (!symbol.AllInterfaces.Contains(
+                    mappingInterface,
+                    SymbolEqualityComparer.Default))
             {
-                if (current.OriginalDefinition.Name is "BaseMappingRegistration" or "BaseModelMappingRegistration")
-                {
-                    baseType = current;
-                    break;
-                }
+                return null;
             }
 
-            if (baseType is null)
-                return null;
 
-            if (baseType.TypeArguments.Length != 1 || baseType.TypeArguments[0] is not INamedTypeSymbol modelType)
-                return null;
-
-            var buildMap = classDecl.Members
-                .OfType<MethodDeclarationSyntax>()
-                .FirstOrDefault(m => m.Identifier.Text == "BuildMap");
-
-            if (buildMap is null)
-                return null;
-
-            return MappingClassParser.Parse(symbol, modelType, buildMap, ctx.SemanticModel, ct);
+            return MappingClassParser.Parse(
+                symbol,
+                ctx.SemanticModel,
+                ct);
         }
 
-        private static void Emit(
+        private static void EmitClass(
             SourceProductionContext spc,
             MappingClassInfo info,
             ImmutableArray<MappingClassInfo> allMappings,
             ImmutableHashSet<INamedTypeSymbol> rootModelTypes,
             ImmutableDictionary<(INamedTypeSymbol, string), string> fluentInverseNav)
         {
-            foreach (var d in info.Diagnostics)
-                spc.ReportDiagnostic(d);
+            try
+            {
+                foreach (var d in info.Diagnostics)
+                    spc.ReportDiagnostic(d);
 
-            if (info.Diagnostics.Any(x => x.Severity == DiagnosticSeverity.Error))
-                return;
+                if (info.Diagnostics.Any(x => x.Severity == DiagnosticSeverity.Error))
+                    return;
 
-            ModelChildrenInference.Apply(info);
-            CompositeChildAttachmentConvention.Apply(info, allMappings);
-            FieldMapGeneration.Apply(info, spc);
+                ModelChildrenInference.Apply(info);
+                CompositeChildAttachmentConvention.Apply(info, allMappings);
+                FieldMapGeneration.Apply(info, spc);
+            }
+            catch (Exception ex)
+            {
+                // Surface the real crash as a compiler error instead of silence
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    MappingDiagnostics.GeneratorCrashDescriptor,
+                    Location.None,
+                    ex.GetType().Name,
+                    ex.Message,
+                    ex.StackTrace?.Replace("\r\n", " ").Replace("\n", " ") ?? ""));
 
-            var rootEntityTypes = ResolveRootEntityTypes(allMappings, rootModelTypes);
+                // Also emit a poisoned file so downstream "type not found" errors
+                // don't mask the real problem
+                spc.AddSource("GeneratorCrash.g.cs", $@"
+                // <auto-generated/>
+                // GENERATOR CRASHED — see CBM000 diagnostic for details
+                #error CBM000: Source generator crashed: {ex.GetType().Name}: {ex.Message}
+                ");
+            }
+        }
+        
+        private static void EmitGlobal(
+            SourceProductionContext spc,
+            ImmutableArray<MappingClassInfo> allMappings,
+            ImmutableHashSet<INamedTypeSymbol> rootModelTypes,
+            ImmutableDictionary<(INamedTypeSymbol, string), string> fluentInverseNav)
+        {
+            try
+            {
+                var rootEntityTypes = ResolveRootEntityTypes(allMappings, rootModelTypes);
+                
+                spc.AddSource("Materializers.g.cs", MaterializerEmitter.Emit(allMappings, rootEntityTypes, fluentInverseNav));
+                
+                spc.AddSource("GeneratedIds.g.cs", IdEmitter.Emit(allMappings, spc));
+                
+                spc.AddSource("EntityMeta.g.cs", MetadataEmitter.Emit(allMappings, rootEntityTypes, fluentInverseNav));
+                
+                var source = AdapterEmitter.Emit(allMappings, rootEntityTypes, fluentInverseNav);
+                spc.AddSource("AdapterTables.g.cs", source);
+                
+                spc.AddSource("Planners.g.cs",
+                    PlannerEmitter.Emit(allMappings, rootEntityTypes, fluentInverseNav));
+            }
+            catch (Exception ex)
+            {
+                // Surface the real crash as a compiler error instead of silence
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    MappingDiagnostics.GeneratorCrashDescriptor,
+                    Location.None,
+                    ex.GetType().Name,
+                    ex.Message,
+                    ex.StackTrace?.Replace("\r\n", " ").Replace("\n", " ") ?? ""));
 
-            var navResult = EntityNavigationConvention.Resolve(info, spc, rootEntityTypes, fluentInverseNav);
-
-            if (navResult.HasBlockingAmbiguity)
-                return;
-
-            var source = NodeTreeEmitter.EmitRegisterOverride(info, navResult);
-            spc.AddSource($"{info.ClassName}.MappingRegistration.g.cs", source);
+                // Also emit a poisoned file so downstream "type not found" errors
+                // don't mask the real problem
+                spc.AddSource("GeneratorCrash.g.cs", $@"
+                // <auto-generated/>
+                // GENERATOR CRASHED — see CBM000 diagnostic for details
+                #error CBM000: Source generator crashed: {ex.GetType().Name}: {ex.Message}
+                ");
+            }
         }
 
         private static ImmutableHashSet<INamedTypeSymbol> ResolveRootEntityTypes(

@@ -33,7 +33,7 @@
 //                          int? totalCount,
 //                          int? totalPageRecords)
 //         MappingConfiguration(
-//             _SqlCompilationContext context,
+//             SqlCompilationContext context,
 //             List<string> aliasOrder,
 //             List<object?[]> rowMatrix,
 //             List<Type> types)

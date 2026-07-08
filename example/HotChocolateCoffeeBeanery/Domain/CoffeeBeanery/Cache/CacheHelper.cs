@@ -11,7 +11,7 @@ public static class CacheHelper
         return string.Join("~", dictionary.Keys);
     }
 
-    public static string GetKey(_SqlCompilationContext context)
+    public static string GetKey(SqlCompilationContext context)
     {
         return JsonConvert.SerializeObject(context);
     }

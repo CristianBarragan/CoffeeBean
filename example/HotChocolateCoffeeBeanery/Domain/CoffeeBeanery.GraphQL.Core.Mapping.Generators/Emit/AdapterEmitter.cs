@@ -38,7 +38,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             // Pre-resolve navigation results for all models.
             var navResults = models.ToDictionary(
                 m => m.ModelType.Name,
-                m => EntityNavigationConvention.ResolveQuietly(m, rootEntityTypes, fluentInverseNav),
+                m => EntityNavigationConvention.Resolve(m, rootEntityTypes, fluentInverseNav),
                 System.StringComparer.Ordinal);
 
             // Build a name → EntityId map for resolving child entity names.
@@ -154,33 +154,47 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 }
             }
 
-            // 2. ModelToEntity role-alias links (e.g. InnerCustomer / OuterCustomer
-            //    on CustomerCustomerEdge) — these are explicitly registered navigation
-            //    fields in the mapping but aren't EF navigations on the entity itself,
-            //    so EntityNavigationConvention won't produce them. Instead read them
-            //    directly from the ModelToEntity list where AliasProperty is set.
             foreach (var link in model.ModelToEntity)
             {
                 if (string.IsNullOrWhiteSpace(link.AliasProperty))
-                    continue; // primary link — not a named nav field
-
-                // Find the child model whose EntityType matches this link's EntityType.
-                var childMapping = allMappings.FirstOrDefault(m =>
-                    SymbolEqualityComparer.Default.Equals(m.EntityType, link.EntityType));
-
-                if (childMapping is null) continue;
-
-                // The GraphQL field name is the AliasProperty camelCased
-                // (e.g. "InnerCustomer" → "innerCustomer").
-                var fieldName = ToCamelCase(link.AliasProperty);
-
-                // Avoid duplicates with nav results already added above.
-                if (links.Any(l =>
-                    string.Equals(l.FieldName, fieldName, System.StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(l.ChildModelName, childMapping.ModelType.Name, System.StringComparison.Ordinal)))
                     continue;
 
-                links.Add((fieldName, childMapping.ModelType.Name));
+
+                var childMapping =
+                    allMappings.FirstOrDefault(m =>
+                        m.ModelToEntity.Any(x =>
+                            x.IsPrimary &&
+                            SymbolEqualityComparer.Default.Equals(x.EntityType, link.EntityType)));
+
+
+                if (childMapping is null)
+                    continue;
+
+
+                var fieldName =
+                    ToCamelCase(link.AliasProperty);
+
+
+                if (links.Any(l =>
+                        string.Equals(
+                            l.FieldName,
+                            fieldName,
+                            System.StringComparison.OrdinalIgnoreCase)
+                        &&
+                        string.Equals(
+                            l.ChildModelName,
+                            childMapping.ModelType.Name,
+                            System.StringComparison.Ordinal)))
+                {
+                    continue;
+                }
+
+
+                links.Add(
+                    (
+                        fieldName,
+                        childMapping.ModelType.Name
+                    ));
             }
 
             // 3. CompositeChildAttachment links (e.g. Customer.product → Product).

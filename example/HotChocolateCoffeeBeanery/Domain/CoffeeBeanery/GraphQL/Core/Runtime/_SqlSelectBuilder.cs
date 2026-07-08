@@ -9,7 +9,7 @@
 // public class SqlSelectBuilder
 // {
 //     public static void HandleGraphQL(
-//         _SqlCompilationContext context,
+//         SqlCompilationContext context,
 //         Dictionary<string, EntityNode> EntityNodes,
 //         Dictionary<string, EntityNode> EntityNodeStatements,
 //         Dictionary<string, CoffeeBeanery.GraphQL.Core.Sql.EntityNodeTree> entityTrees,

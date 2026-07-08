@@ -61,7 +61,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             {
                 if (parentModel.EntityType is null) continue;
 
-                var navResult = EntityNavigationConvention.ResolveQuietly(
+                var navResult = EntityNavigationConvention.Resolve(
                     parentModel, rootEntityTypes, fluentInverseNav);
 
                 // Navigation children (from EF entity relationships).

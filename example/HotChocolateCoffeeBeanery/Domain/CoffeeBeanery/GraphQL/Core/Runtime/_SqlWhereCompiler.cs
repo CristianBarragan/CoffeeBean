@@ -8,7 +8,7 @@
 //     internal static class SqlWhereCompiler
 //     {
 //         public static void Compile(
-//             _SqlCompilationContext context,
+//             SqlCompilationContext context,
 //             Dictionary<string, CoffeeBeanery.GraphQL.Core.Sql.EntityNodeTree> entityTrees,
 //             ISelection selection,
 //             CoffeeBeanery.GraphQL.Core.Sql.EntityNodeTree rootTree,

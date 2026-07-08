@@ -88,7 +88,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
 
                     matchedAny = true;
 
-                    info.FieldMaps.Add(new FieldMapInfo
+                    info.FieldMaps.Add(new FieldInfo
                     {
                         SourceName = modelProp.Name,
                         DestinationEntity = entityType.Name,

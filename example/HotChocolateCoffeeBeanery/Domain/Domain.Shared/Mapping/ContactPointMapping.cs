@@ -1,59 +1,62 @@
 ﻿using CoffeeBeanery.GraphQL.Core.Mapping;
-using CoffeeBeanery.GraphQL.Core.Sql;
 using Domain.Model;
 using DataEntity = Database.Entity;
 
 namespace Domain.Shared.Mapping;
 
-public class ContactPointMappingSet : IMappingSet
+public partial class ContactPointMapping : IMappingDefinition
 {
-    public void Register()
+    public MappingDefinition Definition => new()
     {
-        new ContactPointMapping().Register();
-    }
-}
+        Model = typeof(ContactPoint),
 
-public sealed partial class ContactPointMapping : BaseMappingRegistration<ContactPoint>
-{
-    protected override NodeMap BuildMap()
-    {
-        var map = new NodeMap
-        {
-            ModelName = nameof(ContactPoint),
-            Schema = nameof(DataEntity.Schema.Banking)
-        };
+        Schema = nameof(DataEntity.Schema.Banking),
 
-        map.AddModelToEntity<ContactPoint, DataEntity.ContactPoint>(
-            m => m.ContactPointKey,
-            e => e.ContactPointKey,
-            isPrimary: true);
-
-        map.UpsertKeys.Add(
-            new UpsertKey(
-                nameof(DataEntity.ContactPoint),
-                nameof(DataEntity.ContactPoint.ContactPointKey)));
-
-        map.FieldMaps.Add(new FieldMap
-        {
-            SourceName = nameof(ContactPoint.ContactPointType),
-            DestinationEntity = nameof(DataEntity.ContactPoint),
-            DestinationName = nameof(DataEntity.ContactPoint.ContactPointType),
-
-            FromEnum = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        Entities =
+        [
+            new()
             {
-                { ContactPointType.Email.ToString(), (int)ContactPointType.Email },
-                { ContactPointType.Landline.ToString(), (int)ContactPointType.Landline },
-                { ContactPointType.Mobile.ToString(), (int)ContactPointType.Mobile }
-            },
+                Entity = typeof(DataEntity.ContactPoint),
 
-            ToEnum = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
-            {
-                { ContactPointType.Email.ToString(), (int)ContactPointType.Email },
-                { ContactPointType.Landline.ToString(), (int)ContactPointType.Landline },
-                { ContactPointType.Mobile.ToString(), (int)ContactPointType.Mobile }
+                ModelKey =
+                    nameof(ContactPoint.ContactPointKey),
+
+                EntityKey =
+                    nameof(DataEntity.ContactPoint.ContactPointKey),
+
+                IsPrimary = true
             }
-        });
+        ],
 
-        return map;
-    }
+        UpsertKeys =
+        [
+            new()
+            {
+                Entity = typeof(DataEntity.ContactPoint),
+
+                Column =
+                    nameof(DataEntity.ContactPoint.ContactPointKey)
+            }
+        ],
+
+        Fields =
+        [
+            new()
+            {
+                Source =
+                    nameof(ContactPoint.ContactPointType),
+
+                Entity =
+                    typeof(DataEntity.ContactPoint),
+
+                Destination =
+                    nameof(DataEntity.ContactPoint.ContactPointType),
+
+                EnumMapping =
+                    new EnumMappingDefinition<
+                        ContactPointType,
+                        DataEntity.ContactPointType>()
+            }
+        ]
+    };
 }

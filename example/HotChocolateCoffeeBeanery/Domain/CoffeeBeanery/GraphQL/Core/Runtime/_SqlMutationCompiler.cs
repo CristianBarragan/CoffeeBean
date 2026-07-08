@@ -7,7 +7,7 @@
 //     public static class SqlMutationCompiler
 //     {
 //         public static void Compile(
-//             _SqlCompilationContext context,
+//             SqlCompilationContext context,
 //             ISelection rootSelection,
 //             CoffeeBeanery.GraphQL.Core.Sql.EntityNodeTree rootTree,
 //             Dictionary<string, string> sqlWhereStatement,

@@ -10,7 +10,7 @@
 //     internal static class SqlQueryCompiler
 //     {
 //         public static void Compile(
-//             _SqlCompilationContext context,
+//             SqlCompilationContext context,
 //             ISelection rootSelection,
 //             CoffeeBeanery.GraphQL.Core.Sql.EntityNodeTree rootTree,
 //             IFasterKV<string, string> cache,

@@ -4,12 +4,6 @@ namespace CoffeeBeanery.GraphQL.Core.Runtime;
 
 public enum JoinKind : byte { Left, Inner }
 
-/// <summary>
-/// One JOIN in the query plan.
-/// FromEntityId/ToEntityId are model IDs (EntityId.*) — used for dispatch.
-/// FromStorageEntityId/ToStorageEntityId are storage entity IDs (StorageEntityId.*) —
-/// used by PostgresSqlWriter to look up schema, table name, and column names.
-/// </summary>
 public readonly struct JoinSpec
 {
     public readonly ushort FromEntityId;
@@ -22,14 +16,10 @@ public readonly struct JoinSpec
     public readonly string ToOutputAlias;
 
     public JoinSpec(
-        ushort fromEntityId,
-        ushort fromStorageEntityId,
-        ushort toEntityId,
-        ushort toStorageEntityId,
-        ushort fromColumnId,
-        ushort toColumnId,
-        JoinKind kind,
-        string toOutputAlias)
+        ushort fromEntityId, ushort fromStorageEntityId,
+        ushort toEntityId,   ushort toStorageEntityId,
+        ushort fromColumnId, ushort toColumnId,
+        JoinKind kind, string toOutputAlias)
     {
         FromEntityId        = fromEntityId;
         FromStorageEntityId = fromStorageEntityId;
@@ -42,14 +32,6 @@ public readonly struct JoinSpec
     }
 }
 
-/// <summary>
-/// One column in the SELECT list.
-/// EntityId is the model ID — used for FieldId dispatch.
-/// StorageEntityId is the storage entity ID — used by PostgresSqlWriter
-/// to look up EntityMeta.EntityColumnName[StorageEntityId][ColumnId].
-/// ColumnId is an index into the storage entity's alphabetically-sorted
-/// scalar properties (ColumnId.{EntityName}.*).
-/// </summary>
 public readonly struct ColumnSpec
 {
     public readonly ushort EntityId;
@@ -59,11 +41,8 @@ public readonly struct ColumnSpec
     public readonly string ColumnOutputAlias;
 
     public ColumnSpec(
-        ushort entityId,
-        ushort storageEntityId,
-        ushort columnId,
-        string entityOutputAlias,
-        string columnOutputAlias)
+        ushort entityId, ushort storageEntityId, ushort columnId,
+        string entityOutputAlias, string columnOutputAlias)
     {
         EntityId          = entityId;
         StorageEntityId   = storageEntityId;
@@ -82,11 +61,8 @@ public readonly struct QueryPlan
     public readonly ImmutableArray<JoinSpec> Joins;
 
     public QueryPlan(
-        ushort rootEntityId,
-        ushort rootStorageEntityId,
-        string rootOutputAlias,
-        ImmutableArray<ColumnSpec> columns,
-        ImmutableArray<JoinSpec> joins)
+        ushort rootEntityId, ushort rootStorageEntityId, string rootOutputAlias,
+        ImmutableArray<ColumnSpec> columns, ImmutableArray<JoinSpec> joins)
     {
         RootEntityId        = rootEntityId;
         RootStorageEntityId = rootStorageEntityId;
@@ -94,16 +70,48 @@ public readonly struct QueryPlan
         Columns             = columns;
         Joins               = joins;
     }
+
+    /// <summary>
+    /// Builds a column map for one segment (one storage entity under one alias).
+    /// Filters by both storageEntityId AND entityOutputAlias so InnerCustomer
+    /// and OuterCustomer get separate maps even though both are StorageEntityId.Customer.
+    /// </summary>
+    public ushort[] BuildColumnMap(
+        ushort storageEntityId,
+        string entityOutputAlias,
+        ushort columnCount)
+    {
+        var map = new ushort[columnCount];
+        for (int i = 0; i < columnCount; i++)
+            map[i] = ushort.MaxValue;
+
+        ushort ordinal = 0;
+        foreach (var col in Columns)
+        {
+            if (col.StorageEntityId == storageEntityId &&
+                string.Equals(col.EntityOutputAlias, entityOutputAlias,
+                    StringComparison.OrdinalIgnoreCase))
+                map[col.ColumnId] = ordinal;
+            ordinal++;
+        }
+
+        return map;
+    }
 }
 
 public ref struct QueryPlanBuilder
 {
-    private ushort _rootEntityId;
-    private ushort _rootStorageEntityId;
+    private ushort  _rootEntityId;
+    private ushort  _rootStorageEntityId;
     private string? _rootOutputAlias;
 
     private InlineArray64<ColumnSpec> _columns;
     private InlineArray32<JoinSpec>   _joins;
+
+    // Tracks aliases for root-segment columns only.
+    // Join-segment columns always use a deterministic entity-alias prefix.
+    private HashSet<string>? _rootAliases;
+
     private int _columnCount;
     private int _joinCount;
 
@@ -115,30 +123,57 @@ public ref struct QueryPlanBuilder
     }
 
     /// <summary>
-    /// entityId        — model ID (EntityId.*)         — used for FieldId dispatch
-    /// storageEntityId — storage entity ID (StorageEntityId.*) — used for SQL column lookup
-    /// columnId        — ColumnId.{EntityName}.* — index into EntityColumnName[storageEntityId]
+    /// Adds a column that belongs to the root segment.
+    /// Deduplicates aliases within the root using fallback prefixing.
+    /// Use for: composite primary-entity columns, simple-model columns.
     /// </summary>
-    public void AddColumn(
-        ushort entityId,
-        ushort storageEntityId,
-        ushort columnId,
-        string entityOutputAlias,
-        string columnOutputAlias)
+    public void AddRootColumn(
+        ushort entityId, ushort storageEntityId, ushort columnId,
+        string entityOutputAlias, string columnOutputAlias)
     {
+        _rootAliases ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var finalAlias = columnOutputAlias;
+
+        if (!_rootAliases.Add(finalAlias))
+        {
+            finalAlias = entityOutputAlias +
+                         char.ToUpperInvariant(columnOutputAlias[0]) +
+                         columnOutputAlias[1..];
+
+            if (!_rootAliases.Add(finalAlias))
+            {
+                finalAlias = $"{entityOutputAlias}_{columnOutputAlias}";
+                _rootAliases.Add(finalAlias);
+            }
+        }
+
         _columns[_columnCount++] = new ColumnSpec(
-            entityId, storageEntityId, columnId, entityOutputAlias, columnOutputAlias);
+            entityId, storageEntityId, columnId, entityOutputAlias, finalAlias);
+    }
+
+    /// <summary>
+    // In QueryPlanBuilder.AddColumn (join segment path)
+    public void AddColumn(
+        ushort entityId, ushort storageEntityId, ushort columnId,
+        string entityOutputAlias, string columnOutputAlias)
+    {
+        // Suffix "_pk" on "Id" to avoid colliding with FK columns in the root segment
+        // e.g. root has "InnerCustomerId" (FK), join has "InnerCustomer_Id" (surrogate PK)
+        var baseName = string.Equals(columnOutputAlias, "id",
+            StringComparison.OrdinalIgnoreCase)
+            ? entityOutputAlias + "_pk"
+            : entityOutputAlias + char.ToUpperInvariant(columnOutputAlias[0]) + columnOutputAlias[1..];
+
+        _columns[_columnCount++] = new ColumnSpec(
+            entityId, storageEntityId, columnId, entityOutputAlias, baseName);
     }
 
     public void AddJoin(
-        ushort fromEntityId,
-        ushort fromStorageEntityId,
-        ushort toEntityId,
-        ushort toStorageEntityId,
-        ushort fromColumnId,
-        ushort toColumnId,
-        JoinKind kind,
-        string toOutputAlias)
+        ushort fromEntityId, ushort fromStorageEntityId,
+        ushort toEntityId,   ushort toStorageEntityId,
+        ushort fromColumnId, ushort toColumnId,
+        JoinKind kind, string toOutputAlias)
     {
         _joins[_joinCount++] = new JoinSpec(
             fromEntityId, fromStorageEntityId,
@@ -156,8 +191,7 @@ public ref struct QueryPlanBuilder
         for (var i = 0; i < _joinCount; i++) joins.Add(_joins[i]);
 
         return new QueryPlan(
-            _rootEntityId,
-            _rootStorageEntityId,
+            _rootEntityId, _rootStorageEntityId,
             _rootOutputAlias ?? string.Empty,
             cols.MoveToImmutable(),
             joins.MoveToImmutable());

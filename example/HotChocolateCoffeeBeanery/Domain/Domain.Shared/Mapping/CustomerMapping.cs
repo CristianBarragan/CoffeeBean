@@ -1,78 +1,98 @@
 ﻿using CoffeeBeanery.GraphQL.Core.Mapping;
-using CoffeeBeanery.GraphQL.Core.Sql;
 using Domain.Model;
 using DataEntity = Database.Entity;
 
 namespace Domain.Shared.Mapping;
 
-public class CustomerMappingSet : IMappingSet
+public partial class CustomerMapping : IMappingDefinition
 {
-    public void Register()
+    public MappingDefinition Definition => new()
     {
-        new CustomerMapping().Register();
-    }
-}
+        Model = typeof(Customer),
 
-public partial class CustomerMapping : BaseMappingRegistration<Customer>
-{
-    protected override NodeMap BuildMap()
-    {
-        var map = new NodeMap
-        {
-            ModelName = nameof(Customer),
-            Schema = nameof(DataEntity.Schema.Banking)
-        };
+        Schema = nameof(DataEntity.Schema.Banking),
 
-        map.AddModelToEntity<Customer, DataEntity.Customer>(
-            m => m.CustomerKey,
-            e => e.CustomerKey,
-            isPrimary: true);
-
-        map.UpsertKeys.Add(
-            new UpsertKey(
-                nameof(DataEntity.Customer),
-                nameof(DataEntity.Customer.CustomerKey)));
-
-        map.FieldMaps.Add(new FieldMap
-        {
-            SourceName = nameof(Customer.CustomerType),
-            DestinationEntity = nameof(DataEntity.Customer),
-            DestinationName = nameof(DataEntity.Customer.CustomerType),
-
-            FromEnum = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        Entities =
+        [
+            new()
             {
-                { CustomerType.Person.ToString(), (int)CustomerType.Person },
-                { CustomerType.Organisation.ToString(), (int)CustomerType.Organisation }
+                Entity = typeof(DataEntity.Customer),
+
+                ModelKey =
+                    nameof(Customer.CustomerKey),
+
+                EntityKey =
+                    nameof(DataEntity.Customer.CustomerKey),
+
+                IsPrimary = true
+            }
+        ],
+
+        UpsertKeys =
+        [
+            new()
+            {
+                Entity = typeof(DataEntity.Customer),
+
+                Column =
+                    nameof(DataEntity.Customer.CustomerKey)
+            }
+        ],
+
+        Fields =
+        [
+            new()
+            {
+                Source =
+                    nameof(Customer.CustomerType),
+
+                Entity =
+                    typeof(DataEntity.Customer),
+
+                Destination =
+                    nameof(DataEntity.Customer.CustomerType),
+
+                EnumMapping =
+                    new EnumMappingDefinition<
+                        CustomerType,
+                        DataEntity.CustomerType>()
             },
 
-            ToEnum = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            new()
             {
-                { DataEntity.CustomerType.Person.ToString(), (int)DataEntity.CustomerType.Person },
-                { DataEntity.CustomerType.Organisation.ToString(), (int)DataEntity.CustomerType.Organisation }
+                Source =
+                    nameof(Customer.FirstNaming),
+
+                Entity =
+                    typeof(DataEntity.Customer),
+
+                Destination =
+                    nameof(DataEntity.Customer.FirstName)
+            },
+
+            new()
+            {
+                Source =
+                    nameof(Customer.LastNaming),
+
+                Entity =
+                    typeof(DataEntity.Customer),
+
+                Destination =
+                    nameof(DataEntity.Customer.LastName)
+            },
+
+            new()
+            {
+                Source =
+                    nameof(Customer.FullNaming),
+
+                Entity =
+                    typeof(DataEntity.Customer),
+
+                Destination =
+                    nameof(DataEntity.Customer.FullName)
             }
-        });
-
-        map.FieldMaps.Add(new FieldMap
-        {
-            SourceName = nameof(Customer.FirstNaming),
-            DestinationEntity = nameof(DataEntity.Customer),
-            DestinationName = nameof(DataEntity.Customer.FirstName)
-        });
-
-        map.FieldMaps.Add(new FieldMap
-        {
-            SourceName = nameof(Customer.LastNaming),
-            DestinationEntity = nameof(DataEntity.Customer),
-            DestinationName = nameof(DataEntity.Customer.LastName)
-        });
-
-        map.FieldMaps.Add(new FieldMap
-        {
-            SourceName = nameof(Customer.FullNaming),
-            DestinationEntity = nameof(DataEntity.Customer),
-            DestinationName = nameof(DataEntity.Customer.FullName)
-        });
-
-        return map;
-    }
+        ]
+    };
 }

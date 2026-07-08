@@ -1,13 +1,13 @@
 ﻿using CoffeeBeanery.CQRS;
 using CoffeeBeanery.GraphQL.Core.Runtime;
 using CoffeeBeanery.GraphQL.Core.Sql;
-using Dapper;
+using CoffeeBeanery.Service;
 using FASTER.core;
 using HotChocolate.Execution.Processing;
 using HotChocolate.Language;
 using Npgsql;
 
-namespace CoffeeBeanery.Service;
+namespace Domain.Shared;
 
 public interface IProcessService<M> where M : class
 {
@@ -24,8 +24,9 @@ public interface IProcessService<M> where M : class
         CancellationToken cancellationToken);
 }
 
-public class ProcessService<M> : IProcessService<M>
-    where M : class
+public class ProcessService<TModel, TResult> : IProcessService<TResult>
+    where TModel : class
+    where TResult : class
 {
     private readonly NpgsqlDataSource _dataSource;
     private readonly IFasterKV<string, string> _cache;
@@ -35,6 +36,7 @@ public class ProcessService<M> : IProcessService<M>
     private readonly IReadOnlyList<IQueryPlanContributor> _queryContributors;
     private readonly IReadOnlyList<IMutationPlanContributor> _mutationContributors;
     private readonly IPlannerRegistry _plannerRegistry;
+    private readonly Func<List<TModel>, List<TResult>> _wrap;
 
     public ProcessService(
         NpgsqlDataSource dataSource,
@@ -43,6 +45,7 @@ public class ProcessService<M> : IProcessService<M>
         IEntityMetaProvider meta,
         PostgresSqlWriter sqlWriter,
         IPlannerRegistry plannerRegistry,
+        Func<List<TModel>, List<TResult>> wrap,
         IEnumerable<IQueryPlanContributor>? queryContributors = null,
         IEnumerable<IMutationPlanContributor>? mutationContributors = null)
     {
@@ -52,11 +55,12 @@ public class ProcessService<M> : IProcessService<M>
         _meta = meta;
         _sqlWriter = sqlWriter;
         _plannerRegistry = plannerRegistry;
+        _wrap = wrap;
         _queryContributors = queryContributors?.ToArray() ?? Array.Empty<IQueryPlanContributor>();
         _mutationContributors = mutationContributors?.ToArray() ?? Array.Empty<IMutationPlanContributor>();
     }
 
-    public async Task<QueryResult<M>> MutationProcessAsync(
+    public async Task<QueryResult<TResult>> MutationProcessAsync(
         string cacheKey,
         ISelection selection,
         string modelName,
@@ -78,15 +82,30 @@ public class ProcessService<M> : IProcessService<M>
         if (mutationArg?.Value is ObjectValueNode inputObj)
         {
             var mutationIr = HotChocolateAdapter.AdaptMutation(
-                rootEntityId, rootOutputAlias, inputObj, _adapterLookup);
+                rootEntityId,
+                rootOutputAlias,
+                inputObj,
+                _adapterLookup);
 
-            var mutationPlanBuilder = new MutationPlanBuilder();
-            _plannerRegistry.BuildMutation(rootEntityId, mutationIr, ref mutationPlanBuilder);
+            mutationIr = MutationOptimizer.Optimize(mutationIr);
 
-            foreach (var contributor in _mutationContributors)
-                contributor.Contribute(rootEntityId, mutationIr, ref mutationPlanBuilder);
+            if (MutationOptimizer.HasWork(mutationIr))
+            {
+                var mutationPlanBuilder = new MutationPlanBuilder();
 
-            mutationPlan = mutationPlanBuilder.Build();
+                _plannerRegistry.BuildMutation(
+                    rootEntityId,
+                    mutationIr,
+                    ref mutationPlanBuilder);
+
+                foreach (var contributor in _mutationContributors)
+                    contributor.Contribute(
+                        rootEntityId,
+                        mutationIr,
+                        ref mutationPlanBuilder);
+
+                mutationPlan = mutationPlanBuilder.Build();
+            }
         }
 
         var selectionSet = selection.SyntaxNode.SelectionSet
@@ -107,25 +126,22 @@ public class ProcessService<M> : IProcessService<M>
 
         var queryPlan = queryPlanBuilder.Build();
 
-        var finalSql = mutationPlan.HasValue
-            ? _sqlWriter.WriteUpsertThenSelect(mutationPlan.Value, queryPlan)
-            : _sqlWriter.WriteSelect(queryPlan);
+        var upsertSql = mutationPlan is not null ? _sqlWriter.WriteUpserts(mutationPlan.Value) : "";
+        var selectSql = _sqlWriter.WriteSelect(queryPlan);
+        var finalSql  = string.IsNullOrEmpty(upsertSql) ? selectSql : upsertSql + ";" + selectSql;
 
-        using var connection = await AgeConnectionFactory.OpenAsync(_dataSource);
-        using var grid = await connection.QueryMultipleAsync(
-            new CommandDefinition(finalSql, cancellationToken: cancellationToken));
+        var models  = await ExecuteAndMaterializeAsync(finalSql, rootEntityId, queryPlan, cancellationToken);
+        var results = _wrap(models);
 
-        var models = MaterializeResults<M>(grid, queryPlan);
-
-        return new QueryResult<M>
+        return new QueryResult<TResult>
         {
-            Models = models,
-            TotalCount = models.Count,
-            TotalPageRecords = models.Count
+            Models           = results,
+            TotalCount       = results.Count,
+            TotalPageRecords = results.Count
         };
     }
 
-    public async Task<QueryResult<M>> QueryProcessAsync(
+    public async Task<QueryResult<TResult>> QueryProcessAsync(
         string cacheKey,
         ISelection selection,
         string modelName,
@@ -152,84 +168,111 @@ public class ProcessService<M> : IProcessService<M>
             contributor.Contribute(rootEntityId, selectionIr, ref queryPlanBuilder);
 
         var queryPlan = queryPlanBuilder.Build();
-        var sql = _sqlWriter.WriteSelect(queryPlan);
+        var sql       = _sqlWriter.WriteSelect(queryPlan);
 
-        using var connection = await AgeConnectionFactory.OpenAsync(_dataSource);
-        using var grid = await connection.QueryMultipleAsync(
-            new CommandDefinition(sql, cancellationToken: cancellationToken));
+        var models  = await ExecuteAndMaterializeAsync(sql, rootEntityId, queryPlan, cancellationToken);
+        var results = _wrap(models);
 
-        var models = MaterializeResults<M>(grid, queryPlan);
-
-        return new QueryResult<M>
+        return new QueryResult<TResult>
         {
-            Models = models,
-            TotalCount = models.Count,
-            TotalPageRecords = models.Count
+            Models           = results,
+            TotalCount       = results.Count,
+            TotalPageRecords = results.Count
         };
+    }
+
+    // ---------------------------------------------------------------
+    // Raw ADO.NET execution + AOT-safe materialization
+    // Always builds List<TModel>. Wrapping to TResult is the caller's job.
+    // ---------------------------------------------------------------
+
+    private async Task<List<TModel>> ExecuteAndMaterializeAsync(
+        string sql,
+        ushort rootEntityId,
+        QueryPlan queryPlan,
+        CancellationToken ct)
+    {
+        await using var connection = await AgeConnectionFactory.OpenAsync(_dataSource);
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = sql;
+
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+
+        // Skip result sets from upsert statements (no RETURNING -> FieldCount == 0).
+        while (reader.FieldCount == 0)
+        {
+            if (!await reader.NextResultAsync(ct))
+                throw new InvalidOperationException("Expected a SELECT result set but none was found.");
+        }
+
+        var layout = RowLayout.FromQueryPlan(queryPlan);
+
+        var segmentMaps = new ushort[layout.Segments.Length][];
+        for (int s = 0; s < layout.Segments.Length; s++)
+        {
+            var seg         = layout.Segments[s];
+            var columnCount = _meta.EntityColumnName[seg.StorageEntityId].Length;
+            segmentMaps[s]  = queryPlan.BuildColumnMap(
+                seg.StorageEntityId,
+                seg.EntityOutputAlias,
+                (ushort)columnCount);
+        }
+
+        var rowMatrix = new List<object?[]>();
+
+        while (await reader.ReadAsync(ct))
+        {
+            var row = new object?[layout.Segments.Length];
+            for (int s = 0; s < layout.Segments.Length; s++)
+            {
+                var seg = layout.Segments[s];
+                row[s]  = MaterializerRegistry.Materialize(seg.StorageEntityId, reader, segmentMaps[s]);
+            }
+            rowMatrix.Add(row);
+        }
+
+        return ResultBuilderRegistry.Build<TModel>(rootEntityId, layout, rowMatrix);
     }
 
     // ---------------------------------------------------------------
     // Entity ID resolution
     // ---------------------------------------------------------------
 
-    /// <summary>
-    /// Resolves the model entity ID — used for planner dispatch (EntityId.*).
-    /// Matches against ModelName[i][0].
-    /// </summary>
     private ushort ResolveRootEntityId(string modelName)
     {
-        for (ushort i = 0; i < _meta.Count; i++)
+        for (ushort i = 0; i < _meta.ModelName.Length; i++)
         {
-            if (string.Equals(_meta.ModelName[i][0], modelName, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(
+                    _meta.ModelName[i][0],
+                    modelName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Unknown model '{modelName}'.");
+    }
+
+    private ushort ResolveRootStorageEntityId(string modelName)
+    {
+        if (!_meta.TryGetEntityId(modelName, out var entityId))
+            throw new InvalidOperationException($"Unknown model '{modelName}'.");
+
+        var table = _meta.Table[entityId][0];
+
+        for (ushort i = 0; i < _meta.EntityTable.Length; i++)
+        {
+            if (string.Equals(
+                    _meta.EntityTable[i],
+                    table,
+                    StringComparison.OrdinalIgnoreCase))
                 return i;
         }
 
         throw new InvalidOperationException(
-            $"No entity registered for model '{modelName}'.");
-    }
-
-    /// <summary>
-    /// Resolves the storage entity ID — used for SQL emission (schema/table/columns).
-    /// For simple models this equals the entity ID.
-    /// For composite models (e.g. CustomerCustomerEdge) this resolves to the
-    /// primary DB entity (e.g. CustomerCustomerRelationship).
-    /// Matches Table[i][0] against the DB table name of the model's primary entity.
-    /// </summary>
-    private ushort ResolveRootStorageEntityId(string modelName)
-    {
-        // First find the model entity ID
-        for (ushort i = 0; i < _meta.Count; i++)
-        {
-            if (!string.Equals(_meta.ModelName[i][0], modelName, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            // Table[i][0] is the DB table — may differ from ModelName[i][0] for composites
-            var dbTable = _meta.Table[i][0];
-
-            // Find the storage entity whose table matches
-            for (ushort s = 0; s < _meta.Count; s++)
-            {
-                if (string.Equals(_meta.Table[s][0], dbTable, StringComparison.OrdinalIgnoreCase))
-                    return s;
-            }
-
-            // No distinct storage entity found — storage ID equals model ID
-            return i;
-        }
-
-        throw new InvalidOperationException(
-            $"No storage entity registered for model '{modelName}'.");
-    }
-
-    // ---------------------------------------------------------------
-    // Materialization
-    // ---------------------------------------------------------------
-
-    private static List<M> MaterializeResults<T>(SqlMapper.GridReader grid, in QueryPlan plan)
-        where T : class
-    {
-        _ = grid.Read<dynamic>().ToList();
-        return new List<M>();
+            $"No storage entity found for model '{modelName}'.");
     }
 }
 

@@ -5,6 +5,61 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
     public static class MappingDiagnostics
     {
         private const string Category = "CoffeeBeanery.MappingGenerator";
+        
+        public static readonly DiagnosticDescriptor InvalidMappingDefinition =
+            new(
+                id: "CBM001",
+                title: "Invalid mapping definition",
+                messageFormat: "Mapping class '{0}' does not contain a valid Definition property returning a mapping definition object.",
+                category: "CoffeeBeanery.Mapping.Generator",
+                defaultSeverity: DiagnosticSeverity.Error,
+                isEnabledByDefault: true);
+
+
+        public static readonly DiagnosticDescriptor GeneratorCrashDescriptor =
+            new(
+                id: "CBM000",
+                title: "Mapping generator crashed",
+                messageFormat: "Source generator crashed: {0}: {1}\n{2}",
+                category: "CoffeeBeanery.Mapping.Generator",
+                defaultSeverity: DiagnosticSeverity.Error,
+                isEnabledByDefault: true);
+        
+        public static readonly DiagnosticDescriptor NoColumnsResolved = new(
+            id:              "CBM003",
+            title:           "No scalar columns resolved for storage entity",
+            messageFormat:   "Storage entity '{0}' has no resolvable scalar properties. " +
+                             "ColumnId.{0} will not be emitted; all column references will fail to compile.",
+            category:        Category,
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
+        public static readonly DiagnosticDescriptor NoFieldsResolved = new(
+            id:              "CBM004",
+            title:           "No scalar fields resolved for model",
+            messageFormat:   "Model '{0}' has no resolvable scalar properties. " +
+                             "FieldId.{0} will not be emitted; all field references will fail to compile.",
+            category:        Category,
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+        
+        public static readonly DiagnosticDescriptor MissingPrimaryEntity = new(
+            id:             "CBM001",
+            title:          "Composite model has no primary storage entity",
+            messageFormat:  "Composite model '{0}' has no primary entity with a resolved EntityType. " +
+                            "Ensure AddModelToEntity(..., isPrimary: true) is present in BuildMap().",
+            category:       Category,
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
+        public static readonly DiagnosticDescriptor MissingEntityType = new(
+            id:             "CBM002",
+            title:          "Model has no resolved storage entity",
+            messageFormat:  "Model '{0}' has no resolved EntityType. " +
+                            "Ensure AddModelToEntity is present in BuildMap().",
+            category:       Category,
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
 
         public static readonly DiagnosticDescriptor TypeIncompatible = new(
             id: "CBMAP001",

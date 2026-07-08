@@ -7,7 +7,7 @@
 // {
 //     internal static class SqlPagingCompiler
 //     {
-//         public static void GetPagination(CoffeeBeanery.GraphQL.Core.Sql.EntityNodeTree rootTree, _SqlCompilationContext ctx, ISelection rootSelection)
+//         public static void GetPagination(CoffeeBeanery.GraphQL.Core.Sql.EntityNodeTree rootTree, SqlCompilationContext ctx, ISelection rootSelection)
 //         {
 //             var hasPagination = false;
 //             
@@ -48,7 +48,7 @@
 //             }
 //         }
 //         
-//         private static void HandleQueryClause(CoffeeBeanery.GraphQL.Core.Sql.EntityNodeTree rootTree, _SqlCompilationContext ctx)
+//         private static void HandleQueryClause(CoffeeBeanery.GraphQL.Core.Sql.EntityNodeTree rootTree, SqlCompilationContext ctx)
 //         {
 //             var sqlQuery = new StringBuilder();
 //             sqlQuery.AppendLine(ctx.SelectSql);

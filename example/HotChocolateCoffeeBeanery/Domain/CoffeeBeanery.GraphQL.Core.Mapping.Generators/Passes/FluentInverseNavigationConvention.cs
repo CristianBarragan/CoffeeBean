@@ -8,137 +8,267 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
 {
     /// <summary>
-    /// Scans every IEntityTypeConfiguration&lt;T&gt;.Configure(...) method in the
-    /// compilation for HasOne(...)/HasMany(...).WithOne(...)/WithMany(...) chains,
-    /// extracting just the (DeclaringEntity, NavigationPropertyName) -> InverseNavigationPropertyName
-    /// pairing. Deliberately does NOT read HasForeignKey(...) - this codebase's
-    /// fluent config FKs reference surrogate int Id columns (AccountId, CustomerId),
-    /// not the Guid business keys (AccountKey, CustomerKey) used throughout the rest
-    /// of the mapping/join layer. Pulling those in would silently break the
-    /// business-key join convention everywhere else.
+    /// Reads Entity fluent configuration and extracts:
     ///
-    /// Used solely to disambiguate multiple navigations from the same entity to the
-    /// same related type (e.g. Customer.OuterCustomerCustomerRelationship vs
-    /// InnerCustomerCustomerRelationship), by feeding the inverse nav name into
-    /// EntityNavigationConvention's "{InverseNavName}Key" sibling lookup.
+    /// Entity + NavigationProperty -> InverseNavigationProperty
+    ///
+    /// Used by Model navigation resolution to disambiguate
+    /// multiple navigations to the same Entity type.
+    ///
+    /// Example:
+    ///
+    /// CustomerCustomerRelationship:
+    ///
+    /// HasOne(x => x.InnerCustomer)
+    ///     .WithMany(x => x.InnerCustomerRelationships)
+    ///
+    /// Produces:
+    ///
+    /// (CustomerCustomerRelationship, InnerCustomer)
+    ///     -> InnerCustomerRelationships
+    ///
+    /// Roslyn only.
+    /// No reflection.
+    /// No EF runtime model.
     /// </summary>
     internal static class FluentInverseNavigationConvention
     {
-        public static ImmutableDictionary<(INamedTypeSymbol Entity, string NavigationName), string> CollectAll(
-            Compilation compilation, CancellationToken ct)
+        public static ImmutableDictionary<(INamedTypeSymbol Entity, string NavigationName), string>
+            CollectAll(
+                Compilation compilation,
+                CancellationToken ct)
         {
-            var builder = ImmutableDictionary.CreateBuilder<(INamedTypeSymbol, string), string>(
-                FluentKeyComparer.Instance);
+            var builder =
+                ImmutableDictionary.CreateBuilder<
+                    (INamedTypeSymbol Entity, string NavigationName),
+                    string>(
+                        FluentKeyComparer.Instance);
+
 
             foreach (var tree in compilation.SyntaxTrees)
             {
                 ct.ThrowIfCancellationRequested();
-                var semanticModel = compilation.GetSemanticModel(tree);
-                var root = tree.GetRoot(ct);
 
-                foreach (var classDecl in root.DescendantNodes().OfType<ClassDeclarationSyntax>())
+
+                var semanticModel =
+                    compilation.GetSemanticModel(tree);
+
+
+                var root =
+                    tree.GetRoot(ct);
+
+
+                foreach (var classDecl in root
+                             .DescendantNodes()
+                             .OfType<ClassDeclarationSyntax>())
                 {
-                    var entityType = TryGetConfiguredEntityType(classDecl, semanticModel, ct);
+                    ct.ThrowIfCancellationRequested();
+
+
+                    var entityType =
+                        TryGetConfiguredEntityType(
+                            classDecl,
+                            semanticModel,
+                            ct);
+
+
                     if (entityType is null)
                         continue;
 
-                    var configureMethod = classDecl.Members
-                        .OfType<MethodDeclarationSyntax>()
-                        .FirstOrDefault(m => m.Identifier.Text == "Configure" && m.Body is not null);
 
-                    if (configureMethod?.Body is null)
+                    var configure =
+                        classDecl.Members
+                            .OfType<MethodDeclarationSyntax>()
+                            .FirstOrDefault(x =>
+                                x.Identifier.Text == "Configure" &&
+                                x.Body != null);
+
+
+                    if (configure?.Body == null)
                         continue;
 
-                    foreach (var stmt in configureMethod.Body.Statements.OfType<ExpressionStatementSyntax>())
+
+                    foreach (var statement in configure.Body.Statements
+                                 .OfType<ExpressionStatementSyntax>())
                     {
-                        if (stmt.Expression is not InvocationExpressionSyntax outer)
+                        if (statement.Expression is not InvocationExpressionSyntax outer)
                             continue;
 
-                        var chain = CollectChain(outer);
 
-                        var hasIdx = chain.FindIndex(c => c.Name is "HasOne" or "HasMany");
-                        if (hasIdx < 0) continue;
+                        var chain =
+                            CollectChain(outer);
 
-                        var withIdx = chain.FindIndex(hasIdx + 1, c => c.Name is "WithOne" or "WithMany");
-                        if (withIdx < 0) continue;
 
-                        var navName = ExtractLambdaMemberName(chain[hasIdx].Invocation);
-                        var inverseNavName = ExtractLambdaMemberName(chain[withIdx].Invocation);
+                        var hasIndex =
+                            chain.FindIndex(x =>
+                                x.Name is "HasOne" or "HasMany");
 
-                        if (navName is null || inverseNavName is null)
+
+                        if (hasIndex < 0)
                             continue;
 
-                        builder[(entityType, navName)] = inverseNavName;
+
+                        var withIndex =
+                            chain.FindIndex(
+                                hasIndex + 1,
+                                x =>
+                                    x.Name is "WithOne" or "WithMany");
+
+
+                        if (withIndex < 0)
+                            continue;
+
+
+                        var navigationName =
+                            ExtractLambdaMemberName(
+                                chain[hasIndex].Invocation);
+
+
+                        var inverseName =
+                            ExtractLambdaMemberName(
+                                chain[withIndex].Invocation);
+
+
+                        if (navigationName == null ||
+                            inverseName == null)
+                            continue;
+
+
+                        builder[
+                            (
+                                entityType,
+                                navigationName
+                            )
+                        ] = inverseName;
                     }
                 }
             }
 
+
             return builder.ToImmutable();
         }
 
+
         private static INamedTypeSymbol? TryGetConfiguredEntityType(
-            ClassDeclarationSyntax classDecl, SemanticModel semanticModel, CancellationToken ct)
+            ClassDeclarationSyntax classDecl,
+            SemanticModel semanticModel,
+            CancellationToken ct)
         {
-            if (classDecl.BaseList is null)
-                return null;
-
-            if (semanticModel.GetDeclaredSymbol(classDecl, ct) is not INamedTypeSymbol classSymbol)
-                return null;
-
-            foreach (var iface in classSymbol.AllInterfaces)
+            if (semanticModel.GetDeclaredSymbol(
+                    classDecl,
+                    ct) is not INamedTypeSymbol symbol)
             {
-                if (iface.OriginalDefinition.Name == "IEntityTypeConfiguration" &&
+                return null;
+            }
+
+
+            foreach (var iface in symbol.AllInterfaces)
+            {
+                if (iface.OriginalDefinition.Name ==
+                    "IEntityTypeConfiguration" &&
                     iface.TypeArguments.Length == 1 &&
-                    iface.TypeArguments[0] is INamedTypeSymbol entityType)
+                    iface.TypeArguments[0] is INamedTypeSymbol entity)
                 {
-                    return entityType;
+                    return entity;
                 }
             }
+
 
             return null;
         }
 
-        // Walks a fluent chain from its outermost invocation back to the root
-        // (e.g. "builder"), returning [(CallName, Invocation), ...] in call order.
-        private static List<(string Name, InvocationExpressionSyntax Invocation)> CollectChain(
-            InvocationExpressionSyntax outer)
+
+        private static List<(string Name, InvocationExpressionSyntax Invocation)>
+            CollectChain(
+                InvocationExpressionSyntax outer)
         {
-            var chain = new List<(string, InvocationExpressionSyntax)>();
+            var result =
+                new List<(string, InvocationExpressionSyntax)>();
+
+
             var current = outer;
+
 
             while (current.Expression is MemberAccessExpressionSyntax ma)
             {
-                var name = ma.Name is GenericNameSyntax g ? g.Identifier.Text : ma.Name.Identifier.Text;
-                chain.Insert(0, (name, current));
+                var name =
+                    ma.Name is GenericNameSyntax generic
+                        ? generic.Identifier.Text
+                        : ma.Name.Identifier.Text;
+
+
+                result.Insert(
+                    0,
+                    (
+                        name,
+                        current
+                    ));
+
 
                 if (ma.Expression is InvocationExpressionSyntax inner)
+                {
                     current = inner;
+                }
                 else
+                {
                     break;
+                }
             }
 
-            return chain;
+
+            return result;
         }
 
-        private static string? ExtractLambdaMemberName(InvocationExpressionSyntax invocation)
+
+        private static string? ExtractLambdaMemberName(
+            InvocationExpressionSyntax invocation)
         {
-            var arg = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-            if (arg is not SimpleLambdaExpressionSyntax { Body: MemberAccessExpressionSyntax memberAccess })
-                return null;
+            var arg =
+                invocation.ArgumentList.Arguments
+                    .FirstOrDefault()
+                    ?.Expression;
 
-            return memberAccess.Name.Identifier.Text;
+
+            if (arg is not SimpleLambdaExpressionSyntax
+                {
+                    Body: MemberAccessExpressionSyntax member
+                })
+            {
+                return null;
+            }
+
+
+            return member.Name.Identifier.Text;
         }
 
-        private sealed class FluentKeyComparer : IEqualityComparer<(INamedTypeSymbol Entity, string NavigationName)>
+
+        private sealed class FluentKeyComparer :
+            IEqualityComparer<(INamedTypeSymbol Entity, string NavigationName)>
         {
             public static readonly FluentKeyComparer Instance = new();
 
-            public bool Equals((INamedTypeSymbol Entity, string NavigationName) x, (INamedTypeSymbol Entity, string NavigationName) y) =>
-                SymbolEqualityComparer.Default.Equals(x.Entity, y.Entity) &&
-                x.NavigationName == y.NavigationName;
 
-            public int GetHashCode((INamedTypeSymbol Entity, string NavigationName) obj) =>
-                SymbolEqualityComparer.Default.GetHashCode(obj.Entity) * 397 ^ obj.NavigationName.GetHashCode();
+            public bool Equals(
+                (INamedTypeSymbol Entity, string NavigationName) x,
+                (INamedTypeSymbol Entity, string NavigationName) y)
+            {
+                return SymbolEqualityComparer.Default.Equals(
+                           x.Entity,
+                           y.Entity)
+                       &&
+                       x.NavigationName == y.NavigationName;
+            }
+
+
+            public int GetHashCode(
+                (INamedTypeSymbol Entity, string NavigationName) obj)
+            {
+                return
+                    SymbolEqualityComparer.Default.GetHashCode(obj.Entity)
+                    * 397
+                    ^
+                    obj.NavigationName.GetHashCode();
+            }
         }
     }
 }

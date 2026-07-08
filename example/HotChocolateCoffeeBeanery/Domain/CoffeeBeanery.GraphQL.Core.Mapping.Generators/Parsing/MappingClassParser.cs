@@ -1,370 +1,582 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using CoffeeBeanery.GraphQL.Core.Mapping.Generators;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
 
-namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Parsing
+namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Parsing;
+
+internal static class MappingClassParser
 {
-    public static class MappingClassParser
+    public static MappingClassInfo Parse(
+        INamedTypeSymbol classSymbol,
+        SemanticModel semanticModel,
+        CancellationToken ct)
     {
-        public static MappingClassInfo Parse(
-            INamedTypeSymbol classSymbol,
-            INamedTypeSymbol modelType,
-            MethodDeclarationSyntax buildMap,
-            SemanticModel semanticModel,
-            CancellationToken ct)
+        var info = new MappingClassInfo
         {
-            var info = new MappingClassInfo
-            {
-                ClassSymbol = classSymbol,
-                ModelType = modelType,
-                IsModel = true
-            };
+            ClassSymbol = classSymbol,
+            IsModel = true
+        };
 
-            if (buildMap.Body is null)
-                return info;
+        ct.ThrowIfCancellationRequested();
 
-            foreach (var statement in buildMap.Body.Statements)
-            {
-                ct.ThrowIfCancellationRequested();
+        var definitionProperty =
+            classSymbol
+                .GetMembers("Definition")
+                .OfType<IPropertySymbol>()
+                .FirstOrDefault();
 
-                switch (statement)
-                {
-                    case ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation }:
-                        ParseInvocation(invocation, info, semanticModel);
-                        break;
+        if (definitionProperty == null)
+        {
+            info.Diagnostics.Add(
+                Diagnostic.Create(
+                    MappingDiagnostics.InvalidMappingDefinition,
+                    classSymbol.Locations[0],
+                    classSymbol.Name));
 
-                    case ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax assign }:
-                        ParseAssignment(assign, info);
-                        break;
-
-                    case LocalDeclarationStatementSyntax local:
-                        ParseLocalDeclaration(local, info);
-                        break;
-
-                    case ReturnStatementSyntax:
-                        break;
-
-                    default:
-                        info.Diagnostics.Add(Diagnostic.Create(
-                            MappingDiagnostics.InvalidBuildMapShape,
-                            statement.GetLocation(),
-                            classSymbol.Name,
-                            statement.ToString().Trim()));
-                        break;
-                }
-            }
-            
-            var primaryKey = info.ModelToEntity
-                .FirstOrDefault(k => k.IsPrimary && !string.IsNullOrWhiteSpace(k.ToColumn));
-
-            if (primaryKey is not null)
-            {
-                foreach (var link in info.ModelToEntity
-                             .Where(k => !string.IsNullOrWhiteSpace(k.AliasProperty)))
-                {
-                    info.CteUpdateMeta.Add(new CteUpdateMetaInfo
-                    {
-                        NavigationAlias          = link.AliasProperty!,
-                        ForeignKeyColumn         = link.AliasProperty + "Id",
-                        OwningPrimaryKeyColumn   = primaryKey.ToColumn!,
-                        RelatedEntityTypeName    = link.EntityType.Name,
-                        RelatedSurrogateIdColumn = "Id",
-                        RelatedNaturalKeyColumn  = link.ToColumn ?? string.Empty
-                    });
-                }
-            }
-
-            if (info.ModelToEntityTypes.Count == 1)
-            {
-                info.EntityType = info.ModelToEntityTypes[0];
-                info.IsEntity = true;
-            }
             return info;
         }
-        
-        private static void ParseLocalDeclaration(
-            LocalDeclarationStatementSyntax local,
-            MappingClassInfo info)
+
+        var syntax =
+            definitionProperty
+                .DeclaringSyntaxReferences
+                .FirstOrDefault()
+                ?.GetSyntax(ct);
+
+        if (syntax is not PropertyDeclarationSyntax property)
+            return info;
+
+        var expression = GetPropertyExpression(property);
+
+        if (expression == null)
+            return info;
+
+        var initializer = GetObjectInitializer(expression);
+
+        if (initializer == null)
+            return info;
+
+        foreach (var assignment in initializer.Expressions
+                     .OfType<AssignmentExpressionSyntax>())
         {
-            foreach (var variable in local.Declaration.Variables)
+            ct.ThrowIfCancellationRequested();
+
+            var name =
+                (assignment.Left as IdentifierNameSyntax)
+                ?.Identifier.Text;
+
+            switch (name)
             {
-                if (variable.Initializer?.Value is not ObjectCreationExpressionSyntax { Initializer: not null } creation)
-                    continue;
+                case "Model":
+                    info.ModelType =
+                        GetTypeSymbol(
+                            assignment.Right,
+                            semanticModel);
+                    break;
 
-                // Don't filter by type name — BuildMap uses `var map = new NodeMap { ... }`
-                // so the declared type is `var`, not `NodeMap`.
-                foreach (var expr in creation.Initializer.Expressions.OfType<AssignmentExpressionSyntax>())
-                {
-                    var propName = (expr.Left as IdentifierNameSyntax)?.Identifier.Text;
-                    var value = EvaluateStringLikeExpression(expr.Right);
-                    if (propName is null || value is null) continue;
-
-                    switch (propName)
-                    {
-                        case "Schema":
-                            info.Schema = value;
-                            break;
-                        case "Prefix":
-                            info.Prefix = value;
-                            break;
-                    }
-                }
-            }
-        }
-        
-        private static void ParseAssignment(
-            AssignmentExpressionSyntax assign,
-            MappingClassInfo info)
-        {
-            if (assign.Left is not MemberAccessExpressionSyntax { Name.Identifier.Text: var propName })
-                return;
-
-            var value = EvaluateStringLikeExpression(assign.Right);
-            if (value is null) return;
-
-            switch (propName)
-            {
                 case "Schema":
-                    info.Schema = value;
+                    info.Schema =
+                        EvaluateStringLikeExpression(
+                            assignment.Right);
                     break;
-                case "Prefix":
-                    info.Prefix = value;
+
+                case "Entities":
+                    ParseEntities(
+                        assignment.Right,
+                        info,
+                        semanticModel);
+                    break;
+
+                case "UpsertKeys":
+                    ParseUpsertKeys(
+                        assignment.Right,
+                        info);
+                    break;
+
+                case "Fields":
+                    ParseFields(
+                        assignment.Right,
+                        info);
+                    break;
+
+                case "Graph":
+                    ParseGraph(
+                        assignment.Right,
+                        info);
                     break;
             }
         }
 
-        private static void ParseInvocation(
-            InvocationExpressionSyntax invocation,
-            MappingClassInfo info,
-            SemanticModel semanticModel)
+        // Nothing above sets the singular EntityType — only ModelToEntity gets
+        // populated (via ParseEntities). Several downstream emitters (PlannerEmitter,
+        // MetadataEmitter, MaterializerEmitter) still read info.EntityType directly
+        // for simple/non-composite models, and were throwing/crashing because it was
+        // always null. Derive it here from whichever link is marked primary so this
+        // is fixed once, at the source, instead of needing the same patch applied
+        // separately to every downstream consumer.
+        info.EntityType ??=
+            info.ModelToEntity
+                .FirstOrDefault(k => k.IsPrimary)
+                ?.EntityType;
+
+        return info;
+    }
+
+
+    private static ExpressionSyntax? GetPropertyExpression(
+        PropertyDeclarationSyntax property)
+    {
+        // => new()
+        if (property.ExpressionBody != null)
+            return property.ExpressionBody.Expression;
+
+
+        if (property.AccessorList != null)
         {
-            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-                return;
+            var getter =
+                property.AccessorList.Accessors
+                    .FirstOrDefault(x =>
+                        x.Keyword.Text == "get");
 
-            var memberName = memberAccess.Name is GenericNameSyntax generic
-                ? generic.Identifier.Text
-                : memberAccess.Name.Identifier.Text;
 
-            switch (memberName)
+            // get => new()
+            if (getter?.ExpressionBody != null)
+                return getter.ExpressionBody.Expression;
+
+
+            // get
+            // {
+            //     return new MappingDefinition();
+            // }
+            if (getter?.Body != null)
             {
-                case "AddModelToEntity":
-                    ParseAddModelToEntity(invocation, memberAccess, info, semanticModel);
-                    return;
-
-                case "Add" when memberAccess.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "FieldMaps" }:
-                    ParseFieldMapAdd(invocation, info);
-                    return;
-
-                case "AddRange" when memberAccess.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "FieldMaps" }:
-                    ParseFieldMapAddRange(invocation, info);
-                    return;
-
-                case "Add" when memberAccess.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "ExcludedFieldMappings" }:
-                    ParseExcludedFieldMapAdd(invocation, info);
-                    return;
-
-                case "Add" when memberAccess.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "ModelChildren" }:
-                    ParseModelChildAdd(invocation, info);
-                    return;
-
-                case "Add" when memberAccess.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "UpsertKeys" }:
-                case "Add" when memberAccess.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "EntityChildren" }:
-                case "Add" when memberAccess.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "EntityChildrenRelated" }:
-                    return;
-
-                default:
-                    info.Diagnostics.Add(Diagnostic.Create(
-                        MappingDiagnostics.InvalidBuildMapShape,
-                        invocation.GetLocation(),
-                        info.ClassSymbol.Name,
-                        invocation.ToString()));
-                    return;
+                return getter.Body.Statements
+                    .OfType<ReturnStatementSyntax>()
+                    .FirstOrDefault()
+                    ?.Expression;
             }
         }
 
-        private static void ParseAddModelToEntity(
-            InvocationExpressionSyntax invocation,
-            MemberAccessExpressionSyntax memberAccess,
-            MappingClassInfo info,
-            SemanticModel semanticModel)
+        return null;
+    }
+
+
+    private static InitializerExpressionSyntax? GetObjectInitializer(
+        ExpressionSyntax expression)
+    {
+        return expression switch
         {
-            if (memberAccess.Name is not GenericNameSyntax { TypeArgumentList.Arguments: { Count: 2 } typeArgs })
-                return;
+            ObjectCreationExpressionSyntax obj =>
+                obj.Initializer,
 
-            if (semanticModel.GetTypeInfo(typeArgs[1]).Type is not INamedTypeSymbol entityTypeSymbol)
-                return;
+            ImplicitObjectCreationExpressionSyntax obj =>
+                obj.Initializer,
 
-            info.ModelToEntityTypes.Add(entityTypeSymbol);
+            _ => null
+        };
+    }
 
-            var args = invocation.ArgumentList.Arguments;
 
-            // fk (TModel -> key), pk (TEntity -> key), alias (TModel -> object?, optional, 3rd positional or named "alias")
-            var modelKeyProp = args.Count >= 1 ? ExtractLambdaMemberName(args[0].Expression) : null;
-            var entityKeyProp = args.Count >= 2 ? ExtractLambdaMemberName(args[1].Expression) : null;
+    private static INamedTypeSymbol? GetTypeSymbol(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel)
+    {
+        if (expression is TypeOfExpressionSyntax typeOf)
+        {
+            return semanticModel
+                .GetTypeInfo(typeOf.Type)
+                .Type as INamedTypeSymbol;
+        }
 
-            var aliasArg = args
-                               .Where(a => a.NameColon?.Name.Identifier.Text == "alias")
-                               .Select(a => (ArgumentSyntax?)a)
-                               .FirstOrDefault()
-                           ?? (args.Count >= 3 && args[2].NameColon is null ? args[2] : null);
+        return null;
+    }
 
-            var aliasProperty = aliasArg is not null ? ExtractLambdaMemberName(aliasArg.Expression) : null;
 
-            info.ModelToEntity.Add(new EntityKeyInfo
+    private static void ParseEntities(
+        ExpressionSyntax expression,
+        MappingClassInfo info,
+        SemanticModel semanticModel)
+    {
+        foreach (var element in GetCollectionElements(expression))
+        {
+            var initializer = GetObjectInitializer(element);
+
+            if (initializer == null)
+                continue;
+
+
+            var entity = new EntityKeyInfo
             {
-                EntityType = entityTypeSymbol,
-                To = entityTypeSymbol.Name,
-                ToColumn = entityKeyProp,
-                FromColumn = modelKeyProp,
-                AliasProperty = aliasProperty   // null/empty for primary links, real alias name otherwise
-            });
-        }
-
-        private static string? ExtractLambdaMemberName(ExpressionSyntax expr)
-        {
-            if (expr is not SimpleLambdaExpressionSyntax { Body: MemberAccessExpressionSyntax memberAccess })
-                return null;
-
-            return memberAccess.Name.Identifier.Text;
-        }
-
-        private static void ParseFieldMapAdd(InvocationExpressionSyntax invocation, MappingClassInfo info)
-        {
-            var arg = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-            if (arg is ObjectCreationExpressionSyntax creation)
-                TryParseFieldMapCreation(creation, info);
-        }
-
-        private static void ParseFieldMapAddRange(InvocationExpressionSyntax invocation, MappingClassInfo info)
-        {
-            var arg = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-
-            SeparatedSyntaxList<ExpressionSyntax>? maybeElements = arg switch
-            {
-                ArrayCreationExpressionSyntax { Initializer: { } init } => init.Expressions,
-                ImplicitArrayCreationExpressionSyntax { Initializer: { } init } => init.Expressions,
-                InitializerExpressionSyntax init => init.Expressions,
-                _ => (SeparatedSyntaxList<ExpressionSyntax>?)null
+                EntityType = null!
             };
 
-            if (maybeElements is not { } elements)
-                return;
 
-            foreach (var element in elements)
+            foreach (var assignment in initializer.Expressions
+                         .OfType<AssignmentExpressionSyntax>())
             {
-                if (element is ObjectCreationExpressionSyntax creation)
-                    TryParseFieldMapCreation(creation, info);
-            }
-        }
+                var name =
+                    (assignment.Left as IdentifierNameSyntax)
+                    ?.Identifier.Text;
 
-        private static void TryParseFieldMapCreation(ObjectCreationExpressionSyntax creation, MappingClassInfo info)
-        {
-            if (creation.Initializer is null)
-                return;
 
-            string? sourceName = null, destEntity = null, destName = null;
-
-            foreach (var assign in creation.Initializer.Expressions.OfType<AssignmentExpressionSyntax>())
-            {
-                var propName = (assign.Left as IdentifierNameSyntax)?.Identifier.Text;
-                switch (propName)
+                switch (name)
                 {
-                    case "SourceName":
-                        sourceName = EvaluateStringLikeExpression(assign.Right);
+                    case "Entity":
+                        entity.EntityType =
+                            GetTypeSymbol(
+                                assignment.Right,
+                                semanticModel);
                         break;
-                    case "DestinationEntity":
-                        destEntity = EvaluateStringLikeExpression(assign.Right);
+
+                    case "ModelKey":
+                        entity.FromColumn =
+                            EvaluateStringLikeExpression(
+                                assignment.Right);
                         break;
-                    case "DestinationName":
-                        destName = EvaluateStringLikeExpression(assign.Right);
+
+                    case "EntityKey":
+                        entity.ToColumn =
+                            EvaluateStringLikeExpression(
+                                assignment.Right);
+                        break;
+
+                    case "AliasProperty":
+                        entity.AliasProperty =
+                            EvaluateStringLikeExpression(
+                                assignment.Right);
+                        break;
+
+                    case "IsPrimary":
+                        entity.IsPrimary =
+                            assignment.Right.ToString()
+                                .Equals(
+                                    "true",
+                                    StringComparison.OrdinalIgnoreCase);
                         break;
                 }
             }
 
-            if (sourceName is null || destEntity is null || destName is null)
-            {
-                info.Diagnostics.Add(Diagnostic.Create(
-                    MappingDiagnostics.InvalidBuildMapShape,
-                    creation.GetLocation(),
-                    info.ClassSymbol.Name,
-                    "FieldMap initializer missing SourceName/DestinationEntity/DestinationName"));
-                return;
-            }
 
-            info.ManualFieldMaps.Add(new FieldMapInfo
+            if (entity.EntityType != null)
             {
-                SourceName = sourceName,
-                DestinationEntity = destEntity,
-                DestinationName = destName
-            });
+                info.ModelToEntity.Add(entity);
+            }
         }
-
-        private static void ParseExcludedFieldMapAdd(InvocationExpressionSyntax invocation, MappingClassInfo info)
+    }
+    
+        private static void ParseUpsertKeys(
+        ExpressionSyntax expression,
+        MappingClassInfo info)
+    {
+        foreach (var element in GetCollectionElements(expression))
         {
-            var arg = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-            if (arg is not ObjectCreationExpressionSyntax { Initializer: not null } creation)
-                return;
+            var initializer = GetObjectInitializer(element);
 
-            string? sourceName = null, destEntity = null;
-            foreach (var assign in creation.Initializer.Expressions.OfType<AssignmentExpressionSyntax>())
-            {
-                var propName = (assign.Left as IdentifierNameSyntax)?.Identifier.Text;
-                if (propName == "SourceName")
-                    sourceName = EvaluateStringLikeExpression(assign.Right);
-                else if (propName == "DestinationEntity")
-                    destEntity = EvaluateStringLikeExpression(assign.Right);
-            }
+            if (initializer == null)
+                continue;
 
-            if (sourceName is not null && destEntity is not null)
+
+            string? entity = null;
+            string? column = null;
+
+
+            foreach (var assignment in initializer.Expressions
+                         .OfType<AssignmentExpressionSyntax>())
             {
-                info.ExcludedFieldMappings.Add(new ExcludedFieldMappingInfo
+                var name =
+                    (assignment.Left as IdentifierNameSyntax)
+                    ?.Identifier.Text;
+
+
+                switch (name)
                 {
-                    SourceName = sourceName,
-                    DestinationEntity = destEntity
-                });
+                    case "Entity":
+                        entity =
+                            EvaluateTypeName(
+                                assignment.Right);
+                        break;
+
+                    case "Column":
+                        column =
+                            EvaluateStringLikeExpression(
+                                assignment.Right);
+                        break;
+                }
             }
-        }
 
-        // map.ModelChildren.Add(new ModelKey { To = nameof(SomeType) })
-        private static void ParseModelChildAdd(InvocationExpressionSyntax invocation, MappingClassInfo info)
-        {
-            var arg = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-            if (arg is not ObjectCreationExpressionSyntax { Initializer: not null } creation)
-                return;
 
-            foreach (var assign in creation.Initializer.Expressions.OfType<AssignmentExpressionSyntax>())
+            if (entity != null && column != null)
             {
-                if ((assign.Left as IdentifierNameSyntax)?.Identifier.Text != "To")
-                    continue;
-
-                var value = EvaluateStringLikeExpression(assign.Right);
-                if (value is not null)
-                    info.ModelChildren.Add(new ModelChildInfo { To = value });
-            }
-        }
-
-        private static string? EvaluateStringLikeExpression(ExpressionSyntax expr)
-        {
-            switch (expr)
-            {
-                case InvocationExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.Text: "nameof" } } nameofInvocation:
-                    var nameofArg = nameofInvocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-                    return nameofArg switch
+                info.UpsertKeys.Add(
+                    new UpsertKeyInfo
                     {
-                        MemberAccessExpressionSyntax ma => ma.Name.Identifier.Text,
-                        IdentifierNameSyntax id => id.Identifier.Text,
-                        _ => null
-                    };
-
-                case LiteralExpressionSyntax literal:
-                    return literal.Token.ValueText;
-
-                default:
-                    return null;
+                        Entity = entity,
+                        Key = column
+                    });
             }
         }
+    }
+
+
+    private static IEnumerable<ExpressionSyntax> GetCollectionElements(
+        ExpressionSyntax expression)
+    {
+        switch (expression)
+        {
+            case CollectionExpressionSyntax collection:
+                foreach (var element in collection.Elements)
+                {
+                    if (element is ExpressionElementSyntax expr)
+                        yield return expr.Expression;
+                }
+
+                yield break;
+
+
+            case ImplicitArrayCreationExpressionSyntax array:
+                foreach (var item in array.Initializer.Expressions)
+                    yield return item;
+
+                yield break;
+
+
+            case ArrayCreationExpressionSyntax array:
+                if (array.Initializer != null)
+                {
+                    foreach (var item in array.Initializer.Expressions)
+                        yield return item;
+                }
+
+                yield break;
+        }
+    }
+
+
+    private static void ParseFields(
+        ExpressionSyntax expression,
+        MappingClassInfo info)
+    {
+        foreach (var element in GetCollectionElements(expression))
+        {
+            var initializer = GetObjectInitializer(element);
+
+            if (initializer == null)
+                continue;
+
+            var field = new FieldInfo();
+
+            foreach (var assignment in initializer.Expressions
+                         .OfType<AssignmentExpressionSyntax>())
+            {
+                var name =
+                    (assignment.Left as IdentifierNameSyntax)
+                    ?.Identifier.Text;
+
+                switch (name)
+                {
+                    case "Source":
+                        field.SourceName =
+                            EvaluateStringLikeExpression(
+                                assignment.Right);
+                        break;
+
+                    case "Destination":
+                        field.DestinationName =
+                            EvaluateStringLikeExpression(
+                                assignment.Right);
+                        break;
+
+                    case "Entity":
+                        field.DestinationEntity =
+                            EvaluateTypeName(
+                                assignment.Right);
+                        break;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(field.SourceName) &&
+                !string.IsNullOrWhiteSpace(field.DestinationEntity) &&
+                !string.IsNullOrWhiteSpace(field.DestinationName))
+            {
+                info.FieldMaps.Add(field);
+            }
+        }
+    }
+
+
+    private static void ParseGraph(
+        ExpressionSyntax expression,
+        MappingClassInfo info)
+    {
+        var initializer = GetObjectInitializer(expression);
+
+        if (initializer == null)
+            return;
+
+
+        var graph = new GraphInfo();
+
+
+        foreach (var assignment in initializer.Expressions
+                     .OfType<AssignmentExpressionSyntax>())
+        {
+            var name =
+                (assignment.Left as IdentifierNameSyntax)
+                ?.Identifier.Text;
+
+
+            switch (name)
+            {
+                case "GraphName":
+                    graph.GraphName =
+                        EvaluateStringLikeExpression(
+                            assignment.Right) ?? "";
+                    break;
+
+                case "EdgeLabel":
+                    graph.EdgeLabel =
+                        EvaluateStringLikeExpression(
+                            assignment.Right) ?? "";
+                    break;
+
+                case "EdgeKey":
+                    graph.EdgeKey =
+                        EvaluateStringLikeExpression(
+                            assignment.Right) ?? "";
+                    break;
+
+                case "From":
+                    graph.From =
+                        ParseVertex(
+                            assignment.Right);
+                    break;
+
+                case "To":
+                    graph.To =
+                        ParseVertex(
+                            assignment.Right);
+                    break;
+
+                case "FromJoinColumn":
+                    graph.FromJoinColumn =
+                        EvaluateStringLikeExpression(
+                            assignment.Right) ?? "";
+                    break;
+
+                case "ToJoinColumn":
+                    graph.ToJoinColumn =
+                        EvaluateStringLikeExpression(
+                            assignment.Right) ?? "";
+                    break;
+            }
+        }
+
+
+        info.Graph = graph;
+    }
+
+
+    private static VertexInfo? ParseVertex(
+        ExpressionSyntax expression)
+    {
+        var initializer = GetObjectInitializer(expression);
+
+        if (initializer == null)
+            return null;
+
+
+        var vertex = new VertexInfo();
+
+
+        foreach (var assignment in initializer.Expressions
+                     .OfType<AssignmentExpressionSyntax>())
+        {
+            var name =
+                (assignment.Left as IdentifierNameSyntax)
+                ?.Identifier.Text;
+
+
+            switch (name)
+            {
+                case "Label":
+                    vertex.Label =
+                        EvaluateStringLikeExpression(
+                            assignment.Right) ?? "";
+                    break;
+
+                case "KeyColumn":
+                    vertex.KeyColumn =
+                        EvaluateStringLikeExpression(
+                            assignment.Right) ?? "";
+                    break;
+
+                case "Alias":
+                    vertex.Alias =
+                        EvaluateStringLikeExpression(
+                            assignment.Right);
+                    break;
+            }
+        }
+
+
+        return vertex;
+    }
+
+
+    private static string? EvaluateStringLikeExpression(
+        ExpressionSyntax expression)
+    {
+        if (expression is InvocationExpressionSyntax invocation &&
+            invocation.Expression is IdentifierNameSyntax identifier &&
+            identifier.Identifier.Text == "nameof")
+        {
+            var arg =
+                invocation.ArgumentList.Arguments
+                    .FirstOrDefault()
+                    ?.Expression;
+
+
+            return arg switch
+            {
+                IdentifierNameSyntax id =>
+                    id.Identifier.Text,
+
+                MemberAccessExpressionSyntax member =>
+                    member.Name.Identifier.Text,
+
+                _ => null
+            };
+        }
+
+
+        if (expression is LiteralExpressionSyntax literal)
+            return literal.Token.ValueText;
+
+
+        // NOTE: interpolated strings (e.g. `$"{nameof(X)}{nameof(Y)}"`, used for
+        // vertex aliases in graph mapping definitions) are not handled here and
+        // will silently return null. If any Definition uses an interpolated
+        // string for a string-valued property, that value will be dropped.
+        // Add an InterpolatedStringExpressionSyntax case here if that's in use.
+
+        return null;
+    }
+
+
+    private static string? EvaluateTypeName(
+        ExpressionSyntax expression)
+    {
+        if (expression is TypeOfExpressionSyntax typeOf)
+        {
+            return typeOf.Type
+                .ToString()
+                .Split('.')
+                .Last();
+        }
+
+        return null;
     }
 }

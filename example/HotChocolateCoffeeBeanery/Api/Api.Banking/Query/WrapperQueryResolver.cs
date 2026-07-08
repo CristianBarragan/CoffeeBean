@@ -4,6 +4,7 @@ using Domain.Model;
 using HotChocolate.Resolvers;
 using HotChocolate.Types.Pagination;
 using CoffeeBeanery.GraphQL.Core.Sql;
+using Domain.Shared;
 
 namespace Api.Banking.Query;
 

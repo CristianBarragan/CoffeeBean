@@ -15,12 +15,8 @@ public partial class CustomerCustomerRelationship : Process
     
     public Guid? CustomerCustomerRelationshipKey { get; set; }
     
-    public Guid? OuterCustomerKey { get; set; }
-    
     public int? OuterCustomerId { get; set; }
     public Customer? OuterCustomer { get; set; }
-    
-    public Guid? InnerCustomerKey { get; set; }
     
     public int? InnerCustomerId { get; set; }
     
@@ -50,13 +46,17 @@ public class CustomerCustomerRelationshipEntityConfiguration : IEntityTypeConfig
     public void Configure(EntityTypeBuilder<CustomerCustomerRelationship> builder)
     {
         builder.ToTable(nameof(CustomerCustomerRelationship), _schema);
-
         builder.HasKey(c => c.Id);
-        
         builder.HasIndex(c => new { c.CustomerCustomerRelationshipKey }).IsUnique();
-
-        builder.HasIndex(c => new { c.OuterCustomerKey, c.InnerCustomerKey }).IsUnique();
-        
+        builder.HasIndex(c => new { c.OuterCustomerId, c.InnerCustomerId }).IsUnique();
         builder.Property(c => c.ProcessedDateTime).HasDefaultValueSql("(now() at time zone 'utc')");
+
+        builder.HasOne(c => c.InnerCustomer)
+            .WithMany()
+            .HasForeignKey(c => c.InnerCustomerId);
+
+        builder.HasOne(c => c.OuterCustomer)
+            .WithMany()
+            .HasForeignKey(c => c.OuterCustomerId);
     }
 }

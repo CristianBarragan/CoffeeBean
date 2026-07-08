@@ -2,6 +2,7 @@
 using CoffeeBeanery.GraphQL.Core.Runtime;
 using CoffeeBeanery.GraphQL.Core.Sql;
 using CoffeeBeanery.Service;
+using Domain.Model;
 using FASTER.core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,7 +51,24 @@ namespace Domain.Shared.Extension
             services.AddSingleton<PostgresSqlWriter>();
 
             // ---- Process service ----
-            services.AddScoped(typeof(IProcessService<>), typeof(ProcessService<>));
+            // services.AddScoped(typeof(IProcessService<>), typeof(ProcessService<>));
+            
+            services.AddScoped<IProcessService<Wrapper>>(sp =>
+                new ProcessService<CustomerCustomerEdge, Wrapper>(
+                    sp.GetRequiredService<NpgsqlDataSource>(),
+                    sp.GetRequiredService<IFasterKV<string, string>>(),
+                    sp.GetRequiredService<AdapterLookup>(),
+                    sp.GetRequiredService<IEntityMetaProvider>(),
+                    sp.GetRequiredService<PostgresSqlWriter>(),
+                    sp.GetRequiredService<IPlannerRegistry>(),
+                    wrap: edges => new List<Wrapper>
+                    {
+                        new Wrapper
+                        {
+                            CustomerCustomerEdge = edges,
+                            Model = Model.Model.CustomerCustomerEdge
+                        }
+                    }));
 
             // ---- User-supplied mapping sets ----
             // Registered as a singleton list so NodeBuilder (or equivalent)

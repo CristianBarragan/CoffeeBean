@@ -1,38 +1,42 @@
 ﻿using CoffeeBeanery.GraphQL.Core.Mapping;
-using CoffeeBeanery.GraphQL.Core.Sql;
 using Domain.Model;
 using DataEntity = Database.Entity;
 
 namespace Domain.Shared.Mapping;
 
-public class AccountMappingSet : IMappingSet
+public partial class AccountMapping : IMappingDefinition
 {
-    public void Register()
+    public MappingDefinition Definition => new()
     {
-        new AccountMapping().Register();
-    }
-}
+        Model = typeof(Account),
 
-public sealed partial class AccountMapping : BaseMappingRegistration<Account>
-{
-    protected override NodeMap BuildMap()
-    {
-        var map = new NodeMap
-        {
-            ModelName = nameof(Account),
-            Schema = nameof(DataEntity.Schema.Account),
-            PrimaryKey = nameof(DataEntity.Account.Id)
-        };
+        Schema = nameof(DataEntity.Schema.Account),
 
-        map.AddModelToEntity<Account, DataEntity.Account>(
-            m => m.AccountKey,
-            e => e.AccountKey);
+        Entities =
+        [
+            new()
+            {
+                Entity = typeof(DataEntity.Account),
 
-        map.UpsertKeys.Add(
-            new UpsertKey(
-                nameof(DataEntity.Account),
-                nameof(DataEntity.Account.AccountKey)));
+                ModelKey =
+                    nameof(Account.AccountKey),
 
-        return map;
-    }
+                EntityKey =
+                    nameof(DataEntity.Account.AccountKey),
+
+                IsPrimary = true
+            }
+        ],
+
+        UpsertKeys =
+        [
+            new()
+            {
+                Entity = typeof(DataEntity.Account),
+
+                Column =
+                    nameof(DataEntity.Account.AccountKey)
+            }
+        ]
+    };
 }

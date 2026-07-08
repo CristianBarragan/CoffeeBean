@@ -4,56 +4,75 @@
         <TargetFramework>net9.0</TargetFramework>
         <OutputType>Library</OutputType>
         <PlatformTarget>x64</PlatformTarget>
+
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>latest</LangVersion>
-<!--        <OutputItemType>Analyzer</OutputItemType>-->
-<!--        <ReferenceOutputAssembly>false</ReferenceOutputAssembly>-->
-        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
         <Nullable>enable</Nullable>
-        <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+
         <RootNamespace>Domain.Shared</RootNamespace>
+
+        <!-- Source generator debugging -->
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
-    </PropertyGroup>
 
-    <PropertyGroup>
+        <!-- Enable mapping generator global emit -->
         <IsMappingRoot>true</IsMappingRoot>
+
+        <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
     </PropertyGroup>
 
+
+    <!-- Makes MSBuild property available to the Roslyn generator -->
     <ItemGroup>
         <CompilerVisibleProperty Include="IsMappingRoot" />
     </ItemGroup>
 
+
+    <!-- Source generator -->
     <ItemGroup>
         <ProjectReference Include="..\CoffeeBeanery.GraphQL.Core.Mapping.Generators\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj"
                           OutputItemType="Analyzer"
                           ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+
+    <ItemGroup>
         <PackageReference Include="AWSSDK.Core" Version="4.0.0.19" />
         <PackageReference Include="AWSSDK.RDS" Version="4.0.4.4" />
         <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.1.7" />
+
         <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
+
         <PackageReference Include="FasterKv.Cache.Core" Version="1.0.2" />
+
         <PackageReference Include="HotChocolate" Version="15.1.12" />
         <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.12" />
         <PackageReference Include="HotChocolate.Data" Version="15.1.12" />
         <PackageReference Include="HotChocolate.Types" Version="15.1.12" />
         <PackageReference Include="HotChocolate.Types.Analyzers" Version="15.1.12" />
+
         <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.0" />
+
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.7">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.7" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.7" />
         <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.7" />
         <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.7" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.7" />
+
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.7" />
+
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     </ItemGroup>
 
+
+    <!-- Projects containing model/entity types -->
     <ItemGroup>
         <ProjectReference Include="..\..\Infrastructure\Database\Database.Entity.Banking\Database.Entity.Banking.csproj" />
         <ProjectReference Include="..\..\Infrastructure\Database\Database.Graph.Banking\Database.Graph.Banking.csproj" />

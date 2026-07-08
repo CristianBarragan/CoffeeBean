@@ -19,23 +19,24 @@ public readonly struct UpsertRow
         string? schemaOverride = null,
         string? tableOverride = null)
     {
-        EntityId = entityId;
+        EntityId        = entityId;
+        StorageEntityId = storageEntityId;
         EntityOutputAlias = entityOutputAlias;
-        Values = values;
-        SchemaOverride = schemaOverride;
-        TableOverride = tableOverride;
+        Values          = values;
+        SchemaOverride  = schemaOverride;
+        TableOverride   = tableOverride;
     }
 }
 
 public readonly struct CteResolutionSpec
 {
-    public readonly string NavigationAlias;           // "InnerCustomer"
-    public readonly string ForeignKeyColumn;          // "InnerCustomerId"
-    public readonly string OwningPkColumn;            // "CustomerCustomerRelationshipKey"
-    public readonly ushort OwningPkFieldId;           // index into root.Values to find the PK value
-    public readonly string RelatedTableAlias;         // "InnerCustomerCustomer"
-    public readonly string RelatedSurrogateIdColumn;  // "Id"
-    public readonly string RelatedNaturalKeyColumn;   // "CustomerKey"
+    public readonly string NavigationAlias;
+    public readonly string ForeignKeyColumn;
+    public readonly string OwningPkColumn;
+    public readonly ushort OwningPkFieldId;
+    public readonly string RelatedTableAlias;
+    public readonly string RelatedSurrogateIdColumn;
+    public readonly string RelatedNaturalKeyColumn;
 
     public CteResolutionSpec(
         string navigationAlias,
@@ -59,13 +60,13 @@ public readonly struct CteResolutionSpec
 public readonly struct MutationCteNode
 {
     public readonly ushort EntityId;
-    public readonly ushort StorageEntityId;        // ← add
+    public readonly ushort StorageEntityId;
     public readonly string Alias;
     public readonly ImmutableArray<FieldValue> Values;
     public readonly ImmutableArray<MutationCteNode> Children;
-    public readonly string? SchemaOverride;         // ← add
-    public readonly string? TableOverride;          // ← add
-    public readonly ImmutableArray<string> ConflictColumns; // ← add
+    public readonly string? SchemaOverride;
+    public readonly string? TableOverride;
+    public readonly ImmutableArray<string> ConflictColumns;
 
     public MutationCteNode(
         ushort entityId,
@@ -87,6 +88,29 @@ public readonly struct MutationCteNode
         ConflictColumns = conflictColumns.IsDefault
             ? ImmutableArray<string>.Empty
             : conflictColumns;
+    }
+}
+
+public readonly struct FieldMapSpec
+{
+    public readonly string SourceName;
+    public readonly ushort DestinationEntity;
+    public readonly string DestinationName;
+    public readonly string SourceAlias;
+    public readonly string DestinationAlias;
+
+    public FieldMapSpec(
+        string sourceName,
+        ushort destinationEntity,
+        string destinationName,
+        string sourceAlias,
+        string destinationAlias)
+    {
+        SourceName = sourceName;
+        DestinationEntity = destinationEntity;
+        DestinationName = destinationName;
+        SourceAlias = sourceAlias;
+        DestinationAlias = destinationAlias;
     }
 }
 
