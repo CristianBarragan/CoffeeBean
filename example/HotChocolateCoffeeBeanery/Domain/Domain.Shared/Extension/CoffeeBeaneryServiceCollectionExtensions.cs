@@ -15,15 +15,15 @@ namespace Domain.Shared.Extension
         public static IServiceCollection AddCoffeeBeanery<TContext>(
             this IServiceCollection services,
             string postgresConnectionString,
-            Action<CoffeeBeaneryBuilder>? configure = null,
+            // Action<CoffeeBeaneryBuilder>? configure = null,
             Action<CoffeeBeaneryOptions>? options = null)
             where TContext : DbContext
         {
             var opts = new CoffeeBeaneryOptions();
             options?.Invoke(opts);
 
-            var builder = new CoffeeBeaneryBuilder();
-            configure?.Invoke(builder);
+            // var builder = new CoffeeBeaneryBuilder();
+            // configure?.Invoke(builder);
 
             // ---- Database ----
             services.AddSingleton(_ => NpgsqlDataSource.Create(postgresConnectionString));
@@ -73,16 +73,16 @@ namespace Domain.Shared.Extension
             // ---- User-supplied mapping sets ----
             // Registered as a singleton list so NodeBuilder (or equivalent)
             // can resolve them all at startup.
-            services.AddSingleton<IReadOnlyList<IMappingSet>>(_ => builder.MappingSets);
+            // services.AddSingleton<IReadOnlyList<IMappingSet>>(_ => builder.MappingSets);
 
             // ---- User-supplied NodeMap overrides ----
             // Registered as a singleton list; applied after all mapping sets
             // have registered their maps.
-            services.AddSingleton<IReadOnlyList<Action<NodeMap>>>(_ => builder.Overrides);
+            // services.AddSingleton<IReadOnlyList<Action<NodeMap>>>(_ => builder.Overrides);
 
             // ---- User-supplied service hooks ----
-            foreach (var hook in builder.ServiceHooks)
-                hook(services);
+            // foreach (var hook in builder.ServiceHooks)
+            //     hook(services);
 
             return services;
         }

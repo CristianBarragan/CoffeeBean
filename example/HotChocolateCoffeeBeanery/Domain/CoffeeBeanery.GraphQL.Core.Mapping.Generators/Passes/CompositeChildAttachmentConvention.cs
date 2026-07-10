@@ -93,7 +93,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
 
                 if (parentHasColumn)
                 {
-                    foreach (var link in childMapping.ModelToEntity)
+                    foreach (var link in childMapping.Definition.Entities)
                     {
                         var hasFk = link.EntityType.GetMembers().OfType<IPropertySymbol>()
                             .Any(p => p.Name == parentJoinColumn);

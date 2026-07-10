@@ -95,7 +95,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
              * but they are valid GraphQL child links.
              */
 
-            foreach (var link in info.ModelToEntity)
+            foreach (var link in info.Definition.Entities)
             {
                 if (string.IsNullOrWhiteSpace(link.AliasProperty))
                     continue;

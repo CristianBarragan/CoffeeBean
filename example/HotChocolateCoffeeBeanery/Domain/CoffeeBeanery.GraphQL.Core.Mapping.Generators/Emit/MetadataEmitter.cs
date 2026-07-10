@@ -36,7 +36,7 @@ internal static class MetadataEmitter
 
         // All unique storage entity types — same logic as IdEmitter
         var entityTypes = allMappings
-            .SelectMany(m => m.ModelToEntity)
+            .SelectMany(m => m.Definition.Entities)
             .Where(x => x.EntityType is not null)
             .Select(x => x.EntityType!)
             .GroupBy(
@@ -50,7 +50,7 @@ internal static class MetadataEmitter
 
 
         var entitySchemaLookup = allMappings
-            .SelectMany(m => m.ModelToEntity
+            .SelectMany(m => m.Definition.Entities
                 .Where(x => x.EntityType != null)
                 .Select(x => new
                 {
@@ -155,7 +155,7 @@ internal static class MetadataEmitter
         foreach (var fm in allMappings)
         {
             // DestinationEntity: resolve StorageEntityId from entity type name
-            var entityTypes = m.ModelToEntity
+            var entityTypes = m.Definition.Entities
                 .Where(k => k.EntityType != null)
                 .Select(k => k.EntityType!)
                 .GroupBy(e => e.Name, System.StringComparer.Ordinal)
@@ -197,7 +197,7 @@ internal static class MetadataEmitter
         var name = destinationEntity.ToString();
 
         var entities = models
-            .SelectMany(m => m.ModelToEntity)
+            .SelectMany(m => m.Definition.Entities)
             .Where(x => x.EntityType != null)
             .Select(x => x.EntityType!)
             .GroupBy(x => x.Name, StringComparer.Ordinal)
@@ -242,7 +242,7 @@ internal static class MetadataEmitter
             foreach (var fm in allMappings)
             {
                 // Find the entity that owns this column
-                var owningLink = m.ModelToEntity.FirstOrDefault(k =>
+                var owningLink = m.Definition.Entities.FirstOrDefault(k =>
                     k.EntityType != null &&
                     string.Equals(k.EntityType.Name, fm.EntityTypeName,
                         System.StringComparison.Ordinal));
@@ -286,11 +286,11 @@ internal static class MetadataEmitter
 
         if (fkNavs.Count == 0) return;
 
-        var primaryEntry = info.ModelToEntity
+        var primaryEntry = info.Definition.Entities
             .FirstOrDefault(k => k.IsPrimary && k.EntityType != null);
         if (primaryEntry is null || string.IsNullOrWhiteSpace(primaryEntry.ToColumn)) return;
 
-        var aliasToNaturalKey = info.ModelToEntity
+        var aliasToNaturalKey = info.Definition.Entities
             .Where(k => k.AliasProperty != null && !string.IsNullOrWhiteSpace(k.ToColumn))
             .ToDictionary(k => k.AliasProperty!, k => k,
                 System.StringComparer.OrdinalIgnoreCase);
@@ -426,7 +426,7 @@ internal static class MetadataEmitter
             string dbTable;
             if (IsComposite(m))
             {
-                var primaryEntity = m.ModelToEntity.FirstOrDefault(k => k.IsPrimary)
+                var primaryEntity = m.Definition.Entities.FirstOrDefault(k => k.IsPrimary)
                                     ?? throw new InvalidOperationException(
                                         $"Composite model '{m.ModelType.Name}' has no entry marked isPrimary: true. " +
                                         $"Ensure exactly one AddModelToEntity call passes isPrimary: true.");
@@ -470,7 +470,7 @@ internal static class MetadataEmitter
 
             if (IsComposite(m))
             {
-                var primaryEntity = m.ModelToEntity.FirstOrDefault(k => k.IsPrimary);
+                var primaryEntity = m.Definition.Entities.FirstOrDefault(k => k.IsPrimary);
                 typeForColumns = primaryEntity?.EntityType            // <-- was: ?? m.ModelType
                                  ?? throw new InvalidOperationException(
                                      $"Composite model '{m.ModelType.Name}' has no primary EntityType.");
@@ -497,7 +497,7 @@ internal static class MetadataEmitter
     private static bool IsComposite(
         MappingClassInfo info)
     {
-        return info.ModelToEntity
+        return info.Definition.Entities
             .Where(x => x.EntityType != null)
             .Select(x => x.EntityType!.Name)
             .Distinct(StringComparer.Ordinal)
@@ -541,7 +541,7 @@ internal static class MetadataEmitter
 
             if (keys.Count == 0)
             {
-                keys = m.ModelToEntity
+                keys = m.Definition.Entities
                     .Where(k => k.IsPrimary && !string.IsNullOrWhiteSpace(k.ToColumn))
                     .Select(k => k.ToColumn!)
                     .Distinct(System.StringComparer.OrdinalIgnoreCase)

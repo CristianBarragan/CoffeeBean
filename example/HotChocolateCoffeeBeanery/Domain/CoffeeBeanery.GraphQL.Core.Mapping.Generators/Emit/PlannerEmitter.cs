@@ -77,7 +77,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         internal static bool IsCompositeInfo(MappingClassInfo info)
         {
             string? firstName = null;
-            foreach (var k in info.ModelToEntity)
+            foreach (var k in info.Definition.Entities)
             {
                 var name = k.EntityType?.Name;
                 if (name is null) continue;
@@ -103,7 +103,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
             if (composite)
             {
-                var primaryLink = info.ModelToEntity.FirstOrDefault(k => k.IsPrimary);
+                var primaryLink = info.Definition.Entities.FirstOrDefault(k => k.IsPrimary);
                 var primaryEntityType = primaryLink?.EntityType
                     ?? throw new InvalidOperationException(
                         $"Composite model {info.ModelType.Name} has no primary storage entity.");
@@ -120,7 +120,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 sb.AppendLine();
 
                 // ---- FK-alias secondary joins (InnerCustomer / OuterCustomer etc.) ----
-                foreach (var link in info.ModelToEntity.Where(k =>
+                foreach (var link in info.Definition.Entities.Where(k =>
                     !k.IsPrimary && k.EntityType != null && k.AliasProperty != null))
                 {
                     var relatedEntityType = link.EntityType!;
@@ -163,6 +163,23 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                         sb.AppendLine($"                StorageEntityId.{relatedEntityType.Name},");
                         sb.AppendLine($"                ColumnId.{relatedEntityType.Name}.{prop.Name},");
                         sb.AppendLine($"                \"{alias}\", \"{ToCamel(modelFieldName)}\");");
+                        
+                        sb.AppendLine($"            foreach (var fkChild in node.Children)");
+                        sb.AppendLine($"            {{");
+                        sb.AppendLine($"                if (string.Equals(fkChild.OutputAlias, \"{alias}\",");
+                        sb.AppendLine($"                    System.StringComparison.OrdinalIgnoreCase))");
+                        sb.AppendLine($"                {{");
+                        sb.AppendLine($"                    var childrenOnly = new SelectionIR(");
+                        sb.AppendLine($"                        EntityId.{relatedModel.ModelType.Name},");
+                        sb.AppendLine($"                        \"{alias}\",");
+                        sb.AppendLine($"                        fkChild.IsConditional,");
+                        sb.AppendLine($"                        ImmutableArray<ScalarSelection>.Empty,");
+                        sb.AppendLine($"                        fkChild.Children);");
+                        sb.AppendLine($"                    {relatedModel.ModelType.Name}Planner.Build(childrenOnly, ref builder);");
+                        sb.AppendLine($"                    break;");
+                        sb.AppendLine($"                }}");
+                        sb.AppendLine($"            }}");
+                        sb.AppendLine();
                     }
                     sb.AppendLine();
                 }
@@ -334,7 +351,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             List<MappingClassInfo> models)
         {
             var ownedEntityNames = new HashSet<string>(
-                info.ModelToEntity
+                info.Definition.Entities
                     .Where(k => k.EntityType != null)
                     .Select(k => k.EntityType!.Name),
                 System.StringComparer.Ordinal);
@@ -351,7 +368,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 .OrderBy(n => n, System.StringComparer.Ordinal)
                 .ToList();
 
-            var primaryLink       = info.ModelToEntity.FirstOrDefault(k => k.IsPrimary);
+            var primaryLink       = info.Definition.Entities.FirstOrDefault(k => k.IsPrimary);
             var primaryEntityName = primaryLink?.EntityType?.Name
                                     ?? throw new InvalidOperationException(
                                         $"Composite model {info.ModelType.Name} has no primary storage entity.");
@@ -372,7 +389,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 .ToList();
 
             if (conflictKeys.Count == 0)
-                conflictKeys = info.ModelToEntity
+                conflictKeys = info.Definition.Entities
                     .Where(k => k.IsPrimary && !string.IsNullOrWhiteSpace(k.ToColumn))
                     .Select(k => k.ToColumn!)
                     .Distinct(System.StringComparer.OrdinalIgnoreCase)
@@ -610,7 +627,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
             var fkColumnSet = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
             if (!composite && info.EntityType is not null)
-                foreach (var k in info.ModelToEntity)
+                foreach (var k in info.Definition.Entities)
                     if (!SymbolEqualityComparer.Default.Equals(k.EntityType, info.EntityType) &&
                         k.FromColumn is not null)
                         fkColumnSet.Add(k.FromColumn);
@@ -618,7 +635,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             var entityProps = new Dictionary<string, Dictionary<string, IPropertySymbol>>(System.StringComparer.Ordinal);
             var seenEntities = new HashSet<string>(System.StringComparer.Ordinal);
 
-            foreach (var link in info.ModelToEntity)
+            foreach (var link in info.Definition.Entities)
             {
                 if (link.EntityType is null) continue;
                 var eName = link.EntityType.Name;
@@ -676,7 +693,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             MappingClassInfo currentModel,
             ImmutableArray<MappingClassInfo> allMappings)
         {
-            if (currentModel.ModelToEntity.Any(link =>
+            if (currentModel.Definition.Entities.Any(link =>
                     string.Equals(link.EntityType?.Name, entityTypeName,
                         System.StringComparison.Ordinal)))
                 return currentModel.ModelType.Name;
@@ -684,7 +701,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             var owner = allMappings
                 .Where(m => !IsCompositeInfo(m))
                 .FirstOrDefault(m =>
-                    m.ModelToEntity.Any(link =>
+                    m.Definition.Entities.Any(link =>
                         string.Equals(link.EntityType?.Name, entityTypeName,
                             System.StringComparison.Ordinal)));
 
@@ -717,7 +734,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     var childMapping = allMappings.FirstOrDefault(m =>
                         m.IsModel &&
                         (SymbolEqualityComparer.Default.Equals(m.EntityType, nav.RelatedEntityType) ||
-                         m.ModelToEntity.Any(link =>
+                         m.Definition.Entities.Any(link =>
                              link.IsPrimary &&
                              SymbolEqualityComparer.Default.Equals(link.EntityType, nav.RelatedEntityType))));
 
@@ -788,7 +805,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 if (childMapping is null) continue;
 
                 var childEntityType = childMapping.EntityType
-                    ?? childMapping.ModelToEntity
+                    ?? childMapping.Definition.Entities
                            .FirstOrDefault(k => k.IsPrimary)?.EntityType;
                 if (childEntityType is null) continue;
 

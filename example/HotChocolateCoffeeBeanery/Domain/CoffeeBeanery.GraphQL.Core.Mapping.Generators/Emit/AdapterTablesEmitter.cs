@@ -27,7 +27,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
     ///           ChildLinks = { ... };
     ///   }
     /// </summary>
-    internal static class AdapterTablesEmitter
+    public static class AdapterTablesEmitter
     {
         public static string Emit(
             ImmutableArray<MappingClassInfo> allMappings,
@@ -110,7 +110,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     if (childMapping?.EntityType is null) continue;
 
                     // Confirm the child actually has the FK back to the parent.
-                    var childCarriesFk = childMapping.ModelToEntity.Any(link =>
+                    var childCarriesFk = childMapping.Definition.Entities.Any(link =>
                         link.EntityType.GetMembers().OfType<IPropertySymbol>()
                             .Any(p => p.Name == parentKeyName));
 

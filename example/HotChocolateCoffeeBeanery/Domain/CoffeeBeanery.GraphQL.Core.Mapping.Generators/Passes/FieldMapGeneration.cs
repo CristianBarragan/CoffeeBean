@@ -33,14 +33,14 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
             SourceProductionContext spc,
             bool reportDiagnostics)
         {
-            if (info.ModelToEntity.Count == 0)
+            if (info.Definition.Entities.Count == 0)
                 return;
 
             var modelProperties = info.ModelType.GetMembers().OfType<IPropertySymbol>()
                 .Where(p => p.GetMethod is not null && !p.IsStatic)
                 .ToList();
 
-            var candidateEntities = info.ModelToEntity
+            var candidateEntities = info.Definition.Entities
                 .Select(k => k.EntityType)
                 .Distinct(SymbolEqualityComparer.Default)
                 .Cast<INamedTypeSymbol>()

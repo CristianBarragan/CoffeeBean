@@ -35,7 +35,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
             }
 
             // Model → Entity keys
-            foreach (var key in info.ModelToEntity)
+            foreach (var key in info.Definition.Entities)
             {
                 key.AliasProperty = Next(info.Alias, key.EntityType.Name);
             }

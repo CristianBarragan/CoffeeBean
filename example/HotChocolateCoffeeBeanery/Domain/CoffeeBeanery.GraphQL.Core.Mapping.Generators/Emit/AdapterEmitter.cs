@@ -154,7 +154,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 }
             }
 
-            foreach (var link in model.ModelToEntity)
+            foreach (var link in model.Definition.Entities)
             {
                 if (string.IsNullOrWhiteSpace(link.AliasProperty))
                     continue;
@@ -162,7 +162,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
                 var childMapping =
                     allMappings.FirstOrDefault(m =>
-                        m.ModelToEntity.Any(x =>
+                        m.Definition.Entities.Any(x =>
                             x.IsPrimary &&
                             SymbolEqualityComparer.Default.Equals(x.EntityType, link.EntityType)));
 

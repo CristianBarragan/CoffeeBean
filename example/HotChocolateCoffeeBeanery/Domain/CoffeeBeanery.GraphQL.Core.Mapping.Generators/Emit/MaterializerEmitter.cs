@@ -25,19 +25,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 .OrderBy(m => m.ModelType.Name, System.StringComparer.Ordinal)
                 .ToList();
 
-            // NOTE: previously filtered on `m.IsEntity && m.EntityType is not null`,
-            // which assumed a separate entity-side MappingClassInfo registration.
-            // Under the current IMappingDefinition/Definition architecture there is
-            // no such thing - every discovered MappingClassInfo is a model, and
-            // IsEntity is never set to true by MappingClassParser. Filtering on it
-            // silently produced an empty `entities` list (no compile error - the
-            // MaterializerRegistry switch just had no cases and always fell through
-            // to `return null`), which breaks every query at runtime with no build
-            // failure to signal it. Instead, derive the distinct set of storage
-            // entity types directly from every model's ModelToEntity links, which
-            // is where entity types are actually declared now.
             var entities = allMappings
-                .SelectMany(m => m.ModelToEntity)
+                .SelectMany(m => m.Definition.Entities)
                 .Select(k => k.EntityType)
                 .Where(t => t is not null)
                 .GroupBy(t => t!.Name, System.StringComparer.Ordinal)
@@ -225,11 +214,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         {
             if (PlannerEmitter.IsCompositeInfo(model)) return;
 
-            // Fall back to deriving from ModelToEntity directly rather than only
-            // trusting info.EntityType — keeps this resilient even if the parser's
-            // EntityType derivation step is skipped or ordered differently.
             var entityType = model.EntityType
-                ?? model.ModelToEntity.FirstOrDefault(k => k.IsPrimary)?.EntityType;
+                ?? model.Definition.Entities.FirstOrDefault(k => k.IsPrimary)?.EntityType;
             if (entityType is null) return;
 
             var fields = PlannerEmitter.ComputeFieldMappingsEagerPublic(model, composite: false)
@@ -264,7 +250,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         {
             var composite = PlannerEmitter.IsCompositeInfo(info);
 
-            var primaryLink       = info.ModelToEntity.FirstOrDefault(k => k.IsPrimary);
+            var primaryLink       = info.Definition.Entities.FirstOrDefault(k => k.IsPrimary);
             var primaryEntityName = primaryLink?.EntityType?.Name ?? info.EntityType?.Name;
             if (primaryEntityName is null) return;
 
@@ -280,7 +266,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
             var childLinks = PlannerEmitter.ComputeChildLinks(info, allMappings, navResult).ToList();
 
-            var fkNavAliases = info.ModelToEntity
+            var fkNavAliases = info.Definition.Entities
                 .Where(k => !k.IsPrimary && !string.IsNullOrWhiteSpace(k.AliasProperty))
                 .Select(k =>
                 {

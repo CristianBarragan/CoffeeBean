@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
@@ -10,19 +12,17 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         // Graph/model type
         public INamedTypeSymbol ModelType { get; set; } = null!;
 
-        // Primary Entity type for this mapping
+        // Primary Entity type — derived from Definition.Entities where IsPrimary = true.
+        // Set explicitly by MappingClassParser after ParseEntities runs.
         public INamedTypeSymbol? EntityType { get; set; }
-
 
         public string ClassName =>
             ClassSymbol.Name;
-
 
         public string Namespace =>
             ClassSymbol.ContainingNamespace?.IsGlobalNamespace == false
                 ? ClassSymbol.ContainingNamespace.ToDisplayString()
                 : "";
-
 
         public string Alias { get; set; } = "";
 
@@ -30,83 +30,76 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         public string Schema { get; set; } = "";
 
-
         public bool IsModel { get; set; }
 
         public bool IsEntity { get; set; }
 
         public bool IsGraph { get; set; }
 
-
-
         public GraphInfo? Graph { get; set; }
 
+        // Always initialised — parser accesses Definition.Entities without null-checking.
+        public MappingDefinitionInfo Definition { get; set; } = new MappingDefinitionInfo();
 
+        // ---------------------------------------------------------------
+        // ModelToEntity — computed bridge from Definition.Entities.
+        //
+        // All emitters (PlannerEmitter, MetadataEmitter, MaterializerEmitter)
+        // read this list. It is derived lazily from Definition.Entities so the
+        // new IMappingDefinition parsing path and the old emitter path both work
+        // without rewriting every downstream consumer.
+        //
+        // Invalidate the cache by setting _modelToEntity = null if Definition
+        // is replaced after initial parse (unusual but possible in passes).
+        // ---------------------------------------------------------------
+        private List<EntityKeyInfo>? _modelToEntity;
+
+        public IReadOnlyList<EntityKeyInfo> ModelToEntity
+        {
+            get
+            {
+                if (_modelToEntity is null)
+                {
+                    _modelToEntity = (Definition?.Entities ?? Enumerable.Empty<EntityDefinitionInfo>())
+                        .Select(e => new EntityKeyInfo
+                        {
+                            EntityType   = e.EntityType,
+                            FromColumn   = e.FromColumn,
+                            ToColumn     = e.ToColumn,
+                            AliasProperty = e.AliasProperty,
+                            IsPrimary    = e.IsPrimary
+                        })
+                        .ToList();
+                }
+                return _modelToEntity;
+            }
+        }
 
         /// <summary>
-        /// All explicit Model -> Entity mappings.
-        ///
-        /// Example:
-        ///
-        /// CustomerCustomerEdge
-        ///
-        ///   -> CustomerCustomerRelationship
-        ///   -> Customer (InnerCustomer)
-        ///   -> Customer (OuterCustomer)
-        ///
+        /// Invalidates the ModelToEntity cache after Definition.Entities is mutated.
+        /// Call this in any pass that adds/removes entities from Definition after
+        /// the initial parse.
         /// </summary>
-        public List<EntityKeyInfo> ModelToEntity { get; }
-            = new();
+        public void InvalidateModelToEntityCache() => _modelToEntity = null;
 
+        public List<FieldInfo> FieldMaps { get; } = new();
 
+        public List<FieldInfo> ManualFieldMaps { get; } = new();
 
-        /// <summary>
-        /// Unique Entity symbols referenced by ModelToEntity.
-        /// </summary>
-        public List<INamedTypeSymbol> ModelToEntityTypes { get; }
-            = new();
+        public List<ExcludedFieldMappingInfo> ExcludedFieldMappings { get; } = new();
 
+        public List<ModelChildInfo> ModelChildren { get; } = new();
 
+        public List<UpsertKeyInfo> UpsertKeys { get; } = new();
 
-        public List<FieldInfo> FieldMaps { get; }
-            = new();
+        public List<Diagnostic> Diagnostics { get; } = new();
 
+        public List<AutoChildAttachmentInfo> AutoChildAttachments { get; } = new();
 
-        public List<FieldInfo> ManualFieldMaps { get; }
-            = new();
-
-
-        public List<ExcludedFieldMappingInfo> ExcludedFieldMappings { get; }
-            = new();
-
-
-        public List<ModelChildInfo> ModelChildren { get; }
-            = new();
-
-
-        public List<UpsertKeyInfo> UpsertKeys { get; }
-            = new();
-
-
-        public List<Diagnostic> Diagnostics { get; }
-            = new();
-
-
-
-        public List<AutoChildAttachmentInfo> AutoChildAttachments { get; }
-            = new();
-
-
-
-        public List<CteUpdateMetaInfo> CteUpdateMeta { get; }
-            = new();
-
-
+        public List<CteUpdateMetaInfo> CteUpdateMeta { get; } = new();
 
         public string Id { get; set; } = "";
     }
-
-
 
     public sealed class EntityKeyInfo
     {
@@ -114,76 +107,58 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         public string AliasFrom { get; set; } = "";
 
-
         public string? FromColumn { get; set; }
-
 
         public string To { get; set; } = "";
 
         public string AliasTo { get; set; } = "";
 
-
         public string? ToColumn { get; set; }
 
-
-        // Entity type for this mapping entry
         public required INamedTypeSymbol EntityType { get; set; }
 
-
-        // Model navigation alias:
-        //
-        // InnerCustomer
-        // OuterCustomer
-        //
         public string? AliasProperty { get; set; }
-
 
         public bool IsPrimary { get; set; }
     }
 
-
-
     public sealed class CteUpdateMetaInfo
     {
-        public required string NavigationAlias { get; init; }
+        public required string NavigationAlias { get; set; }
 
-        public required string ForeignKeyColumn { get; init; }
+        public required string ForeignKeyColumn { get; set; }
 
-        public required string OwningPrimaryKeyColumn { get; init; }
+        public required string OwningPrimaryKeyColumn { get; set; }
 
-        public required string RelatedEntityTypeName { get; init; }
+        public required string RelatedEntityTypeName { get; set; }
 
-        public required string RelatedSurrogateIdColumn { get; init; }
+        public required string RelatedSurrogateIdColumn { get; set; }
 
-        public required string RelatedNaturalKeyColumn { get; init; }
+        public required string RelatedNaturalKeyColumn { get; set; }
     }
-
-
 
     public sealed class AutoChildAttachmentInfo
     {
-        public required string FieldName { get; init; }
+        public required string FieldName { get; set; }
 
-        public required string ToModelName { get; init; }
+        public required string ToModelName { get; set; }
 
-        public required INamedTypeSymbol ParentEntityType { get; init; }
+        public required INamedTypeSymbol ParentEntityType { get; set; }
 
-        public required string ParentJoinColumn { get; init; }
+        public required string ParentJoinColumn { get; set; }
 
-        public required INamedTypeSymbol ChildEntityType { get; init; }
+        public required INamedTypeSymbol ChildEntityType { get; set; }
 
-        public required string ChildJoinColumn { get; init; }
+        public required string ChildJoinColumn { get; set; }
     }
-
-
 
     public sealed class FieldInfo
     {
-        public string SourceName { get; set; }
+        public string SourceName { get; set; } = "";
 
-        public string DestinationEntity { get; set; }
+        public string DestinationEntity { get; set; } = "";
 
-        public string DestinationName { get; set; }
+        public string DestinationName { get; set; } = "";
 
         public string? SourceAlias { get; set; }
 
@@ -193,53 +168,47 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         public Dictionary<string, int>? ToEnum { get; set; }
 
-        public Dictionary<string,string> EnumOverrides { get; } = [];
+        public Dictionary<string, string> EnumOverrides { get; } = [];
 
         public HashSet<string> EnumIgnore { get; } = [];
-        
+
         public bool IsGenerated { get; set; }
     }
 
-
-
     public sealed class ExcludedFieldMappingInfo
     {
-        public required string SourceName { get; init; }
+        public required string SourceName { get; set; }
 
-        public required string DestinationEntity { get; init; }
+        public required string DestinationEntity { get; set; }
     }
-
-
 
     public sealed class ModelChildInfo
     {
-        public required string To { get; init; }
+        public required string To { get; set; }
     }
-
-
 
     public sealed class UpsertKeyInfo
     {
-        public required string Entity { get; init; }
+        public required string Entity { get; set; }
 
-        public required string Key { get; init; }
+        public required string Key { get; set; }
     }
 
     public sealed class GraphInfo
     {
-        public string GraphName { get; set; }
-        
-        public string EdgeLabel { get; set; }
-        
-        public string EdgeKey { get; set; }
-        
-        public VertexInfo From { get; set; }
-        
-        public VertexInfo To { get; set; }
-        
-        public string FromJoinColumn { get; set; }
-        
-        public string ToJoinColumn { get; set; }
+        public string GraphName { get; set; } = "";
+
+        public string EdgeLabel { get; set; } = "";
+
+        public string EdgeKey { get; set; } = "";
+
+        public VertexInfo? From { get; set; }
+
+        public VertexInfo? To { get; set; }
+
+        public string FromJoinColumn { get; set; } = "";
+
+        public string ToJoinColumn { get; set; } = "";
     }
 
     public sealed class VertexInfo
@@ -253,31 +222,95 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
     public sealed class NavigationInfo
     {
-        public required string NavigationName { get; init; }
+        public required string NavigationName { get; set; }
 
-        public required INamedTypeSymbol RelatedEntityType { get; init; }
+        public required INamedTypeSymbol RelatedEntityType { get; set; }
 
-        public required string ForeignKeyProperty { get; init; }
+        public required string ForeignKeyProperty { get; set; }
 
-        public required string PrincipalKeyProperty { get; init; }
+        public required string PrincipalKeyProperty { get; set; }
 
-        public bool IsCollection { get; init; }
+        public bool IsCollection { get; set; }
 
         public bool TargetIsRoot { get; set; }
     }
 
-
-
     public sealed class NavigationResolutionResult
     {
-        public List<NavigationInfo> Navigations { get; }
-            = new();
-
+        public List<NavigationInfo> Navigations { get; } = new();
 
         public bool HasBlockingAmbiguity { get; set; }
 
+        public List<Diagnostic> PendingDiagnostics { get; } = new();
+    }
 
-        public List<Diagnostic> PendingDiagnostics { get; }
-            = new();
+    public sealed record MappingDefinitionInfo
+    {
+        public INamedTypeSymbol ModelType { get; set; } = null!;
+
+        public string? Schema { get; set; }
+
+        public bool IsGraph { get; set; }
+
+        public List<EntityDefinitionInfo> Entities { get; set; } = [];
+    }
+
+    public sealed record EntityDefinitionInfo
+    {
+        public INamedTypeSymbol EntityType { get; set; } = null!;
+
+        public string FromColumn { get; set; } = string.Empty;
+
+        public string ToColumn { get; set; } = string.Empty;
+
+        public string To => EntityType?.Name ?? string.Empty;
+
+        public string? AliasProperty { get; set; }
+
+        public bool IsPrimary { get; set; }
+    }
+
+    public sealed record FieldDefinitionInfo
+    {
+        public required string Source { get; set; }
+
+        public required INamedTypeSymbol EntityType { get; set; }
+
+        public required string Destination { get; set; }
+
+        public EnumMappingDefinitionInfo? EnumMapping { get; set; }
+    }
+
+    public abstract record EnumMappingDefinitionInfo
+    {
+        public abstract INamedTypeSymbol ModelEnum { get; }
+
+        public abstract INamedTypeSymbol EntityEnum { get; }
+    }
+
+    public sealed record GraphDefinitionInfo
+    {
+        public required string GraphName { get; set; }
+
+        public required string EdgeLabel { get; set; }
+
+        public required string EdgeKey { get; set; }
+
+        public required VertexDefinitionInfo From { get; set; }
+
+        public required VertexDefinitionInfo To { get; set; }
+
+        public required string FromJoinColumn { get; set; }
+
+        public required string ToJoinColumn { get; set; }
+    }
+
+    public sealed class VertexDefinitionInfo
+    {
+        public required string Label { get; set; }
+
+        public required string KeyColumn { get; set; }
+
+        public string? Alias { get; set; }
     }
 }

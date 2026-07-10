@@ -20,7 +20,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
             var entityTypes = allMappings
                 .SelectMany(m =>
-                    m.ModelToEntity
+                    m.Definition.Entities
                         .Where(x => x.EntityType != null)
                         .Select(x => x.EntityType!))
                 .GroupBy(

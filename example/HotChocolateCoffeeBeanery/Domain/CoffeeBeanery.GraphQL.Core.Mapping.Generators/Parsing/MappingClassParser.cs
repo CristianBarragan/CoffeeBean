@@ -118,7 +118,7 @@ internal static class MappingClassParser
         // is fixed once, at the source, instead of needing the same patch applied
         // separately to every downstream consumer.
         info.EntityType ??=
-            info.ModelToEntity
+            info.Definition.Entities
                 .FirstOrDefault(k => k.IsPrimary)
                 ?.EntityType;
 
@@ -262,7 +262,14 @@ internal static class MappingClassParser
 
             if (entity.EntityType != null)
             {
-                info.ModelToEntity.Add(entity);
+                info.Definition.Entities.Add(new EntityDefinitionInfo
+                {
+                    EntityType = entity.EntityType,
+                    FromColumn = entity.FromColumn,
+                    ToColumn = entity.ToColumn,
+                    AliasProperty = entity.AliasProperty,
+                    IsPrimary = entity.IsPrimary
+                });
             }
         }
     }

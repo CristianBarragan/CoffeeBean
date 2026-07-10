@@ -15,8 +15,9 @@ public enum Model
 {
     CustomerCustomerEdge,
     CustomerCustomerRelationship,
-    OuterCustomer,
-    InnerCustomer,
+    Customer,
+    // OuterCustomer,
+    // InnerCustomer,
     ContactPoint,
     CustomerBankingRelationship,
     Product,

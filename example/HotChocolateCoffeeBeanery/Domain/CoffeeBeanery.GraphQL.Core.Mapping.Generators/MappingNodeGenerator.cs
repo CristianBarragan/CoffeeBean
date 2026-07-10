@@ -132,6 +132,14 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 ModelChildrenInference.Apply(info);
                 CompositeChildAttachmentConvention.Apply(info, allMappings);
                 FieldMapGeneration.Apply(info, spc);
+
+                var rootEntityTypes = ResolveRootEntityTypes(allMappings, rootModelTypes);
+
+                var navResult = EntityNavigationConvention.Resolve(info, rootEntityTypes, fluentInverseNav);
+
+                if (navResult.HasBlockingAmbiguity)
+                    return;
+
             }
             catch (Exception ex)
             {
