@@ -1,893 +1,172 @@
-# ☕ GraphQL Coffee Beanery
+# GraphQL Coffee Beanery
 
-> **Compile-time optimized GraphQL query execution for Hot Chocolate using source-generated mappings, Dapper, and Native AOT-friendly architecture.**
+<p align="center">
+  <img src="docs/images/coffee-beanery-logo.png" alt="GraphQL Coffee Beanery" width="300" />
+</p>
 
-GraphQL Coffee Beanery is a high-performance execution engine that transforms GraphQL selection sets into optimized SQL queries using compile-time generated metadata instead of runtime reflection.
+<p align="center">
+  <strong>Compile-time optimized GraphQL execution engine for .NET</strong>
+</p>
 
-Unlike traditional GraphQL data access patterns that rely heavily on DataLoaders, manual projections, or runtime expression trees, Coffee Beanery generates strongly typed mapping metadata during compilation, allowing GraphQL requests to be translated into efficient SQL while remaining fully compatible with Native AOT.
-
-Coffee Beanery is designed to work alongside **Hot Chocolate**, allowing developers to keep their existing GraphQL schema, mutations, and business logic while dramatically reducing boilerplate for complex read operations.
-
----
-
-# Why Coffee Beanery?
-
-Building GraphQL APIs over relational databases usually introduces several challenges:
-
-- N+1 query problems
-- Large numbers of DataLoaders
-- Runtime reflection
-- Complex projection logic
-- Manual object mapping
-- Difficult Native AOT compatibility
-- Repetitive SQL generation
-
-Coffee Beanery approaches these problems differently.
-
-Instead of resolving relationships at runtime through multiple database calls, Coffee Beanery analyzes the GraphQL selection tree and compiles it into an optimized SQL query using metadata generated at build time.
-
-The result is a predictable execution pipeline that minimizes allocations, reduces runtime work, and simplifies the implementation of large GraphQL APIs.
+<p align="center">
+  Transform GraphQL AST selections into optimized SQL operations using source-generated metadata, supporting queries, mutations, upserts, and strongly typed materialization.
+</p>
 
 ---
 
-# Key Features
+# Overview
 
-- 🚀 Optimized SQL generation from GraphQL selection sets
-- ⚡ Compile-time source-generated mappings
-- 🧠 Native AOT friendly
-- 🔄 Hot Chocolate integration
-- 🏗 Strongly typed object materialization
-- 📦 Dapper support
-- 🛠 EF Core model integration
-- 🌳 Deep nested GraphQL selection support
-- 🔍 Elimination of common N+1 scenarios
-- 🧩 Centralized post-processing pipeline
-- 🔒 Enterprise customization hooks
-- 📈 PostgreSQL optimized
-- 🌐 Apache AGE compatible
-- ⚖️ Citus compatible
-- 🧪 CQRS-friendly architecture
+GraphQL Coffee Beanery is a high-performance GraphQL execution engine designed for the .NET ecosystem.
 
----
+Built around **Hot Chocolate**, **C# Source Generators**, and an AST-driven execution model, Coffee Beanery analyzes GraphQL operations and translates them into optimized database operations while minimizing runtime overhead.
 
-# Design Philosophy
+Unlike traditional GraphQL implementations that rely heavily on resolver orchestration, runtime reflection, and manually maintained DataLoaders, Coffee Beanery moves intelligence into compile time.
 
-Coffee Beanery focuses on one responsibility:
+The result is a predictable execution pipeline capable of handling:
 
-> **Efficiently executing GraphQL read operations.**
-
-Instead of becoming an ORM or replacing your application's business layer, Coffee Beanery specializes in translating GraphQL selection trees into efficient database queries.
-
-Business logic remains inside your application.
-
-Validation remains inside your application.
-
-Transactions remain inside your application.
-
-Coffee Beanery simply provides an optimized execution engine for retrieving the requested GraphQL data.
-
-This separation keeps the architecture clean, composable, and easy to reason about.
+- Complex GraphQL queries
+- Deep relationship graphs
+- Mutation execution
+- Insert operations
+- Update operations
+- Upsert operations
+- Optimized mutation responses
+- Native AOT deployments
+- Enterprise-scale workloads
 
 ---
 
-# Architecture Overview
+# Core Philosophy
 
-Coffee Beanery is built around four independent execution pipelines.
+Coffee Beanery is built around one principle:
+
+> **The GraphQL AST is the execution plan.**
+
+A GraphQL operation already contains the information required to understand:
+
+- Requested fields
+- Relationships
+- Data dependencies
+- Mutation inputs
+- Response shape
+
+Coffee Beanery uses this information to generate the most efficient execution path possible.
+
+Instead of:
 
 ```text
-                GraphQL Request
-                       │
-                       ▼
-             Hot Chocolate Execution
-                       │
-          ┌────────────┴────────────┐
-          │                         │
-          ▼                         ▼
-    Query Pipeline           Mutation Pipeline
-          │                         │
-          ▼                         ▼
- Coffee Beanery             Business Logic
- SQL Compiler               EF Core / Dapper
-          │                         │
-          ▼                         ▼
- Optimized SQL             Database Transaction
-          │                         │
-          └────────────┬────────────┘
-                       ▼
-             GraphQL Selection Phase
-                       ▼
-             Coffee Beanery Compiler
-                       ▼
-               ProcessService
-                       ▼
-              GraphQL Response
-```
+GraphQL Request
 
-Each pipeline has a dedicated responsibility.
-
-| Pipeline | Responsibility |
-|----------|----------------|
-| Query Pipeline | Compiles GraphQL selections into optimized SQL |
-| Mutation Pipeline | Executes writes, validation, transactions, and business rules |
-| Materialization Pipeline | Hydrates strongly typed objects and applies custom processing |
-| Build Pipeline | Generates compile-time mapping metadata for runtime execution |
-
-This separation enables applications to evolve independently without coupling read optimization to business logic.
-
----
-
-# How Coffee Beanery Works
-
-Coffee Beanery executes GraphQL requests in four stages.
-
-## 1. Source Generation
-
-During compilation, source generators inspect your mapping configuration and produce strongly typed metadata describing:
-
-- Entity relationships
-- Property mappings
-- Foreign keys
-- Collection navigation
-- SQL aliases
-- Materialization rules
-
-Because this work happens at build time, runtime reflection is avoided.
-
----
-
-## 2. GraphQL Parsing
-
-When a GraphQL request arrives, Coffee Beanery reads the selection tree produced by Hot Chocolate.
-
-For example:
-
-```graphql
-query {
-
-  products {
-
-    id
-
-    name
-
-    supplier {
-
-      name
-
-      address {
-
-        city
-
-      }
-
-    }
-
-  }
-
-}
-```
-
-Coffee Beanery converts this selection tree into an internal execution graph that describes exactly which entities and relationships are required.
-
-No unnecessary fields are fetched.
-
-No runtime expression trees are built.
-
----
-
-## 3. SQL Compilation
-
-Using the generated metadata, Coffee Beanery produces optimized SQL tailored to the requested selection.
-
-Instead of multiple database round trips, related entities are retrieved together whenever possible.
-
-This dramatically reduces unnecessary database access while preserving the GraphQL response shape.
-
----
-
-## 4. Materialization
-
-The resulting database rows are transformed into strongly typed object graphs.
-
-This process is handled by **ProcessService**, which reconstructs nested relationships and prepares the objects returned to Hot Chocolate.
-
-Unlike traditional object mappers, this pipeline also serves as the central extension point for enterprise customization.
-
-# Query & Mutation Execution
-
-One of the most important architectural concepts in Coffee Beanery is the separation between **writing data** and **reading data**.
-
-GraphQL mutations naturally execute in two distinct phases:
-
-1. **Mutation Phase** – Execute business logic and persist state changes.
-2. **Selection Phase** – Resolve the fields requested in the mutation response.
-
-Coffee Beanery intentionally focuses on the second phase.
-
-This allows existing mutation handlers to remain unchanged while still benefiting from optimized query execution when returning complex GraphQL response shapes.
-
----
-
-# The Two-Pipeline Execution Model
-
-When Hot Chocolate executes a mutation, the request naturally flows through two independent pipelines.
-
-```text
-                 Incoming GraphQL Mutation
-                            │
-                            ▼
-┌──────────────────────────────────────────────────────────────┐
-│                  Mutation Pipeline                           │
-│                                                              │
-│  • Validation                                                │
-│  • Authorization                                             │
-│  • Business Rules                                            │
-│  • EF Core / Dapper                                          │
-│  • Transactions                                              │
-│  • Domain Events                                             │
-│  • Save Changes                                              │
-└──────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-              Returns Root Object / Identifier
-                            │
-                            ▼
-┌──────────────────────────────────────────────────────────────┐
-│                GraphQL Selection Pipeline                    │
-│                                                              │
-│  • Reads requested GraphQL fields                            │
-│  • Builds execution graph                                    │
-│  • Compiles optimized SQL                                    │
-│  • Materializes nested object graph                          │
-│  • Returns requested response shape                          │
-└──────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-                  GraphQL Response
-```
-
-Because these responsibilities are independent, Coffee Beanery can optimize every read operation without interfering with how writes are implemented.
-
----
-
-# Why This Matters
-
-Many GraphQL applications optimize queries but unintentionally fall back to inefficient execution when returning data from mutations.
-
-Consider the following mutation:
-
-```graphql
-mutation {
-
-  adjustStock(
-    input: {
-      productId: 42
-      adjustment: -5
-    }
-  ) {
-
-    product {
-
-      id
-
-      name
-
-      stockLevel
-
-      supplier {
-
-        name
-
-        contact {
-
-          email
-
-        }
-
-      }
-
-    }
-
-  }
-
-}
-```
-
-Although this is a mutation, the response body is simply another GraphQL selection tree.
-
-After the write completes, Hot Chocolate begins resolving the requested fields.
-
-Coffee Beanery treats this exactly like any other GraphQL query.
-
-The requested object graph is analyzed, optimized, and materialized using the same execution engine used for standard queries.
-
-This means deeply nested mutation responses can avoid common N+1 scenarios without requiring additional DataLoaders or handwritten projections.
-
----
-
-# Example Mutation
-
-Your mutation remains focused exclusively on business logic.
-
-```csharp
-public sealed class InventoryMutations
-{
-    public async Task<ProductPayload> AdjustStockAsync(
-        AdjustStockInput input,
-        [ScopedService] AppDbContext db)
-    {
-        var product = await db.Products.FindAsync(input.ProductId);
-
-        product.StockLevel += input.Adjustment;
-
-        await db.SaveChangesAsync();
-
-        return new ProductPayload
-        {
-            ProductId = product.Id
-        };
-    }
-}
-```
-
-Notice that the mutation only performs the write operation.
-
-There is no manual loading of related entities.
-
-There are no DataLoaders.
-
-There is no SQL projection.
-
-The mutation simply returns the information required for the GraphQL selection pipeline to continue execution.
-
----
-
-# Automatic Response Optimization
-
-Suppose the client requests additional information.
-
-```graphql
-mutation {
-
-  adjustStock(input: {
-      productId: 42
-      adjustment: -5
-  }) {
-
-    product {
-
-      id
-
-      name
-
-      stockLevel
-
-      category {
-
-          name
-
-      }
-
-      supplier {
-
-          name
-
-          contact {
-
-              email
-
-              phone
-
-          }
-
-      }
-
-      warehouse {
-
-          address {
-
-              city
-
-              country
-
-          }
-
-      }
-
-    }
-
-  }
-
-}
-```
-
-After the mutation commits successfully:
-
-1. Hot Chocolate begins resolving the selection tree.
-2. Coffee Beanery analyzes every requested field.
-3. Generated metadata identifies required relationships.
-4. SQL is compiled for the requested graph.
-5. ProcessService materializes the object graph.
-6. The response is returned.
-
-No manual projections are necessary.
-
-No additional DataLoaders are required.
-
-No custom response-building logic needs to be written.
-
----
-
-# CQRS-Friendly by Design
-
-Coffee Beanery naturally complements CQRS architectures.
-
-The write side remains completely independent from the read side.
-
-```text
-                  GraphQL Request
-                         │
-        ┌────────────────┴────────────────┐
-        │                                 │
-        ▼                                 ▼
-      Commands                         Queries
-        │                                 │
-        ▼                                 ▼
- Business Logic                 Coffee Beanery
- EF Core                        SQL Compiler
- Transactions                   Materialization
- Validation                     Response
-        │                                 │
-        └──────────────┬──────────────────┘
-                       ▼
-                GraphQL Response
-```
-
-Each side can evolve independently.
-
-Command handlers remain focused on state changes.
-
-Coffee Beanery remains focused on efficient data retrieval.
-
-This separation simplifies testing, improves maintainability, and keeps responsibilities clearly defined.
-
----
-
-# Benefits of the Two-Pipeline Model
-
-Separating writes from reads provides several advantages.
-
-## Transaction Safety
-
-Mutations continue using your preferred transaction strategy.
-
-Coffee Beanery does not interfere with transactional boundaries.
-
----
-
-## Business Logic Isolation
-
-Validation, authorization, domain rules, and messaging remain inside the mutation handler where they belong.
-
-The query engine remains focused solely on retrieving data.
-
----
-
-## Optimized Mutation Responses
-
-Large response payloads are retrieved using the same optimized execution engine as regular GraphQL queries.
-
-This allows clients to request rich, nested response shapes without introducing unnecessary database round trips.
-
----
-
-## Reduced Boilerplate
-
-Mutation handlers remain small and focused.
-
-Developers do not need to manually populate response graphs or duplicate query logic inside every mutation.
-
----
-
-## Consistent GraphQL Execution
-
-Whether a client executes a query or requests nested data from a mutation, Coffee Beanery uses the same optimized execution pipeline.
-
-The result is a consistent programming model across your entire GraphQL API.
-
-# ProcessService: The Materialization & Extension Pipeline
-
-After Coffee Beanery executes the generated SQL, the returned data still needs to be transformed into the object graph expected by your GraphQL schema.
-
-This responsibility belongs to **ProcessService**.
-
-Rather than acting as a simple object mapper, ProcessService is the central execution stage where raw database results become strongly typed domain models.
-
-It also provides a single, well-defined extension point for implementing enterprise-specific behavior without modifying query generation or GraphQL resolvers.
-
-```text
-              Generated SQL
-                    │
-                    ▼
-          Database Result Set
-                    │
-                    ▼
-           Metadata Resolution
-                    │
-                    ▼
-             ProcessService
-                    │
-      ┌─────────────┼─────────────┐
-      │             │             │
-      ▼             ▼             ▼
- Materialize   Transform      Validate
-      │             │             │
-      └─────────────┼─────────────┘
-                    ▼
-          GraphQL Response Model
-```
-
----
-
-# Responsibilities
-
-ProcessService is responsible for:
-
-- Materializing strongly typed objects
-- Reconstructing nested relationships
-- Populating collections
-- Resolving parent/child graphs
-- Applying generated mapping metadata
-- Producing the final object graph returned to Hot Chocolate
-
-Because it operates after SQL execution, it provides a natural place to introduce application-specific processing while preserving the efficiency of the generated query.
-
----
-
-# Enterprise Extension Point
-
-Many enterprise applications require additional processing that cannot—or should not—be expressed directly in SQL.
-
-Rather than scattering this logic across GraphQL resolvers, ProcessService centralizes these concerns into a single pipeline.
-
-Typical scenarios include:
-
-- Computed fields
-- Currency conversion
-- Tax calculations
-- Localization
-- User-specific formatting
-- Business rule evaluation
-- Response enrichment
-- Security trimming
-- Data masking
-- Payload caching
-- Audit metadata
-- Multi-tenant filtering
-
-This keeps GraphQL resolvers simple while allowing applications to evolve without modifying generated SQL.
-
----
-
-# Computed Business Logic
-
-Not every value belongs in the database.
-
-Some fields depend on runtime context or business rules that are only available within the application.
-
-Examples include:
-
-- Discounted prices
-- Loyalty rewards
-- Inventory availability
-- Shipping estimates
-- Tax calculations
-- Feature flags
-- Dynamic permissions
-
-Instead of embedding these concerns into SQL, ProcessService can compute them after the object graph has been materialized.
-
-```text
-SQL Result
-      │
-      ▼
-Product
-      │
-      ▼
-Apply Business Rules
-      │
-      ▼
-Calculated Fields
-      │
-      ▼
-Return GraphQL Response
-```
-
-This keeps SQL focused on retrieving data while allowing application logic to remain inside .NET.
-
----
-
-# Payload Caching
-
-ProcessService is also an ideal integration point for response caching.
-
-Instead of caching raw SQL rows, applications can cache the fully materialized object graph.
-
-```text
-Incoming GraphQL Request
-            │
-            ▼
-     Cache Lookup
-      │        │
- Cache Hit   Cache Miss
-      │        │
-      ▼        ▼
- Return     Execute SQL
- Object         │
-                ▼
-         Materialize Objects
-                │
-                ▼
-           Store in Cache
-                │
-                ▼
-          Return Response
-```
-
-Possible implementations include:
-
-- IMemoryCache
-- Redis
-- Distributed Cache
-- Hybrid cache strategies
-
-Caching complete payloads avoids repeated materialization work and reduces database load for frequently requested queries.
-
----
-
-# Dynamic Field Masking
-
-Many applications must protect sensitive information based on the current user's identity.
-
-Examples include:
-
-- Email addresses
-- Phone numbers
-- Salary information
-- Personal identifiers
-- Financial records
-- Healthcare information
-
-Because ProcessService operates on strongly typed objects, fields can be modified before they are returned.
-
-For example:
-
-- Replace values with masked text
-- Return null
-- Apply role-based filtering
-- Remove restricted collections
-- Hide confidential properties
-
-This approach keeps authorization concerns separate from SQL generation while supporting GDPR, HIPAA, and similar compliance requirements.
-
----
-
-# Multi-Tenant Applications
-
-Enterprise systems frequently require tenant-aware responses.
-
-After objects have been materialized, ProcessService can:
-
-- Filter collections
-- Remove inaccessible entities
-- Inject tenant metadata
-- Enforce tenant boundaries
-- Apply organization-specific transformations
-
-This allows tenant rules to remain centralized rather than duplicated across individual GraphQL resolvers.
-
----
-
-# Response Enrichment
-
-Applications often need to enrich data using services outside the database.
-
-Examples include:
-
-- Exchange rate services
-- Recommendation engines
-- Inventory systems
-- Distributed caches
-- External APIs
-- Machine learning predictions
-
-Because ProcessService executes after database retrieval, these integrations can be introduced without affecting SQL compilation.
-
----
-
-# Why This Preserves Native AOT
-
-A common concern with extensibility is whether customization reintroduces reflection.
-
-Coffee Beanery avoids this problem.
-
-ProcessService operates on strongly typed models produced by the source generators.
-
-No runtime type discovery is required.
-
-No dynamic proxies are created.
-
-No reflection-based object mapping occurs.
-
-The execution flow remains compatible with Native AOT while allowing rich application-specific customization.
-
-```text
-Source Generator
         │
+
         ▼
-Generated Metadata
+
+Resolver Chain
+
         │
+
         ▼
-Strongly Typed Models
+
+DataLoaders
+
         │
+
         ▼
-ProcessService
+
+Multiple Database Queries
+
         │
+
         ▼
-GraphQL Response
-```
+
+Manual Mapping
 
 ---
 
-# Keeping Responsibilities Separate
+# Architecture Deep Dive
 
-One of the design goals of Coffee Beanery is ensuring each stage has a single responsibility.
+Coffee Beanery is built around a unified AST-driven execution architecture.
 
-| Component | Responsibility |
-|-----------|----------------|
-| Source Generator | Generate mapping metadata |
-| SQL Compiler | Build optimized SQL |
-| Database | Execute relational queries |
-| ProcessService | Materialize and transform objects |
-| Hot Chocolate | Serialize the GraphQL response |
+The same GraphQL operation model powers:
 
-This separation keeps the architecture modular and makes it easier to customize behavior without modifying unrelated parts of the pipeline.
-
----
-
-# Why ProcessService Matters
-
-ProcessService transforms Coffee Beanery from a SQL generation library into a complete GraphQL execution pipeline.
-
-It provides a single place to introduce business-specific behavior while preserving the performance benefits of compile-time generated mappings.
-
-Instead of spreading business rules across GraphQL resolvers, DataLoaders, middleware, and object mappers, applications can centralize post-processing in one predictable location.
-
-The result is a cleaner architecture that scales from simple CRUD applications to enterprise systems requiring caching, security, compliance, and complex business rules—all without sacrificing the performance characteristics of Native AOT or the efficiency of Coffee Beanery's query compilation pipeline.
-
----
-
-# Source-Generated Mapping
-
-Coffee Beanery is built around **compile-time generated mapping metadata**.
-
-Rather than discovering entities, relationships, and navigation properties through runtime reflection, Coffee Beanery generates strongly typed metadata during compilation that describes how your GraphQL schema maps to your relational model.
-
-This generated metadata drives every stage of execution:
-
-- GraphQL selection analysis
-- SQL generation
-- Join resolution
+- Query generation
+- Mutation generation
+- Upsert execution
+- Response projection
 - Object materialization
-- Nested relationship reconstruction
 
-Because the metadata is generated at build time, runtime execution remains lightweight, predictable, and compatible with Native AOT.
+The framework does not treat queries and mutations as unrelated systems.
 
----
-
-# Why Source Generators?
-
-Traditional ORMs and GraphQL frameworks frequently depend on runtime reflection to inspect entity models.
-
-Reflection offers flexibility but introduces several trade-offs:
-
-- Additional startup work
-- Higher memory usage
-- Runtime metadata discovery
-- Dynamic expression generation
-- Limited Native AOT compatibility
-
-Coffee Beanery takes a different approach.
-
-Instead of discovering metadata during execution, it generates the required information once during compilation.
-
-```text
-Application Build
-        │
-        ▼
-Source Generator
-        │
-        ▼
-Generate Mapping Metadata
-        │
-        ▼
-Compile Application
-        │
-────────────────────────────────────
-Runtime
-        │
-        ▼
-Read Generated Metadata
-        │
-        ▼
-Compile SQL
-        │
-        ▼
-Execute Query
-```
-
-The result is less runtime work and greater predictability.
+Instead, they are different execution paths originating from the same GraphQL AST.
 
 ---
 
-# Generated Metadata
+# GraphQL AST as the Execution Source
 
-The generated metadata contains everything Coffee Beanery needs to execute GraphQL queries efficiently.
+Every GraphQL operation contains two important pieces of information:
 
-Typical information includes:
+## Input Shape
 
-- Entity names
-- Database tables
-- Primary keys
-- Foreign keys
-- Navigation properties
-- Collection relationships
-- Column mappings
-- SQL aliases
-- Join definitions
-- Materialization instructions
-
-Because this information already exists before the application starts, there is no need to inspect types dynamically.
-
----
-
-# Mapping Once, Using Everywhere
-
-One of the core principles of Coffee Beanery is that mapping information should only need to be defined once.
-
-After relationships are configured, the generated metadata is reused throughout the framework.
-
-The same metadata powers:
-
-- Query compilation
-- SQL generation
-- Relationship traversal
-- Nested object reconstruction
-- Materialization
-- Mutation response optimization
-
-This avoids duplicated configuration across multiple layers of the application.
-
----
-
-# GraphQL Selection Analysis
-
-Consider the following GraphQL query:
+For mutations:
 
 ```graphql
-query {
+mutation {
 
-    customers {
+  upsertProduct(
+    input: {
+      id: 100
+      name: "Ethiopian Blend"
+    }
+  )
 
-        id
+}
 
-        name
+---
 
-        orders {
+# Mutation Response Optimization
 
-            orderDate
+A GraphQL mutation is not only a write operation.
+
+The mutation response is another GraphQL selection tree.
+
+This distinction is important because the operation that changes state and the operation that returns data can be optimized independently.
+
+Example:
+
+```graphql
+mutation {
+
+    upsertOrder(
+        input: {
+            customerId: 42
+            items: [
+                {
+                    productId: 10
+                    quantity: 2
+                }
+            ]
+        }
+    ) {
+
+        order {
+
+            id
+
+            status
 
             total
+
+            customer {
+
+                name
+
+                address {
+
+                    city
+
+                }
+
+            }
 
             items {
 
@@ -897,7 +176,7 @@ query {
 
                     name
 
-                    category {
+                    supplier {
 
                         name
 
@@ -912,990 +191,203 @@ query {
     }
 
 }
-```
-
-Coffee Beanery walks the selection tree and identifies exactly which entities and relationships are required.
-
-```text
-Customer
-    │
-    ├──────────────► Orders
-                         │
-                         ▼
-                      Items
-                         │
-                         ▼
-                      Product
-                         │
-                         ▼
-                     Category
-```
-
-Only the requested fields participate in query generation.
-
-Unused properties are ignored.
 
 ---
 
-# Relationship Resolution
+# Source Generators & Compile-Time Metadata
 
-The generated mapping metadata defines how entities relate to one another.
+A core design decision behind Coffee Beanery is moving execution knowledge from runtime into compile time.
 
-Coffee Beanery uses this information to construct joins automatically.
+Instead of discovering relationships, mappings, and execution rules dynamically, Coffee Beanery uses C# Source Generators to produce strongly typed metadata during the build process.
 
-For example:
-
-```text
-Customer
-      │
-      ▼
-Order
-      │
-      ▼
-OrderItem
-      │
-      ▼
-Product
-      │
-      ▼
-Supplier
-```
-
-Because relationships are already known, SQL generation becomes deterministic.
-
-There is no need to inspect CLR types or dynamically infer navigation paths.
-
----
-
-# SQL Generation
-
-After the execution graph has been built, Coffee Beanery compiles the required SQL.
-
-Conceptually, the execution pipeline looks like this:
-
-```text
-GraphQL Query
-        │
-        ▼
-Selection Tree
-        │
-        ▼
-Execution Graph
-        │
-        ▼
-Generated Mapping Metadata
-        │
-        ▼
-SQL Compiler
-        │
-        ▼
-Optimized SQL
-```
-
-The compiler only generates the joins, columns, and relationships required to satisfy the client's request.
-
----
-
-# Materialization Metadata
-
-Generating SQL is only half of the problem.
-
-The returned rows must also be reconstructed into the nested object graph expected by GraphQL.
-
-Coffee Beanery generates metadata describing how flat relational data maps back into strongly typed objects.
-
-```text
-Database Rows
-
-Customer
-Order
-Item
-Product
-
-        │
-        ▼
-
-Generated Materialization Metadata
-
-        │
-        ▼
-
-Customer
- ├── Orders
- │      ├── Items
- │      │      └── Product
- │      └── ...
- └── ...
-```
-
-This allows ProcessService to efficiently rebuild complex object graphs without reflection.
-
----
-
-# Native AOT Benefits
-
-Compile-time metadata generation is one of the key reasons Coffee Beanery works well with Native AOT.
-
-Instead of relying on runtime type discovery, execution uses generated code that is already known at compile time.
-
-Benefits include:
+This approach provides:
 
 - Faster startup
-- Reduced memory allocations
-- Smaller deployment size
-- Elimination of reflection
+- Reduced runtime overhead
+- Better Native AOT compatibility
 - Predictable execution
-- Improved cold-start performance
-- Better compatibility with containerized workloads
+- Strong typing
+- Fewer runtime surprises
 
 ---
 
-# Strongly Typed Execution
+# Traditional Runtime Discovery
 
-Every stage of Coffee Beanery is designed around strongly typed models.
+Many data access systems rely on runtime inspection.
+
+A simplified execution model:
 
 ```text
-Source Generator
+GraphQL Request
+
         │
+
         ▼
-Generated C# Metadata
+
+Runtime Reflection
+
         │
+
         ▼
-SQL Compiler
+
+Discover Types
+
         │
+
         ▼
-Database
+
+Discover Relationships
+
         │
+
         ▼
-ProcessService
+
+Build Query
+
         │
+
         ▼
-Strongly Typed Domain Models
-        │
-        ▼
-Hot Chocolate
-```
 
-This approach minimizes runtime surprises while improving maintainability and debugging.
+Execute
 
 ---
 
-# Design Goals
+# Database Architecture
 
-The mapping system was designed with several principles in mind.
+Coffee Beanery is designed to work with modern .NET persistence architectures.
 
-## Single Source of Truth
+The framework does not require applications to adopt a single database access pattern.
 
-Relationship definitions should exist in one place and be reused throughout the framework.
+Instead, it provides an execution layer that can integrate with:
 
----
-
-## Compile-Time Validation
-
-Whenever possible, mapping problems should be detected during compilation rather than at runtime.
-
----
-
-## Minimal Runtime Work
-
-Runtime execution should focus on query compilation and data retrieval—not metadata discovery.
-
----
-
-## Native AOT Compatibility
-
-Avoid runtime reflection whenever possible.
-
----
-
-## Extensibility
-
-Generated metadata should provide a foundation that can be extended without requiring consumers to rewrite the query engine.
-
----
-
-By combining source generators with strongly typed mapping metadata, Coffee Beanery shifts work from runtime to build time.
-
-This approach reduces boilerplate, simplifies GraphQL execution, and provides the foundation for efficient SQL generation, optimized materialization, and enterprise customization through ProcessService.
-
----
-
-# Performance Philosophy
-
-Coffee Beanery was designed around a simple principle:
-
-> **Move as much work as possible from runtime to compile time.**
-
-Rather than relying on reflection, runtime metadata discovery, or manually maintained DataLoaders, Coffee Beanery generates the information required to execute GraphQL queries during the build process.
-
-At runtime, the execution engine focuses on four responsibilities:
-
-1. Analyze the GraphQL selection tree.
-2. Compile an optimized SQL query.
-3. Materialize the returned data.
-4. Produce the requested GraphQL response.
-
-Everything else is handled during compilation.
-
----
-
-# Eliminating Runtime Complexity
-
-Many GraphQL applications gradually accumulate runtime infrastructure as they grow.
-
-A typical application may include:
-
-- DataLoaders
-- Custom projections
-- Manual object mapping
-- Reflection-based metadata discovery
-- Expression tree generation
-- Resolver-specific SQL
-
-Each component solves an individual problem, but together they increase the complexity of the execution pipeline.
-
-Coffee Beanery consolidates much of this work into a single, predictable pipeline driven by compile-time generated metadata.
-
-```text
-Traditional GraphQL
-
-Resolver
-    │
-    ▼
-Projection
-    │
-    ▼
-DataLoader
-    │
-    ▼
-Mapping
-    │
-    ▼
-Database
-
-────────────────────────────────────
-
-Coffee Beanery
-
-GraphQL Selection
-        │
-        ▼
-Generated Metadata
-        │
-        ▼
-SQL Compiler
-        │
-        ▼
-Database
-        │
-        ▼
-ProcessService
-```
-
-The goal is not to replace every GraphQL pattern, but to reduce the amount of infrastructure required for common read scenarios.
-
----
-
-# Compile-Time vs Runtime
-
-Coffee Beanery intentionally shifts responsibility toward compilation.
-
-| Build Time | Runtime |
-|------------|---------|
-| Generate mapping metadata | Parse GraphQL selection |
-| Validate relationships | Compile SQL |
-| Generate materialization metadata | Execute query |
-| Prepare execution model | Materialize objects |
-
-This results in less runtime work and more predictable execution.
-
----
-
-# Native AOT as a Design Goal
-
-Native AOT is not an afterthought.
-
-It influenced the design of the framework from the beginning.
-
-Whenever possible, Coffee Beanery avoids features that typically make Native AOT more difficult, such as:
-
-- Runtime reflection
-- Dynamic proxy generation
-- Runtime expression compilation
-- Dynamic type discovery
-
-Instead, generated code provides the metadata required during execution.
-
----
-
-# Scaling with Schema Complexity
-
-As GraphQL schemas grow, applications often introduce:
-
-- Additional DataLoaders
-- Resolver-specific optimization
-- Duplicate mapping logic
-- Specialized projection code
-
-Coffee Beanery approaches scalability differently.
-
-The same execution pipeline is used regardless of whether a query requests:
-
-- One entity
-- Multiple relationships
-- Deeply nested collections
-- Complex response graphs
-
-Because execution is driven by the GraphQL selection tree and generated metadata, increasing schema size does not require fundamentally different infrastructure.
-
----
-
-# Large GraphQL Responses
-
-GraphQL allows clients to request rich object graphs.
-
-For example:
-
-```graphql
-query {
-
-    customers {
-
-        orders {
-
-            items {
-
-                product {
-
-                    supplier {
-
-                        address {
-
-                            country
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        }
-
-    }
-
-}
-```
-
-Coffee Beanery is designed to analyze these selection trees and retrieve the requested data efficiently without requiring developers to manually assemble the response.
-
-The client defines the shape.
-
-Coffee Beanery determines how to retrieve it.
-
----
-
-# Mutation Responses Follow the Same Pipeline
-
-One important design decision is that mutation responses are treated exactly like query responses.
-
-After the mutation completes successfully:
-
-```text
-Mutation
-      │
-      ▼
-Business Logic
-      │
-      ▼
-Database Commit
-      │
-      ▼
-GraphQL Selection
-      │
-      ▼
-Coffee Beanery
-      │
-      ▼
-Optimized Response
-```
-
-Because GraphQL mutation payloads are simply selection trees, the same query compilation pipeline can be reused.
-
-This keeps the programming model consistent across queries and mutations.
-
----
-
-# Comparison with Traditional Approaches
-
-Every GraphQL data access strategy has different trade-offs.
-
-The table below summarizes common architectural characteristics.
-
-| Capability | Coffee Beanery | Hot Chocolate + EF Core | Hot Chocolate + DataLoaders |
-|------------|----------------|--------------------------|-----------------------------|
-| Compile-time mapping | ✅ | ❌ | ❌ |
-| Source generators | ✅ | ❌ | ❌ |
-| Runtime reflection minimized | ✅ | Partial | Partial |
-| Native AOT friendly | ✅ | Partial | Partial |
-| Optimized SQL generation | ✅ | EF Core dependent | Resolver dependent |
-| Deep graph support | ✅ | ✅ | ✅ |
-| Mutation response optimization | ✅ | Manual | Manual |
-| Centralized materialization pipeline | ✅ | ❌ | ❌ |
-| Business extension pipeline | ✅ | Partial | Resolver-specific |
-| DataLoader management | Minimal | Optional | Extensive |
-
-Each approach has strengths.
-
-Coffee Beanery is optimized for applications that want a compile-time driven execution model with minimal runtime infrastructure.
-
----
-
-# Designed for Enterprise Applications
-
-Coffee Beanery is intended to support applications with requirements such as:
-
-- Large GraphQL schemas
-- Multiple development teams
-- Native AOT deployments
-- High-throughput APIs
-- Complex relational models
-- Deep object graphs
-- PostgreSQL
-- Citus clusters
-- Apache AGE
-- CQRS architectures
-
-Rather than introducing custom infrastructure for each use case, the framework provides a consistent execution pipeline that can be extended where necessary.
-
----
-
-# A Foundation, Not a Framework Lock-In
-
-Coffee Beanery is designed to complement existing .NET applications rather than replace them.
-
-You remain free to choose:
-
-- EF Core
 - Dapper
-- CQRS
-- Repository patterns
-- Domain-driven design
-- Transaction strategies
-- Authentication and authorization
-- Dependency injection
-- Caching technologies
+- EF Core
+- PostgreSQL
+- Distributed PostgreSQL
+- Graph database extensions
+- Custom SQL strategies
 
-Coffee Beanery focuses on one responsibility:
-
-Efficiently executing GraphQL read operations.
-
-Everything else remains under your application's control.
+The goal is to provide optimized GraphQL execution while allowing applications to choose the right persistence approach for each workload.
 
 ---
 
-# Design Principles
+# Dapper Integration
 
-The architecture of Coffee Beanery is guided by a few core principles.
+Coffee Beanery naturally complements Dapper-based architectures.
 
-### Build-Time First
+Dapper provides:
 
-Perform expensive work during compilation whenever possible.
+- Lightweight database access
+- High-performance execution
+- Direct SQL control
+- Minimal abstraction overhead
 
----
+Coffee Beanery adds:
 
-### Separation of Responsibilities
-
-Keep query execution, business logic, materialization, and schema execution independent.
-
----
-
-### Strong Typing
-
-Prefer generated, strongly typed metadata over runtime discovery.
-
----
-
-### Extensibility
-
-Provide well-defined customization points without requiring consumers to modify the query engine.
-
----
-
-### Predictable Execution
-
-The same GraphQL request should consistently follow the same execution pipeline.
-
----
-
-These principles make Coffee Beanery suitable for applications ranging from small GraphQL services to large enterprise systems, while preserving a clean separation between application logic and query execution.
-
----
-
-# Getting Started
-
-Coffee Beanery is designed to integrate naturally with existing **Hot Chocolate** applications.
-
-The framework focuses on optimizing GraphQL read execution while allowing you to continue using your preferred persistence strategy for writes.
-
-A typical application consists of:
-
-- Hot Chocolate
-- Coffee Beanery
-- Dapper (query execution)
-- EF Core (optional model definitions and mutations)
-- Source-generated mappings
-
-```text
-ASP.NET Core
-      │
-      ▼
-Hot Chocolate
-      │
-      ▼
-Coffee Beanery
-      │
-      ▼
-Generated Mapping Metadata
-      │
-      ▼
-SQL Compiler
-      │
-      ▼
-Database
-```
-
----
-
-# Basic Execution Flow
-
-Every GraphQL request follows the same high-level pipeline.
-
-```text
-GraphQL Request
-        │
-        ▼
-Hot Chocolate
-        │
-        ▼
-GraphQL Selection Tree
-        │
-        ▼
-Coffee Beanery
-        │
-        ▼
-Generated Mapping Metadata
-        │
-        ▼
-SQL Compilation
-        │
-        ▼
-Database
-        │
-        ▼
-ProcessService
-        │
-        ▼
-GraphQL Response
-```
-
-This execution model remains consistent regardless of query complexity.
-
----
-
-# Defining Your Domain
-
-Coffee Beanery works with strongly typed domain models.
-
-A simplified example might look like:
-
-```csharp
-public class Customer
-{
-    public int Id { get; set; }
-
-    public string Name { get; set; } = string.Empty;
-
-    public ICollection<Order> Orders { get; set; } = [];
-}
-
-public class Order
-{
-    public int Id { get; set; }
-
-    public DateTime OrderDate { get; set; }
-
-    public ICollection<OrderItem> Items { get; set; } = [];
-}
-
-public class OrderItem
-{
-    public int Id { get; set; }
-
-    public Product Product { get; set; } = default!;
-}
-
-public class Product
-{
-    public int Id { get; set; }
-
-    public string Name { get; set; } = string.Empty;
-}
-```
-
-These models define the shape of your GraphQL response while the generated mapping metadata describes how they relate to the underlying database.
-
----
-
-# Configuring Relationships
-
-Coffee Beanery uses mapping configuration to understand how entities relate to one another.
-
-Conceptually, relationships are defined once and reused throughout the execution pipeline.
-
-```text
-Customer
-      │
-      ▼
-Order
-      │
-      ▼
-OrderItem
-      │
-      ▼
-Product
-```
-
-Once generated, this metadata is reused for:
-
+- GraphQL AST processing
 - SQL generation
-- Join resolution
 - Relationship traversal
-- Materialization
-- Mutation response execution
+- Generated mappings
+- Object materialization
 
-No resolver-specific relationship configuration is required.
-
----
-
-# Executing a GraphQL Query
-
-Suppose a client executes:
-
-```graphql
-query {
-
-    customers {
-
-        id
-
-        name
-
-        orders {
-
-            orderDate
-
-            items {
-
-                quantity
-
-                product {
-
-                    name
-
-                }
-
-            }
-
-        }
-
-    }
-
-}
-```
-
-Coffee Beanery analyzes the selection tree and determines:
-
-- Which entities are required
-- Which joins are necessary
-- Which columns should be selected
-- How the response should be materialized
-
-The generated SQL only includes the requested data.
-
----
-
-# Deep Relationship Traversal
-
-One of the strengths of Coffee Beanery is handling deeply nested object graphs.
-
-For example:
-
-```graphql
-query {
-
-    customers {
-
-        orders {
-
-            items {
-
-                product {
-
-                    supplier {
-
-                        address {
-
-                            country
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        }
-
-    }
-
-}
-```
-
-Execution remains identical.
-
-The only difference is the execution graph generated from the requested fields.
+The execution model becomes:
 
 ```text
-Customer
-      │
-      ▼
-Order
-      │
-      ▼
-OrderItem
-      │
-      ▼
-Product
-      │
-      ▼
-Supplier
-      │
-      ▼
-Address
-```
-
-Because the relationships are already known through generated metadata, Coffee Beanery can construct the required SQL without additional resolver logic.
-
----
-
-# Materializing the Response
-
-Once the database returns the requested rows, ProcessService reconstructs the GraphQL response.
-
-```text
-Flat Database Rows
-
-Customer
-Order
-Item
-Supplier
-
-        │
-        ▼
-
-ProcessService
-
-        │
-        ▼
-
-Customer
- └── Orders
-      └── Items
-            └── Product
-                  └── Supplier
-```
-
-This reconstruction is driven entirely by generated metadata rather than reflection.
-
----
-
-# Working with EF Core
-
-Coffee Beanery does not replace EF Core.
-
-Instead, both technologies complement one another.
-
-A common architecture is:
-
-| Responsibility | Technology |
-|----------------|------------|
-| Mutations | EF Core |
-| Transactions | EF Core |
-| Change Tracking | EF Core |
-| Business Rules | Application Layer |
-| Query Execution | Coffee Beanery |
-| GraphQL Schema | Hot Chocolate |
-
-This allows developers to continue benefiting from EF Core's rich write capabilities while using Coffee Beanery to optimize GraphQL reads.
-
----
-
-# Working with Dapper
-
-Coffee Beanery naturally integrates with Dapper for query execution.
-
-The framework focuses on:
-
-- Building optimized SQL
-- Executing the generated query
-- Materializing strongly typed objects
-
-This combination provides a lightweight and predictable read pipeline while keeping full control over the generated SQL.
-
----
-
-# CQRS Example
-
-Coffee Beanery fits naturally into a CQRS architecture.
-
-```text
-GraphQL
-
-        │
-
- ┌──────┴──────┐
-
- ▼             ▼
-
-Commands     Queries
-
- ▼             ▼
-
-EF Core   Coffee Beanery
-
- ▼             ▼
-
-Database   Database
-```
-
-Commands remain responsible for changing state.
-
-Coffee Beanery remains responsible for reading state.
-
-The two pipelines share the same GraphQL schema while remaining architecturally independent.
-
----
-
-# End-to-End Request Lifecycle
-
-Putting everything together, a typical request follows this path.
-
-```text
-Client
-
- │
-
- ▼
-
 GraphQL Request
 
- │
+        │
 
- ▼
+        ▼
 
-Hot Chocolate
+Coffee Beanery AST Processing
 
- │
+        │
 
- ▼
+        ▼
 
-Selection Tree
+Generated SQL
 
- │
+        │
 
- ▼
+        ▼
 
-Coffee Beanery
+Dapper Execution
 
- │
+        │
 
- ▼
+        ▼
 
-Generated Metadata
+Generated Object Graph
 
- │
+        │
 
- ▼
-
-SQL Compiler
-
- │
-
- ▼
-
-Database
-
- │
-
- ▼
-
-ProcessService
-
- │
-
- ▼
-
-Strongly Typed Objects
-
- │
-
- ▼
+        ▼
 
 GraphQL Response
-```
-
-Every request follows the same predictable execution model regardless of schema size or query depth.
 
 ---
 
-# Next Steps
+# CQRS Architecture
 
-After understanding the execution pipeline, the next areas to explore are:
+Coffee Beanery naturally fits into Command Query Responsibility Segregation (CQRS) architectures.
 
-- Source-generated mappings
-- Custom ProcessService extensions
-- Mutation response optimization
-- Native AOT deployment
-- Advanced PostgreSQL scenarios
-- Apache AGE graph traversal
-- Citus distributed execution
+CQRS separates application responsibilities:
 
-Each builds upon the same compile-time metadata and execution pipeline described throughout this guide.
+- Commands modify state.
+- Queries retrieve state.
 
+Coffee Beanery extends this model by providing an optimized GraphQL execution layer for both sides when desired.
+
+---
+
+# Traditional CQRS Model
+
+A common CQRS architecture looks like:
+
+```text
+                    GraphQL API
+
+                         │
+
+             ┌───────────┴───────────┐
+
+             ▼                       ▼
+
+        Commands                  Queries
+
+             │                       │
+
+             ▼                       ▼
+
+     Domain Application        Read Application
+
+             │                       │
+
+             ▼                       ▼
+
+        Write Database          Read Database
+		
 ---
 
 # Coffee Beanery vs DataLoaders
 
-DataLoaders are one of the most important tools in the GraphQL ecosystem.
+DataLoaders are an important part of the GraphQL ecosystem.
 
-Coffee Beanery does **not** replace DataLoaders.
+Coffee Beanery does not replace DataLoaders.
 
-Instead, it addresses a different layer of the GraphQL execution pipeline.
+Instead, Coffee Beanery and DataLoaders solve different problems at different layers of GraphQL execution.
 
-Understanding this distinction helps determine when each approach is most appropriate.
+Understanding this distinction helps determine when each approach is appropriate.
 
 ---
 
 # What DataLoaders Solve
 
-GraphQL executes fields independently.
+GraphQL fields are resolved independently.
 
-Without batching, resolving nested relationships can produce the well-known **N+1 query problem**.
+Without batching, nested relationships can create the classic N+1 query problem.
 
-For example:
+Example:
 
 ```graphql
 query {
@@ -1906,269 +398,350 @@ query {
 
         orders {
 
-            orderDate
+            id
 
         }
 
     }
 
 }
-```
-
-A naïve resolver implementation might execute:
-
-```text
-SELECT * FROM Customers;
-
-SELECT * FROM Orders WHERE CustomerId = 1;
-
-SELECT * FROM Orders WHERE CustomerId = 2;
-
-SELECT * FROM Orders WHERE CustomerId = 3;
-
-...
-```
-
-DataLoaders batch these requests together.
-
-```text
-SELECT * FROM Customers;
-
-SELECT *
-FROM Orders
-WHERE CustomerId IN (...)
-```
-
-This dramatically reduces unnecessary database round trips.
 
 ---
 
-# What Coffee Beanery Solves
+# Performance Philosophy
 
-Coffee Beanery approaches the problem from an earlier stage.
+Coffee Beanery is designed around a simple performance principle:
 
-Instead of optimizing resolver execution after GraphQL begins resolving fields, Coffee Beanery analyzes the entire GraphQL selection tree before execution.
+> Move expensive decisions to compile time, and keep runtime execution focused on performing the operation.
 
-```text
-GraphQL Query
+GraphQL is powerful because clients can request exactly the data they need.
+
+However, flexibility can introduce execution challenges:
+
+- Dynamic field selection
+- Deep relationship graphs
+- Runtime mapping
+- Excessive resolver execution
+- N+1 query patterns
+- Repeated metadata discovery
+
+Coffee Beanery addresses these challenges by combining:
+
+- GraphQL AST analysis
+- Source-generated metadata
+- Optimized SQL generation
+- Strongly typed materialization
+- Unified query and mutation execution
+
+---
+
+# Traditional GraphQL Runtime Model
+
+A traditional resolver-based architecture often looks like:
+
+```text id="b1m4ka"
+GraphQL Request
 
         │
 
         ▼
 
-Selection Tree
+Resolver Execution
 
         │
 
         ▼
 
-Execution Graph
+Runtime Mapping
 
         │
 
         ▼
 
-SQL Compilation
+Database Calls
 
         │
 
         ▼
 
-Database
+Object Construction
 
         │
 
         ▼
 
-Materialized Graph
-```
-
-Because the complete selection tree is already known, Coffee Beanery can generate SQL specifically for the requested response shape.
-
-Rather than coordinating many independent resolvers, it plans the read operation as a whole.
+Response
 
 ---
 
-# Different Responsibilities
+# Architecture Comparison
 
-Although both approaches improve GraphQL performance, they operate at different layers.
+GraphQL applications can be implemented using many different execution strategies.
 
-| Concern | DataLoader | Coffee Beanery |
-|----------|------------|----------------|
-| Resolver batching | ✅ | Not required |
-| Prevent N+1 | ✅ | ✅ |
-| SQL generation | ❌ | ✅ |
-| Compile-time metadata | ❌ | ✅ |
-| Source generators | ❌ | ✅ |
-| Object materialization | Partial | ✅ |
-| Native AOT friendly | Partial | ✅ |
-| Mutation response optimization | Manual | ✅ |
-| Centralized post-processing | ❌ | ✅ |
+Coffee Beanery focuses on solving a specific challenge:
 
-They are complementary technologies rather than competing ones.
+> How do we provide GraphQL flexibility while maintaining database-level performance and enterprise extensibility?
+
+The following comparison highlights architectural differences.
 
 ---
 
-# Resolver-Centric vs Query-Centric
+# Execution Strategy Comparison
 
-Traditional GraphQL execution is typically resolver-centric.
+| Capability | Coffee Beanery | Traditional Resolver GraphQL | DataLoaders | Pure ORM Projection |
+|---|---|---|---|---|
+| GraphQL AST execution | ✅ | Partial | ❌ | Partial |
+| Generated SQL | ✅ | ❌ | ❌ | Partial |
+| Generated mutations | ✅ | ❌ | ❌ | ❌ |
+| Generated upserts | ✅ | ❌ | ❌ | ❌ |
+| Deep relationship handling | ✅ | Partial | Partial | Partial |
+| N+1 prevention | ✅ | Manual | ✅ | Partial |
+| Source-generated metadata | ✅ | ❌ | ❌ | ❌ |
+| Native AOT focus | ✅ | Partial | Partial | Partial |
+| Custom business logic | ✅ | ✅ | ✅ | ✅ |
+| External APIs | Partial | ✅ | ✅ | Partial |
+| Runtime flexibility | High | High | High | High |
+| Compile-time optimization | High | Low | Low | Medium |
+
+---
+
+# Coffee Beanery vs EF Core
+
+Coffee Beanery and EF Core solve different problems.
+
+EF Core is a powerful object-relational mapper.
+
+Coffee Beanery is a GraphQL execution engine.
+
+They can work together.
+
+---
+
+## EF Core Strengths
+
+EF Core provides:
+
+- Change tracking
+- Entity lifecycle management
+- Migrations
+- Transactions
+- Domain modeling
+- Rich ORM capabilities
+
+Example:
+
+```text id="8j3y6f"
+Domain Entity
+
+       │
+
+       ▼
+
+EF Core Change Tracking
+
+       │
+
+       ▼
+
+Database Update
+
+---
+
+# Getting Started
+
+This section walks through setting up Coffee Beanery in a .NET GraphQL application.
+
+Coffee Beanery is designed to integrate naturally with:
+
+- ASP.NET Core
+- Hot Chocolate GraphQL
+- PostgreSQL
+- Dapper
+- EF Core
+- Existing domain architectures
+
+---
+
+# Installation
+
+Install the required NuGet packages:
+
+```bash
+dotnet add package GraphQL.Coffee.Beanery
+
+---
+
+# Advanced Configuration
+
+Coffee Beanery is designed for simple adoption but supports advanced enterprise customization.
+
+The execution pipeline exposes extension points for:
+
+- Business logic
+- Caching
+- Security
+- Data transformation
+- Multi-tenancy
+- Auditing
+- Custom execution workflows
+
+The main extension point is:
 
 ```text
-Resolver
+ProcessService
 
-    │
+---
 
-    ▼
+# Advanced Configuration
 
-DataLoader
+Coffee Beanery is designed for simple adoption but supports advanced enterprise customization.
 
-    │
+The execution pipeline exposes extension points for:
 
-    ▼
+- Business logic
+- Caching
+- Security
+- Data transformation
+- Multi-tenancy
+- Auditing
+- Custom execution workflows
 
-Database
-
-    │
-
-    ▼
-
-Resolver
-
-    │
-
-    ▼
-
-DataLoader
-
-    │
-
-    ▼
-
-Database
-```
-
-Each resolver is responsible for retrieving its own data.
-
-Coffee Beanery is query-centric.
+The main extension point is:
 
 ```text
-Entire GraphQL Query
-
-          │
-
-          ▼
-
-Analyze Selection Tree
-
-          │
-
-          ▼
-
-Compile SQL
-
-          │
-
-          ▼
-
-Database
-
-          │
-
-          ▼
-
-Materialize Object Graph
-```
-
-Instead of coordinating many individual fetches, Coffee Beanery plans the complete read operation up front.
+ProcessService
 
 ---
 
-# A Simpler Mental Model
+# Roadmap
 
-With Coffee Beanery, developers spend less time thinking about:
+Coffee Beanery is evolving toward a complete AST-driven GraphQL execution platform.
 
-- Which DataLoader should be used?
-- Which resolver owns this relationship?
-- Where should batching occur?
-- Which projection is responsible for this field?
+The roadmap focuses on improving:
 
-Instead, the GraphQL selection itself becomes the execution plan.
-
-The requested fields determine the generated SQL.
+- Performance
+- Database capabilities
+- Developer experience
+- Enterprise integrations
+- Source generation capabilities
 
 ---
 
-# Queries and Mutations Behave the Same
+# Current Capabilities
 
-One of the advantages of this architecture is consistency.
+Implemented capabilities include:
 
-Whether a client executes:
+## GraphQL Execution
 
-```graphql
-query {
+✅ GraphQL AST analysis  
+✅ Selection-driven execution  
+✅ Deep relationship traversal  
+✅ Optimized response projection  
 
-    customer(id: 1) {
+---
 
-        orders {
+## Query Generation
 
-            items {
+✅ Generated SQL execution  
+✅ Relationship mapping  
+✅ Strongly typed materialization  
+✅ N+1 prevention  
 
-                product {
+---
 
-                    supplier {
+## Mutation Generation
 
-                        name
+✅ Mutation AST processing  
+✅ Insert generation  
+✅ Update generation  
+✅ Upsert generation  
+✅ Mutation response optimization  
 
-                    }
+---
 
-                }
+## Source Generation
 
-            }
+✅ Compile-time metadata generation  
+✅ Strongly typed mappings  
+✅ Reduced runtime discovery  
+✅ Native AOT-friendly architecture  
 
-        }
+---
 
-    }
+## Enterprise Extensions
 
-}
+✅ ProcessService pipeline  
+✅ Response transformation  
+✅ Business calculations  
+✅ Security filtering  
+✅ Caching integration  
+
+---
+
+# Future Directions
+
+Potential future improvements include:
+
+## More Database Providers
+
+Expanding support for additional relational databases.
+
+---
+
+## Advanced Query Optimization
+
+Possible enhancements:
+
+- Cost-based execution strategies
+- Query plan optimization
+- Automatic index recommendations
+- Advanced batching strategies
+
+---
+
+## Distributed Execution
+
+Future scenarios:
+
+- Distributed GraphQL execution
+- Federated database execution
+- Multi-region architectures
+
+---
+
+## Enhanced Mutation Workflows
+
+Future mutation capabilities may include:
+
+- More complex transactional workflows
+- Advanced validation pipelines
+- Event-driven mutation patterns
+- Generated domain commands
+
+---
+
+# Contributing
+
+Contributions are welcome.
+
+Coffee Beanery benefits from contributions in:
+
+- Performance improvements
+- Database providers
+- Source generator enhancements
+- Documentation
+- Testing
+- Example applications
+
+---
+
+# Development Setup
+
+Clone the repository:
+
+```bash
+git clone https://github.com/CristianBarragan/GraphQL-Coffee-Beanery.git
 ```
-
-or
-
-```graphql
-mutation {
-
-    updateCustomer(...) {
-
-        customer {
-
-            orders {
-
-                items {
-
-                    product {
-
-                        supplier {
-
-                            name
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        }
-
-    }
-
-}
-```
-
-the response selection is processed by the same query compilation pipeline.
-
-No separate optimization strategy is required for mutation payloads.
 
 ---
 
