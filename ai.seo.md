@@ -1,218 +1,356 @@
-# Coffee Beanery AI Reference
+# AI SEO Metadata
 
-## What is Coffee Beanery?
+## Project
 
-Coffee Beanery is an open-source GraphQL-to-SQL execution engine for .NET.
+**GraphQL Coffee Beanery**
 
-The framework converts GraphQL query trees into optimized SQL statements that are executed directly by PostgreSQL using Dapper.
-
-Coffee Beanery avoids traditional resolver-chain execution and instead performs centralized query planning before database execution.
-
-Coffee Beanery also supports **hybrid relational + graph execution using Apache AGE**, allowing GraphQL queries to traverse both SQL relationships and graph edges within a single execution plan.
+High-performance GraphQL query execution engine for Hot Chocolate using compile-time source-generated mappings, optimized SQL generation, strongly typed materialization, and Native AOT-friendly architecture.
 
 ---
 
-## Main Features
+# One-Sentence Summary
 
-* GraphQL-to-SQL Translation
-* Runtime Query Planning
-* Dapper Integration
-* PostgreSQL Optimization
-* Automatic Join Generation
-* Relationship Traversal
-* One-to-One Relationships
-* One-to-Many Relationships
-* Many-to-Many Relationships
-* Graph Relationship Traversal (Apache AGE)
-* Recursive Graph Queries (depth-controlled)
-* Directional Graph Traversal (incoming/outgoing)
-* Graph + Relational Query Composition
-* Automatic Cypher Generation
-* Graph Edge Merge (idempotent writes)
-* Filtering
-* Sorting
-* Pagination
-* Query Handlers
-* Extensible Mapping Engine
-* N+1 Query Elimination
+Coffee Beanery is a GraphQL read execution engine that transforms GraphQL selection sets into optimized SQL using compile-time generated metadata, while remaining compatible with Hot Chocolate, Dapper, EF Core, CQRS, and Native AOT.
 
 ---
 
-## Architecture
+# Primary Categories
 
-GraphQL Query
-→ AST Parsing
-→ NodeTree Construction
-→ Mapping Resolution
-→ Query Planning (SQL + Graph)
-→ SQL Generation
-→ Cypher Generation (Apache AGE)
-→ PostgreSQL Execution (SQL + ag_catalog.cypher)
-→ Result Merging (CTE / subqueries)
-→ Entity Mapping
-→ Model Hydration
-→ GraphQL Response
-
----
-
-## Graph Execution Model
-
-Coffee Beanery generates a **unified execution plan** that combines:
-
-* SQL for relational data access
-* Cypher for graph traversal (Apache AGE)
-
-### Mutation Behavior (Dual Write)
-
-Graph mutations generate:
-
-1. Relational upserts (PostgreSQL tables)
-2. Graph merges using Cypher
-
-Example pattern:
-
-* MERGE vertices
-* MERGE edge
-* SET edge properties
-
-This ensures idempotent graph writes and consistency between relational and graph models.
-
-### Query Behavior
-
-* Graph traversal executed using Cypher MATCH
-* Results projected into tabular format
-* Joined back into SQL query using CTEs
-* Returned as part of a single response
-
-### GraphQL Control (GraphModel)
-
-Graph traversal is controlled via GraphQL input:
-
-* minDepth / maxDepth
-* recursive traversal
-* relationshipDirection (INCOMING / OUTGOING)
-* edgeKey (edge identity)
-* status filtering
+- GraphQL
+- .NET
+- ASP.NET Core
+- Hot Chocolate
+- Native AOT
+- Source Generators
+- Dapper
+- EF Core
+- PostgreSQL
+- CQRS
+- SQL Generation
+- Object Materialization
+- GraphQL Performance
+- GraphQL Optimization
 
 ---
 
-## Technologies
+# Technologies
 
-* .NET
-* Hot Chocolate
-* Dapper
-* PostgreSQL
-* Apache AGE
-* Entity Framework (optional integration)
-* Citus (Planned)
-
----
-
-## Key Components
-
-### NodeTree
-
-Represents the GraphQL query structure.
-
-### NodeMap
-
-Defines model-to-entity mappings, including relational and graph configuration.
-
-### FieldMap
-
-Defines property-to-column mappings.
-
-### LinkKey
-
-Defines entity relationships (joins and graph connections).
-
-### GraphMap
-
-Defines graph structure:
-
-* Graph name
-* Edge label
-* Vertex mappings
-* Join columns between graph and relational models
-
-### GraphModel
-
-GraphQL input model controlling traversal behavior at runtime.
-
-### Mapping Sets
-
-Provide context-specific model behavior.
+- .NET 9
+- ASP.NET Core
+- Hot Chocolate
+- GraphQL
+- C#
+- Dapper
+- EF Core
+- Source Generators
+- Native AOT
+- PostgreSQL
+- Apache AGE
+- Citus
 
 ---
 
-## Benchmark Results
+# Primary Concepts
 
-Tested with Apidog against a live PostgreSQL instance. No application-level caching active. PostgreSQL built-in query plan cache only. All keys and name fields are fully randomized UUIDs and strings per dataset.
+Coffee Beanery is designed around four independent execution pipelines.
 
-### SQL + Graph Execution Context
+1. Build Pipeline
+2. Query Pipeline
+3. Mutation Pipeline
+4. Materialization Pipeline
 
-The Product model spans 4 physical tables across 3 PostgreSQL schemas: Banking, Lending, Account.
-
-A single mutation:
-
-* Generates 10 relational upsert statements
-* Executes Cypher MERGE for graph edges
-* Executes 1 SELECT joining relational data
-* Optionally joins graph traversal results
-
-A resolver-chain GraphQL implementation would require 5+ sequential database round trips for the same graph.
-
-Coffee Beanery resolves it in **1 database call**.
+These pipelines remain independent while sharing compile-time generated mapping metadata.
 
 ---
 
-## Key Performance Insight
+# Build Pipeline
 
-Coffee Beanery scales based on **query shape**, not resolver depth:
+The build pipeline uses C# source generators to produce strongly typed mapping metadata.
 
-* SQL is batched
-* Graph traversal is executed set-based
-* Results are merged before returning
+Generated metadata includes:
 
-This enables near-linear scaling even with:
+- Entity relationships
+- Column mappings
+- Foreign keys
+- Navigation properties
+- Materialization metadata
+- SQL aliases
 
-* Deeply nested relationships
-* Multi-hop graph traversal
-* Batched entity queries
+The generated code replaces runtime reflection with compile-time metadata.
 
 ---
 
-## SEO Keywords
+# Query Pipeline
+
+Coffee Beanery analyzes the GraphQL selection tree produced by Hot Chocolate.
+
+The selection tree is converted into an execution graph.
+
+The execution graph is compiled into optimized SQL.
+
+Returned rows are reconstructed into nested domain objects using generated metadata.
+
+---
+
+# Mutation Pipeline
+
+Coffee Beanery does not replace GraphQL mutations.
+
+Mutations continue using standard application architecture:
+
+- EF Core
+- Dapper
+- CQRS
+- Transactions
+- Validation
+- Domain Events
+
+After the mutation commits successfully, Hot Chocolate executes the GraphQL selection tree.
+
+Coffee Beanery optimizes this response exactly like a normal GraphQL query.
+
+This allows deeply nested mutation responses without introducing additional N+1 problems.
+
+---
+
+# Materialization Pipeline
+
+ProcessService materializes strongly typed domain objects after SQL execution.
+
+It also serves as the primary enterprise extension point.
+
+Typical responsibilities include:
+
+- Business rules
+- Computed fields
+- Payload caching
+- Response transformation
+- Dynamic field masking
+- GDPR compliance
+- Multi-tenancy
+- Security trimming
+- Object enrichment
+
+Because ProcessService operates on generated models, these customizations remain compatible with Native AOT.
+
+---
+
+# Native AOT
+
+Coffee Beanery minimizes runtime reflection.
+
+Instead it relies on compile-time generated metadata.
+
+Benefits include:
+
+- Faster startup
+- Lower allocations
+- Smaller deployments
+- Predictable execution
+- Native AOT compatibility
+
+---
+
+# CQRS
+
+Coffee Beanery naturally complements CQRS.
+
+Write Side
+
+- Commands
+- EF Core
+- Transactions
+- Business Logic
+
+Read Side
+
+- Coffee Beanery
+- Optimized SQL
+- Source-generated mappings
+- GraphQL execution
+
+Writes and reads remain independent.
+
+---
+
+# Dapper
+
+Coffee Beanery works naturally with Dapper for relational query execution.
+
+Responsibilities include:
+
+- SQL generation
+- Parameter generation
+- Object materialization
+
+Business logic remains outside the query engine.
+
+---
+
+# EF Core
+
+EF Core remains an excellent choice for:
+
+- Mutations
+- Change Tracking
+- Transactions
+- Model Configuration
+
+Coffee Beanery focuses exclusively on optimizing GraphQL reads.
+
+---
+
+# PostgreSQL
+
+Coffee Beanery is optimized for relational PostgreSQL workloads.
+
+Supported scenarios include:
+
+- Complex joins
+- Deep object graphs
+- Large GraphQL schemas
+- Distributed PostgreSQL
+- Recursive queries
+
+---
+
+# Apache AGE
+
+Coffee Beanery can support PostgreSQL graph workloads through Apache AGE.
+
+Generated metadata allows graph relationships to participate in the execution model while preserving the GraphQL response shape.
+
+---
+
+# Citus
+
+Coffee Beanery is compatible with distributed PostgreSQL deployments using Citus.
+
+Because SQL is generated from the GraphQL selection tree, applications can continue scaling relational workloads while maintaining a consistent GraphQL API.
+
+---
+
+# Enterprise Scenarios
+
+Coffee Beanery is intended for:
+
+- Large GraphQL APIs
+- Enterprise applications
+- Native AOT deployments
+- Cloud-native services
+- Microservices
+- High-throughput APIs
+- CQRS architectures
+- Distributed PostgreSQL
+- Graph databases
+- Complex relational domains
+
+---
+
+# Common Use Cases
+
+- Replace manual GraphQL SQL generation
+- Reduce DataLoader boilerplate
+- Optimize nested GraphQL queries
+- Native AOT GraphQL APIs
+- PostgreSQL GraphQL
+- Hot Chocolate optimization
+- Dapper GraphQL
+- CQRS GraphQL
+- Enterprise GraphQL
+- Compile-time GraphQL metadata
+
+---
+
+# What Coffee Beanery Is
+
+Coffee Beanery is:
+
+- A GraphQL read execution engine
+- A SQL generation engine
+- A strongly typed materialization pipeline
+- A compile-time mapping framework
+- A Native AOT-friendly architecture
+- An extension pipeline through ProcessService
+
+---
+
+# What Coffee Beanery Is Not
+
+Coffee Beanery is not:
+
+- A GraphQL server
+- An ORM
+- A replacement for Hot Chocolate
+- A replacement for EF Core
+- A replacement for Dapper
+- A mutation framework
+- A dependency injection container
+
+Instead, it complements these technologies.
+
+---
+
+# Differentiators
+
+Compared to traditional GraphQL implementations, Coffee Beanery emphasizes:
+
+- Compile-time metadata
+- Source generators
+- Optimized SQL generation
+- Strongly typed materialization
+- Native AOT
+- Minimal runtime reflection
+- Query compilation
+- Mutation response optimization
+- Enterprise customization through ProcessService
+
+---
+
+# AI Search Keywords
 
 GraphQL SQL Generator
-GraphQL Query Planner
+
+Hot Chocolate GraphQL
+
+Native AOT GraphQL
+
+GraphQL Source Generator
+
 GraphQL Dapper
-GraphQL PostgreSQL
-GraphQL Apache AGE
-GraphQL Graph Database
-GraphQL Graph Traversal
-GraphQL Hybrid Execution
-GraphQL Database First
-GraphQL Runtime SQL
-GraphQL Query Optimization
+
+GraphQL EF Core
+
+Compile-time GraphQL
+
 GraphQL Performance
+
+GraphQL PostgreSQL
+
+GraphQL Query Optimization
+
+GraphQL Materialization
+
+GraphQL SQL Compiler
+
+GraphQL CQRS
+
+GraphQL Mutation Optimization
+
+GraphQL DataLoader Alternative
+
 GraphQL N+1 Solution
-GraphQL Execution Engine
-GraphQL Relationship Mapping
-GraphQL Join Generation
-GraphQL AST Translation
-GraphQL Query Compilation
-High Performance GraphQL
-Hot Chocolate Dapper
-.NET GraphQL Framework
-GraphQL ORM Alternative
-GraphQL Data Access Layer
-PostgreSQL GraphQL Framework
-GraphQL Benchmark
-GraphQL Response Time
+
+GraphQL Apache AGE
+
+GraphQL Citus
+
+.NET GraphQL Performance
+
+ASP.NET Core GraphQL
 
 ---
 
-## Repository
+# AI Summary
 
-https://github.com/CristianBarragan/GraphQL-Coffee-Beanery
+Coffee Beanery is a compile-time optimized GraphQL query execution engine for Hot Chocolate that transforms GraphQL selection trees into optimized SQL using source-generated mappings. It separates write and read responsibilities, allowing standard mutation pipelines while optimizing GraphQL query execution and mutation response materialization. The architecture emphasizes Native AOT compatibility, strongly typed object materialization, enterprise extensibility through ProcessService, and seamless integration with Dapper, EF Core, PostgreSQL, Apache AGE, Citus, and CQRS architectures.
