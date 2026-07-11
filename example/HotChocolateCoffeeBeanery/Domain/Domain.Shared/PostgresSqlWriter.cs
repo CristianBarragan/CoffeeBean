@@ -2,7 +2,7 @@
 using System.Text;
 using CoffeeBeanery.GraphQL.Core.Runtime;
 
-namespace CoffeeBeanery.GraphQL.Core.Sql;
+namespace Domain.Shared;
 
 public sealed class PostgresSqlWriter
 {
@@ -118,9 +118,7 @@ public sealed class PostgresSqlWriter
             if (c > 0)
                 sb.Append(", ");
 
-            AppendQuotedValue(
-                sb,
-                row.Values[c].RawValue);
+            AppendFieldValue(sb, row.StorageEntityId, row.Values[c].FieldId, row.Values[c].RawValue);
         }
 
         sb.Append(')');
@@ -138,35 +136,27 @@ public sealed class PostgresSqlWriter
     private string ResolveColumnName(
         ushort entityId,
         ushort storageEntityId,
-        ushort fieldId)
+        ushort columnId)
     {
-        var fields = _meta.FieldName[entityId];
+        var cols = _meta.EntityColumnName[storageEntityId];
 
-        if ((uint)fieldId >= (uint)fields.Length)
+        if ((uint)columnId >= (uint)cols.Length)
         {
             throw new Exception(
-                $"FieldId {fieldId} is outside FieldName[{entityId}] (Length={fields.Length}). " +
-                $"StorageEntity={storageEntityId}");
+                $"ColumnId {columnId} is outside EntityColumnName[{storageEntityId}] " +
+                $"({_meta.EntityTable[storageEntityId]}, Length={cols.Length}). " +
+                $"Entity={entityId}");
         }
 
-        var fieldName = fields[fieldId];
+        var columnName = cols[columnId];
 
-        if (string.IsNullOrEmpty(fieldName))
+        if (string.IsNullOrEmpty(columnName))
         {
             throw new Exception(
-                $"Empty field name. Entity={entityId}, Field={fieldId}");
+                $"Empty column name. StorageEntity={storageEntityId}, Column={columnId}");
         }
 
-        var mappings = _meta.FieldMappings[entityId];
-
-        foreach (var map in mappings)
-        {
-            if (string.Equals(map.SourceName, fieldName,
-                    StringComparison.OrdinalIgnoreCase))
-                return map.DestinationName;
-        }
-
-        return char.ToUpperInvariant(fieldName[0]) + fieldName[1..];
+        return columnName;
     }
     
     private string BuildCteNodeUpsertMerged(in MutationCteNode root)
@@ -205,16 +195,14 @@ public sealed class PostgresSqlWriter
             for (int c = 0; c < root.Values.Length; c++)
             {
                 if (c > 0) plainSb.Append(", ");
-                plainSb.Append('"').Append(rootCols[
-                    _meta.FieldToColumn[root.EntityId]
-                        [root.Values[c].FieldId]
-                ]).Append('"');
+                
+                plainSb.Append('"').Append(rootCols[root.Values[c].FieldId]).Append('"');
             }
             plainSb.Append(") VALUES (");
             for (int c = 0; c < root.Values.Length; c++)
             {
                 if (c > 0) plainSb.Append(", ");
-                AppendQuotedValue(plainSb, root.Values[c].RawValue);
+                AppendFieldValue(plainSb, root.StorageEntityId, root.Values[c].FieldId, root.Values[c].RawValue);
             }
             plainSb.Append(')');
 
@@ -228,10 +216,7 @@ public sealed class PostgresSqlWriter
         for (int c = 0; c < root.Values.Length; c++)
         {
             if (c > 0) sb.Append(", ");
-            sb.Append('"').Append(rootCols[
-                _meta.FieldToColumn[root.EntityId]
-                    [root.Values[c].FieldId]
-            ]).Append('"');
+            sb.Append('"').Append(rootCols[root.Values[c].FieldId]).Append('"');
         }
         for (int i = 0; i < matched.Count; i++)
         {
@@ -243,7 +228,7 @@ public sealed class PostgresSqlWriter
         for (int c = 0; c < root.Values.Length; c++)
         {
             if (c > 0) sb.Append(", ");
-            AppendQuotedValue(sb, root.Values[c].RawValue);
+            AppendFieldValue(sb, root.StorageEntityId, root.Values[c].FieldId, root.Values[c].RawValue);
         }
         for (int i = 0; i < matched.Count; i++)
         {
@@ -284,11 +269,8 @@ public sealed class PostgresSqlWriter
         var firstSet = true;
         foreach (var v in root.Values)
         {
-            var col =
-                rootCols[
-                    _meta.FieldToColumn[root.EntityId]
-                        [v.FieldId]
-                ];
+            // v.FieldId is already a ColumnId — index rootCols directly.
+            var col = rootCols[v.FieldId];
 
             if (Array.IndexOf(conflictCols, col) >= 0)
                 continue;
@@ -392,8 +374,32 @@ public sealed class PostgresSqlWriter
     // Shared helpers
     // ---------------------------------------------------------------
 
+    private void AppendFieldValue(
+        StringBuilder sb,
+        ushort storageEntityId,
+        ushort columnId,
+        string rawValue)
+    {
+        var converted = EnumConversions.TryConvert(storageEntityId, columnId, rawValue);
+        if (converted != null)
+        {
+            sb.Append(converted);
+            return;
+        }
+        AppendQuotedValue(sb, rawValue);
+    }
+    
     private static void AppendQuotedValue(StringBuilder sb, string value)
-        => sb.Append('\'').Append(value.Replace("'", "''")).Append('\'');
+    {
+        if (int.TryParse(value,
+                System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture, out _))
+        {
+            sb.Append(value);
+            return;
+        }
+        sb.Append('\'').Append(value.Replace("'", "''")).Append('\'');
+    }
 
     private void AppendDoUpdateSet(
         StringBuilder sb,
@@ -426,11 +432,11 @@ public sealed class PostgresSqlWriter
 
         foreach (var value in values)
         {
-            var columnId =
-                _meta.FieldToColumn[entityId][value.FieldId];
-
-            var columnName =
-                _meta.EntityColumnName[storageEntityId][columnId];
+            // value.FieldId is already a ColumnId — resolve the name directly
+            // via EntityColumnName rather than through _meta.FieldToColumn (a
+            // model-FieldId→ColumnId table, which this value has already passed
+            // through once at codegen time).
+            var columnName = ResolveColumnName(entityId, storageEntityId, value.FieldId);
 
             if (Array.Exists(
                     conflictCols,
@@ -493,10 +499,8 @@ public sealed class PostgresSqlWriter
 
         for (int c = 0; c < values.Length; c++)
         {
-            var columnId =
-                _meta.FieldToColumn[entityId][values[c].FieldId];
-
-            var colName = cols[columnId];
+            // values[c].FieldId is already a ColumnId — index cols directly.
+            var colName = cols[values[c].FieldId];
 
             var isConflict = false;
 

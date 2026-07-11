@@ -10,9 +10,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 {
     internal static class MaterializerEmitter
     {
-        // Sentinel value placed in the column map for columns that were not
-        // projected by the current query. ushort.MaxValue (65535) is safe
-        // because no real query will ever have 65535 result columns.
         private const string Sentinel = "ushort.MaxValue";
 
         public static string Emit(
@@ -51,13 +48,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine("namespace CoffeeBeanery.GraphQL.Core.Runtime");
             sb.AppendLine("{");
 
-            // ---------------------------------------------------------------
-            // MaterializerRegistry
-            // Signature changed: accepts ushort[] map instead of int ordinalStart.
-            // The map is built by QueryPlan.BuildColumnMap(storageEntityId, columnCount)
-            // and contains the result-set ordinal for each ColumnId constant,
-            // or ushort.MaxValue (Sentinel) for columns that were not projected.
-            // ---------------------------------------------------------------
             sb.AppendLine("    public static class MaterializerRegistry");
             sb.AppendLine("    {");
             sb.AppendLine("        public static object? Materialize(ushort storageEntityId, IDataRecord record, ushort[] map)");
@@ -72,9 +62,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine("    }");
             sb.AppendLine();
 
-            // ---------------------------------------------------------------
-            // ResultBuilderRegistry — unchanged
-            // ---------------------------------------------------------------
             sb.AppendLine("    public static class ResultBuilderRegistry");
             sb.AppendLine("    {");
             sb.AppendLine("        public static List<T> Build<T>(ushort entityId, RowLayout layout, List<object?[]> rows) where T : class");
@@ -106,32 +93,13 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         }
 
         // ---------------------------------------------------------------
-        // Column-reading materializer
-        //
-        // Old contract:  Materialize(IDataRecord record, int ordinalStart)
-        //                reads record[ordinalStart + i] for each property i.
-        //                BROKEN when query projects only a subset of columns.
-        //
-        // New contract:  Materialize(IDataRecord record, ushort[] map)
-        //                map is indexed by ColumnId.{Entity}.{Prop} constant.
-        //                map[colId] == ushort.MaxValue  → column not projected,
-        //                                                 use default/null.
-        //                map[colId] == N                → read record[N].
-        //
-        // The map is built once per entity per query execution by
-        // QueryPlan.BuildColumnMap(storageEntityId, ColumnId.{Entity}.Count).
+        // Entity materializer — map-based ordinal lookup
         // ---------------------------------------------------------------
 
-        // Takes the storage entity's INamedTypeSymbol directly rather than a
-        // MappingClassInfo — there is no separate entity-side MappingClassInfo
-        // under the current architecture, and this method never needed anything
-        // but the entity type itself.
         private static void EmitEntityMaterializer(StringBuilder sb, INamedTypeSymbol entityType)
         {
             var scalarProps = IdEmitter.GetScalarProperties(entityType);
 
-            // Identify the PK column — used for NULL check on outer-joined rows.
-            // Convention: prefer "Id" if present, otherwise first column.
             var pkProp = scalarProps.FirstOrDefault(p =>
                 string.Equals(p.Name, "Id", System.StringComparison.Ordinal))
                 ?? (scalarProps.Count > 0 ? scalarProps[0] : null);
@@ -145,8 +113,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
             if (pkProp is not null)
             {
-                // If the PK column was not projected or is NULL, this row belongs
-                // to a LEFT JOIN that produced no match — return null.
                 sb.AppendLine($"            var pkOrdinal = map[ColumnId.{entityType.Name}.{pkProp.Name}];");
                 sb.AppendLine($"            if (pkOrdinal == {Sentinel} || record.IsDBNull(pkOrdinal)) return null;");
                 sb.AppendLine();
@@ -156,11 +122,39 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
             foreach (var prop in scalarProps)
             {
-                var colIdExpr = $"ColumnId.{entityType.Name}.{prop.Name}";
-                // Emit one local per property — evaluated exactly once
-                sb.AppendLine($"            var _o_{prop.Name} = map[{colIdExpr}];");
-                var accessExpr = BuildMapAccessor(prop, $"_o_{prop.Name}");
-                sb.AppendLine($"            entity.{prop.Name} = {accessExpr};");
+                var ordinal = $"_o_{prop.Name}";
+                sb.AppendLine($"            var {ordinal} = map[ColumnId.{entityType.Name}.{prop.Name}];");
+
+                var type = prop.Type;
+                var nullableType = type as INamedTypeSymbol;
+                var underlying = nullableType?.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
+                    ? nullableType.TypeArguments[0]
+                    : type;
+
+                if (underlying.TypeKind == TypeKind.Enum)
+                {
+                    // Nullable or non-nullable enum
+                    var enumTypeName = underlying.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                                                 .Replace("global::", "");
+
+                    if (underlying.Equals(type, SymbolEqualityComparer.Default))
+                    {
+                        // Non-nullable enum
+                        sb.AppendLine(
+                            $"            entity.{prop.Name} = {ordinal} == {Sentinel} ? default({enumTypeName}) : ({enumTypeName})record.GetInt32({ordinal});");
+                    }
+                    else
+                    {
+                        // Nullable enum
+                        sb.AppendLine(
+                            $"            entity.{prop.Name} = {ordinal} == {Sentinel} ? null : record.IsDBNull({ordinal}) ? null : ({enumTypeName})record.GetInt32({ordinal});");
+                    }
+                }
+                else
+                {
+                    var accessExpr = BuildMapAccessor(prop, ordinal);
+                    sb.AppendLine($"            entity.{prop.Name} = {accessExpr};");
+                }
             }
 
             sb.AppendLine("            return entity;");
@@ -169,21 +163,12 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine();
         }
 
-        /// <summary>
-        /// Builds the read expression for one property when the result ordinal
-        /// is held in <paramref name="ordinalExpr"/> (a map lookup).
-        /// Emits: map[colId] == Sentinel ? default(T) : record.GetXxx(map[colId])
-        /// For nullable types the sentinel branch returns null.
-        /// </summary>
         private static string BuildMapAccessor(IPropertySymbol prop, string ordinalExpr)
         {
             var type = prop.Type;
             var isNullable = type.NullableAnnotation == NullableAnnotation.Annotated
                               || type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
 
-            // We need to avoid evaluating ordinalExpr twice (it's a map indexer).
-            // The generated code uses a helper method on the reader side instead —
-            // emit a checked read that tests the sentinel inline.
             var defaultLiteral = isNullable ? "null" : $"default({type.ToDisplayString()})";
 
             var getter = type switch
@@ -197,12 +182,10 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 _ => $"({type.ToDisplayString()})record.GetValue({ordinalExpr})"
             };
 
-            // Nullable types also need a DBNull guard even when the column was projected.
             var readExpr = isNullable
                 ? $"record.IsDBNull({ordinalExpr}) ? {defaultLiteral} : {getter}"
                 : getter;
 
-            // Sentinel guard wraps everything: if column wasn't projected, skip.
             return $"{ordinalExpr} == {Sentinel} ? {defaultLiteral} : {readExpr}";
         }
 
@@ -254,31 +237,28 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             var primaryEntityName = primaryLink?.EntityType?.Name ?? info.EntityType?.Name;
             if (primaryEntityName is null) return;
 
-            // Previously re-resolved primaryEntityType by searching allMappings for a
-            // *separate* MappingClassInfo whose own EntityType matched by name — that
-            // assumed an entity-side registration distinct from the model-side one,
-            // which does not exist under the current IMappingDefinition architecture.
-            // allMappings only ever contains model mappings now, so that lookup always
-            // returned null, silently skipping the enum/Guid conversion logic in
-            // ConvertExpression and producing unconverted (type-mismatched) assignments.
-            // The correct entity type is already sitting on primaryLink itself.
             var primaryEntityType = primaryLink?.EntityType ?? info.EntityType;
 
             var childLinks = PlannerEmitter.ComputeChildLinks(info, allMappings, navResult).ToList();
 
+            // Carry EntityType (INamedTypeSymbol) through the tuple so the
+            // flatten-field path below can call BuildFieldAssignment without
+            // needing a separate lookup dictionary.
             var fkNavAliases = info.Definition.Entities
                 .Where(k => !k.IsPrimary && !string.IsNullOrWhiteSpace(k.AliasProperty))
                 .Select(k =>
                 {
-                    var entityName  = k.EntityType!.Name;
+                    var entityName   = k.EntityType!.Name;
+                    var entitySymbol = k.EntityType!;
                     var relatedModel = allMappings.FirstOrDefault(m =>
                         m.IsModel &&
                         !PlannerEmitter.IsCompositeInfo(m) &&
                         string.Equals(m.EntityType?.Name, entityName, System.StringComparison.Ordinal));
                     return (
-                        Alias:     k.AliasProperty!,
-                        EntityName: entityName,
-                        ModelName: relatedModel?.ModelType.Name ?? entityName);
+                        Alias:       k.AliasProperty!,
+                        EntityName:  entityName,
+                        EntityType:  entitySymbol,          // INamedTypeSymbol — for BuildFieldAssignment
+                        ModelName:   relatedModel?.ModelType.Name ?? entityName);
                 })
                 .ToList();
 
@@ -293,7 +273,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine($"            var byRootId = new Dictionary<int, {info.ModelType.Name}>();");
             sb.AppendLine();
 
-            foreach (var (alias, _, _) in fkNavAliases)
+            foreach (var (alias, _, _, _) in fkNavAliases)
                 sb.AppendLine($"            var {ToCamel(alias)}Idx = layout.IndexOf(\"{alias}\");");
 
             foreach (var link in childLinks)
@@ -321,13 +301,28 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine("                }");
             sb.AppendLine();
 
-            foreach (var (alias, entityName, modelName) in fkNavAliases)
+            foreach (var (alias, entityName, entityType, modelName) in fkNavAliases)
             {
                 var camel = ToCamel(alias);
+
                 sb.AppendLine($"                if ({camel}Idx >= 0 && model.{alias} is null)");
                 sb.AppendLine("                {");
                 sb.AppendLine($"                    var {camel} = (Database.Entity.{entityName}?)row[{camel}Idx];");
                 sb.AppendLine($"                    if ({camel} is not null) model.{alias} = {modelName}ModelMapper.FromEntity({camel});");
+
+                // Flatten-field path: scalars declared in Definition.Fields whose
+                // EntityTypeName matches this FK-alias entity (e.g. InnerCustomerKey
+                // ← InnerCustomer.CustomerKey). These live on the composite model
+                // directly rather than through the nested object, so they are NOT
+                // handled by primaryFields (wrong entity) or ModelMapper (wrong model).
+                var flattenFields = PlannerEmitter.ComputeFieldMappingsEagerPublic(info, composite: true)
+                    .Where(f => string.Equals(f.EntityTypeName, entityName,
+                        System.StringComparison.Ordinal))
+                    .ToList();
+
+                foreach (var fm in flattenFields)
+                    sb.AppendLine($"                    if ({camel} is not null) {BuildFieldAssignment(fm, info.ModelType, entityType, camel, "model")}");
+
                 sb.AppendLine("                }");
                 sb.AppendLine();
             }
@@ -368,7 +363,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         }
 
         // ---------------------------------------------------------------
-        // Field assignment helpers — unchanged from original
+        // Field assignment helpers
         // ---------------------------------------------------------------
 
         private static string BuildFieldAssignment(

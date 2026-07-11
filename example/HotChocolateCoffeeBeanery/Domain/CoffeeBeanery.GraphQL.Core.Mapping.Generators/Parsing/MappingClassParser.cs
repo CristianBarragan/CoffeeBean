@@ -99,7 +99,8 @@ internal static class MappingClassParser
                 case "Fields":
                     ParseFields(
                         assignment.Right,
-                        info);
+                        info,
+                        semanticModel);
                     break;
 
                 case "Graph":
@@ -364,42 +365,33 @@ internal static class MappingClassParser
 
     private static void ParseFields(
         ExpressionSyntax expression,
-        MappingClassInfo info)
+        MappingClassInfo info,
+        SemanticModel semanticModel)
     {
         foreach (var element in GetCollectionElements(expression))
         {
             var initializer = GetObjectInitializer(element);
-
-            if (initializer == null)
-                continue;
+            if (initializer == null) continue;
 
             var field = new FieldInfo();
 
             foreach (var assignment in initializer.Expressions
                          .OfType<AssignmentExpressionSyntax>())
             {
-                var name =
-                    (assignment.Left as IdentifierNameSyntax)
-                    ?.Identifier.Text;
-
+                var name = (assignment.Left as IdentifierNameSyntax)?.Identifier.Text;
                 switch (name)
                 {
                     case "Source":
-                        field.SourceName =
-                            EvaluateStringLikeExpression(
-                                assignment.Right);
+                        field.SourceName = EvaluateStringLikeExpression(assignment.Right);
                         break;
-
                     case "Destination":
-                        field.DestinationName =
-                            EvaluateStringLikeExpression(
-                                assignment.Right);
+                        field.DestinationName = EvaluateStringLikeExpression(assignment.Right);
                         break;
-
                     case "Entity":
-                        field.DestinationEntity =
-                            EvaluateTypeName(
-                                assignment.Right);
+                        field.DestinationEntity = EvaluateTypeName(assignment.Right);
+                        break;
+                    case "EnumMapping":
+                        ParseEnumMapping(assignment.Right, field, semanticModel);
                         break;
                 }
             }
@@ -407,10 +399,34 @@ internal static class MappingClassParser
             if (!string.IsNullOrWhiteSpace(field.SourceName) &&
                 !string.IsNullOrWhiteSpace(field.DestinationEntity) &&
                 !string.IsNullOrWhiteSpace(field.DestinationName))
-            {
                 info.FieldMaps.Add(field);
-            }
         }
+    }
+
+    private static void ParseEnumMapping(
+        ExpressionSyntax expression,
+        FieldInfo field,
+        SemanticModel semanticModel)
+    {
+        var typeInfo = semanticModel.GetTypeInfo(expression);
+        if (typeInfo.Type is not INamedTypeSymbol { IsGenericType: true } genericType) return;
+        if (genericType.TypeArguments.Length < 2) return;
+
+        var modelEnum  = genericType.TypeArguments[0] as INamedTypeSymbol;
+        var entityEnum = genericType.TypeArguments[1] as INamedTypeSymbol;
+
+        if (modelEnum?.TypeKind  != TypeKind.Enum) return;
+        if (entityEnum?.TypeKind != TypeKind.Enum) return;
+
+        field.FromEnum = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var m in modelEnum.GetMembers().OfType<IFieldSymbol>()
+                     .Where(f => f.IsConst && f.HasConstantValue))
+            field.FromEnum[m.Name] = Convert.ToInt32(m.ConstantValue);
+
+        field.ToEnum = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var m in entityEnum.GetMembers().OfType<IFieldSymbol>()
+                     .Where(f => f.IsConst && f.HasConstantValue))
+            field.ToEnum[m.Name] = Convert.ToInt32(m.ConstantValue);
     }
 
 

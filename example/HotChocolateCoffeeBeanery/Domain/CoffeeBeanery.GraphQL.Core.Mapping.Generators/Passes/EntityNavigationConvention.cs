@@ -11,7 +11,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
         public static NavigationResolutionResult Resolve(
             MappingClassInfo info,
             ISet<INamedTypeSymbol> rootEntityTypes,
-            IReadOnlyDictionary<(INamedTypeSymbol Entity, string Navigation), string> inverseNavigation)
+            IReadOnlyDictionary<(INamedTypeSymbol Entity, string Navigation), string> inverseNavigation = null)
         {
             var result = new NavigationResolutionResult();
 

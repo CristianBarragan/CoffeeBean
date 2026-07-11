@@ -5,7 +5,7 @@
     <version>1.0.0</version>
     <authors>CoffeeBeanery.GraphQL.Core.Mapping.Generators</authors>
     <description>Package Description</description>
-    <repository type="git" commit="0e79027509440b6fbfb38e321a360c4acef84e25" />
+    <repository type="git" commit="baeaf8ffa12aac4cc9a62acdd6a69d3bb288b91f" />
     <dependencies>
       <group targetFramework=".NETStandard2.0" />
     </dependencies>

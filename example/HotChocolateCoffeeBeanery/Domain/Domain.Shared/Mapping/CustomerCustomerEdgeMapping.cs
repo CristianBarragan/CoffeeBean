@@ -87,6 +87,28 @@ public partial class CustomerCustomerEdgeMapping : IMappingDefinition
                     new EnumMappingDefinition<
                         CustomerCustomerRelationshipType,
                         DataEntity.CustomerCustomerRelationshipType>()
+            },
+            new()
+            {
+                Source =
+                    nameof(CustomerCustomerEdge.InnerCustomerKey),
+
+                Entity =
+                    typeof(DataEntity.Customer),
+
+                Destination =
+                    nameof(DataEntity.Customer.CustomerKey)
+            },
+            new()
+            {
+                Source =
+                    nameof(CustomerCustomerEdge.OuterCustomerKey),
+
+                Entity =
+                    typeof(DataEntity.Customer),
+
+                Destination =
+                    nameof(DataEntity.Customer.CustomerKey)
             }
         ],
 

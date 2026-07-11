@@ -108,6 +108,7 @@ internal static class MetadataEmitter
 
 
         sb.AppendLine("    }");
+        EmitEnumConversions(sb, models);
         sb.AppendLine("}");
         sb.AppendLine();
 
@@ -122,6 +123,54 @@ internal static class MetadataEmitter
 
 
         return sb.ToString();
+    }
+    
+    private static void EmitEnumConversions(StringBuilder sb, List<MappingClassInfo> models)
+    {
+        var enumFields = models
+            .SelectMany(m => m.FieldMaps
+                .Where(f => f.FromEnum != null && f.FromEnum.Count > 0)
+                .Select(f => (Model: m, Field: f)))
+            .ToList();
+
+        sb.AppendLine("    public static class EnumConversions");
+        sb.AppendLine("    {");
+        sb.AppendLine("        // Converts a model enum name string to its integer string value.");
+        sb.AppendLine("        // Returns null if the field has no enum conversion or the name is unknown.");
+        sb.AppendLine("        public static string? TryConvert(ushort storageEntityId, ushort columnId, string value)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            switch (storageEntityId)");
+        sb.AppendLine("            {");
+
+        foreach (var group in enumFields.GroupBy(
+            x => x.Field.DestinationEntity,
+            System.StringComparer.Ordinal))
+        {
+            var entityName = group.Key;
+            sb.AppendLine($"                case StorageEntityId.{entityName}:");
+            sb.AppendLine("                    switch (columnId)");
+            sb.AppendLine("                    {");
+
+            foreach (var (_, field) in group)
+            {
+                sb.AppendLine($"                        case (ushort)ColumnId.{entityName}.{field.DestinationName}:");
+                sb.AppendLine("                            return value switch");
+                sb.AppendLine("                            {");
+                foreach (var kvp in field.FromEnum!)
+                    sb.AppendLine($"                                \"{kvp.Key.Trim().ToUpperInvariant()}\" => \"{kvp.Value}\",");
+                sb.AppendLine("                                _ => null");
+                sb.AppendLine("                            };");
+            }
+
+            sb.AppendLine("                    }");
+            sb.AppendLine("                    break;");
+        }
+
+        sb.AppendLine("            }");
+        sb.AppendLine("            return null;");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
     }
     
     private static void EmitFieldMappingsArray(

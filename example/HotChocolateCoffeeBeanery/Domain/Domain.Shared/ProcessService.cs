@@ -79,30 +79,46 @@ public class ProcessService<TModel, TResult> : IProcessService<TResult>
 
         MutationPlan? mutationPlan = null;
 
-        if (mutationArg?.Value is ObjectValueNode inputObj)
+        if (mutationArg?.Value is ObjectValueNode wrapperObj)
         {
-            var mutationIr = HotChocolateAdapter.AdaptMutation(
-                rootEntityId,
-                rootOutputAlias,
-                inputObj,
-                _adapterLookup);
+            var entityFieldName = char.ToLowerInvariant(rootOutputAlias[0]) + rootOutputAlias.Substring(1);
 
-            mutationIr = MutationOptimizer.Optimize(mutationIr);
+            var entityField = wrapperObj.Fields.FirstOrDefault(f =>
+                string.Equals(f.Name.Value, entityFieldName, StringComparison.OrdinalIgnoreCase));
 
-            if (MutationOptimizer.HasWork(mutationIr))
+            var mutationBuilders = new List<MutationIR>();
+
+            switch (entityField?.Value)
+            {
+                case ObjectValueNode singleObj:
+                    mutationBuilders.Add(HotChocolateAdapter.AdaptMutation(
+                        rootEntityId, rootOutputAlias, singleObj, _adapterLookup));
+                    break;
+
+                case ListValueNode listNode:
+                    foreach (var item in listNode.Items)
+                    {
+                        if (item is ObjectValueNode itemObj)
+                            mutationBuilders.Add(HotChocolateAdapter.AdaptMutation(
+                                rootEntityId, rootOutputAlias, itemObj, _adapterLookup));
+                    }
+                    break;
+            }
+
+            if (mutationBuilders.Count > 0)
             {
                 var mutationPlanBuilder = new MutationPlanBuilder();
 
-                _plannerRegistry.BuildMutation(
-                    rootEntityId,
-                    mutationIr,
-                    ref mutationPlanBuilder);
+                foreach (var mutationIr in mutationBuilders)
+                {
+                    var optimized = MutationOptimizer.Optimize(mutationIr);
+                    if (!MutationOptimizer.HasWork(optimized)) continue;
 
-                foreach (var contributor in _mutationContributors)
-                    contributor.Contribute(
-                        rootEntityId,
-                        mutationIr,
-                        ref mutationPlanBuilder);
+                    _plannerRegistry.BuildMutation(rootEntityId, optimized, ref mutationPlanBuilder);
+
+                    foreach (var contributor in _mutationContributors)
+                        contributor.Contribute(rootEntityId, optimized, ref mutationPlanBuilder);
+                }
 
                 mutationPlan = mutationPlanBuilder.Build();
             }

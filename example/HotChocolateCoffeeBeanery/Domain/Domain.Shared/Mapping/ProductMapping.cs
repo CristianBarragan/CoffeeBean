@@ -33,7 +33,9 @@ public partial class ProductMapping : IMappingDefinition
                     nameof(Product.ContractKey),
 
                 EntityKey =
-                    nameof(DataEntity.Contract.ContractKey)
+                    nameof(DataEntity.Contract.ContractKey),
+
+                IsPrimary = true
             },
 
             new()
@@ -44,7 +46,9 @@ public partial class ProductMapping : IMappingDefinition
                     nameof(Product.TransactionKey),
 
                 EntityKey =
-                    nameof(DataEntity.Transaction.TransactionKey)
+                    nameof(DataEntity.Transaction.TransactionKey),
+
+                IsPrimary = true
             },
 
             new()
@@ -55,7 +59,9 @@ public partial class ProductMapping : IMappingDefinition
                     nameof(Product.CustomerBankingRelationshipKey),
 
                 EntityKey =
-                    nameof(DataEntity.CustomerBankingRelationship.CustomerBankingRelationshipKey)
+                    nameof(DataEntity.CustomerBankingRelationship.CustomerBankingRelationshipKey),
+
+                IsPrimary = true
             }
         ]
     };
