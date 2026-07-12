@@ -57,7 +57,14 @@ public partial class CustomerCustomerEdgeMapping : IMappingDefinition
                     nameof(CustomerCustomerEdge.OuterCustomer)
             }
         ],
+        PrimaryKey = [new()
+        {
+            Entity = typeof(DataEntity.CustomerCustomerRelationship),
 
+            ModelKey = nameof(DataEntity.CustomerCustomerRelationship.CustomerCustomerRelationshipKey),
+            ColumnKey =
+                nameof(DataEntity.CustomerCustomerRelationship.Id)
+        }],
         UpsertKeys =
         [
             new()

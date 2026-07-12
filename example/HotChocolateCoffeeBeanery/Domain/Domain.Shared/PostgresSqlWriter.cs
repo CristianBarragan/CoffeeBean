@@ -160,133 +160,195 @@ public sealed class PostgresSqlWriter
     }
     
     private string BuildCteNodeUpsertMerged(in MutationCteNode root)
+{
+    var owningSchema = root.SchemaOverride ?? _meta.EntitySchema[root.StorageEntityId];
+    var owningTable  = root.TableOverride  ?? _meta.EntityTable[root.StorageEntityId];
+    var rootCols     = _meta.EntityColumnName[root.StorageEntityId];
+    var conflictCols = root.ConflictColumns.Length > 0
+        ? root.ConflictColumns.ToArray()
+        : _meta.ConflictColumns[root.EntityId];
+
+    var resolutions = _meta.CteResolutions[root.EntityId];
+
+    // Match CTE children to their resolution specs.
+    var matched = new List<(MutationCteNode child, CteResolutionSpec spec)>();
+    var seenAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var child in root.Children)
     {
-        var owningSchema = root.SchemaOverride ?? _meta.EntitySchema[root.StorageEntityId];
-        var owningTable  = root.TableOverride  ?? _meta.EntityTable[root.StorageEntityId];
-        var rootCols     = _meta.EntityColumnName[root.StorageEntityId];
-        var conflictCols = root.ConflictColumns.Length > 0
-            ? root.ConflictColumns.ToArray()
-            : _meta.ConflictColumns[root.EntityId];
-
-        var resolutions = _meta.CteResolutions[root.EntityId];
-
-        var matched = new List<(MutationCteNode child, CteResolutionSpec spec)>();
-        var seenAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var child in root.Children)
+        if (!seenAliases.Add(child.Alias)) continue;
+        foreach (var r in resolutions)
         {
-            if (!seenAliases.Add(child.Alias))
-                continue;
-
-            foreach (var r in resolutions)
+            if (string.Equals(r.NavigationAlias, child.Alias, StringComparison.OrdinalIgnoreCase))
             {
-                if (string.Equals(r.NavigationAlias, child.Alias, StringComparison.OrdinalIgnoreCase))
-                {
-                    matched.Add((child, r));
-                    break;
-                }
+                matched.Add((child, r));
+                break;
             }
         }
-        
-        if (matched.Count == 0)
+    }
+
+    // Build a column-name → FieldValue index from root.Values so we can
+    // detect missing conflict columns and enumerate values by column name.
+    var valueByColumn = new Dictionary<string, FieldValue>(StringComparer.OrdinalIgnoreCase);
+    foreach (var v in root.Values)
+    {
+        if (v.FieldId < rootCols.Length)
+            valueByColumn[rootCols[v.FieldId]] = v;
+    }
+
+    // Detect conflict columns that are missing from root.Values.
+    // This is always a caller bug (planner didn't add the key to edgeValues),
+    // but surface it clearly rather than producing silent bad SQL.
+    var fkColumnNames = new HashSet<string>(
+        matched.Select(m => m.spec.ForeignKeyColumn),
+        StringComparer.OrdinalIgnoreCase);
+
+    foreach (var cc in conflictCols)
+    {
+        if (!valueByColumn.ContainsKey(cc) && !fkColumnNames.Contains(cc))
         {
-            var plainSb = new StringBuilder();
-            plainSb.Append("INSERT INTO \"").Append(owningSchema).Append("\".\"").Append(owningTable).Append("\" (");
-
-            for (int c = 0; c < root.Values.Length; c++)
-            {
-                if (c > 0) plainSb.Append(", ");
-                
-                plainSb.Append('"').Append(rootCols[root.Values[c].FieldId]).Append('"');
-            }
-            plainSb.Append(") VALUES (");
-            for (int c = 0; c < root.Values.Length; c++)
-            {
-                if (c > 0) plainSb.Append(", ");
-                AppendFieldValue(plainSb, root.StorageEntityId, root.Values[c].FieldId, root.Values[c].RawValue);
-            }
-            plainSb.Append(')');
-
-            AppendDoUpdateSetFromNames(plainSb, root.EntityId, root.StorageEntityId, root.Values, rootCols, conflictCols);
-            return plainSb.ToString();
+            throw new InvalidOperationException(
+                $"BuildCteNodeUpsertMerged: conflict column \"{cc}\" for " +
+                $"{owningSchema}.{owningTable} (EntityId={root.EntityId}) is not present " +
+                $"in root.Values and is not a CTE FK column. " +
+                $"The planner did not add this value to edgeValues — check " +
+                $"EmitCompositeMutation generates a case for this field.");
         }
+    }
 
-        var sb = new StringBuilder();
-        sb.Append("INSERT INTO \"").Append(owningSchema).Append("\".\"").Append(owningTable).Append("\" (");
+    // ---------------------------------------------------------------
+    // Simple upsert — no FK resolution children
+    // ---------------------------------------------------------------
+    if (matched.Count == 0)
+    {
+        var plainSb = new StringBuilder();
+        plainSb.Append("INSERT INTO \"").Append(owningSchema)
+               .Append("\".\"").Append(owningTable).Append("\" (");
 
-        for (int c = 0; c < root.Values.Length; c++)
-        {
-            if (c > 0) sb.Append(", ");
-            sb.Append('"').Append(rootCols[root.Values[c].FieldId]).Append('"');
-        }
-        for (int i = 0; i < matched.Count; i++)
-        {
-            if (root.Values.Length > 0 || i > 0) sb.Append(", ");
-            sb.Append('"').Append(matched[i].spec.ForeignKeyColumn).Append('"');
-        }
-        sb.Append(") SELECT ");
-
-        for (int c = 0; c < root.Values.Length; c++)
-        {
-            if (c > 0) sb.Append(", ");
-            AppendFieldValue(sb, root.StorageEntityId, root.Values[c].FieldId, root.Values[c].RawValue);
-        }
-        for (int i = 0; i < matched.Count; i++)
-        {
-            if (root.Values.Length > 0 || i > 0) sb.Append(", ");
-            var spec = matched[i].spec;
-            sb.Append(spec.RelatedTableAlias).Append(".\"").Append(spec.RelatedSurrogateIdColumn).Append('"');
-        }
-
-        sb.Append(" FROM ");
-        for (int i = 0; i < matched.Count; i++)
-        {
-            var (child, spec) = matched[i];
-            var relatedSchema = _meta.EntitySchema[child.StorageEntityId];
-            var relatedTable  = _meta.EntityTable[child.StorageEntityId];
-            if (i > 0) sb.Append(" CROSS JOIN ");
-            sb.Append('"').Append(relatedSchema).Append("\".\"").Append(relatedTable)
-              .Append("\" ").Append(spec.RelatedTableAlias);
-        }
-
-        sb.Append(" WHERE ");
-        for (int i = 0; i < matched.Count; i++)
-        {
-            var (child, spec) = matched[i];
-            var naturalKeyValue = child.Values.Length > 0 ? child.Values[0].RawValue : "NULL";
-            if (i > 0) sb.Append(" AND ");
-            sb.Append(spec.RelatedTableAlias).Append(".\"").Append(spec.RelatedNaturalKeyColumn).Append("\" = ");
-            AppendQuotedValue(sb, naturalKeyValue);
-        }
-
-        sb.Append(" ON CONFLICT (");
-        for (int i = 0; i < conflictCols.Length; i++)
-        {
-            if (i > 0) sb.Append(", ");
-            sb.Append('"').Append(conflictCols[i]).Append('"');
-        }
-        sb.Append(") DO UPDATE SET ");
-
-        var firstSet = true;
+        var first = true;
         foreach (var v in root.Values)
         {
-            // v.FieldId is already a ColumnId — index rootCols directly.
-            var col = rootCols[v.FieldId];
-
-            if (Array.IndexOf(conflictCols, col) >= 0)
-                continue;
-            if (!firstSet) sb.Append(", ");
-            firstSet = false;
-            sb.Append('"').Append(col).Append("\" = EXCLUDED.\"").Append(col).Append('"');
+            if (!first) plainSb.Append(", ");
+            first = false;
+            plainSb.Append('"').Append(rootCols[v.FieldId]).Append('"');
         }
-        foreach (var (_, spec) in matched)
+        plainSb.Append(") VALUES (");
+
+        first = true;
+        foreach (var v in root.Values)
         {
-            if (!firstSet) sb.Append(", ");
-            firstSet = false;
-            sb.Append('"').Append(spec.ForeignKeyColumn).Append("\" = EXCLUDED.\"").Append(spec.ForeignKeyColumn).Append('"');
+            if (!first) plainSb.Append(", ");
+            first = false;
+            AppendFieldValue(plainSb, root.StorageEntityId, v.FieldId, v.RawValue);
         }
+        plainSb.Append(')');
 
-        return sb.ToString();
+        AppendDoUpdateSetFromNames(
+            plainSb, root.EntityId, root.StorageEntityId,
+            root.Values, rootCols, conflictCols);
+
+        return plainSb.ToString();
     }
+
+    // ---------------------------------------------------------------
+    // CTE upsert — FK columns resolved from sub-selects
+    // ---------------------------------------------------------------
+    var sb = new StringBuilder();
+
+    // Column list: root value columns + FK columns from CTE children
+    sb.Append("INSERT INTO \"").Append(owningSchema)
+      .Append("\".\"").Append(owningTable).Append("\" (");
+
+    var firstCol = true;
+    foreach (var v in root.Values)
+    {
+        if (!firstCol) sb.Append(", ");
+        firstCol = false;
+        sb.Append('"').Append(rootCols[v.FieldId]).Append('"');
+    }
+    foreach (var (_, spec) in matched)
+    {
+        if (!firstCol) sb.Append(", ");
+        firstCol = false;
+        sb.Append('"').Append(spec.ForeignKeyColumn).Append('"');
+    }
+
+    // SELECT clause: literal values + surrogate IDs from joined tables
+    sb.Append(") SELECT ");
+
+    var firstVal = true;
+    foreach (var v in root.Values)
+    {
+        if (!firstVal) sb.Append(", ");
+        firstVal = false;
+        AppendFieldValue(sb, root.StorageEntityId, v.FieldId, v.RawValue);
+    }
+    foreach (var (_, spec) in matched)
+    {
+        if (!firstVal) sb.Append(", ");
+        firstVal = false;
+        sb.Append(spec.RelatedTableAlias).Append(".\"")
+          .Append(spec.RelatedSurrogateIdColumn).Append('"');
+    }
+
+    // FROM + CROSS JOINs for each FK child
+    sb.Append(" FROM ");
+    for (int i = 0; i < matched.Count; i++)
+    {
+        var (child, spec) = matched[i];
+        if (i > 0) sb.Append(" CROSS JOIN ");
+        sb.Append('"').Append(_meta.EntitySchema[child.StorageEntityId]).Append("\".\"")
+          .Append(_meta.EntityTable[child.StorageEntityId]).Append("\" ")
+          .Append(spec.RelatedTableAlias);
+    }
+
+    // WHERE: natural key predicates for each FK child
+    sb.Append(" WHERE ");
+    for (int i = 0; i < matched.Count; i++)
+    {
+        var (child, spec) = matched[i];
+        var naturalKeyValue = child.Values.Length > 0 ? child.Values[0].RawValue : "NULL";
+        if (i > 0) sb.Append(" AND ");
+        sb.Append(spec.RelatedTableAlias).Append(".\"")
+          .Append(spec.RelatedNaturalKeyColumn).Append("\" = ");
+        AppendQuotedValue(sb, naturalKeyValue);
+    }
+
+    // ON CONFLICT ... DO UPDATE SET (non-conflict columns only)
+    sb.Append(" ON CONFLICT (");
+    for (int i = 0; i < conflictCols.Length; i++)
+    {
+        if (i > 0) sb.Append(", ");
+        sb.Append('"').Append(conflictCols[i]).Append('"');
+    }
+    sb.Append(") DO UPDATE SET ");
+
+    var firstSet = true;
+
+    foreach (var v in root.Values)
+    {
+        var col = rootCols[v.FieldId];
+        if (Array.IndexOf(conflictCols, col) >= 0) continue;
+        if (!firstSet) sb.Append(", ");
+        firstSet = false;
+        sb.Append('"').Append(col).Append("\" = EXCLUDED.\"").Append(col).Append('"');
+    }
+    foreach (var (_, spec) in matched)
+    {
+        if (!firstSet) sb.Append(", ");
+        firstSet = false;
+        sb.Append('"').Append(spec.ForeignKeyColumn)
+          .Append("\" = EXCLUDED.\"").Append(spec.ForeignKeyColumn).Append('"');
+    }
+
+    if (firstSet)
+    {
+        // All columns were conflict columns — nothing to update
+        sb.Length -= " DO UPDATE SET ".Length;
+        sb.Append(" DO NOTHING");
+    }
+
+    return sb.ToString();
+}
 
     private void AppendSelect(StringBuilder sb, in QueryPlan plan)
     {

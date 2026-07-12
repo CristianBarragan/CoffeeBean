@@ -12,6 +12,8 @@ public sealed record MappingDefinition
 
     public IReadOnlyList<FieldDefinition> Fields { get; init; } = [];
 
+    public IReadOnlyList<PrimaryKeyDefinition> PrimaryKey { get; init; } = [];
+
     public IReadOnlyList<UpsertKeyDefinition> UpsertKeys { get; init; } = [];
 
     public GraphDefinition? Graph { get; init; }
@@ -22,6 +24,15 @@ public sealed record UpsertKeyDefinition
     public required Type Entity { get; init; }
 
     public required string Column { get; init; }
+}
+
+public sealed record PrimaryKeyDefinition
+{
+    public required Type Entity { get; init; }
+
+    public required string ModelKey { get; init; }
+    
+    public required string ColumnKey { get; init; }
 }
 
 

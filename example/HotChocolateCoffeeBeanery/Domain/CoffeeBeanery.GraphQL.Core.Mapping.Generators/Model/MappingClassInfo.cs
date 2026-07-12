@@ -15,6 +15,36 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         // Primary Entity type — derived from Definition.Entities where IsPrimary = true.
         // Set explicitly by MappingClassParser after ParseEntities runs.
         public INamedTypeSymbol? EntityType { get; set; }
+        
+        public List<EntityKeyInfo> ModelToEntityList { get; } = new();
+
+        public IReadOnlyList<EntityKeyInfo> ModelToEntity
+        {
+            get
+            {
+                if (ModelToEntityList.Count > 0)
+                    return ModelToEntityList;
+
+                if (_modelToEntity is null)
+                {
+                    _modelToEntity = Definition.Entities
+                        .Where(e => e.EntityType != null)
+                        .Select(e => new EntityKeyInfo
+                        {
+                            EntityType    = e.EntityType!,
+                            FromColumn    = e.FromColumn,
+                            ToColumn      = e.ToColumn,
+                            AliasProperty = e.AliasProperty,
+                            IsPrimary     = e.IsPrimary
+                        })
+                        .ToList();
+                }
+                return _modelToEntity;
+            }
+        }
+        private List<EntityKeyInfo>? _modelToEntity;
+
+        public void InvalidateModelToEntityCache() => _modelToEntity = null;
 
         public string ClassName =>
             ClassSymbol.Name;
@@ -40,47 +70,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         // Always initialised — parser accesses Definition.Entities without null-checking.
         public MappingDefinitionInfo Definition { get; set; } = new MappingDefinitionInfo();
-
-        // ---------------------------------------------------------------
-        // ModelToEntity — computed bridge from Definition.Entities.
-        //
-        // All emitters (PlannerEmitter, MetadataEmitter, MaterializerEmitter)
-        // read this list. It is derived lazily from Definition.Entities so the
-        // new IMappingDefinition parsing path and the old emitter path both work
-        // without rewriting every downstream consumer.
-        //
-        // Invalidate the cache by setting _modelToEntity = null if Definition
-        // is replaced after initial parse (unusual but possible in passes).
-        // ---------------------------------------------------------------
-        private List<EntityKeyInfo>? _modelToEntity;
-
-        public IReadOnlyList<EntityKeyInfo> ModelToEntity
-        {
-            get
-            {
-                if (_modelToEntity is null)
-                {
-                    _modelToEntity = (Definition?.Entities ?? Enumerable.Empty<EntityDefinitionInfo>())
-                        .Select(e => new EntityKeyInfo
-                        {
-                            EntityType   = e.EntityType,
-                            FromColumn   = e.FromColumn,
-                            ToColumn     = e.ToColumn,
-                            AliasProperty = e.AliasProperty,
-                            IsPrimary    = e.IsPrimary
-                        })
-                        .ToList();
-                }
-                return _modelToEntity;
-            }
-        }
-
-        /// <summary>
-        /// Invalidates the ModelToEntity cache after Definition.Entities is mutated.
-        /// Call this in any pass that adds/removes entities from Definition after
-        /// the initial parse.
-        /// </summary>
-        public void InvalidateModelToEntityCache() => _modelToEntity = null;
 
         public List<FieldInfo> FieldMaps { get; } = new();
 
@@ -229,6 +218,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public required string ForeignKeyProperty { get; set; }
 
         public required string PrincipalKeyProperty { get; set; }
+        
+        public bool FkOwnedByDeclaringEntity { get; set; }
 
         public bool IsCollection { get; set; }
 
@@ -253,20 +244,24 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public bool IsGraph { get; set; }
 
         public List<EntityDefinitionInfo> Entities { get; set; } = [];
+        
+        public List<PrimaryKeyDefinitionInfo> PrimaryKey { get; set; } = [];
+    }
+    
+    public sealed record PrimaryKeyDefinitionInfo
+    {
+        public required INamedTypeSymbol Entity { get; set; }
+        public required string ModelKey { get; set; }
+        public required string ColumnKey { get; set; }
     }
 
     public sealed record EntityDefinitionInfo
     {
         public INamedTypeSymbol EntityType { get; set; } = null!;
-
         public string FromColumn { get; set; } = string.Empty;
-
         public string ToColumn { get; set; } = string.Empty;
-
         public string To => EntityType?.Name ?? string.Empty;
-
         public string? AliasProperty { get; set; }
-
         public bool IsPrimary { get; set; }
     }
 

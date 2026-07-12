@@ -89,6 +89,13 @@ internal static class MappingClassParser
                         info,
                         semanticModel);
                     break;
+                
+                case "PrimaryKey":
+                    ParsePrimaryKeys(
+                        assignment.Right,
+                        info,
+                        semanticModel);
+                    break;
 
                 case "UpsertKeys":
                     ParseUpsertKeys(
@@ -110,14 +117,7 @@ internal static class MappingClassParser
                     break;
             }
         }
-
-        // Nothing above sets the singular EntityType — only ModelToEntity gets
-        // populated (via ParseEntities). Several downstream emitters (PlannerEmitter,
-        // MetadataEmitter, MaterializerEmitter) still read info.EntityType directly
-        // for simple/non-composite models, and were throwing/crashing because it was
-        // always null. Derive it here from whichever link is marked primary so this
-        // is fixed once, at the source, instead of needing the same patch applied
-        // separately to every downstream consumer.
+        
         info.EntityType ??=
             info.Definition.Entities
                 .FirstOrDefault(k => k.IsPrimary)
@@ -125,7 +125,53 @@ internal static class MappingClassParser
 
         return info;
     }
+    
+    private static void ParsePrimaryKeys(
+        ExpressionSyntax expression,
+        MappingClassInfo info,
+        SemanticModel semanticModel)
+    {
+        foreach (var element in GetCollectionElements(expression))
+        {
+            var initializer = GetObjectInitializer(element);
+            if (initializer == null)
+                continue;
 
+            INamedTypeSymbol? resolvedEntity = null;
+            string? resolvedModelKey = null;
+            string? resolvedColumnKey = null;
+
+            foreach (var assignment in initializer.Expressions.OfType<AssignmentExpressionSyntax>())
+            {
+                var name = (assignment.Left as IdentifierNameSyntax)?.Identifier.Text;
+
+                switch (name)
+                {
+                    case "Entity":
+                        resolvedEntity = GetTypeSymbol(assignment.Right, semanticModel);
+                        break;
+
+                    case "ModelKey":
+                        resolvedModelKey = EvaluateStringLikeExpression(assignment.Right);
+                        break;
+
+                    case "ColumnKey":
+                        resolvedColumnKey = EvaluateStringLikeExpression(assignment.Right);
+                        break;
+                }
+            }
+
+            if (resolvedEntity != null && !string.IsNullOrWhiteSpace(resolvedModelKey) && !string.IsNullOrWhiteSpace(resolvedColumnKey))
+            {
+                info.Definition.PrimaryKey.Add(new PrimaryKeyDefinitionInfo
+                {
+                    Entity = resolvedEntity,
+                    ModelKey = resolvedModelKey!,
+                    ColumnKey = resolvedColumnKey!
+                });
+            }
+        }
+    }
 
     private static ExpressionSyntax? GetPropertyExpression(
         PropertyDeclarationSyntax property)
@@ -270,6 +316,15 @@ internal static class MappingClassParser
                     ToColumn = entity.ToColumn,
                     AliasProperty = entity.AliasProperty,
                     IsPrimary = entity.IsPrimary
+                });
+                
+                info.ModelToEntityList.Add(new EntityKeyInfo
+                {
+                    EntityType    = entity.EntityType,
+                    FromColumn    = entity.FromColumn,
+                    ToColumn      = entity.ToColumn,
+                    AliasProperty = entity.AliasProperty,
+                    IsPrimary     = entity.IsPrimary
                 });
             }
         }

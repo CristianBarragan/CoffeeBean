@@ -27,7 +27,14 @@ public partial class ContactPointMapping : IMappingDefinition
                 IsPrimary = true
             }
         ],
+        PrimaryKey = [new()
+        {
+            Entity = typeof(DataEntity.ContactPoint),
 
+            ModelKey = nameof(ContactPoint.ContactPointKey),
+            ColumnKey = 
+                nameof(DataEntity.ContactPoint.Id)
+        }],
         UpsertKeys =
         [
             new()

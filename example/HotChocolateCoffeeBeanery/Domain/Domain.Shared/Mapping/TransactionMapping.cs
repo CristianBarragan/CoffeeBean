@@ -27,7 +27,13 @@ public partial class TransactionMapping : IMappingDefinition
                 IsPrimary = true
             }
         ],
-
+        PrimaryKey = [new()
+        {
+            Entity = typeof(DataEntity.Transaction),
+            ModelKey = nameof(Transaction.TransactionKey),
+            ColumnKey =
+                nameof(DataEntity.Transaction.Id)
+        }],
         UpsertKeys =
         [
             new()

@@ -27,7 +27,13 @@ public partial class CustomerMapping : IMappingDefinition
                 IsPrimary = true
             }
         ],
-
+        PrimaryKey = [new()
+        {
+            Entity = typeof(DataEntity.Customer),
+            ModelKey = nameof(Customer.CustomerKey),
+            ColumnKey =
+                nameof(DataEntity.Customer.Id)
+        }],
         UpsertKeys =
         [
             new()

@@ -27,7 +27,13 @@ public partial class ContractMapping : IMappingDefinition
                 IsPrimary = true
             }
         ],
-
+        PrimaryKey = [new()
+        {
+            Entity = typeof(DataEntity.Contract),
+            ModelKey = nameof(DataEntity.Contract.ContractKey),
+            ColumnKey =
+                nameof(DataEntity.Contract.Id)
+        }],
         UpsertKeys =
         [
             new()

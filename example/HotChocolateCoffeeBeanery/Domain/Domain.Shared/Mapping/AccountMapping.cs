@@ -27,7 +27,15 @@ public partial class AccountMapping : IMappingDefinition
                 IsPrimary = true
             }
         ],
+        PrimaryKey = [ new()
+        {
+            Entity = typeof(DataEntity.Account),
 
+            ModelKey = nameof(Account.AccountKey),
+            
+            ColumnKey =
+                nameof(DataEntity.Account.Id)
+        }],
         UpsertKeys =
         [
             new()

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 using Microsoft.CodeAnalysis;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
 
@@ -38,47 +39,44 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                 if (property.IsStatic)
                     continue;
 
-
-
                 if (!IsNavigationCandidate(property))
                     continue;
 
+                // Only surface navigations the GraphQL model actually exposes —
+                // entity-only navs (e.g. Customer.OuterCustomerCustomerRelationship,
+                // which exists solely to support fluent EF config for the edge model)
+                // must not be promoted into NavigationInfo.
+                var modelHasMatchingProperty = info.ModelType.GetMembers()
+                    .OfType<IPropertySymbol>()
+                    .Any(p => string.Equals(p.Name, property.Name, StringComparison.Ordinal));
+                if (!modelHasMatchingProperty)
+                    continue;
 
-
-                var related =
-                    ResolveRelatedEntity(property.Type);
-
-
-
+                var related = ResolveRelatedEntity(property.Type);
                 if (related == null)
                     continue;
 
+                // Ownership follows the sibling-Id property, not collection-ness:
+                // whichever side declares "{NavPropertyName}Id" alongside the nav
+                // is the dependent/FK-owning side (matches HasForeignKey<T>(...)).
+                var fkSiblingName = property.Name + "Id";
+                var declaringOwnsFk = properties.Any(p =>
+                    string.Equals(p.Name, fkSiblingName, StringComparison.Ordinal));
 
+                var navigation = new NavigationInfo
+                {
+                    NavigationName = property.Name,
+                    RelatedEntityType = related,
+                    ForeignKeyProperty = declaringOwnsFk
+                        ? fkSiblingName
+                        : PlannerEmitter.GetPkPropertyName(entity),
+                    PrincipalKeyProperty = related.Name + "Key",
+                    IsCollection = IsCollection(property.Type),
+                    TargetIsRoot = rootEntityTypes.Contains(related),
+                    FkOwnedByDeclaringEntity = declaringOwnsFk 
+                };
 
-                var navigation =
-                    new NavigationInfo
-                    {
-                        NavigationName = property.Name,
-
-                        RelatedEntityType = related,
-
-                        ForeignKeyProperty =
-                            property.Name + "Id",
-
-                        PrincipalKeyProperty =
-                            related.Name + "Key",
-
-                        IsCollection =
-                            IsCollection(property.Type),
-
-                        TargetIsRoot =
-                            rootEntityTypes.Contains(related)
-                    };
-
-
-
-                result.Navigations.Add(
-                    navigation);
+                result.Navigations.Add(navigation);
             }
 
 
