@@ -39,7 +39,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             foreach (var model in models)
             {
                 var navResult = navResults.TryGetValue(model.ModelType.Name, out var r) ? r : null;
-                EmitPlanner(sb, model, allMappings, models, navResult);
+                EmitPlanner(sb, model, allMappings, models, navResult, entityGraph);
             }
 
             EmitRegistry(sb, models);
@@ -123,10 +123,9 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             MappingClassInfo info,
             ImmutableArray<MappingClassInfo> allMappings,
             NavigationResolutionResult? navResult,
-            bool composite)
+            bool composite,
+            List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
         {
-
-
             sb.AppendLine("        public static void Build(in SelectionIR node, ref QueryPlanBuilder builder)");
             sb.AppendLine("        {");
 
@@ -166,12 +165,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
                         if (entityFields.Count == 0) continue;
 
-                        // Root entity reads off node.OutputAlias directly (same table as the
-                        // CTE/FROM row). Non-root entities were joined under a per-entity
-                        // alias suffix by EmitHopChain when this model is reached as a child
-                        // (see ComputeChildLinks/EmitChildJoinDispatch); when queried at the
-                        // root directly there is currently no equivalent join emitted here --
-                        // see open question below.
                         var aliasExpr = string.Equals(entityType.Name, primaryEntityType.Name, System.StringComparison.Ordinal)
                             ? "node.OutputAlias"
                             : $"node.OutputAlias + \"_{entityType.Name}\"";
@@ -193,6 +186,36 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     sb.AppendLine();
                 }
 
+                // ---------------------------------------------------------------
+                // NEW: real multi-hop joins between the composite model's own
+                // backing entities. Previously this relied on `secondaryLinks`,
+                // which only supports a single hop with the FK assumed to live on
+                // the PRIMARY entity pointing at the related entity's PK — wrong
+                // for chains like Product's CustomerBankingRelationship (primary)
+                // -> Contract -> Account / Transaction, where the FK actually
+                // lives on the CHILD side, and Account/Transaction are two hops
+                // away, not one. This walks entityGraph via the same
+                // EntityGraphPathfinder used for model-to-model navigation, and
+                // emits one AddJoin per hop using EmitInternalHopChain (mirrors
+                // EmitHopChain below, but targets the entitiesToEmit alias
+                // convention: node.OutputAlias + "_{EntityName}" for the final
+                // hop, node.OutputAlias + "_hopN" for intermediate hops).
+                // ---------------------------------------------------------------
+                foreach (var entityType in entitiesToEmit)
+                {
+                    if (SymbolEqualityComparer.Default.Equals(entityType, primaryEntityType))
+                        continue;
+
+                    var hops = FluentEntityNavigationConvention.EntityGraphPathfinder.FindPath(
+                        entityGraph, primaryEntityType, entityType);
+
+                    if (hops == null || hops.Count == 0)
+                        continue; // no physical path found -- can't join, columns for this entity stay unreachable
+
+                    EmitInternalHopChain(sb, info, hops, entityType.Name);
+                }
+                sb.AppendLine();
+
                 // Single graph block — was duplicated before, now appears exactly once.
                 if (info.Graph != null && !string.IsNullOrWhiteSpace(info.Graph.GraphName))
                 {
@@ -204,11 +227,11 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     sb.AppendLine($"                \"{g.EdgeLabel}\",");
                     sb.AppendLine($"                \"{g.EdgeKey}\",");
                     sb.AppendLine($"                \"{g.From!.Label}\",");
-                    sb.AppendLine($"                \"{g.From.KeyColumn}\",");
+                    sb.AppendLine($"                \"{g.FromJoinColumn}\",");
                     sb.AppendLine($"                \"{g.From.Alias}\",");
                     sb.AppendLine($"                \"{g.FromJoinColumn}\",");
                     sb.AppendLine($"                \"{g.To!.Label}\",");
-                    sb.AppendLine($"                \"{g.To.KeyColumn}\",");
+                    sb.AppendLine($"                \"{g.ToJoinColumn}\",");
                     sb.AppendLine($"                \"{g.To.Alias}\",");
                     sb.AppendLine($"                \"{g.ToJoinColumn}\",");
                     sb.AppendLine($"                node.OutputAlias + \"_graph\");");
@@ -434,6 +457,52 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine();
         }
 
+        // ---------------------------------------------------------------
+        // NEW: emits AddJoin calls for a hop chain that stays entirely
+        // internal to a single composite model's own backing entities
+        // (as opposed to EmitHopChain below, which targets a genuinely
+        // separate child model). The final hop's target alias matches
+        // the convention already used by the entitiesToEmit scalar-column
+        // block: node.OutputAlias + "_{finalEntityName}".
+        // ---------------------------------------------------------------
+        private static void EmitInternalHopChain(
+            StringBuilder sb,
+            MappingClassInfo info,
+            List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> hops,
+            string finalEntityName)
+        {
+            for (var i = 0; i < hops.Count; i++)
+            {
+                var edge = hops[i];
+                var isLast = i == hops.Count - 1;
+
+                // FindPath returns edges oriented FK(dependent) -> PK(principal);
+                // walking direction here always proceeds primary -> target, and
+                // FindPath already resolves the correct traversal order, so we
+                // read From/To directly off which side matches the previous hop.
+                var fromEntity = edge.DependentEntity;
+                var fromColumn = edge.DependentColumn;
+                var toEntity = edge.PrincipalEntity;
+                var toColumn = edge.PrincipalColumn;
+
+                var fromAliasExpr = i == 0
+                    ? "node.OutputAlias"
+                    : $"node.OutputAlias + \"_hop{i - 1}\"";
+                var toAliasExpr = isLast
+                    ? $"node.OutputAlias + \"_{finalEntityName}\""
+                    : $"node.OutputAlias + \"_hop{i}\"";
+
+                sb.AppendLine("            builder.AddJoin(");
+                sb.AppendLine($"                EntityId.{info.ModelType.Name},");
+                sb.AppendLine($"                StorageEntityId.{fromEntity.Name},");
+                sb.AppendLine($"                EntityId.{info.ModelType.Name},");
+                sb.AppendLine($"                StorageEntityId.{toEntity.Name},");
+                sb.AppendLine($"                ColumnId.{fromEntity.Name}.{fromColumn},");
+                sb.AppendLine($"                ColumnId.{toEntity.Name}.{toColumn},");
+                sb.AppendLine($"                JoinKind.Left, {toAliasExpr});");
+            }
+        }
+
         private static void EmitChildJoinDispatch(
             StringBuilder sb,
             MappingClassInfo info,
@@ -455,9 +524,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
                 if (byNavName.Count > 1)
                 {
-                    // Disambiguation case: same child model reached via differently-named
-                    // navigations (e.g. InnerCustomer / OuterCustomer both -> Customer).
-                    // Exactly one path expected per nav name here.
                     for (var i = 0; i < byNavName.Count; i++)
                     {
                         var navGroup = byNavName[i];
@@ -475,15 +541,10 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
                     if (navLinks.Count == 1)
                     {
-                        // Simple single-path child.
                         EmitHopChain(sb, info, navLinks[0], "child.OutputAlias", indent: "                        ");
                     }
                     else
                     {
-                        // Composite case: one navigation, multiple backing-entity paths
-                        // (e.g. Product via CustomerBankingRelationship/Contract/Account/Transaction).
-                        // All chains are emitted unconditionally under distinct join aliases;
-                        // ProductPlanner.Build must read whichever alias is populated per row.
                         foreach (var l in navLinks)
                         {
                             var joinAlias = $"child.OutputAlias + \"_{l.ChildEntityName}\"";
@@ -511,8 +572,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             {
                 var hop = link.Hops[i];
                 var isLast = i == link.Hops.Count - 1;
-                // Intermediate hops need their own pass-through alias; only the last
-                // hop's join target is exposed under the GraphQL-visible alias.
                 var aliasExpr = isLast ? finalAliasExpr : $"child.OutputAlias + \"_hop{i}\"";
                 var parentEntityIdExpr = i == 0 ? $"EntityId.{info.ModelType.Name}" : $"EntityId.{hop.FromEntityName}";
 
@@ -532,14 +591,15 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             MappingClassInfo info,
             ImmutableArray<MappingClassInfo> allMappings,
             List<MappingClassInfo> models,
-            NavigationResolutionResult? navResult)
+            NavigationResolutionResult? navResult,
+            List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
         {
             sb.AppendLine($"    public static class {info.ModelType.Name}Planner");
             sb.AppendLine("    {");
 
             var composite = IsCompositeInfo(info);
 
-            EmitBuildQuery(sb, info, allMappings, navResult, composite);
+            EmitBuildQuery(sb, info, allMappings, navResult, composite, entityGraph);
             EmitBuildMutation(sb, info, allMappings, models, navResult, composite);
 
             sb.AppendLine("    }");
@@ -1108,14 +1168,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             if (info.Graph != null &&
                 !string.IsNullOrWhiteSpace(info.Graph.GraphName))
             {
-                // FIX: fkLinks/AliasProperty is the alias actually used at runtime
-                // (child.OutputAlias in MutationIR). info.Graph.From/To.Alias is
-                // frequently a concatenated query-side display string (e.g.
-                // "InnerCustomerCustomer") that never matches a real child alias --
-                // it must only be a fallback when no fkLinks entry exists, not the
-                // primary source. Previously this was reversed, which silently
-                // prevented graphFromKey/graphToKey from ever being set, and the
-                // Cypher MERGE was never emitted.
                 resolvedGraphFromAlias =
                     fkLinks.FirstOrDefault(l =>
                             string.Equals(
@@ -1640,7 +1692,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine("        }");
             sb.AppendLine();
 
-            // --- new members, still inside PlannerRegistry, using its own PlannerCount/ThrowUnknownEntity ---
             sb.AppendLine("        public static bool IsValidEntity(ushort entityId) => entityId < PlannerCount;");
             sb.AppendLine();
             sb.AppendLine("        public static string GetEntityName(ushort entityId)");
@@ -1663,14 +1714,12 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine("    }");
         }
 
-        // Bridge helper to map to the internal Eager methods from your code generator core
         internal static List<(string FieldName, string EntityTypeName, string ColumnName)>
             ComputeFieldMappingsEagerPublic(MappingClassInfo info, bool composite)
         {
             return ComputeFieldMappingsEager(info, composite);
         }
 
-        // Keep internal hooks intact exactly as defined in your passes
         private static List<(string FieldName, string EntityTypeName, string ColumnName)> ComputeFieldMappingsEager(
             MappingClassInfo info, bool composite)
         {
@@ -1756,9 +1805,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                         Hops = path.Hops.Select(e => new ChildLinkHop
                         {
                             FromEntityName = e.DependentEntity.Name,
-                            // an Edge is stored FK->PK; walking direction (dependent->principal
-                            // or principal->dependent) depends on which side matches the
-                            // previous hop's "To", so orient per-hop below rather than assuming
                             FromColumn = e.DependentColumn,
                             ToEntityName = e.PrincipalEntity.Name,
                             ToColumn = e.PrincipalColumn

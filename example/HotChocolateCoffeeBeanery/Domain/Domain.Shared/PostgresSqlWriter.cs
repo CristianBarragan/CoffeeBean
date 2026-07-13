@@ -463,7 +463,13 @@ private static string EscapeCypherValue(string value) =>
 
         var edgeReturn = string.IsNullOrEmpty(join.EdgeKeyColumn) ? "" : $"r.{join.EdgeKeyColumn}";
         var edgeColumnDef = string.IsNullOrEmpty(join.EdgeKeyColumn) ? "" : $"{join.EdgeKeyColumn} agtype";
-        var edgeSelect = string.IsNullOrEmpty(join.EdgeKeyColumn) ? "" : $"({join.EdgeKeyColumn})::text::uuid AS {join.EdgeKeyColumn}";
+        // FIX: this alias must be quoted, matching from_key/to_key below. Unquoted,
+        // Postgres folds it to lowercase ("customercustomerrelationshipkey"), which
+        // then can't match the quoted, mixed-case reference in the outer join
+        // condition ("...".CustomerCustomerRelationshipKey) — causing
+        // "column ... does not exist" at execution time even though the SQL
+        // compiled/generated without error.
+        var edgeSelect = string.IsNullOrEmpty(join.EdgeKeyColumn) ? "" : $"({join.EdgeKeyColumn})::text::uuid AS \"{join.EdgeKeyColumn}\"";
 
         sb.Append("LEFT JOIN (\n");
         sb.Append("    WITH graph_edges AS (\n");

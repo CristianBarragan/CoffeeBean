@@ -366,6 +366,25 @@ internal static class MetadataEmitter
             });
     }
     
+    // FIX: ForeignKeyColumn/RelatedNaturalKeyColumn were previously taken
+    // directly from link.ToColumn/link.FromColumn (the ModelKey/EntityKey
+    // pair used for reading the model's own scalar back out of the related
+    // entity's natural key — e.g. InnerCustomerKey/CustomerKey). That pair
+    // describes a completely different mapping than what the SQL writer
+    // needs here:
+    //   - ForeignKeyColumn must be the actual FK column on THIS (owning)
+    //     entity that points at the related row (e.g. InnerCustomerId /
+    //     OuterCustomerId on CustomerCustomerRelationship) — not the
+    //     related entity's natural key column name.
+    //   - RelatedNaturalKeyColumn must be the natural key column on the
+    //     RELATED entity (e.g. CustomerKey on Customer) — not the parent
+    //     model's own scalar name (e.g. InnerCustomerKey), which doesn't
+    //     exist as a column on the related table at all.
+    // The {AliasProperty}Id convention mirrors the same convention already
+    // used for ordinary secondary-link joins in PlannerEmitter's
+    // EmitBuildQuery (fkColumn = alias + "Id"), so this stays consistent
+    // with how FK columns are derived elsewhere in the generator rather
+    // than introducing a new naming rule.
     foreach (var link in info.Definition.Entities.Where(k => 
                  !k.IsPrimary &&
                  k.EntityType != null &&
@@ -387,7 +406,7 @@ internal static class MetadataEmitter
             {
                 NavigationAlias = link.AliasProperty!,
 
-                ForeignKeyColumn = link.ToColumn!,
+                ForeignKeyColumn = link.AliasProperty! + "Id",
 
                 OwningPrimaryKeyColumn = primaryEntry.ToColumn!,
 
@@ -397,7 +416,7 @@ internal static class MetadataEmitter
                     GetPkPropertyName(link.EntityType),
 
                 RelatedNaturalKeyColumn =
-                    link.FromColumn!
+                    link.ToColumn!
             });
     }
 }
