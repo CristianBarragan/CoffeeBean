@@ -17,6 +17,44 @@ public sealed record MappingDefinition
     public IReadOnlyList<UpsertKeyDefinition> UpsertKeys { get; init; } = [];
 
     public GraphDefinition? Graph { get; init; }
+
+    public IReadOnlyList<NavigationDefinition> Navigations { get; init; } = [];
+}
+
+public sealed record NavigationDefinition
+{
+    /// <summary>The property name on the parent Model (e.g. "Product", "ContactPoint").</summary>
+    public required string NavigationName { get; init; }
+
+    /// <summary>The target Model type (e.g. typeof(Product)).</summary>
+    public required Type TargetModel { get; init; }
+
+    public bool IsCollection { get; init; } = true;
+
+    /// <summary>
+    /// One path per backing entity of the target model. For a simple
+    /// single-entity target this list has exactly one Path. For a composite
+    /// target like Product, one Path per Product-owned entity that is
+    /// actually reachable from this parent — omit any that aren't.
+    /// </summary>
+    public required IReadOnlyList<JoinPathDefinition> Paths { get; init; }
+}
+
+public sealed record JoinPathDefinition
+{
+    /// <summary>Which of the target model's backing entities this path resolves to.</summary>
+    public required Type TargetEntity { get; init; }
+
+    /// <summary>Ordered hops from the parent's primary entity to TargetEntity.</summary>
+    public required IReadOnlyList<JoinHopDefinition> Hops { get; init; }
+}
+
+public sealed record JoinHopDefinition
+{
+    public required Type FromEntity { get; init; }
+    public required string FromColumn { get; init; }
+    public required Type ToEntity { get; init; }
+    public required string ToColumn { get; init; }
 }
 
 public sealed record UpsertKeyDefinition

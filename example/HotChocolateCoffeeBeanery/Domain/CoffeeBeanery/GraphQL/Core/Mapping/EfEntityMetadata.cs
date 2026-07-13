@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace CoffeeBeanery.GraphQL.Core.Mapping;
@@ -29,32 +30,41 @@ public sealed class EfEntityMetadata<TContext>
         return efType;
     }
 
-    public List<NavigationInfo> GetNavigations(IEntityType efEntityType)
+    public List<NavigationDefinition> GetNavigations(IEntityType efEntityType)
     {
-        var result = new List<NavigationInfo>();
+        var result = new List<NavigationDefinition>();
 
         foreach (var nav in efEntityType.GetNavigations())
         {
             var fk = nav.ForeignKey;
 
-            // FIX: previously skipped every dependent-side navigation (`if (nav.IsOnDependent)
-            // continue;`). That silently dropped any single-reference nav where THIS entity
-            // is the one holding the FK column - e.g. CustomerCustomerEdge.InnerCustomer /
-            // .OuterCustomer, where CustomerCustomerEdge holds InnerCustomerId/OuterCustomerId
-            // pointing at Customer's PK. Both directions are now returned; IsOnDependent is
-            // surfaced so callers (NodeBuilder.BuildEntityChildren) can orient FromColumn/
-            // ToColumn correctly for whichever side this entity is on - ForeignKeyProperty and
-            // PrincipalKeyProperty below are direction-invariant (always "the FK column" /
-            // "the PK column" of the underlying relationship), so the caller still needs to
-            // know which one lives on THIS entity vs the related one.
-            result.Add(new NavigationInfo
+            // Orient FromColumn/ToColumn based on which side THIS entity is on.
+            var (fromEntity, fromColumn, toEntity, toColumn) = nav.IsOnDependent
+                ? (efEntityType.ClrType, fk.Properties[0].Name, nav.TargetEntityType.ClrType, fk.PrincipalKey.Properties[0].Name)
+                : (efEntityType.ClrType, fk.PrincipalKey.Properties[0].Name, nav.TargetEntityType.ClrType, fk.Properties[0].Name);
+
+            result.Add(new NavigationDefinition
             {
                 NavigationName = nav.Name,
-                ForeignKeyProperty = fk.Properties[0].Name,
-                PrincipalKeyProperty = fk.PrincipalKey.Properties[0].Name,
-                RelatedEntityType = nav.TargetEntityType.ClrType,
+                TargetModel = nav.TargetEntityType.ClrType,
                 IsCollection = nav.IsCollection,
-                IsOnDependent = nav.IsOnDependent
+                Paths =
+                [
+                    new JoinPathDefinition
+                    {
+                        TargetEntity = nav.TargetEntityType.ClrType,
+                        Hops =
+                        [
+                            new JoinHopDefinition
+                            {
+                                FromEntity = fromEntity,
+                                FromColumn = fromColumn,
+                                ToEntity = toEntity,
+                                ToColumn = toColumn
+                            }
+                        ]
+                    }
+                ]
             });
         }
 
@@ -64,6 +74,8 @@ public sealed class EfEntityMetadata<TContext>
     public sealed class NavigationInfo
     {
         public string NavigationName { get; init; } = "";
+        
+        public INamedTypeSymbol? TargetModel { get; init; } 
         public string ForeignKeyProperty { get; init; } = "";
         public string PrincipalKeyProperty { get; init; } = "";
         public Type RelatedEntityType { get; init; } = typeof(object);

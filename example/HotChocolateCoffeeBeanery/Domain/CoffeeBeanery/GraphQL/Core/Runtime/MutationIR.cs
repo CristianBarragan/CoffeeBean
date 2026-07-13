@@ -10,8 +10,16 @@ namespace CoffeeBeanery.GraphQL.Core.Runtime;
 public readonly struct FieldValue
 {
     public readonly ushort FieldId;
+    public readonly ushort ColumnId;
     public readonly string RawValue;
 
+    public FieldValue(ushort fieldId, ushort columnId, string rawValue)
+    {
+        FieldId = fieldId;
+        ColumnId = columnId;
+        RawValue = rawValue;
+    }
+    
     public FieldValue(ushort fieldId, string rawValue)
     {
         FieldId = fieldId;

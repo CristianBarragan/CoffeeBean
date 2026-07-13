@@ -1,12 +1,20 @@
-﻿namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
+﻿using System.Collections.Generic;
+
+namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
 
 internal sealed class ChildLink
 {
-    public string NavigationName   { get; init; } = "";
-    public string ChildModelName   { get; init; } = "";
-    public string ParentEntityName { get; init; } = "";
-    public string ChildEntityName  { get; init; } = "";
-    public string ParentJoinColumn { get; init; } = "";
-    public string ChildJoinColumn  { get; init; } = "";
-    public bool   IsCollection     { get; init; }
+    public required string NavigationName { get; init; }
+    public required string ChildModelName { get; init; }
+    public required string ChildEntityName { get; init; } 
+    public required List<ChildLinkHop> Hops { get; init; }
+    public bool IsCollection { get; init; }
+}
+
+internal sealed class ChildLinkHop
+{
+    public required string FromEntityName { get; init; }
+    public required string FromColumn { get; init; }
+    public required string ToEntityName { get; init; }
+    public required string ToColumn { get; init; }
 }

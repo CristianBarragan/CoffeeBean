@@ -69,21 +69,7 @@ namespace Domain.Shared.Extension
                             Model = Model.Model.CustomerCustomerEdge
                         }
                     }));
-
-            // ---- User-supplied mapping sets ----
-            // Registered as a singleton list so NodeBuilder (or equivalent)
-            // can resolve them all at startup.
-            // services.AddSingleton<IReadOnlyList<IMappingSet>>(_ => builder.MappingSets);
-
-            // ---- User-supplied NodeMap overrides ----
-            // Registered as a singleton list; applied after all mapping sets
-            // have registered their maps.
-            // services.AddSingleton<IReadOnlyList<Action<NodeMap>>>(_ => builder.Overrides);
-
-            // ---- User-supplied service hooks ----
-            // foreach (var hook in builder.ServiceHooks)
-            //     hook(services);
-
+            
             return services;
         }
     }

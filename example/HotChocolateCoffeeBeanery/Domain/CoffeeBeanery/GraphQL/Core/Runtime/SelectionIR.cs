@@ -20,20 +20,6 @@ public readonly struct ScalarSelection
     }
 }
 
-/// <summary>
-/// A node in the normalized selection tree.
-/// EntityId is a generated ushort constant (IdEmitter output).
-/// OutputAlias is the role alias the client used for this entity
-/// (e.g. "InnerCustomer" when the schema name is "Customer").
-/// Children are nested entity selections (not scalar fields).
-///
-/// Invariants guaranteed by the adapter:
-///   - No HotChocolate types leak past this struct.
-///   - Field aliases are already resolved to schema names.
-///   - Inline fragments are already unwrapped.
-///   - Conditional fields (@skip/@include) are marked IsConditional
-///     but NOT removed here; Selection Optimizer handles that.
-/// </summary>
 public readonly struct SelectionIR
 {
     public readonly ushort EntityId;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
 using Microsoft.CodeAnalysis;
 
 namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
@@ -11,6 +12,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         // Graph/model type
         public INamedTypeSymbol ModelType { get; set; } = null!;
+        
+        public bool IsComposite { get; set; }
 
         // Primary Entity type — derived from Definition.Entities where IsPrimary = true.
         // Set explicitly by MappingClassParser after ParseEntities runs.
@@ -95,6 +98,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public string From { get; set; } = "";
 
         public string AliasFrom { get; set; } = "";
+        
+        public string? AliasProperty { get; set; }
 
         public string? FromColumn { get; set; }
 
@@ -105,8 +110,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public string? ToColumn { get; set; }
 
         public required INamedTypeSymbol EntityType { get; set; }
-
-        public string? AliasProperty { get; set; }
 
         public bool IsPrimary { get; set; }
     }
@@ -211,19 +214,21 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
     public sealed class NavigationInfo
     {
-        public required string NavigationName { get; set; }
-
-        public required INamedTypeSymbol RelatedEntityType { get; set; }
-
-        public required string ForeignKeyProperty { get; set; }
-
-        public required string PrincipalKeyProperty { get; set; }
-        
-        public bool FkOwnedByDeclaringEntity { get; set; }
-
-        public bool IsCollection { get; set; }
-
-        public bool TargetIsRoot { get; set; }
+        public required string NavigationName { get; init; }
+        public INamedTypeSymbol? TargetModel { get; init; }  
+        public INamedTypeSymbol? RelatedEntityType { get; init; }
+        public string? ForeignKeyProperty { get; init; }     // kept for simple/alias cases
+        public string? PrincipalKeyProperty { get; init; }
+        public bool IsCollection { get; init; }
+        public bool TargetIsRoot { get; init; }
+        public bool FkOwnedByDeclaringEntity { get; init; }
+        public List<NavigationJoinPath> JoinPaths { get; init; } = [];
+    }
+    
+    public sealed class NavigationJoinPath
+    {
+        public required INamedTypeSymbol TargetEntity { get; init; }
+        public required List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> Hops { get; init; }
     }
 
     public sealed class NavigationResolutionResult

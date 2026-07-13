@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -15,13 +16,18 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         public static string Emit(
             ImmutableArray<MappingClassInfo> allMappings,
             ImmutableHashSet<INamedTypeSymbol> rootEntityTypes,
-            ImmutableDictionary<(INamedTypeSymbol, string), string> fluentInverseNav)
+            List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
         {
             var models = allMappings
                 .Where(m => m.IsModel)
                 .OrderBy(m => m.ModelType.Name, System.StringComparer.Ordinal)
                 .ToList();
 
+            var navResults = models.ToDictionary(
+                m => m.ModelType.Name,
+                m => EntityNavigationConvention.Resolve(m, allMappings, entityGraph, rootEntityTypes),
+                System.StringComparer.Ordinal);
+            
             var entities = allMappings
                 .SelectMany(m => m.Definition.Entities)
                 .Select(k => k.EntityType)
@@ -30,11 +36,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 .Select(g => g.First()!)
                 .OrderBy(t => t.Name, System.StringComparer.Ordinal)
                 .ToList();
-
-            var navResults = models.ToDictionary(
-                m => m.ModelType.Name,
-                m => EntityNavigationConvention.Resolve(m, rootEntityTypes, fluentInverseNav),
-                System.StringComparer.Ordinal);
 
             var sb = new StringBuilder();
             sb.AppendLine("#nullable enable");
@@ -163,21 +164,23 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
         private static string BuildMapAccessor(IPropertySymbol prop, string ordinalExpr)
         {
-            var type = prop.Type;
-            var isNullable = type.NullableAnnotation == NullableAnnotation.Annotated
-                              || type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
+            var type      = prop.Type;
+            var unwrapped = AdapterEmitter.UnwrapNullable(type);
+            var isNullable = !SymbolEqualityComparer.Default.Equals(type, unwrapped)
+                             || type.NullableAnnotation == NullableAnnotation.Annotated;
 
-            var defaultLiteral = isNullable ? "null" : $"default({type.ToDisplayString()})";
+            var defaultLiteral = isNullable ? "null" : $"default({unwrapped.ToDisplayString()})";
 
-            var getter = type switch
+            // Switch on UNWRAPPED type — fixes Guid? and enum? falling through to wrong branch
+            var getter = unwrapped switch
             {
                 { SpecialType: SpecialType.System_String }   => $"record.GetString({ordinalExpr})",
                 { SpecialType: SpecialType.System_Int32 }    => $"record.GetInt32({ordinalExpr})",
                 { SpecialType: SpecialType.System_Boolean }  => $"record.GetBoolean({ordinalExpr})",
                 { SpecialType: SpecialType.System_DateTime } => $"record.GetDateTime({ordinalExpr})",
                 { Name: "Guid" }                              => $"record.GetGuid({ordinalExpr})",
-                { TypeKind: TypeKind.Enum }                   => $"({type.Name})record.GetInt32({ordinalExpr})",
-                _ => $"({type.ToDisplayString()})record.GetValue({ordinalExpr})"
+                { TypeKind: TypeKind.Enum }                   => $"({unwrapped.ToDisplayString()})record.GetInt32({ordinalExpr})",
+                _ => $"({unwrapped.ToDisplayString()})record.GetValue({ordinalExpr})"
             };
 
             var readExpr = isNullable
@@ -233,8 +236,13 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
             var primaryEntityType = primaryLink?.EntityType ?? info.EntityType;
 
-            // Gather child navigation links
-            var childLinks = PlannerEmitter.ComputeChildLinks(info, allMappings, navResult).ToList();
+            var childLinks = PlannerEmitter
+                .ComputeChildLinks(info, allMappings, navResult)
+                .Where(l => !string.Equals(
+                    l.ChildModelName,
+                    info.ModelType.Name,
+                    StringComparison.Ordinal))
+                .ToList();
 
             var fkNavAliases = info.Definition.Entities
                 .Where(k => !k.IsPrimary && !string.IsNullOrWhiteSpace(k.AliasProperty))
@@ -352,7 +360,13 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                         .Where(f => string.Equals(f.EntityTypeName, entityName, System.StringComparison.Ordinal))
                         .ToList();
                     foreach (var fm in flattenFields)
+                    {
+                        // Fix: Prevent Inner aliases from overwriting Outer fields, and vice-versa
+                        if (alias.StartsWith("Inner") && fm.FieldName.StartsWith("Outer")) continue;
+                        if (alias.StartsWith("Outer") && fm.FieldName.StartsWith("Inner")) continue;
+
                         sb.AppendLine($"                    if ({camel} is not null) {BuildFieldAssignment(fm, info.ModelType, entityType, camel, "model")}");
+                    }
                 }
                 else
                 {
@@ -363,7 +377,10 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                         .Where(f => string.Equals(f.EntityTypeName, entityName, System.StringComparison.Ordinal))
                         .ToList();
                     foreach (var fm in flattenFields)
-                        sb.AppendLine($"                        {BuildFieldAssignment(fm, info.ModelType, entityType, camel, $"model.{alias}")}");
+                    {
+                        var targetTypeSymbol = targetModelInfo?.ModelType ?? info.ModelType;
+                        sb.AppendLine($"                        {BuildFieldAssignment(fm, targetTypeSymbol, entityType, camel, $"model.{alias}")}");
+                    }
                     sb.AppendLine("                    }");
                 }
 
@@ -389,7 +406,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 
                 var childEntitySymbol = childMapping?.EntityType ?? childMapping?.Definition.Entities.FirstOrDefault(k => k.IsPrimary)?.EntityType;
                 string entityJoinKey = GetEntityPkProperty(childEntitySymbol);
-                string modelJoinKey = link.ChildJoinColumn;
+                string modelJoinKey = GetChildJoinColumn(link); 
 
                 if (childEntitySymbol != null)
                 {
@@ -448,8 +465,32 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                         var compositeFields = PlannerEmitter.ComputeFieldMappingsEagerPublic(childMapping!, composite: true)
                             .Where(f => string.Equals(f.EntityTypeName, link.ChildEntityName, System.StringComparison.Ordinal))
                             .ToList();
+                        
                         foreach (var fm in compositeFields)
-                            sb.AppendLine($"                            {BuildFieldAssignment(fm, childMapping!.ModelType, childEntitySymbol, camel, "compositeItem")}");
+                        {
+                            var targetTypeSymbol = childMapping?.ModelType ?? info.ModelType;
+                            sb.AppendLine($"                            {BuildFieldAssignment(fm, targetTypeSymbol, childEntitySymbol, camel, "compositeItem")}");
+                        }
+
+                        if (!compositeFields.Any(f => string.Equals(f.FieldName, modelJoinKey, System.StringComparison.Ordinal)))
+                        {
+                            var modelKeyProp = (childMapping?.ModelType ?? info.ModelType).GetMembers().OfType<IPropertySymbol>()
+                                .FirstOrDefault(p => string.Equals(p.Name, modelJoinKey, StringComparison.Ordinal));
+
+                            var matchingEntityProp = childEntitySymbol?.GetMembers().OfType<IPropertySymbol>()
+                                .FirstOrDefault(p =>
+                                    string.Equals(p.Name, entityJoinKey, StringComparison.Ordinal) &&
+                                    modelKeyProp != null &&
+                                    IsCompatibleType(p.Type, modelKeyProp.Type));
+
+                            if (matchingEntityProp != null)
+                            {
+                                var primaryKeyField = (FieldName: modelJoinKey, EntityTypeName: link.ChildEntityName, ColumnName: entityJoinKey);
+                                var targetTypeSymbol = childMapping?.ModelType ?? info.ModelType;
+                                sb.AppendLine($"                            {BuildFieldAssignment(primaryKeyField, targetTypeSymbol, childEntitySymbol, camel, "compositeItem")}");
+                            }
+                        }
+
                         sb.AppendLine($"                            model.{link.NavigationName}.Add(compositeItem);");
                     }
                     sb.AppendLine("                        }");
@@ -474,10 +515,13 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                             .Where(f => string.Equals(f.EntityTypeName, link.ChildEntityName, System.StringComparison.Ordinal))
                             .ToList();
                         foreach (var fm in compositeFields)
-                            sb.AppendLine($"                        {BuildFieldAssignment(fm, childMapping!.ModelType, childEntitySymbol, camel, $"model.{link.NavigationName}")}");
+                        {
+                            var targetTypeSymbol = childMapping?.ModelType ?? info.ModelType;
+                            sb.AppendLine($"                        {BuildFieldAssignment(fm, targetTypeSymbol, childEntitySymbol, camel, $"model.{link.NavigationName}")}");
+                        }
                         sb.AppendLine("                    }");
                     }
-                    sb.AppendLine("                }"); // Correctly terminates reference assignment
+                    sb.AppendLine("                }"); 
                 }
                 sb.AppendLine();
             }
@@ -488,6 +532,22 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine("        }");
             sb.AppendLine("    }");
             sb.AppendLine();
+        }
+        
+        private static string GetChildJoinColumn(ChildLink link)
+        {
+            if (link.Hops.Count == 0) return "Id";
+            var lastHop = link.Hops[link.Hops.Count - 1];
+            return string.Equals(lastHop.ToEntityName, link.ChildEntityName, StringComparison.Ordinal)
+                ? lastHop.ToColumn
+                : lastHop.FromColumn;
+        }
+        
+        private static bool IsCompatibleType(ITypeSymbol entityType, ITypeSymbol modelType)
+        {
+            var entityUnderlying = AdapterEmitter.UnwrapNullable(entityType);
+            var modelUnderlying = AdapterEmitter.UnwrapNullable(modelType);
+            return SymbolEqualityComparer.Default.Equals(entityUnderlying, modelUnderlying);
         }
 
         // ---------------------------------------------------------------

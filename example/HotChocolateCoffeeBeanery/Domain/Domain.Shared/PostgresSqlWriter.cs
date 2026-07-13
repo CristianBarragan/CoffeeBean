@@ -40,6 +40,67 @@ public sealed class PostgresSqlWriter
         AppendSelect(sb, plan);
         return sb.ToString();
     }
+    
+    private List<string> CollectUpsertArms(in MutationPlan plan)
+    {
+        var arms = new List<string>();
+
+        foreach (var row in plan.Rows)
+            arms.Add(BuildRegularUpsert(row));
+
+        foreach (var root in plan.CteRoots)
+            arms.Add(BuildCteNodeUpsertMerged(root));
+
+        return arms;
+    }
+
+    // Graph merges are NOT part of the WITH ... AS (...) arms — Cypher via ag_catalog.cypher()
+    // can't run inside a CTE the way plain INSERTs can, per the reference: it's a standalone
+    // statement using CREATE TEMP TABLE ... DROP TABLE as a side-effect-only wrapper.
+    // So these render as separate statements, before or after the main WITH block.
+    public string WriteGraphMerges(in MutationPlan plan)
+    {
+        var sb = new StringBuilder();
+        foreach (var merge in plan.GraphMerges)
+        {
+            sb.AppendLine(BuildGraphMergeCypher(merge));
+        }
+        return sb.ToString();
+    }
+
+    private string BuildGraphMergeCypher(in GraphMergeSpec spec)
+    {
+        var setClause = BuildGraphSetClause(spec.EdgeKeyColumn, spec.EdgeKeyValue, spec.EdgeProperties);
+        return $@"
+                ;CREATE TEMP TABLE temp_merge AS SELECT 1 
+                FROM ag_catalog.cypher(
+                    '{spec.GraphName}',
+                    $$
+                    MERGE (a:{spec.FromLabel} {{ {spec.FromKeyColumn}: '{EscapeCypherValue(spec.FromKeyValue)}' }})
+                    MERGE (b:{spec.ToLabel} {{ {spec.ToKeyColumn}: '{EscapeCypherValue(spec.ToKeyValue)}' }})
+                    MERGE (a)-[r:{spec.EdgeLabel}]->(b)
+                    {setClause}
+                    RETURN r.{spec.EdgeLabel}::text
+                    $$
+                ) AS (r text); DROP TABLE temp_merge;
+                ";
+    }
+
+private static string BuildGraphSetClause(string edgeKeyColumn, string? edgeKeyValue, ImmutableDictionary<string, string> edgeProperties)
+{
+    var parts = new List<string>();
+
+    if (!string.IsNullOrWhiteSpace(edgeKeyValue))
+        parts.Add($"r.{edgeKeyColumn} = '{EscapeCypherValue(edgeKeyValue)}'");
+
+    foreach (var kvp in edgeProperties)
+        parts.Add($"r.{kvp.Key} = '{EscapeCypherValue(kvp.Value)}'");
+
+    return parts.Count == 0 ? "" : "SET " + string.Join(", ", parts);
+}
+
+private static string EscapeCypherValue(string value) =>
+    value.Replace("\\", "\\\\").Replace("'", "\\'");
 
     public string WriteUpserts(in MutationPlan plan)
     {
@@ -60,19 +121,6 @@ public sealed class PostgresSqlWriter
     // ---------------------------------------------------------------
     // Collect all upsert SQL arms
     // ---------------------------------------------------------------
-
-    private List<string> CollectUpsertArms(in MutationPlan plan)
-    {
-        var arms = new List<string>();
-
-        foreach (var row in plan.Rows)
-            arms.Add(BuildRegularUpsert(row));
-
-        foreach (var root in plan.CteRoots)
-            arms.Add(BuildCteNodeUpsertMerged(root));
-
-        return arms;
-    }
 
     private string BuildRegularUpsert(in UpsertRow row)
     {
@@ -400,6 +448,46 @@ public sealed class PostgresSqlWriter
             sb.Append('\n');
             AppendJoin(sb, join, plan);
         }
+        
+        foreach (var graphJoin in plan.GraphJoins)
+        {
+            sb.Append('\n');
+            AppendGraphJoin(sb, graphJoin, plan.RootOutputAlias);
+        }
+    }
+    
+    private void AppendGraphJoin(StringBuilder sb, in GraphJoinSpec join, string primaryOutputAlias)
+    {
+        var fromColAlias = join.FromAlias + join.FromJoinColumn;
+        var toColAlias   = join.ToAlias   + join.ToJoinColumn;
+
+        var edgeReturn = string.IsNullOrEmpty(join.EdgeKeyColumn) ? "" : $"r.{join.EdgeKeyColumn}";
+        var edgeColumnDef = string.IsNullOrEmpty(join.EdgeKeyColumn) ? "" : $"{join.EdgeKeyColumn} agtype";
+        var edgeSelect = string.IsNullOrEmpty(join.EdgeKeyColumn) ? "" : $"({join.EdgeKeyColumn})::text::uuid AS {join.EdgeKeyColumn}";
+
+        sb.Append("LEFT JOIN (\n");
+        sb.Append("    WITH graph_edges AS (\n");
+        sb.Append("        SELECT DISTINCT * FROM cypher(\n");
+        sb.Append($"            '{join.GraphName}',\n");
+        sb.Append("            $$\n");
+        sb.Append($"            MATCH (a:{join.FromLabel})-[r:{join.EdgeLabel}]->(b:{join.ToLabel})\n");
+        sb.Append("            RETURN\n");
+        sb.Append($"                a.properties.{join.FromKeyColumn} AS from_key,\n");
+        sb.Append($"                b.properties.{join.ToKeyColumn} AS to_key");
+        if (!string.IsNullOrEmpty(edgeReturn)) sb.Append($",\n                {edgeReturn}");
+        sb.Append("\n            $$\n");
+        sb.Append("        ) AS (\n");
+        sb.Append("            from_key agtype,\n");
+        sb.Append("            to_key agtype");
+        if (!string.IsNullOrEmpty(edgeColumnDef)) sb.Append($",\n            {edgeColumnDef}");
+        sb.Append("\n        )\n");
+        sb.Append("    )\n");
+        sb.Append("    SELECT\n");
+        sb.Append($"        from_key::text::uuid AS \"{fromColAlias}\",\n");
+        sb.Append($"        to_key::text::uuid AS \"{toColAlias}\"");
+        if (!string.IsNullOrEmpty(edgeSelect)) sb.Append($",\n        {edgeSelect}");
+        sb.Append("\n    FROM graph_edges\n");
+        sb.Append($") \"{join.JoinAlias}\" ON \"{join.JoinAlias}\".\"{join.EdgeKeyColumn}\" = \"{primaryOutputAlias}\".\"{join.EdgeKeyColumn}\"");
     }
 
     private void AppendJoin(StringBuilder sb, in JoinSpec join, in QueryPlan plan)
@@ -445,7 +533,7 @@ public sealed class PostgresSqlWriter
         var converted = EnumConversions.TryConvert(storageEntityId, columnId, rawValue);
         if (converted != null)
         {
-            sb.Append(converted);
+            sb.Append((string)converted);
             return;
         }
         AppendQuotedValue(sb, rawValue);

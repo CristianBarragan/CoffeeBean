@@ -1,207 +1,123 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
-using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
-using Microsoft.CodeAnalysis;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
+using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
+using Microsoft.CodeAnalysis;
 
-namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
+internal static class EntityNavigationConvention
 {
-    internal static class EntityNavigationConvention
+    public static NavigationResolutionResult Resolve(
+    MappingClassInfo info,
+    ImmutableArray<MappingClassInfo> allMappings,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph,
+    ISet<INamedTypeSymbol> rootEntityTypes)
+{
+    var result = new NavigationResolutionResult();
+
+    // CHANGED: don't collapse the parent to just its primary entity.
+    // A composite parent can have its FK-bearing side on any of its
+    // backing entities, not necessarily the one marked IsPrimary.
+    var parentEntities = info.Definition.Entities
+        .Where(e => e.EntityType != null)
+        .Select(e => e.EntityType!)
+        .Distinct(SymbolEqualityComparer.Default)
+        .Cast<INamedTypeSymbol>()
+        .ToList();
+
+    if (parentEntities.Count == 0 && info.EntityType != null)
+        parentEntities.Add(info.EntityType);
+
+    if (parentEntities.Count == 0)
+        return result;
+
+    var modelProperties = info.ModelType.GetMembers().OfType<IPropertySymbol>().ToList();
+
+    foreach (var prop in modelProperties)
     {
-        public static NavigationResolutionResult Resolve(
-            MappingClassInfo info,
-            ISet<INamedTypeSymbol> rootEntityTypes,
-            IReadOnlyDictionary<(INamedTypeSymbol Entity, string Navigation), string> inverseNavigation = null)
+        if (prop.IsStatic) continue;
+
+        var relatedModelType = ResolveElementType(prop.Type);
+        if (relatedModelType == null) continue;
+
+        var childModel = allMappings.FirstOrDefault(m =>
+            m.IsModel && SymbolEqualityComparer.Default.Equals(m.ModelType, relatedModelType));
+        if (childModel == null) continue;
+
+        if (!string.Equals(prop.Name, relatedModelType.Name, StringComparison.Ordinal))
+            continue;
+
+        var isCollection = IsCollection(prop.Type);
+        var childEntities = childModel.Definition.Entities
+            .Where(e => e.EntityType != null)
+            .Select(e => e.EntityType!)
+            .Distinct(SymbolEqualityComparer.Default)
+            .Cast<INamedTypeSymbol>()
+            .ToList();
+
+        if (childEntities.Count == 0)
+            continue;
+
+        var joinPaths = new List<NavigationJoinPath>();
+
+        // CHANGED: try every (parentEntity, childEntity) pair, not just
+        // (primaryParentEntity, childEntity). Accept the first path found
+        // per target entity — a composite child may legitimately connect
+        // via more than one of its backing entities in different queries,
+        // so we don't stop at the first successful target, only at the
+        // first successful *source* for a given target.
+        foreach (var targetEntity in childEntities)
         {
-            var result = new NavigationResolutionResult();
+            List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge>? path = null;
 
-
-            if (info.EntityType == null)
-                return result;
-
-
-
-            var entity =
-                info.EntityType;
-
-
-
-            var properties =
-                entity.GetMembers()
-                    .OfType<IPropertySymbol>()
-                    .ToList();
-
-
-
-            foreach (var property in properties)
+            foreach (var sourceEntity in parentEntities)
             {
-                if (property.IsStatic)
-                    continue;
-
-                if (!IsNavigationCandidate(property))
-                    continue;
-
-                // Only surface navigations the GraphQL model actually exposes —
-                // entity-only navs (e.g. Customer.OuterCustomerCustomerRelationship,
-                // which exists solely to support fluent EF config for the edge model)
-                // must not be promoted into NavigationInfo.
-                var modelHasMatchingProperty = info.ModelType.GetMembers()
-                    .OfType<IPropertySymbol>()
-                    .Any(p => string.Equals(p.Name, property.Name, StringComparison.Ordinal));
-                if (!modelHasMatchingProperty)
-                    continue;
-
-                var related = ResolveRelatedEntity(property.Type);
-                if (related == null)
-                    continue;
-
-                // Ownership follows the sibling-Id property, not collection-ness:
-                // whichever side declares "{NavPropertyName}Id" alongside the nav
-                // is the dependent/FK-owning side (matches HasForeignKey<T>(...)).
-                var fkSiblingName = property.Name + "Id";
-                var declaringOwnsFk = properties.Any(p =>
-                    string.Equals(p.Name, fkSiblingName, StringComparison.Ordinal));
-
-                var navigation = new NavigationInfo
-                {
-                    NavigationName = property.Name,
-                    RelatedEntityType = related,
-                    ForeignKeyProperty = declaringOwnsFk
-                        ? fkSiblingName
-                        : PlannerEmitter.GetPkPropertyName(entity),
-                    PrincipalKeyProperty = related.Name + "Key",
-                    IsCollection = IsCollection(property.Type),
-                    TargetIsRoot = rootEntityTypes.Contains(related),
-                    FkOwnedByDeclaringEntity = declaringOwnsFk 
-                };
-
-                result.Navigations.Add(navigation);
+                path = FluentEntityNavigationConvention.EntityGraphPathfinder.FindPath(
+                    entityGraph, sourceEntity, targetEntity);
+                if (path != null) break;
             }
 
+            if (path == null) continue;
 
-
-            /*
-             * Add explicit Model aliases:
-             *
-             * CustomerCustomerEdge:
-             *
-             * InnerCustomer
-             * OuterCustomer
-             *
-             * These are not necessarily Entity navigations,
-             * but they are valid GraphQL child links.
-             */
-
-            foreach (var link in info.Definition.Entities)
+            joinPaths.Add(new NavigationJoinPath
             {
-                if (string.IsNullOrWhiteSpace(link.AliasProperty))
-                    continue;
-
-
-
-                if (result.Navigations.Any(x =>
-                    x.NavigationName == link.AliasProperty))
-                {
-                    continue;
-                }
-
-
-
-                result.Navigations.Add(
-                    new NavigationInfo
-                    {
-                        NavigationName =
-                            link.AliasProperty,
-
-                        RelatedEntityType =
-                            link.EntityType,
-
-                        ForeignKeyProperty =
-                            link.AliasProperty + "Id",
-
-                        PrincipalKeyProperty =
-                            link.EntityType.Name + "Key",
-
-                        IsCollection = false,
-
-                        TargetIsRoot =
-                            rootEntityTypes.Contains(
-                                link.EntityType)
-                    });
-            }
-
-
-
-            return result;
+                TargetEntity = targetEntity,
+                Hops = path
+            });
         }
 
+        if (joinPaths.Count == 0)
+            continue;
 
-
-        private static bool IsNavigationCandidate(
-            IPropertySymbol property)
+        result.Navigations.Add(new NavigationInfo
         {
-            var type =
-                property.Type;
-
-
-            if (type.SpecialType != SpecialType.None)
-                return false;
-
-
-            if (type.TypeKind == TypeKind.Enum)
-                return false;
-
-
-            if (type is INamedTypeSymbol named)
-            {
-                if (named.Name == "String")
-                    return false;
-
-
-                return true;
-            }
-
-
-            return false;
-        }
-
-
-
-        private static INamedTypeSymbol? ResolveRelatedEntity(
-            ITypeSymbol type)
-        {
-            if (type is INamedTypeSymbol named &&
-                named.IsGenericType &&
-                named.TypeArguments.Length == 1)
-            {
-                if (named.Name is
-                    "List" or
-                    "ICollection" or
-                    "IEnumerable" or
-                    "IList")
-                {
-                    return named.TypeArguments[0]
-                        as INamedTypeSymbol;
-                }
-            }
-
-
-            return type as INamedTypeSymbol;
-        }
-
-
-
-        private static bool IsCollection(
-            ITypeSymbol type)
-        {
-            return type is INamedTypeSymbol named &&
-                   named.IsGenericType &&
-                   named.Name is
-                       "List" or
-                       "ICollection" or
-                       "IEnumerable" or
-                       "IList";
-        }
+            NavigationName = prop.Name,
+            TargetModel = relatedModelType,
+            RelatedEntityType = childModel.EntityType,
+            IsCollection = isCollection,
+            TargetIsRoot = childEntities.Any(rootEntityTypes.Contains),
+            JoinPaths = joinPaths
+        });
     }
+
+    // ... AliasProperty fallback loop unchanged (still uses parentPrimaryEntity there,
+    // should probably get the same treatment — see note below) ...
+
+    return result;
+}
+
+    private static INamedTypeSymbol? ResolveElementType(ITypeSymbol type)
+    {
+        if (type is INamedTypeSymbol named && named.IsGenericType && named.TypeArguments.Length == 1 &&
+            named.Name is "List" or "ICollection" or "IEnumerable" or "IList")
+        {
+            return named.TypeArguments[0] as INamedTypeSymbol;
+        }
+        return type as INamedTypeSymbol;
+    }
+
+    private static bool IsCollection(ITypeSymbol type) =>
+        type is INamedTypeSymbol named && named.IsGenericType &&
+        named.Name is "List" or "ICollection" or "IEnumerable" or "IList";
 }

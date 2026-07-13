@@ -118,11 +118,13 @@ public readonly struct MutationPlan
 {
     public readonly ImmutableArray<UpsertRow> Rows;
     public readonly ImmutableArray<MutationCteNode> CteRoots;
+    public readonly ImmutableArray<GraphMergeSpec> GraphMerges;
 
     public MutationPlan(ImmutableArray<UpsertRow> rows)
     {
         Rows = rows;
         CteRoots = ImmutableArray<MutationCteNode>.Empty;
+        GraphMerges = ImmutableArray<GraphMergeSpec>.Empty;
     }
 
     public MutationPlan(
@@ -131,9 +133,21 @@ public readonly struct MutationPlan
     {
         Rows = rows;
         CteRoots = cteRoots;
+        GraphMerges = ImmutableArray<GraphMergeSpec>.Empty;
+    }
+
+    public MutationPlan(
+        ImmutableArray<UpsertRow> rows,
+        ImmutableArray<MutationCteNode> cteRoots,
+        ImmutableArray<GraphMergeSpec> graphMerges)
+    {
+        Rows = rows;
+        CteRoots = cteRoots;
+        GraphMerges = graphMerges;
     }
 
     public bool HasCte => !CteRoots.IsEmpty;
+    public bool HasGraphMerges => !GraphMerges.IsEmpty;
 }
 
 public ref struct MutationPlanBuilder
@@ -144,21 +158,41 @@ public ref struct MutationPlanBuilder
     private InlineArray32<MutationCteNode> _cteRoots;
     private int _cteRootCount;
 
+    private InlineArray32<GraphMergeSpec> _graphMerges;
+    private int _graphMergeCount;
+
     public void AddRow(
-        ushort entityId,
-        ushort storageEntityId,
-        string outputAlias,
+        ushort entityId, ushort storageEntityId, string outputAlias,
         ImmutableArray<FieldValue> values,
-        string? schemaOverride = null,
-        string? tableOverride = null)
+        string? schemaOverride = null, string? tableOverride = null)
     {
-        _rows[_rowCount++] = new UpsertRow(
-            entityId, storageEntityId, outputAlias, values, schemaOverride, tableOverride);
+        _rows[_rowCount++] = new UpsertRow(entityId, storageEntityId, outputAlias, values, schemaOverride, tableOverride);
     }
 
     public void AddCteRoot(MutationCteNode node)
     {
         _cteRoots[_cteRootCount++] = node;
+    }
+
+    public void AddGraphMerge(
+        string graphName,
+        string edgeLabel,
+        string fromLabel,
+        string fromKeyColumn,
+        string fromKeyValue,
+        string toLabel,
+        string toKeyColumn,
+        string toKeyValue,
+        string edgeKeyColumn,
+        string? edgeKeyValue,
+        ImmutableDictionary<string, string> edgeProperties)
+    {
+        _graphMerges[_graphMergeCount++] = new GraphMergeSpec(
+            graphName, edgeLabel,
+            fromLabel, fromKeyColumn, fromKeyValue,
+            toLabel, toKeyColumn, toKeyValue,
+            edgeKeyColumn, edgeKeyValue,
+            edgeProperties);
     }
 
     public MutationPlan Build()
@@ -167,13 +201,17 @@ public ref struct MutationPlanBuilder
         for (var i = 0; i < _rowCount; i++)
             rows.Add(_rows[i]);
 
+        var graphMerges = ImmutableArray.CreateBuilder<GraphMergeSpec>(_graphMergeCount);
+        for (var i = 0; i < _graphMergeCount; i++)
+            graphMerges.Add(_graphMerges[i]);
+
         if (_cteRootCount == 0)
-            return new MutationPlan(rows.ToImmutable());
+            return new MutationPlan(rows.ToImmutable(), ImmutableArray<MutationCteNode>.Empty, graphMerges.ToImmutable());
 
         var roots = ImmutableArray.CreateBuilder<MutationCteNode>(_cteRootCount);
         for (var i = 0; i < _cteRootCount; i++)
             roots.Add(_cteRoots[i]);
 
-        return new MutationPlan(rows.ToImmutable(), roots.ToImmutable());
+        return new MutationPlan(rows.ToImmutable(), roots.ToImmutable(), graphMerges.ToImmutable());
     }
 }

@@ -118,6 +118,9 @@ internal static class MappingClassParser
             }
         }
         
+        info.IsComposite = info.ModelToEntityList.Count > 1
+                           || info.Definition.Entities.Count > 1;
+        
         info.EntityType ??=
             info.Definition.Entities
                 .FirstOrDefault(k => k.IsPrimary)
@@ -316,15 +319,6 @@ internal static class MappingClassParser
                     ToColumn = entity.ToColumn,
                     AliasProperty = entity.AliasProperty,
                     IsPrimary = entity.IsPrimary
-                });
-                
-                info.ModelToEntityList.Add(new EntityKeyInfo
-                {
-                    EntityType    = entity.EntityType,
-                    FromColumn    = entity.FromColumn,
-                    ToColumn      = entity.ToColumn,
-                    AliasProperty = entity.AliasProperty,
-                    IsPrimary     = entity.IsPrimary
                 });
             }
         }
@@ -634,11 +628,28 @@ internal static class MappingClassParser
             return literal.Token.ValueText;
 
 
-        // NOTE: interpolated strings (e.g. `$"{nameof(X)}{nameof(Y)}"`, used for
-        // vertex aliases in graph mapping definitions) are not handled here and
-        // will silently return null. If any Definition uses an interpolated
-        // string for a string-valued property, that value will be dropped.
-        // Add an InterpolatedStringExpressionSyntax case here if that's in use.
+        if (expression is InterpolatedStringExpressionSyntax interpolated)
+        {
+            var parts = new List<string>();
+
+            foreach (var content in interpolated.Contents)
+            {
+                switch (content)
+                {
+                    case InterpolatedStringTextSyntax text:
+                        parts.Add(text.TextToken.ValueText);
+                        break;
+
+                    case InterpolationSyntax interpolation:
+                        var value = EvaluateStringLikeExpression(interpolation.Expression);
+                        if (value != null)
+                            parts.Add(value);
+                        break;
+                }
+            }
+
+            return string.Concat(parts);
+        }
 
         return null;
     }

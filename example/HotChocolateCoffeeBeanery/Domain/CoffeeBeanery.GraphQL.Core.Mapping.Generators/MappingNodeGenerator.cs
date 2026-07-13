@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -33,13 +34,24 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 .Where(static info => info is not null)
                 .Select(static (info, _) => info!);
 
-            var allMappings = mappingClasses.Collect();
+            var rawAllMappings = mappingClasses.Collect();
 
             var rootModelTypes = context.CompilationProvider
                 .Select(static (compilation, ct) => WrapperRootModelResolver.Resolve(compilation, ct));
 
-            var fluentInverseNavigations = context.CompilationProvider
-                .Select(static (compilation, ct) => FluentInverseNavigationConvention.CollectAll(compilation, ct));
+            var entityGraphs = context.CompilationProvider
+                .Select(static (compilation, ct) => FluentEntityNavigationConvention.EntityForeignKeyGraph.Build(compilation, ct));
+
+            var allMappings = rawAllMappings.Select(static (mappings, _) =>
+            {
+                foreach (var info in mappings)
+                {
+                    ModelChildrenInference.Apply(info);
+                    CompositeChildAttachmentConvention.Apply(info, mappings);
+                }
+
+                return mappings;
+            });
 
             // ----------------------------------------------------------------
             // Per-class registration — one file per mapping class, runs in every project.
@@ -47,12 +59,12 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
             var perClassInput = mappingClasses
                 .Combine(allMappings)
                 .Combine(rootModelTypes)
-                .Combine(fluentInverseNavigations);
+                .Combine(entityGraphs);
 
             context.RegisterSourceOutput(perClassInput, static (spc, data) =>
             {
-                var (((info, all), rootModelTypes), fluentInverseNav) = data;
-                EmitClass(spc, info, all, rootModelTypes, fluentInverseNav);
+                var (((info, all), rootModelTypes), entityGraph) = data;
+                EmitClass(spc, info, all, rootModelTypes, entityGraph);
             });
 
             // ----------------------------------------------------------------
@@ -61,17 +73,17 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
             // ----------------------------------------------------------------
             var globalInput = allMappings
                 .Combine(rootModelTypes)
-                .Combine(fluentInverseNavigations)
+                .Combine(entityGraphs)
                 .Combine(isMappingRoot);
 
             context.RegisterSourceOutput(globalInput, static (spc, data) =>
             {
-                var (((all, rootModelTypes), fluentInverseNav), isRoot) = data;
-            
+                var (((all, rootModelTypes), entityGraphs), isRoot) = data;
+
                 if (!isRoot || all.IsEmpty)
                     return;
-            
-                EmitGlobal(spc, all, rootModelTypes, fluentInverseNav);
+
+                EmitGlobal(spc, all, rootModelTypes, entityGraphs);
             });
         }
 
@@ -85,20 +97,16 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 ctx.SemanticModel.GetDeclaredSymbol(classDecl, ct)
                     as INamedTypeSymbol;
 
-
             if (symbol is null || symbol.IsAbstract)
                 return null;
-
 
             var mappingInterface =
                 ctx.SemanticModel.Compilation
                     .GetTypeByMetadataName(
                         "CoffeeBeanery.GraphQL.Core.Mapping.IMappingDefinition");
 
-
             if (mappingInterface is null)
                 return null;
-
 
             if (!symbol.AllInterfaces.Contains(
                     mappingInterface,
@@ -106,7 +114,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
             {
                 return null;
             }
-
 
             return MappingClassParser.Parse(
                 symbol,
@@ -119,7 +126,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
             MappingClassInfo info,
             ImmutableArray<MappingClassInfo> allMappings,
             ImmutableHashSet<INamedTypeSymbol> rootModelTypes,
-            ImmutableDictionary<(INamedTypeSymbol, string), string> fluentInverseNav)
+            List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
         {
             try
             {
@@ -129,13 +136,11 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 if (info.Diagnostics.Any(x => x.Severity == DiagnosticSeverity.Error))
                     return;
 
-                ModelChildrenInference.Apply(info);
-                CompositeChildAttachmentConvention.Apply(info, allMappings);
                 FieldMapGeneration.Apply(info, spc);
 
                 var rootEntityTypes = ResolveRootEntityTypes(allMappings, rootModelTypes);
 
-                var navResult = EntityNavigationConvention.Resolve(info, rootEntityTypes, fluentInverseNav);
+                var navResult = EntityNavigationConvention.Resolve(info, allMappings, entityGraph, rootEntityTypes);
 
                 if (navResult.HasBlockingAmbiguity)
                     return;
@@ -160,28 +165,28 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 ");
             }
         }
-        
+
         private static void EmitGlobal(
             SourceProductionContext spc,
             ImmutableArray<MappingClassInfo> allMappings,
             ImmutableHashSet<INamedTypeSymbol> rootModelTypes,
-            ImmutableDictionary<(INamedTypeSymbol, string), string> fluentInverseNav)
+            List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
         {
             try
             {
                 var rootEntityTypes = ResolveRootEntityTypes(allMappings, rootModelTypes);
-                
-                spc.AddSource("Materializers.g.cs", MaterializerEmitter.Emit(allMappings, rootEntityTypes, fluentInverseNav));
-                
+
+                spc.AddSource("Materializers.g.cs", MaterializerEmitter.Emit(allMappings, rootEntityTypes, entityGraph));
+
                 spc.AddSource("GeneratedIds.g.cs", IdEmitter.Emit(allMappings, spc));
-                
-                spc.AddSource("EntityMeta.g.cs", MetadataEmitter.Emit(allMappings, rootEntityTypes, fluentInverseNav));
-                
-                var source = AdapterEmitter.Emit(allMappings, rootEntityTypes, fluentInverseNav);
+
+                spc.AddSource("EntityMeta.g.cs", MetadataEmitter.Emit(allMappings, rootEntityTypes, entityGraph));
+
+                var source = AdapterEmitter.Emit(allMappings, rootEntityTypes, entityGraph);
                 spc.AddSource("AdapterTables.g.cs", source);
-                
+
                 spc.AddSource("Planners.g.cs",
-                    PlannerEmitter.Emit(allMappings, rootEntityTypes, fluentInverseNav));
+                    PlannerEmitter.Emit(allMappings, rootEntityTypes, entityGraph));
             }
             catch (Exception ex)
             {

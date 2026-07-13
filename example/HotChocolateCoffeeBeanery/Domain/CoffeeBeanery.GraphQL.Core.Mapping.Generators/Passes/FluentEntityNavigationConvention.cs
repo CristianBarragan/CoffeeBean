@@ -16,7 +16,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
     /// No reflection.
     /// No EF runtime model access.
     /// </summary>
-    internal static class FluentEntityNavigationConvention
+    public static class FluentEntityNavigationConvention
     {
         public record DerivedForeignKey(
             INamedTypeSymbol DeclaringEntityType,
@@ -27,50 +27,32 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
             bool IsAmbiguous);
 
 
-        public static List<DerivedForeignKey> CollectAll(
-            Compilation compilation,
-            CancellationToken ct)
+        public static List<DerivedForeignKey> CollectAll(Compilation compilation, CancellationToken ct)
         {
             var results = new List<DerivedForeignKey>();
 
             foreach (var tree in compilation.SyntaxTrees)
             {
                 ct.ThrowIfCancellationRequested();
-
                 var semanticModel = compilation.GetSemanticModel(tree);
                 var root = tree.GetRoot(ct);
 
-                foreach (var classDecl in root
-                             .DescendantNodes()
-                             .OfType<ClassDeclarationSyntax>())
+                foreach (var classDecl in root.DescendantNodes().OfType<ClassDeclarationSyntax>())
                 {
                     ct.ThrowIfCancellationRequested();
 
-                    var entityType = TryGetConfiguredEntityType(
-                        classDecl,
-                        semanticModel,
-                        ct);
+                    var entityType = TryGetConfiguredEntityType(classDecl, semanticModel, ct);
+                    if (entityType is null) continue;
 
-                    if (entityType is null)
-                        continue;
-
-
-                    var configure = classDecl.Members
-                        .OfType<MethodDeclarationSyntax>()
-                        .FirstOrDefault(x =>
-                            x.Identifier.Text == "Configure" &&
-                            x.Body != null);
-
-                    if (configure?.Body == null)
-                        continue;
-
+                    var configure = classDecl.Members.OfType<MethodDeclarationSyntax>()
+                        .FirstOrDefault(x => x.Identifier.Text == "Configure" && x.Body != null);
+                    if (configure?.Body == null) continue;
 
                     var entityResults = new List<DerivedForeignKey>();
 
-
-                    foreach (var statement in configure.Body.Statements
-                                 .OfType<ExpressionStatementSyntax>())
+                    foreach (var statement in configure.Body.Statements.OfType<ExpressionStatementSyntax>())
                     {
+
                         if (statement.Expression is not InvocationExpressionSyntax outer)
                             continue;
 
@@ -174,11 +156,152 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                             ambiguous.Add(group.Key);
                         }
                     }
+                    
+                    foreach (var r in entityResults)
+                    {
+                        results.Add(ambiguous.Contains(r.RelatedEntityType)
+                            ? r with { IsAmbiguous = true }
+                            : r);
+                    }
                 }
             }
 
 
             return results;
+        }
+        
+        internal static class EntityGraphPathfinder
+        {
+            public static List<EntityForeignKeyGraph.Edge>? FindPath(
+                List<EntityForeignKeyGraph.Edge> edges,
+                INamedTypeSymbol from,
+                INamedTypeSymbol to)
+            {
+                var adjacency = new Dictionary<INamedTypeSymbol, List<(EntityForeignKeyGraph.Edge Edge, bool Forward)>>(
+                    SymbolEqualityComparer.Default);
+
+                void AddAdj(INamedTypeSymbol node, EntityForeignKeyGraph.Edge edge, bool forward)
+                {
+                    if (!adjacency.TryGetValue(node, out var list))
+                        adjacency[node] = list = new();
+                    list.Add((edge, forward));
+                }
+
+                foreach (var e in edges)
+                {
+                    AddAdj(e.DependentEntity, e, true);   // dependent -> principal
+                    AddAdj(e.PrincipalEntity, e, false);  // principal -> dependent
+                }
+
+                var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default) { from };
+                var queue = new Queue<(INamedTypeSymbol Node, List<EntityForeignKeyGraph.Edge> Path)>();
+                queue.Enqueue((from, new()));
+
+                while (queue.Count > 0)
+                {
+                    var (node, path) = queue.Dequeue();
+                    if (SymbolEqualityComparer.Default.Equals(node, to))
+                        return path;
+
+                    if (!adjacency.TryGetValue(node, out var neighbors)) continue;
+
+                    foreach (var (edge, forward) in neighbors)
+                    {
+                        var next = forward ? edge.PrincipalEntity : edge.DependentEntity;
+                        if (visited.Contains(next)) continue;
+                        visited.Add(next);
+                        queue.Enqueue((next, new List<EntityForeignKeyGraph.Edge>(path) { edge }));
+                    }
+                }
+
+                return null; // no path found
+            }
+        }
+        
+        public static class EntityForeignKeyGraph
+        {
+            public sealed record Edge(
+                INamedTypeSymbol DependentEntity,
+                string DependentColumn,
+                INamedTypeSymbol PrincipalEntity,
+                string PrincipalColumn);
+
+            public static List<Edge> Build(Compilation compilation, CancellationToken ct)
+            {
+                var edges = new List<Edge>();
+
+                foreach (var tree in compilation.SyntaxTrees)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    var semanticModel = compilation.GetSemanticModel(tree);
+                    var root = tree.GetRoot(ct);
+
+                    foreach (var classDecl in root.DescendantNodes().OfType<ClassDeclarationSyntax>())
+                    {
+                        var principalEntity = TryGetConfiguredEntityType(classDecl, semanticModel, ct);
+                        if (principalEntity == null) continue;
+
+                        var configure = classDecl.Members.OfType<MethodDeclarationSyntax>()
+                            .FirstOrDefault(x => x.Identifier.Text == "Configure" && x.Body != null);
+                        if (configure?.Body == null) continue;
+
+                        foreach (var statement in configure.Body.Statements.OfType<ExpressionStatementSyntax>())
+                        {
+                            if (statement.Expression is not InvocationExpressionSyntax outer) continue;
+
+                            var chain = CollectChain(outer);
+
+                            var hasIndex = chain.FindIndex(x => x.Name is "HasOne" or "HasMany");
+                            if (hasIndex < 0) continue;
+
+                            var withIndex = chain.FindIndex(hasIndex + 1, x => x.Name is "WithOne" or "WithMany");
+                            if (withIndex < 0) continue;
+
+                            var fkIndex = chain.FindIndex(withIndex + 1, x => x.Name == "HasForeignKey");
+                            if (fkIndex < 0) continue;
+
+                            // navName: property on principalEntity, e.g. Customer.ContactPoint
+                            var navName = ExtractLambdaMemberName(chain[hasIndex].Invocation);
+                            if (navName == null) continue;
+
+                            var navProperty = principalEntity.GetMembers().OfType<IPropertySymbol>()
+                                .FirstOrDefault(p => p.Name == navName);
+
+                            var dependentEntity = ResolveRelatedType(navProperty);
+                            if (dependentEntity == null) continue;
+
+                            // FK column name, e.g. "CustomerId" -- lambda param is the dependent side
+                            // regardless of whether it came via WithOne/WithMany or an explicit
+                            // HasForeignKey<TDependent> generic arg; in every config in this codebase
+                            // the nav target of HasOne/HasMany IS the dependent/FK-owning side.
+                            var fkColumnName = ExtractLambdaMemberName(chain[fkIndex].Invocation);
+                            if (fkColumnName == null) continue;
+
+                            var principalPk = dependentEntity.Name == principalEntity.Name
+                                ? "Id"
+                                : "Id"; // convention: every entity's PK property is "Id" per Process base
+
+                            edges.Add(new Edge(dependentEntity, fkColumnName, principalEntity, principalPk));
+                        }
+                    }
+                }
+
+                return edges;
+            }
+
+            private static INamedTypeSymbol? ResolveRelatedType(IPropertySymbol? property)
+            {
+                if (property == null) return null;
+                var type = property.Type;
+                if (type is INamedTypeSymbol generic && generic.IsGenericType && generic.TypeArguments.Length == 1)
+                    return generic.TypeArguments[0] as INamedTypeSymbol;
+                return type as INamedTypeSymbol;
+            }
+
+            // CollectChain / ExtractLambdaMemberName / TryGetConfiguredEntityType:
+            // identical to FluentEntityNavigationConvention's private helpers —
+            // either factor them into a shared internal class both passes call,
+            // or duplicate; your call on which.
         }
 
 

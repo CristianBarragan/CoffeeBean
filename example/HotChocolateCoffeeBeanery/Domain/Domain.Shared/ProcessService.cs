@@ -143,8 +143,15 @@ public class ProcessService<TModel, TResult> : IProcessService<TResult>
         var queryPlan = queryPlanBuilder.Build();
 
         var upsertSql = mutationPlan is not null ? _sqlWriter.WriteUpserts(mutationPlan.Value) : "";
+        var graphSql  = mutationPlan is not null ? _sqlWriter.WriteGraphMerges(mutationPlan.Value) : "";
         var selectSql = _sqlWriter.WriteSelect(queryPlan);
-        var finalSql  = string.IsNullOrEmpty(upsertSql) ? selectSql : upsertSql + ";" + selectSql;
+
+        var sqlParts = new List<string>();
+        if (!string.IsNullOrEmpty(upsertSql)) sqlParts.Add(upsertSql);
+        if (!string.IsNullOrEmpty(graphSql))  sqlParts.Add(graphSql);
+        sqlParts.Add(selectSql);
+
+        var finalSql = string.Join(";", sqlParts);
 
         var models  = await ExecuteAndMaterializeAsync(finalSql, rootEntityId, queryPlan, cancellationToken);
         var results = _wrap(models);

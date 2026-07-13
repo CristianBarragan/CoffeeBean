@@ -32,6 +32,82 @@ public readonly struct JoinSpec
     }
 }
 
+public readonly struct GraphJoinSpec
+{
+    public readonly ushort EntityId;
+    public readonly ushort StorageEntityId;
+    public readonly string GraphName;
+    public readonly string EdgeLabel;
+    public readonly string EdgeKeyColumn;
+    public readonly string FromLabel;
+    public readonly string FromKeyColumn;
+    public readonly string FromAlias;
+    public readonly string FromJoinColumn;
+    public readonly string ToLabel;
+    public readonly string ToKeyColumn;
+    public readonly string ToAlias;
+    public readonly string ToJoinColumn;
+    public readonly string JoinAlias;
+
+    public GraphJoinSpec(
+        ushort entityId, ushort storageEntityId,
+        string graphName, string edgeLabel, string edgeKeyColumn,
+        string fromLabel, string fromKeyColumn, string fromAlias, string fromJoinColumn,
+        string toLabel, string toKeyColumn, string toAlias, string toJoinColumn,
+        string joinAlias)
+    {
+        EntityId = entityId;
+        StorageEntityId = storageEntityId;
+        GraphName = graphName;
+        EdgeLabel = edgeLabel;
+        EdgeKeyColumn = edgeKeyColumn;
+        FromLabel = fromLabel;
+        FromKeyColumn = fromKeyColumn;
+        FromAlias = fromAlias;
+        FromJoinColumn = fromJoinColumn;
+        ToLabel = toLabel;
+        ToKeyColumn = toKeyColumn;
+        ToAlias = toAlias;
+        ToJoinColumn = toJoinColumn;
+        JoinAlias = joinAlias;
+    }
+}
+
+public readonly struct GraphMergeSpec
+{
+    public readonly string GraphName;
+    public readonly string EdgeLabel;
+    public readonly string FromLabel;
+    public readonly string FromKeyColumn;
+    public readonly string FromKeyValue;
+    public readonly string ToLabel;
+    public readonly string ToKeyColumn;
+    public readonly string ToKeyValue;
+    public readonly string EdgeKeyColumn;
+    public readonly string? EdgeKeyValue;
+    public readonly ImmutableDictionary<string, string> EdgeProperties;
+
+    public GraphMergeSpec(
+        string graphName, string edgeLabel,
+        string fromLabel, string fromKeyColumn, string fromKeyValue,
+        string toLabel, string toKeyColumn, string toKeyValue,
+        string edgeKeyColumn, string? edgeKeyValue,
+        ImmutableDictionary<string, string> edgeProperties)
+    {
+        GraphName = graphName;
+        EdgeLabel = edgeLabel;
+        FromLabel = fromLabel;
+        FromKeyColumn = fromKeyColumn;
+        FromKeyValue = fromKeyValue;
+        ToLabel = toLabel;
+        ToKeyColumn = toKeyColumn;
+        ToKeyValue = toKeyValue;
+        EdgeKeyColumn = edgeKeyColumn;
+        EdgeKeyValue = edgeKeyValue;
+        EdgeProperties = edgeProperties ?? ImmutableDictionary<string, string>.Empty;
+    }
+}
+
 public readonly struct ColumnSpec
 {
     public readonly ushort EntityId;
@@ -59,16 +135,19 @@ public readonly struct QueryPlan
     public readonly string RootOutputAlias;
     public readonly ImmutableArray<ColumnSpec> Columns;
     public readonly ImmutableArray<JoinSpec> Joins;
+    public readonly ImmutableArray<GraphJoinSpec> GraphJoins;
 
     public QueryPlan(
         ushort rootEntityId, ushort rootStorageEntityId, string rootOutputAlias,
-        ImmutableArray<ColumnSpec> columns, ImmutableArray<JoinSpec> joins)
+        ImmutableArray<ColumnSpec> columns, ImmutableArray<JoinSpec> joins,
+        ImmutableArray<GraphJoinSpec> graphJoins)
     {
         RootEntityId        = rootEntityId;
         RootStorageEntityId = rootStorageEntityId;
         RootOutputAlias     = rootOutputAlias;
         Columns             = columns;
         Joins               = joins;
+        GraphJoins          = graphJoins;
     }
 
     /// <summary>
@@ -114,6 +193,8 @@ public ref struct QueryPlanBuilder
 
     private int _columnCount;
     private int _joinCount;
+    private InlineArray32<GraphJoinSpec> _graphJoins;
+    private int _graphJoinCount;
 
     public void SetRoot(ushort entityId, ushort storageEntityId, string outputAlias)
     {
@@ -181,6 +262,30 @@ public ref struct QueryPlanBuilder
             fromColumnId, toColumnId,
             kind, toOutputAlias);
     }
+    
+    public void AddGraphJoin(
+        ushort entityId,
+        ushort storageEntityId,
+        string graphName,
+        string edgeLabel,
+        string edgeKeyColumn,
+        string fromLabel,
+        string fromKeyColumn,
+        string fromAlias,
+        string fromJoinColumn,
+        string toLabel,
+        string toKeyColumn,
+        string toAlias,
+        string toJoinColumn,
+        string joinAlias)
+    {
+        _graphJoins[_graphJoinCount++] = new GraphJoinSpec(
+            entityId, storageEntityId,
+            graphName, edgeLabel, edgeKeyColumn,
+            fromLabel, fromKeyColumn, fromAlias, fromJoinColumn,
+            toLabel, toKeyColumn, toAlias, toJoinColumn,
+            joinAlias);
+    }
 
     public QueryPlan Build()
     {
@@ -189,12 +294,16 @@ public ref struct QueryPlanBuilder
 
         var joins = ImmutableArray.CreateBuilder<JoinSpec>(_joinCount);
         for (var i = 0; i < _joinCount; i++) joins.Add(_joins[i]);
+        
+        var graphJoins = ImmutableArray.CreateBuilder<GraphJoinSpec>(_graphJoinCount);
+        for (var i = 0; i < _graphJoinCount; i++) graphJoins.Add(_graphJoins[i]);
 
         return new QueryPlan(
             _rootEntityId, _rootStorageEntityId,
             _rootOutputAlias ?? string.Empty,
             cols.MoveToImmutable(),
-            joins.MoveToImmutable());
+            joins.MoveToImmutable(),
+            graphJoins.MoveToImmutable());
     }
 }
 

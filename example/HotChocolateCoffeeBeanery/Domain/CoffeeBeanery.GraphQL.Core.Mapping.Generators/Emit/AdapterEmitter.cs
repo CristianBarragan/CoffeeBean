@@ -28,17 +28,16 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         public static string Emit(
             ImmutableArray<MappingClassInfo> allMappings,
             ImmutableHashSet<INamedTypeSymbol> rootEntityTypes,
-            ImmutableDictionary<(INamedTypeSymbol, string), string> fluentInverseNav)
+            List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
         {
             var models = allMappings
                 .Where(m => m.IsModel)
                 .OrderBy(m => m.ModelType.Name, System.StringComparer.Ordinal)
                 .ToList();
 
-            // Pre-resolve navigation results for all models.
             var navResults = models.ToDictionary(
                 m => m.ModelType.Name,
-                m => EntityNavigationConvention.Resolve(m, rootEntityTypes, fluentInverseNav),
+                m => EntityNavigationConvention.Resolve(m, allMappings, entityGraph, rootEntityTypes),
                 System.StringComparer.Ordinal);
 
             // Build a name → EntityId map for resolving child entity names.
@@ -267,7 +266,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             return type;
         }
 
-        private static ITypeSymbol UnwrapNullable(ITypeSymbol type) =>
+        internal static ITypeSymbol UnwrapNullable(ITypeSymbol type) =>
             type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } n
                 ? n.TypeArguments[0]
                 : type;
