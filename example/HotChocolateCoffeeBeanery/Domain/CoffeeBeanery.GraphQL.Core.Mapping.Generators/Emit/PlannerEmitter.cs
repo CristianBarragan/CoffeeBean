@@ -117,7 +117,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 ? conventionalKey
                 : "Id";
         }
-        
+
         private static void EmitBuildQuery(
             StringBuilder sb,
             MappingClassInfo info,
@@ -125,7 +125,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             NavigationResolutionResult? navResult,
             bool composite)
         {
-            
+
 
             sb.AppendLine("        public static void Build(in SelectionIR node, ref QueryPlanBuilder builder)");
             sb.AppendLine("        {");
@@ -134,7 +134,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             var secondaryLinks = info.Definition.Entities
                 .Where(k => !k.IsPrimary && k.EntityType != null && k.AliasProperty != null)
                 .ToList();
-            
+
             if (composite)
             {
                 var primaryLink = info.Definition.Entities.FirstOrDefault(k => k.IsPrimary);
@@ -1108,25 +1108,31 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             if (info.Graph != null &&
                 !string.IsNullOrWhiteSpace(info.Graph.GraphName))
             {
+                // FIX: fkLinks/AliasProperty is the alias actually used at runtime
+                // (child.OutputAlias in MutationIR). info.Graph.From/To.Alias is
+                // frequently a concatenated query-side display string (e.g.
+                // "InnerCustomerCustomer") that never matches a real child alias --
+                // it must only be a fallback when no fkLinks entry exists, not the
+                // primary source. Previously this was reversed, which silently
+                // prevented graphFromKey/graphToKey from ever being set, and the
+                // Cypher MERGE was never emitted.
                 resolvedGraphFromAlias =
-                    !string.IsNullOrWhiteSpace(info.Graph.From?.Alias)
-                        ? info.Graph.From!.Alias
-                        : fkLinks.FirstOrDefault(l =>
-                                string.Equals(
-                                    l.FromColumn,
-                                    info.Graph.From?.KeyColumn,
-                                    StringComparison.OrdinalIgnoreCase))
-                            ?.AliasProperty;
+                    fkLinks.FirstOrDefault(l =>
+                            string.Equals(
+                                l.FromColumn,
+                                info.Graph.From?.KeyColumn,
+                                StringComparison.OrdinalIgnoreCase))
+                        ?.AliasProperty
+                    ?? info.Graph.From?.Alias;
 
                 resolvedGraphToAlias =
-                    !string.IsNullOrWhiteSpace(info.Graph.To?.Alias)
-                        ? info.Graph.To!.Alias
-                        : fkLinks.FirstOrDefault(l =>
-                                string.Equals(
-                                    l.FromColumn,
-                                    info.Graph.To?.KeyColumn,
-                                    StringComparison.OrdinalIgnoreCase))
-                            ?.AliasProperty;
+                    fkLinks.FirstOrDefault(l =>
+                            string.Equals(
+                                l.FromColumn,
+                                info.Graph.To?.KeyColumn,
+                                StringComparison.OrdinalIgnoreCase))
+                        ?.AliasProperty
+                    ?? info.Graph.To?.Alias;
 
                 sb.AppendLine(
                     "            string? graphFromKey = null, graphToKey = null, graphEdgeKey = null;");
@@ -1230,53 +1236,13 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     if (relatedModel == null)
                         continue;
 
-                    relatedModel = allMappings.FirstOrDefault(m =>
-                        m.IsModel &&
-                        string.Equals(
-                            m.EntityType?.Name,
-                            cte.RelatedEntityTypeName,
-                            StringComparison.Ordinal));
-
-                    if (relatedModel == null)
-                        continue;
-
-                    relatedModel = allMappings.FirstOrDefault(m =>
-                        m.IsModel &&
-                        string.Equals(
-                            m.EntityType?.Name,
-                            cte.RelatedEntityTypeName,
-                            StringComparison.Ordinal));
-
-                    if (relatedModel == null)
-                        continue;
-
-                    relatedModel = allMappings.FirstOrDefault(m =>
-                        m.IsModel &&
-                        string.Equals(
-                            m.EntityType?.Name,
-                            cte.RelatedEntityTypeName,
-                            StringComparison.Ordinal));
-
-                    if (relatedModel == null)
-                        continue;
-
-                    relatedModel = allMappings.FirstOrDefault(m =>
-                        m.IsModel &&
-                        string.Equals(
-                            m.EntityType?.Name,
-                            cte.RelatedEntityTypeName,
-                            StringComparison.Ordinal));
-
-                    if (relatedModel == null)
-                        continue;
-
                     var childKey = relatedModel.Definition.Entities
                                        .FirstOrDefault(e => e.IsPrimary)?.FromColumn
                                    ?? cte.RelatedNaturalKeyColumn;
 
                     sb.AppendLine(
                         $"if (cv.FieldId == FieldId.{cte.RelatedEntityTypeName}.{childKey})");
-                    
+
                     sb.AppendLine(
                         "                        {");
 
@@ -1477,9 +1443,9 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine(
                 $"                {conflictLiteral}));");
         }
-    
-    
-        
+
+
+
         private static void EmitGraphMutation(StringBuilder sb, MappingClassInfo info, GraphInfo g)
         {
             sb.AppendLine("            string? fromKeyValue = null;");

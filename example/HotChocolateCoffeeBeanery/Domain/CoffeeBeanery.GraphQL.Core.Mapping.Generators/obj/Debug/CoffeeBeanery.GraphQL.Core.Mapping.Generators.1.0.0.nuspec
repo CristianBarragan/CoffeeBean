@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>CoffeeBeanery.GraphQL.Core.Mapping.Generators</id>
+    <version>1.0.0</version>
+    <authors>CoffeeBeanery.GraphQL.Core.Mapping.Generators</authors>
+    <description>Package Description</description>
+    <repository type="git" commit="14bb6653c6f3d481098b9497bd19555d3f37e2b8" />
+    <dependencies>
+      <group targetFramework=".NETStandard2.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\bin\Debug\netstandard2.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.dll" target="analyzers\dotnet\cs\CoffeeBeanery.GraphQL.Core.Mapping.Generators.dll" />
+  </files>
+</package>
