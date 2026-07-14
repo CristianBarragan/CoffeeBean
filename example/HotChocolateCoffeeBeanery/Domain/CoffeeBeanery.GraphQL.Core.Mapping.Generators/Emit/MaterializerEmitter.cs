@@ -485,7 +485,11 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
                             if (matchingEntityProp != null)
                             {
-                                var primaryKeyField = (FieldName: modelJoinKey, EntityTypeName: link.ChildEntityName, ColumnName: entityJoinKey);
+                                var primaryKeyField = (
+                                    FieldName: modelJoinKey,
+                                    EntityTypeName: link.ChildEntityName,
+                                    ColumnName: entityJoinKey,
+                                    StorageAlias: (string?)null);
                                 var targetTypeSymbol = childMapping?.ModelType ?? info.ModelType;
                                 sb.AppendLine($"                            {BuildFieldAssignment(primaryKeyField, targetTypeSymbol, childEntitySymbol, camel, "compositeItem")}");
                             }
@@ -565,7 +569,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         }
 
         private static string BuildFieldAssignment(
-            (string FieldName, string EntityTypeName, string ColumnName) fm,
+            (string FieldName, string EntityTypeName, string ColumnName, string StorageAlias) fm,
             INamedTypeSymbol modelType,
             INamedTypeSymbol? entityType,
             string sourceVar,

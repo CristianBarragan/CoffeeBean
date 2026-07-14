@@ -107,9 +107,21 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine("        public static void Build(in SelectionIR node, ref QueryPlanBuilder builder)");
             sb.AppendLine("        {");
 
-            // Pre-calculate secondary links so they are accessible to the childLinks filter below
             var secondaryLinks = info.Definition.Entities
                 .Where(k => !k.IsPrimary && k.EntityType != null && k.AliasProperty != null)
+                .ToList();
+            
+            var childLinks = ComputeChildLinks(info, allMappings, navResult)
+                .Where(l =>
+                {
+                    var childInfo = allMappings.FirstOrDefault(m =>
+                        string.Equals(m.ModelType.Name, l.ChildModelName, System.StringComparison.Ordinal));
+                    if (childInfo == null || IsCompositeInfo(childInfo)) return false;
+                    if (secondaryLinks.Any(sl => string.Equals(sl.AliasProperty, l.NavigationName,
+                            System.StringComparison.OrdinalIgnoreCase)))
+                        return false;
+                    return true;
+                })
                 .ToList();
 
             if (composite)
@@ -135,28 +147,26 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     sb.AppendLine("                switch (scalar.FieldId)");
                     sb.AppendLine("                {");
 
-                    foreach (var entityType in entitiesToEmit)
+                    foreach (var fm in allFieldMappings)
                     {
-                        var entityFields = allFieldMappings
-                            .Where(f => string.Equals(f.EntityTypeName, entityType.Name, System.StringComparison.Ordinal))
-                            .ToList();
+                        var aliasExpr = info.Graph != null && fm.StorageAlias != null
+                            ? "node.OutputAlias + \"_graph\""
+                            : fm.StorageAlias != null
+                                ? $"\"{fm.StorageAlias}\""
+                                : string.Equals(
+                                    fm.EntityTypeName,
+                                    primaryEntityType.Name,
+                                    StringComparison.Ordinal)
+                                    ? "node.OutputAlias"
+                                    : $"node.OutputAlias + \"_{fm.EntityTypeName}\"";
 
-                        if (entityFields.Count == 0) continue;
-
-                        var aliasExpr = string.Equals(entityType.Name, primaryEntityType.Name, System.StringComparison.Ordinal)
-                            ? "node.OutputAlias"
-                            : $"node.OutputAlias + \"_{entityType.Name}\"";
-
-                        foreach (var fm in entityFields)
-                        {
-                            sb.AppendLine($"                    case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
-                            sb.AppendLine($"                        builder.AddRootColumn(");
-                            sb.AppendLine($"                            EntityId.{info.ModelType.Name},");
-                            sb.AppendLine($"                            StorageEntityId.{fm.EntityTypeName},");
-                            sb.AppendLine($"                            ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
-                            sb.AppendLine($"                            {aliasExpr}, scalar.OutputAlias);");
-                            sb.AppendLine("                        break;");
-                        }
+                        sb.AppendLine($"                    case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
+                        sb.AppendLine($"                        builder.AddRootColumn(");
+                        sb.AppendLine($"                            EntityId.{info.ModelType.Name},");
+                        sb.AppendLine($"                            StorageEntityId.{fm.EntityTypeName},");
+                        sb.AppendLine($"                            ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
+                        sb.AppendLine($"                            {aliasExpr}, scalar.OutputAlias);");
+                        sb.AppendLine("                        break;");
                     }
 
                     sb.AppendLine("                }");
@@ -164,21 +174,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     sb.AppendLine();
                 }
 
-                // ---------------------------------------------------------------
-                // Real multi-hop joins between the composite model's own backing
-                // entities. Previously this relied on `secondaryLinks`, which only
-                // supports a single hop with the FK assumed to live on the PRIMARY
-                // entity pointing at the related entity's PK -- wrong for chains
-                // like Product's CustomerBankingRelationship (primary) -> Contract
-                // -> Account / Transaction, where the FK actually lives on the
-                // CHILD side, and Account/Transaction are two hops away, not one.
-                // This walks entityGraph via the same EntityGraphPathfinder used
-                // for model-to-model navigation, and emits one AddJoin per hop
-                // using EmitInternalHopChain (mirrors EmitHopChain below, but
-                // targets the entitiesToEmit alias convention:
-                // node.OutputAlias + "_{EntityName}" for the final hop,
-                // node.OutputAlias + "_hopN" for intermediate hops).
-                // ---------------------------------------------------------------
                 foreach (var entityType in entitiesToEmit)
                 {
                     if (SymbolEqualityComparer.Default.Equals(entityType, primaryEntityType))
@@ -193,7 +188,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     EmitInternalHopChain(sb, info, hops, entityType.Name);
                 }
                 sb.AppendLine();
-
+                
                 // Single graph block — was duplicated before, now appears exactly once.
                 if (info.Graph != null && !string.IsNullOrWhiteSpace(info.Graph.GraphName))
                 {
@@ -372,24 +367,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     sb.AppendLine();
                 }
 
-                var childLinks = ComputeChildLinks(info, allMappings, navResult)
-                    .Where(l =>
-                    {
-                        var childInfo = allMappings.FirstOrDefault(m =>
-                            string.Equals(m.ModelType.Name, l.ChildModelName, System.StringComparison.Ordinal));
-                        if (childInfo == null || IsCompositeInfo(childInfo)) return false;
-
-                        // Exclude links already handled by secondary links mapping loop
-                        if (secondaryLinks.Any(sl => string.Equals(sl.AliasProperty, l.NavigationName,
-                                System.StringComparison.OrdinalIgnoreCase)))
-                        {
-                            return false;
-                        }
-
-                        return true;
-                    })
-                    .ToList();
-
                 EmitChildJoinDispatch(sb, info, childLinks);
             }
             else
@@ -418,16 +395,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     sb.AppendLine("            }");
                     sb.AppendLine();
                 }
-
-                var childLinks = ComputeChildLinks(info, allMappings, navResult)
-                    .Where(l =>
-                    {
-                        var childInfo = allMappings.FirstOrDefault(m =>
-                            string.Equals(m.ModelType.Name, l.ChildModelName, System.StringComparison.Ordinal));
-                        return childInfo != null && !IsCompositeInfo(childInfo);
-                    })
-                    .ToList();
-
+                
                 EmitChildJoinDispatch(sb, info, childLinks);
             }
 
@@ -756,7 +724,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                             (
                                 link.FromColumn,
                                 entityName,
-                                link.ToColumn
+                                link.ToColumn,
+                                null
                             ));
                     }
 
@@ -928,7 +897,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                         (
                             primaryLink.FromColumn,
                             primaryEntityName,
-                            primaryLink.ToColumn
+                            primaryLink.ToColumn,
+                            null
                         ));
                 }
             }
@@ -1526,7 +1496,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         !string.IsNullOrWhiteSpace(primaryLink.FromColumn) &&
         !string.IsNullOrWhiteSpace(primaryLink.ToColumn))
     {
-        allValueMappings.Add((primaryLink.FromColumn, storageTypeName, primaryLink.ToColumn));
+        allValueMappings.Add((primaryLink.FromColumn, storageTypeName, primaryLink.ToColumn, null));
     }
 
     if (allValueMappings.Count > 0)
@@ -1689,26 +1659,63 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine("    }");
         }
 
-        internal static List<(string FieldName, string EntityTypeName, string ColumnName)>
+        internal static List<(string FieldName, string EntityTypeName, string ColumnName, string? StorageAlias)>
             ComputeFieldMappingsEagerPublic(MappingClassInfo info, bool composite)
         {
             return ComputeFieldMappingsEager(info, composite);
         }
 
-        private static List<(string FieldName, string EntityTypeName, string ColumnName)> ComputeFieldMappingsEager(
-            MappingClassInfo info, bool composite)
+        private static List<(string FieldName, string EntityTypeName, string ColumnName, string? StorageAlias)>
+            ComputeFieldMappingsEager(
+                MappingClassInfo info,
+                bool composite)
         {
-            var list = new List<(string, string, string)>();
-            foreach (var f in info.FieldMaps)
+            var list =
+                new List<(string FieldName, string EntityTypeName, string ColumnName, string? StorageAlias)>();
+
+            foreach (var field in info.FieldMaps)
             {
-                if (f.IsGenerated) continue;
+                if (field.IsGenerated)
+                    continue;
 
-                var entityTypeName = string.IsNullOrWhiteSpace(f.DestinationEntity)
-                    ? (info.EntityType?.Name ?? info.ModelType.Name)
-                    : f.DestinationEntity;
+                var entityTypeName =
+                    string.IsNullOrWhiteSpace(field.DestinationEntity)
+                        ? info.EntityType?.Name ?? info.ModelType.Name
+                        : field.DestinationEntity;
 
-                list.Add((f.SourceName, entityTypeName, f.DestinationName));
+                list.Add((
+                    FieldName: field.SourceName,
+                    EntityTypeName: entityTypeName,
+                    ColumnName: field.DestinationName,
+                    StorageAlias: field.DestinationAlias));
             }
+
+
+            var primary = info.Definition.Entities
+                .FirstOrDefault(e => e.IsPrimary);
+
+
+            if (primary != null &&
+                !string.IsNullOrWhiteSpace(primary.FromColumn) &&
+                !string.IsNullOrWhiteSpace(primary.ToColumn))
+            {
+                var exists = list.Any(x =>
+                    string.Equals(
+                        x.FieldName,
+                        primary.FromColumn,
+                        StringComparison.Ordinal));
+
+
+                if (!exists)
+                {
+                    list.Add((
+                        FieldName: primary.FromColumn,
+                        EntityTypeName: primary.EntityType.Name,
+                        ColumnName: primary.ToColumn,
+                        StorageAlias: null));
+                }
+            }
+
 
             return list;
         }
@@ -1721,6 +1728,87 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             return entity.GetMembers().OfType<IPropertySymbol>().Any(p => p.Name == conventional)
                 ? conventional
                 : "Id";
+        }
+        
+        internal static class ChildNavigationConvention
+        {
+            public static List<ChildLink> Resolve(
+                MappingClassInfo info,
+                ImmutableArray<MappingClassInfo> allMappings)
+            {
+                var mappedModels = allMappings
+                    .Where(m => m.IsModel)
+                    .ToDictionary(
+                        m => m.ModelType,
+                        SymbolEqualityComparer.Default);
+
+                var result = new List<ChildLink>();
+
+                foreach (var property in info.ModelType
+                             .GetMembers()
+                             .OfType<IPropertySymbol>())
+                {
+                    var childType = UnwrapCollection(property.Type);
+
+                    if (childType is not INamedTypeSymbol childSymbol)
+                        continue;
+
+                    if (!mappedModels.TryGetValue(childSymbol, out var childMapping))
+                        continue;
+
+                    if (SymbolEqualityComparer.Default.Equals(
+                            childSymbol,
+                            info.ModelType))
+                    {
+                        continue;
+                    }
+
+                    result.Add(new ChildLink
+                    {
+                        NavigationName = property.Name,
+                        ChildModelName = childSymbol.Name,
+                        ChildEntityName =
+                            childMapping.EntityType?.Name ??
+                            childMapping.Definition.Entities
+                                .First(e => e.IsPrimary)
+                                .EntityType!
+                                .Name,
+
+                        IsCollection = IsCollection(property.Type),
+
+                        Hops = []
+                    });
+                }
+
+                return result;
+            }
+
+
+            private static ITypeSymbol UnwrapCollection(ITypeSymbol type)
+            {
+                if (type is INamedTypeSymbol named &&
+                    named.IsGenericType &&
+                    named.TypeArguments.Length == 1)
+                {
+                    return named.TypeArguments[0];
+                }
+
+                return type;
+            }
+
+
+            private static bool IsCollection(ITypeSymbol type)
+            {
+                return type is INamedTypeSymbol named &&
+                       named.IsGenericType &&
+                       named.TypeArguments.Length == 1 &&
+                       named.Name is
+                           "List" or
+                           "ICollection" or
+                           "IEnumerable" or
+                           "IReadOnlyCollection" or
+                           "IReadOnlyList";
+            }
         }
 
         internal static IEnumerable<ChildLink> ComputeChildLinks(
