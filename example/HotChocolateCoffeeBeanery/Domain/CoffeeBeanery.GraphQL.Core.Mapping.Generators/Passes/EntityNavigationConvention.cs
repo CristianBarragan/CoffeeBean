@@ -9,103 +9,129 @@ using Microsoft.CodeAnalysis;
 internal static class EntityNavigationConvention
 {
     public static NavigationResolutionResult Resolve(
-    MappingClassInfo info,
-    ImmutableArray<MappingClassInfo> allMappings,
-    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph,
-    ISet<INamedTypeSymbol> rootEntityTypes)
-{
-    var result = new NavigationResolutionResult();
-
-    // CHANGED: don't collapse the parent to just its primary entity.
-    // A composite parent can have its FK-bearing side on any of its
-    // backing entities, not necessarily the one marked IsPrimary.
-    var parentEntities = info.Definition.Entities
-        .Where(e => e.EntityType != null)
-        .Select(e => e.EntityType!)
-        .Distinct(SymbolEqualityComparer.Default)
-        .Cast<INamedTypeSymbol>()
-        .ToList();
-
-    if (parentEntities.Count == 0 && info.EntityType != null)
-        parentEntities.Add(info.EntityType);
-
-    if (parentEntities.Count == 0)
-        return result;
-
-    var modelProperties = info.ModelType.GetMembers().OfType<IPropertySymbol>().ToList();
-
-    foreach (var prop in modelProperties)
+        MappingClassInfo info,
+        ImmutableArray<MappingClassInfo> allMappings,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph,
+        ISet<INamedTypeSymbol> rootEntityTypes)
     {
-        if (prop.IsStatic) continue;
+        var result = new NavigationResolutionResult();
 
-        var relatedModelType = ResolveElementType(prop.Type);
-        if (relatedModelType == null) continue;
-
-        var childModel = allMappings.FirstOrDefault(m =>
-            m.IsModel && SymbolEqualityComparer.Default.Equals(m.ModelType, relatedModelType));
-        if (childModel == null) continue;
-
-        if (!string.Equals(prop.Name, relatedModelType.Name, StringComparison.Ordinal))
-            continue;
-
-        var isCollection = IsCollection(prop.Type);
-        var childEntities = childModel.Definition.Entities
+        var parentEntities = info.Definition.Entities
             .Where(e => e.EntityType != null)
             .Select(e => e.EntityType!)
             .Distinct(SymbolEqualityComparer.Default)
             .Cast<INamedTypeSymbol>()
             .ToList();
 
-        if (childEntities.Count == 0)
-            continue;
+        if (parentEntities.Count == 0 && info.EntityType != null)
+            parentEntities.Add(info.EntityType);
 
-        var joinPaths = new List<NavigationJoinPath>();
+        if (parentEntities.Count == 0)
+            return result;
 
-        // CHANGED: try every (parentEntity, childEntity) pair, not just
-        // (primaryParentEntity, childEntity). Accept the first path found
-        // per target entity — a composite child may legitimately connect
-        // via more than one of its backing entities in different queries,
-        // so we don't stop at the first successful target, only at the
-        // first successful *source* for a given target.
-        foreach (var targetEntity in childEntities)
+        // Shared helper: try every parent entity as a source, return the first
+        // path found. Used by both the model-property walk below and the
+        // AliasProperty fallback loop, so a composite parent's FK can live on
+        // any of its backing entities in either code path — not just whichever
+        // one happened to be marked IsPrimary.
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge>? FindPathFromAnyParent(
+            INamedTypeSymbol targetEntity)
         {
-            List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge>? path = null;
-
             foreach (var sourceEntity in parentEntities)
             {
-                path = FluentEntityNavigationConvention.EntityGraphPathfinder.FindPath(
+                var path = FluentEntityNavigationConvention.EntityGraphPathfinder.FindPath(
                     entityGraph, sourceEntity, targetEntity);
-                if (path != null) break;
+                if (path != null) return path;
+            }
+            return null;
+        }
+
+        var modelProperties = info.ModelType.GetMembers().OfType<IPropertySymbol>().ToList();
+
+        foreach (var prop in modelProperties)
+        {
+            if (prop.IsStatic) continue;
+
+            var relatedModelType = ResolveElementType(prop.Type);
+            if (relatedModelType == null) continue;
+
+            var childModel = allMappings.FirstOrDefault(m =>
+                m.IsModel && SymbolEqualityComparer.Default.Equals(m.ModelType, relatedModelType));
+            if (childModel == null) continue;
+
+            if (!string.Equals(prop.Name, relatedModelType.Name, StringComparison.Ordinal))
+                continue;
+
+            var isCollection = IsCollection(prop.Type);
+            var childEntities = childModel.Definition.Entities
+                .Where(e => e.EntityType != null)
+                .Select(e => e.EntityType!)
+                .Distinct(SymbolEqualityComparer.Default)
+                .Cast<INamedTypeSymbol>()
+                .ToList();
+
+            if (childEntities.Count == 0)
+                continue;
+
+            var joinPaths = new List<NavigationJoinPath>();
+
+            foreach (var targetEntity in childEntities)
+            {
+                var path = FindPathFromAnyParent(targetEntity);
+                if (path == null) continue;
+
+                joinPaths.Add(new NavigationJoinPath
+                {
+                    TargetEntity = targetEntity,
+                    Hops = path
+                });
             }
 
-            if (path == null) continue;
+            if (joinPaths.Count == 0)
+                continue;
 
-            joinPaths.Add(new NavigationJoinPath
+            result.Navigations.Add(new NavigationInfo
             {
-                TargetEntity = targetEntity,
-                Hops = path
+                NavigationName = prop.Name,
+                TargetModel = relatedModelType,
+                RelatedEntityType = childModel.EntityType,
+                IsCollection = isCollection,
+                TargetIsRoot = childEntities.Any(rootEntityTypes.Contains),
+                JoinPaths = joinPaths
             });
         }
 
-        if (joinPaths.Count == 0)
-            continue;
-
-        result.Navigations.Add(new NavigationInfo
+        // FIX: previously used a single parentPrimaryEntity here, so an
+        // AliasProperty link (e.g. CustomerCustomerEdge.InnerCustomer/
+        // OuterCustomer) would silently fail to resolve a path whenever the
+        // FK-owning entity for that alias wasn't the model's IsPrimary
+        // entity. Now tries every backing entity, same as the main loop above.
+        foreach (var link in info.Definition.Entities)
         {
-            NavigationName = prop.Name,
-            TargetModel = relatedModelType,
-            RelatedEntityType = childModel.EntityType,
-            IsCollection = isCollection,
-            TargetIsRoot = childEntities.Any(rootEntityTypes.Contains),
-            JoinPaths = joinPaths
-        });
+            if (string.IsNullOrWhiteSpace(link.AliasProperty)) continue;
+            if (result.Navigations.Any(x =>
+                    string.Equals(x.NavigationName, link.AliasProperty, StringComparison.Ordinal)))
+                continue;
+
+            var path = FindPathFromAnyParent(link.EntityType!);
+
+            result.Navigations.Add(new NavigationInfo
+            {
+                NavigationName = link.AliasProperty,
+                TargetModel = link.EntityType,
+                RelatedEntityType = link.EntityType,
+                ForeignKeyProperty = link.AliasProperty + "Id",
+                PrincipalKeyProperty = link.EntityType!.Name + "Key",
+                IsCollection = false,
+                TargetIsRoot = rootEntityTypes.Contains(link.EntityType),
+                JoinPaths = path != null
+                    ? [new NavigationJoinPath { TargetEntity = link.EntityType, Hops = path }]
+                    : []
+            });
+        }
+
+        return result;
     }
-
-    // ... AliasProperty fallback loop unchanged (still uses parentPrimaryEntity there,
-    // should probably get the same treatment — see note below) ...
-
-    return result;
-}
 
     private static INamedTypeSymbol? ResolveElementType(ITypeSymbol type)
     {

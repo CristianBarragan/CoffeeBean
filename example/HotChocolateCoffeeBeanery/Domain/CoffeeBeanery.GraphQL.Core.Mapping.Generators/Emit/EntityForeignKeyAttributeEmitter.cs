@@ -45,7 +45,9 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     $"    [global::CoffeeBeanery.GraphQL.Core.Mapping.EntityForeignKey(" +
                     $"typeof(global::{key.RelatedEntityType.ToDisplayString()}), " +
                     $"\"{key.ModelForeignKeyProperty}\", " +
-                    $"\"{key.ModelPrincipalKeyProperty}\"" +
+                    $"\"{key.ModelPrincipalKeyProperty}\", " +
+                    $"\"{key.RawForeignKeyColumn}\", " +
+                    $"\"{key.RawPrincipalKeyColumn}\"" +
                     $"{navArg})]");
             }
 

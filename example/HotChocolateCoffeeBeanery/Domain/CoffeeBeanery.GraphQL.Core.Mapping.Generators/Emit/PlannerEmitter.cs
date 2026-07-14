@@ -61,28 +61,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     .Count(a => a.AttributeClass?.Name == "EntityForeignKeyAttribute");
 
                 if (fkAttributeCount > 1) return true;
-
-                var definitionProp = info.ClassSymbol
-                    .GetMembers("Definition")
-                    .OfType<IPropertySymbol>()
-                    .FirstOrDefault();
-
-                if (definitionProp != null)
-                {
-                    var syntaxRefs = definitionProp.DeclaringSyntaxReferences;
-                    foreach (var sr in syntaxRefs)
-                    {
-                        var text = sr.GetSyntax().ToFullString();
-                        var count = 0;
-                        var idx = 0;
-                        while ((idx = text.IndexOf("Entity = typeof(", idx, StringComparison.Ordinal)) >= 0)
-                        {
-                            count++;
-                            idx++;
-                        }
-                        if (count > 1) return true;
-                    }
-                }
             }
 
             string? firstName = null;
@@ -187,19 +165,19 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 }
 
                 // ---------------------------------------------------------------
-                // NEW: real multi-hop joins between the composite model's own
-                // backing entities. Previously this relied on `secondaryLinks`,
-                // which only supports a single hop with the FK assumed to live on
-                // the PRIMARY entity pointing at the related entity's PK — wrong
-                // for chains like Product's CustomerBankingRelationship (primary)
-                // -> Contract -> Account / Transaction, where the FK actually
-                // lives on the CHILD side, and Account/Transaction are two hops
-                // away, not one. This walks entityGraph via the same
-                // EntityGraphPathfinder used for model-to-model navigation, and
-                // emits one AddJoin per hop using EmitInternalHopChain (mirrors
-                // EmitHopChain below, but targets the entitiesToEmit alias
-                // convention: node.OutputAlias + "_{EntityName}" for the final
-                // hop, node.OutputAlias + "_hopN" for intermediate hops).
+                // Real multi-hop joins between the composite model's own backing
+                // entities. Previously this relied on `secondaryLinks`, which only
+                // supports a single hop with the FK assumed to live on the PRIMARY
+                // entity pointing at the related entity's PK -- wrong for chains
+                // like Product's CustomerBankingRelationship (primary) -> Contract
+                // -> Account / Transaction, where the FK actually lives on the
+                // CHILD side, and Account/Transaction are two hops away, not one.
+                // This walks entityGraph via the same EntityGraphPathfinder used
+                // for model-to-model navigation, and emits one AddJoin per hop
+                // using EmitInternalHopChain (mirrors EmitHopChain below, but
+                // targets the entitiesToEmit alias convention:
+                // node.OutputAlias + "_{EntityName}" for the final hop,
+                // node.OutputAlias + "_hopN" for intermediate hops).
                 // ---------------------------------------------------------------
                 foreach (var entityType in entitiesToEmit)
                 {
@@ -458,12 +436,12 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         }
 
         // ---------------------------------------------------------------
-        // NEW: emits AddJoin calls for a hop chain that stays entirely
-        // internal to a single composite model's own backing entities
-        // (as opposed to EmitHopChain below, which targets a genuinely
-        // separate child model). The final hop's target alias matches
-        // the convention already used by the entitiesToEmit scalar-column
-        // block: node.OutputAlias + "_{finalEntityName}".
+        // Emits AddJoin calls for a hop chain that stays entirely internal
+        // to a single composite model's own backing entities (as opposed to
+        // EmitHopChain below, which targets a genuinely separate child
+        // model). The final hop's target alias matches the convention
+        // already used by the entitiesToEmit scalar-column block:
+        // node.OutputAlias + "_{finalEntityName}".
         // ---------------------------------------------------------------
         private static void EmitInternalHopChain(
             StringBuilder sb,
@@ -485,9 +463,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                 var toEntity = edge.PrincipalEntity;
                 var toColumn = edge.PrincipalColumn;
 
-                var fromAliasExpr = i == 0
-                    ? "node.OutputAlias"
-                    : $"node.OutputAlias + \"_hop{i - 1}\"";
                 var toAliasExpr = isLast
                     ? $"node.OutputAlias + \"_{finalEntityName}\""
                     : $"node.OutputAlias + \"_hop{i}\"";
