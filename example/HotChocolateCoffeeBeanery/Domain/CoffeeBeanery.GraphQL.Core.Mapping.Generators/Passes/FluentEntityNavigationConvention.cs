@@ -86,7 +86,26 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                             .FirstOrDefault(x => x.Name == navName);
                         var relatedEntity = ResolveRelatedType(navProperty);
                         if (relatedEntity == null) continue;
-                        
+
+                        // FIX: previously required both of these lookups to succeed
+                        // before recording the relationship at all:
+                        //     var foreignKey = FindProperty(relatedEntity, inverseName + "Key");
+                        //     var principalKey = FindProperty(entityType, entityType.Name + "Key");
+                        //     if (foreignKey == null || principalKey == null) continue;
+                        // That assumes FK columns follow a "{Name}Key" business-key
+                        // naming convention. This codebase's actual FK columns are
+                        // surrogate-key-style ("{Name}Id", e.g. ContactPoint.CustomerId),
+                        // so that lookup failed for virtually every relationship and
+                        // silently dropped it before it ever reached entityResults —
+                        // meaning EntityForeignKeyGraph ended up with almost no edges.
+                        // RawForeignKeyColumn/RawPrincipalKeyColumn below are already
+                        // correctly derived straight from the HasForeignKey lambda and
+                        // the "Id" PK convention, with no naming guesswork — those are
+                        // what the graph-building path actually needs. ForeignKey/
+                        // PrincipalKey here are kept only as best-effort cosmetic
+                        // fallbacks for anything that still reads ModelForeignKeyProperty/
+                        // ModelPrincipalKeyProperty; the relationship itself is now
+                        // always recorded regardless of whether that lookup resolves.
                         var foreignKey = FindProperty(relatedEntity, inverseName + "Key");
                         var principalKey = FindProperty(entityType, entityType.Name + "Key");
 
@@ -177,74 +196,89 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
         }
         
         public static class EntityForeignKeyGraph
-{
-    public sealed record Edge(
-        INamedTypeSymbol DependentEntity,
-        string DependentColumn,
-        INamedTypeSymbol PrincipalEntity,
-        string PrincipalColumn);
-
-    public static List<Edge> Build(Compilation compilation, CancellationToken ct)
-    {
-        var edges = new List<Edge>();
-
-        var attributeType = compilation.GetTypeByMetadataName(
-            "CoffeeBeanery.GraphQL.Core.Mapping.EntityForeignKeyAttribute");
-
-        if (attributeType == null)
-            return edges; // attribute type not visible yet — nothing to read
-
-        // The [EntityForeignKey] attributes are emitted onto partial declarations
-        // of the DEPENDENT entity (the one that owns the FK column), one attribute
-        // per relationship it participates in. Walk every named type visible in
-        // this compilation (including referenced assemblies) looking for them.
-        foreach (var candidate in GetAllNamedTypes(compilation.GlobalNamespace))
         {
-            ct.ThrowIfCancellationRequested();
+            public sealed record Edge(
+                INamedTypeSymbol DependentEntity,
+                string DependentColumn,
+                INamedTypeSymbol PrincipalEntity,
+                string PrincipalColumn);
 
-            foreach (var attr in candidate.GetAttributes())
+            /// <summary>
+            /// Reads the single assembly-level [EntityForeignKeyGraph(...)] attribute
+            /// (emitted by EntityForeignKeyEmitterGenerator, possibly in a referenced
+            /// assembly such as Database.Entity) and deserializes its delimited edge
+            /// list. Replaces the earlier approach of scanning every named type in the
+            /// compilation for per-class [EntityForeignKey] attributes.
+            /// </summary>
+            public static List<Edge> Build(Compilation compilation, CancellationToken ct)
             {
-                if (!SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attributeType))
-                    continue;
+                var edges = new List<Edge>();
 
-                if (attr.ConstructorArguments.Length < 5)
-                    continue;
+                var attributeType = compilation.GetTypeByMetadataName(
+                    "CoffeeBeanery.GraphQL.Core.Mapping.EntityForeignKeyGraphAttribute");
 
-                if (attr.ConstructorArguments[0].Value is not INamedTypeSymbol relatedEntity)
-                    continue;
+                if (attributeType == null)
+                    return edges; // attribute type not visible yet — nothing to read
 
-                var rawFkColumn = attr.ConstructorArguments[3].Value as string;
-                var rawPkColumn = attr.ConstructorArguments[4].Value as string;
+                AttributeData? found = null;
 
-                if (string.IsNullOrWhiteSpace(rawFkColumn) || string.IsNullOrWhiteSpace(rawPkColumn))
-                    continue;
-                
-                edges.Add(new Edge(relatedEntity, rawFkColumn!, candidate, rawPkColumn!));
+                // Check this compilation's own assembly first.
+                found = compilation.Assembly.GetAttributes()
+                    .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attributeType));
+
+                // Then check every referenced assembly (e.g. Database.Entity, where
+                // the entity-defining project's own generator instance emitted it).
+                if (found == null)
+                {
+                    foreach (var reference in compilation.References)
+                    {
+                        ct.ThrowIfCancellationRequested();
+
+                        if (compilation.GetAssemblyOrModuleSymbol(reference) is not IAssemblySymbol asmSymbol)
+                            continue;
+
+                        found = asmSymbol.GetAttributes()
+                            .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attributeType));
+
+                        if (found != null)
+                            break;
+                    }
+                }
+
+                if (found == null || found.ConstructorArguments.Length < 1)
+                    return edges;
+
+                var serialized = found.ConstructorArguments[0].Value as string;
+                if (string.IsNullOrEmpty(serialized))
+                    return edges;
+
+                foreach (var line in serialized!.Split(';'))
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+
+                    var parts = line.Split('|');
+                    if (parts.Length != 4) continue;
+
+                    var dependentType = compilation.GetTypeByMetadataName(parts[0]);
+                    var principalType = compilation.GetTypeByMetadataName(parts[2]);
+
+                    if (dependentType == null || principalType == null) continue;
+
+                    edges.Add(new Edge(dependentType, parts[1], principalType, parts[3]));
+                }
+
+                return edges;
+            }
+
+            private static INamedTypeSymbol? ResolveRelatedType(IPropertySymbol? property)
+            {
+                if (property == null) return null;
+                var type = property.Type;
+                if (type is INamedTypeSymbol generic && generic.IsGenericType && generic.TypeArguments.Length == 1)
+                    return generic.TypeArguments[0] as INamedTypeSymbol;
+                return type as INamedTypeSymbol;
             }
         }
-
-        return edges;
-    }
-
-    private static IEnumerable<INamedTypeSymbol> GetAllNamedTypes(INamespaceSymbol root)
-    {
-        foreach (var member in root.GetMembers())
-        {
-            switch (member)
-            {
-                case INamespaceSymbol ns:
-                    foreach (var t in GetAllNamedTypes(ns))
-                        yield return t;
-                    break;
-                case INamedTypeSymbol type:
-                    yield return type;
-                    foreach (var nested in type.GetTypeMembers())
-                        yield return nested;
-                    break;
-            }
-        }
-    }
-}
 
 
         private static INamedTypeSymbol? ResolveRelatedType(

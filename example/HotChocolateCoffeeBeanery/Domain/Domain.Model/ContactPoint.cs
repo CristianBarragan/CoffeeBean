@@ -2,7 +2,7 @@
 
 namespace Domain.Model;
 
-public class ContactPoint
+public partial class ContactPoint
 {
 
     public Guid? ContactPointKey { get; set; }

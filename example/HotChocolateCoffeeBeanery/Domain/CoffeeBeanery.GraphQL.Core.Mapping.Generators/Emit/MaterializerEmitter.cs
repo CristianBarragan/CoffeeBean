@@ -569,7 +569,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         }
 
         private static string BuildFieldAssignment(
-            (string FieldName, string EntityTypeName, string ColumnName, string StorageAlias) fm,
+            (string FieldName, string EntityTypeName, string ColumnName, string? StorageAlias) fm,
             INamedTypeSymbol modelType,
             INamedTypeSymbol? entityType,
             string sourceVar,

@@ -2,7 +2,7 @@
 
 namespace Domain.Model;
 
-public class Transaction
+public partial class Transaction
 {
 
     public Guid TransactionKey { get; set; }

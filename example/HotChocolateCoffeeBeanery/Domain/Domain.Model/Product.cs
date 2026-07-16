@@ -2,7 +2,7 @@
 
 namespace Domain.Model;
 
-public class Product
+public partial class Product
 {
     public Guid? CustomerBankingRelationshipKey { get; set; }
     

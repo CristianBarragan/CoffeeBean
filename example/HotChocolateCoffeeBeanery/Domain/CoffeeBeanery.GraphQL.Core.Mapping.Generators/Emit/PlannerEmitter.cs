@@ -61,6 +61,28 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     .Count(a => a.AttributeClass?.Name == "EntityForeignKeyAttribute");
 
                 if (fkAttributeCount > 1) return true;
+
+                var definitionProp = info.ClassSymbol
+                    .GetMembers("Definition")
+                    .OfType<IPropertySymbol>()
+                    .FirstOrDefault();
+
+                if (definitionProp != null)
+                {
+                    var syntaxRefs = definitionProp.DeclaringSyntaxReferences;
+                    foreach (var sr in syntaxRefs)
+                    {
+                        var text = sr.GetSyntax().ToFullString();
+                        var count = 0;
+                        var idx = 0;
+                        while ((idx = text.IndexOf("Entity = typeof(", idx, StringComparison.Ordinal)) >= 0)
+                        {
+                            count++;
+                            idx++;
+                        }
+                        if (count > 1) return true;
+                    }
+                }
             }
 
             string? firstName = null;
@@ -107,21 +129,9 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine("        public static void Build(in SelectionIR node, ref QueryPlanBuilder builder)");
             sb.AppendLine("        {");
 
+            // Pre-calculate secondary links so they are accessible to the childLinks filter below
             var secondaryLinks = info.Definition.Entities
                 .Where(k => !k.IsPrimary && k.EntityType != null && k.AliasProperty != null)
-                .ToList();
-            
-            var childLinks = ComputeChildLinks(info, allMappings, navResult)
-                .Where(l =>
-                {
-                    var childInfo = allMappings.FirstOrDefault(m =>
-                        string.Equals(m.ModelType.Name, l.ChildModelName, System.StringComparison.Ordinal));
-                    if (childInfo == null || IsCompositeInfo(childInfo)) return false;
-                    if (secondaryLinks.Any(sl => string.Equals(sl.AliasProperty, l.NavigationName,
-                            System.StringComparison.OrdinalIgnoreCase)))
-                        return false;
-                    return true;
-                })
                 .ToList();
 
             if (composite)
@@ -147,26 +157,28 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     sb.AppendLine("                switch (scalar.FieldId)");
                     sb.AppendLine("                {");
 
-                    foreach (var fm in allFieldMappings)
+                    foreach (var entityType in entitiesToEmit)
                     {
-                        var aliasExpr = info.Graph != null && fm.StorageAlias != null
-                            ? "node.OutputAlias + \"_graph\""
-                            : fm.StorageAlias != null
-                                ? $"\"{fm.StorageAlias}\""
-                                : string.Equals(
-                                    fm.EntityTypeName,
-                                    primaryEntityType.Name,
-                                    StringComparison.Ordinal)
-                                    ? "node.OutputAlias"
-                                    : $"node.OutputAlias + \"_{fm.EntityTypeName}\"";
+                        var entityFields = allFieldMappings
+                            .Where(f => string.Equals(f.EntityTypeName, entityType.Name, System.StringComparison.Ordinal))
+                            .ToList();
 
-                        sb.AppendLine($"                    case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
-                        sb.AppendLine($"                        builder.AddRootColumn(");
-                        sb.AppendLine($"                            EntityId.{info.ModelType.Name},");
-                        sb.AppendLine($"                            StorageEntityId.{fm.EntityTypeName},");
-                        sb.AppendLine($"                            ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
-                        sb.AppendLine($"                            {aliasExpr}, scalar.OutputAlias);");
-                        sb.AppendLine("                        break;");
+                        if (entityFields.Count == 0) continue;
+
+                        var aliasExpr = string.Equals(entityType.Name, primaryEntityType.Name, System.StringComparison.Ordinal)
+                            ? "node.OutputAlias"
+                            : $"node.OutputAlias + \"_{entityType.Name}\"";
+
+                        foreach (var fm in entityFields)
+                        {
+                            sb.AppendLine($"                    case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
+                            sb.AppendLine($"                        builder.AddRootColumn(");
+                            sb.AppendLine($"                            EntityId.{info.ModelType.Name},");
+                            sb.AppendLine($"                            StorageEntityId.{fm.EntityTypeName},");
+                            sb.AppendLine($"                            ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
+                            sb.AppendLine($"                            {aliasExpr}, scalar.OutputAlias);");
+                            sb.AppendLine("                        break;");
+                        }
                     }
 
                     sb.AppendLine("                }");
@@ -174,6 +186,21 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     sb.AppendLine();
                 }
 
+                // ---------------------------------------------------------------
+                // Real multi-hop joins between the composite model's own backing
+                // entities. Previously this relied on `secondaryLinks`, which only
+                // supports a single hop with the FK assumed to live on the PRIMARY
+                // entity pointing at the related entity's PK -- wrong for chains
+                // like Product's CustomerBankingRelationship (primary) -> Contract
+                // -> Account / Transaction, where the FK actually lives on the
+                // CHILD side, and Account/Transaction are two hops away, not one.
+                // This walks entityGraph via the same EntityGraphPathfinder used
+                // for model-to-model navigation, and emits one AddJoin per hop
+                // using EmitInternalHopChain (mirrors EmitHopChain below, but
+                // targets the entitiesToEmit alias convention:
+                // node.OutputAlias + "_{EntityName}" for the final hop,
+                // node.OutputAlias + "_hopN" for intermediate hops).
+                // ---------------------------------------------------------------
                 foreach (var entityType in entitiesToEmit)
                 {
                     if (SymbolEqualityComparer.Default.Equals(entityType, primaryEntityType))
@@ -188,7 +215,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     EmitInternalHopChain(sb, info, hops, entityType.Name);
                 }
                 sb.AppendLine();
-                
+
                 // Single graph block — was duplicated before, now appears exactly once.
                 if (info.Graph != null && !string.IsNullOrWhiteSpace(info.Graph.GraphName))
                 {
@@ -367,6 +394,24 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     sb.AppendLine();
                 }
 
+                var childLinks = ComputeChildLinks(info, allMappings, navResult)
+                    .Where(l =>
+                    {
+                        var childInfo = allMappings.FirstOrDefault(m =>
+                            string.Equals(m.ModelType.Name, l.ChildModelName, System.StringComparison.Ordinal));
+                        if (childInfo == null || IsCompositeInfo(childInfo)) return false;
+
+                        // Exclude links already handled by secondary links mapping loop
+                        if (secondaryLinks.Any(sl => string.Equals(sl.AliasProperty, l.NavigationName,
+                                System.StringComparison.OrdinalIgnoreCase)))
+                        {
+                            return false;
+                        }
+
+                        return true;
+                    })
+                    .ToList();
+
                 EmitChildJoinDispatch(sb, info, childLinks);
             }
             else
@@ -395,7 +440,16 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     sb.AppendLine("            }");
                     sb.AppendLine();
                 }
-                
+
+                var childLinks = ComputeChildLinks(info, allMappings, navResult)
+                    .Where(l =>
+                    {
+                        var childInfo = allMappings.FirstOrDefault(m =>
+                            string.Equals(m.ModelType.Name, l.ChildModelName, System.StringComparison.Ordinal));
+                        return childInfo != null && !IsCompositeInfo(childInfo);
+                    })
+                    .ToList();
+
                 EmitChildJoinDispatch(sb, info, childLinks);
             }
 
@@ -569,7 +623,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                     sb,
                     info,
                     allMappings,
-                    models);
+                    models,
+                    navResult);
             }
             else
             {
@@ -620,698 +675,110 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         }
 
         private static void EmitCompositeMutation(
-            StringBuilder sb,
-            MappingClassInfo info,
-            ImmutableArray<MappingClassInfo> allMappings,
-            List<MappingClassInfo> models)
+    StringBuilder sb,
+    MappingClassInfo info,
+    ImmutableArray<MappingClassInfo> allMappings,
+    List<MappingClassInfo> models,
+    NavigationResolutionResult? navResult)
+{
+    var childModels = ComputeChildLinks(info, allMappings, navResult)
+        .GroupBy(l => l.ChildModelName, StringComparer.Ordinal)
+        .Select(g => (ModelName: g.Key, EntityName: g.First().ChildEntityName))
+        .OrderBy(t => t.ModelName, StringComparer.Ordinal)
+        .ToList();
+
+    var storageLinks = info.Definition.Entities
+        .Where(k => k.EntityType != null)
+        .ToList();
+
+    var allPrimaryLinks = storageLinks
+        .Where(k => k.IsPrimary)
+        .ToList();
+
+    var relationshipLinks = storageLinks
+        .Where(k =>
+            !k.IsPrimary &&
+            k.EntityType != null &&
+            !string.IsNullOrWhiteSpace(k.ToColumn))
+        .ToList();
+
+    sb.AppendLine(
+        "            var pendingRows = new Dictionary<(ushort EntityId, ushort StorageEntityId, string Alias), ImmutableArray<FieldValue>.Builder>();");
+
+    sb.AppendLine(
+        "            void AddOrMergeRow(ushort entityId, ushort storageEntityId, string alias, FieldValue field)");
+
+    sb.AppendLine(
+        "            {");
+
+    sb.AppendLine(
+        "                var key = (entityId, storageEntityId, alias);");
+
+    sb.AppendLine(
+        "                if (!pendingRows.TryGetValue(key, out var values))");
+
+    sb.AppendLine(
+        "                {");
+
+    sb.AppendLine(
+        "                    values = ImmutableArray.CreateBuilder<FieldValue>();");
+
+    sb.AppendLine(
+        "                    pendingRows[key] = values;");
+
+    sb.AppendLine(
+        "                }");
+
+    sb.AppendLine(
+        "                if (!values.Any(x => x.FieldId == field.FieldId))");
+
+    sb.AppendLine(
+        "                    values.Add(field);");
+
+    sb.AppendLine(
+        "            }");
+
+    if (allPrimaryLinks.Count > 1)
+    {
+        foreach (var link in allPrimaryLinks)
         {
-            var ownedEntityNames = new HashSet<string>(
-                info.Definition.Entities
-                    .Where(k => k.EntityType != null)
-                    .Select(k => k.EntityType!.Name),
-                StringComparer.Ordinal);
+            var entityName = link.EntityType!.Name;
 
-            var childModels = models
-                .Where(m =>
-                    !IsCompositeInfo(m) &&
-                    !string.Equals(
-                        m.ModelType.Name,
-                        info.ModelType.Name,
-                        StringComparison.Ordinal) &&
-                    ownedEntityNames.Contains(m.EntityType?.Name ?? m.ModelType.Name))
-                .Select(m => m.ModelType.Name)
-                .Distinct(StringComparer.Ordinal)
-                .OrderBy(n => n, StringComparer.Ordinal)
-                .ToList();
-
-            var storageLinks = info.Definition.Entities
-                .Where(k => k.EntityType != null)
-                .ToList();
-
-            var allPrimaryLinks = storageLinks
-                .Where(k => k.IsPrimary)
-                .ToList();
-
-            var relationshipLinks = storageLinks
-                .Where(k =>
-                    !k.IsPrimary &&
-                    k.EntityType != null &&
-                    !string.IsNullOrWhiteSpace(k.ToColumn))
-                .ToList();
-
-            sb.AppendLine(
-                "            var pendingRows = new Dictionary<(ushort EntityId, ushort StorageEntityId, string Alias), ImmutableArray<FieldValue>.Builder>();");
-
-            sb.AppendLine(
-                "            void AddOrMergeRow(ushort entityId, ushort storageEntityId, string alias, FieldValue field)");
-
-            sb.AppendLine(
-                "            {");
-
-            sb.AppendLine(
-                "                var key = (entityId, storageEntityId, alias);");
-
-            sb.AppendLine(
-                "                if (!pendingRows.TryGetValue(key, out var values))");
-
-            sb.AppendLine(
-                "                {");
-
-            sb.AppendLine(
-                "                    values = ImmutableArray.CreateBuilder<FieldValue>();");
-
-            sb.AppendLine(
-                "                    pendingRows[key] = values;");
-
-            sb.AppendLine(
-                "                }");
-
-            sb.AppendLine(
-                "                if (!values.Any(x => x.FieldId == field.FieldId))");
-
-            sb.AppendLine(
-                "                    values.Add(field);");
-
-            sb.AppendLine(
-                "            }");
-
-            if (allPrimaryLinks.Count > 1)
-            {
-                foreach (var link in allPrimaryLinks)
-                {
-                    var entityName = link.EntityType!.Name;
-
-                    var entityFields =
-                        ComputeFieldMappingsEagerPublic(
-                            info,
-                            composite: true)
-                        .Where(f =>
-                            string.Equals(
-                                f.EntityTypeName,
-                                entityName,
-                                StringComparison.Ordinal))
-                        .ToList();
-
-                    if (!entityFields.Any(f =>
-                            string.Equals(
-                                f.ColumnName,
-                                link.ToColumn,
-                                StringComparison.OrdinalIgnoreCase)) &&
-                        !string.IsNullOrWhiteSpace(link.FromColumn) &&
-                        !string.IsNullOrWhiteSpace(link.ToColumn))
-                    {
-                        entityFields.Add(
-                            (
-                                link.FromColumn,
-                                entityName,
-                                link.ToColumn,
-                                null
-                            ));
-                    }
-
-                    if (entityFields.Count == 0)
-                        continue;
-
-                    var valuesName = ToCamel(entityName) + "Values";
-
-                    sb.AppendLine(
-                        $"            var {valuesName} = ImmutableArray.CreateBuilder<FieldValue>(node.Values.Length);");
-
-                    sb.AppendLine(
-                        "            foreach (var v in node.Values)");
-
-                    sb.AppendLine(
-                        "            {");
-
-                    sb.AppendLine(
-                        "                switch (v.FieldId)");
-
-                    sb.AppendLine(
-                        "                {");
-
-                    foreach (var fm in entityFields)
-                    {
-                        sb.AppendLine(
-                            $"                    case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
-
-                        sb.AppendLine(
-                            $"                        {valuesName}.Add(new FieldValue(");
-
-                        sb.AppendLine(
-                            $"                            FieldId.{info.ModelType.Name}.{fm.FieldName},");
-
-                        sb.AppendLine(
-                            $"                            ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
-
-                        sb.AppendLine(
-                            "                            v.RawValue));");
-
-                        sb.AppendLine(
-                            "                        break;");
-                    }
-
-                    sb.AppendLine(
-                        "                }");
-
-                    sb.AppendLine(
-                        "            }");
-
-                    var mappedModel = allMappings.FirstOrDefault(m =>
-                        m.IsModel &&
-                        string.Equals(
-                            m.EntityType?.Name,
-                            entityName,
-                            StringComparison.Ordinal));
-
-                    sb.AppendLine(
-                        $"            if ({valuesName}.Count > 0)");
-
-                    sb.AppendLine(
-                        "            {");
-
-                    sb.AppendLine(
-                        "                builder.AddRow(");
-
-                    sb.AppendLine(
-                        $"                    EntityId.{mappedModel?.ModelType.Name ?? entityName},");
-
-                    sb.AppendLine(
-                        $"                    StorageEntityId.{entityName},");
-
-                    sb.AppendLine(
-                        "                    node.OutputAlias,");
-
-                    sb.AppendLine(
-                        $"                    {valuesName}.ToImmutable());");
-
-                    sb.AppendLine(
-                        "            }");
-                }
-
-                if (info.CteUpdateMeta.Count == 0)
-                    return;
-            }
-
-            if (childModels.Count > 0)
-            {
-                sb.AppendLine(
-                    "            foreach (var child in node.Children)");
-
-                sb.AppendLine(
-                    "            {");
-
-                sb.AppendLine(
-                    "                switch (child.EntityId)");
-
-                sb.AppendLine(
-                    "                {");
-
-                foreach (var childName in childModels)
-                {
-                    sb.AppendLine(
-                        $"                    case EntityId.{childName}:");
-
-                    sb.AppendLine(
-                        $"                        {childName}Planner.BuildMutation(child, ref builder);");
-
-                    sb.AppendLine(
-                        "                        break;");
-                }
-
-                sb.AppendLine(
-                    "                }");
-
-                sb.AppendLine(
-                    "            }");
-            }
-
-            var primaryLink = allPrimaryLinks.FirstOrDefault();
-
-            var primaryEntityName =
-                primaryLink?.EntityType?.Name
-                ?? throw new InvalidOperationException(
-                    $"Composite model '{info.ModelType.Name}' has no primary storage entity.");
-
-            var primarySchema =
-                allMappings.FirstOrDefault(m =>
-                        m.EntityType != null &&
-                        string.Equals(
-                            m.EntityType.Name,
-                            primaryEntityName,
-                            StringComparison.Ordinal))
-                    ?.Schema
-                ?? info.Schema;
-
-            var edgeMappings = ComputeFieldMappingsEagerPublic(
+            var entityFields =
+                ComputeFieldMappingsEagerPublic(
                     info,
                     composite: true)
                 .Where(f =>
                     string.Equals(
                         f.EntityTypeName,
-                        primaryEntityName,
+                        entityName,
                         StringComparison.Ordinal))
-                .GroupBy(f => new
-                {
-                    f.EntityTypeName,
-                    f.ColumnName
-                })
-                .Select(g => g.First())
                 .ToList();
 
-            if (primaryLink != null &&
-                !string.IsNullOrWhiteSpace(primaryLink.ToColumn))
-            {
-                var exists = edgeMappings.Any(f =>
-                    string.Equals(
-                        f.EntityTypeName,
-                        primaryEntityName,
-                        StringComparison.OrdinalIgnoreCase) &&
+            if (!entityFields.Any(f =>
                     string.Equals(
                         f.ColumnName,
-                        primaryLink.ToColumn,
-                        StringComparison.OrdinalIgnoreCase));
-
-                if (!exists)
-                {
-                    edgeMappings.Add(
-                        (
-                            primaryLink.FromColumn,
-                            primaryEntityName,
-                            primaryLink.ToColumn,
-                            null
-                        ));
-                }
-            }
-
-            edgeMappings = edgeMappings
-                .GroupBy(f => new
-                {
-                    f.EntityTypeName,
-                    f.ColumnName
-                })
-                .Select(g => g.First())
-                .ToList();
-
-            var conflictKeys = new List<string>();
-
-            var isRelationshipEntity =
-                relationshipLinks.Count > 0 &&
-                info.ModelType.Name.IndexOf(
-                    "Relationship",
-                    StringComparison.OrdinalIgnoreCase) >= 0;
-
-            if (isRelationshipEntity)
+                        link.ToColumn,
+                        StringComparison.OrdinalIgnoreCase)) &&
+                !string.IsNullOrWhiteSpace(link.FromColumn) &&
+                !string.IsNullOrWhiteSpace(link.ToColumn))
             {
-                conflictKeys = relationshipLinks
-                    .Where(x => !string.IsNullOrWhiteSpace(x.ToColumn))
-                    .Select(x => x.ToColumn!)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
+                entityFields.Add(
+                    (
+                        link.FromColumn,
+                        entityName,
+                        link.ToColumn,
+                        (string?)null
+                    ));
             }
 
-            if (conflictKeys.Count == 0)
-            {
-                conflictKeys = info.UpsertKeys
-                    .Where(k => !string.IsNullOrWhiteSpace(k.Key))
-                    .Select(k => k.Key)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-            }
+            if (entityFields.Count == 0)
+                continue;
 
-            if (conflictKeys.Count == 0)
-            {
-                conflictKeys = info.Definition.Entities
-                    .Where(k =>
-                        k.IsPrimary &&
-                        !string.IsNullOrWhiteSpace(k.ToColumn))
-                    .Select(k => k.ToColumn!)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-            }
-
-            var conflictLiteral =
-                conflictKeys.Count == 0
-                    ? "ImmutableArray<string>.Empty"
-                    : "ImmutableArray.Create(" +
-                      string.Join(
-                          ", ",
-                          conflictKeys.Select(k => $"\"{k}\"")) +
-                      ")";
-
-            var fkLinks = info.Definition.Entities
-                .Where(k =>
-                    !k.IsPrimary &&
-                    k.EntityType != null &&
-                    !string.IsNullOrWhiteSpace(k.AliasProperty))
-                .ToList();
-
-            foreach (var link in fkLinks)
-            {
-                sb.AppendLine(
-                    "            foreach (var v in node.Values)");
-
-                sb.AppendLine(
-                    "            {");
-
-                sb.AppendLine(
-                    $"                if (v.FieldId == FieldId.{info.ModelType.Name}.{link.FromColumn})");
-
-                sb.AppendLine(
-                    "                {");
-
-                sb.AppendLine(
-                    "                    if (!string.IsNullOrWhiteSpace(v.RawValue))");
-
-                sb.AppendLine(
-                    "                    {");
-
-                sb.AppendLine(
-                    "                        AddOrMergeRow(");
-
-                sb.AppendLine(
-                    $"                            EntityId.{link.EntityType!.Name},");
-
-                sb.AppendLine(
-                    $"                            StorageEntityId.{link.EntityType.Name},");
-
-                sb.AppendLine(
-                    $"                            \"{link.AliasProperty}\",");
-
-                sb.AppendLine(
-                    "                            new FieldValue(");
-
-                sb.AppendLine(
-                    $"                                ColumnId.{link.EntityType.Name}.{link.ToColumn},");
-
-                sb.AppendLine(
-                    "                                v.RawValue));");
-
-                sb.AppendLine(
-                    "                    }");
-
-                sb.AppendLine(
-                    "                    break;");
-
-                sb.AppendLine(
-                    "                }");
-
-                sb.AppendLine(
-                    "            }");
-            }
+            var valuesName = ToCamel(entityName) + "Values";
 
             sb.AppendLine(
-                "            foreach (var child in node.Children)");
-
-            sb.AppendLine(
-                "            {");
-
-            sb.AppendLine(
-                "                switch (child.EntityId)");
-
-            sb.AppendLine(
-                "                {");
-
-            foreach (var childName in childModels)
-            {
-                sb.AppendLine(
-                    $"                    case EntityId.{childName}:");
-
-                sb.AppendLine(
-                    "                    {");
-
-                sb.AppendLine(
-                    "                        foreach (var childValue in child.Values)");
-
-                sb.AppendLine(
-                    "                        {");
-
-                sb.AppendLine(
-                    "                            AddOrMergeRow(");
-
-                sb.AppendLine(
-                    $"                                EntityId.{childName},");
-
-                sb.AppendLine(
-                    $"                                StorageEntityId.{childName},");
-
-                sb.AppendLine(
-                    "                                child.OutputAlias,");
-
-                sb.AppendLine(
-                    "                                childValue);");
-
-                sb.AppendLine(
-                    "                        }");
-
-                sb.AppendLine(
-                    "                        break;");
-
-                sb.AppendLine(
-                    "                    }");
-            }
-
-            sb.AppendLine(
-                "                }");
-
-            sb.AppendLine(
-                "            }");
-
-            sb.AppendLine();
-
-            sb.AppendLine(
-                "            foreach (var row in pendingRows)");
-
-            sb.AppendLine(
-                "            {");
-
-            sb.AppendLine(
-                "                builder.AddRow(");
-
-            sb.AppendLine(
-                "                    row.Key.EntityId,");
-
-            sb.AppendLine(
-                "                    row.Key.StorageEntityId,");
-
-            sb.AppendLine(
-                "                    row.Key.Alias,");
-
-            sb.AppendLine(
-                "                    row.Value.ToImmutable());");
-
-            sb.AppendLine(
-                "            }");
-
-            var cteEntries = info.CteUpdateMeta;
-
-            sb.AppendLine(
-                $"            var cteChildren = ImmutableArray.CreateBuilder<MutationCteNode>({cteEntries.Count});");
-
-            string? resolvedGraphFromAlias = null;
-            string? resolvedGraphToAlias = null;
-
-            if (info.Graph != null &&
-                !string.IsNullOrWhiteSpace(info.Graph.GraphName))
-            {
-                resolvedGraphFromAlias =
-                    fkLinks.FirstOrDefault(l =>
-                            string.Equals(
-                                l.FromColumn,
-                                info.Graph.From?.KeyColumn,
-                                StringComparison.OrdinalIgnoreCase))
-                        ?.AliasProperty
-                    ?? info.Graph.From?.Alias;
-
-                resolvedGraphToAlias =
-                    fkLinks.FirstOrDefault(l =>
-                            string.Equals(
-                                l.FromColumn,
-                                info.Graph.To?.KeyColumn,
-                                StringComparison.OrdinalIgnoreCase))
-                        ?.AliasProperty
-                    ?? info.Graph.To?.Alias;
-
-                sb.AppendLine(
-                    "            string? graphFromKey = null, graphToKey = null, graphEdgeKey = null;");
-
-                sb.AppendLine();
-
-                sb.AppendLine(
-                    "            foreach (var child in node.Children)");
-
-                sb.AppendLine(
-                    "            {");
-
-                sb.AppendLine(
-                    "                string? naturalKey = null;");
-
-                sb.AppendLine(
-                    "                foreach (var cv in child.Values)");
-
-                sb.AppendLine(
-                    "                {");
-
-                sb.AppendLine(
-                    "                    if (cv.FieldId == FieldId.Customer.CustomerKey)");
-
-                sb.AppendLine(
-                    "                    {");
-
-                sb.AppendLine(
-                    "                        naturalKey = cv.RawValue;");
-
-                sb.AppendLine(
-                    "                        break;");
-
-                sb.AppendLine(
-                    "                    }");
-
-                sb.AppendLine(
-                    "                }");
-
-                sb.AppendLine();
-
-                sb.AppendLine(
-                    "                if (naturalKey != null)");
-
-                sb.AppendLine(
-                    "                {");
-
-                sb.AppendLine(
-                    $"                    if (string.Equals(child.OutputAlias, \"{resolvedGraphFromAlias}\", StringComparison.OrdinalIgnoreCase))");
-
-                sb.AppendLine(
-                    "                        graphFromKey = naturalKey;");
-
-                sb.AppendLine();
-
-                sb.AppendLine(
-                    $"                    if (string.Equals(child.OutputAlias, \"{resolvedGraphToAlias}\", StringComparison.OrdinalIgnoreCase))");
-
-                sb.AppendLine(
-                    "                        graphToKey = naturalKey;");
-
-                sb.AppendLine(
-                    "                }");
-
-                sb.AppendLine(
-                    "            }");
-            }
-
-            if (cteEntries.Count > 0)
-            {
-                sb.AppendLine(
-                    "            foreach (var child in node.Children)");
-
-                sb.AppendLine(
-                    "            {");
-
-                foreach (var cte in cteEntries)
-                {
-                    sb.AppendLine(
-                        $"                if (string.Equals(child.OutputAlias, \"{cte.NavigationAlias}\", System.StringComparison.OrdinalIgnoreCase))");
-
-                    sb.AppendLine(
-                        "                {");
-
-                    sb.AppendLine(
-                        "                    string? naturalKey = null;");
-
-                    sb.AppendLine(
-                        "                    foreach (var cv in child.Values)");
-
-                    sb.AppendLine(
-                        "                    {");
-
-                    var relatedModel = allMappings.FirstOrDefault(m =>
-                        m.IsModel &&
-                        string.Equals(
-                            m.EntityType?.Name,
-                            cte.RelatedEntityTypeName,
-                            StringComparison.Ordinal));
-
-                    if (relatedModel == null)
-                        continue;
-
-                    var childKey = relatedModel.Definition.Entities
-                                       .FirstOrDefault(e => e.IsPrimary)?.FromColumn
-                                   ?? cte.RelatedNaturalKeyColumn;
-
-                    sb.AppendLine(
-                        $"if (cv.FieldId == FieldId.{cte.RelatedEntityTypeName}.{childKey})");
-
-                    sb.AppendLine(
-                        "                        {");
-
-                    sb.AppendLine(
-                        "                            naturalKey = cv.RawValue;");
-
-                    sb.AppendLine(
-                        "                            break;");
-
-                    sb.AppendLine(
-                        "                        }");
-
-                    sb.AppendLine(
-                        "                    }");
-
-                    sb.AppendLine(
-                        "                    if (!string.IsNullOrWhiteSpace(naturalKey))");
-
-                    sb.AppendLine(
-                        "                    {");
-
-                    sb.AppendLine(
-                        "                        cteChildren.Add(new MutationCteNode(");
-
-                    sb.AppendLine(
-                        $"                            EntityId.{cte.RelatedEntityTypeName},");
-
-                    sb.AppendLine(
-                        $"                            StorageEntityId.{cte.RelatedEntityTypeName},");
-
-                    sb.AppendLine(
-                        $"                            \"{cte.NavigationAlias}\",");
-
-                    sb.AppendLine(
-                        $"                            ImmutableArray.Create(new FieldValue(ColumnId.{cte.RelatedEntityTypeName}.{childKey}, naturalKey)),");
-
-                    sb.AppendLine(
-                        "                            ImmutableArray<MutationCteNode>.Empty));");
-
-                    if (info.Graph != null &&
-                        string.Equals(
-                            cte.NavigationAlias,
-                            resolvedGraphFromAlias,
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        sb.AppendLine(
-                            "                        graphFromKey = naturalKey;");
-                    }
-
-                    if (info.Graph != null &&
-                        string.Equals(
-                            cte.NavigationAlias,
-                            resolvedGraphToAlias,
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        sb.AppendLine(
-                            "                        graphToKey = naturalKey;");
-                    }
-
-                    sb.AppendLine(
-                        "                    }");
-
-                    sb.AppendLine(
-                        "                }");
-                }
-
-                sb.AppendLine(
-                    "            }");
-            }
-
-            sb.AppendLine(
-                "            var edgeValues = ImmutableArray.CreateBuilder<FieldValue>(node.Values.Length);");
+                $"            var {valuesName} = ImmutableArray.CreateBuilder<FieldValue>(node.Values.Length);");
 
             sb.AppendLine(
                 "            foreach (var v in node.Values)");
@@ -1325,13 +792,13 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine(
                 "                {");
 
-            foreach (var fm in edgeMappings)
+            foreach (var fm in entityFields)
             {
                 sb.AppendLine(
                     $"                    case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
 
                 sb.AppendLine(
-                    "                        edgeValues.Add(new FieldValue(");
+                    $"                        {valuesName}.Add(new FieldValue(");
 
                 sb.AppendLine(
                     $"                            FieldId.{info.ModelType.Name}.{fm.FieldName},");
@@ -1341,16 +808,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
 
                 sb.AppendLine(
                     "                            v.RawValue));");
-
-                if (info.Graph != null &&
-                    string.Equals(
-                        fm.FieldName,
-                        info.Graph.EdgeKey,
-                        StringComparison.Ordinal))
-                {
-                    sb.AppendLine(
-                        "                        graphEdgeKey = v.RawValue;");
-                }
 
                 sb.AppendLine(
                     "                        break;");
@@ -1362,84 +819,697 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             sb.AppendLine(
                 "            }");
 
+            var mappedModel = allMappings.FirstOrDefault(m =>
+                m.IsModel &&
+                string.Equals(
+                    m.EntityType?.Name,
+                    entityName,
+                    StringComparison.Ordinal));
+
+            sb.AppendLine(
+                $"            if ({valuesName}.Count > 0)");
+
+            sb.AppendLine(
+                "            {");
+
+            sb.AppendLine(
+                "                builder.AddRow(");
+
+            sb.AppendLine(
+                $"                    EntityId.{mappedModel?.ModelType.Name ?? entityName},");
+
+            sb.AppendLine(
+                $"                    StorageEntityId.{entityName},");
+
+            sb.AppendLine(
+                "                    node.OutputAlias,");
+
+            sb.AppendLine(
+                $"                    {valuesName}.ToImmutable());");
+
+            sb.AppendLine(
+                "            }");
+        }
+
+        if (info.CteUpdateMeta.Count == 0)
+            return;
+    }
+
+    if (childModels.Count > 0)
+    {
+        sb.AppendLine(
+            "            foreach (var child in node.Children)");
+
+        sb.AppendLine(
+            "            {");
+
+        sb.AppendLine(
+            "                switch (child.EntityId)");
+
+        sb.AppendLine(
+            "                {");
+
+        foreach (var (childName, childEntityName) in childModels)
+        {
+            sb.AppendLine(
+                $"                    case EntityId.{childName}:");
+
+            sb.AppendLine(
+                "                    {");
+
+            sb.AppendLine(
+                "                        foreach (var childValue in child.Values)");
+
+            sb.AppendLine(
+                "                        {");
+
+            sb.AppendLine(
+                "                            AddOrMergeRow(");
+
+            sb.AppendLine(
+                $"                                EntityId.{childName},");
+
+            sb.AppendLine(
+                $"                                StorageEntityId.{childEntityName},");   // <-- was {childName}
+
+            sb.AppendLine(
+                "                                child.OutputAlias,");
+
+            sb.AppendLine(
+                "                                childValue);");
+
+            sb.AppendLine(
+                "                        }");
+
+            sb.AppendLine(
+                "                        break;");
+
+            sb.AppendLine(
+                "                    }");
+        }
+
+        sb.AppendLine(
+            "                }");
+
+        sb.AppendLine(
+            "            }");
+    }
+
+    var primaryLink = allPrimaryLinks.FirstOrDefault();
+
+    var primaryEntityName =
+        primaryLink?.EntityType?.Name
+        ?? throw new InvalidOperationException(
+            $"Composite model '{info.ModelType.Name}' has no primary storage entity.");
+
+    var primarySchema =
+        allMappings.FirstOrDefault(m =>
+                m.EntityType != null &&
+                string.Equals(
+                    m.EntityType.Name,
+                    primaryEntityName,
+                    StringComparison.Ordinal))
+            ?.Schema
+        ?? info.Schema;
+
+    var edgeMappings = ComputeFieldMappingsEagerPublic(
+            info,
+            composite: true)
+        .Where(f =>
+            string.Equals(
+                f.EntityTypeName,
+                primaryEntityName,
+                StringComparison.Ordinal))
+        .GroupBy(f => new
+        {
+            f.EntityTypeName,
+            f.ColumnName
+        })
+        .Select(g => g.First())
+        .ToList();
+
+    if (primaryLink != null &&
+        !string.IsNullOrWhiteSpace(primaryLink.ToColumn))
+    {
+        var exists = edgeMappings.Any(f =>
+            string.Equals(
+                f.EntityTypeName,
+                primaryEntityName,
+                StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(
+                f.ColumnName,
+                primaryLink.ToColumn,
+                StringComparison.OrdinalIgnoreCase));
+
+        if (!exists)
+        {
+            edgeMappings.Add(
+                (
+                    primaryLink.FromColumn,
+                    primaryEntityName,
+                    primaryLink.ToColumn,
+                    (string?)null
+                ));
+        }
+    }
+
+    edgeMappings = edgeMappings
+        .GroupBy(f => new
+        {
+            f.EntityTypeName,
+            f.ColumnName
+        })
+        .Select(g => g.First())
+        .ToList();
+
+    var conflictKeys = new List<string>();
+
+    var isRelationshipEntity =
+        relationshipLinks.Count > 0 &&
+        info.ModelType.Name.IndexOf(
+            "Relationship",
+            StringComparison.OrdinalIgnoreCase) >= 0;
+
+    if (isRelationshipEntity)
+    {
+        conflictKeys = relationshipLinks
+            .Where(x => !string.IsNullOrWhiteSpace(x.ToColumn))
+            .Select(x => x.ToColumn!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    if (conflictKeys.Count == 0)
+    {
+        conflictKeys = info.UpsertKeys
+            .Where(k => !string.IsNullOrWhiteSpace(k.Key))
+            .Select(k => k.Key)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    if (conflictKeys.Count == 0)
+    {
+        conflictKeys = info.Definition.Entities
+            .Where(k =>
+                k.IsPrimary &&
+                !string.IsNullOrWhiteSpace(k.ToColumn))
+            .Select(k => k.ToColumn!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    var conflictLiteral =
+        conflictKeys.Count == 0
+            ? "ImmutableArray<string>.Empty"
+            : "ImmutableArray.Create(" +
+              string.Join(
+                  ", ",
+                  conflictKeys.Select(k => $"\"{k}\"")) +
+              ")";
+
+    var fkLinks = info.Definition.Entities
+        .Where(k =>
+            !k.IsPrimary &&
+            k.EntityType != null &&
+            !string.IsNullOrWhiteSpace(k.AliasProperty))
+        .ToList();
+
+    foreach (var link in fkLinks)
+    {
+        sb.AppendLine(
+            "            foreach (var v in node.Values)");
+
+        sb.AppendLine(
+            "            {");
+
+        sb.AppendLine(
+            $"                if (v.FieldId == FieldId.{info.ModelType.Name}.{link.FromColumn})");
+
+        sb.AppendLine(
+            "                {");
+
+        sb.AppendLine(
+            "                    if (!string.IsNullOrWhiteSpace(v.RawValue))");
+
+        sb.AppendLine(
+            "                    {");
+
+        sb.AppendLine(
+            "                        AddOrMergeRow(");
+
+        sb.AppendLine(
+            $"                            EntityId.{link.EntityType!.Name},");
+
+        sb.AppendLine(
+            $"                            StorageEntityId.{link.EntityType.Name},");
+
+        sb.AppendLine(
+            $"                            \"{link.AliasProperty}\",");
+
+        sb.AppendLine(
+            "                            new FieldValue(");
+
+        sb.AppendLine(
+            $"                                ColumnId.{link.EntityType.Name}.{link.ToColumn},");
+
+        sb.AppendLine(
+            "                                v.RawValue));");
+
+        sb.AppendLine(
+            "                    }");
+
+        sb.AppendLine(
+            "                    break;");
+
+        sb.AppendLine(
+            "                }");
+
+        sb.AppendLine(
+            "            }");
+    }
+
+    sb.AppendLine(
+        "            foreach (var child in node.Children)");
+
+    sb.AppendLine(
+        "            {");
+
+    sb.AppendLine(
+        "                switch (child.EntityId)");
+
+    sb.AppendLine(
+        "                {");
+
+    foreach (var (childName, childEntityName) in childModels)
+    {
+        sb.AppendLine(
+            $"                    case EntityId.{childName}:");
+
+        sb.AppendLine(
+            "                    {");
+
+        sb.AppendLine(
+            "                        foreach (var childValue in child.Values)");
+
+        sb.AppendLine(
+            "                        {");
+
+        sb.AppendLine(
+            "                            AddOrMergeRow(");
+
+        sb.AppendLine(
+            $"                                EntityId.{childName},");
+
+        sb.AppendLine(
+            $"                                StorageEntityId.{childEntityName},");
+
+        sb.AppendLine(
+            "                                child.OutputAlias,");
+
+        sb.AppendLine(
+            "                                childValue);");
+
+        sb.AppendLine(
+            "                        }");
+
+        sb.AppendLine(
+            "                        break;");
+
+        sb.AppendLine(
+            "                    }");
+    }
+
+    sb.AppendLine(
+        "                }");
+
+    sb.AppendLine(
+        "            }");
+
+    sb.AppendLine();
+
+    sb.AppendLine(
+        "            foreach (var row in pendingRows)");
+
+    sb.AppendLine(
+        "            {");
+
+    sb.AppendLine(
+        "                builder.AddRow(");
+
+    sb.AppendLine(
+        "                    row.Key.EntityId,");
+
+    sb.AppendLine(
+        "                    row.Key.StorageEntityId,");
+
+    sb.AppendLine(
+        "                    row.Key.Alias,");
+
+    sb.AppendLine(
+        "                    row.Value.ToImmutable());");
+
+    sb.AppendLine(
+        "            }");
+
+    var cteEntries = info.CteUpdateMeta;
+
+    sb.AppendLine(
+        $"            var cteChildren = ImmutableArray.CreateBuilder<MutationCteNode>({cteEntries.Count});");
+
+    string? resolvedGraphFromAlias = null;
+    string? resolvedGraphToAlias = null;
+
+    if (info.Graph != null &&
+        !string.IsNullOrWhiteSpace(info.Graph.GraphName))
+    {
+        resolvedGraphFromAlias =
+            fkLinks.FirstOrDefault(l =>
+                    string.Equals(
+                        l.FromColumn,
+                        info.Graph.From?.KeyColumn,
+                        StringComparison.OrdinalIgnoreCase))
+                ?.AliasProperty
+            ?? info.Graph.From?.Alias;
+
+        resolvedGraphToAlias =
+            fkLinks.FirstOrDefault(l =>
+                    string.Equals(
+                        l.FromColumn,
+                        info.Graph.To?.KeyColumn,
+                        StringComparison.OrdinalIgnoreCase))
+                ?.AliasProperty
+            ?? info.Graph.To?.Alias;
+
+        sb.AppendLine(
+            "            string? graphFromKey = null, graphToKey = null, graphEdgeKey = null;");
+
+        sb.AppendLine();
+
+        sb.AppendLine(
+            "            foreach (var child in node.Children)");
+
+        sb.AppendLine(
+            "            {");
+
+        sb.AppendLine(
+            "                string? naturalKey = null;");
+
+        sb.AppendLine(
+            "                foreach (var cv in child.Values)");
+
+        sb.AppendLine(
+            "                {");
+
+        sb.AppendLine(
+            "                    if (cv.FieldId == FieldId.Customer.CustomerKey)");
+
+        sb.AppendLine(
+            "                    {");
+
+        sb.AppendLine(
+            "                        naturalKey = cv.RawValue;");
+
+        sb.AppendLine(
+            "                        break;");
+
+        sb.AppendLine(
+            "                    }");
+
+        sb.AppendLine(
+            "                }");
+
+        sb.AppendLine();
+
+        sb.AppendLine(
+            "                if (naturalKey != null)");
+
+        sb.AppendLine(
+            "                {");
+
+        sb.AppendLine(
+            $"                    if (string.Equals(child.OutputAlias, \"{resolvedGraphFromAlias}\", StringComparison.OrdinalIgnoreCase))");
+
+        sb.AppendLine(
+            "                        graphFromKey = naturalKey;");
+
+        sb.AppendLine();
+
+        sb.AppendLine(
+            $"                    if (string.Equals(child.OutputAlias, \"{resolvedGraphToAlias}\", StringComparison.OrdinalIgnoreCase))");
+
+        sb.AppendLine(
+            "                        graphToKey = naturalKey;");
+
+        sb.AppendLine(
+            "                }");
+
+        sb.AppendLine(
+            "            }");
+    }
+
+    if (cteEntries.Count > 0)
+    {
+        sb.AppendLine(
+            "            foreach (var child in node.Children)");
+
+        sb.AppendLine(
+            "            {");
+
+        foreach (var cte in cteEntries)
+        {
+            sb.AppendLine(
+                $"                if (string.Equals(child.OutputAlias, \"{cte.NavigationAlias}\", System.StringComparison.OrdinalIgnoreCase))");
+
+            sb.AppendLine(
+                "                {");
+
+            sb.AppendLine(
+                "                    string? naturalKey = null;");
+
+            sb.AppendLine(
+                "                    foreach (var cv in child.Values)");
+
+            sb.AppendLine(
+                "                    {");
+
+            var relatedModel = allMappings.FirstOrDefault(m =>
+                m.IsModel &&
+                string.Equals(
+                    m.EntityType?.Name,
+                    cte.RelatedEntityTypeName,
+                    StringComparison.Ordinal));
+
+            if (relatedModel == null)
+                continue;
+
+            var childKey = relatedModel.Definition.Entities
+                               .FirstOrDefault(e => e.IsPrimary)?.FromColumn
+                           ?? cte.RelatedNaturalKeyColumn;
+
+            sb.AppendLine(
+                $"if (cv.FieldId == FieldId.{cte.RelatedEntityTypeName}.{childKey})");
+
+            sb.AppendLine(
+                "                        {");
+
+            sb.AppendLine(
+                "                            naturalKey = cv.RawValue;");
+
+            sb.AppendLine(
+                "                            break;");
+
+            sb.AppendLine(
+                "                        }");
+
+            sb.AppendLine(
+                "                    }");
+
+            sb.AppendLine(
+                "                    if (!string.IsNullOrWhiteSpace(naturalKey))");
+
+            sb.AppendLine(
+                "                    {");
+
+            sb.AppendLine(
+                "                        cteChildren.Add(new MutationCteNode(");
+
+            sb.AppendLine(
+                $"                            EntityId.{cte.RelatedEntityTypeName},");
+
+            sb.AppendLine(
+                $"                            StorageEntityId.{cte.RelatedEntityTypeName},");
+
+            sb.AppendLine(
+                $"                            \"{cte.NavigationAlias}\",");
+
+            sb.AppendLine(
+                $"                            ImmutableArray.Create(new FieldValue(ColumnId.{cte.RelatedEntityTypeName}.{childKey}, naturalKey)),");
+
+            sb.AppendLine(
+                "                            ImmutableArray<MutationCteNode>.Empty));");
+
             if (info.Graph != null &&
-                !string.IsNullOrWhiteSpace(info.Graph.GraphName))
+                string.Equals(
+                    cte.NavigationAlias,
+                    resolvedGraphFromAlias,
+                    StringComparison.OrdinalIgnoreCase))
             {
-                var g = info.Graph;
-
                 sb.AppendLine(
-                    "            if (graphFromKey != null && graphToKey != null)");
+                    "                        graphFromKey = naturalKey;");
+            }
 
+            if (info.Graph != null &&
+                string.Equals(
+                    cte.NavigationAlias,
+                    resolvedGraphToAlias,
+                    StringComparison.OrdinalIgnoreCase))
+            {
                 sb.AppendLine(
-                    "            {");
-
-                sb.AppendLine(
-                    "                builder.AddGraphMerge(");
-
-                sb.AppendLine(
-                    $"                    \"{g.GraphName}\",");
-
-                sb.AppendLine(
-                    $"                    \"{g.EdgeLabel}\",");
-
-                sb.AppendLine(
-                    $"                    \"{g.From!.Label}\",");
-
-                sb.AppendLine(
-                    $"                    \"{g.FromJoinColumn}\",");
-
-                sb.AppendLine(
-                    "                    graphFromKey,");
-
-                sb.AppendLine(
-                    $"                    \"{g.To!.Label}\",");
-
-                sb.AppendLine(
-                    $"                    \"{g.ToJoinColumn}\",");
-
-                sb.AppendLine(
-                    "                    graphToKey,");
-
-                sb.AppendLine(
-                    $"                    \"{g.EdgeKey}\",");
-
-                sb.AppendLine(
-                    "                    graphEdgeKey,");
-
-                sb.AppendLine(
-                    "                    ImmutableDictionary<string, string>.Empty);");
-
-                sb.AppendLine(
-                    "            }");
+                    "                        graphToKey = naturalKey;");
             }
 
             sb.AppendLine(
-                "            builder.AddCteRoot(new MutationCteNode(");
+                "                    }");
 
             sb.AppendLine(
-                $"                EntityId.{info.ModelType.Name},");
-
-            sb.AppendLine(
-                $"                StorageEntityId.{primaryEntityName},");
-
-            sb.AppendLine(
-                "                node.OutputAlias,");
-
-            sb.AppendLine(
-                "                edgeValues.ToImmutable(),");
-
-            sb.AppendLine(
-                "                cteChildren.ToImmutable(),");
-
-            sb.AppendLine(
-                $"                \"{primarySchema}\",");
-
-            sb.AppendLine(
-                $"                \"{primaryEntityName}\",");
-
-            sb.AppendLine(
-                $"                {conflictLiteral}));");
+                "                }");
         }
+
+        sb.AppendLine(
+            "            }");
+    }
+
+    sb.AppendLine(
+        "            var edgeValues = ImmutableArray.CreateBuilder<FieldValue>(node.Values.Length);");
+
+    sb.AppendLine(
+        "            foreach (var v in node.Values)");
+
+    sb.AppendLine(
+        "            {");
+
+    sb.AppendLine(
+        "                switch (v.FieldId)");
+
+    sb.AppendLine(
+        "                {");
+
+    foreach (var fm in edgeMappings)
+    {
+        sb.AppendLine(
+            $"                    case FieldId.{info.ModelType.Name}.{fm.FieldName}:");
+
+        sb.AppendLine(
+            "                        edgeValues.Add(new FieldValue(");
+
+        sb.AppendLine(
+            $"                            FieldId.{info.ModelType.Name}.{fm.FieldName},");
+
+        sb.AppendLine(
+            $"                            ColumnId.{fm.EntityTypeName}.{fm.ColumnName},");
+
+        sb.AppendLine(
+            "                            v.RawValue));");
+
+        if (info.Graph != null &&
+            string.Equals(
+                fm.FieldName,
+                info.Graph.EdgeKey,
+                StringComparison.Ordinal))
+        {
+            sb.AppendLine(
+                "                        graphEdgeKey = v.RawValue;");
+        }
+
+        sb.AppendLine(
+            "                        break;");
+    }
+
+    sb.AppendLine(
+        "                }");
+
+    sb.AppendLine(
+        "            }");
+
+    if (info.Graph != null &&
+        !string.IsNullOrWhiteSpace(info.Graph.GraphName))
+    {
+        var g = info.Graph;
+
+        sb.AppendLine(
+            "            if (graphFromKey != null && graphToKey != null)");
+
+        sb.AppendLine(
+            "            {");
+
+        sb.AppendLine(
+            "                builder.AddGraphMerge(");
+
+        sb.AppendLine(
+            $"                    \"{g.GraphName}\",");
+
+        sb.AppendLine(
+            $"                    \"{g.EdgeLabel}\",");
+
+        sb.AppendLine(
+            $"                    \"{g.From!.Label}\",");
+
+        sb.AppendLine(
+            $"                    \"{g.FromJoinColumn}\",");
+
+        sb.AppendLine(
+            "                    graphFromKey,");
+
+        sb.AppendLine(
+            $"                    \"{g.To!.Label}\",");
+
+        sb.AppendLine(
+            $"                    \"{g.ToJoinColumn}\",");
+
+        sb.AppendLine(
+            "                    graphToKey,");
+
+        sb.AppendLine(
+            $"                    \"{g.EdgeKey}\",");
+
+        sb.AppendLine(
+            "                    graphEdgeKey,");
+
+        sb.AppendLine(
+            "                    ImmutableDictionary<string, string>.Empty);");
+
+        sb.AppendLine(
+            "            }");
+    }
+
+    sb.AppendLine(
+        "            builder.AddCteRoot(new MutationCteNode(");
+
+    sb.AppendLine(
+        $"                EntityId.{info.ModelType.Name},");
+
+    sb.AppendLine(
+        $"                StorageEntityId.{primaryEntityName},");
+
+    sb.AppendLine(
+        "                node.OutputAlias,");
+
+    sb.AppendLine(
+        "                edgeValues.ToImmutable(),");
+
+    sb.AppendLine(
+        "                cteChildren.ToImmutable(),");
+
+    sb.AppendLine(
+        $"                \"{primarySchema}\",");
+
+    sb.AppendLine(
+        $"                \"{primaryEntityName}\",");
+
+    sb.AppendLine(
+        $"                {conflictLiteral}));");
+}
 
 
 
@@ -1496,7 +1566,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
         !string.IsNullOrWhiteSpace(primaryLink.FromColumn) &&
         !string.IsNullOrWhiteSpace(primaryLink.ToColumn))
     {
-        allValueMappings.Add((primaryLink.FromColumn, storageTypeName, primaryLink.ToColumn, null));
+        allValueMappings.Add((primaryLink.FromColumn, storageTypeName, primaryLink.ToColumn, (string?)null));
     }
 
     if (allValueMappings.Count > 0)
@@ -1665,57 +1735,20 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             return ComputeFieldMappingsEager(info, composite);
         }
 
-        private static List<(string FieldName, string EntityTypeName, string ColumnName, string? StorageAlias)>
-            ComputeFieldMappingsEager(
-                MappingClassInfo info,
-                bool composite)
+        private static List<(string FieldName, string EntityTypeName, string ColumnName, string? StorageAlias)> ComputeFieldMappingsEager(
+            MappingClassInfo info, bool composite)
         {
-            var list =
-                new List<(string FieldName, string EntityTypeName, string ColumnName, string? StorageAlias)>();
-
-            foreach (var field in info.FieldMaps)
+            var list = new List<(string, string, string, string?)>();
+            foreach (var f in info.FieldMaps)
             {
-                if (field.IsGenerated)
-                    continue;
+                if (f.IsGenerated) continue;
 
-                var entityTypeName =
-                    string.IsNullOrWhiteSpace(field.DestinationEntity)
-                        ? info.EntityType?.Name ?? info.ModelType.Name
-                        : field.DestinationEntity;
+                var entityTypeName = string.IsNullOrWhiteSpace(f.DestinationEntity)
+                    ? (info.EntityType?.Name ?? info.ModelType.Name)
+                    : f.DestinationEntity;
 
-                list.Add((
-                    FieldName: field.SourceName,
-                    EntityTypeName: entityTypeName,
-                    ColumnName: field.DestinationName,
-                    StorageAlias: field.DestinationAlias));
+                list.Add((f.SourceName, entityTypeName, f.DestinationName, f.DestinationAlias));
             }
-
-
-            var primary = info.Definition.Entities
-                .FirstOrDefault(e => e.IsPrimary);
-
-
-            if (primary != null &&
-                !string.IsNullOrWhiteSpace(primary.FromColumn) &&
-                !string.IsNullOrWhiteSpace(primary.ToColumn))
-            {
-                var exists = list.Any(x =>
-                    string.Equals(
-                        x.FieldName,
-                        primary.FromColumn,
-                        StringComparison.Ordinal));
-
-
-                if (!exists)
-                {
-                    list.Add((
-                        FieldName: primary.FromColumn,
-                        EntityTypeName: primary.EntityType.Name,
-                        ColumnName: primary.ToColumn,
-                        StorageAlias: null));
-                }
-            }
-
 
             return list;
         }
@@ -1728,87 +1761,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             return entity.GetMembers().OfType<IPropertySymbol>().Any(p => p.Name == conventional)
                 ? conventional
                 : "Id";
-        }
-        
-        internal static class ChildNavigationConvention
-        {
-            public static List<ChildLink> Resolve(
-                MappingClassInfo info,
-                ImmutableArray<MappingClassInfo> allMappings)
-            {
-                var mappedModels = allMappings
-                    .Where(m => m.IsModel)
-                    .ToDictionary(
-                        m => m.ModelType,
-                        SymbolEqualityComparer.Default);
-
-                var result = new List<ChildLink>();
-
-                foreach (var property in info.ModelType
-                             .GetMembers()
-                             .OfType<IPropertySymbol>())
-                {
-                    var childType = UnwrapCollection(property.Type);
-
-                    if (childType is not INamedTypeSymbol childSymbol)
-                        continue;
-
-                    if (!mappedModels.TryGetValue(childSymbol, out var childMapping))
-                        continue;
-
-                    if (SymbolEqualityComparer.Default.Equals(
-                            childSymbol,
-                            info.ModelType))
-                    {
-                        continue;
-                    }
-
-                    result.Add(new ChildLink
-                    {
-                        NavigationName = property.Name,
-                        ChildModelName = childSymbol.Name,
-                        ChildEntityName =
-                            childMapping.EntityType?.Name ??
-                            childMapping.Definition.Entities
-                                .First(e => e.IsPrimary)
-                                .EntityType!
-                                .Name,
-
-                        IsCollection = IsCollection(property.Type),
-
-                        Hops = []
-                    });
-                }
-
-                return result;
-            }
-
-
-            private static ITypeSymbol UnwrapCollection(ITypeSymbol type)
-            {
-                if (type is INamedTypeSymbol named &&
-                    named.IsGenericType &&
-                    named.TypeArguments.Length == 1)
-                {
-                    return named.TypeArguments[0];
-                }
-
-                return type;
-            }
-
-
-            private static bool IsCollection(ITypeSymbol type)
-            {
-                return type is INamedTypeSymbol named &&
-                       named.IsGenericType &&
-                       named.TypeArguments.Length == 1 &&
-                       named.Name is
-                           "List" or
-                           "ICollection" or
-                           "IEnumerable" or
-                           "IReadOnlyCollection" or
-                           "IReadOnlyList";
-            }
         }
 
         internal static IEnumerable<ChildLink> ComputeChildLinks(

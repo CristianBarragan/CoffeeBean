@@ -2,27 +2,34 @@
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
-using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 
 namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
 {
     /// <summary>
     /// Runs in the entity-defining project itself (e.g. Database.Entity), where
-    /// fluent EF configuration syntax is actually visible, and auto-emits
-    /// [EntityForeignKey] attributes onto generated partial class declarations -
-    /// so MappingNodeGenerator (running separately in e.g. Domain.Shared) can
-    /// resolve ambiguous/inverse navigations via ordinary compiled-symbol
-    /// reflection, without either project needing to reference the other's
-    /// source or duplicate any mapping logic by hand.
+    /// fluent EF configuration syntax is actually visible, and emits a SINGLE
+    /// assembly-level [EntityForeignKeyGraph(...)] attribute carrying every
+    /// derived FK edge as a delimited string - so MappingNodeGenerator (running
+    /// separately in e.g. Domain.Shared) can rebuild the same edge list via
+    /// ordinary compiled-metadata lookup, without either project needing to
+    /// reference the other's source or duplicate any mapping logic by hand.
     ///
-    /// Entity classes must be declared 'partial' for the generated attribute
-    /// declaration to merge with the hand-written class.
+    /// Replaces the earlier per-class [EntityForeignKey] attribute approach:
+    /// one assembly attribute instead of N per-class attributes removes the
+    /// requirement that entity classes be declared 'partial', and lets the
+    /// consuming side do a single lookup instead of walking every named type
+    /// in the compilation looking for decorated classes.
     /// </summary>
     [Generator(LanguageNames.CSharp)]
     public sealed class EntityForeignKeyEmitterGenerator : IIncrementalGenerator
     {
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
+            context.RegisterPostInitializationOutput(static ctx =>
+            {
+                ctx.AddSource("EntityForeignKeyAttribute.g.cs", EntityForeignKeyAttributeSourceText.Value);
+            });
+
             var derivedKeys = context.CompilationProvider
                 .Select(static (compilation, ct) => FluentEntityNavigationConvention.CollectAll(compilation, ct));
 
@@ -30,17 +37,21 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
             {
                 try
                 {
-                    foreach (var group in keys.GroupBy(k => k.DeclaringEntityType, SymbolEqualityComparer.Default))
-                    {
-                        var declaringType = (INamedTypeSymbol)group.Key!;
-                        var list = group.ToList();
+                    // Format: edges joined with ';', each edge is
+                    // "{DependentTypeFullName}|{FkColumn}|{PrincipalTypeFullName}|{PkColumn}"
+                    var edgeLines = keys.Select(k =>
+                        $"{k.DeclaringEntityType.ToDisplayString()}|{k.RawForeignKeyColumn}|" +
+                        $"{k.RelatedEntityType.ToDisplayString()}|{k.RawPrincipalKeyColumn}");
 
-                        if (list.Count == 0)
-                            continue;
+                    var serialized = string.Join(";", edgeLines);
 
-                        var source = EntityForeignKeyAttributeEmitter.Emit(declaringType, list);
-                        spc.AddSource($"{declaringType.Name}.EntityForeignKeys.g.cs", source);
-                    }    
+                    // Escape for a C# verbatim string literal — only " needs doubling in @"...".
+                    var escaped = serialized.Replace("\"", "\"\"");
+
+                    var source =
+                        $"[assembly: global::CoffeeBeanery.GraphQL.Core.Mapping.EntityForeignKeyGraph(@\"{escaped}\")]";
+
+                    spc.AddSource("EntityForeignKeyGraph.g.cs", source);
                 }
                 catch (Exception ex)
                 {

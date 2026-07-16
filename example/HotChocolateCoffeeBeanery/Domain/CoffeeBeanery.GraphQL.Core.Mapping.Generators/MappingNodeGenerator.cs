@@ -17,11 +17,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
     {
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            context.RegisterPostInitializationOutput(static ctx =>
-            {
-                ctx.AddSource("EntityForeignKeyAttribute.g.cs", EntityForeignKeyAttributeSourceText.Value);
-            });
-
             var isMappingRoot = context.AnalyzerConfigOptionsProvider
                 .Select(static (opts, _) =>
                     opts.GlobalOptions.TryGetValue("build_property.IsMappingRoot", out var v)

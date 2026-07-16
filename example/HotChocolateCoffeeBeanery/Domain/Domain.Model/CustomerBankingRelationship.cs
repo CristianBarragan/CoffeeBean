@@ -2,7 +2,7 @@ using CoffeeBeanery.GraphQL.Core.Sql;
 
 namespace Domain.Model;
 
-public class CustomerBankingRelationship
+public partial class CustomerBankingRelationship
 {
     
     public Guid? CustomerBankingRelationshipKey { get; set; }

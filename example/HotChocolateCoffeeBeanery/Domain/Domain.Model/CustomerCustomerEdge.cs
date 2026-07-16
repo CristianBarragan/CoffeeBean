@@ -2,7 +2,7 @@
 
 namespace Domain.Model;
 
-public class CustomerCustomerEdge
+public partial class CustomerCustomerEdge
 {
     public Customer? InnerCustomer { get; set; }
     
