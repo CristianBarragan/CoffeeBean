@@ -134,7 +134,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
             return false;
         }
 
-        private static ITypeSymbol UnwrapCollection(ITypeSymbol type)
+        internal static ITypeSymbol UnwrapCollection(ITypeSymbol type)
         {
             if (type.SpecialType == SpecialType.System_String)
                 return type;

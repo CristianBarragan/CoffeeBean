@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
@@ -20,7 +22,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
             "Int64", "UInt64", "Single", "Double", "Char"
         };
 
-        public static void Apply(MappingClassInfo info)
+        public static void Apply(MappingClassInfo info,
+            ImmutableArray<MappingClassInfo> allMappings)
         {
             var existing = new HashSet<string>(
                 info.ModelChildren.Select(c => c.To),
@@ -43,8 +46,45 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                     existing.Add(unwrapped.Name);
                 }
             }
-        }
+            
+            foreach (var candidate in allMappings)
+            {
+                if (candidate.EntityType == null)
+                    continue;
 
+                var entityName = candidate.EntityType.Name;
+
+                if (!entityName.EndsWith("Edge", StringComparison.Ordinal))
+                    continue;
+
+
+                var navs = candidate.EntityType
+                    .GetMembers()
+                    .OfType<IPropertySymbol>()
+                    .Where(p =>
+                        p.Type is INamedTypeSymbol n &&
+                        SymbolEqualityComparer.Default.Equals(
+                            n,
+                            info.EntityType));
+
+
+                if (navs.Count() < 2)
+                    continue;
+
+
+                if (!entityName.StartsWith(
+                        info.EntityType.Name,
+                        StringComparison.Ordinal))
+                    continue;
+
+
+                info.ModelChildren.Add(new ModelChildInfo
+                {
+                    To = info.ModelType.Name
+                });
+            }
+        }
+        
         private static ITypeSymbol UnwrapCollection(ITypeSymbol type)
         {
             if (type.SpecialType == SpecialType.System_String)

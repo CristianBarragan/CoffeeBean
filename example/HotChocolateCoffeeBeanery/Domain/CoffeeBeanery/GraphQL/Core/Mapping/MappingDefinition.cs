@@ -76,11 +76,11 @@ public sealed record PrimaryKeyDefinition
 
 public sealed record EntityDefinition
 {
-    public required Type Entity { get; init; }
+    public Type Entity { get; init; }
 
     public required string ModelKey { get; init; }
 
-    public required string EntityKey { get; init; }
+    public string? EntityKey { get; init; }
 
     public bool IsPrimary { get; init; }
 

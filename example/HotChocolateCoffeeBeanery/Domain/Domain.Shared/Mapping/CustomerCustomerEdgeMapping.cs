@@ -28,34 +28,34 @@ public partial class CustomerCustomerEdgeMapping : IMappingDefinition
 
                 IsPrimary = true
             },
-
-            new()
-            {
-                Entity = typeof(DataEntity.Customer),
-
-                ModelKey =
-                    nameof(CustomerCustomerEdge.InnerCustomerKey),
-
-                EntityKey =
-                    nameof(DataEntity.Customer.CustomerKey),
-
-                AliasProperty =
-                    nameof(CustomerCustomerEdge.InnerCustomer)
-            },
-
-            new()
-            {
-                Entity = typeof(DataEntity.Customer),
-
-                ModelKey =
-                    nameof(CustomerCustomerEdge.OuterCustomerKey),
-
-                EntityKey =
-                    nameof(DataEntity.Customer.CustomerKey),
-
-                AliasProperty =
-                    nameof(CustomerCustomerEdge.OuterCustomer)
-            }
+            //
+            // new()
+            // {
+            //     Entity = typeof(DataEntity.Customer),
+            //
+            //     ModelKey =
+            //         nameof(CustomerCustomerEdge.InnerCustomerKey),
+            //
+            //     EntityKey =
+            //         nameof(DataEntity.Customer.CustomerKey),
+            //
+            //     AliasProperty =
+            //         nameof(CustomerCustomerEdge.InnerCustomer)
+            // },
+            //
+            // new()
+            // {
+            //     Entity = typeof(DataEntity.Customer),
+            //
+            //     ModelKey =
+            //         nameof(CustomerCustomerEdge.OuterCustomerKey),
+            //
+            //     EntityKey =
+            //         nameof(DataEntity.Customer.CustomerKey),
+            //
+            //     AliasProperty =
+            //         nameof(CustomerCustomerEdge.OuterCustomer)
+            // }
         ],
         PrimaryKey = [new()
         {

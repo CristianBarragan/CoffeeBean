@@ -37,16 +37,24 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
             var entityGraphs = context.CompilationProvider
                 .Select(static (compilation, ct) => FluentEntityNavigationConvention.EntityForeignKeyGraph.Build(compilation, ct));
 
-            var allMappings = rawAllMappings.Select(static (mappings, _) =>
-            {
-                foreach (var info in mappings)
+            var allMappings = rawAllMappings
+                .Combine(entityGraphs)
+                .Select(static (pair, _) =>
                 {
-                    ModelChildrenInference.Apply(info);
-                    CompositeChildAttachmentConvention.Apply(info, mappings);
-                }
+                    var (mappings, entityGraph) = pair;
 
-                return mappings;
-            });
+                    foreach (var info in mappings)
+                    {
+                        ModelChildrenInference.Apply(info, mappings);
+                        CompositeChildAttachmentConvention.Apply(info, mappings);
+                        EntityGraphChildrenInference.Apply(
+                            info,
+                            mappings,
+                            entityGraph);
+                    }
+
+                    return mappings;
+                });
 
             // ----------------------------------------------------------------
             // Per-class registration — one file per mapping class, runs in every project.
@@ -125,6 +133,28 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
         {
             try
             {
+                
+                var modelProperties = info.ModelType.GetMembers().OfType<IPropertySymbol>()
+                    .Where(p => p.GetMethod is not null && !p.IsStatic)
+                    .ToList();
+                    
+                foreach (var prop in modelProperties)
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(
+                        MappingDiagnostics.EntityGraphDebug,
+                        Location.None,
+                        $"{info.ModelType.Name}.{prop.Name} type={prop.Type.ToDisplayString()}"
+                    ));
+
+                    var relatedModelType = EntityNavigationConvention.ResolveElementType(prop.Type);
+
+                    spc.ReportDiagnostic(Diagnostic.Create(
+                        MappingDiagnostics.EntityGraphDebug,
+                        Location.None,
+                        $"{info.ModelType.Name}.{prop.Name} resolved={relatedModelType?.ToDisplayString() ?? "null"}"
+                    ));
+                }
+                
                 foreach (var d in info.Diagnostics)
                     spc.ReportDiagnostic(d);
 
@@ -136,6 +166,58 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 var rootEntityTypes = ResolveRootEntityTypes(allMappings, rootModelTypes);
 
                 var navResult = EntityNavigationConvention.Resolve(info, allMappings, entityGraph, rootEntityTypes);
+                
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        "CBM001",
+                        "Debug",
+                        "{0}",
+                        "Mapping",
+                        DiagnosticSeverity.Warning,
+                        true),
+                    Location.None,
+                    $"Mapping={info.ModelType.Name}, SecondaryLinks={string.Join(",", info.Definition.Entities
+                        .Where(k => !k.IsPrimary && k.EntityType != null && k.AliasProperty != null).Select(x => x.FromColumn))}"
+                ));
+                
+                var childLinks = PlannerEmitter.ComputeChildLinks(info, allMappings, navResult, entityGraph);
+                
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        "CBM001",
+                        "Debug",
+                        "{0}",
+                        "Mapping",
+                        DiagnosticSeverity.Info,
+                        true),
+                    Location.None,
+                    $"Mapping={info.ModelType.Name}, ChildLinks={string.Join(",", childLinks.Select(x => x.NavigationName))}"
+                ));
+                
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        "CBM001",
+                        "Debug",
+                        "{0}",
+                        "Mapping",
+                        DiagnosticSeverity.Info,
+                        true),
+                    Location.None,
+                    $"Mapping={info.ModelType.Name}, EntityGraphEdges={entityGraph.Count}"
+                ));
+
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        "CBM001",
+                        "Debug",
+                        "{0}",
+                        "Mapping",
+                        DiagnosticSeverity.Info,
+                        true),
+                    Location.None,
+                    $"Mapping={info.ModelType.Name}, Navs={string.Join(",", navResult.Navigations.Select(x => x.NavigationName))}"
+                ));
+                
 
                 if (navResult.HasBlockingAmbiguity)
                     return;
@@ -182,6 +264,11 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
 
                 spc.AddSource("Planners.g.cs",
                     PlannerEmitter.Emit(allMappings, rootEntityTypes, entityGraph));
+                
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    MappingDiagnostics.EntityGraphDebug,
+                    Location.None,
+                    entityGraph.Count));
             }
             catch (Exception ex)
             {

@@ -118,5 +118,13 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
             category: Category,
             defaultSeverity: DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
+        
+        public static readonly DiagnosticDescriptor EntityGraphDebug = new(
+            id: "CBMAP900",
+            title: "Entity graph debug",
+            messageFormat: "Entity graph contains {0} edges",
+            category: Category,
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
     }
 }

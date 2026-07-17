@@ -25,7 +25,23 @@ public partial class CustomerMapping : IMappingDefinition
                     nameof(DataEntity.Customer.CustomerKey),
 
                 IsPrimary = true
-            }
+            },
+            // new()
+            // {
+            //     Entity = typeof(DataEntity.ContactPoint),
+            //
+            //     ModelKey = nameof(ContactPoint.CustomerKey),
+            //
+            //     EntityKey = nameof(DataEntity.ContactPoint.CustomerId)
+            // },
+            // new()
+            // {
+            //     ModelKey =
+            //         nameof(Product.CustomerKey),
+            //
+            //     AliasProperty =
+            //         nameof(Customer.Product)
+            // }
         ],
         PrimaryKey = [new()
         {

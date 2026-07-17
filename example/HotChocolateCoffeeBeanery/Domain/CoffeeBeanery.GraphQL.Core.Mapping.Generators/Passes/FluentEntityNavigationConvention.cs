@@ -86,26 +86,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                             .FirstOrDefault(x => x.Name == navName);
                         var relatedEntity = ResolveRelatedType(navProperty);
                         if (relatedEntity == null) continue;
-
-                        // FIX: previously required both of these lookups to succeed
-                        // before recording the relationship at all:
-                        //     var foreignKey = FindProperty(relatedEntity, inverseName + "Key");
-                        //     var principalKey = FindProperty(entityType, entityType.Name + "Key");
-                        //     if (foreignKey == null || principalKey == null) continue;
-                        // That assumes FK columns follow a "{Name}Key" business-key
-                        // naming convention. This codebase's actual FK columns are
-                        // surrogate-key-style ("{Name}Id", e.g. ContactPoint.CustomerId),
-                        // so that lookup failed for virtually every relationship and
-                        // silently dropped it before it ever reached entityResults —
-                        // meaning EntityForeignKeyGraph ended up with almost no edges.
-                        // RawForeignKeyColumn/RawPrincipalKeyColumn below are already
-                        // correctly derived straight from the HasForeignKey lambda and
-                        // the "Id" PK convention, with no naming guesswork — those are
-                        // what the graph-building path actually needs. ForeignKey/
-                        // PrincipalKey here are kept only as best-effort cosmetic
-                        // fallbacks for anything that still reads ModelForeignKeyProperty/
-                        // ModelPrincipalKeyProperty; the relationship itself is now
-                        // always recorded regardless of whether that lookup resolves.
+                        
                         var foreignKey = FindProperty(relatedEntity, inverseName + "Key");
                         var principalKey = FindProperty(entityType, entityType.Name + "Key");
 
@@ -323,27 +304,19 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
             SemanticModel semanticModel,
             CancellationToken ct)
         {
-            var symbol =
-                semanticModel.GetDeclaredSymbol(
-                    classDecl,
-                    ct) as INamedTypeSymbol;
-
-
-            if (symbol == null)
+            if (semanticModel.GetDeclaredSymbol(classDecl, ct)
+                is not INamedTypeSymbol symbol)
                 return null;
-
 
             foreach (var iface in symbol.AllInterfaces)
             {
-                if (iface.OriginalDefinition.Name ==
-                    "IEntityTypeConfiguration" &&
+                if (iface.Name == "IEntityTypeConfiguration" &&
                     iface.TypeArguments.Length == 1 &&
                     iface.TypeArguments[0] is INamedTypeSymbol entity)
                 {
                     return entity;
                 }
             }
-
 
             return null;
         }

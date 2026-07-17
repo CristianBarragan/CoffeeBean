@@ -133,7 +133,7 @@ internal static class EntityNavigationConvention
         return result;
     }
 
-    private static INamedTypeSymbol? ResolveElementType(ITypeSymbol type)
+    internal static INamedTypeSymbol? ResolveElementType(ITypeSymbol type)
     {
         if (type is INamedTypeSymbol named && named.IsGenericType && named.TypeArguments.Length == 1 &&
             named.Name is "List" or "ICollection" or "IEnumerable" or "IList")
