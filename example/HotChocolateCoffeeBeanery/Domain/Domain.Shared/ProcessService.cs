@@ -1,4 +1,6 @@
-﻿using CoffeeBeanery.CQRS;
+﻿using System;
+using System.Collections.Generic;
+using CoffeeBeanery.CQRS;
 using CoffeeBeanery.GraphQL.Core.Runtime;
 using CoffeeBeanery.GraphQL.Core.Sql;
 using CoffeeBeanery.Service;
@@ -9,13 +11,16 @@ using Npgsql;
 
 namespace Domain.Shared;
 
-public interface IProcessService<M> where M : class
+
+public interface IProcessService<M>
+    where M : class
 {
     Task<QueryResult<M>> QueryProcessAsync(
         string cacheKey,
         ISelection selection,
         string modelName,
         CancellationToken cancellationToken);
+
 
     Task<QueryResult<M>> MutationProcessAsync(
         string cacheKey,
@@ -24,28 +29,41 @@ public interface IProcessService<M> where M : class
         CancellationToken cancellationToken);
 }
 
-public class ProcessService<TModel, TResult> : IProcessService<TResult>
+
+
+public sealed class ProcessService<TModel, TResult> :
+    IProcessService<TResult>
     where TModel : class
     where TResult : class
 {
     private readonly NpgsqlDataSource _dataSource;
-    private readonly IFasterKV<string, string> _cache;
+
+    private readonly IFasterKV<string,string> _cache;
+
     private readonly AdapterLookup _adapterLookup;
+
     private readonly IEntityMetaProvider _meta;
+
     private readonly PostgresSqlWriter _sqlWriter;
+
     private readonly IReadOnlyList<IQueryPlanContributor> _queryContributors;
+
     private readonly IReadOnlyList<IMutationPlanContributor> _mutationContributors;
+
     private readonly IPlannerRegistry _plannerRegistry;
+
     private readonly Func<List<TModel>, List<TResult>> _wrap;
+
+
 
     public ProcessService(
         NpgsqlDataSource dataSource,
-        IFasterKV<string, string> cache,
+        IFasterKV<string,string> cache,
         AdapterLookup adapterLookup,
         IEntityMetaProvider meta,
         PostgresSqlWriter sqlWriter,
         IPlannerRegistry plannerRegistry,
-        Func<List<TModel>, List<TResult>> wrap,
+        Func<List<TModel>,List<TResult>> wrap,
         IEnumerable<IQueryPlanContributor>? queryContributors = null,
         IEnumerable<IMutationPlanContributor>? mutationContributors = null)
     {
@@ -56,158 +74,346 @@ public class ProcessService<TModel, TResult> : IProcessService<TResult>
         _sqlWriter = sqlWriter;
         _plannerRegistry = plannerRegistry;
         _wrap = wrap;
-        _queryContributors = queryContributors?.ToArray() ?? Array.Empty<IQueryPlanContributor>();
-        _mutationContributors = mutationContributors?.ToArray() ?? Array.Empty<IMutationPlanContributor>();
-    }
 
-    public async Task<QueryResult<TResult>> MutationProcessAsync(
+        _queryContributors =
+            queryContributors?.ToArray()
+            ?? Array.Empty<IQueryPlanContributor>();
+
+        _mutationContributors =
+            mutationContributors?.ToArray()
+            ?? Array.Empty<IMutationPlanContributor>();
+    }
+    
+        public async Task<QueryResult<TResult>> MutationProcessAsync(
         string cacheKey,
         ISelection selection,
         string modelName,
         CancellationToken cancellationToken)
     {
-        var rootEntityId        = ResolveRootEntityId(modelName);
-        var rootStorageEntityId = ResolveRootStorageEntityId(modelName);
-        var rootOutputAlias     = modelName;
+        var rootEntityId =
+            ResolveRootEntityId(modelName);
 
-        var mutationArg = selection.SyntaxNode.Arguments
-            .FirstOrDefault(a =>
-                !string.Equals(a.Name.Value, "where",  StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(a.Name.Value, "order",  StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(a.Name.Value, "first",  StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(a.Name.Value, "last",   StringComparison.OrdinalIgnoreCase));
+        var rootStorageEntityId =
+            ResolveRootStorageEntityId(modelName);
+
+        var rootOutputAlias =
+            modelName;
+
 
         MutationPlan? mutationPlan = null;
 
+
+        var mutationArg =
+            selection.SyntaxNode.Arguments
+                .FirstOrDefault(a =>
+                    !string.Equals(a.Name.Value, "where",
+                        StringComparison.OrdinalIgnoreCase)
+                    &&
+                    !string.Equals(a.Name.Value, "order",
+                        StringComparison.OrdinalIgnoreCase)
+                    &&
+                    !string.Equals(a.Name.Value, "first",
+                        StringComparison.OrdinalIgnoreCase)
+                    &&
+                    !string.Equals(a.Name.Value, "last",
+                        StringComparison.OrdinalIgnoreCase));
+
+
         if (mutationArg?.Value is ObjectValueNode wrapperObj)
         {
-            var entityFieldName = char.ToLowerInvariant(rootOutputAlias[0]) + rootOutputAlias.Substring(1);
+            var entityFieldName =
+                char.ToLowerInvariant(rootOutputAlias[0])
+                + rootOutputAlias.Substring(1);
 
-            var entityField = wrapperObj.Fields.FirstOrDefault(f =>
-                string.Equals(f.Name.Value, entityFieldName, StringComparison.OrdinalIgnoreCase));
 
-            var mutationBuilders = new List<MutationIR>();
+            var entityField =
+                wrapperObj.Fields.FirstOrDefault(f =>
+                    string.Equals(
+                        f.Name.Value,
+                        entityFieldName,
+                        StringComparison.OrdinalIgnoreCase));
+
+
+            var mutations =
+                new List<MutationIR>();
+
 
             switch (entityField?.Value)
             {
-                case ObjectValueNode singleObj:
-                    mutationBuilders.Add(HotChocolateAdapter.AdaptMutation(
-                        rootEntityId, rootOutputAlias, singleObj, _adapterLookup));
+                case ObjectValueNode obj:
+
+                    mutations.Add(
+                        HotChocolateAdapter.AdaptMutation(
+                            rootEntityId,
+                            rootOutputAlias,
+                            obj,
+                            _adapterLookup));
+
                     break;
 
-                case ListValueNode listNode:
-                    foreach (var item in listNode.Items)
+
+                case ListValueNode list:
+
+                    foreach (var item in list.Items)
                     {
                         if (item is ObjectValueNode itemObj)
-                            mutationBuilders.Add(HotChocolateAdapter.AdaptMutation(
-                                rootEntityId, rootOutputAlias, itemObj, _adapterLookup));
+                        {
+                            mutations.Add(
+                                HotChocolateAdapter.AdaptMutation(
+                                    rootEntityId,
+                                    rootOutputAlias,
+                                    itemObj,
+                                    _adapterLookup));
+                        }
                     }
+
                     break;
             }
 
-            if (mutationBuilders.Count > 0)
+
+            if (mutations.Count > 0)
             {
-                var mutationPlanBuilder = new MutationPlanBuilder();
+                var builder =
+                    new MutationPlanBuilder();
 
-                foreach (var mutationIr in mutationBuilders)
+
+                foreach (var mutation in mutations)
                 {
-                    var optimized = MutationOptimizer.Optimize(mutationIr);
-                    if (!MutationOptimizer.HasWork(optimized)) continue;
+                    var optimized =
+                        MutationOptimizer.Optimize(mutation);
 
-                    MutationRuntimePlanner.Build(rootEntityId, optimized, ref mutationPlanBuilder);
+
+                    if (!MutationOptimizer.HasWork(optimized))
+                        continue;
+
+
+                    MutationRuntimePlanner.Build(
+                        rootEntityId,
+                        optimized,
+                        ref builder);
+
 
                     foreach (var contributor in _mutationContributors)
-                        contributor.Contribute(rootEntityId, optimized, ref mutationPlanBuilder);
+                    {
+                        contributor.Contribute(
+                            rootEntityId,
+                            optimized,
+                            ref builder);
+                    }
                 }
 
-                mutationPlan = mutationPlanBuilder.Build();
+
+                mutationPlan =
+                    builder.Build();
             }
         }
 
-        var selectionSet = selection.SyntaxNode.SelectionSet
-            ?? throw new InvalidOperationException("Selection has no SelectionSet.");
 
-        var selectionIr = HotChocolateAdapter.AdaptQuery(
-            rootEntityId, rootOutputAlias, selectionSet, _adapterLookup);
+        var selectionSet =
+            selection.SyntaxNode.SelectionSet
+            ?? throw new InvalidOperationException(
+                "Selection has no SelectionSet.");
 
-        selectionIr = SelectionOptimizer.Optimize(selectionIr);
 
-        var queryPlanBuilder = new QueryPlanBuilder();
-        queryPlanBuilder.SetRoot(rootEntityId, rootStorageEntityId, rootOutputAlias);
+        var selectionIr =
+            HotChocolateAdapter.AdaptQuery(
+                rootEntityId,
+                rootOutputAlias,
+                selectionSet,
+                _adapterLookup);
 
-        _plannerRegistry.Build(rootEntityId, selectionIr, ref queryPlanBuilder);
+
+        selectionIr =
+            SelectionOptimizer.Optimize(selectionIr);
+
+
+
+        var queryBuilder =
+            new QueryPlanBuilder();
+
+
+        queryBuilder.SetRoot(
+            rootEntityId,
+            rootStorageEntityId,
+            rootOutputAlias);
+
+
+
+        _plannerRegistry.Build(
+            rootEntityId,
+            selectionIr,
+            ref queryBuilder);
+
+
 
         foreach (var contributor in _queryContributors)
-            contributor.Contribute(rootEntityId, selectionIr, ref queryPlanBuilder);
+        {
+            contributor.Contribute(
+                rootEntityId,
+                selectionIr,
+                ref queryBuilder);
+        }
 
-        var queryPlan = queryPlanBuilder.Build();
 
-        var upsertSql = mutationPlan is not null ? _sqlWriter.WriteUpserts(mutationPlan.Value) : "";
-        var graphSql  = mutationPlan is not null ? _sqlWriter.WriteGraphMerges(mutationPlan.Value) : "";
-        var selectSql = _sqlWriter.WriteSelect(queryPlan);
+        var queryPlan =
+            queryBuilder.Build();
 
-        var sqlParts = new List<string>();
-        if (!string.IsNullOrEmpty(upsertSql)) sqlParts.Add(upsertSql);
-        if (!string.IsNullOrEmpty(graphSql))  sqlParts.Add(graphSql);
-        sqlParts.Add(selectSql);
 
-        var finalSql = string.Join(";", sqlParts);
 
-        var models  = await ExecuteAndMaterializeAsync(finalSql, rootEntityId, queryPlan, cancellationToken);
-        var results = _wrap(models);
+        var sqlParts =
+            new List<string>();
+
+
+        if (mutationPlan.HasValue)
+        {
+            var upsert =
+                _sqlWriter.WriteUpserts(
+                    mutationPlan.Value);
+
+
+            var graph =
+                _sqlWriter.WriteGraphMerges(
+                    mutationPlan.Value);
+
+
+            if (!string.IsNullOrWhiteSpace(upsert))
+                sqlParts.Add(upsert);
+
+
+            if (!string.IsNullOrWhiteSpace(graph))
+                sqlParts.Add(graph);
+        }
+
+
+        sqlParts.Add(
+            _sqlWriter.WriteSelect(queryPlan));
+
+
+        var sql =
+            string.Join(";", sqlParts);
+
+
+
+        var models =
+            await ExecuteAndMaterializeAsync(
+                sql,
+                rootEntityId,
+                queryPlan,
+                cancellationToken);
+
+
+
+        var results =
+            _wrap(models);
+
+
 
         return new QueryResult<TResult>
         {
-            Models           = results,
-            TotalCount       = results.Count,
+            Models = results,
+            TotalCount = results.Count,
             TotalPageRecords = results.Count
         };
     }
-
-    public async Task<QueryResult<TResult>> QueryProcessAsync(
+    
+        public async Task<QueryResult<TResult>> QueryProcessAsync(
         string cacheKey,
         ISelection selection,
         string modelName,
         CancellationToken cancellationToken)
     {
-        var rootEntityId        = ResolveRootEntityId(modelName);
-        var rootStorageEntityId = ResolveRootStorageEntityId(modelName);
-        var rootOutputAlias     = modelName;
+        var rootEntityId =
+            ResolveRootEntityId(modelName);
 
-        var selectionSet = selection.SyntaxNode.SelectionSet
-            ?? throw new InvalidOperationException("Selection has no SelectionSet.");
+        var rootStorageEntityId =
+            ResolveRootStorageEntityId(modelName);
 
-        var selectionIr = HotChocolateAdapter.AdaptQuery(
-            rootEntityId, rootOutputAlias, selectionSet, _adapterLookup);
+        var rootOutputAlias =
+            modelName;
 
-        selectionIr = SelectionOptimizer.Optimize(selectionIr);
 
-        var queryPlanBuilder = new QueryPlanBuilder();
-        queryPlanBuilder.SetRoot(rootEntityId, rootStorageEntityId, rootOutputAlias);
+        var selectionSet =
+            selection.SyntaxNode.SelectionSet
+            ?? throw new InvalidOperationException(
+                "Selection has no SelectionSet.");
 
-        _plannerRegistry.Build(rootEntityId, selectionIr, ref queryPlanBuilder);
+
+
+        var selectionIr =
+            HotChocolateAdapter.AdaptQuery(
+                rootEntityId,
+                rootOutputAlias,
+                selectionSet,
+                _adapterLookup);
+
+
+
+        selectionIr =
+            SelectionOptimizer.Optimize(selectionIr);
+
+
+
+        var builder =
+            new QueryPlanBuilder();
+
+
+        builder.SetRoot(
+            rootEntityId,
+            rootStorageEntityId,
+            rootOutputAlias);
+
+
+
+        _plannerRegistry.Build(
+            rootEntityId,
+            selectionIr,
+            ref builder);
+
+
 
         foreach (var contributor in _queryContributors)
-            contributor.Contribute(rootEntityId, selectionIr, ref queryPlanBuilder);
+        {
+            contributor.Contribute(
+                rootEntityId,
+                selectionIr,
+                ref builder);
+        }
 
-        var queryPlan = queryPlanBuilder.Build();
-        var sql       = _sqlWriter.WriteSelect(queryPlan);
 
-        var models  = await ExecuteAndMaterializeAsync(sql, rootEntityId, queryPlan, cancellationToken);
-        var results = _wrap(models);
+
+        var queryPlan =
+            builder.Build();
+
+
+
+        var sql =
+            _sqlWriter.WriteSelect(queryPlan);
+
+
+
+        var models =
+            await ExecuteAndMaterializeAsync(
+                sql,
+                rootEntityId,
+                queryPlan,
+                cancellationToken);
+
+
+
+        var results =
+            _wrap(models);
+
+
 
         return new QueryResult<TResult>
         {
-            Models           = results,
-            TotalCount       = results.Count,
+            Models = results,
+            TotalCount = results.Count,
             TotalPageRecords = results.Count
         };
     }
 
-    // ---------------------------------------------------------------
-    // Raw ADO.NET execution + AOT-safe materialization
-    // Always builds List<TModel>. Wrapping to TResult is the caller's job.
-    // ---------------------------------------------------------------
+
 
     private async Task<List<TModel>> ExecuteAndMaterializeAsync(
         string sql,
@@ -215,53 +421,106 @@ public class ProcessService<TModel, TResult> : IProcessService<TResult>
         QueryPlan queryPlan,
         CancellationToken ct)
     {
-        await using var connection = await AgeConnectionFactory.OpenAsync(_dataSource);
-        await using var cmd = connection.CreateCommand();
-        cmd.CommandText = sql;
+        await using var connection =
+            await AgeConnectionFactory.OpenAsync(_dataSource);
 
-        await using var reader = await cmd.ExecuteReaderAsync(ct);
 
-        // Skip result sets from upsert statements (no RETURNING -> FieldCount == 0).
+        await using var command =
+            connection.CreateCommand();
+
+
+        command.CommandText = sql;
+
+
+
+        await using var reader =
+            await command.ExecuteReaderAsync(ct);
+
+
+
+        // Skip mutation result sets.
         while (reader.FieldCount == 0)
         {
             if (!await reader.NextResultAsync(ct))
-                throw new InvalidOperationException("Expected a SELECT result set but none was found.");
+            {
+                throw new InvalidOperationException(
+                    "No SELECT result set returned.");
+            }
         }
 
-        var layout = RowLayout.FromQueryPlan(queryPlan);
 
-        var segmentMaps = new ushort[layout.Segments.Length][];
-        for (int s = 0; s < layout.Segments.Length; s++)
+
+        var layout =
+            RowLayout.FromQueryPlan(queryPlan);
+
+
+
+        var segmentMaps =
+            new ushort[layout.Segments.Length][];
+
+
+
+        for (var i = 0; i < layout.Segments.Length; i++)
         {
-            var seg         = layout.Segments[s];
-            var columnCount = _meta.EntityColumnName[seg.StorageEntityId].Length;
-            segmentMaps[s]  = queryPlan.BuildColumnMap(
-                seg.StorageEntityId,
-                seg.EntityOutputAlias,
-                (ushort)columnCount);
+            var segment =
+                layout.Segments[i];
+
+
+            var columnCount =
+                _meta.EntityColumnName[
+                    segment.StorageEntityId]
+                    .Length;
+
+
+
+            segmentMaps[i] =
+                queryPlan.BuildColumnMap(
+                    segment.StorageEntityId,
+                    segment.EntityOutputAlias,
+                    (ushort)columnCount);
         }
 
-        var rowMatrix = new List<object?[]>();
+
+
+        var rowMatrix =
+            new List<object?[]>();
+
+
 
         while (await reader.ReadAsync(ct))
         {
-            var row = new object?[layout.Segments.Length];
-            for (int s = 0; s < layout.Segments.Length; s++)
+            var row =
+                new object?[layout.Segments.Length];
+
+
+
+            for (var i = 0; i < layout.Segments.Length; i++)
             {
-                var seg = layout.Segments[s];
-                row[s]  = MaterializerRegistry.Materialize(seg.StorageEntityId, reader, segmentMaps[s]);
+                var segment =
+                    layout.Segments[i];
+
+
+                row[i] =
+                    MaterializerRegistry.Materialize(
+                        segment.StorageEntityId,
+                        reader,
+                        segmentMaps[i]);
             }
+
+
             rowMatrix.Add(row);
         }
 
-        return ResultBuilderRegistry.Build<TModel>(rootEntityId, layout, rowMatrix);
+
+
+        return ResultBuilderRegistry.Build<TModel>(
+            rootEntityId,
+            layout,
+            rowMatrix);
     }
-
-    // ---------------------------------------------------------------
-    // Entity ID resolution
-    // ---------------------------------------------------------------
-
-    private ushort ResolveRootEntityId(string modelName)
+    
+    private ushort ResolveRootEntityId(
+        string modelName)
     {
         for (ushort i = 0; i < _meta.ModelName.Length; i++)
         {
@@ -274,30 +533,52 @@ public class ProcessService<TModel, TResult> : IProcessService<TResult>
             }
         }
 
+
         throw new InvalidOperationException(
             $"Unknown model '{modelName}'.");
     }
 
-    private ushort ResolveRootStorageEntityId(string modelName)
+
+
+    private ushort ResolveRootStorageEntityId(
+        string modelName)
     {
-        if (!_meta.TryGetEntityId(modelName, out var entityId))
-            throw new InvalidOperationException($"Unknown model '{modelName}'.");
+        if (!_meta.TryGetEntityId(
+                modelName,
+                out var entityId))
+        {
+            throw new InvalidOperationException(
+                $"Unknown model '{modelName}'.");
+        }
 
-        var table = _meta.Table[entityId][0];
 
-        for (ushort i = 0; i < _meta.EntityTable.Length; i++)
+
+        var table =
+            _meta.Table[entityId][0];
+
+
+
+        for (ushort i = 0;
+             i < _meta.EntityTable.Length;
+             i++)
         {
             if (string.Equals(
                     _meta.EntityTable[i],
                     table,
                     StringComparison.OrdinalIgnoreCase))
+            {
                 return i;
+            }
         }
 
+
+
         throw new InvalidOperationException(
-            $"No storage entity found for model '{modelName}'.");
+            $"No storage entity found for '{modelName}'.");
     }
 }
+
+
 
 public interface IQueryPlanContributor
 {
@@ -306,6 +587,8 @@ public interface IQueryPlanContributor
         in SelectionIR selection,
         ref QueryPlanBuilder builder);
 }
+
+
 
 public interface IMutationPlanContributor
 {

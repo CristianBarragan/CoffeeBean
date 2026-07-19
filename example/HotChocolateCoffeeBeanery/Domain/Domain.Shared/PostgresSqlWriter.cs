@@ -112,11 +112,36 @@ public sealed class PostgresSqlWriter
             .Append("\".\"")
             .Append(table)
             .Append("\" (");
+        
+        foreach (var value in row.Values)
+        {
+            if (value.FieldId >= _meta.EntityColumnName[row.StorageEntityId].Length)
+            {
+                throw new Exception(
+                    $"Mutation contains invalid field.\n" +
+                    $"Entity={row.EntityId}\n" +
+                    $"StorageEntity={row.StorageEntityId}\n" +
+                    $"FieldId={value.FieldId}\n" +
+                    $"Table={_meta.EntityTable[row.StorageEntityId]}\n" +
+                    $"ColumnCount={_meta.EntityColumnName[row.StorageEntityId].Length}");
+            }
+        }
 
         for (int c = 0; c < row.Values.Length; c++)
         {
             if (c > 0)
                 sb.Append(", ");
+            
+            if (row.Values[c].FieldId >= _meta.EntityColumnName[row.StorageEntityId].Length)
+            {
+                throw new Exception(
+                    $"Mutation contains invalid field.\n" +
+                    $"Entity={row.EntityId}\n" +
+                    $"StorageEntity={row.StorageEntityId}\n" +
+                    $"FieldId={row.Values[c].FieldId}\n" +
+                    $"Table={_meta.EntityTable[row.StorageEntityId]}\n" +
+                    $"ColumnCount={_meta.EntityColumnName[row.StorageEntityId].Length}");
+            }
 
             var column =
                 ResolveColumnName(
@@ -156,22 +181,36 @@ public sealed class PostgresSqlWriter
         ushort storageEntityId,
         ushort columnId)
     {
-        var cols = _meta.EntityColumnName[storageEntityId];
-
-        if ((uint)columnId >= (uint)cols.Length)
+        if (storageEntityId >= _meta.EntityColumnName.Length)
         {
             throw new Exception(
-                $"ColumnId {columnId} is outside EntityColumnName[{storageEntityId}] " +
-                $"({_meta.EntityTable[storageEntityId]}, Length={cols.Length}). " +
+                $"StorageEntityId {storageEntityId} does not exist. " +
                 $"Entity={entityId}");
+        }
+
+        var cols = _meta.EntityColumnName[storageEntityId];
+
+        if (columnId >= cols.Length)
+        {
+            var available =
+                string.Join(", ", cols.Select((x, i) => $"{i}={x}"));
+
+            throw new Exception(
+                $"ColumnId {columnId} missing.\n" +
+                $"EntityId={entityId}\n" +
+                $"StorageEntityId={storageEntityId}\n" +
+                $"Table={_meta.EntityTable[storageEntityId]}\n" +
+                $"Available columns: [{available}]");
         }
 
         var columnName = cols[columnId];
 
-        if (string.IsNullOrEmpty(columnName))
+        if (string.IsNullOrWhiteSpace(columnName))
         {
             throw new Exception(
-                $"Empty column name. StorageEntity={storageEntityId}, Column={columnId}");
+                $"Empty column name.\n" +
+                $"StorageEntityId={storageEntityId}\n" +
+                $"ColumnId={columnId}");
         }
 
         return columnName;
@@ -519,12 +558,18 @@ public sealed class PostgresSqlWriter
         ushort columnId,
         string rawValue)
     {
-        var converted = EnumConversions.TryConvert(storageEntityId, columnId, rawValue);
+        var converted =
+            EnumConversions.TryConvert(
+                storageEntityId,
+                columnId,
+                rawValue);
+
         if (converted != null)
         {
             sb.Append((string)converted);
             return;
         }
+
         AppendQuotedValue(sb, rawValue);
     }
 

@@ -162,6 +162,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public string DestinationEntity { get; set; } = "";
 
         public string DestinationName { get; set; } = "";
+        
+        public string? DestinationColumn { get; set; }
 
         public string? SourceAlias { get; set; }
 

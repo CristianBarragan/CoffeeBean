@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis;
 
 namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 
-internal static class MaterializerEmitter
+internal static class MutationMaterializerEmitter
 {
     public static string Emit(ImmutableArray<MappingClassInfo> mappings)
     {
@@ -120,8 +120,13 @@ internal static class MaterializerEmitter
                 sb.AppendLine("        builder.Add(new FieldValue(");
                 sb.AppendLine(
                     $"            FieldId.{model}.{FieldIdNameHelper.GetName(field)},");
+                var columnName =
+                    string.IsNullOrWhiteSpace(field.DestinationColumn)
+                        ? field.DestinationName
+                        : field.DestinationColumn;
+
                 sb.AppendLine(
-                    $"            ColumnId.{field.DestinationEntity}.{field.DestinationName},");
+                    $"            ColumnId.{field.DestinationEntity}.{columnName},");
                 sb.AppendLine(
                     $"            {variable} ?? string.Empty));");
                 sb.AppendLine();
@@ -257,7 +262,7 @@ internal static class MaterializerEmitter
             : propertyType;
 
 
-    // enums
+    // Enum
     if (underlying.TypeKind == TypeKind.Enum)
     {
         var enumName =
@@ -265,12 +270,12 @@ internal static class MaterializerEmitter
                 SymbolDisplayFormat.FullyQualifiedFormat);
 
         return isNullable
-            ? $"string.IsNullOrEmpty(value.RawValue) ? null : Enum.Parse<{enumName}>(value.RawValue, true)"
-            : $"Enum.Parse<{enumName}>(value.RawValue!, true)";
+            ? $"string.IsNullOrEmpty(value.RawValue) ? null : ({enumName})Enum.Parse(typeof({enumName}), value.RawValue, true)"
+            : $"({enumName})Enum.Parse(typeof({enumName}), value.RawValue!, true)";
     }
 
 
-    // string
+    // String
     if (underlying.SpecialType == SpecialType.System_String)
     {
         return "value.RawValue";
@@ -278,50 +283,56 @@ internal static class MaterializerEmitter
 
 
     // Guid
-    if (underlying.ToDisplayString() == "System.Guid")
+    if (underlying.SpecialType == SpecialType.None &&
+        underlying.Name == "Guid" &&
+        underlying.ContainingNamespace.ToDisplayString() == "System")
     {
         return isNullable
-            ? "Guid.TryParse(value.RawValue, out var guid) ? guid : null"
+            ? "Guid.TryParse(value.RawValue, out var guid) ? (Guid?)guid : null"
             : "Guid.Parse(value.RawValue!)";
     }
 
 
-    // primitives
     switch (underlying.SpecialType)
     {
         case SpecialType.System_Int32:
             return isNullable
-                ? "int.TryParse(value.RawValue, out var i) ? i : null"
+                ? "int.TryParse(value.RawValue, out var i) ? (int?)i : null"
                 : "int.Parse(value.RawValue!)";
 
 
         case SpecialType.System_Int64:
             return isNullable
-                ? "long.TryParse(value.RawValue, out var l) ? l : null"
+                ? "long.TryParse(value.RawValue, out var l) ? (long?)l : null"
                 : "long.Parse(value.RawValue!)";
 
 
         case SpecialType.System_Decimal:
             return isNullable
-                ? "decimal.TryParse(value.RawValue, out var d) ? d : null"
+                ? "decimal.TryParse(value.RawValue, out var d) ? (decimal?)d : null"
                 : "decimal.Parse(value.RawValue!)";
 
 
         case SpecialType.System_Boolean:
             return isNullable
-                ? "bool.TryParse(value.RawValue, out var b) ? b : null"
+                ? "bool.TryParse(value.RawValue, out var b) ? (bool?)b : null"
                 : "bool.Parse(value.RawValue!)";
 
 
         case SpecialType.System_Double:
             return isNullable
-                ? "double.TryParse(value.RawValue, out var dbl) ? dbl : null"
+                ? "double.TryParse(value.RawValue, out var dbl) ? (double?)dbl : null"
                 : "double.Parse(value.RawValue!)";
     }
 
 
-    // fallback for unknown structs/classes
-    return $"({propertyType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})value.RawValue";
+    // fallback
+    if (isNullable)
+    {
+        return $"string.IsNullOrEmpty(value.RawValue) ? null : ({underlying.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})Convert.ChangeType(value.RawValue, typeof({underlying.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}))";
+    }
+
+    return $"({propertyType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})Convert.ChangeType(value.RawValue, typeof({propertyType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}))";
 }
 
 

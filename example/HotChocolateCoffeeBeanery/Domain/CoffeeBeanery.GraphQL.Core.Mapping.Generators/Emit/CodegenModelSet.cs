@@ -10,7 +10,7 @@ internal static class CodegenModelSet
     /// The single source of truth for which mappings participate in
     /// codegen, and in what order. EntityId assignment (IdEmitter) and
     /// every other emitter that needs to align with it (AdapterEmitter,
-    /// PlannerEmitter, MaterializerEmitter) must all call this instead
+    /// PlannerEmitter, MutationMaterializerEmitter) must all call this instead
     /// of independently filtering ImmutableArray&lt;MappingClassInfo&gt;.
     /// </summary>
     public static System.Collections.Generic.List<MappingClassInfo> Resolve(
