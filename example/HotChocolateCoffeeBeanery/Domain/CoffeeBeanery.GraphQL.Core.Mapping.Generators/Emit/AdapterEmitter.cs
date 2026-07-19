@@ -106,26 +106,23 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
             MappingClassInfo model,
             ushort entityId)
         {
-            var scalarProps = IdEmitter.GetScalarProperties(model.ModelType);
-            if (scalarProps.Count == 0) return;
+            var fields = IdEmitter.GetResolvedFieldNames(model);
+            if (fields.Count == 0)
+                return;
 
             sb.AppendLine($"            // {model.ModelType.Name} scalar fields");
-            sb.AppendLine($"            {{");
-            sb.AppendLine($"                var m = new Dictionary<string, ushort>(StringComparer.OrdinalIgnoreCase);");
+            sb.AppendLine("            {");
+            sb.AppendLine("                var m = new Dictionary<string, ushort>(StringComparer.OrdinalIgnoreCase);");
 
-            // Enumerate scalar properties in the same alphabetical order as FieldId.*
-            // constants so indices match.
-            for (ushort i = 0; i < scalarProps.Count; i++)
+            foreach (var field in fields)
             {
-                var prop = scalarProps[(int)i];
-                // GraphQL field name is the model property name, camelCased.
-                // The adapter receives camelCase names from the client.
-                var camel = ToCamelCase(prop.Name);
-                sb.AppendLine($"                m[\"{camel}\"] = FieldId.{model.ModelType.Name}.{prop.Name};");
+                var camel = ToCamelCase(field);
+                sb.AppendLine(
+                    $"                m[\"{camel}\"] = FieldId.{model.ModelType!.Name}.{field};");
             }
 
-            sb.AppendLine($"                fieldIds[EntityId.{model.ModelType.Name}] = m;");
-            sb.AppendLine($"            }}");
+            sb.AppendLine($"                fieldIds[EntityId.{model.ModelType!.Name}] = m;");
+            sb.AppendLine("            }");
             sb.AppendLine();
         }
 

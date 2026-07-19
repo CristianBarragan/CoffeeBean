@@ -11,7 +11,10 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 
 internal static class PlannerEmitter
 {
-    public static string Emit(ImmutableArray<MappingClassInfo> mappings)
+    public static string Emit(
+        ImmutableArray<MappingClassInfo> mappings,
+        ImmutableHashSet<INamedTypeSymbol> rootEntityTypes,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
     {
         var sb = new StringBuilder();
 
@@ -41,13 +44,13 @@ internal static class PlannerEmitter
 
         foreach (var mapping in models)
         {
-            EmitPlanner(sb, mapping, mappings);
+            EmitPlanner(sb, mapping, mappings, rootEntityTypes, entityGraph);
             sb.AppendLine();
         }
 
-        EmitRegistry(sb, models);   // back inside, before the closing brace
+        EmitRegistry(sb, models);
 
-        sb.AppendLine("}");         // closes GeneratedPlanners
+        sb.AppendLine("}");
 
         return sb.ToString();
     }
@@ -55,7 +58,9 @@ internal static class PlannerEmitter
     private static void EmitPlanner(
         StringBuilder sb,
         MappingClassInfo info,
-        ImmutableArray<MappingClassInfo> allMappings)
+        ImmutableArray<MappingClassInfo> allMappings,
+        ImmutableHashSet<INamedTypeSymbol> rootEntityTypes,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
     {
         if (info.ModelType == null)
             return;
@@ -65,7 +70,7 @@ internal static class PlannerEmitter
         sb.AppendLine($"    public static class {name}Planner");
         sb.AppendLine("    {");
 
-        EmitBuild(sb, info, allMappings);
+        EmitBuild(sb, info, allMappings, rootEntityTypes, entityGraph);
 
         sb.AppendLine("    }");
     }
@@ -73,33 +78,104 @@ internal static class PlannerEmitter
     private static void EmitBuild(
         StringBuilder sb,
         MappingClassInfo info,
-        ImmutableArray<MappingClassInfo> allMappings)
+        ImmutableArray<MappingClassInfo> allMappings,
+        ImmutableHashSet<INamedTypeSymbol> rootEntityTypes,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
     {
         sb.AppendLine("        public static void Build(in SelectionIR node, ref QueryPlanBuilder builder)");
         sb.AppendLine("        {");
 
         EmitScalarSelection(sb, info);
-        EmitChildSelection(sb, info, allMappings);
+        EmitChildSelection(sb, info, allMappings, rootEntityTypes, entityGraph);
 
         sb.AppendLine("        }");
     }
 
     private static void EmitChildSelection(
-        StringBuilder sb,
-        MappingClassInfo info,
-        ImmutableArray<MappingClassInfo> allMappings)
+    StringBuilder sb,
+    MappingClassInfo info,
+    ImmutableArray<MappingClassInfo> allMappings,
+    ImmutableHashSet<INamedTypeSymbol> rootEntityTypes,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+{
+    var navResult = EntityNavigationConvention.Resolve(info, allMappings, entityGraph, rootEntityTypes);
+
+    if (navResult.Navigations.Count == 0)
+        return;
+
+    sb.AppendLine();
+
+    if (info.Graph != null && !string.IsNullOrWhiteSpace(info.Graph.GraphName))
     {
-        var children = ResolveChildren(info, allMappings);
-
-        if (children.Count == 0)
-            return;
-
-        sb.AppendLine();
-        sb.AppendLine("            foreach (var child in node.Children)");
-        sb.AppendLine("            {");
-        sb.AppendLine("                PlannerRegistry.Build(child.EntityId, child, ref builder);");
-        sb.AppendLine("            }");
+        EmitGraphVertexResultJoins(sb, info, allMappings);
     }
+
+    sb.AppendLine("            foreach (var child in node.Children)");
+    sb.AppendLine("            {");
+    sb.AppendLine("                PlannerRegistry.Build(child.EntityId, child, ref builder);");
+    sb.AppendLine("            }");
+}
+    
+    private static void EmitGraphVertexResultJoins(
+    StringBuilder sb,
+    MappingClassInfo info,
+    ImmutableArray<MappingClassInfo> allMappings)
+{
+    var g = info.Graph!;
+
+    sb.AppendLine("            builder.AddGraphJoin(");
+    sb.AppendLine($"                EntityId.{info.ModelType!.Name},");
+    sb.AppendLine($"                StorageEntityId.{IdEmitter.StripEntitySuffix(info.EntityType!.Name)},");
+
+    sb.AppendLine($"                \"{g.GraphName}\",");
+    sb.AppendLine($"                \"{g.EdgeLabel}\",");
+    sb.AppendLine($"                \"{g.EdgeKey}\",");
+
+    sb.AppendLine($"                \"{g.From.Label}\",");
+    sb.AppendLine($"                \"{g.From.GraphProperty}\",");
+    sb.AppendLine($"                \"{g.From.Alias ?? g.From.Label}\",");
+    sb.AppendLine($"                \"{g.FromJoinColumn}\",");
+
+    sb.AppendLine($"                \"{g.To.Label}\",");
+    sb.AppendLine($"                \"{g.To.GraphProperty}\",");
+    sb.AppendLine($"                \"{g.To.Alias ?? g.To.Label}\",");
+    sb.AppendLine($"                \"{g.ToJoinColumn}\",");
+
+    sb.AppendLine($"                node.OutputAlias + \"_graph\");");
+    sb.AppendLine();
+
+    foreach (var (vertex, isFrom) in new[] { (g.From, true), (g.To, false) })
+    {
+        var alias = vertex.Alias ?? vertex.Label;
+
+        var relatedModel = allMappings.FirstOrDefault(m =>
+            m.IsModel && string.Equals(m.EntityType?.Name, vertex.Label, StringComparison.Ordinal));
+
+        if (relatedModel?.EntityType == null)
+            continue;
+
+        var joinColumn = isFrom ? g.FromJoinColumn : g.ToJoinColumn;
+        var strippedEntityName = IdEmitter.StripEntitySuffix(relatedModel.EntityType.Name);
+
+        var graphColumnAlias = alias + joinColumn;
+
+        sb.AppendLine("            foreach (var gc in node.Children)");
+        sb.AppendLine("            {");
+        sb.AppendLine($"                if (string.Equals(gc.OutputAlias, \"{alias}\", System.StringComparison.OrdinalIgnoreCase))");
+        sb.AppendLine("                {");
+        sb.AppendLine("                    builder.AddGraphResultJoin(");
+        sb.AppendLine("                        node.OutputAlias + \"_graph\",");
+        sb.AppendLine($"                        \"{graphColumnAlias}\",");
+        sb.AppendLine($"                        EntityId.{relatedModel.ModelType!.Name},");
+        sb.AppendLine($"                        StorageEntityId.{strippedEntityName},");
+        sb.AppendLine($"                        ColumnId.{strippedEntityName}.{joinColumn},");
+        sb.AppendLine("                        JoinKind.Left,");
+        sb.AppendLine("                        gc.OutputAlias);");
+        sb.AppendLine("                }");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+    }
+}
 
     internal static List<(string FieldName, string EntityTypeName, string ColumnName, string? StorageAlias)>
         ComputeFieldMappingsEagerPublic(MappingClassInfo info, bool composite)
@@ -114,17 +190,8 @@ internal static class PlannerEmitter
 
         foreach (var field in info.FieldMaps)
         {
-            if (field.IsGenerated)
+            if (field.IsNavigationKey)
                 continue;
-
-            if (info.Graph != null && !string.IsNullOrWhiteSpace(info.Graph.GraphName))
-            {
-                if (string.Equals(field.SourceName, info.Graph.From?.KeyColumn, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(field.SourceName, info.Graph.To?.KeyColumn, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-            }
 
             var entity =
                 string.IsNullOrWhiteSpace(field.DestinationEntity)
@@ -135,37 +202,6 @@ internal static class PlannerEmitter
         }
 
         return fields;
-    }
-
-    private static List<MappingClassInfo> ResolveChildren(
-        MappingClassInfo parent,
-        ImmutableArray<MappingClassInfo> mappings)
-    {
-        if (parent.ModelType == null)
-            return new List<MappingClassInfo>();
-
-        var result = new Dictionary<string, MappingClassInfo>(StringComparer.Ordinal);
-
-        foreach (var mapping in mappings)
-        {
-            if (mapping.ModelType == null) continue;
-            if (ReferenceEquals(mapping, parent)) continue;
-
-            foreach (var entity in mapping.Definition.Entities)
-            {
-                if (entity.EntityType == null) continue;
-
-                if (!SymbolEqualityComparer.Default.Equals(entity.EntityType, parent.EntityType))
-                    continue;
-
-                if (!result.ContainsKey(mapping.ModelType.Name))
-                    result.Add(mapping.ModelType.Name, mapping);
-
-                break;
-            }
-        }
-
-        return result.Values.OrderBy(x => x.ModelType!.Name).ToList();
     }
 
     private static void EmitScalarSelection(StringBuilder sb, MappingClassInfo info)
@@ -190,9 +226,7 @@ internal static class PlannerEmitter
 
             foreach (var field in group)
             {
-                var method = info.IsComposite ? "AddColumn" : "AddRootColumn";
-
-                sb.AppendLine($"                        builder.{method}(");
+                sb.AppendLine($"                        builder.AddColumn(");
                 sb.AppendLine($"                            EntityId.{info.ModelType.Name},");
                 sb.AppendLine($"                            StorageEntityId.{field.EntityTypeName},");
                 sb.AppendLine($"                            ColumnId.{field.EntityTypeName}.{field.ColumnName},");

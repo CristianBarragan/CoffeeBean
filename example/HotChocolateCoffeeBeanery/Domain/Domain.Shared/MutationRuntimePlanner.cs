@@ -53,18 +53,20 @@ public static class MutationRuntimePlanner
         {
             EmitGraphMerge(node, metadata, ref builder);
         }
-
+        
         var cteNode = new MutationCteNode(
             entityId,
             metadata.StorageEntityId,
             node.OutputAlias,
             values,
             childNodes.ToImmutable(),
-            metadata.Schema,
-            metadata.Table,
-            metadata.PrimaryColumns);
+            schemaOverride: metadata.Schema,
+            tableOverride: metadata.Table);
 
-        builder.AddCteRoot(cteNode);
+        if (!values.IsEmpty)
+        {
+            builder.AddCteRoot(cteNode);
+        }
 
         return (cteNode, model);
     }
@@ -87,8 +89,10 @@ public static class MutationRuntimePlanner
                 continue;
 
             var target = targets.FirstOrDefault(t => t.ColumnId == value.ColumnId);
-
             if (target is null)
+                continue;
+
+            if (target.StorageEntityId == metadata.StorageEntityId)
                 continue;
 
             if (!byStorageEntity.TryGetValue(target.StorageEntityId, out var group))
@@ -102,13 +106,7 @@ public static class MutationRuntimePlanner
 
         foreach (var (storageEntityId, group) in byStorageEntity)
         {
-            builder.AddRow(
-                entityId,
-                storageEntityId,
-                node.OutputAlias,
-                group.ToImmutable(),
-                null,
-                null);
+            builder.AddRow(entityId, storageEntityId, node.OutputAlias, group.ToImmutable(), null, null);
         }
     }
 
@@ -123,14 +121,23 @@ public static class MutationRuntimePlanner
 
         foreach (var value in node.Values)
         {
-            if (value.FieldId == metadata.GraphFromFieldId)
+            // InnerCustomerKey/OuterCustomerKey are intentionally excluded
+            // from metadata.TryResolveField (IsNavigationKey = true) so they
+            // never get treated as ordinary INSERT columns — that's the
+            // whole point of the earlier fix. That means they must be read
+            // here directly by FieldId, not through metadata resolution.
+            if (value.FieldId == FieldId.CustomerCustomerEdge.InnerCustomerKey)
+            {
                 fromKey = value.RawValue;
-
-            if (value.FieldId == metadata.GraphToFieldId)
+            }
+            else if (value.FieldId == FieldId.CustomerCustomerEdge.OuterCustomerKey)
+            {
                 toKey = value.RawValue;
-
-            if (metadata.TryResolveField(value.FieldId, out var field) && field.IsPrimaryKey)
+            }
+            else if (metadata.TryResolveField(value.FieldId, out var field) && field.IsPrimaryKey)
+            {
                 edgeKey = value.RawValue;
+            }
         }
 
         if (fromKey == null || toKey == null)

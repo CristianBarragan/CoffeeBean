@@ -60,7 +60,6 @@ public partial class CustomerMapping : IMappingDefinition
                     nameof(DataEntity.Customer.CustomerKey)
             }
         ],
-
         Fields =
         [
             new()

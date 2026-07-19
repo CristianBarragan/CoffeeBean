@@ -12,7 +12,7 @@ public partial class CustomerCustomerEdge
     
     public Guid? OuterCustomerKey { get; set; }
 
-    public string? CustomerCustomerRelationshipKey { get; set; }
+    public Guid? CustomerCustomerRelationshipKey { get; set; }
     
     public CustomerCustomerRelationshipType? CustomerCustomerRelationshipType { get; set; }
 

@@ -22,8 +22,16 @@ namespace Domain.Shared.Extension
             var opts = new CoffeeBeaneryOptions();
             options?.Invoke(opts);
 
-            // var builder = new CoffeeBeaneryBuilder();
-            // configure?.Invoke(builder);
+            // ---- Generated metadata ----
+            services.AddSingleton<IEntityMetaProvider, GeneratedEntityMetaProvider>();
+            services.AddSingleton<IPlannerRegistry, GeneratedPlannerRegistry>();
+            services.AddSingleton(AdapterTables.Build());
+
+            // ---- Graph strategy ----
+                        services.AddSingleton<IGraphStrategy, ApacheAgeGraphStrategy>();
+
+            // ---- SQL writer ----
+                        services.AddSingleton<PostgresSqlWriter>();
 
             // ---- Database ----
             services.AddSingleton(_ => NpgsqlDataSource.Create(postgresConnectionString));

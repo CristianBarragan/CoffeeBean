@@ -342,11 +342,14 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 spc.AddSource("MutationMetadataRegistry.g.cs",
                     MutationMetadataEmitter.Emit(resolvedMappings));
 
-                spc.AddSource("Materializers.g.cs",
-                    MaterializerEmitter.Emit(resolvedMappings));
+                spc.AddSource("MutationMaterializers.g.cs",
+                    MutationMaterializerEmitter.Emit(resolvedMappings));
+
+                spc.AddSource("QueryMaterializers.g.cs",
+                    QueryMaterializerEmitter.Emit(resolvedMappings));
 
                 spc.AddSource("Planners.g.cs",
-                    PlannerEmitter.Emit(resolvedMappings));
+                    PlannerEmitter.Emit(resolvedMappings, rootEntityTypes,  entityGraph));
 
                 spc.AddSource("AdapterTables.g.cs",
                     AdapterEmitter.Emit(resolvedMappings, rootEntityTypes, entityGraph));

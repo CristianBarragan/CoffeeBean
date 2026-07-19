@@ -101,11 +101,6 @@ internal static class EntityNavigationConvention
             });
         }
 
-        // FIX: previously used a single parentPrimaryEntity here, so an
-        // AliasProperty link (e.g. CustomerCustomerEdge.InnerCustomer/
-        // OuterCustomer) would silently fail to resolve a path whenever the
-        // FK-owning entity for that alias wasn't the model's IsPrimary
-        // entity. Now tries every backing entity, same as the main loop above.
         foreach (var link in info.Definition.Entities)
         {
             if (string.IsNullOrWhiteSpace(link.AliasProperty)) continue;
@@ -127,6 +122,64 @@ internal static class EntityNavigationConvention
                 JoinPaths = path != null
                     ? [new NavigationJoinPath { TargetEntity = link.EntityType, Hops = path }]
                     : []
+            });
+        }
+
+        // Explicit navigations declared via MappingDefinition.Navigations —
+        // fully hand-specified join hops, independent of Definition.Entities
+        // entirely. Unlike the AliasProperty fallback above (which requires
+        // an Entities entry, and therefore also feeds CteResolutions/
+        // surrogate-id upserts), this path exists specifically so a model
+        // can declare a navigable child relationship WITHOUT that entry
+        // also triggering CTE-based FK resolution — e.g.
+        // CustomerCustomerEdge.InnerCustomer, where the FK is already the
+        // natural CustomerKey and no surrogate-id lookup should happen at
+        // upsert time.
+        foreach (var navDef in info.Definition.Navigations)
+        {
+            if (string.IsNullOrWhiteSpace(navDef.NavigationName))
+                continue;
+
+            if (result.Navigations.Any(x =>
+                    string.Equals(x.NavigationName, navDef.NavigationName, StringComparison.Ordinal)))
+                continue;
+
+            var joinPaths = new List<NavigationJoinPath>();
+
+            foreach (var pathDef in navDef.Paths)
+            {
+                if (pathDef.TargetEntity == null) continue;
+
+                var hops = pathDef.Hops
+                    .Where(h => h.FromEntity != null && h.ToEntity != null &&
+                                !string.IsNullOrWhiteSpace(h.FromColumn) &&
+                                !string.IsNullOrWhiteSpace(h.ToColumn))
+                    .Select(h => new FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge(
+                        h.FromEntity!, h.FromColumn!, h.ToEntity!, h.ToColumn!))
+                    .ToList();
+
+                if (hops.Count == 0) continue;
+
+                joinPaths.Add(new NavigationJoinPath
+                {
+                    TargetEntity = pathDef.TargetEntity,
+                    Hops = hops
+                });
+            }
+
+            if (joinPaths.Count == 0)
+                continue;
+
+            var childEntities = joinPaths.Select(p => p.TargetEntity).ToList();
+
+            result.Navigations.Add(new NavigationInfo
+            {
+                NavigationName = navDef.NavigationName,
+                TargetModel = navDef.TargetModel,
+                RelatedEntityType = navDef.Paths.FirstOrDefault()?.TargetEntity,
+                IsCollection = navDef.IsCollection,
+                TargetIsRoot = childEntities.Any(rootEntityTypes.Contains),
+                JoinPaths = joinPaths
             });
         }
 
