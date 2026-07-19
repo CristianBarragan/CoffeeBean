@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 {
+    
     public sealed class MappingClassInfo
     {
         public INamedTypeSymbol ClassSymbol { get; set; } = null!;
@@ -19,35 +20,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         // Set explicitly by MappingClassParser after ParseEntities runs.
         public INamedTypeSymbol? EntityType { get; set; }
         
-        public List<EntityKeyInfo> ModelToEntityList { get; } = new();
-
-        public IReadOnlyList<EntityKeyInfo> ModelToEntity
-        {
-            get
-            {
-                if (ModelToEntityList.Count > 0)
-                    return ModelToEntityList;
-
-                if (_modelToEntity is null)
-                {
-                    _modelToEntity = Definition.Entities
-                        .Where(e => e.EntityType != null)
-                        .Select(e => new EntityKeyInfo
-                        {
-                            EntityType    = e.EntityType!,
-                            FromColumn    = e.FromColumn,
-                            ToColumn      = e.ToColumn,
-                            AliasProperty = e.AliasProperty,
-                            IsPrimary     = e.IsPrimary
-                        })
-                        .ToList();
-                }
-                return _modelToEntity;
-            }
-        }
-        private List<EntityKeyInfo>? _modelToEntity;
-
-        public void InvalidateModelToEntityCache() => _modelToEntity = null;
+        public IReadOnlyList<EntityDefinitionInfo> ModelToEntity
+            => Definition.Entities;
 
         public string ClassName =>
             ClassSymbol.Name;
@@ -91,6 +65,43 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public List<CteUpdateMetaInfo> CteUpdateMeta { get; } = new();
 
         public string Id { get; set; } = "";
+        
+        /// <summary>
+        /// Creates an independent copy for pipelines (like the global emitter)
+        /// that must not mutate the shared instance produced by the per-class
+        /// pipeline. All mutable collections are deep-copied; immutable/value
+        /// properties are copied by reference/value as-is.
+        /// </summary>
+        public MappingClassInfo Clone()
+        {
+            var copy = new MappingClassInfo
+            {
+                ClassSymbol = ClassSymbol,
+                ModelType = ModelType,
+                IsComposite = IsComposite,
+                EntityType = EntityType,
+                Alias = Alias,
+                Prefix = Prefix,
+                Schema = Schema,
+                IsModel = IsModel,
+                IsEntity = IsEntity,
+                IsGraph = IsGraph,
+                Graph = Graph,
+                Definition = Definition, // MappingDefinitionInfo is a record; treated as immutable snapshot
+                Id = Id
+            };
+
+            copy.FieldMaps.AddRange(FieldMaps);
+            copy.ManualFieldMaps.AddRange(ManualFieldMaps);
+            copy.ExcludedFieldMappings.AddRange(ExcludedFieldMappings);
+            copy.ModelChildren.AddRange(ModelChildren);
+            copy.UpsertKeys.AddRange(UpsertKeys);
+            copy.Diagnostics.AddRange(Diagnostics);
+            copy.AutoChildAttachments.AddRange(AutoChildAttachments);
+            copy.CteUpdateMeta.AddRange(CteUpdateMeta);
+
+            return copy;
+        }
     }
 
     public sealed class EntityKeyInfo
@@ -165,6 +176,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public HashSet<string> EnumIgnore { get; } = [];
 
         public bool IsGenerated { get; set; }
+
+        public ITypeSymbol? PropertyType { get; set; }
     }
 
     public sealed class ExcludedFieldMappingInfo
@@ -176,7 +189,11 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
     public sealed class ModelChildInfo
     {
+        public required string From { get; set; }
+
         public required string To { get; set; }
+
+        public required string NavigationName { get; set; }
     }
 
     public sealed class UpsertKeyInfo
@@ -239,6 +256,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         public List<Diagnostic> PendingDiagnostics { get; } = new();
     }
+    
+    
 
     public sealed record MappingDefinitionInfo
     {
@@ -249,8 +268,11 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public bool IsGraph { get; set; }
 
         public List<EntityDefinitionInfo> Entities { get; set; } = [];
-        
+
         public List<PrimaryKeyDefinitionInfo> PrimaryKey { get; set; } = [];
+
+        // Compatibility with existing emitters.
+        public GraphDefinitionInfo? Graph { get; set; }
     }
     
     public sealed record PrimaryKeyDefinitionInfo
@@ -263,11 +285,23 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
     public sealed record EntityDefinitionInfo
     {
         public INamedTypeSymbol EntityType { get; set; } = null!;
-        public string FromColumn { get; set; } = string.Empty;
-        public string ToColumn { get; set; } = string.Empty;
+
+        public string? FromColumn { get; set; } = string.Empty;
+
+        public string? ToColumn { get; set; } = string.Empty;
+
         public string To => EntityType?.Name ?? string.Empty;
+
         public string? AliasProperty { get; set; }
+
         public bool IsPrimary { get; set; }
+
+        // Compatibility with older emitters.
+        // Represents the model-side key property.
+        public string? ModelKey { get; set; }
+
+        // Represents the entity/database column.
+        public string? EntityKey { get; set; }
     }
 
     public sealed record FieldDefinitionInfo

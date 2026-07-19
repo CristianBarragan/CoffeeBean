@@ -121,6 +121,18 @@ public partial class ProductMapping : IMappingDefinition
                 Entity = typeof(DataEntity.Contract),
                 Destination = nameof(DataEntity.Contract.ContractType),
                 EnumMapping = new EnumMappingDefinition<ProductType, DataEntity.ContractType>()
+            },
+            new()
+            {
+                Source = nameof(Product.Amount),
+                Entity = typeof(DataEntity.Transaction),
+                Destination = nameof(DataEntity.Transaction.Amount)
+            },
+            new()
+            {
+                Source = nameof(Product.Amount),
+                Entity = typeof(DataEntity.Contract),
+                Destination = nameof(DataEntity.Contract.Amount)
             }
         ]
     };

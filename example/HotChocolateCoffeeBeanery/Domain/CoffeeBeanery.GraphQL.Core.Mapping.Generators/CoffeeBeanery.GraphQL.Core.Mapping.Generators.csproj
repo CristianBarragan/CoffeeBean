@@ -7,7 +7,7 @@
 
         <!-- Roslyn generator settings -->
         <IsRoslynComponent>true</IsRoslynComponent>
-        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <IncludeBuildOutput>true</IncludeBuildOutput>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
         <!-- Debug generated output while developing -->
@@ -15,7 +15,6 @@
         <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
 
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-
         <RootNamespace>CoffeeBeanery.GraphQL.Core.Mapping.Generators</RootNamespace>
     </PropertyGroup>
 

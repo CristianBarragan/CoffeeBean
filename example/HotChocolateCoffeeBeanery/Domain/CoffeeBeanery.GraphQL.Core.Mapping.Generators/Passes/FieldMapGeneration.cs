@@ -93,7 +93,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                         SourceName = modelProp.Name,
                         DestinationEntity = entityType.Name,
                         DestinationName = entityProp.Name,
-                        IsGenerated = true
+                        IsGenerated = true,
+                        PropertyType = modelProp.Type
                     });
                 }
 

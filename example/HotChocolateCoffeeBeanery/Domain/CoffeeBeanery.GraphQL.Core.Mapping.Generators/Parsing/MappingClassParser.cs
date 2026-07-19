@@ -118,15 +118,47 @@ internal static class MappingClassParser
             }
         }
         
-        info.IsComposite = info.ModelToEntityList.Count > 1
-                           || info.Definition.Entities.Count > 1;
-        
+        info.IsComposite =
+            info.Definition.Entities
+                .Where(e => e.EntityType != null)
+                .Select(e => e.EntityType)
+                .Distinct(SymbolEqualityComparer.Default)
+                .Count() > 1;
+
         info.EntityType ??=
             info.Definition.Entities
                 .FirstOrDefault(k => k.IsPrimary)
                 ?.EntityType;
+        
+        ResolvePropertyTypes(info);
 
         return info;
+    }
+    
+    private static void ResolvePropertyTypes(MappingClassInfo info)
+    {
+        if (info.ModelType == null)
+            return;
+
+        var modelProperties =
+            info.ModelType
+                .GetMembers()
+                .OfType<IPropertySymbol>()
+                .ToDictionary(p => p.Name, StringComparer.Ordinal);
+
+        foreach (var field in info.FieldMaps)
+        {
+            if (field.PropertyType != null)
+                continue; // already resolved elsewhere (e.g. FieldMapGeneration)
+
+            if (string.IsNullOrWhiteSpace(field.SourceName))
+                continue;
+
+            if (modelProperties.TryGetValue(field.SourceName, out var property))
+            {
+                field.PropertyType = property.Type;
+            }
+        }
     }
     
     private static void ParsePrimaryKeys(
@@ -258,10 +290,7 @@ internal static class MappingClassParser
                 continue;
 
 
-            var entity = new EntityKeyInfo
-            {
-                EntityType = null!
-            };
+            var entity = new EntityDefinitionInfo();
 
 
             foreach (var assignment in initializer.Expressions
@@ -427,7 +456,10 @@ internal static class MappingClassParser
             foreach (var assignment in initializer.Expressions
                          .OfType<AssignmentExpressionSyntax>())
             {
-                var name = (assignment.Left as IdentifierNameSyntax)?.Identifier.Text;
+                var identifier = (assignment.Left as IdentifierNameSyntax)?.Identifier;
+                var name = identifier.Value.Text;
+                // field.PropertyType = identifier.GetType().GetType();
+                
                 switch (name)
                 {
                     case "Source":

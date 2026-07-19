@@ -34,17 +34,24 @@ public class EntityGraphChildrenInference
                 continue;
 
 
+            var fieldName =
+                char.ToLowerInvariant(childMapping.ModelType.Name[0])
+                + childMapping.ModelType.Name.Substring(1);
+
+
             if (info.ModelChildren.Any(x =>
                     string.Equals(
-                        x.To,
-                        childMapping.ModelType.Name,
+                        x.NavigationName,
+                        fieldName,
                         StringComparison.OrdinalIgnoreCase)))
                 continue;
 
 
             info.ModelChildren.Add(new ModelChildInfo
             {
-                To = childMapping.ModelType.Name
+                From = info.ModelType.Name,
+                To = childMapping.ModelType.Name,
+                NavigationName = fieldName
             });
         }
     }

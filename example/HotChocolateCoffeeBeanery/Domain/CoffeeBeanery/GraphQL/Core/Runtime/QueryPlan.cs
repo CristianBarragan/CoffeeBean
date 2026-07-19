@@ -4,31 +4,57 @@ namespace CoffeeBeanery.GraphQL.Core.Runtime;
 
 public enum JoinKind : byte { Left, Inner }
 
+public enum JoinSourceKind : byte { Table, GraphVertex }
+
 public readonly struct JoinSpec
 {
+    public readonly JoinSourceKind SourceKind;
     public readonly ushort FromEntityId;
     public readonly ushort FromStorageEntityId;
+    public readonly ushort FromColumnId;
+    public readonly string? FromGraphAlias;
+    public readonly string? FromRawColumnName;
     public readonly ushort ToEntityId;
     public readonly ushort ToStorageEntityId;
-    public readonly ushort FromColumnId;
     public readonly ushort ToColumnId;
     public readonly JoinKind Kind;
     public readonly string ToOutputAlias;
-
+    
     public JoinSpec(
         ushort fromEntityId, ushort fromStorageEntityId,
         ushort toEntityId,   ushort toStorageEntityId,
         ushort fromColumnId, ushort toColumnId,
         JoinKind kind, string toOutputAlias)
     {
-        FromEntityId        = fromEntityId;
+        SourceKind = JoinSourceKind.Table;
+        FromEntityId = fromEntityId;
         FromStorageEntityId = fromStorageEntityId;
-        ToEntityId          = toEntityId;
-        ToStorageEntityId   = toStorageEntityId;
-        FromColumnId        = fromColumnId;
-        ToColumnId          = toColumnId;
-        Kind                = kind;
-        ToOutputAlias       = toOutputAlias;
+        FromColumnId = fromColumnId;
+        FromGraphAlias = null;
+        FromRawColumnName = null;
+        ToEntityId = toEntityId;
+        ToStorageEntityId = toStorageEntityId;
+        ToColumnId = toColumnId;
+        Kind = kind;
+        ToOutputAlias = toOutputAlias;
+    }
+
+    public JoinSpec(
+        ushort fromEntityId, string fromGraphAlias, string fromRawColumnName,
+        ushort toEntityId, ushort toStorageEntityId, ushort toColumnId,
+        JoinKind kind, string toOutputAlias)
+    {
+        SourceKind = JoinSourceKind.GraphVertex;
+        FromEntityId = fromEntityId;
+        FromStorageEntityId = 0;
+        FromColumnId = 0;
+        FromGraphAlias = fromGraphAlias;
+        FromRawColumnName = fromRawColumnName;
+        ToEntityId = toEntityId;
+        ToStorageEntityId = toStorageEntityId;
+        ToColumnId = toColumnId;
+        Kind = kind;
+        ToOutputAlias = toOutputAlias;
     }
 }
 
@@ -73,6 +99,38 @@ public readonly struct GraphJoinSpec
     }
 }
 
+/// <summary>
+/// Joins a real stored table against a column that lives on a graph subquery's
+/// output (e.g. CustomerCustomerEdge_graph's InnerCustomerCustomerCustomerKey) —
+/// which has no ColumnId since it isn't a stored column on any entity. Mirrors
+/// JoinSpec, but the "from" side is addressed by a literal alias + raw column
+/// name instead of a typed (StorageEntityId, ColumnId) pair.
+/// </summary>
+public readonly struct GraphResultJoinSpec
+{
+    public readonly string FromAlias;
+    public readonly string FromColumnName;
+    public readonly ushort ToEntityId;
+    public readonly ushort ToStorageEntityId;
+    public readonly ushort ToColumnId;
+    public readonly JoinKind Kind;
+    public readonly string ToOutputAlias;
+
+    public GraphResultJoinSpec(
+        string fromAlias, string fromColumnName,
+        ushort toEntityId, ushort toStorageEntityId, ushort toColumnId,
+        JoinKind kind, string toOutputAlias)
+    {
+        FromAlias = fromAlias;
+        FromColumnName = fromColumnName;
+        ToEntityId = toEntityId;
+        ToStorageEntityId = toStorageEntityId;
+        ToColumnId = toColumnId;
+        Kind = kind;
+        ToOutputAlias = toOutputAlias;
+    }
+}
+
 public readonly struct GraphMergeSpec
 {
     public readonly string GraphName;
@@ -108,21 +166,41 @@ public readonly struct GraphMergeSpec
     }
 }
 
+public enum ColumnKind : byte { Table, GraphSynthetic }
+
 public readonly struct ColumnSpec
 {
+    public readonly ColumnKind Kind;
     public readonly ushort EntityId;
     public readonly ushort StorageEntityId;
     public readonly ushort ColumnId;
+    public readonly string? RawColumnName;
     public readonly string EntityOutputAlias;
     public readonly string ColumnOutputAlias;
-
+    
     public ColumnSpec(
         ushort entityId, ushort storageEntityId, ushort columnId,
         string entityOutputAlias, string columnOutputAlias)
     {
-        EntityId          = entityId;
-        StorageEntityId   = storageEntityId;
-        ColumnId          = columnId;
+        Kind = ColumnKind.Table;
+        EntityId = entityId;
+        StorageEntityId = storageEntityId;
+        ColumnId = columnId;
+        RawColumnName = null;
+        EntityOutputAlias = entityOutputAlias;
+        ColumnOutputAlias = columnOutputAlias;
+    }
+
+    // new constructor for graph-synthetic columns
+    public ColumnSpec(
+        ushort entityId, string rawColumnName,
+        string entityOutputAlias, string columnOutputAlias)
+    {
+        Kind = ColumnKind.GraphSynthetic;
+        EntityId = entityId;
+        StorageEntityId = 0;
+        ColumnId = 0;
+        RawColumnName = rawColumnName;
         EntityOutputAlias = entityOutputAlias;
         ColumnOutputAlias = columnOutputAlias;
     }
@@ -136,11 +214,13 @@ public readonly struct QueryPlan
     public readonly ImmutableArray<ColumnSpec> Columns;
     public readonly ImmutableArray<JoinSpec> Joins;
     public readonly ImmutableArray<GraphJoinSpec> GraphJoins;
+    public readonly ImmutableArray<GraphResultJoinSpec> GraphResultJoins;
 
     public QueryPlan(
         ushort rootEntityId, ushort rootStorageEntityId, string rootOutputAlias,
         ImmutableArray<ColumnSpec> columns, ImmutableArray<JoinSpec> joins,
-        ImmutableArray<GraphJoinSpec> graphJoins)
+        ImmutableArray<GraphJoinSpec> graphJoins,
+        ImmutableArray<GraphResultJoinSpec> graphResultJoins)
     {
         RootEntityId        = rootEntityId;
         RootStorageEntityId = rootStorageEntityId;
@@ -148,6 +228,7 @@ public readonly struct QueryPlan
         Columns             = columns;
         Joins               = joins;
         GraphJoins          = graphJoins;
+        GraphResultJoins    = graphResultJoins;
     }
 
     /// <summary>
@@ -195,6 +276,8 @@ public ref struct QueryPlanBuilder
     private int _joinCount;
     private InlineArray32<GraphJoinSpec> _graphJoins;
     private int _graphJoinCount;
+    private InlineArray32<GraphResultJoinSpec> _graphResultJoins;
+    private int _graphResultJoinCount;
 
     public void SetRoot(ushort entityId, ushort storageEntityId, string outputAlias)
     {
@@ -232,6 +315,17 @@ public ref struct QueryPlanBuilder
         _columns[_columnCount++] = new ColumnSpec(
             entityId, storageEntityId, columnId, entityOutputAlias, finalAlias);
     }
+    
+    public void AddGraphVertexJoin(
+        ushort fromEntityId, string fromGraphAlias, string fromRawColumnName,
+        ushort toEntityId, ushort toStorageEntityId, ushort toColumnId,
+        JoinKind kind, string toOutputAlias)
+    {
+        _joins[_joinCount++] = new JoinSpec(
+            fromEntityId, fromGraphAlias, fromRawColumnName,
+            toEntityId, toStorageEntityId, toColumnId,
+            kind, toOutputAlias);
+    }
 
     /// <summary>
     // In QueryPlanBuilder.AddColumn (join segment path)
@@ -248,6 +342,12 @@ public ref struct QueryPlanBuilder
 
         _columns[_columnCount++] = new ColumnSpec(
             entityId, storageEntityId, columnId, entityOutputAlias, baseName);
+    }
+    
+    public void AddGraphColumn(
+        ushort entityId, string joinAlias, string rawColumnName, string columnOutputAlias)
+    {
+        _columns[_columnCount++] = new ColumnSpec(entityId, rawColumnName, joinAlias, columnOutputAlias);
     }
 
     public void AddJoin(
@@ -287,6 +387,24 @@ public ref struct QueryPlanBuilder
             joinAlias);
     }
 
+    /// <summary>
+    /// Joins a real stored table against a graph subquery's synthetic output
+    /// column (e.g. CustomerCustomerEdge_graph.InnerCustomerCustomerCustomerKey
+    /// -> Customer.CustomerKey), so scalar columns on that related entity
+    /// (e.g. Customer.FullName under alias "InnerCustomer") can actually be
+    /// selected rather than referencing a table alias that was never joined in.
+    /// </summary>
+    public void AddGraphResultJoin(
+        string fromAlias, string fromColumnName,
+        ushort toEntityId, ushort toStorageEntityId, ushort toColumnId,
+        JoinKind kind, string toOutputAlias)
+    {
+        _graphResultJoins[_graphResultJoinCount++] = new GraphResultJoinSpec(
+            fromAlias, fromColumnName,
+            toEntityId, toStorageEntityId, toColumnId,
+            kind, toOutputAlias);
+    }
+
     public QueryPlan Build()
     {
         var cols = ImmutableArray.CreateBuilder<ColumnSpec>(_columnCount);
@@ -298,12 +416,16 @@ public ref struct QueryPlanBuilder
         var graphJoins = ImmutableArray.CreateBuilder<GraphJoinSpec>(_graphJoinCount);
         for (var i = 0; i < _graphJoinCount; i++) graphJoins.Add(_graphJoins[i]);
 
+        var graphResultJoins = ImmutableArray.CreateBuilder<GraphResultJoinSpec>(_graphResultJoinCount);
+        for (var i = 0; i < _graphResultJoinCount; i++) graphResultJoins.Add(_graphResultJoins[i]);
+
         return new QueryPlan(
             _rootEntityId, _rootStorageEntityId,
             _rootOutputAlias ?? string.Empty,
             cols.MoveToImmutable(),
             joins.MoveToImmutable(),
-            graphJoins.MoveToImmutable());
+            graphJoins.MoveToImmutable(),
+            graphResultJoins.MoveToImmutable());
     }
 }
 

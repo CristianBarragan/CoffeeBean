@@ -5,7 +5,7 @@
     <version>1.0.0</version>
     <authors>CoffeeBeanery.GraphQL.Core.Mapping.Generators</authors>
     <description>Package Description</description>
-    <repository type="git" commit="0e4aabba975716af64ff3364ab304f559b2a7911" />
+    <repository type="git" commit="16a115de6db696a320164e4f3311768863d5724d" />
     <dependencies>
       <group targetFramework=".NETStandard2.0">
         <dependency id="Newtonsoft.Json" version="13.0.3" exclude="Build,Analyzers" />
@@ -13,6 +13,7 @@
     </dependencies>
   </metadata>
   <files>
+    <file src="C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\bin\Debug\netstandard2.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.dll" target="lib\netstandard2.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.dll" />
     <file src="C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\bin\Debug\netstandard2.0\CoffeeBeanery.GraphQL.Core.Mapping.Generators.dll" target="analyzers\dotnet\cs\CoffeeBeanery.GraphQL.Core.Mapping.Generators.dll" />
   </files>
 </package>

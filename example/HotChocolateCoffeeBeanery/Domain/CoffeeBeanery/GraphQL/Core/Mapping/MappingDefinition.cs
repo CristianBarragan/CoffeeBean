@@ -6,8 +6,6 @@ public sealed record MappingDefinition
 
     public string? Schema { get; init; }
 
-    public bool IsGraph { get; init; }
-
     public IReadOnlyList<EntityDefinition> Entities { get; init; } = [];
 
     public IReadOnlyList<FieldDefinition> Fields { get; init; } = [];
@@ -15,6 +13,8 @@ public sealed record MappingDefinition
     public IReadOnlyList<PrimaryKeyDefinition> PrimaryKey { get; init; } = [];
 
     public IReadOnlyList<UpsertKeyDefinition> UpsertKeys { get; init; } = [];
+    
+    public MutationDefinition? Mutation { get; init; }
 
     public GraphDefinition? Graph { get; init; }
 
@@ -71,6 +71,57 @@ public sealed record PrimaryKeyDefinition
     public required string ModelKey { get; init; }
     
     public required string ColumnKey { get; init; }
+}
+
+public sealed record MutationDefinition
+{
+    public IReadOnlyList<MutationEntityDefinition> Entities { get; init; }
+        = [];
+
+    public IReadOnlyList<GraphMutationDefinition> Graphs { get; init; }
+        = [];
+}
+
+public sealed record MutationEntityDefinition
+{
+    public required Type Entity { get; init; }
+
+    public required string Alias { get; init; }
+
+    public MutationOperation Operation { get; init; } =
+        MutationOperation.Upsert;
+
+    public IReadOnlyList<MutationFieldDefinition> Fields { get; init; }
+        = [];
+}
+
+public sealed record MutationFieldDefinition
+{
+    public required string ModelField { get; init; }
+
+    public required string Column { get; init; }
+}
+
+public sealed record GraphMutationDefinition
+{
+    public required string EdgeLabel { get; init; }
+
+    public required string FromAlias { get; init; }
+
+    public required string ToAlias { get; init; }
+
+    public string? EdgeKey { get; init; }
+}
+
+public enum MutationOperation
+{
+    Insert,
+
+    Update,
+
+    Upsert,
+
+    Ignore
 }
 
 

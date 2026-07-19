@@ -114,7 +114,7 @@ public class ProcessService<TModel, TResult> : IProcessService<TResult>
                     var optimized = MutationOptimizer.Optimize(mutationIr);
                     if (!MutationOptimizer.HasWork(optimized)) continue;
 
-                    _plannerRegistry.BuildMutation(rootEntityId, optimized, ref mutationPlanBuilder);
+                    MutationRuntimePlanner.Build(rootEntityId, optimized, ref mutationPlanBuilder);
 
                     foreach (var contributor in _mutationContributors)
                         contributor.Contribute(rootEntityId, optimized, ref mutationPlanBuilder);

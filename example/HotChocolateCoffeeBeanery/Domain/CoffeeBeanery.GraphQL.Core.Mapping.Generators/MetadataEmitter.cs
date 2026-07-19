@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using CoffeeBeanery.GraphQL.Core.Mapping.Generators;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
@@ -115,10 +116,6 @@ internal static class MetadataEmitter
 
         EmitModelIdConstants(sb, models);
 
-        EmitStorageEntityIdConstants(
-            sb,
-            entityTypes);
-
         EmitGeneratedEntityMetaProvider(sb);
 
         EmitGeneratedPlannerRegistry(sb);
@@ -168,7 +165,7 @@ internal static class MetadataEmitter
 
                 var columns = IdEmitter.GetScalarProperties(
                     entity.EntityType);
-
+                
                 var index = columns.FindIndex(c =>
                     string.Equals(
                         c.Name,
@@ -472,37 +469,37 @@ private static void EmitModelIdConstants(
     }
 
 
-    private static void EmitStorageEntityIdConstants(
-        StringBuilder sb,
-        List<Microsoft.CodeAnalysis.INamedTypeSymbol> entityTypes)
-    {
-        sb.AppendLine(
-            "namespace CoffeeBeanery.GraphQL.Core.Runtime");
-
-        sb.AppendLine("{");
-
-        sb.AppendLine(
-            "    public static class StorageEntityId");
-
-        sb.AppendLine("    {");
-
-        for (int i = 0; i < entityTypes.Count; i++)
-        {
-            sb.AppendLine(
-                $"        public const ushort {entityTypes[i].Name} = {i};");
-        }
-
-        sb.AppendLine();
-
-        sb.AppendLine(
-            $"        public const ushort Count = {entityTypes.Count};");
-
-        sb.AppendLine("    }");
-
-        sb.AppendLine("}");
-
-        sb.AppendLine();
-    }
+    // private static void EmitStorageEntityIdConstants(
+    //     StringBuilder sb,
+    //     List<Microsoft.CodeAnalysis.INamedTypeSymbol> entityTypes)
+    // {
+    //     sb.AppendLine(
+    //         "namespace CoffeeBeanery.GraphQL.Core.Runtime");
+    //
+    //     sb.AppendLine("{");
+    //
+    //     sb.AppendLine(
+    //         "    public static class StorageEntityId");
+    //
+    //     sb.AppendLine("    {");
+    //
+    //     for (int i = 0; i < entityTypes.Count; i++)
+    //     {
+    //         sb.AppendLine(
+    //             $"        public const ushort {entityTypes[i].Name} = {i};");
+    //     }
+    //
+    //     sb.AppendLine();
+    //
+    //     sb.AppendLine(
+    //         $"        public const ushort Count = {entityTypes.Count};");
+    //
+    //     sb.AppendLine("    }");
+    //
+    //     sb.AppendLine("}");
+    //
+    //     sb.AppendLine();
+    // }
 
 
 // ---------------------------------------------------------------
@@ -1111,51 +1108,24 @@ private static void EmitCteResolutionsArray(
 // GeneratedPlannerRegistry
 // ---------------------------------------------------------------
 
-    private static void EmitGeneratedPlannerRegistry(
-        StringBuilder sb)
+    private static void EmitGeneratedPlannerRegistry(StringBuilder sb)
     {
-        sb.AppendLine(
-            "namespace CoffeeBeanery.GraphQL.Core.Runtime");
-
+        sb.AppendLine("namespace CoffeeBeanery.GraphQL.Core.Runtime");
         sb.AppendLine("{");
-
-        sb.AppendLine(
-            "    public sealed class GeneratedPlannerRegistry : global::CoffeeBeanery.GraphQL.Core.Runtime.IPlannerRegistry");
-
+        sb.AppendLine("    public sealed class GeneratedPlannerRegistry : global::CoffeeBeanery.GraphQL.Core.Runtime.IPlannerRegistry");
         sb.AppendLine("    {");
-
-        sb.AppendLine(
-            "        public void Build(ushort entityId, in global::CoffeeBeanery.GraphQL.Core.Runtime.SelectionIR selection, ref global::CoffeeBeanery.GraphQL.Core.Runtime.QueryPlanBuilder builder)");
-
-        sb.AppendLine(
-            "            => PlannerRegistry.Build(entityId, selection, ref builder);");
-
+        sb.AppendLine("        public void Build(ushort entityId, in global::CoffeeBeanery.GraphQL.Core.Runtime.SelectionIR selection, ref global::CoffeeBeanery.GraphQL.Core.Runtime.QueryPlanBuilder builder)");
+        sb.AppendLine("            => GeneratedPlanners.PlannerRegistry.Build(entityId, selection, ref builder);");
         sb.AppendLine();
-
-        sb.AppendLine(
-            "        public void BuildMutation(ushort entityId, in global::CoffeeBeanery.GraphQL.Core.Runtime.MutationIR mutation, ref global::CoffeeBeanery.GraphQL.Core.Runtime.MutationPlanBuilder builder)");
-
-        sb.AppendLine(
-            "            => PlannerRegistry.BuildMutation(entityId, mutation, ref builder);");
-
+        sb.AppendLine("        public void BuildMutation(ushort entityId, in global::CoffeeBeanery.GraphQL.Core.Runtime.MutationIR mutation, ref global::CoffeeBeanery.GraphQL.Core.Runtime.MutationPlanBuilder builder)");
+        sb.AppendLine("            => global::CoffeeBeanery.GraphQL.Core.Runtime.MutationRuntimePlanner.Build(entityId, mutation, ref builder);");
         sb.AppendLine();
-
-        sb.AppendLine(
-            "        public bool IsValidEntity(ushort entityId)");
-
-        sb.AppendLine(
-            "            => PlannerRegistry.IsValidEntity(entityId);");
-
+        sb.AppendLine("        public bool IsValidEntity(ushort entityId)");
+        sb.AppendLine("            => GeneratedPlanners.PlannerRegistry.IsValidEntity(entityId);");
         sb.AppendLine();
-
-        sb.AppendLine(
-            "        public string GetEntityName(ushort entityId)");
-
-        sb.AppendLine(
-            "            => PlannerRegistry.GetEntityName(entityId);");
-
+        sb.AppendLine("        public string GetEntityName(ushort entityId)");
+        sb.AppendLine("            => GeneratedPlanners.PlannerRegistry.GetEntityName(entityId);");
         sb.AppendLine("    }");
-
         sb.AppendLine("}");
     }
 }

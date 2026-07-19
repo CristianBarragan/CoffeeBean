@@ -15,101 +15,165 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
     [Generator(LanguageNames.CSharp)]
     public sealed class MappingNodeGenerator : IIncrementalGenerator
     {
-        public void Initialize(IncrementalGeneratorInitializationContext context)
+        public void Initialize(
+            IncrementalGeneratorInitializationContext context)
         {
-            var isMappingRoot = context.AnalyzerConfigOptionsProvider
-                .Select(static (opts, _) =>
-                    opts.GlobalOptions.TryGetValue("build_property.IsMappingRoot", out var v)
-                    && v?.Trim().ToLowerInvariant() == "true");
+            var mappingClasses =
+                context.SyntaxProvider
+                    .CreateSyntaxProvider(
+                        predicate: static (node, _) =>
+                            node is ClassDeclarationSyntax,
 
-            var mappingClasses = context.SyntaxProvider
-                .CreateSyntaxProvider(
-                    predicate: static (node, _) => node is ClassDeclarationSyntax,
-                    transform: static (ctx, ct) => TryGetMappingClass(ctx, ct))
-                .Where(static info => info is not null)
-                .Select(static (info, _) => info!);
+                        transform: static (ctx, ct) =>
+                            TryGetMappingClass(ctx, ct))
 
-            var rawAllMappings = mappingClasses.Collect();
+                    .Where(static info => info is not null)
+                    .Select(static (info, _) => info!);
 
-            var rootModelTypes = context.CompilationProvider
-                .Select(static (compilation, ct) => WrapperRootModelResolver.Resolve(compilation, ct));
+            var rawAllMappings =
+                mappingClasses.Collect();
 
-            var entityGraphs = context.CompilationProvider
-                .Select(static (compilation, ct) => FluentEntityNavigationConvention.EntityForeignKeyGraph.Build(compilation, ct));
 
-            var allMappings = rawAllMappings
-                .Combine(entityGraphs)
-                .Select(static (pair, _) =>
-                {
-                    var (mappings, entityGraph) = pair;
+            var rootModelTypes =
+                context.CompilationProvider
+                    .Select(static (compilation, ct) =>
+                        WrapperRootModelResolver.Resolve(
+                            compilation,
+                            ct));
 
-                    foreach (var info in mappings)
+
+            var entityGraphs =
+                context.CompilationProvider
+                    .Select(static (compilation, ct) =>
+                        FluentEntityNavigationConvention
+                            .EntityForeignKeyGraph
+                            .Build(
+                                compilation,
+                                ct));
+
+
+            var allMappings =
+                rawAllMappings
+                    .Combine(entityGraphs)
+                    .Select(static (pair, ct) =>
                     {
-                        ModelChildrenInference.Apply(info, mappings);
-                        CompositeChildAttachmentConvention.Apply(info, mappings);
-                        EntityGraphChildrenInference.Apply(
-                            info,
-                            mappings,
-                            entityGraph);
-                    }
+                        var (mappings, entityGraph) = pair;
 
-                    return mappings;
+                        foreach (var info in mappings)
+                        {
+                            ModelChildrenInference.Apply(
+                                info,
+                                mappings);
+
+                            CompositeChildAttachmentConvention.Apply(
+                                info,
+                                mappings);
+
+                            EntityGraphChildrenInference.Apply(
+                                info,
+                                mappings,
+                                entityGraph);
+                        }
+
+                        return mappings;
+                    });
+
+
+            var perClassInput =
+                mappingClasses
+                    .Combine(allMappings)
+                    .Combine(rootModelTypes)
+                    .Combine(entityGraphs);
+
+            context.RegisterSourceOutput(
+                perClassInput,
+                static (spc, data) =>
+                {
+                    var (((info, all), rootModelTypes), entityGraph) =
+                        data;
+
+                    EmitClass(
+                        spc,
+                        info,
+                        all,
+                        rootModelTypes,
+                        entityGraph);
                 });
 
-            // ----------------------------------------------------------------
-            // Per-class registration — one file per mapping class, runs in every project.
-            // ----------------------------------------------------------------
-            var perClassInput = mappingClasses
-                .Combine(allMappings)
-                .Combine(rootModelTypes)
-                .Combine(entityGraphs);
 
-            context.RegisterSourceOutput(perClassInput, static (spc, data) =>
+            var globalInput =
+                allMappings
+                    .Combine(rootModelTypes)
+                    .Combine(entityGraphs);
+
+            context.RegisterPostInitializationOutput(static ctx =>
             {
-                var (((info, all), rootModelTypes), entityGraph) = data;
-                EmitClass(spc, info, all, rootModelTypes, entityGraph);
+                ctx.AddSource(
+                    "GeneratorLoaded.g.cs",
+                    """
+                    // <auto-generated/>
+
+                    namespace CoffeeBeanery.GraphQL.Core.Runtime;
+
+                    public static class GeneratorLoaded
+                    {
+                        public const bool Value = true;
+                    }
+                    """);
             });
 
-            // ----------------------------------------------------------------
-            // Global emitters — only the IsMappingRoot project emits these,
-            // and only ONCE per compilation (not once per mapping class).
-            // ----------------------------------------------------------------
-            var globalInput = allMappings
-                .Combine(rootModelTypes)
-                .Combine(entityGraphs)
-                .Combine(isMappingRoot);
+            context.RegisterSourceOutput(
+                globalInput,
+                static (spc, data) =>
+                {
+                    var ((all, rootModelTypes), entityGraph) =
+                        data;
 
-            context.RegisterSourceOutput(globalInput, static (spc, data) =>
-            {
-                var (((all, rootModelTypes), entityGraphs), isRoot) = data;
 
-                if (!isRoot || all.IsEmpty)
-                    return;
+                    if (all.IsEmpty)
+                        return;
 
-                EmitGlobal(spc, all, rootModelTypes, entityGraphs);
-            });
+
+                    EmitGlobal(
+                        spc,
+                        all,
+                        rootModelTypes,
+                        entityGraph);
+                });
         }
+
 
         private static MappingClassInfo? TryGetMappingClass(
             GeneratorSyntaxContext ctx,
             CancellationToken ct)
         {
-            var classDecl = (ClassDeclarationSyntax)ctx.Node;
+            var classDecl =
+                (ClassDeclarationSyntax)ctx.Node;
+
 
             var symbol =
-                ctx.SemanticModel.GetDeclaredSymbol(classDecl, ct)
-                    as INamedTypeSymbol;
+                ctx.SemanticModel.GetDeclaredSymbol(
+                    classDecl,
+                    ct)
+                as INamedTypeSymbol;
 
-            if (symbol is null || symbol.IsAbstract)
+
+            if (symbol is null ||
+                symbol.IsAbstract)
+            {
                 return null;
+            }
+
 
             var mappingInterface =
                 ctx.SemanticModel.Compilation
                     .GetTypeByMetadataName(
                         "CoffeeBeanery.GraphQL.Core.Mapping.IMappingDefinition");
 
+
             if (mappingInterface is null)
                 return null;
+
 
             if (!symbol.AllInterfaces.Contains(
                     mappingInterface,
@@ -118,13 +182,14 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 return null;
             }
 
+
             return MappingClassParser.Parse(
                 symbol,
                 ctx.SemanticModel,
                 ct);
         }
-
-        private static void EmitClass(
+        
+                private static void EmitClass(
             SourceProductionContext spc,
             MappingClassInfo info,
             ImmutableArray<MappingClassInfo> allMappings,
@@ -133,115 +198,96 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
         {
             try
             {
-                
-                var modelProperties = info.ModelType.GetMembers().OfType<IPropertySymbol>()
-                    .Where(p => p.GetMethod is not null && !p.IsStatic)
-                    .ToList();
-                    
-                foreach (var prop in modelProperties)
-                {
-                    spc.ReportDiagnostic(Diagnostic.Create(
-                        MappingDiagnostics.EntityGraphDebug,
-                        Location.None,
-                        $"{info.ModelType.Name}.{prop.Name} type={prop.Type.ToDisplayString()}"
-                    ));
-
-                    var relatedModelType = EntityNavigationConvention.ResolveElementType(prop.Type);
-
-                    spc.ReportDiagnostic(Diagnostic.Create(
-                        MappingDiagnostics.EntityGraphDebug,
-                        Location.None,
-                        $"{info.ModelType.Name}.{prop.Name} resolved={relatedModelType?.ToDisplayString() ?? "null"}"
-                    ));
-                }
-                
-                foreach (var d in info.Diagnostics)
-                    spc.ReportDiagnostic(d);
-
-                if (info.Diagnostics.Any(x => x.Severity == DiagnosticSeverity.Error))
+                if (info.ModelType == null)
                     return;
 
-                FieldMapGeneration.Apply(info, spc);
 
-                var rootEntityTypes = ResolveRootEntityTypes(allMappings, rootModelTypes);
+                foreach (var diagnostic in info.Diagnostics)
+                {
+                    spc.ReportDiagnostic(diagnostic);
+                }
 
-                var navResult = EntityNavigationConvention.Resolve(info, allMappings, entityGraph, rootEntityTypes);
-                
-                spc.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "CBM001",
-                        "Debug",
-                        "{0}",
-                        "Mapping",
-                        DiagnosticSeverity.Warning,
-                        true),
-                    Location.None,
-                    $"Mapping={info.ModelType.Name}, SecondaryLinks={string.Join(",", info.Definition.Entities
-                        .Where(k => !k.IsPrimary && k.EntityType != null && k.AliasProperty != null).Select(x => x.FromColumn))}"
-                ));
-                
-                var childLinks = PlannerEmitter.ComputeChildLinks(info, allMappings, navResult, entityGraph);
-                
-                spc.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "CBM001",
-                        "Debug",
-                        "{0}",
-                        "Mapping",
-                        DiagnosticSeverity.Info,
-                        true),
-                    Location.None,
-                    $"Mapping={info.ModelType.Name}, ChildLinks={string.Join(",", childLinks.Select(x => x.NavigationName))}"
-                ));
-                
-                spc.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "CBM001",
-                        "Debug",
-                        "{0}",
-                        "Mapping",
-                        DiagnosticSeverity.Info,
-                        true),
-                    Location.None,
-                    $"Mapping={info.ModelType.Name}, EntityGraphEdges={entityGraph.Count}"
-                ));
 
-                spc.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "CBM001",
-                        "Debug",
-                        "{0}",
-                        "Mapping",
-                        DiagnosticSeverity.Info,
-                        true),
-                    Location.None,
-                    $"Mapping={info.ModelType.Name}, Navs={string.Join(",", navResult.Navigations.Select(x => x.NavigationName))}"
-                ));
-                
+                if (info.Diagnostics.Any(
+                        x => x.Severity == DiagnosticSeverity.Error))
+                {
+                    return;
+                }
+
+
+                FieldMapGeneration.Apply(
+                    info,
+                    spc);
+
+
+                var rootEntityTypes =
+                    ResolveRootEntityTypes(
+                        allMappings,
+                        rootModelTypes);
+
+
+                var navResult =
+                    EntityNavigationConvention.Resolve(
+                        info,
+                        allMappings,
+                        entityGraph,
+                        rootEntityTypes);
+
+
+                var navResults =
+                    new Dictionary<string, NavigationResolutionResult?>(
+                        StringComparer.Ordinal);
+
+
+                foreach (var model in allMappings)
+                {
+                    if (model.ModelType == null)
+                        continue;
+
+
+                    navResults[model.ModelType.Name] =
+                        EntityNavigationConvention.Resolve(
+                            model,
+                            allMappings,
+                            entityGraph,
+                            rootEntityTypes);
+                }
+
+                var childLinks =
+                    PlannerEmitter.ComputeChildLinks(
+                        info,
+                        allMappings,
+                        navResults,
+                        entityGraph);
+
+                spc.ReportDiagnostic(
+                    Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            "CBM001",
+                            "Debug",
+                            "{0}",
+                            "Mapping",
+                            DiagnosticSeverity.Info,
+                            true),
+                        Location.None,
+                        $"Mapping={info.ModelType.Name}, " +
+                        $"ChildLinks={string.Join(",",
+                            childLinks.Select(
+                                x => x.ChildModelName))}"));
+
 
                 if (navResult.HasBlockingAmbiguity)
                     return;
-
             }
             catch (Exception ex)
             {
-                // Surface the real crash as a compiler error instead of silence
-                spc.ReportDiagnostic(Diagnostic.Create(
-                    MappingDiagnostics.GeneratorCrashDescriptor,
-                    Location.None,
-                    ex.GetType().Name,
-                    ex.Message,
-                    ex.StackTrace?.Replace("\r\n", " ").Replace("\n", " ") ?? ""));
-
-                // Also emit a poisoned file so downstream "type not found" errors
-                // don't mask the real problem
-                spc.AddSource("GeneratorCrash.g.cs", $@"
-                // <auto-generated/>
-                // GENERATOR CRASHED — see CBM000 diagnostic for details
-                #error CBM000: Source generator crashed: {ex.GetType().Name}: {ex.Message}
-                ");
+                ReportCrash(
+                    spc,
+                    ex);
             }
         }
+
+
 
         private static void EmitGlobal(
             SourceProductionContext spc,
@@ -251,62 +297,128 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
         {
             try
             {
-                var rootEntityTypes = ResolveRootEntityTypes(allMappings, rootModelTypes);
+                spc.AddSource(
+                    "GeneratorHeartbeat.g.cs",
+                    """
+                    // <auto-generated/>
 
-                spc.AddSource("Materializers.g.cs", MaterializerEmitter.Emit(allMappings, rootEntityTypes, entityGraph));
+                    namespace CoffeeBeanery.GraphQL.Core.Runtime;
 
-                spc.AddSource("GeneratedIds.g.cs", IdEmitter.Emit(allMappings, spc));
+                    public static class GeneratorHeartbeat
+                    {
+                        public const bool Running = true;
+                    }
+                    """);
 
-                spc.AddSource("EntityMeta.g.cs", MetadataEmitter.Emit(allMappings, rootEntityTypes, entityGraph));
+                if (allMappings.IsEmpty)
+                    return;
 
-                var source = AdapterEmitter.Emit(allMappings, rootEntityTypes, entityGraph);
-                spc.AddSource("AdapterTables.g.cs", source);
+                var resolvedMappings = allMappings
+                    .Select(info =>
+                    {
+                        var copy = info.Clone();
+                        FieldMapGeneration.ApplyWithoutDiagnostics(copy);
+                        return copy;
+                    })
+                    .ToImmutableArray();
+
+                var rootEntityTypes =
+                    ResolveRootEntityTypes(resolvedMappings, rootModelTypes);
+
+                foreach (var model in resolvedMappings)
+                {
+                    if (model.ModelType == null)
+                        continue;
+
+                    EntityNavigationConvention.Resolve(
+                        model, resolvedMappings, entityGraph, rootEntityTypes);
+                }
+
+                spc.AddSource("GeneratedIds.g.cs", IdEmitter.Emit(resolvedMappings));
+
+                spc.AddSource("EntityMeta.g.cs",
+                    MetadataEmitter.Emit(resolvedMappings, rootEntityTypes, entityGraph));
+
+                spc.AddSource("MutationMetadataRegistry.g.cs",
+                    MutationMetadataEmitter.Emit(resolvedMappings));
+
+                spc.AddSource("Materializers.g.cs",
+                    MaterializerEmitter.Emit(resolvedMappings));
 
                 spc.AddSource("Planners.g.cs",
-                    PlannerEmitter.Emit(allMappings, rootEntityTypes, entityGraph));
-                
-                spc.ReportDiagnostic(Diagnostic.Create(
-                    MappingDiagnostics.EntityGraphDebug,
-                    Location.None,
-                    entityGraph.Count));
+                    PlannerEmitter.Emit(resolvedMappings));
+
+                spc.AddSource("AdapterTables.g.cs",
+                    AdapterEmitter.Emit(resolvedMappings, rootEntityTypes, entityGraph));
+
+                spc.ReportDiagnostic(
+                    Diagnostic.Create(MappingDiagnostics.EntityGraphDebug, Location.None, entityGraph.Count));
             }
             catch (Exception ex)
             {
-                // Surface the real crash as a compiler error instead of silence
-                spc.ReportDiagnostic(Diagnostic.Create(
+                ReportCrash(spc, ex);
+            }
+        }
+
+
+
+        private static void ReportCrash(
+            SourceProductionContext spc,
+            Exception ex)
+        {
+            spc.ReportDiagnostic(
+                Diagnostic.Create(
                     MappingDiagnostics.GeneratorCrashDescriptor,
                     Location.None,
                     ex.GetType().Name,
                     ex.Message,
-                    ex.StackTrace?.Replace("\r\n", " ").Replace("\n", " ") ?? ""));
+                    ex.StackTrace?
+                        .Replace("\r\n", " ")
+                        .Replace("\n", " ")
+                    ?? ""));
 
-                // Also emit a poisoned file so downstream "type not found" errors
-                // don't mask the real problem
-                spc.AddSource("GeneratorCrash.g.cs", $@"
+
+            spc.AddSource(
+                "GeneratorCrash.g.cs",
+                $"""
                 // <auto-generated/>
-                // GENERATOR CRASHED — see CBM000 diagnostic for details
-                #error CBM000: Source generator crashed: {ex.GetType().Name}: {ex.Message}
-                ");
-            }
-        }
 
+                #error CBM000: Source generator crashed:
+                {ex.GetType().Name}: {ex.Message}
+                """);
+        }
+        
         private static ImmutableHashSet<INamedTypeSymbol> ResolveRootEntityTypes(
             ImmutableArray<MappingClassInfo> allMappings,
             ImmutableHashSet<INamedTypeSymbol> rootModelTypes)
         {
             if (rootModelTypes.IsEmpty)
-                return ImmutableHashSet.Create<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+            {
+                return ImmutableHashSet.Create<INamedTypeSymbol>(
+                    SymbolEqualityComparer.Default);
+            }
 
-            var builder = ImmutableHashSet.CreateBuilder<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+
+            var builder =
+                ImmutableHashSet.CreateBuilder<INamedTypeSymbol>(
+                    SymbolEqualityComparer.Default);
+
+
 
             foreach (var mapping in allMappings)
             {
-                if (mapping.EntityType is null)
+                if (mapping.EntityType == null)
                     continue;
 
-                if (rootModelTypes.Contains(mapping.ModelType))
+
+                if (mapping.ModelType != null &&
+                    rootModelTypes.Contains(mapping.ModelType))
+                {
                     builder.Add(mapping.EntityType);
+                }
             }
+
+
 
             return builder.ToImmutable();
         }

@@ -42,7 +42,12 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
 
                 if (!existing.Contains(unwrapped.Name))
                 {
-                    info.ModelChildren.Add(new ModelChildInfo { To = unwrapped.Name });
+                    info.ModelChildren.Add(new ModelChildInfo
+                    {
+                        From = info.ModelType.Name,
+                        To = unwrapped.Name,
+                        NavigationName = char.ToLowerInvariant(prop.Name[0]) + prop.Name.Substring(1)
+                    });
                     existing.Add(unwrapped.Name);
                 }
             }
@@ -72,15 +77,24 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                     continue;
 
 
-                if (!entityName.StartsWith(
-                        info.EntityType.Name,
-                        StringComparison.Ordinal))
-                    continue;
+                var navigationName =
+                    char.ToLowerInvariant(candidate.ModelType.Name[0])
+                    + candidate.ModelType.Name.Substring(1);
 
+                if (info.ModelChildren.Any(x =>
+                        string.Equals(
+                            x.NavigationName,
+                            navigationName,
+                            StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
 
                 info.ModelChildren.Add(new ModelChildInfo
                 {
-                    To = info.ModelType.Name
+                    From = info.ModelType.Name,
+                    To = candidate.ModelType.Name,
+                    NavigationName = navigationName
                 });
             }
         }

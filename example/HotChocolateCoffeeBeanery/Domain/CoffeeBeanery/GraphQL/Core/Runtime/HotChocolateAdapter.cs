@@ -58,10 +58,11 @@ public static class HotChocolateAdapter
     {
         var scalars = ImmutableArray.CreateBuilder<ScalarSelection>(8);
         var children = ImmutableArray.CreateBuilder<SelectionIR>(4);
+        var usedAliases = new HashSet<string>(StringComparer.Ordinal);
 
         WalkSelectionSet(
             selectionSet, rootEntityId, rootOutputAlias,
-            scalars, children, lookup, isConditional: false);
+            scalars, children, lookup, isConditional: false, usedAliases);
 
         return new SelectionIR(
             rootEntityId,
@@ -70,6 +71,7 @@ public static class HotChocolateAdapter
             scalars.ToImmutable(),
             children.ToImmutable());
     }
+
 
     // ---------------------------------------------------------------
     // Mutation adapter
@@ -98,6 +100,35 @@ public static class HotChocolateAdapter
             values.ToImmutable(),
             children.ToImmutable());
     }
+    
+    // ---------------------------------------------------------------
+// Alias disambiguation
+// ---------------------------------------------------------------
+
+    /// <summary>
+    /// Ensures uniqueness among sibling OutputAliases at the same tree level.
+    /// Client-supplied names only differ from HotChocolate's grammar by
+    /// character set, not case — "innerCustomer" and "InnerCustomer" both
+    /// PascalCase to "InnerCustomer" and would otherwise collide in the
+    /// mutation row buffer, which keys rows on (EntityId, StorageEntityId,
+    /// Alias). First occurrence keeps the plain name; subsequent collisions
+    /// get a numeric suffix.
+    /// </summary>
+    private static string Disambiguate(string alias, HashSet<string> usedAliases)
+    {
+        if (usedAliases.Add(alias))
+            return alias;
+
+        var i = 2;
+        string candidate;
+        do
+        {
+            candidate = alias + i;
+            i++;
+        } while (!usedAliases.Add(candidate));
+
+        return candidate;
+    }
 
     // ---------------------------------------------------------------
     // Selection walking (query side)
@@ -110,7 +141,8 @@ public static class HotChocolateAdapter
         ImmutableArray<ScalarSelection>.Builder scalars,
         ImmutableArray<SelectionIR>.Builder children,
         AdapterLookup lookup,
-        bool isConditional)
+        bool isConditional,
+        HashSet<string> usedAliases)
     {
         foreach (var selection in set.Selections)
         {
@@ -119,173 +151,181 @@ public static class HotChocolateAdapter
                 case FieldNode field:
                     WalkField(field, entityId, outputAlias,
                         scalars, children, lookup,
-                        isConditional || HasConditionDirective(field));
+                        isConditional || HasConditionDirective(field),
+                        usedAliases);
                     break;
 
                 case InlineFragmentNode fragment:
-                    // Unwrap inline fragments transparently.
+                    // Unwrapped transparently into the SAME selection — so it
+                    // must share the enclosing level's usedAliases, not get its
+                    // own. A field inside the fragment and a same-named field
+                    // outside it are still siblings in the emitted tree.
                     if (fragment.SelectionSet is not null)
                         WalkSelectionSet(fragment.SelectionSet, entityId, outputAlias,
-                            scalars, children, lookup, isConditional);
+                            scalars, children, lookup, isConditional, usedAliases);
                     break;
 
                 // Named fragments (FragmentSpreadNode) are not supported in v1.
-                // A FragmentExpander pass should run before the adapter.
             }
         }
     }
 
     private static void WalkField(
-        FieldNode field,
-        ushort entityId,
-        string parentOutputAlias,
-        ImmutableArray<ScalarSelection>.Builder scalars,
-        ImmutableArray<SelectionIR>.Builder children,
-        AdapterLookup lookup,
-        bool isConditional)
+    FieldNode field,
+    ushort entityId,
+    string parentOutputAlias,
+    ImmutableArray<ScalarSelection>.Builder scalars,
+    ImmutableArray<SelectionIR>.Builder children,
+    AdapterLookup lookup,
+    bool isConditional,
+    HashSet<string> usedAliases)
+{
+    var wireAlias  = field.Alias?.Value;
+    var schemaName = field.Name.Value;
+
+    if (MetaFields.Contains(schemaName))
+        return;
+
+    if (ConnectionWrappers.Contains(schemaName))
     {
-        // The wire name the client used (may differ from schema name when aliased).
-        var wireAlias  = field.Alias?.Value;
-        var schemaName = field.Name.Value;
-
-        // Meta-fields are handled outside the planner.
-        if (MetaFields.Contains(schemaName))
-            return;
-
-        // Connection wrappers are transparent: lift their children up.
-        if (ConnectionWrappers.Contains(schemaName))
-        {
-            if (field.SelectionSet is not null)
-                WalkSelectionSet(field.SelectionSet, entityId, parentOutputAlias,
-                    scalars, children, lookup, isConditional);
-            return;
-        }
-
-        // Resolve the schema name → EntityId for child entities.
+        // Transparent like inline fragments — same reasoning, share the
+        // parent's usedAliases rather than starting a fresh set.
         if (field.SelectionSet is not null)
-        {
-            // This field is an object/entity selection.
-            if (lookup.TryGetChildEntityId(entityId, schemaName, out var childEntityId))
-            {
-                // The output alias is either the client's alias or the schema name,
-                // normalized to PascalCase so it matches the mapping convention.
-                var childOutputAlias = wireAlias is not null
-                    ? ToPascalCase(wireAlias)
-                    : ToPascalCase(schemaName);
-
-                var childScalars  = ImmutableArray.CreateBuilder<ScalarSelection>(8);
-                var childChildren = ImmutableArray.CreateBuilder<SelectionIR>(4);
-
-                WalkSelectionSet(field.SelectionSet, childEntityId, childOutputAlias,
-                    childScalars, childChildren, lookup, isConditional);
-
-                children.Add(new SelectionIR(
-                    childEntityId,
-                    childOutputAlias,
-                    isConditional,
-                    childScalars.ToImmutable(),
-                    childChildren.ToImmutable()));
-            }
-            else
-            {
-                // Unknown child entity - treat as transparent wrapper and
-                // walk its children in the current entity's context.
-                WalkSelectionSet(field.SelectionSet, entityId, parentOutputAlias,
-                    scalars, children, lookup, isConditional);
-            }
-
-            return;
-        }
-
-        // Scalar field — resolve schema name → FieldId.
-        if (lookup.TryGetFieldId(entityId, schemaName, out var fieldId))
-        {
-            var scalarOutputAlias = wireAlias ?? schemaName;
-            scalars.Add(new ScalarSelection(fieldId, scalarOutputAlias));
-        }
-        // Unknown scalar fields are silently skipped — they may be extension
-        // fields handled by IQueryPlanContributor after the planner runs.
+            WalkSelectionSet(field.SelectionSet, entityId, parentOutputAlias,
+                scalars, children, lookup, isConditional, usedAliases);
+        return;
     }
+
+    if (field.SelectionSet is not null)
+    {
+        if (lookup.TryGetChildEntityId(entityId, schemaName, out var childEntityId))
+        {
+            var baseAlias = wireAlias is not null
+                ? ToPascalCase(wireAlias)
+                : ToPascalCase(schemaName);
+
+            var childOutputAlias = Disambiguate(baseAlias, usedAliases);
+
+            var childScalars  = ImmutableArray.CreateBuilder<ScalarSelection>(8);
+            var childChildren = ImmutableArray.CreateBuilder<SelectionIR>(4);
+            var childUsedAliases = new HashSet<string>(StringComparer.Ordinal);
+
+            WalkSelectionSet(field.SelectionSet, childEntityId, childOutputAlias,
+                childScalars, childChildren, lookup, isConditional, childUsedAliases);
+
+            children.Add(new SelectionIR(
+                childEntityId,
+                childOutputAlias,
+                isConditional,
+                childScalars.ToImmutable(),
+                childChildren.ToImmutable()));
+        }
+        else
+        {
+            // Unknown child entity, transparent wrapper — same level, share aliases.
+            WalkSelectionSet(field.SelectionSet, entityId, parentOutputAlias,
+                scalars, children, lookup, isConditional, usedAliases);
+        }
+
+        return;
+    }
+
+    // Scalar field.
+    if (lookup.TryGetFieldId(entityId, schemaName, out var fieldId))
+    {
+        var baseAlias = wireAlias ?? schemaName;
+        var scalarOutputAlias = Disambiguate(baseAlias, usedAliases);
+        scalars.Add(new ScalarSelection(fieldId, scalarOutputAlias));
+    }
+}
+
 
     // ---------------------------------------------------------------
     // Mutation walking
     // ---------------------------------------------------------------
 
     private static void WalkMutationObject(
-        ObjectValueNode obj,
-        ushort entityId,
-        string outputAlias,
-        ImmutableArray<FieldValue>.Builder values,
-        ImmutableArray<MutationIR>.Builder children,
-        AdapterLookup lookup)
+    ObjectValueNode obj,
+    ushort entityId,
+    string outputAlias,
+    ImmutableArray<FieldValue>.Builder values,
+    ImmutableArray<MutationIR>.Builder children,
+    AdapterLookup lookup)
+{
+    var usedAliases = new HashSet<string>(StringComparer.Ordinal);
+
+    foreach (var field in obj.Fields)
     {
-        foreach (var field in obj.Fields)
+        var name = field.Name.Value;
+
+        switch (field.Value)
         {
-            var name = field.Name.Value;
+            case ObjectValueNode childObj:
+                if (lookup.TryGetChildEntityId(entityId, name, out var childEntityId))
+                {
+                    var childOutputAlias = Disambiguate(ToPascalCase(name), usedAliases);
+                    var childValues   = ImmutableArray.CreateBuilder<FieldValue>(8);
+                    var childChildren = ImmutableArray.CreateBuilder<MutationIR>(4);
 
-            switch (field.Value)
-            {
-                case ObjectValueNode childObj:
-                    // Nested entity input.
-                    if (lookup.TryGetChildEntityId(entityId, name, out var childEntityId))
+                    WalkMutationObject(childObj, childEntityId, childOutputAlias,
+                        childValues, childChildren, lookup);
+
+                    children.Add(new MutationIR(
+                        childEntityId,
+                        childOutputAlias,
+                        childValues.ToImmutable(),
+                        childChildren.ToImmutable()));
+                }
+                else
+                {
+                    WalkMutationObject(childObj, entityId, outputAlias,
+                        values, children, lookup);
+                }
+                break;
+
+            case ListValueNode listNode:
+                if (lookup.TryGetChildEntityId(entityId, name, out var listEntityId))
+                {
+                    var listOutputAliasBase = ToPascalCase(name);
+                    var itemIndex = 0;
+
+                    foreach (var item in listNode.Items)
                     {
-                        var childOutputAlias = ToPascalCase(name);
-                        var childValues   = ImmutableArray.CreateBuilder<FieldValue>(8);
-                        var childChildren = ImmutableArray.CreateBuilder<MutationIR>(4);
+                        if (item is not ObjectValueNode itemObj) continue;
 
-                        WalkMutationObject(childObj, childEntityId, childOutputAlias,
-                            childValues, childChildren, lookup);
+                        // List items share the field name by definition, so
+                        // each item needs its own disambiguated alias too —
+                        // "Items", "Items2", "Items3"... rather than every
+                        // item silently colliding into one row.
+                        var listOutputAlias = Disambiguate(listOutputAliasBase, usedAliases);
+
+                        var itemValues   = ImmutableArray.CreateBuilder<FieldValue>(8);
+                        var itemChildren = ImmutableArray.CreateBuilder<MutationIR>(4);
+
+                        WalkMutationObject(itemObj, listEntityId, listOutputAlias,
+                            itemValues, itemChildren, lookup);
 
                         children.Add(new MutationIR(
-                            childEntityId,
-                            childOutputAlias,
-                            childValues.ToImmutable(),
-                            childChildren.ToImmutable()));
+                            listEntityId,
+                            listOutputAlias,
+                            itemValues.ToImmutable(),
+                            itemChildren.ToImmutable()));
+
+                        itemIndex++;
                     }
-                    else
-                    {
-                        // Unknown object — walk it in the current entity context.
-                        WalkMutationObject(childObj, entityId, outputAlias,
-                            values, children, lookup);
-                    }
-                    break;
+                }
+                break;
 
-                case ListValueNode listNode:
-                    // List of entity inputs.
-                    if (lookup.TryGetChildEntityId(entityId, name, out var listEntityId))
-                    {
-                        var listOutputAlias = ToPascalCase(name);
-                        foreach (var item in listNode.Items)
-                        {
-                            if (item is not ObjectValueNode itemObj) continue;
+            default:
+                var rawValue = field.Value.Value?.ToString();
+                if (rawValue is null) break;
 
-                            var itemValues   = ImmutableArray.CreateBuilder<FieldValue>(8);
-                            var itemChildren = ImmutableArray.CreateBuilder<MutationIR>(4);
-
-                            WalkMutationObject(itemObj, listEntityId, listOutputAlias,
-                                itemValues, itemChildren, lookup);
-
-                            children.Add(new MutationIR(
-                                listEntityId,
-                                listOutputAlias,
-                                itemValues.ToImmutable(),
-                                itemChildren.ToImmutable()));
-                        }
-                    }
-                    break;
-
-                default:
-                    // Scalar value.
-                    var rawValue = field.Value.Value?.ToString();
-                    if (rawValue is null) break;
-
-                    if (lookup.TryGetFieldId(entityId, name, out var fieldId))
-                        values.Add(new FieldValue(fieldId, rawValue));
-                    // Unknown scalars silently skipped — extension contributor territory.
-                    break;
-            }
+                if (lookup.TryGetFieldId(entityId, name, out var fieldId))
+                    values.Add(new FieldValue(fieldId, rawValue));
+                break;
         }
     }
+}
 
     // ---------------------------------------------------------------
     // Directive helpers

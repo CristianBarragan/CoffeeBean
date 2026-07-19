@@ -69,7 +69,9 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
 
                 info.ModelChildren.Add(new ModelChildInfo
                 {
-                    To = childMapping.ModelType.Name
+                    From = info.ModelType.Name,
+                    To = childMapping.ModelType.Name,
+                    NavigationName = fieldName
                 });
 
                 existingFieldNames.Add(fieldName);
@@ -96,7 +98,12 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                         FieldName = fieldName,
                         ToModelName = childMapping.ModelType.Name,
 
-                        ParentEntityType = info.EntityType,
+                        ParentEntityType =
+                            info.Definition.Entities
+                                .FirstOrDefault(e => e.IsPrimary)
+                                ?.EntityType
+                            ?? throw new InvalidOperationException(
+                                $"Mapping {info.ModelType.Name} has no primary entity"),
 
                         ParentJoinColumn = parentJoinColumn,
 
@@ -330,7 +337,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
         }
 
 
-        private static string ToGraphQlFieldNameLiteral(string name)
+        internal static string ToGraphQlFieldNameLiteral(string name)
         {
             if (string.IsNullOrEmpty(name))
                 return name;

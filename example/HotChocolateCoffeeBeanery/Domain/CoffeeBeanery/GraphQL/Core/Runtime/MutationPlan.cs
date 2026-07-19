@@ -160,6 +160,119 @@ public ref struct MutationPlanBuilder
 
     private InlineArray32<GraphMergeSpec> _graphMerges;
     private int _graphMergeCount;
+    
+    private readonly Dictionary<
+        (ushort EntityId, ushort StorageEntityId, string Alias),
+        ImmutableArray<FieldValue>.Builder> _pendingRows = new();
+
+    public void MapField(
+        ushort fieldId,
+        ushort entityId,
+        ushort storageEntityId,
+        ushort columnId)
+    {
+        _fieldMappings[fieldId] =
+            (entityId, storageEntityId, columnId);
+    }
+    
+    public void AddRowValue(
+        ushort fieldId,
+        FieldValue value,
+        string alias)
+    {
+        if (!_fieldMappings.TryGetValue(
+                fieldId,
+                out var mapping))
+        {
+            return;
+        }
+
+
+        var key =
+        (
+            mapping.EntityId,
+            mapping.StorageEntityId,
+            alias
+        );
+
+
+        if (!_pendingRows.TryGetValue(
+                key,
+                out var values))
+        {
+            values =
+                ImmutableArray.CreateBuilder<FieldValue>();
+
+            _pendingRows[key] = values;
+        }
+
+
+        if (!values.Any(x => x.FieldId == fieldId))
+        {
+            values.Add(
+                new FieldValue(
+                    fieldId,
+                    mapping.ColumnId,
+                    value.RawValue));
+        }
+    }
+    
+    public ImmutableArray<FieldValue> GetPendingValues(
+        string alias)
+    {
+        var builder =
+            ImmutableArray.CreateBuilder<FieldValue>();
+
+
+        foreach (var row in _pendingRows)
+        {
+            if (!string.Equals(
+                    row.Key.Alias,
+                    alias,
+                    StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+
+            builder.AddRange(
+                row.Value);
+        }
+
+
+        return builder.ToImmutable();
+    }
+    
+    public void FlushRows()
+    {
+        foreach (var row in _pendingRows)
+        {
+            AddRow(
+                row.Key.EntityId,
+                row.Key.StorageEntityId,
+                row.Key.Alias,
+                row.Value.ToImmutable(),
+                null,
+                null);
+        }
+
+
+        _pendingRows.Clear();
+    }
+
+    private readonly Dictionary<
+        ushort,
+        (ushort EntityId, ushort StorageEntityId, ushort ColumnId)> _fieldMappings = new();
+
+    public MutationPlanBuilder()
+    {
+        _rows = default;
+        _rowCount = 0;
+        _cteRoots = default;
+        _cteRootCount = 0;
+        _graphMerges = default;
+        _graphMergeCount = 0;
+    }
 
     public void AddRow(
         ushort entityId, ushort storageEntityId, string outputAlias,

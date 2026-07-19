@@ -1,18 +1,21 @@
 ﻿using System.Collections.Immutable;
 using System.Text;
 using CoffeeBeanery.GraphQL.Core.Runtime;
+using Domain.Shared;
 
 namespace Domain.Shared;
 
 public sealed class PostgresSqlWriter
 {
     private readonly IEntityMetaProvider _meta;
+    private readonly IGraphStrategy _graphStrategy;
 
-    public PostgresSqlWriter(IEntityMetaProvider meta)
+    public PostgresSqlWriter(IEntityMetaProvider meta, IGraphStrategy graphStrategy)
     {
         _meta = meta;
+        _graphStrategy = graphStrategy;
     }
-    
+
     public string WriteUpsertThenSelect(in MutationPlan mutation, in QueryPlan query)
     {
         var sb = new StringBuilder(1024);
@@ -40,7 +43,7 @@ public sealed class PostgresSqlWriter
         AppendSelect(sb, plan);
         return sb.ToString();
     }
-    
+
     private List<string> CollectUpsertArms(in MutationPlan plan)
     {
         var arms = new List<string>();
@@ -54,53 +57,20 @@ public sealed class PostgresSqlWriter
         return arms;
     }
 
-    // Graph merges are NOT part of the WITH ... AS (...) arms — Cypher via ag_catalog.cypher()
-    // can't run inside a CTE the way plain INSERTs can, per the reference: it's a standalone
-    // statement using CREATE TEMP TABLE ... DROP TABLE as a side-effect-only wrapper.
-    // So these render as separate statements, before or after the main WITH block.
+    // Graph merges are NOT part of the WITH ... AS (...) arms — the current
+    // (AGE) strategy can't run inside a plain CTE, so they render as
+    // separate statements. Delegated entirely to IGraphStrategy now; a
+    // future strategy backed by ordinary tables could in principle return
+    // something CTE-compatible, but the call site doesn't assume that.
     public string WriteGraphMerges(in MutationPlan plan)
     {
         var sb = new StringBuilder();
         foreach (var merge in plan.GraphMerges)
         {
-            sb.AppendLine(BuildGraphMergeCypher(merge));
+            sb.AppendLine(_graphStrategy.BuildGraphMerge(merge));
         }
         return sb.ToString();
     }
-
-    private string BuildGraphMergeCypher(in GraphMergeSpec spec)
-    {
-        var setClause = BuildGraphSetClause(spec.EdgeKeyColumn, spec.EdgeKeyValue, spec.EdgeProperties);
-        return $@"
-                ;CREATE TEMP TABLE temp_merge AS SELECT 1 
-                FROM ag_catalog.cypher(
-                    '{spec.GraphName}',
-                    $$
-                    MERGE (a:{spec.FromLabel} {{ {spec.FromKeyColumn}: '{EscapeCypherValue(spec.FromKeyValue)}' }})
-                    MERGE (b:{spec.ToLabel} {{ {spec.ToKeyColumn}: '{EscapeCypherValue(spec.ToKeyValue)}' }})
-                    MERGE (a)-[r:{spec.EdgeLabel}]->(b)
-                    {setClause}
-                    RETURN r.{spec.EdgeLabel}::text
-                    $$
-                ) AS (r text); DROP TABLE temp_merge;
-                ";
-    }
-
-private static string BuildGraphSetClause(string edgeKeyColumn, string? edgeKeyValue, ImmutableDictionary<string, string> edgeProperties)
-{
-    var parts = new List<string>();
-
-    if (!string.IsNullOrWhiteSpace(edgeKeyValue))
-        parts.Add($"r.{edgeKeyColumn} = '{EscapeCypherValue(edgeKeyValue)}'");
-
-    foreach (var kvp in edgeProperties)
-        parts.Add($"r.{kvp.Key} = '{EscapeCypherValue(kvp.Value)}'");
-
-    return parts.Count == 0 ? "" : "SET " + string.Join(", ", parts);
-}
-
-private static string EscapeCypherValue(string value) =>
-    value.Replace("\\", "\\\\").Replace("'", "\\'");
 
     public string WriteUpserts(in MutationPlan plan)
     {
@@ -180,7 +150,7 @@ private static string EscapeCypherValue(string value) =>
 
         return sb.ToString();
     }
-    
+
     private string ResolveColumnName(
         ushort entityId,
         ushort storageEntityId,
@@ -206,197 +176,197 @@ private static string EscapeCypherValue(string value) =>
 
         return columnName;
     }
-    
+
     private string BuildCteNodeUpsertMerged(in MutationCteNode root)
-{
-    var owningSchema = root.SchemaOverride ?? _meta.EntitySchema[root.StorageEntityId];
-    var owningTable  = root.TableOverride  ?? _meta.EntityTable[root.StorageEntityId];
-    var rootCols     = _meta.EntityColumnName[root.StorageEntityId];
-    var conflictCols = root.ConflictColumns.Length > 0
-        ? root.ConflictColumns.ToArray()
-        : _meta.ConflictColumns[root.EntityId];
-
-    var resolutions = _meta.CteResolutions[root.EntityId];
-
-    // Match CTE children to their resolution specs.
-    var matched = new List<(MutationCteNode child, CteResolutionSpec spec)>();
-    var seenAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-    foreach (var child in root.Children)
     {
-        if (!seenAliases.Add(child.Alias)) continue;
-        foreach (var r in resolutions)
+        var owningSchema = root.SchemaOverride ?? _meta.EntitySchema[root.StorageEntityId];
+        var owningTable  = root.TableOverride  ?? _meta.EntityTable[root.StorageEntityId];
+        var rootCols     = _meta.EntityColumnName[root.StorageEntityId];
+        var conflictCols = root.ConflictColumns.Length > 0
+            ? root.ConflictColumns.ToArray()
+            : _meta.ConflictColumns[root.EntityId];
+
+        var resolutions = _meta.CteResolutions[root.EntityId];
+
+        var matched = new List<(MutationCteNode child, CteResolutionSpec spec)>();
+        var seenAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var child in root.Children)
         {
-            if (string.Equals(r.NavigationAlias, child.Alias, StringComparison.OrdinalIgnoreCase))
+            if (!seenAliases.Add(child.Alias)) continue;
+            foreach (var r in resolutions)
             {
-                matched.Add((child, r));
-                break;
+                if (string.Equals(r.NavigationAlias, child.Alias, StringComparison.OrdinalIgnoreCase))
+                {
+                    matched.Add((child, r));
+                    break;
+                }
             }
         }
-    }
 
-    // Build a column-name → FieldValue index from root.Values so we can
-    // detect missing conflict columns and enumerate values by column name.
-    var valueByColumn = new Dictionary<string, FieldValue>(StringComparer.OrdinalIgnoreCase);
-    foreach (var v in root.Values)
-    {
-        if (v.FieldId < rootCols.Length)
-            valueByColumn[rootCols[v.FieldId]] = v;
-    }
-
-    // Detect conflict columns that are missing from root.Values.
-    // This is always a caller bug (planner didn't add the key to edgeValues),
-    // but surface it clearly rather than producing silent bad SQL.
-    var fkColumnNames = new HashSet<string>(
-        matched.Select(m => m.spec.ForeignKeyColumn),
-        StringComparer.OrdinalIgnoreCase);
-
-    foreach (var cc in conflictCols)
-    {
-        if (!valueByColumn.ContainsKey(cc) && !fkColumnNames.Contains(cc))
-        {
-            throw new InvalidOperationException(
-                $"BuildCteNodeUpsertMerged: conflict column \"{cc}\" for " +
-                $"{owningSchema}.{owningTable} (EntityId={root.EntityId}) is not present " +
-                $"in root.Values and is not a CTE FK column. " +
-                $"The planner did not add this value to edgeValues — check " +
-                $"EmitCompositeMutation generates a case for this field.");
-        }
-    }
-
-    // ---------------------------------------------------------------
-    // Simple upsert — no FK resolution children
-    // ---------------------------------------------------------------
-    if (matched.Count == 0)
-    {
-        var plainSb = new StringBuilder();
-        plainSb.Append("INSERT INTO \"").Append(owningSchema)
-               .Append("\".\"").Append(owningTable).Append("\" (");
-
-        var first = true;
+        var valueByColumn = new Dictionary<string, FieldValue>(StringComparer.OrdinalIgnoreCase);
         foreach (var v in root.Values)
         {
-            if (!first) plainSb.Append(", ");
-            first = false;
-            plainSb.Append('"').Append(rootCols[v.FieldId]).Append('"');
+            if (v.FieldId < rootCols.Length)
+                valueByColumn[rootCols[v.FieldId]] = v;
         }
-        plainSb.Append(") VALUES (");
 
-        first = true;
+        var fkColumnNames = new HashSet<string>(
+            matched.Select(m => m.spec.ForeignKeyColumn),
+            StringComparer.OrdinalIgnoreCase);
+
+        foreach (var cc in conflictCols)
+        {
+            if (!valueByColumn.ContainsKey(cc) && !fkColumnNames.Contains(cc))
+            {
+                throw new InvalidOperationException(
+                    $"BuildCteNodeUpsertMerged: conflict column \"{cc}\" for " +
+                    $"{owningSchema}.{owningTable} (EntityId={root.EntityId}) is not present " +
+                    $"in root.Values and is not a CTE FK column. " +
+                    $"The planner did not add this value to edgeValues — check " +
+                    $"EmitCompositeMutation generates a case for this field.");
+            }
+        }
+
+        if (matched.Count == 0)
+        {
+            var plainSb = new StringBuilder();
+            plainSb.Append("INSERT INTO \"").Append(owningSchema)
+                   .Append("\".\"").Append(owningTable).Append("\" (");
+
+            var first = true;
+            foreach (var v in root.Values)
+            {
+                if (!first) plainSb.Append(", ");
+                first = false;
+                plainSb.Append('"').Append(rootCols[v.FieldId]).Append('"');
+            }
+            plainSb.Append(") VALUES (");
+
+            first = true;
+            foreach (var v in root.Values)
+            {
+                if (!first) plainSb.Append(", ");
+                first = false;
+                AppendFieldValue(plainSb, root.StorageEntityId, v.FieldId, v.RawValue);
+            }
+            plainSb.Append(')');
+
+            AppendDoUpdateSetFromNames(
+                plainSb, root.EntityId, root.StorageEntityId,
+                root.Values, rootCols, conflictCols);
+
+            return plainSb.ToString();
+        }
+
+        var sb = new StringBuilder();
+
+        sb.Append("INSERT INTO \"").Append(owningSchema)
+          .Append("\".\"").Append(owningTable).Append("\" (");
+
+        var firstCol = true;
         foreach (var v in root.Values)
         {
-            if (!first) plainSb.Append(", ");
-            first = false;
-            AppendFieldValue(plainSb, root.StorageEntityId, v.FieldId, v.RawValue);
+            if (!firstCol) sb.Append(", ");
+            firstCol = false;
+            sb.Append('"').Append(rootCols[v.FieldId]).Append('"');
         }
-        plainSb.Append(')');
+        foreach (var (_, spec) in matched)
+        {
+            if (!firstCol) sb.Append(", ");
+            firstCol = false;
+            sb.Append('"').Append(spec.ForeignKeyColumn).Append('"');
+        }
 
-        AppendDoUpdateSetFromNames(
-            plainSb, root.EntityId, root.StorageEntityId,
-            root.Values, rootCols, conflictCols);
+        sb.Append(") SELECT ");
 
-        return plainSb.ToString();
+        var firstVal = true;
+        foreach (var v in root.Values)
+        {
+            if (!firstVal) sb.Append(", ");
+            firstVal = false;
+            AppendFieldValue(sb, root.StorageEntityId, v.FieldId, v.RawValue);
+        }
+        foreach (var (_, spec) in matched)
+        {
+            if (!firstVal) sb.Append(", ");
+            firstVal = false;
+            sb.Append(spec.RelatedTableAlias).Append(".\"")
+              .Append(spec.RelatedSurrogateIdColumn).Append('"');
+        }
+
+        sb.Append(" FROM ");
+
+        for (int i = 0; i < matched.Count; i++)
+        {
+            var (child, spec) = matched[i];
+
+            if (i == 0)
+            {
+                sb.Append('"')
+                    .Append(_meta.EntitySchema[child.StorageEntityId])
+                    .Append("\".\"")
+                    .Append(_meta.EntityTable[child.StorageEntityId])
+                    .Append("\" ")
+                    .Append(spec.RelatedTableAlias);
+            }
+            else
+            {
+                sb.Append(" JOIN ")
+                    .Append('"')
+                    .Append(_meta.EntitySchema[child.StorageEntityId])
+                    .Append("\".\"")
+                    .Append(_meta.EntityTable[child.StorageEntityId])
+                    .Append("\" ")
+                    .Append(spec.RelatedTableAlias);
+
+                sb.Append(" ON ")
+                    .Append(spec.RelatedTableAlias)
+                    .Append(".\"")
+                    .Append(spec.RelatedNaturalKeyColumn)
+                    .Append("\" = ");
+
+                AppendQuotedValue(
+                    sb,
+                    child.Values.Length > 0
+                        ? child.Values[0].RawValue
+                        : string.Empty);
+            }
+        }
+
+        sb.Append(" ON CONFLICT (");
+        for (int i = 0; i < conflictCols.Length; i++)
+        {
+            if (i > 0) sb.Append(", ");
+            sb.Append('"').Append(conflictCols[i]).Append('"');
+        }
+        sb.Append(") DO UPDATE SET ");
+
+        var firstSet = true;
+
+        foreach (var v in root.Values)
+        {
+            var col = rootCols[v.FieldId];
+            if (Array.IndexOf(conflictCols, col) >= 0) continue;
+            if (!firstSet) sb.Append(", ");
+            firstSet = false;
+            sb.Append('"').Append(col).Append("\" = EXCLUDED.\"").Append(col).Append('"');
+        }
+        foreach (var (_, spec) in matched)
+        {
+            if (!firstSet) sb.Append(", ");
+            firstSet = false;
+            sb.Append('"').Append(spec.ForeignKeyColumn)
+              .Append("\" = EXCLUDED.\"").Append(spec.ForeignKeyColumn).Append('"');
+        }
+
+        if (firstSet)
+        {
+            sb.Length -= " DO UPDATE SET ".Length;
+            sb.Append(" DO NOTHING");
+        }
+
+        return sb.ToString();
     }
-
-    // ---------------------------------------------------------------
-    // CTE upsert — FK columns resolved from sub-selects
-    // ---------------------------------------------------------------
-    var sb = new StringBuilder();
-
-    // Column list: root value columns + FK columns from CTE children
-    sb.Append("INSERT INTO \"").Append(owningSchema)
-      .Append("\".\"").Append(owningTable).Append("\" (");
-
-    var firstCol = true;
-    foreach (var v in root.Values)
-    {
-        if (!firstCol) sb.Append(", ");
-        firstCol = false;
-        sb.Append('"').Append(rootCols[v.FieldId]).Append('"');
-    }
-    foreach (var (_, spec) in matched)
-    {
-        if (!firstCol) sb.Append(", ");
-        firstCol = false;
-        sb.Append('"').Append(spec.ForeignKeyColumn).Append('"');
-    }
-
-    // SELECT clause: literal values + surrogate IDs from joined tables
-    sb.Append(") SELECT ");
-
-    var firstVal = true;
-    foreach (var v in root.Values)
-    {
-        if (!firstVal) sb.Append(", ");
-        firstVal = false;
-        AppendFieldValue(sb, root.StorageEntityId, v.FieldId, v.RawValue);
-    }
-    foreach (var (_, spec) in matched)
-    {
-        if (!firstVal) sb.Append(", ");
-        firstVal = false;
-        sb.Append(spec.RelatedTableAlias).Append(".\"")
-          .Append(spec.RelatedSurrogateIdColumn).Append('"');
-    }
-
-    // FROM + CROSS JOINs for each FK child
-    sb.Append(" FROM ");
-    for (int i = 0; i < matched.Count; i++)
-    {
-        var (child, spec) = matched[i];
-        if (i > 0) sb.Append(" CROSS JOIN ");
-        sb.Append('"').Append(_meta.EntitySchema[child.StorageEntityId]).Append("\".\"")
-          .Append(_meta.EntityTable[child.StorageEntityId]).Append("\" ")
-          .Append(spec.RelatedTableAlias);
-    }
-
-    // WHERE: natural key predicates for each FK child
-    sb.Append(" WHERE ");
-    for (int i = 0; i < matched.Count; i++)
-    {
-        var (child, spec) = matched[i];
-        var naturalKeyValue = child.Values.Length > 0 ? child.Values[0].RawValue : "NULL";
-        if (i > 0) sb.Append(" AND ");
-        sb.Append(spec.RelatedTableAlias).Append(".\"")
-          .Append(spec.RelatedNaturalKeyColumn).Append("\" = ");
-        AppendQuotedValue(sb, naturalKeyValue);
-    }
-
-    // ON CONFLICT ... DO UPDATE SET (non-conflict columns only)
-    sb.Append(" ON CONFLICT (");
-    for (int i = 0; i < conflictCols.Length; i++)
-    {
-        if (i > 0) sb.Append(", ");
-        sb.Append('"').Append(conflictCols[i]).Append('"');
-    }
-    sb.Append(") DO UPDATE SET ");
-
-    var firstSet = true;
-
-    foreach (var v in root.Values)
-    {
-        var col = rootCols[v.FieldId];
-        if (Array.IndexOf(conflictCols, col) >= 0) continue;
-        if (!firstSet) sb.Append(", ");
-        firstSet = false;
-        sb.Append('"').Append(col).Append("\" = EXCLUDED.\"").Append(col).Append('"');
-    }
-    foreach (var (_, spec) in matched)
-    {
-        if (!firstSet) sb.Append(", ");
-        firstSet = false;
-        sb.Append('"').Append(spec.ForeignKeyColumn)
-          .Append("\" = EXCLUDED.\"").Append(spec.ForeignKeyColumn).Append('"');
-    }
-
-    if (firstSet)
-    {
-        // All columns were conflict columns — nothing to update
-        sb.Length -= " DO UPDATE SET ".Length;
-        sb.Append(" DO NOTHING");
-    }
-
-    return sb.ToString();
-}
 
     private void AppendSelect(StringBuilder sb, in QueryPlan plan)
     {
@@ -411,26 +381,34 @@ private static string EscapeCypherValue(string value) =>
 
             first = false;
 
-            var colNames = _meta.EntityColumnName[col.StorageEntityId];
+            string columnName;
 
-            if (col.ColumnId >= colNames.Length)
+            if (col.Kind == ColumnKind.GraphSynthetic)
             {
-                throw new IndexOutOfRangeException(
-                    $"ColumnId {col.ColumnId} out of range for StorageEntityId {col.StorageEntityId} " +
-                    $"({_meta.EntityTable[col.StorageEntityId]}, Length={colNames.Length}), " +
-                    $"ModelId={col.EntityId} ({_meta.ModelName[col.EntityId][0]})");
+                columnName = col.RawColumnName
+                             ?? throw new InvalidOperationException(
+                                 $"GraphSynthetic column has null RawColumnName. EntityOutputAlias={col.EntityOutputAlias}, ColumnOutputAlias={col.ColumnOutputAlias}");
+            }
+            else
+            {
+                var colNames = _meta.EntityColumnName[col.StorageEntityId];
+
+                if (col.ColumnId >= colNames.Length)
+                {
+                    throw new IndexOutOfRangeException(
+                        $"ColumnId {col.ColumnId} out of range for StorageEntityId {col.StorageEntityId} " +
+                        $"({_meta.EntityTable[col.StorageEntityId]}, Length={colNames.Length}), " +
+                        $"ModelId={col.EntityId} ({_meta.ModelName[col.EntityId][0]})");
+                }
+
+                columnName = colNames[col.ColumnId];
             }
 
-            sb.Append("\n    ")
-                .Append('"')
-                .Append(col.EntityOutputAlias)
-                .Append('"')
-                .Append(".\"")
-                .Append(colNames[col.ColumnId])
-                .Append('"')
-                .Append(" AS \"")
-                .Append(col.ColumnOutputAlias)
-                .Append('"');
+            sb.Append("\n    ");
+            AppendQuotedIdentifier(sb, col.EntityOutputAlias);
+            sb.Append('.').Append('"').Append(columnName).Append('"');
+            sb.Append(" AS ");
+            AppendQuotedIdentifier(sb, col.ColumnOutputAlias);
         }
 
         if (first)
@@ -439,61 +417,28 @@ private static string EscapeCypherValue(string value) =>
         sb.Append("\nFROM ");
         AppendQualifiedTable(sb, plan.RootStorageEntityId);
 
-        sb.Append(" \"")
-            .Append(plan.RootOutputAlias)
-            .Append('"');
+        sb.Append(' ');
+        AppendQuotedIdentifier(sb, plan.RootOutputAlias);
+
+        foreach (var graphJoin in plan.GraphJoins)
+        {
+            sb.Append('\n');
+            _graphStrategy.AppendGraphJoin(sb, graphJoin, plan.RootOutputAlias);
+        }
 
         foreach (var join in plan.Joins)
         {
             sb.Append('\n');
             AppendJoin(sb, join, plan);
         }
-        
-        foreach (var graphJoin in plan.GraphJoins)
+
+        // Result-joins depend on a graph join's output alias already being
+        // present in FROM, so these must be emitted after the GraphJoins loop.
+        foreach (var resultJoin in plan.GraphResultJoins)
         {
             sb.Append('\n');
-            AppendGraphJoin(sb, graphJoin, plan.RootOutputAlias);
+            _graphStrategy.AppendGraphResultJoin(sb, resultJoin);
         }
-    }
-    
-    private void AppendGraphJoin(StringBuilder sb, in GraphJoinSpec join, string primaryOutputAlias)
-    {
-        var fromColAlias = join.FromAlias + join.FromJoinColumn;
-        var toColAlias   = join.ToAlias   + join.ToJoinColumn;
-
-        var edgeReturn = string.IsNullOrEmpty(join.EdgeKeyColumn) ? "" : $"r.{join.EdgeKeyColumn}";
-        var edgeColumnDef = string.IsNullOrEmpty(join.EdgeKeyColumn) ? "" : $"{join.EdgeKeyColumn} agtype";
-        // FIX: this alias must be quoted, matching from_key/to_key below. Unquoted,
-        // Postgres folds it to lowercase ("customercustomerrelationshipkey"), which
-        // then can't match the quoted, mixed-case reference in the outer join
-        // condition ("...".CustomerCustomerRelationshipKey) — causing
-        // "column ... does not exist" at execution time even though the SQL
-        // compiled/generated without error.
-        var edgeSelect = string.IsNullOrEmpty(join.EdgeKeyColumn) ? "" : $"({join.EdgeKeyColumn})::text::uuid AS \"{join.EdgeKeyColumn}\"";
-
-        sb.Append("LEFT JOIN (\n");
-        sb.Append("    WITH graph_edges AS (\n");
-        sb.Append("        SELECT DISTINCT * FROM cypher(\n");
-        sb.Append($"            '{join.GraphName}',\n");
-        sb.Append("            $$\n");
-        sb.Append($"            MATCH (a:{join.FromLabel})-[r:{join.EdgeLabel}]->(b:{join.ToLabel})\n");
-        sb.Append("            RETURN\n");
-        sb.Append($"                a.properties.{join.FromKeyColumn} AS from_key,\n");
-        sb.Append($"                b.properties.{join.ToKeyColumn} AS to_key");
-        if (!string.IsNullOrEmpty(edgeReturn)) sb.Append($",\n                {edgeReturn}");
-        sb.Append("\n            $$\n");
-        sb.Append("        ) AS (\n");
-        sb.Append("            from_key agtype,\n");
-        sb.Append("            to_key agtype");
-        if (!string.IsNullOrEmpty(edgeColumnDef)) sb.Append($",\n            {edgeColumnDef}");
-        sb.Append("\n        )\n");
-        sb.Append("    )\n");
-        sb.Append("    SELECT\n");
-        sb.Append($"        from_key::text::uuid AS \"{fromColAlias}\",\n");
-        sb.Append($"        to_key::text::uuid AS \"{toColAlias}\"");
-        if (!string.IsNullOrEmpty(edgeSelect)) sb.Append($",\n        {edgeSelect}");
-        sb.Append("\n    FROM graph_edges\n");
-        sb.Append($") \"{join.JoinAlias}\" ON \"{join.JoinAlias}\".\"{join.EdgeKeyColumn}\" = \"{primaryOutputAlias}\".\"{join.EdgeKeyColumn}\"");
     }
 
     private void AppendJoin(StringBuilder sb, in JoinSpec join, in QueryPlan plan)
@@ -501,19 +446,33 @@ private static string EscapeCypherValue(string value) =>
         var keyword = join.Kind == JoinKind.Left ? "LEFT JOIN" : "JOIN";
         sb.Append(keyword).Append(' ');
         AppendQualifiedTable(sb, join.ToStorageEntityId);
-        sb.Append(" \"").Append(join.ToOutputAlias).Append('"');
+        sb.Append(' ');
+        AppendQuotedIdentifier(sb, join.ToOutputAlias);
         sb.Append("\n    ON ");
 
-        var fromAlias   = ResolveOutputAlias(join.FromEntityId, plan);
-        var fromColName = _meta.EntityColumnName[join.FromStorageEntityId][join.FromColumnId];
-        var toColName   = _meta.EntityColumnName[join.ToStorageEntityId][join.ToColumnId];
+        var toColName = _meta.EntityColumnName[join.ToStorageEntityId][join.ToColumnId];
+        AppendQuotedIdentifier(sb, join.ToOutputAlias);
+        sb.Append(".\"").Append(toColName).Append('"');
+        sb.Append(" = ");
 
-        sb.Append('"').Append(join.ToOutputAlias).Append("\".\"").Append(toColName).Append('"')
-          .Append(" = \"").Append(fromAlias).Append("\".\"").Append(fromColName).Append('"');
+        if (join.SourceKind == JoinSourceKind.GraphVertex)
+        {
+            AppendQuotedIdentifier(sb, join.FromGraphAlias);
+            sb.Append(".\"").Append(join.FromRawColumnName).Append('"');
+        }
+        else
+        {
+            var fromAlias   = ResolveOutputAlias(join.FromEntityId, plan);
+            var fromColName = _meta.EntityColumnName[join.FromStorageEntityId][join.FromColumnId];
+            AppendQuotedIdentifier(sb, fromAlias);
+            sb.Append(".\"").Append(fromColName).Append('"');
+        }
     }
 
     private void AppendQualifiedTable(StringBuilder sb, ushort storageEntityId)
     {
+        // Schema/table names come from _meta (compile-time mapping metadata),
+        // never client input — no quoting-injection concern here.
         sb.Append('"').Append(_meta.EntitySchema[storageEntityId]).Append("\".\"")
           .Append(_meta.EntityTable[storageEntityId]).Append('"');
     }
@@ -530,6 +489,30 @@ private static string EscapeCypherValue(string value) =>
     // Shared helpers
     // ---------------------------------------------------------------
 
+    /// <summary>
+    /// Quotes a SQL identifier (table/column alias), doubling any embedded
+    /// double-quote — the standard Postgres identifier escape, parallel to
+    /// AppendQuotedValue's single-quote doubling for string literals.
+    ///
+    /// Not currently reachable with a malicious value: every OutputAlias
+    /// passed here originates from HotChocolateAdapter, which derives it
+    /// from a parsed GraphQL Name token ([_A-Za-z][_0-9A-Za-z]*) that
+    /// cannot contain a double-quote. This guard exists so that invariant
+    /// doesn't have to hold for this code to be safe.
+    /// </summary>
+    private static void AppendQuotedIdentifier(StringBuilder sb, string identifier)
+        => AppendQuotedIdentifierStatic(sb, identifier);
+
+    /// <summary>
+    /// Static form so IGraphStrategy implementations (which don't inherit
+    /// from PostgresSqlWriter) can reuse the same escaping logic rather
+    /// than duplicating it.
+    /// </summary>
+    internal static void AppendQuotedIdentifierStatic(StringBuilder sb, string identifier)
+    {
+        sb.Append('"').Append(identifier.Replace("\"", "\"\"")).Append('"');
+    }
+
     private void AppendFieldValue(
         StringBuilder sb,
         ushort storageEntityId,
@@ -544,7 +527,7 @@ private static string EscapeCypherValue(string value) =>
         }
         AppendQuotedValue(sb, rawValue);
     }
-    
+
     private static void AppendQuotedValue(StringBuilder sb, string value)
     {
         if (int.TryParse(value,
@@ -588,10 +571,6 @@ private static string EscapeCypherValue(string value) =>
 
         foreach (var value in values)
         {
-            // value.FieldId is already a ColumnId — resolve the name directly
-            // via EntityColumnName rather than through _meta.FieldToColumn (a
-            // model-FieldId→ColumnId table, which this value has already passed
-            // through once at codegen time).
             var columnName = ResolveColumnName(entityId, storageEntityId, value.FieldId);
 
             if (Array.Exists(
@@ -655,7 +634,6 @@ private static string EscapeCypherValue(string value) =>
 
         for (int c = 0; c < values.Length; c++)
         {
-            // values[c].FieldId is already a ColumnId — index cols directly.
             var colName = cols[values[c].FieldId];
 
             var isConflict = false;

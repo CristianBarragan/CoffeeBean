@@ -7,7 +7,7 @@
 // {
 //     public static Graph Graph { get; private set; } = new();
 //
-//     public static Dictionary<(string Alias, string Field), string> ChildAliasByField { get; } = new();
+//     // public static Dictionary<(string Alias, string Field), string> ChildAliasByField { get; } = new();
 //     public static Dictionary<(string Alias, string Field), List<(string EntityAlias, string EntityColumn)>> ColumnByField { get; } = new();
 //     public static Dictionary<(string Alias, string Field), Dictionary<string, int>> EnumByField { get; } = new();
 //
