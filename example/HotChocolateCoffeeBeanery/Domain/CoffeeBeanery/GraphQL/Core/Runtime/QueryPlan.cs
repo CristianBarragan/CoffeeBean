@@ -296,9 +296,7 @@ public ref struct QueryPlanBuilder
         string entityOutputAlias, string columnOutputAlias)
     {
         _rootAliases ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
         var finalAlias = columnOutputAlias;
-
         if (!_rootAliases.Add(finalAlias))
         {
             finalAlias = entityOutputAlias +
@@ -312,8 +310,7 @@ public ref struct QueryPlanBuilder
             }
         }
 
-        _columns[_columnCount++] = new ColumnSpec(
-            entityId, storageEntityId, columnId, entityOutputAlias, finalAlias);
+        _columns[_columnCount++] = new ColumnSpec(entityId, storageEntityId, columnId, entityOutputAlias, finalAlias);
     }
     
     public void AddGraphVertexJoin(

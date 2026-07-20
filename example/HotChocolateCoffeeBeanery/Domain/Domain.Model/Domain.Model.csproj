@@ -5,6 +5,8 @@
         <OutputType>Library</OutputType>
         <PlatformTarget>x64</PlatformTarget>
         <ImplicitUsings>enable</ImplicitUsings>
+        <DisableIncrementalBuild>true</DisableIncrementalBuild>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 

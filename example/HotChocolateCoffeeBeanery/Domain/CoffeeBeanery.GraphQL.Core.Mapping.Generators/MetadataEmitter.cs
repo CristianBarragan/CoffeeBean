@@ -18,6 +18,8 @@ internal static class MetadataEmitter
     {
         var models = allMappings
             .Where(m => m.IsModel)
+            .GroupBy(m => m.ModelType.Name, System.StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
             .OrderBy(m => m.ModelType.Name, System.StringComparer.Ordinal)
             .ToList();
 

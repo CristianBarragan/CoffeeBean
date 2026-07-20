@@ -64,310 +64,186 @@ internal static class QueryMaterializerEmitter
     }
 
 
-    private static void EmitRowMaterializer(
-        StringBuilder sb,
-        MappingClassInfo info)
+    private static void EmitRowMaterializer(StringBuilder sb, MappingClassInfo info)
+{
+    var model = info.ModelType!.Name;
+
+    sb.AppendLine($"public static class {model}RowMaterializer");
+    sb.AppendLine("{");
+    sb.AppendLine($"    public static {model} Materialize(DbDataReader reader, ushort[] columnMap)");
+    sb.AppendLine("    {");
+    sb.AppendLine($"        var model = new {model}();");
+    sb.AppendLine();
+
+    foreach (var field in info.FieldMaps)
     {
-        var model = info.ModelType!.Name;
-
-        sb.AppendLine($"public static class {model}RowMaterializer");
-        sb.AppendLine("{");
-
-        sb.AppendLine(
-            $"    public static {model} Materialize(DbDataReader reader, ushort[] columnMap)");
-
-        sb.AppendLine("    {");
-
-        sb.AppendLine(
-            $"        var model = new {model}();");
-
-        sb.AppendLine();
-
-
-        foreach (var field in info.FieldMaps)
+        if (info.Graph != null &&
+            (string.Equals(field.SourceName, info.Graph.From?.KeyColumn, StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(field.SourceName, info.Graph.To?.KeyColumn, StringComparison.OrdinalIgnoreCase)))
         {
-            sb.AppendLine("        {");
+            continue;
+        }
 
-            sb.AppendLine(
-                $"            var ordinal = columnMap[ColumnId.{field.DestinationEntity}.{field.DestinationName}];");
+        sb.AppendLine("        {");
+        sb.AppendLine($"            var ordinal = columnMap[ColumnId.{field.DestinationEntity}.{field.DestinationName}];");
+        sb.AppendLine();
+        sb.AppendLine("            if (ordinal != ushort.MaxValue)");
+        sb.AppendLine($"                model.{field.SourceName} = {ReadValue(field)};");
+        sb.AppendLine();
+        sb.AppendLine("        }");
+        sb.AppendLine();
+    }
 
-            sb.AppendLine();
+    sb.AppendLine("        return model;");
+    sb.AppendLine("    }");
+    sb.AppendLine("}");
+}
+    
+    private static string ReadValue(FieldInfo field)
+    {
+        var type = field.PropertyType;
 
-            sb.AppendLine(
-                "            if (ordinal != ushort.MaxValue)");
+        var isNullable = false;
+        ITypeSymbol underlying = type;
 
-            sb.AppendLine(
-                $"                model.{field.SourceName} = {ReadValue(field)};");
 
-            sb.AppendLine();
-
-            sb.AppendLine("        }");
-
-            sb.AppendLine();
+        if (type is INamedTypeSymbol named &&
+            named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+        {
+            isNullable = true;
+            underlying = named.TypeArguments[0];
         }
 
 
-        sb.AppendLine(
-            "        return model;");
+        if (underlying.TypeKind == TypeKind.Enum)
+        {
+            var enumName =
+                underlying.ToDisplayString(
+                    SymbolDisplayFormat.FullyQualifiedFormat);
 
-        sb.AppendLine(
-            "    }");
+            if (isNullable)
+            {
+                return
+                    $"reader.IsDBNull(ordinal) " +
+                    $"? default({type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}) " +
+                    $": ({enumName})Convert.ToInt32(reader.GetValue(ordinal))";
+            }
 
-        sb.AppendLine(
-            "}");
 
-    }
-    
-    private static string ReadValue(FieldInfo field)
-{
-    var type = field.PropertyType;
+            return
+                $"reader.IsDBNull(ordinal) " +
+                $"? default({enumName}) " +
+                $": ({enumName})Convert.ToInt32(reader.GetValue(ordinal))";
+        }
 
-    if (type == null)
-    {
+
+        var display =
+            type.ToDisplayString(
+                SymbolDisplayFormat.FullyQualifiedFormat);
+
+
         return
-            "reader.IsDBNull(ordinal) ? null : reader.GetValue(ordinal).ToString()";
+            $"reader.IsDBNull(ordinal) " +
+            $"? default({display}) " +
+            $": ({display})reader.GetValue(ordinal)";
     }
-
-    var display =
-        type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
-    var nullable =
-        type.NullableAnnotation == NullableAnnotation.Annotated ||
-        (type is INamedTypeSymbol named &&
-         named.OriginalDefinition.SpecialType ==
-         SpecialType.System_Nullable_T);
-
-    if (type.SpecialType == SpecialType.System_String)
-    {
-        return
-            "reader.IsDBNull(ordinal) ? null : reader.GetValue(ordinal).ToString()";
-    }
-
-    if (type.SpecialType == SpecialType.System_Int32)
-    {
-        return nullable
-            ? "reader.IsDBNull(ordinal) ? null : reader.GetInt32(ordinal)"
-            : "reader.IsDBNull(ordinal) ? default : reader.GetInt32(ordinal)";
-    }
-
-    if (type.SpecialType == SpecialType.System_Int64)
-    {
-        return nullable
-            ? "reader.IsDBNull(ordinal) ? null : reader.GetInt64(ordinal)"
-            : "reader.IsDBNull(ordinal) ? default : reader.GetInt64(ordinal)";
-    }
-
-    if (type.SpecialType == SpecialType.System_Boolean)
-    {
-        return nullable
-            ? "reader.IsDBNull(ordinal) ? null : reader.GetBoolean(ordinal)"
-            : "reader.IsDBNull(ordinal) ? default : reader.GetBoolean(ordinal)";
-    }
-
-    if (type.SpecialType == SpecialType.System_Decimal)
-    {
-        return nullable
-            ? "reader.IsDBNull(ordinal) ? null : reader.GetDecimal(ordinal)"
-            : "reader.IsDBNull(ordinal) ? default : reader.GetDecimal(ordinal)";
-    }
-
-    if (type.SpecialType == SpecialType.System_Double)
-    {
-        return nullable
-            ? "reader.IsDBNull(ordinal) ? null : reader.GetDouble(ordinal)"
-            : "reader.IsDBNull(ordinal) ? default : reader.GetDouble(ordinal)";
-    }
-
-    if (type.ToDisplayString() == "System.Guid")
-    {
-        return nullable
-            ? "reader.IsDBNull(ordinal) ? null : reader.GetGuid(ordinal)"
-            : "reader.IsDBNull(ordinal) ? default : reader.GetGuid(ordinal)";
-    }
-
-    if (type.TypeKind == TypeKind.Enum)
-    {
-        var underlying = type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nt
-            ? nt.TypeArguments[0]
-            : type;
-        var underlyingEnumDisplay = underlying.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        
-        return nullable
-            ? $"reader.IsDBNull(ordinal) ? null : ({underlyingEnumDisplay})Convert.ToInt32(reader.GetValue(ordinal))"
-            : $"reader.IsDBNull(ordinal) ? default({display}) : ({underlyingEnumDisplay})Convert.ToInt32(reader.GetValue(ordinal))";
-    }
-
-    return
-        $"reader.IsDBNull(ordinal) ? default({display}) : ({display})reader.GetValue(ordinal)";
-}
 
 
 
     private static void EmitResultBuilder(
-        StringBuilder sb,
-        MappingClassInfo info)
+    StringBuilder sb,
+    MappingClassInfo info)
+{
+    var model = info.ModelType!.Name;
+
+    sb.AppendLine($"public static class {model}ResultBuilder");
+    sb.AppendLine("{");
+
+    sb.AppendLine($"    public static List<{model}> Build(");
+    sb.AppendLine("        RowLayout layout,");
+    sb.AppendLine("        List<object?[]> rows)");
+    sb.AppendLine("    {");
+
+    sb.AppendLine($"        var results = new List<{model}>();");
+    sb.AppendLine();
+
+    sb.AppendLine("        foreach (var row in rows)");
+    sb.AppendLine("        {");
+
+    sb.AppendLine($"            var model = new {model}();");
+    sb.AppendLine();
+
+    sb.AppendLine($"            var rootIndex = layout.IndexOf(\"{model}\");");
+    sb.AppendLine("            if (rootIndex >= 0 && row[rootIndex] != null)");
+    sb.AppendLine("            {");
+    sb.AppendLine($"                model = ({model})row[rootIndex]!;");
+    sb.AppendLine("            }");
+    sb.AppendLine();
+
+    var emittedProperties = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    var children =
+        info.ModelChildren
+            .Where(x => x.To != "GraphModel")
+            .ToList();
+
+    foreach (var child in children)
     {
-        var model = info.ModelType!.Name;
+        var property = ResolveNavigationProperty(info, child.NavigationName);
 
+        if (property == null)
+            continue;
 
-        sb.AppendLine($"public static class {model}ResultBuilder");
-        sb.AppendLine("{");
+        if (!emittedProperties.Add(property))
+            continue;
 
+        var variable = "childIndex_" + property;
 
-        sb.AppendLine(
-            $"    public static List<{model}> Build(");
-
-        sb.AppendLine(
-            "        RowLayout layout,");
-
-        sb.AppendLine(
-            "        List<object?[]> rows)");
-
-        sb.AppendLine("    {");
-
-
-        sb.AppendLine(
-            $"        var results = new List<{model}>();");
-
+        // Use the navigation alias (e.g. "InnerCustomer"/"OuterCustomer"),
+        // not the target model name (e.g. "Customer") — RowLayout
+        // segments are keyed by output alias. Two navigations to the
+        // same target model (as here, both to Customer) would otherwise
+        // collide on the same layout.IndexOf("Customer") lookup and
+        // both resolve to the same (or no) segment.
+        sb.AppendLine($"            var {variable} = layout.IndexOf(\"{child.NavigationName}\");");
         sb.AppendLine();
 
+        sb.AppendLine($"            if ({variable} >= 0 && row[{variable}] != null)");
+        sb.AppendLine("            {");
 
-        sb.AppendLine(
-            "        foreach (var row in rows)");
+        var propertySymbol =
+            info.ModelType!
+                .GetMembers()
+                .OfType<IPropertySymbol>()
+                .FirstOrDefault(x => x.Name == property);
 
-        sb.AppendLine(
-            "        {");
-
-
-        sb.AppendLine(
-            $"            var model = new {model}();");
-
-        sb.AppendLine();
-
-
-        sb.AppendLine(
-            $"            var rootIndex = layout.IndexOf(\"{model}\");");
-
-
-        sb.AppendLine(
-            "            if (rootIndex >= 0 && row[rootIndex] != null)");
-
-        sb.AppendLine(
-            "            {");
-
-        sb.AppendLine(
-            $"                model = ({model})row[rootIndex]!;");
-
-        sb.AppendLine(
-            "            }");
-
-        sb.AppendLine();
-
-
-        var emittedProperties =
-            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-
-        var children =
-            info.ModelChildren
-                .Where(x => x.To != "GraphModel")
-                .ToList();
-
-
-        foreach (var child in children)
+        if (propertySymbol != null &&
+            propertySymbol.Type is INamedTypeSymbol named &&
+            named.IsGenericType &&
+            (
+                named.ConstructedFrom.ToDisplayString() == "System.Collections.Generic.List<T>" ||
+                named.ConstructedFrom.ToDisplayString() == "System.Collections.Generic.ICollection<T>" ||
+                named.ConstructedFrom.ToDisplayString() == "System.Collections.Generic.IEnumerable<T>"
+            ))
         {
-            var property =
-                ResolveNavigationProperty(
-                    info,
-                    child.NavigationName);
-
-
-            if (property == null)
-                continue;
-
-
-            if (!emittedProperties.Add(property))
-                continue;
-
-
-            var variable =
-                "childIndex_" + property;
-
-
-            sb.AppendLine(
-                $"            var {variable} = layout.IndexOf(\"{child.To}\");");
-
-
-            sb.AppendLine();
-
-
-            sb.AppendLine(
-                $"            if ({variable} >= 0 && row[{variable}] != null)");
-
-            sb.AppendLine(
-                "            {");
-
-
-            var propertySymbol =
-                info.ModelType!
-                    .GetMembers()
-                    .OfType<IPropertySymbol>()
-                    .FirstOrDefault(x =>
-                        x.Name == property);
-
-
-            if (propertySymbol != null &&
-                propertySymbol.Type is INamedTypeSymbol named &&
-                named.IsGenericType &&
-                (
-                    named.ConstructedFrom.ToDisplayString() == 
-                    "System.Collections.Generic.List<T>" ||
-                    named.ConstructedFrom.ToDisplayString() ==
-                    "System.Collections.Generic.ICollection<T>" ||
-                    named.ConstructedFrom.ToDisplayString() ==
-                    "System.Collections.Generic.IEnumerable<T>"
-                ))
-            {
-                sb.AppendLine(
-                    $"                model.{property}.Add(({child.To})row[{variable}]!);");
-            }
-            else
-            {
-                sb.AppendLine(
-                    $"                model.{property} = ({child.To})row[{variable}]!;");
-            }
-
-
-            sb.AppendLine(
-                "            }");
-
-
-            sb.AppendLine();
+            sb.AppendLine($"                model.{property}.Add(({child.To})row[{variable}]!);");
+        }
+        else
+        {
+            sb.AppendLine($"                model.{property} = ({child.To})row[{variable}]!;");
         }
 
-
-        sb.AppendLine(
-            "            results.Add(model);");
-
-        sb.AppendLine(
-            "        }");
-
-
+        sb.AppendLine("            }");
         sb.AppendLine();
-
-
-        sb.AppendLine(
-            "        return results;");
-
-
-        sb.AppendLine(
-            "    }");
-
-
-        sb.AppendLine(
-            "}");
-
     }
+
+    sb.AppendLine("            results.Add(model);");
+    sb.AppendLine("        }");
+    sb.AppendLine();
+    sb.AppendLine("        return results;");
+    sb.AppendLine("    }");
+    sb.AppendLine("}");
+}
     
         private static string? ResolveNavigationProperty(
         MappingClassInfo info,

@@ -60,10 +60,13 @@ public static class MutationRuntimePlanner
             node.OutputAlias,
             values,
             childNodes.ToImmutable(),
-            metadata.Schema,
-            metadata.Table);
+            schemaOverride: metadata.Schema,
+            tableOverride: metadata.Table);
 
-        builder.AddCteRoot(cteNode);
+        if (!values.IsEmpty)
+        {
+            builder.AddCteRoot(cteNode);
+        }
 
         return (cteNode, model);
     }

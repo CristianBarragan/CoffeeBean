@@ -6,8 +6,7 @@
         <PlatformTarget>x64</PlatformTarget>
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>latest</LangVersion>
-<!--        <OutputItemType>Analyzer</OutputItemType>-->
-<!--        <ReferenceOutputAssembly>false</ReferenceOutputAssembly>-->
+        <DisableIncrementalBuild>true</DisableIncrementalBuild>
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
         <Nullable>enable</Nullable>

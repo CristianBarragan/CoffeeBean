@@ -349,7 +349,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                     QueryMaterializerEmitter.Emit(resolvedMappings));
 
                 spc.AddSource("Planners.g.cs",
-                    PlannerEmitter.Emit(resolvedMappings));
+                    PlannerEmitter.Emit(resolvedMappings, rootEntityTypes,  entityGraph));
 
                 spc.AddSource("AdapterTables.g.cs",
                     AdapterEmitter.Emit(resolvedMappings, rootEntityTypes, entityGraph));

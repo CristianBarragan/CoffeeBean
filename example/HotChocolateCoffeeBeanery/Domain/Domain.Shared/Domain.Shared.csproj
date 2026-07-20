@@ -8,7 +8,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
-
+        <PrivateAssets>all</PrivateAssets>
         <RootNamespace>Domain.Shared</RootNamespace>
 
         <!-- Source generator debugging -->
