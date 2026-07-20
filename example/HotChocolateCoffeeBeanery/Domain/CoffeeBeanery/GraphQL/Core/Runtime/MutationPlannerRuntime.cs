@@ -1,5 +1,4 @@
-﻿#nullable enable
-
+﻿
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -33,6 +32,7 @@ public static class MutationPlannerRuntime
                 field.StorageEntityId,
                 node.OutputAlias,
                 new FieldValue(
+                    field.EntityId,
                     value.FieldId,
                     field.ColumnId,
                     value.RawValue));
@@ -84,7 +84,8 @@ public static class MutationPlannerRuntime
                 break;
         }
     }
-    
+
+
     private static void BuildEntityRoot(
         in MutationIR node,
         ref MutationPlanBuilder builder,
@@ -92,7 +93,6 @@ public static class MutationPlannerRuntime
     {
         var values =
             ImmutableArray.CreateBuilder<FieldValue>();
-
 
         foreach (var value in node.Values)
         {
@@ -103,15 +103,14 @@ public static class MutationPlannerRuntime
                 continue;
             }
 
-
             if (!field.IsPrimaryKey)
             {
                 continue;
             }
 
-
             values.Add(
                 new FieldValue(
+                    field.EntityId,
                     field.FieldId,
                     field.ColumnId,
                     value.RawValue));
@@ -129,7 +128,8 @@ public static class MutationPlannerRuntime
                 metadata.Table,
                 metadata.PrimaryColumns));
     }
-    
+
+
     private static void BuildGraphEdgeRoot(
         in MutationIR node,
         ref MutationPlanBuilder builder,
@@ -139,9 +139,14 @@ public static class MutationPlannerRuntime
         string? toKey = null;
         string? edgeKey = null;
 
+        var values =
+            ImmutableArray.CreateBuilder<FieldValue>();
 
         foreach (var value in node.Values)
         {
+            if (value.EntityId != metadata.EntityId)
+                continue;
+
             if (!metadata.TryResolveField(
                     value.FieldId,
                     out var field))
@@ -149,20 +154,22 @@ public static class MutationPlannerRuntime
                 continue;
             }
 
+            values.Add(
+                new FieldValue(
+                    value.EntityId,
+                    value.FieldId,
+                    field.ColumnId,
+                    value.RawValue));
 
-            // if (field.ColumnId ==
-            //     ColumnId.CustomerCustomerRelationship.InnerCustomerKey)
-            // {
-            //     fromKey = value.RawValue;
-            // }
-            //
-            //
-            // if (field.ColumnId ==
-            //     ColumnId.CustomerCustomerRelationship.OuterCustomerKey)
-            // {
-            //     toKey = value.RawValue;
-            // }
+            if (value.FieldId == metadata.GraphFromFieldId)
+            {
+                fromKey = value.RawValue;
+            }
 
+            if (value.FieldId == metadata.GraphToFieldId)
+            {
+                toKey = value.RawValue;
+            }
 
             if (field.IsPrimaryKey)
             {
@@ -171,8 +178,7 @@ public static class MutationPlannerRuntime
         }
 
 
-        if (fromKey != null &&
-            toKey != null)
+        if (fromKey != null && toKey != null)
         {
             builder.AddGraphMerge(
                 metadata.GraphName!,
@@ -185,7 +191,7 @@ public static class MutationPlannerRuntime
                 toKey,
                 metadata.PrimaryColumns[0],
                 edgeKey,
-                ImmutableDictionary<string,string>.Empty);
+                ImmutableDictionary<string, string>.Empty);
         }
 
 
@@ -194,7 +200,7 @@ public static class MutationPlannerRuntime
                 metadata.EntityId,
                 metadata.StorageEntityId,
                 node.OutputAlias,
-                ImmutableArray<FieldValue>.Empty,
+                values.ToImmutable(),
                 ImmutableArray<MutationCteNode>.Empty,
                 metadata.Schema,
                 metadata.Table,

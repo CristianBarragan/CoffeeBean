@@ -105,7 +105,8 @@ internal static class MetadataEmitter
 
         EmitEntityColumnNameArray(
             sb,
-            entityTypes);
+            entityTypes,
+            allMappings);
 
         sb.AppendLine("    }");
 
@@ -209,6 +210,9 @@ internal static class MetadataEmitter
             "        public static string? TryConvert(ushort storageEntityId, ushort columnId, string value)");
 
         sb.AppendLine("        {");
+
+        sb.AppendLine(
+            "            var normalizedValue = value.Trim().ToUpperInvariant();");
         sb.AppendLine("            switch (storageEntityId)");
         sb.AppendLine("            {");
 
@@ -229,7 +233,7 @@ internal static class MetadataEmitter
                 sb.AppendLine(
                     $"                        case (ushort)ColumnId.{entityName}.{field.DestinationName}:");
 
-                sb.AppendLine("                            return value switch");
+                sb.AppendLine("                            return normalizedValue switch");
                 sb.AppendLine("                            {");
 
                 foreach (var kvp in field.FromEnum!)
@@ -968,32 +972,21 @@ private static void EmitCteResolutionsArray(
 
     private static void EmitEntityColumnNameArray(
         StringBuilder sb,
-        List<INamedTypeSymbol> entityTypes)
+        List<INamedTypeSymbol> entityTypes,
+        ImmutableArray<MappingClassInfo> allMappings)   // add this parameter
     {
-        sb.AppendLine(
-            "        /// <summary>Indexed by StorageEntityId.* then ColumnId.{EntityName}.*</summary>");
-
-        sb.AppendLine(
-            $"        public static readonly string[][] EntityColumnName = new string[{entityTypes.Count}][]");
-
+        sb.AppendLine("        /// <summary>Indexed by StorageEntityId.* then ColumnId.{EntityName}.*</summary>");
+        sb.AppendLine($"        public static readonly string[][] EntityColumnName = new string[{entityTypes.Count}][]");
         sb.AppendLine("        {");
 
         foreach (var e in entityTypes)
         {
-            var cols =
-                IdEmitter.GetScalarProperties(e);
+            var cols = IdEmitter.GetOrderedColumnNames(e.Name, allMappings);  // was: IdEmitter.GetScalarProperties(e)
 
-            sb.AppendLine(
-                $"            new string[{cols.Count}]");
-
+            sb.AppendLine($"            new string[{cols.Count}]");
             sb.AppendLine("            {");
-
             foreach (var c in cols)
-            {
-                sb.AppendLine(
-                    $"                \"{c.Name}\",");
-            }
-
+                sb.AppendLine($"                \"{c}\",");
             sb.AppendLine("            },");
         }
 

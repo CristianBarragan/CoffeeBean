@@ -44,8 +44,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public bool IsGraph { get; set; }
 
         public GraphInfo? Graph { get; set; }
-
-        // Always initialised — parser accesses Definition.Entities without null-checking.
+        
         public MappingDefinitionInfo Definition { get; set; } = new MappingDefinitionInfo();
 
         public List<FieldInfo> FieldMaps { get; } = new();
@@ -124,6 +123,28 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         public bool IsPrimary { get; set; }
     }
+    
+    public sealed record NavigationDefinitionInfo
+    {
+        public required string NavigationName { get; set; }
+        public INamedTypeSymbol? TargetModel { get; set; }
+        public bool IsCollection { get; set; } = true;
+        public List<JoinPathDefinitionInfo> Paths { get; set; } = [];
+    }
+
+    public sealed record JoinPathDefinitionInfo
+    {
+        public INamedTypeSymbol? TargetEntity { get; set; }
+        public List<JoinHopDefinitionInfo> Hops { get; set; } = [];
+    }
+
+    public sealed record JoinHopDefinitionInfo
+    {
+        public INamedTypeSymbol? FromEntity { get; set; }
+        public string? FromColumn { get; set; }
+        public INamedTypeSymbol? ToEntity { get; set; }
+        public string? ToColumn { get; set; }
+    }
 
     public sealed class CteUpdateMetaInfo
     {
@@ -158,6 +179,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
     public sealed class FieldInfo
     {
         public string SourceName { get; set; } = "";
+        
+        public bool IsNavigationKey { get; set; }
 
         public string DestinationEntity { get; set; } = "";
 
@@ -269,6 +292,9 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         public bool IsGraph { get; set; }
 
+        
+        public List<NavigationDefinitionInfo> Navigations { get; set; } = [];
+        
         public List<EntityDefinitionInfo> Entities { get; set; } = [];
 
         public List<PrimaryKeyDefinitionInfo> PrimaryKey { get; set; } = [];

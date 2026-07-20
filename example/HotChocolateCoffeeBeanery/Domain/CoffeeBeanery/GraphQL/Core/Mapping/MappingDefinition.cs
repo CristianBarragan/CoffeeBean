@@ -147,6 +147,8 @@ public sealed record FieldDefinition
 
     public required string Destination { get; init; }
 
+    public bool IsNavigationKey { get; set; }
+
     public EnumMappingDefinition? EnumMapping { get; init; }
 }
 

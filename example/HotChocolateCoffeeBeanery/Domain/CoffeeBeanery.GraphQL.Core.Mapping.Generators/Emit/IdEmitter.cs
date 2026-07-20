@@ -78,18 +78,22 @@ internal static class IdEmitter
             .ToList();
     }
 
-    internal static bool IsScalarProperty(
-        IPropertySymbol property)
+    internal static bool IsScalarProperty(IPropertySymbol property)
     {
-        if (property.IsStatic)
-            return false;
-
-        if (property.DeclaredAccessibility != Accessibility.Public)
-            return false;
+        if (property.IsStatic) return false;
+        if (property.DeclaredAccessibility != Accessibility.Public) return false;
 
         var type = property.Type;
 
         if (type.TypeKind == TypeKind.Enum)
+            return true;
+        
+        var namedType = type as INamedTypeSymbol;
+        var underlying = namedType?.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
+            ? namedType.TypeArguments[0]
+            : type;
+
+        if (underlying.ToDisplayString() == "System.Guid")
             return true;
 
         return type.SpecialType switch
@@ -103,6 +107,19 @@ internal static class IdEmitter
             SpecialType.System_DateTime => true,
             _ => false
         };
+    }
+    
+    internal static List<string> GetOrderedColumnNames(
+        string entityName,
+        ImmutableArray<MappingClassInfo> mappings)
+    {
+        return mappings
+            .SelectMany(m => m.FieldMaps)
+            .Where(f => string.Equals(f.DestinationEntity, entityName, StringComparison.OrdinalIgnoreCase))
+            .Select(f => f.DestinationName)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     internal static bool IsScalarProperty(
@@ -156,22 +173,9 @@ internal static class IdEmitter
             sb.AppendLine($"    public static class {modelName}");
             sb.AppendLine("    {");
 
-            // One constant per client-facing field name (SourceName),
-            // even when that field fans out to multiple destination
-            // entities/columns (composite models like Product).
-            var fields = new HashSet<string>(StringComparer.Ordinal);
-
-            foreach (var field in mapping.FieldMaps)
-            {
-                var name = FieldIdNameHelper.GetName(field);
-
-                if (!string.IsNullOrWhiteSpace(name))
-                    fields.Add(name);
-            }
-
             ushort id = 0;
 
-            foreach (var fieldName in fields.OrderBy(x => x))
+            foreach (var fieldName in GetResolvedFieldNames(mapping))
             {
                 sb.AppendLine($"        public const ushort {fieldName} = {id};");
                 id++;
@@ -181,6 +185,31 @@ internal static class IdEmitter
         }
 
         sb.AppendLine("}");
+    }
+    
+    internal static IReadOnlyList<string> GetResolvedFieldNames(
+        MappingClassInfo mapping)
+    {
+        var fields = new HashSet<string>(StringComparer.Ordinal);
+
+        // Convention-discovered scalar properties
+        foreach (var prop in GetScalarProperties(mapping.ModelType!))
+        {
+            fields.Add(prop.Name);
+        }
+
+        // Explicit/custom mapping fields
+        foreach (var field in mapping.FieldMaps)
+        {
+            var name = FieldIdNameHelper.GetName(field);
+
+            if (!string.IsNullOrWhiteSpace(name))
+                fields.Add(name);
+        }
+
+        return fields
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToList();
     }
 
     private static void EmitColumnIds(

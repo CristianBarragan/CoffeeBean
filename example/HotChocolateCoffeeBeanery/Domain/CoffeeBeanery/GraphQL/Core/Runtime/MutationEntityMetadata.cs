@@ -8,28 +8,26 @@ namespace CoffeeBeanery.GraphQL.Core.Runtime;
 public sealed class MutationFieldMetadata
 {
     public ushort FieldId { get; }
-
     public ushort EntityId { get; }
-
     public ushort StorageEntityId { get; }
-
     public ushort ColumnId { get; }
-
     public bool IsPrimaryKey { get; }
-
+    public bool IsNavigationKey { get; }
 
     public MutationFieldMetadata(
         ushort fieldId,
         ushort entityId,
         ushort storageEntityId,
         ushort columnId,
-        bool isPrimaryKey)
+        bool isPrimaryKey,
+        bool isNavigationKey = false)
     {
         FieldId = fieldId;
         EntityId = entityId;
         StorageEntityId = storageEntityId;
         ColumnId = columnId;
         IsPrimaryKey = isPrimaryKey;
+        IsNavigationKey = isNavigationKey;
     }
 }
 

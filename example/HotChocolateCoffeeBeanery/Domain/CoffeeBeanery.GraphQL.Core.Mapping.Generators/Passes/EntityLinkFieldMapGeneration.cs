@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
 
 namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
@@ -12,22 +13,44 @@ internal static class EntityLinkFieldMapGeneration
             if (link.ModelKey == null || link.EntityKey == null)
                 continue;
 
-            if (HasAnyFieldMap(info, link.ModelKey, link.EntityType.Name))
+            if (HasAnyFieldMap(
+                    info,
+                    link.ModelKey,
+                    link.EntityType.Name))
+            {
                 continue;
+            }
 
             info.FieldMaps.Add(new FieldInfo
             {
                 SourceName = link.ModelKey,
                 DestinationEntity = link.EntityType.Name,
                 DestinationName = link.EntityKey,
+
+                // IMPORTANT:
+                // This is a relationship FK, not a normal scalar.
                 IsGenerated = true,
+                IsNavigationKey = true,
+
                 PropertyType = link.EntityType
             });
         }
     }
 
-    private static bool HasAnyFieldMap(MappingClassInfo info, string sourceName, string destEntity) =>
-        info.FieldMaps.Any(f =>
-            string.Equals(f.SourceName, sourceName, System.StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(f.DestinationEntity, destEntity, System.StringComparison.OrdinalIgnoreCase));
+
+    private static bool HasAnyFieldMap(
+        MappingClassInfo info,
+        string sourceName,
+        string destEntity)
+    {
+        return info.FieldMaps.Any(f =>
+            string.Equals(
+                f.SourceName,
+                sourceName,
+                StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(
+                f.DestinationEntity,
+                destEntity,
+                StringComparison.OrdinalIgnoreCase));
+    }
 }

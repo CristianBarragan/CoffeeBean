@@ -76,6 +76,10 @@ internal static class MappingClassParser
                             assignment.Right,
                             semanticModel);
                     break;
+                
+                case "Navigations":
+                    ParseNavigations(assignment.Right, info, semanticModel);
+                    break;
 
                 case "Schema":
                     info.Schema =
@@ -207,6 +211,126 @@ internal static class MappingClassParser
             }
         }
     }
+    
+    private static void ParseNavigations(
+    ExpressionSyntax expression,
+    MappingClassInfo info,
+    SemanticModel semanticModel)
+{
+    foreach (var element in GetCollectionElements(expression))
+    {
+        var initializer = GetObjectInitializer(element);
+        if (initializer == null) continue;
+
+        var nav = new NavigationDefinitionInfo { NavigationName = "" };
+
+        foreach (var assignment in initializer.Expressions.OfType<AssignmentExpressionSyntax>())
+        {
+            var name = (assignment.Left as IdentifierNameSyntax)?.Identifier.Text;
+
+            switch (name)
+            {
+                case "NavigationName":
+                    nav = nav with { NavigationName = EvaluateStringLikeExpression(assignment.Right) ?? "" };
+                    break;
+
+                case "TargetModel":
+                    nav = nav with { TargetModel = GetTypeSymbol(assignment.Right, semanticModel) };
+                    break;
+
+                case "IsCollection":
+                    nav = nav with
+                    {
+                        IsCollection = assignment.Right.ToString()
+                            .Equals("true", StringComparison.OrdinalIgnoreCase)
+                    };
+                    break;
+
+                case "Paths":
+                    nav = nav with { Paths = ParseJoinPaths(assignment.Right, semanticModel) };
+                    break;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(nav.NavigationName))
+            info.Definition.Navigations.Add(nav);
+    }
+}
+
+private static List<JoinPathDefinitionInfo> ParseJoinPaths(
+    ExpressionSyntax expression,
+    SemanticModel semanticModel)
+{
+    var paths = new List<JoinPathDefinitionInfo>();
+
+    foreach (var element in GetCollectionElements(expression))
+    {
+        var initializer = GetObjectInitializer(element);
+        if (initializer == null) continue;
+
+        var path = new JoinPathDefinitionInfo();
+
+        foreach (var assignment in initializer.Expressions.OfType<AssignmentExpressionSyntax>())
+        {
+            var name = (assignment.Left as IdentifierNameSyntax)?.Identifier.Text;
+
+            switch (name)
+            {
+                case "TargetEntity":
+                    path = path with { TargetEntity = GetTypeSymbol(assignment.Right, semanticModel) };
+                    break;
+
+                case "Hops":
+                    path = path with { Hops = ParseJoinHops(assignment.Right, semanticModel) };
+                    break;
+            }
+        }
+
+        paths.Add(path);
+    }
+
+    return paths;
+}
+
+private static List<JoinHopDefinitionInfo> ParseJoinHops(
+    ExpressionSyntax expression,
+    SemanticModel semanticModel)
+{
+    var hops = new List<JoinHopDefinitionInfo>();
+
+    foreach (var element in GetCollectionElements(expression))
+    {
+        var initializer = GetObjectInitializer(element);
+        if (initializer == null) continue;
+
+        var hop = new JoinHopDefinitionInfo();
+
+        foreach (var assignment in initializer.Expressions.OfType<AssignmentExpressionSyntax>())
+        {
+            var name = (assignment.Left as IdentifierNameSyntax)?.Identifier.Text;
+
+            switch (name)
+            {
+                case "FromEntity":
+                    hop = hop with { FromEntity = GetTypeSymbol(assignment.Right, semanticModel) };
+                    break;
+                case "FromColumn":
+                    hop = hop with { FromColumn = EvaluateStringLikeExpression(assignment.Right) };
+                    break;
+                case "ToEntity":
+                    hop = hop with { ToEntity = GetTypeSymbol(assignment.Right, semanticModel) };
+                    break;
+                case "ToColumn":
+                    hop = hop with { ToColumn = EvaluateStringLikeExpression(assignment.Right) };
+                    break;
+            }
+        }
+
+        hops.Add(hop);
+    }
+
+    return hops;
+}
 
     private static ExpressionSyntax? GetPropertyExpression(
         PropertyDeclarationSyntax property)
@@ -453,13 +577,11 @@ internal static class MappingClassParser
 
             var field = new FieldInfo();
 
-            foreach (var assignment in initializer.Expressions
-                         .OfType<AssignmentExpressionSyntax>())
+            foreach (var assignment in initializer.Expressions.OfType<AssignmentExpressionSyntax>())
             {
                 var identifier = (assignment.Left as IdentifierNameSyntax)?.Identifier;
                 var name = identifier.Value.Text;
-                // field.PropertyType = identifier.GetType().GetType();
-                
+
                 switch (name)
                 {
                     case "Source":
@@ -473,6 +595,10 @@ internal static class MappingClassParser
                         break;
                     case "EnumMapping":
                         ParseEnumMapping(assignment.Right, field, semanticModel);
+                        break;
+                    case "IsNavigationKey":   // NEW
+                        field.IsNavigationKey =
+                            assignment.Right.ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
                         break;
                 }
             }

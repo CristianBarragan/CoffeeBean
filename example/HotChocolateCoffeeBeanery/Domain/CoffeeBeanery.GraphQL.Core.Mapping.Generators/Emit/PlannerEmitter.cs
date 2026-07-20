@@ -79,6 +79,9 @@ internal static class PlannerEmitter
         sb.AppendLine("        {");
 
         EmitScalarSelection(sb, info);
+        EmitGraphSelection(
+            sb,
+            info);
         EmitChildSelection(sb, info, allMappings);
 
         sb.AppendLine("        }");
@@ -108,16 +111,20 @@ internal static class PlannerEmitter
     internal static bool IsCompositeInfo(MappingClassInfo info) => info.IsComposite;
 
     private static List<(string FieldName, string EntityTypeName, string ColumnName, string? StorageAlias)>
-        ComputeFieldMappingsEager(MappingClassInfo info, bool composite)
+        ComputeFieldMappingsEager(
+            MappingClassInfo info,
+            bool composite)
     {
-        var fields = new List<(string FieldName, string EntityTypeName, string ColumnName, string? StorageAlias)>();
+        var fields =
+            new List<(string FieldName, string EntityTypeName, string ColumnName, string? StorageAlias)>();
 
         foreach (var field in info.FieldMaps)
         {
-            if (field.IsGenerated)
+            if (field.IsNavigationKey)
                 continue;
-
-            if (info.Graph != null && !string.IsNullOrWhiteSpace(info.Graph.GraphName))
+            
+            if (info.Graph != null &&
+                !string.IsNullOrWhiteSpace(info.Graph.GraphName))
             {
                 if (string.Equals(field.SourceName, info.Graph.From?.KeyColumn, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(field.SourceName, info.Graph.To?.KeyColumn, StringComparison.OrdinalIgnoreCase))
@@ -207,10 +214,24 @@ internal static class PlannerEmitter
         sb.AppendLine("                }");
         sb.AppendLine("            }");
     }
+    
+    private static void EmitGraphSelection(StringBuilder sb, MappingClassInfo info)
+    {
+        if (info.Graph == null || string.IsNullOrWhiteSpace(info.Graph.GraphName))
+            return;
 
-    // PlannerRegistry: query-side only. No BuildMutation, no PlannerCount
-    // mutation switch — MutationRuntimePlanner + MutationMetadataRegistry
-    // own mutation planning entirely now.
+        var g = info.Graph;
+
+        sb.AppendLine();
+        sb.AppendLine($"            builder.AddGraphJoin(");
+        sb.AppendLine($"                EntityId.{info.ModelType!.Name},");
+        sb.AppendLine($"                StorageEntityId.{IdEmitter.StripEntitySuffix(info.EntityType!.Name)},");
+        sb.AppendLine($"                \"{g.GraphName}\", \"{g.EdgeLabel}\", \"{g.EdgeKey}\",");
+        sb.AppendLine($"                \"{g.From!.Label}\", \"{g.From.KeyColumn}\", \"{g.From.Alias}\", \"{g.FromJoinColumn}\",");
+        sb.AppendLine($"                \"{g.To!.Label}\", \"{g.To.KeyColumn}\", \"{g.To.Alias}\", \"{g.ToJoinColumn}\",");
+        sb.AppendLine($"                node.OutputAlias + \"_graph\");");
+    }
+
     private static void EmitRegistry(StringBuilder sb, List<MappingClassInfo> models)
     {
         sb.AppendLine("public static class PlannerRegistry");

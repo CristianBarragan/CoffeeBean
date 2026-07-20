@@ -171,11 +171,15 @@ public ref struct MutationPlanBuilder
         ushort storageEntityId,
         ushort columnId)
     {
+        Console.WriteLine(
+            $"MAP Field={fieldId} Entity={entityId} Storage={storageEntityId} Column={columnId}");
+
         _fieldMappings[fieldId] =
             (entityId, storageEntityId, columnId);
     }
     
     public void AddRowValue(
+        ushort entityId,
         ushort fieldId,
         FieldValue value,
         string alias)
@@ -187,14 +191,12 @@ public ref struct MutationPlanBuilder
             return;
         }
 
-
         var key =
         (
             mapping.EntityId,
             mapping.StorageEntityId,
             alias
         );
-
 
         if (!_pendingRows.TryGetValue(
                 key,
@@ -206,11 +208,11 @@ public ref struct MutationPlanBuilder
             _pendingRows[key] = values;
         }
 
-
         if (!values.Any(x => x.FieldId == fieldId))
         {
             values.Add(
                 new FieldValue(
+                    mapping.EntityId,
                     fieldId,
                     mapping.ColumnId,
                     value.RawValue));
@@ -223,8 +225,9 @@ public ref struct MutationPlanBuilder
         var builder =
             ImmutableArray.CreateBuilder<FieldValue>();
 
-
-        foreach (var row in _pendingRows)
+        foreach (var row in _pendingRows
+                     .OrderBy(x => x.Key.EntityId)
+                     .ThenBy(x => x.Key.StorageEntityId))
         {
             if (!string.Equals(
                     row.Key.Alias,
@@ -234,11 +237,8 @@ public ref struct MutationPlanBuilder
                 continue;
             }
 
-
-            builder.AddRange(
-                row.Value);
+            builder.AddRange(row.Value);
         }
-
 
         return builder.ToImmutable();
     }

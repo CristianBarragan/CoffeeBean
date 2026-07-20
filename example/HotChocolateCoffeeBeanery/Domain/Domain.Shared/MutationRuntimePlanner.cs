@@ -53,7 +53,7 @@ public static class MutationRuntimePlanner
         {
             EmitGraphMerge(node, metadata, ref builder);
         }
-
+        
         var cteNode = new MutationCteNode(
             entityId,
             metadata.StorageEntityId,
@@ -61,8 +61,7 @@ public static class MutationRuntimePlanner
             values,
             childNodes.ToImmutable(),
             metadata.Schema,
-            metadata.Table,
-            metadata.PrimaryColumns);
+            metadata.Table);
 
         builder.AddCteRoot(cteNode);
 
@@ -87,8 +86,10 @@ public static class MutationRuntimePlanner
                 continue;
 
             var target = targets.FirstOrDefault(t => t.ColumnId == value.ColumnId);
-
             if (target is null)
+                continue;
+
+            if (target.StorageEntityId == metadata.StorageEntityId)
                 continue;
 
             if (!byStorageEntity.TryGetValue(target.StorageEntityId, out var group))
@@ -102,51 +103,96 @@ public static class MutationRuntimePlanner
 
         foreach (var (storageEntityId, group) in byStorageEntity)
         {
-            builder.AddRow(
-                entityId,
-                storageEntityId,
-                node.OutputAlias,
-                group.ToImmutable(),
-                null,
-                null);
+            builder.AddRow(entityId, storageEntityId, node.OutputAlias, group.ToImmutable(), null, null);
         }
     }
 
     private static void EmitGraphMerge(
-        in MutationIR node,
-        MutationEntityMetadata metadata,
-        ref MutationPlanBuilder builder)
+    in MutationIR node,
+    MutationEntityMetadata metadata,
+    ref MutationPlanBuilder builder)
+{
+    string? fromKey = null;
+    string? toKey = null;
+    string? edgeKey = null;
+
+    string? edgeKeyColumn = null;
+
+
+    foreach (var value in node.Values)
     {
-        string? fromKey = null;
-        string? toKey = null;
-        string? edgeKey = null;
+        if (value.EntityId != metadata.EntityId)
+            continue;
 
-        foreach (var value in node.Values)
+
+        if (!metadata.TryResolveField(
+                value.FieldId,
+                out var field))
         {
-            if (value.FieldId == metadata.GraphFromFieldId)
-                fromKey = value.RawValue;
-
-            if (value.FieldId == metadata.GraphToFieldId)
-                toKey = value.RawValue;
-
-            if (metadata.TryResolveField(value.FieldId, out var field) && field.IsPrimaryKey)
-                edgeKey = value.RawValue;
+            continue;
         }
 
-        if (fromKey == null || toKey == null)
-            return;
 
-        builder.AddGraphMerge(
-            metadata.GraphName!,
-            metadata.GraphEdgeLabel!,
-            metadata.GraphFromVertex!,
-            metadata.GraphFromColumn!,
-            fromKey,
-            metadata.GraphToVertex!,
-            metadata.GraphToColumn!,
-            toKey,
-            metadata.PrimaryColumns[0],
-            edgeKey,
-            ImmutableDictionary<string, string>.Empty);
+        if (metadata.GraphFromFieldId.HasValue &&
+            value.FieldId == metadata.GraphFromFieldId.Value)
+        {
+            fromKey = value.RawValue;
+        }
+
+
+        if (metadata.GraphToFieldId.HasValue &&
+            value.FieldId == metadata.GraphToFieldId.Value)
+        {
+            toKey = value.RawValue;
+        }
+
+
+        if (field.IsPrimaryKey)
+        {
+            edgeKey = value.RawValue;
+
+            if (metadata.PrimaryColumns.Length > 0)
+            {
+                edgeKeyColumn = metadata.PrimaryColumns[0];
+            }
+        }
     }
+
+
+    if (fromKey == null || toKey == null)
+        return;
+
+
+    if (edgeKeyColumn == null)
+    {
+        throw new InvalidOperationException(
+            $"Graph edge {metadata.EntityId} has no primary key.");
+    }
+
+
+    if (metadata.GraphName == null ||
+        metadata.GraphEdgeLabel == null ||
+        metadata.GraphFromVertex == null ||
+        metadata.GraphToVertex == null ||
+        metadata.GraphFromColumn == null ||
+        metadata.GraphToColumn == null)
+    {
+        throw new InvalidOperationException(
+            $"Incomplete graph metadata for entity {metadata.EntityId}.");
+    }
+
+
+    builder.AddGraphMerge(
+        metadata.GraphName,
+        metadata.GraphEdgeLabel,
+        metadata.GraphFromVertex,
+        metadata.GraphFromColumn,
+        fromKey,
+        metadata.GraphToVertex,
+        metadata.GraphToColumn,
+        toKey,
+        edgeKeyColumn,
+        edgeKey,
+        ImmutableDictionary<string, string>.Empty);
+}
 }

@@ -109,34 +109,37 @@ internal static class MutationMaterializerEmitter
         foreach (var group in RelevantFieldsGrouped(info))
         {
             var representative = group.First();
-
             var variable = $"rawValue{counter++}";
 
             sb.AppendLine($"        var {variable} = {ConvertToRaw(representative)};");
             sb.AppendLine();
+            // Only emit a FieldValue when the model actually has a value for
+            // this field. A null here means the client never supplied it (or
+            // it was never set) — writing it as "" instead of omitting it
+            // entirely corrupts non-string columns (enums, ints, dates) with
+            // an invalid empty-string literal. Omitting lets the column's
+            // existing value / DB default stand, matching "field not touched"
+            // semantics rather than "field explicitly cleared".
+            sb.AppendLine($"        if ({variable} is not null)");
+            sb.AppendLine("        {");
 
             foreach (var field in group)
             {
-                sb.AppendLine("        builder.Add(new FieldValue(");
-                sb.AppendLine(
-                    $"            FieldId.{model}.{FieldIdNameHelper.GetName(field)},");
-                var columnName =
-                    string.IsNullOrWhiteSpace(field.DestinationColumn)
-                        ? field.DestinationName
-                        : field.DestinationColumn;
-
-                sb.AppendLine(
-                    $"            ColumnId.{field.DestinationEntity}.{columnName},");
-                sb.AppendLine(
-                    $"            {variable} ?? string.Empty));");
+                sb.AppendLine("            builder.Add(new FieldValue(");
+                sb.AppendLine($"                EntityId.{model},");
+                sb.AppendLine($"                FieldId.{model}.{FieldIdNameHelper.GetName(field)},");
+                sb.AppendLine($"                ColumnId.{field.DestinationEntity}.{field.DestinationName},");
+                sb.AppendLine($"                {variable}));");
                 sb.AppendLine();
             }
+
+            sb.AppendLine("        }");
+            sb.AppendLine();
         }
 
         sb.AppendLine("        return builder.ToImmutable();");
         sb.AppendLine("    }");
         sb.AppendLine("}");
-
     }
 
 
@@ -218,21 +221,7 @@ internal static class MutationMaterializerEmitter
     {
         var fields =
             info.FieldMaps
-                .Where(field =>
-                    !(info.Graph != null &&
-                    (
-                        string.Equals(
-                            field.SourceName,
-                            info.Graph.From?.KeyColumn,
-                            StringComparison.OrdinalIgnoreCase)
-
-                        ||
-
-                        string.Equals(
-                            field.SourceName,
-                            info.Graph.To?.KeyColumn,
-                            StringComparison.OrdinalIgnoreCase)
-                    )))
+                .Where(field => !field.IsNavigationKey)
                 .ToList();
 
 

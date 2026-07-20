@@ -118,93 +118,88 @@ internal static class QueryMaterializerEmitter
 
     }
     
-        private static string ReadValue(FieldInfo field)
+    private static string ReadValue(FieldInfo field)
+{
+    var type = field.PropertyType;
+
+    if (type == null)
     {
-        var type = field.PropertyType;
-
-        if (type == null)
-        {
-            return
-                "reader.IsDBNull(ordinal) ? null : reader.GetValue(ordinal).ToString()";
-        }
-
-
-        var display =
-            type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
-
-        var nullable =
-            type.NullableAnnotation == NullableAnnotation.Annotated ||
-            (type is INamedTypeSymbol named &&
-             named.OriginalDefinition.SpecialType ==
-             SpecialType.System_Nullable_T);
-
-
-        if (type.SpecialType == SpecialType.System_String)
-        {
-            return
-                "reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal)";
-        }
-
-
-        if (type.SpecialType == SpecialType.System_Int32)
-        {
-            return nullable
-                ? "reader.IsDBNull(ordinal) ? null : reader.GetInt32(ordinal)"
-                : "reader.IsDBNull(ordinal) ? default : reader.GetInt32(ordinal)";
-        }
-
-
-        if (type.SpecialType == SpecialType.System_Int64)
-        {
-            return nullable
-                ? "reader.IsDBNull(ordinal) ? null : reader.GetInt64(ordinal)"
-                : "reader.IsDBNull(ordinal) ? default : reader.GetInt64(ordinal)";
-        }
-
-
-        if (type.SpecialType == SpecialType.System_Boolean)
-        {
-            return nullable
-                ? "reader.IsDBNull(ordinal) ? null : reader.GetBoolean(ordinal)"
-                : "reader.IsDBNull(ordinal) ? default : reader.GetBoolean(ordinal)";
-        }
-
-
-        if (type.SpecialType == SpecialType.System_Decimal)
-        {
-            return nullable
-                ? "reader.IsDBNull(ordinal) ? null : reader.GetDecimal(ordinal)"
-                : "reader.IsDBNull(ordinal) ? default : reader.GetDecimal(ordinal)";
-        }
-
-
-        if (type.SpecialType == SpecialType.System_Double)
-        {
-            return nullable
-                ? "reader.IsDBNull(ordinal) ? null : reader.GetDouble(ordinal)"
-                : "reader.IsDBNull(ordinal) ? default : reader.GetDouble(ordinal)";
-        }
-
-
-        if (type.ToDisplayString() == "System.Guid")
-        {
-            return nullable
-                ? "reader.IsDBNull(ordinal) ? null : reader.GetGuid(ordinal)"
-                : "reader.IsDBNull(ordinal) ? default : reader.GetGuid(ordinal)";
-        }
-
-
-        if (type.TypeKind == TypeKind.Enum)
-        {
-            return
-                $"reader.IsDBNull(ordinal) ? default({display}) : ({display})reader.GetValue(ordinal)";
-        }
-
-
         return
-            $"reader.IsDBNull(ordinal) ? default({display}) : ({display})reader.GetValue(ordinal)";
+            "reader.IsDBNull(ordinal) ? null : reader.GetValue(ordinal).ToString()";
     }
+
+    var display =
+        type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+    var nullable =
+        type.NullableAnnotation == NullableAnnotation.Annotated ||
+        (type is INamedTypeSymbol named &&
+         named.OriginalDefinition.SpecialType ==
+         SpecialType.System_Nullable_T);
+
+    if (type.SpecialType == SpecialType.System_String)
+    {
+        return
+            "reader.IsDBNull(ordinal) ? null : reader.GetValue(ordinal).ToString()";
+    }
+
+    if (type.SpecialType == SpecialType.System_Int32)
+    {
+        return nullable
+            ? "reader.IsDBNull(ordinal) ? null : reader.GetInt32(ordinal)"
+            : "reader.IsDBNull(ordinal) ? default : reader.GetInt32(ordinal)";
+    }
+
+    if (type.SpecialType == SpecialType.System_Int64)
+    {
+        return nullable
+            ? "reader.IsDBNull(ordinal) ? null : reader.GetInt64(ordinal)"
+            : "reader.IsDBNull(ordinal) ? default : reader.GetInt64(ordinal)";
+    }
+
+    if (type.SpecialType == SpecialType.System_Boolean)
+    {
+        return nullable
+            ? "reader.IsDBNull(ordinal) ? null : reader.GetBoolean(ordinal)"
+            : "reader.IsDBNull(ordinal) ? default : reader.GetBoolean(ordinal)";
+    }
+
+    if (type.SpecialType == SpecialType.System_Decimal)
+    {
+        return nullable
+            ? "reader.IsDBNull(ordinal) ? null : reader.GetDecimal(ordinal)"
+            : "reader.IsDBNull(ordinal) ? default : reader.GetDecimal(ordinal)";
+    }
+
+    if (type.SpecialType == SpecialType.System_Double)
+    {
+        return nullable
+            ? "reader.IsDBNull(ordinal) ? null : reader.GetDouble(ordinal)"
+            : "reader.IsDBNull(ordinal) ? default : reader.GetDouble(ordinal)";
+    }
+
+    if (type.ToDisplayString() == "System.Guid")
+    {
+        return nullable
+            ? "reader.IsDBNull(ordinal) ? null : reader.GetGuid(ordinal)"
+            : "reader.IsDBNull(ordinal) ? default : reader.GetGuid(ordinal)";
+    }
+
+    if (type.TypeKind == TypeKind.Enum)
+    {
+        var underlying = type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nt
+            ? nt.TypeArguments[0]
+            : type;
+        var underlyingEnumDisplay = underlying.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        
+        return nullable
+            ? $"reader.IsDBNull(ordinal) ? null : ({underlyingEnumDisplay})Convert.ToInt32(reader.GetValue(ordinal))"
+            : $"reader.IsDBNull(ordinal) ? default({display}) : ({underlyingEnumDisplay})Convert.ToInt32(reader.GetValue(ordinal))";
+    }
+
+    return
+        $"reader.IsDBNull(ordinal) ? default({display}) : ({display})reader.GetValue(ordinal)";
+}
 
 
 
