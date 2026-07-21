@@ -709,48 +709,41 @@ private static List<JoinHopDefinitionInfo> ParseJoinHops(
     }
 
 
-    private static VertexInfo? ParseVertex(
-        ExpressionSyntax expression)
+    private static VertexInfo? ParseVertex(ExpressionSyntax expression)
     {
         var initializer = GetObjectInitializer(expression);
-
         if (initializer == null)
             return null;
 
-
         var vertex = new VertexInfo();
 
-
-        foreach (var assignment in initializer.Expressions
-                     .OfType<AssignmentExpressionSyntax>())
+        foreach (var assignment in initializer.Expressions.OfType<AssignmentExpressionSyntax>())
         {
-            var name =
-                (assignment.Left as IdentifierNameSyntax)
-                ?.Identifier.Text;
-
+            var name = (assignment.Left as IdentifierNameSyntax)?.Identifier.Text;
 
             switch (name)
             {
                 case "Label":
-                    vertex.Label =
-                        EvaluateStringLikeExpression(
-                            assignment.Right) ?? "";
+                    vertex.Label = EvaluateStringLikeExpression(assignment.Right) ?? "";
+                    break;
+
+                case "GraphProperty":
+                    vertex.GraphProperty = EvaluateStringLikeExpression(assignment.Right) ?? "";
+                    break;
+
+                case "ForeignKeyColumn":
+                    vertex.ForeignKeyColumn = EvaluateStringLikeExpression(assignment.Right) ?? "";
                     break;
 
                 case "KeyColumn":
-                    vertex.KeyColumn =
-                        EvaluateStringLikeExpression(
-                            assignment.Right) ?? "";
+                    vertex.KeyColumn = EvaluateStringLikeExpression(assignment.Right) ?? "";
                     break;
 
                 case "Alias":
-                    vertex.Alias =
-                        EvaluateStringLikeExpression(
-                            assignment.Right);
+                    vertex.Alias = EvaluateStringLikeExpression(assignment.Right);
                     break;
             }
         }
-
 
         return vertex;
     }

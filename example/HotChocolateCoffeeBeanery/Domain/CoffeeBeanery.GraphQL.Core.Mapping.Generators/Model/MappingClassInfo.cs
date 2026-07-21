@@ -248,9 +248,9 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
     public sealed class VertexInfo
     {
         public string Label { get; set; } = string.Empty;
-
+        public string GraphProperty { get; set; } = string.Empty;
+        public string ForeignKeyColumn { get; set; } = string.Empty;
         public string KeyColumn { get; set; } = string.Empty;
-
         public string? Alias { get; set; }
     }
 

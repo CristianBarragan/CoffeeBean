@@ -126,17 +126,21 @@ internal static class PlannerEmitter
     sb.AppendLine("            builder.AddGraphJoin(");
     sb.AppendLine($"                EntityId.{info.ModelType!.Name},");
     sb.AppendLine($"                StorageEntityId.{IdEmitter.StripEntitySuffix(info.EntityType!.Name)},");
+
     sb.AppendLine($"                \"{g.GraphName}\",");
     sb.AppendLine($"                \"{g.EdgeLabel}\",");
     sb.AppendLine($"                \"{g.EdgeKey}\",");
+
     sb.AppendLine($"                \"{g.From.Label}\",");
-    sb.AppendLine($"                \"{g.From.KeyColumn}\",");
+    sb.AppendLine($"                \"{g.From.GraphProperty}\",");
     sb.AppendLine($"                \"{g.From.Alias ?? g.From.Label}\",");
     sb.AppendLine($"                \"{g.FromJoinColumn}\",");
+
     sb.AppendLine($"                \"{g.To.Label}\",");
-    sb.AppendLine($"                \"{g.To.KeyColumn}\",");
+    sb.AppendLine($"                \"{g.To.GraphProperty}\",");
     sb.AppendLine($"                \"{g.To.Alias ?? g.To.Label}\",");
     sb.AppendLine($"                \"{g.ToJoinColumn}\",");
+
     sb.AppendLine($"                node.OutputAlias + \"_graph\");");
     sb.AppendLine();
 

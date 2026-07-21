@@ -62,39 +62,56 @@ public readonly struct GraphJoinSpec
 {
     public readonly ushort EntityId;
     public readonly ushort StorageEntityId;
+
     public readonly string GraphName;
     public readonly string EdgeLabel;
     public readonly string EdgeKeyColumn;
+
     public readonly string FromLabel;
-    public readonly string FromKeyColumn;
+    public readonly string FromGraphProperty;
     public readonly string FromAlias;
     public readonly string FromJoinColumn;
+
     public readonly string ToLabel;
-    public readonly string ToKeyColumn;
+    public readonly string ToGraphProperty;
     public readonly string ToAlias;
     public readonly string ToJoinColumn;
+
     public readonly string JoinAlias;
 
     public GraphJoinSpec(
-        ushort entityId, ushort storageEntityId,
-        string graphName, string edgeLabel, string edgeKeyColumn,
-        string fromLabel, string fromKeyColumn, string fromAlias, string fromJoinColumn,
-        string toLabel, string toKeyColumn, string toAlias, string toJoinColumn,
+        ushort entityId,
+        ushort storageEntityId,
+        string graphName,
+        string edgeLabel,
+        string edgeKeyColumn,
+        string fromLabel,
+        string fromGraphProperty,
+        string fromAlias,
+        string fromJoinColumn,
+        string toLabel,
+        string toGraphProperty,
+        string toAlias,
+        string toJoinColumn,
         string joinAlias)
     {
         EntityId = entityId;
         StorageEntityId = storageEntityId;
+
         GraphName = graphName;
         EdgeLabel = edgeLabel;
         EdgeKeyColumn = edgeKeyColumn;
+
         FromLabel = fromLabel;
-        FromKeyColumn = fromKeyColumn;
+        FromGraphProperty = fromGraphProperty;
         FromAlias = fromAlias;
         FromJoinColumn = fromJoinColumn;
+
         ToLabel = toLabel;
-        ToKeyColumn = toKeyColumn;
+        ToGraphProperty = toGraphProperty;
         ToAlias = toAlias;
         ToJoinColumn = toJoinColumn;
+
         JoinAlias = joinAlias;
     }
 }
@@ -367,20 +384,29 @@ public ref struct QueryPlanBuilder
         string edgeLabel,
         string edgeKeyColumn,
         string fromLabel,
-        string fromKeyColumn,
+        string fromGraphProperty,
         string fromAlias,
         string fromJoinColumn,
         string toLabel,
-        string toKeyColumn,
+        string toGraphProperty,
         string toAlias,
         string toJoinColumn,
         string joinAlias)
     {
         _graphJoins[_graphJoinCount++] = new GraphJoinSpec(
-            entityId, storageEntityId,
-            graphName, edgeLabel, edgeKeyColumn,
-            fromLabel, fromKeyColumn, fromAlias, fromJoinColumn,
-            toLabel, toKeyColumn, toAlias, toJoinColumn,
+            entityId,
+            storageEntityId,
+            graphName,
+            edgeLabel,
+            edgeKeyColumn,
+            fromLabel,
+            fromGraphProperty,
+            fromAlias,
+            fromJoinColumn,
+            toLabel,
+            toGraphProperty,
+            toAlias,
+            toJoinColumn,
             joinAlias);
     }
 

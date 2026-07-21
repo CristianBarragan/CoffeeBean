@@ -131,31 +131,40 @@ public partial class CustomerCustomerEdgeMapping : IMappingDefinition
         Graph =
             new GraphDefinition
             {
-                GraphName =
-                    nameof(CustomerCustomerEdge),
+                GraphName = nameof(CustomerCustomerEdge),
 
-                EdgeLabel =
-                    nameof(CustomerCustomerEdge),
+                EdgeLabel = nameof(CustomerCustomerEdge),
 
-                EdgeKey =
-                    nameof(CustomerCustomerEdge.CustomerCustomerRelationshipKey),
+                EdgeKey = nameof(CustomerCustomerEdge.CustomerCustomerRelationshipKey),
+
                 From = new VertexDefinition
                 {
                     Label = nameof(Customer),
-                    KeyColumn = nameof(DataEntity.CustomerCustomerRelationship.InnerCustomerId),
+
+                    // Property stored on the graph node
+                    GraphProperty = nameof(Customer.CustomerKey),
+
+                    // FK column in CustomerCustomerRelationship
+                    ForeignKeyColumn = nameof(DataEntity.CustomerCustomerRelationship.InnerCustomerId),
+
                     Alias = nameof(DataEntity.CustomerCustomerRelationship.InnerCustomer)
                 },
+
                 To = new VertexDefinition
                 {
                     Label = nameof(Customer),
-                    KeyColumn = nameof(DataEntity.CustomerCustomerRelationship.OuterCustomerId),
+
+                    GraphProperty = nameof(Customer.CustomerKey),
+
+                    ForeignKeyColumn = nameof(DataEntity.CustomerCustomerRelationship.OuterCustomerId),
+
                     Alias = nameof(DataEntity.CustomerCustomerRelationship.OuterCustomer)
                 },
-                FromJoinColumn =
-                    nameof(Customer.CustomerKey),
 
-                ToJoinColumn =
-                    nameof(Customer.CustomerKey)
+                // Column used when joining graph results back to SQL
+                FromJoinColumn = nameof(Customer.CustomerKey),
+
+                ToJoinColumn = nameof(Customer.CustomerKey)
             }
     };
 }

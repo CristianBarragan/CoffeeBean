@@ -65,136 +65,117 @@ internal static class MutationMetadataEmitter
     }
 
     private static void EmitFactory(
-    StringBuilder sb,
-    MappingClassInfo info)
-{
-    var modelName = info.ModelType!.Name;
-
-    var primaryEntity =
-        info.Definition.Entities.FirstOrDefault(e => e.IsPrimary)
-        ?? info.Definition.Entities.FirstOrDefault();
-
-    if (primaryEntity?.EntityType == null)
+        StringBuilder sb,
+        MappingClassInfo info)
     {
-        sb.AppendLine($"    private static MutationEntityMetadata Create{modelName}()");
-        sb.AppendLine("        => throw new InvalidOperationException(" +
-                       $"\"{modelName} has no primary entity — cannot generate mutation metadata.\");");
-        return;
-    }
+        var modelName = info.ModelType!.Name;
 
-    var tableName = IdEmitter.StripEntitySuffix(primaryEntity.EntityType.Name);
-    var schema = info.Schema ?? "public";
+        var primaryEntity =
+            info.Definition.Entities.FirstOrDefault(e => e.IsPrimary)
+            ?? info.Definition.Entities.FirstOrDefault();
 
-    var distinctEntityTypeCount =
-        info.Definition.Entities
-            .Select(e => e.EntityType)
-            .Distinct(SymbolEqualityComparer.Default)
-            .Count();
-
-    var isGraph = info.IsGraph || distinctEntityTypeCount > 1;
-    var kind = isGraph ? "MutationKind.GraphEdge" : "MutationKind.Entity";
-
-    var primaryColumns =
-        info.Definition.PrimaryKey
-            .Select(pk => pk.ColumnKey)
-            .Where(c => !string.IsNullOrWhiteSpace(c))
-            .ToList();
-
-    var grouped =
-        info.FieldMaps
-            .Where(f => !f.IsNavigationKey)
-            .GroupBy(f => f.SourceName, StringComparer.Ordinal)
-            .ToList();
-
-    var lines = new List<string>();
-
-    foreach (var group in grouped)
-    {
-        var fieldIdName = group.Key;
-
-        var targetLines = group.Select(target =>
+        if (primaryEntity?.EntityType == null)
         {
-            var isPrimaryKey =
-                info.Definition.PrimaryKey.Any(pk =>
-                    string.Equals(pk.Entity?.Name, target.DestinationEntity, StringComparison.Ordinal) &&
-                    string.Equals(pk.ColumnKey, target.DestinationName, StringComparison.Ordinal));
+            sb.AppendLine($"    private static MutationEntityMetadata Create{modelName}()");
+            sb.AppendLine("        => throw new InvalidOperationException(" +
+                          $"\"{modelName} has no primary entity — cannot generate mutation metadata.\");");
+            return;
+        }
 
-            var storageEntityName = IdEmitter.StripEntitySuffix(target.DestinationEntity);
+        var tableName = IdEmitter.StripEntitySuffix(primaryEntity.EntityType.Name);
+        var schema = info.Schema ?? "public";
 
-            return
-                $"new MutationFieldMetadata(" +
-                $"FieldId.{modelName}.{fieldIdName}, " +
-                $"EntityId.{modelName}, " +
-                $"StorageEntityId.{storageEntityName}, " +
-                $"ColumnId.{target.DestinationEntity}.{target.DestinationName}, " +
-                $"{(isPrimaryKey ? "true" : "false")})";
-        });
+        var distinctEntityTypeCount =
+            info.Definition.Entities
+                .Select(e => e.EntityType)
+                .Distinct(SymbolEqualityComparer.Default)
+                .Count();
 
-        lines.Add(
-            $"                [FieldId.{modelName}.{fieldIdName}] = " +
-            $"ImmutableArray.Create({string.Join(", ", targetLines)})");
+        var isGraph = info.IsGraph || distinctEntityTypeCount > 1;
+        var kind = isGraph ? "MutationKind.GraphEdge" : "MutationKind.Entity";
+
+        var primaryColumns =
+            info.Definition.PrimaryKey
+                .Select(pk => pk.ColumnKey)
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .ToList();
+
+        var grouped =
+            info.FieldMaps
+                .Where(f => !f.IsNavigationKey)
+                .GroupBy(f => f.SourceName, StringComparer.Ordinal)
+                .ToList();
+
+        var lines = new List<string>();
+
+        foreach (var group in grouped)
+        {
+            var fieldIdName = group.Key;
+
+            var targetLines = group.Select(target =>
+            {
+                var isPrimaryKey =
+                    info.Definition.PrimaryKey.Any(pk =>
+                        string.Equals(pk.Entity?.Name, target.DestinationEntity, StringComparison.Ordinal) &&
+                        string.Equals(pk.ColumnKey, target.DestinationName, StringComparison.Ordinal));
+
+                var storageEntityName = IdEmitter.StripEntitySuffix(target.DestinationEntity);
+
+                return
+                    $"new MutationFieldMetadata(" +
+                    $"FieldId.{modelName}.{fieldIdName}, " +
+                    $"EntityId.{modelName}, " +
+                    $"StorageEntityId.{storageEntityName}, " +
+                    $"ColumnId.{target.DestinationEntity}.{target.DestinationName}, " +
+                    $"{(isPrimaryKey ? "true" : "false")})";
+            });
+
+            lines.Add(
+                $"                [FieldId.{modelName}.{fieldIdName}] = " +
+                $"ImmutableArray.Create({string.Join(", ", targetLines)})");
+        }
+
+        sb.AppendLine($"    private static MutationEntityMetadata Create{modelName}()");
+        sb.AppendLine("    {");
+        sb.AppendLine("        return new MutationEntityMetadata(");
+        sb.AppendLine($"            EntityId.{modelName},");
+        sb.AppendLine($"            StorageEntityId.{tableName},");
+        sb.AppendLine($"            \"{schema}\",");
+        sb.AppendLine($"            \"{tableName}\",");
+        sb.AppendLine($"            {(info.IsComposite ? "false" : "true")},");
+        sb.AppendLine($"            {kind},");
+        sb.AppendLine("            ImmutableArray.Create(" +
+                      string.Join(", ", primaryColumns.Select(c => $"\"{c}\"")) + "),");
+        sb.AppendLine();
+        sb.AppendLine("            new Dictionary<ushort, ImmutableArray<MutationFieldMetadata>>");
+        sb.AppendLine("            {");
+        sb.AppendLine(string.Join(",\n", lines));
+        sb.AppendLine("            }"); // dictionary body closed; comma decided by EmitGraphMetadata below
+
+        EmitGraphMetadata(sb, info); // emits ", <6 values>" or nothing, then closes with ");"
+
+        sb.AppendLine("    }");
     }
 
-    sb.AppendLine($"    private static MutationEntityMetadata Create{modelName}()");
-    sb.AppendLine("    {");
-    sb.AppendLine("        return new MutationEntityMetadata(");
-    sb.AppendLine($"            EntityId.{modelName},");
-    sb.AppendLine($"            StorageEntityId.{tableName},");
-    sb.AppendLine($"            \"{schema}\",");
-    sb.AppendLine($"            \"{tableName}\",");
-    sb.AppendLine($"            {(info.IsComposite ? "false" : "true")},");
-    sb.AppendLine($"            {kind},");
-    sb.AppendLine("            ImmutableArray.Create(" +
-                  string.Join(", ", primaryColumns.Select(c => $"\"{c}\"")) + "),");
-    sb.AppendLine();
-    sb.AppendLine("            new Dictionary<ushort, ImmutableArray<MutationFieldMetadata>>");
-    sb.AppendLine("            {");
-    sb.AppendLine(string.Join(",\n", lines));
-    sb.AppendLine("            }");   // dictionary body closed; comma decided by EmitGraphMetadata below
-
-    EmitGraphMetadata(sb, info);      // emits ", <6 values>" or nothing, then closes with ");"
-
-    sb.AppendLine("    }");
-}
-
-private static void EmitGraphMetadata(
-    StringBuilder sb,
-    MappingClassInfo info)
-{
-    // No graph info at all — dictionary was the last real argument;
-    // just close the constructor call.
-    if (!info.IsGraph || info.Definition.Graph == null)
+    private static void EmitGraphMetadata(
+        StringBuilder sb,
+        MappingClassInfo info)
     {
+        var graph = info.Graph;
+
+        if (graph == null || graph.From == null || graph.To == null)
+        {
+            sb.AppendLine("        );");
+            return;
+        }
+
+        sb.AppendLine("            ,");
+        sb.AppendLine($"            graphName: \"{graph.GraphName}\",");
+        sb.AppendLine($"            graphEdgeLabel: \"{graph.EdgeLabel}\",");
+        sb.AppendLine($"            graphFromVertex: \"{graph.From.Label}\",");
+        sb.AppendLine($"            graphToVertex: \"{graph.To.Label}\",");
+        sb.AppendLine($"            graphFromColumn: \"{graph.From.GraphProperty}\",");
+        sb.AppendLine($"            graphToColumn: \"{graph.To.GraphProperty}\"");
         sb.AppendLine("        );");
-        return;
     }
-
-    var graph = info.Definition.Graph;
-
-    // Only used to validate that this edge's From/To key fields are
-    // actually present in FieldMaps — not passed to the constructor
-    // (MutationEntityMetadata has no FieldId-typed graph parameters).
-    var fromField =
-        info.FieldMaps.FirstOrDefault(x =>
-            string.Equals(x.SourceName, graph.From.KeyColumn, StringComparison.OrdinalIgnoreCase));
-
-    var toField =
-        info.FieldMaps.FirstOrDefault(x =>
-            string.Equals(x.SourceName, graph.To.KeyColumn, StringComparison.OrdinalIgnoreCase));
-
-    if (fromField.SourceName == null || toField.SourceName == null)
-    {
-        sb.AppendLine("        );");
-        return;
-    }
-
-    sb.AppendLine("            ,");
-    sb.AppendLine($"            graphName: \"{graph.GraphName}\",");
-    sb.AppendLine($"            graphEdgeLabel: \"{graph.EdgeLabel}\",");
-    sb.AppendLine($"            graphFromVertex: \"{graph.From.Label}\",");
-    sb.AppendLine($"            graphToVertex: \"{graph.To.Label}\",");
-    sb.AppendLine($"            graphFromColumn: \"{graph.FromJoinColumn}\",");
-    sb.AppendLine($"            graphToColumn: \"{graph.ToJoinColumn}\"");
-    sb.AppendLine("        );");
-}
 }

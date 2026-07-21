@@ -209,7 +209,9 @@ public sealed record VertexDefinition
 {
     public required string Label { get; init; }
 
-    public required string KeyColumn { get; init; }
+    public required string GraphProperty { get; init; }
+
+    public required string ForeignKeyColumn { get; init; }
 
     public string? Alias { get; init; }
 }

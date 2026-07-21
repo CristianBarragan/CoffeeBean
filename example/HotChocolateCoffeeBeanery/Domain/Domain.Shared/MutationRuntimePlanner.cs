@@ -111,91 +111,49 @@ public static class MutationRuntimePlanner
     }
 
     private static void EmitGraphMerge(
-    in MutationIR node,
-    MutationEntityMetadata metadata,
-    ref MutationPlanBuilder builder)
-{
-    string? fromKey = null;
-    string? toKey = null;
-    string? edgeKey = null;
-
-    string? edgeKeyColumn = null;
-
-
-    foreach (var value in node.Values)
+        in MutationIR node,
+        MutationEntityMetadata metadata,
+        ref MutationPlanBuilder builder)
     {
-        if (value.EntityId != metadata.EntityId)
-            continue;
+        string? fromKey = null;
+        string? toKey = null;
+        string? edgeKey = null;
 
-
-        if (!metadata.TryResolveField(
-                value.FieldId,
-                out var field))
+        foreach (var value in node.Values)
         {
-            continue;
-        }
-
-
-        if (metadata.GraphFromFieldId.HasValue &&
-            value.FieldId == metadata.GraphFromFieldId.Value)
-        {
-            fromKey = value.RawValue;
-        }
-
-
-        if (metadata.GraphToFieldId.HasValue &&
-            value.FieldId == metadata.GraphToFieldId.Value)
-        {
-            toKey = value.RawValue;
-        }
-
-
-        if (field.IsPrimaryKey)
-        {
-            edgeKey = value.RawValue;
-
-            if (metadata.PrimaryColumns.Length > 0)
+            // InnerCustomerKey/OuterCustomerKey are intentionally excluded
+            // from metadata.TryResolveField (IsNavigationKey = true) so they
+            // never get treated as ordinary INSERT columns — that's the
+            // whole point of the earlier fix. That means they must be read
+            // here directly by FieldId, not through metadata resolution.
+            if (value.FieldId == FieldId.CustomerCustomerEdge.InnerCustomerKey)
             {
-                edgeKeyColumn = metadata.PrimaryColumns[0];
+                fromKey = value.RawValue;
+            }
+            else if (value.FieldId == FieldId.CustomerCustomerEdge.OuterCustomerKey)
+            {
+                toKey = value.RawValue;
+            }
+            else if (metadata.TryResolveField(value.FieldId, out var field) && field.IsPrimaryKey)
+            {
+                edgeKey = value.RawValue;
             }
         }
+
+        if (fromKey == null || toKey == null)
+            return;
+
+        builder.AddGraphMerge(
+            metadata.GraphName!,
+            metadata.GraphEdgeLabel!,
+            metadata.GraphFromVertex!,
+            metadata.GraphFromColumn!,
+            fromKey,
+            metadata.GraphToVertex!,
+            metadata.GraphToColumn!,
+            toKey,
+            metadata.PrimaryColumns[0],
+            edgeKey,
+            ImmutableDictionary<string, string>.Empty);
     }
-
-
-    if (fromKey == null || toKey == null)
-        return;
-
-
-    if (edgeKeyColumn == null)
-    {
-        throw new InvalidOperationException(
-            $"Graph edge {metadata.EntityId} has no primary key.");
-    }
-
-
-    if (metadata.GraphName == null ||
-        metadata.GraphEdgeLabel == null ||
-        metadata.GraphFromVertex == null ||
-        metadata.GraphToVertex == null ||
-        metadata.GraphFromColumn == null ||
-        metadata.GraphToColumn == null)
-    {
-        throw new InvalidOperationException(
-            $"Incomplete graph metadata for entity {metadata.EntityId}.");
-    }
-
-
-    builder.AddGraphMerge(
-        metadata.GraphName,
-        metadata.GraphEdgeLabel,
-        metadata.GraphFromVertex,
-        metadata.GraphFromColumn,
-        fromKey,
-        metadata.GraphToVertex,
-        metadata.GraphToColumn,
-        toKey,
-        edgeKeyColumn,
-        edgeKey,
-        ImmutableDictionary<string, string>.Empty);
-}
 }
