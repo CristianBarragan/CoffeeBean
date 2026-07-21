@@ -113,6 +113,34 @@ public partial class CustomerMapping : IMappingDefinition
 
                 Destination =
                     nameof(DataEntity.Customer.FullName)
+            },
+
+            new()
+            {
+                Source =
+                    nameof(Customer.ContactPoint),
+
+                Entity =
+                    typeof(DataEntity.ContactPoint),
+
+                Destination =
+                    nameof(DataEntity.ContactPoint.CustomerKey),
+
+                IsNavigationKey = true
+            },
+
+            new()
+            {
+                Source =
+                    nameof(Customer.Product),
+
+                Entity =
+                    typeof(DataEntity.CustomerBankingRelationship),
+
+                Destination =
+                    nameof(DataEntity.CustomerBankingRelationship.CustomerKey),
+
+                IsNavigationKey = true
             }
         ]
     };

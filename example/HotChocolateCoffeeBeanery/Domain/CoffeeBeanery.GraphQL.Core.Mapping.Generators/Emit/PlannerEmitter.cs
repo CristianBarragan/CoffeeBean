@@ -92,29 +92,34 @@ internal static class PlannerEmitter
     }
 
     private static void EmitChildSelection(
-    StringBuilder sb,
-    MappingClassInfo info,
-    ImmutableArray<MappingClassInfo> allMappings,
-    ImmutableHashSet<INamedTypeSymbol> rootEntityTypes,
-    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
-{
-    var navResult = EntityNavigationConvention.Resolve(info, allMappings, entityGraph, rootEntityTypes);
-
-    if (navResult.Navigations.Count == 0)
-        return;
-
-    sb.AppendLine();
-
-    if (info.Graph != null && !string.IsNullOrWhiteSpace(info.Graph.GraphName))
+        StringBuilder sb,
+        MappingClassInfo info,
+        ImmutableArray<MappingClassInfo> allMappings,
+        ImmutableHashSet<INamedTypeSymbol> rootEntityTypes,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
     {
-        EmitGraphVertexResultJoins(sb, info, allMappings);
-    }
+        var navResult = EntityNavigationConvention.Resolve(
+            info,
+            allMappings,
+            entityGraph,
+            rootEntityTypes);
 
-    sb.AppendLine("            foreach (var child in node.Children)");
-    sb.AppendLine("            {");
-    sb.AppendLine("                PlannerRegistry.Build(child.EntityId, child, ref builder);");
-    sb.AppendLine("            }");
-}
+        if (navResult == null || navResult.Navigations.Count == 0)
+            return;
+
+        sb.AppendLine();
+
+        if (info.Graph != null &&
+            !string.IsNullOrWhiteSpace(info.Graph.GraphName))
+        {
+            EmitGraphVertexResultJoins(sb, info, allMappings);
+        }
+
+        sb.AppendLine("            foreach (var child in node.Children)");
+        sb.AppendLine("            {");
+        sb.AppendLine("                PlannerRegistry.Build(child.EntityId, child, ref builder);");
+        sb.AppendLine("            }");
+    }
     
     private static void EmitGraphVertexResultJoins(
     StringBuilder sb,

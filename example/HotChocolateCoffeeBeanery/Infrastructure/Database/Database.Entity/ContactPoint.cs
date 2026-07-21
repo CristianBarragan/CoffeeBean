@@ -18,6 +18,8 @@ public partial class ContactPoint : Process
 
     public string? ContactPointValue { get; set; }
 
+    public int? CustomerKey { get; set; }
+
     public int? CustomerId { get; set; }
     
     public Customer? Customer { get; set; }

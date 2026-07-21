@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Database.Entity.Banking.Migrations
 {
     [DbContext(typeof(BankingEntityContext))]
-    [Migration("20260720013035_Initial")]
+    [Migration("20260721110651_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -73,6 +73,9 @@ namespace Database.Entity.Banking.Migrations
                         .HasColumnType("text");
 
                     b.Property<int?>("CustomerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CustomerKey")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("ProcessedDateTime")
@@ -180,6 +183,9 @@ namespace Database.Entity.Banking.Migrations
 
                     b.Property<int?>("CustomerId")
                         .HasColumnType("integer");
+
+                    b.Property<Guid?>("CustomerKey")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("ProcessedDateTime")
                         .ValueGeneratedOnAdd()
