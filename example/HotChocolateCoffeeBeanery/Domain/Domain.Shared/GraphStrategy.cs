@@ -61,8 +61,8 @@ public sealed class ApacheAgeGraphStrategy : IGraphStrategy
         sb.Append("            $$\n");
         sb.Append($"            MATCH (a:{join.FromLabel})-[r:{join.EdgeLabel}]->(b:{join.ToLabel})\n");
         sb.Append("            RETURN\n");
-        sb.Append($"                a.properties.{join.FromGraphProperty} AS from_key,\n");
-        sb.Append($"                b.properties.{join.ToGraphProperty} AS to_key");
+        sb.Append($"                a.{join.FromGraphProperty} AS from_key,\n");
+        sb.Append($"                b.{join.ToGraphProperty} AS to_key");
         if (!string.IsNullOrEmpty(edgeReturn)) sb.Append($",\n                {edgeReturn}");
         sb.Append("\n            $$\n");
         sb.Append("        ) AS (\n");
