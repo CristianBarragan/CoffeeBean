@@ -72,6 +72,9 @@ namespace Database.Entity.Banking.Migrations
                     b.Property<int?>("CustomerId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("CustomerKey")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("ProcessedDateTime")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -177,6 +180,9 @@ namespace Database.Entity.Banking.Migrations
 
                     b.Property<int?>("CustomerId")
                         .HasColumnType("integer");
+
+                    b.Property<Guid?>("CustomerKey")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("ProcessedDateTime")
                         .ValueGeneratedOnAdd()

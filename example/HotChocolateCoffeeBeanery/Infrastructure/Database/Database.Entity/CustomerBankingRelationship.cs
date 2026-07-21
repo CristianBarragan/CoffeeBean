@@ -16,6 +16,9 @@ public partial class CustomerBankingRelationship : Process
     public Guid CustomerBankingRelationshipKey { get; set; }
     
     public int? CustomerId { get; set; }
+
+    public Guid? CustomerKey { get; set; }
+    
     public Customer? Customer { get; set; }
     
     public List<Contract>? Contract { get; set; }
