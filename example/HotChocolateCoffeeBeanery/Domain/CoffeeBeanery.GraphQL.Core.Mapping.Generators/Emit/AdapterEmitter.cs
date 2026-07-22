@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -212,7 +213,10 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                         var unwrapped = UnwrapNullable(elementType);
 
                         if (unwrapped is not INamedTypeSymbol related) continue;
-                        if (IdEmitter.IsScalarProperty(related)) continue;
+
+                        if (related.TypeKind == TypeKind.Enum) continue;
+                        if (related.SpecialType != SpecialType.None) continue;
+
                         if (SymbolEqualityComparer.Default.Equals(related, model.ModelType)) continue;
                         if (related.Name == "Wrapper") continue;
 
@@ -224,8 +228,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit
                         var fieldName = ToCamelCase(prop.Name);
 
                         if (links.Any(l =>
-                            string.Equals(l.FieldName, fieldName, System.StringComparison.OrdinalIgnoreCase) &&
-                            string.Equals(l.ChildModelName, childMapping.ModelType.Name, System.StringComparison.Ordinal)))
+                                string.Equals(l.FieldName, fieldName, StringComparison.OrdinalIgnoreCase) &&
+                                string.Equals(l.ChildModelName, childMapping.ModelType.Name, StringComparison.Ordinal)))
                             continue;
 
                         links.Add((fieldName, childMapping.ModelType.Name));

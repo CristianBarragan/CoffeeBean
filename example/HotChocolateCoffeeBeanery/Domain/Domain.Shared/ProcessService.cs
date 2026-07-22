@@ -84,7 +84,8 @@ public sealed class ProcessService<TModel, TResult> :
             ?? Array.Empty<IMutationPlanContributor>();
     }
     
-        public async Task<QueryResult<TResult>> MutationProcessAsync(
+
+    public async Task<QueryResult<TResult>> MutationProcessAsync(
         string cacheKey,
         ISelection selection,
         string modelName,
@@ -207,9 +208,8 @@ public sealed class ProcessService<TModel, TResult> :
                     builder.Build();
             }
         }
-
-
-        var selectionSet =
+        
+                var selectionSet =
             selection.SyntaxNode.SelectionSet
             ?? throw new InvalidOperationException(
                 "Selection has no SelectionSet.");
@@ -292,16 +292,6 @@ public sealed class ProcessService<TModel, TResult> :
         var sql =
             string.Join(";", sqlParts);
 
-//         sql =
-//             @$"INSERT INTO ""Banking"".""Customer"" (""FullName"", ""CustomerKey"") SELECT 'Testing a complex upsert', '2dc3449a-f1c5-4e88-aada-a8e2dce37103' ON CONFLICT (""CustomerKey"") DO UPDATE SET ""FullName"" = EXCLUDED.""FullName"", ""CustomerKey"" = EXCLUDED.""CustomerKey"";
-// INSERT INTO ""Banking"".""Customer"" (""FullName"", ""CustomerKey"") SELECT 'TEstom 12', '1dc3449a-f1c5-4e88-aada-a8e2dce37103' ON CONFLICT (""CustomerKey"") DO UPDATE SET ""FullName"" = EXCLUDED.""FullName"", ""CustomerKey"" = EXCLUDED.""CustomerKey"";
-// INSERT INTO ""Banking"".""CustomerCustomerRelationship"" (""CustomerCustomerRelationshipType"", ""CustomerCustomerRelationshipKey"", ""InnerCustomerId"", ""OuterCustomerId"") SELECT 0, '5dc3449a-f1c5-4e88-aada-a8e2dce37103', InnerCustomerCustomer.""Id"", OuterCustomerCustomer.""Id"" FROM ""Banking"".""Customer"" InnerCustomerCustomer JOIN ""Banking"".""Customer"" OuterCustomerCustomer ON true WHERE InnerCustomerCustomer.""CustomerKey"" = '2dc3449a-f1c5-4e88-aada-a8e2dce37103' AND OuterCustomerCustomer.""CustomerKey"" = '1dc3449a-f1c5-4e88-aada-a8e2dce37103' ON CONFLICT (""CustomerCustomerRelationshipKey"") DO UPDATE SET ""CustomerCustomerRelationshipType"" = EXCLUDED.""CustomerCustomerRelationshipType"", ""InnerCustomerId"" = EXCLUDED.""InnerCustomerId"", ""OuterCustomerId"" = EXCLUDED.""OuterCustomerId"";SELECT DISTINCT
-//                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ""CustomerCustomerEdge"".""CustomerCustomerRelationshipType"" AS ""CustomerCustomerEdgeCustomerCustomerRelationshipType"",
-//                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ""InnerCustomer"".""FullName"" AS ""fullNaming"",
-//                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ""OuterCustomer"".""FullName"" AS ""OuterCustomerFullNaming""
-//                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        FROM ""Banking"".""CustomerCustomerRelationship"" ""CustomerCustomerEdge""
-//                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        LEFT JOIN ""Banking"".""Customer"" ""InnerCustomer"" on ""CustomerCustomerEdge"".""InnerCustomerId"" = ""InnerCustomer"".""Id""
-//                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        LEFT JOIN ""Banking"".""Customer"" ""OuterCustomer"" on ""OuterCustomer"".""Id"" = ""CustomerCustomerEdge"".""OuterCustomerId""";
 
         var models =
             await ExecuteAndMaterializeAsync(
@@ -325,7 +315,8 @@ public sealed class ProcessService<TModel, TResult> :
         };
     }
     
-        public async Task<QueryResult<TResult>> QueryProcessAsync(
+
+    public async Task<QueryResult<TResult>> QueryProcessAsync(
         string cacheKey,
         ISelection selection,
         string modelName,
@@ -421,10 +412,8 @@ public sealed class ProcessService<TModel, TResult> :
             TotalPageRecords = results.Count
         };
     }
-
-
-
-    private async Task<List<TModel>> ExecuteAndMaterializeAsync(
+    
+        private async Task<List<TModel>> ExecuteAndMaterializeAsync(
         string sql,
         ushort rootEntityId,
         QueryPlan queryPlan,
@@ -528,6 +517,7 @@ public sealed class ProcessService<TModel, TResult> :
             rowMatrix);
     }
     
+
     private ushort ResolveRootEntityId(
         string modelName)
     {

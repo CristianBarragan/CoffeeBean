@@ -29,28 +29,37 @@ internal static class MutationMetadataEmitter
         sb.AppendLine();
         sb.AppendLine("namespace CoffeeBeanery.GraphQL.Core.Runtime;");
         sb.AppendLine();
+
         sb.AppendLine("public static class MutationMetadataRegistry");
         sb.AppendLine("{");
-        sb.AppendLine("    private static readonly MutationEntityMetadata[] _entities =");
-        sb.AppendLine("    {");
+
+        sb.AppendLine("    private static readonly ImmutableDictionary<ushort, MutationEntityMetadata> _entities =");
+        sb.AppendLine("        ImmutableDictionary.CreateRange(new MutationEntityMetadata[]");
+        sb.AppendLine("        {");
 
         for (var i = 0; i < models.Count; i++)
         {
             var comma = i < models.Count - 1 ? "," : "";
-            sb.AppendLine($"        Create{models[i].ModelType!.Name}(){comma}");
+
+            sb.AppendLine(
+                $"            Create{models[i].ModelType!.Name}(){comma}");
         }
 
-        sb.AppendLine("    };");
+        sb.AppendLine("        }.Select(x => new KeyValuePair<ushort, MutationEntityMetadata>(x.EntityId, x)));");
+
         sb.AppendLine();
-        sb.AppendLine("    public static int Count => _entities.Length;");
+
+        sb.AppendLine("    public static int Count => _entities.Count;");
         sb.AppendLine();
+
         sb.AppendLine("    public static MutationEntityMetadata Get(ushort entityId)");
         sb.AppendLine("    {");
-        sb.AppendLine("        if (entityId >= _entities.Length)");
+        sb.AppendLine("        if (!_entities.TryGetValue(entityId, out var metadata))");
         sb.AppendLine("            throw new ArgumentOutOfRangeException(nameof(entityId));");
         sb.AppendLine();
-        sb.AppendLine("        return _entities[entityId];");
+        sb.AppendLine("        return metadata;");
         sb.AppendLine("    }");
+
         sb.AppendLine();
 
         foreach (var model in models)
@@ -62,6 +71,57 @@ internal static class MutationMetadataEmitter
         sb.AppendLine("}");
 
         return sb.ToString();
+    }
+    
+    private static string GetStorageEntityName(
+        MappingClassInfo mapping)
+    {
+        var modelName = mapping.ModelType!.Name;
+
+        // Prefer a storage entity matching the model name.
+        var entity =
+            mapping.Definition.Entities
+                .FirstOrDefault(e =>
+                    e.EntityType != null &&
+                    e.EntityType.Name.Equals(
+                        modelName + "Entity",
+                        StringComparison.Ordinal))
+                ?.EntityType;
+
+        // If no exact entity exists, use primary.
+        if (entity == null)
+        {
+            entity =
+                mapping.Definition.Entities
+                    .FirstOrDefault(e => e.IsPrimary)
+                    ?.EntityType;
+        }
+
+        // Last fallback.
+        if (entity == null)
+        {
+            entity =
+                mapping.Definition.Entities
+                    .FirstOrDefault()
+                    ?.EntityType;
+        }
+
+        var entityName =
+            entity?.Name ?? modelName;
+
+        const string suffix = "Entity";
+
+        if (entityName.EndsWith(
+                suffix,
+                StringComparison.Ordinal))
+        {
+            entityName =
+                entityName.Substring(
+                    0,
+                    entityName.Length - suffix.Length);
+        }
+
+        return entityName;
     }
 
     private static void EmitFactory(
@@ -82,7 +142,7 @@ internal static class MutationMetadataEmitter
             return;
         }
 
-        var tableName = IdEmitter.StripEntitySuffix(primaryEntity.EntityType.Name);
+        var tableName = info.ModelType!.Name;
         var schema = info.Schema ?? "public";
 
         var distinctEntityTypeCount =
@@ -91,8 +151,15 @@ internal static class MutationMetadataEmitter
                 .Distinct(SymbolEqualityComparer.Default)
                 .Count();
 
-        var isGraph = info.IsGraph || distinctEntityTypeCount > 1;
-        var kind = isGraph ? "MutationKind.GraphEdge" : "MutationKind.Entity";
+        var hasGraphMetadata =
+            info.Graph != null &&
+            info.Graph.From != null &&
+            info.Graph.To != null;
+
+        var kind =
+            hasGraphMetadata
+                ? "MutationKind.GraphEdge"
+                : "MutationKind.Entity";
 
         var primaryColumns =
             info.Definition.PrimaryKey
@@ -119,14 +186,15 @@ internal static class MutationMetadataEmitter
                         string.Equals(pk.Entity?.Name, target.DestinationEntity, StringComparison.Ordinal) &&
                         string.Equals(pk.ColumnKey, target.DestinationName, StringComparison.Ordinal));
 
-                var storageEntityName = IdEmitter.StripEntitySuffix(target.DestinationEntity);
+                var storageEntityName =
+                    IdEmitter.StripEntitySuffix(target.DestinationEntity);
 
                 return
                     $"new MutationFieldMetadata(" +
                     $"FieldId.{modelName}.{fieldIdName}, " +
                     $"EntityId.{modelName}, " +
                     $"StorageEntityId.{storageEntityName}, " +
-                    $"ColumnId.{target.DestinationEntity}.{target.DestinationName}, " +
+                    $"ColumnId.{storageEntityName}.{target.DestinationName}, " +
                     $"{(isPrimaryKey ? "true" : "false")})";
             });
 
@@ -139,20 +207,65 @@ internal static class MutationMetadataEmitter
         sb.AppendLine("    {");
         sb.AppendLine("        return new MutationEntityMetadata(");
         sb.AppendLine($"            EntityId.{modelName},");
-        sb.AppendLine($"            StorageEntityId.{tableName},");
-        sb.AppendLine($"            \"{schema}\",");
-        sb.AppendLine($"            \"{tableName}\",");
-        sb.AppendLine($"            {(info.IsComposite ? "false" : "true")},");
-        sb.AppendLine($"            {kind},");
-        sb.AppendLine("            ImmutableArray.Create(" +
-                      string.Join(", ", primaryColumns.Select(c => $"\"{c}\"")) + "),");
+        tableName = GetStorageEntityName(info);
+        schema = info.Schema ?? "public";
+
+        var isComposite =
+            info.Definition.Entities
+                .Count(e => e.EntityType != null) > 1;
+
+        if (isComposite)
+        {
+            sb.AppendLine($"            StorageEntityId.{tableName},");
+            sb.AppendLine($"            \"{schema}\",");
+            sb.AppendLine($"            \"{tableName}\",");
+            sb.AppendLine("            false,");
+            sb.AppendLine($"            {kind},");
+
+            var upsertColumns =
+                info.UpsertKeys
+                    .Select(x => x.Key)
+                    .ToList();
+
+            sb.AppendLine("            ImmutableArray.Create(" +
+                          string.Join(", ",
+                              upsertColumns.Select(x => $"\"{x}\"")) +
+                          "),");
+        }
+        else
+        {
+            sb.AppendLine($"            StorageEntityId.{tableName},");
+            sb.AppendLine($"            \"{schema}\",");
+            sb.AppendLine($"            \"{tableName}\",");
+            sb.AppendLine("            true,");
+            sb.AppendLine($"            {kind},");
+            sb.AppendLine("            ImmutableArray.Create(" +
+                          string.Join(", ",
+                              primaryColumns.Select(c => $"\"{c}\"")) +
+                          "),");
+        }
         sb.AppendLine();
         sb.AppendLine("            new Dictionary<ushort, ImmutableArray<MutationFieldMetadata>>");
         sb.AppendLine("            {");
         sb.AppendLine(string.Join(",\n", lines));
-        sb.AppendLine("            }"); // dictionary body closed; comma decided by EmitGraphMetadata below
+        var hasGraph =
+            info.Graph != null &&
+            info.Graph.From != null &&
+            info.Graph.To != null;
 
-        EmitGraphMetadata(sb, info); // emits ", <6 values>" or nothing, then closes with ");"
+        sb.AppendLine(hasGraph ? "            }," : "            }");
+
+        if (hasGraph)
+        {
+            sb.AppendLine($"            graphName: \"{Escape(info.Graph!.GraphName)}\",");
+            sb.AppendLine($"            graphEdgeLabel: \"{Escape(info.Graph.EdgeLabel)}\",");
+            sb.AppendLine($"            graphFromVertex: \"{Escape(info.Graph.From.Label)}\",");
+            sb.AppendLine($"            graphToVertex: \"{Escape(info.Graph.To.Label)}\",");
+            sb.AppendLine($"            graphFromColumn: \"{Escape(info.Graph.From.GraphProperty)}\",");
+            sb.AppendLine($"            graphToColumn: \"{Escape(info.Graph.To.GraphProperty)}\"");
+        }
+
+        sb.AppendLine("        );");
 
         sb.AppendLine("    }");
     }
@@ -170,12 +283,18 @@ internal static class MutationMetadataEmitter
         }
 
         sb.AppendLine("            ,");
-        sb.AppendLine($"            graphName: \"{graph.GraphName}\",");
-        sb.AppendLine($"            graphEdgeLabel: \"{graph.EdgeLabel}\",");
-        sb.AppendLine($"            graphFromVertex: \"{graph.From.Label}\",");
-        sb.AppendLine($"            graphToVertex: \"{graph.To.Label}\",");
-        sb.AppendLine($"            graphFromColumn: \"{graph.From.GraphProperty}\",");
-        sb.AppendLine($"            graphToColumn: \"{graph.To.GraphProperty}\"");
+        sb.AppendLine($"            graphName: \"{Escape(graph.GraphName)}\",");
+        sb.AppendLine($"            graphEdgeLabel: \"{Escape(graph.EdgeLabel)}\",");
+        sb.AppendLine($"            graphFromVertex: \"{Escape(graph.From.Label)}\",");
+        sb.AppendLine($"            graphToVertex: \"{Escape(graph.To.Label)}\",");
+        sb.AppendLine($"            graphFromColumn: \"{Escape(graph.From.GraphProperty)}\",");
+        sb.AppendLine($"            graphToColumn: \"{Escape(graph.To.GraphProperty)}\"");
         sb.AppendLine("        );");
+    }
+
+    private static string Escape(string value)
+    {
+        return value.Replace("\\", "\\\\")
+            .Replace("\"", "\\\"");
     }
 }

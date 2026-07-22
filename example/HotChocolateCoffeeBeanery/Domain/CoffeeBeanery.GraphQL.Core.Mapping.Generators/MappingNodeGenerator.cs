@@ -335,6 +335,9 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 }
 
                 spc.AddSource("GeneratedIds.g.cs", IdEmitter.Emit(resolvedMappings));
+                
+                
+                spc.AddSource("ColumnNameResolver.g.cs", ColumnNameResolverEmitter.Emit(resolvedMappings));
 
                 spc.AddSource("EntityMeta.g.cs",
                     MetadataEmitter.Emit(resolvedMappings, rootEntityTypes, entityGraph));

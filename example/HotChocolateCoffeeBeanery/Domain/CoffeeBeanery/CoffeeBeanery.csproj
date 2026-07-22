@@ -55,5 +55,6 @@
     
     <ItemGroup>
       <Folder Include="GraphQL\Core\Extensions\" />
+      <Folder Include="GraphQL\Core\Sql\Filtering\" />
     </ItemGroup>
 </Project>

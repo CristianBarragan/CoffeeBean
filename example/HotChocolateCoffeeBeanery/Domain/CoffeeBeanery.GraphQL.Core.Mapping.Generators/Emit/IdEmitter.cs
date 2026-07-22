@@ -49,25 +49,23 @@ internal static class IdEmitter
             mappings
                 .Where(x => x.ModelType != null)
                 .Select(x => x.ModelType!.Name)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(x => x)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(x => x, StringComparer.Ordinal)
                 .ToList();
 
         sb.AppendLine();
         sb.AppendLine("public static class EntityId");
         sb.AppendLine("{");
 
-        ushort id = 0;
-
-        foreach (var entity in entities)
+        for (ushort id = 0; id < entities.Count; id++)
         {
-            sb.AppendLine($"    public const ushort {entity} = {id};");
-            id++;
+            sb.AppendLine(
+                $"    public const ushort {entities[id]} = {id};");
         }
 
         sb.AppendLine("}");
     }
-
+    
     internal static IReadOnlyList<IPropertySymbol> GetScalarProperties(
         INamedTypeSymbol type)
     {
@@ -80,18 +78,23 @@ internal static class IdEmitter
 
     internal static bool IsScalarProperty(IPropertySymbol property)
     {
-        if (property.IsStatic) return false;
-        if (property.DeclaredAccessibility != Accessibility.Public) return false;
+        if (property.IsStatic)
+            return false;
+
+        if (property.DeclaredAccessibility != Accessibility.Public)
+            return false;
 
         var type = property.Type;
 
         if (type.TypeKind == TypeKind.Enum)
             return true;
-        
+
         var namedType = type as INamedTypeSymbol;
-        var underlying = namedType?.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
-            ? namedType.TypeArguments[0]
-            : type;
+
+        var underlying =
+            namedType?.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
+                ? namedType.TypeArguments[0]
+                : type;
 
         if (underlying.ToDisplayString() == "System.Guid")
             return true;
@@ -137,20 +140,18 @@ internal static class IdEmitter
                 .SelectMany(x => x.Definition.Entities)
                 .Where(x => x.EntityType != null)
                 .Select(x => StripEntitySuffix(x.EntityType!.Name))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(x => x)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(x => x, StringComparer.Ordinal)
                 .ToList();
 
         sb.AppendLine();
         sb.AppendLine("public static class StorageEntityId");
         sb.AppendLine("{");
 
-        ushort id = 0;
-
-        foreach (var entity in entities)
+        for (ushort id = 0; id < entities.Count; id++)
         {
-            sb.AppendLine($"    public const ushort {entity} = {id};");
-            id++;
+            sb.AppendLine(
+                $"    public const ushort {entities[id]} = {id};");
         }
 
         sb.AppendLine("}");

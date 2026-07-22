@@ -258,11 +258,13 @@ internal static class MutationMaterializerEmitter
             underlying.ToDisplayString(
                 SymbolDisplayFormat.FullyQualifiedFormat);
 
-        return isNullable
-            ? $"string.IsNullOrEmpty(value.RawValue) ? null : ({enumName})Enum.Parse(typeof({enumName}), value.RawValue, true)"
-            : $"({enumName})Enum.Parse(typeof({enumName}), value.RawValue!, true)";
-    }
+        const string normalize =
+            "string.Concat(value.RawValue!.Trim().Split('_').Select(s => char.ToUpperInvariant(s[0]) + s.Substring(1).ToLowerInvariant()))";
 
+        return isNullable
+            ? $"string.IsNullOrWhiteSpace(value.RawValue) ? null : ({enumName})Enum.Parse(typeof({enumName}), string.Concat(value.RawValue.Trim().Split('_').Select(s => char.ToUpperInvariant(s[0]) + s.Substring(1).ToLowerInvariant())), true)"
+            : $"({enumName})Enum.Parse(typeof({enumName}), string.Concat(value.RawValue!.Trim().Split('_').Select(s => char.ToUpperInvariant(s[0]) + s.Substring(1).ToLowerInvariant())), true)";
+    }
 
     // String
     if (underlying.SpecialType == SpecialType.System_String)

@@ -190,78 +190,101 @@ internal static class MetadataEmitter
     }
     
     private static void EmitEnumConversions(
-        StringBuilder sb,
-        List<MappingClassInfo> models)
+    StringBuilder sb,
+    List<MappingClassInfo> models)
+{
+    var enumFields = models
+        .SelectMany(m => m.FieldMaps
+            .Where(f => f.ModelEnumType != null &&
+                        f.EntityEnumType != null)
+            .Select(f => (Model: m, Field: f)))
+        .ToList();
+
+    sb.AppendLine("    public static class EnumConversions");
+    sb.AppendLine("    {");
+
+    sb.AppendLine("        public static string? TryConvert(ushort storageEntityId, ushort columnId, string value)");
+    sb.AppendLine("        {");
+    sb.AppendLine("            var normalizedValue = value.Trim().ToUpperInvariant();");
+    sb.AppendLine("            switch (storageEntityId)");
+    sb.AppendLine("            {");
+
+    foreach (var group in enumFields.GroupBy(
+                 x => x.Field.DestinationEntity,
+                 StringComparer.Ordinal))
     {
-        var enumFields = models
-            .SelectMany(m => m.FieldMaps
-                .Where(f => f.FromEnum != null && f.FromEnum.Count > 0)
-                .Select(f => (Model: m, Field: f)))
-            .ToList();
+        var entityName = group.Key;
 
-        sb.AppendLine("    public static class EnumConversions");
-        sb.AppendLine("    {");
+        sb.AppendLine($"                case StorageEntityId.{entityName}:");
+        sb.AppendLine("                    switch (columnId)");
+        sb.AppendLine("                    {");
 
-        sb.AppendLine(
-            "        // Converts a model enum name string to its integer string value.");
-
-        sb.AppendLine(
-            "        // Returns null if the field has no enum conversion or the name is unknown.");
-
-        sb.AppendLine(
-            "        public static string? TryConvert(ushort storageEntityId, ushort columnId, string value)");
-
-        sb.AppendLine("        {");
-
-        sb.AppendLine(
-            "            var normalizedValue = value.Trim().ToUpperInvariant();");
-        sb.AppendLine("            switch (storageEntityId)");
-        sb.AppendLine("            {");
-
-        foreach (var group in enumFields.GroupBy(
-                     x => x.Field.DestinationEntity,
-                     StringComparer.Ordinal))
+        foreach (var item in group)
         {
-            var entityName = group.Key;
+            var field = item.Field;
 
-            sb.AppendLine(
-                $"                case StorageEntityId.{entityName}:");
+            sb.AppendLine($"                        case (ushort)ColumnId.{entityName}.{field.DestinationName}:");
+            sb.AppendLine("                            return normalizedValue switch");
+            sb.AppendLine("                            {");
 
-            sb.AppendLine("                    switch (columnId)");
-            sb.AppendLine("                    {");
+            var modelMembers =
+                field.ModelEnumType!
+                    .GetMembers()
+                    .OfType<IFieldSymbol>()
+                    .Where(f => f.IsConst && f.HasConstantValue);
 
-            foreach (var (_, field) in group)
+            var entityMembers =
+                field.EntityEnumType!
+                    .GetMembers()
+                    .OfType<IFieldSymbol>()
+                    .Where(f => f.IsConst && f.HasConstantValue)
+                    .ToDictionary(
+                        x => x.Name,
+                        x => x.Name,
+                        StringComparer.OrdinalIgnoreCase);
+
+            foreach (var modelMember in modelMembers)
             {
-                sb.AppendLine(
-                    $"                        case (ushort)ColumnId.{entityName}.{field.DestinationName}:");
+                if (field.EnumIgnored.Contains(modelMember.Name))
+                    continue;
 
-                sb.AppendLine("                            return normalizedValue switch");
-                sb.AppendLine("                            {");
 
-                foreach (var kvp in field.FromEnum!)
+                var destinationName =
+                    field.EnumOverrides.TryGetValue(
+                        modelMember.Name,
+                        out var overrideName)
+                        ? overrideName
+                        : modelMember.Name;
+
+
+                if (!entityMembers.TryGetValue(
+                        destinationName,
+                        out var destinationNameValue))
                 {
-                    sb.AppendLine(
-                        $"                                \"{kvp.Key.Trim().ToUpperInvariant()}\" => \"{kvp.Value}\",");
+                    continue;
                 }
 
-                sb.AppendLine(
-                    "                                _ => null");
 
-                sb.AppendLine("                            };");
+                sb.AppendLine(
+                    $"                                \"{modelMember.Name.ToUpperInvariant()}\" => \"{destinationNameValue}\",");
             }
 
-            sb.AppendLine("                    }");
-            sb.AppendLine("                    break;");
+            sb.AppendLine("                                _ => null");
+            sb.AppendLine("                            };");
         }
 
-        sb.AppendLine("            }");
-
-        sb.AppendLine("            return null;");
-        sb.AppendLine("        }");
-
-        sb.AppendLine("    }");
-        sb.AppendLine();
+        sb.AppendLine("                    }");
+        sb.AppendLine("                    break;");
     }
+
+    sb.AppendLine("            }");
+
+    sb.AppendLine("            return null;");
+    sb.AppendLine("        }");
+
+    sb.AppendLine("    }");
+    sb.AppendLine();
+}
 
 
     private static ushort ResolveStorageEntityId(
@@ -975,20 +998,34 @@ private static void EmitCteResolutionsArray(
     private static void EmitEntityColumnNameArray(
         StringBuilder sb,
         List<INamedTypeSymbol> entityTypes,
-        ImmutableArray<MappingClassInfo> allMappings)   // add this parameter
+        ImmutableArray<MappingClassInfo> allMappings)
     {
-        sb.AppendLine("        /// <summary>Indexed by StorageEntityId.* then ColumnId.{EntityName}.*</summary>");
-        sb.AppendLine($"        public static readonly string[][] EntityColumnName = new string[{entityTypes.Count}][]");
+        sb.AppendLine(
+            "        /// <summary>Indexed by StorageEntityId.* then ColumnId.{EntityName}.*</summary>");
+
+        sb.AppendLine(
+            $"        public static readonly string[][] EntityColumnName = new string[{entityTypes.Count}][]");
+
         sb.AppendLine("        {");
 
-        foreach (var e in entityTypes)
+        foreach (var entity in entityTypes)
         {
-            var cols = IdEmitter.GetOrderedColumnNames(e.Name, allMappings);  // was: IdEmitter.GetScalarProperties(e)
+            var columns =
+                IdEmitter.GetOrderedColumnNames(
+                    entity.Name,
+                    allMappings);
 
-            sb.AppendLine($"            new string[{cols.Count}]");
+            sb.AppendLine(
+                $"            new string[{columns.Count}]");
+
             sb.AppendLine("            {");
-            foreach (var c in cols)
-                sb.AppendLine($"                \"{c}\",");
+
+            foreach (var column in columns)
+            {
+                sb.AppendLine(
+                    $"                \"{column}\",");
+            }
+
             sb.AppendLine("            },");
         }
 

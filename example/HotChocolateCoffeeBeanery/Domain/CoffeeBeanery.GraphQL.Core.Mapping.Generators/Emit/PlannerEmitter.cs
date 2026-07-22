@@ -92,34 +92,83 @@ internal static class PlannerEmitter
     }
 
     private static void EmitChildSelection(
-        StringBuilder sb,
-        MappingClassInfo info,
-        ImmutableArray<MappingClassInfo> allMappings,
-        ImmutableHashSet<INamedTypeSymbol> rootEntityTypes,
-        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+    StringBuilder sb,
+    MappingClassInfo info,
+    ImmutableArray<MappingClassInfo> allMappings,
+    ImmutableHashSet<INamedTypeSymbol> rootEntityTypes,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+{
+    var navResult = EntityNavigationConvention.Resolve(
+        info, allMappings, entityGraph, rootEntityTypes);
+
+    var hasNavigations = navResult != null && navResult.Navigations.Count > 0;
+    var hasAutoAttachments = info.AutoChildAttachments.Count > 0;
+
+    if (!hasNavigations && !hasAutoAttachments)
+        return;
+
+    sb.AppendLine();
+
+    if (info.Graph != null && !string.IsNullOrWhiteSpace(info.Graph.GraphName))
     {
-        var navResult = EntityNavigationConvention.Resolve(
-            info,
-            allMappings,
-            entityGraph,
-            rootEntityTypes);
-
-        if (navResult == null || navResult.Navigations.Count == 0)
-            return;
-
-        sb.AppendLine();
-
-        if (info.Graph != null &&
-            !string.IsNullOrWhiteSpace(info.Graph.GraphName))
-        {
-            EmitGraphVertexResultJoins(sb, info, allMappings);
-        }
-
-        sb.AppendLine("            foreach (var child in node.Children)");
-        sb.AppendLine("            {");
-        sb.AppendLine("                PlannerRegistry.Build(child.EntityId, child, ref builder);");
-        sb.AppendLine("            }");
+        EmitGraphVertexResultJoins(sb, info, allMappings);
     }
+
+    if (hasAutoAttachments)
+    {
+        EmitCompositeChildAttachmentJoins(sb, info);
+    }
+
+    sb.AppendLine("            foreach (var child in node.Children)");
+    sb.AppendLine("            {");
+    sb.AppendLine("                PlannerRegistry.Build(child.EntityId, child, ref builder);");
+    sb.AppendLine("            }");
+}
+
+/// <summary>
+/// Emits AddJoin calls for children discovered via
+/// CompositeChildAttachmentConvention — composite target models (like
+/// Product) that have no single EF navigation property for
+/// EntityNavigationConvention to find a path through. The convention
+/// matches purely on a "{ParentModel}Key"-shaped property existing
+/// somewhere in the child's own composition (e.g.
+/// CustomerBankingRelationship.CustomerKey), independent of EF fluent
+/// HasOne/WithMany/HasForeignKey configuration.
+/// </summary>
+private static void EmitCompositeChildAttachmentJoins(
+    StringBuilder sb,
+    MappingClassInfo info)
+{
+    sb.AppendLine("            foreach (var attachChild in node.Children)");
+    sb.AppendLine("            {");
+
+    var first = true;
+
+    foreach (var attachment in info.AutoChildAttachments)
+    {
+        var parentEntityName = IdEmitter.StripEntitySuffix(attachment.ParentEntityType.Name);
+        var childEntityName = IdEmitter.StripEntitySuffix(attachment.ChildEntityType.Name);
+
+        var keyword = first ? "if" : "else if";
+        first = false;
+
+        sb.AppendLine($"                {keyword} (string.Equals(attachChild.OutputAlias, \"{attachment.FieldName}\", System.StringComparison.OrdinalIgnoreCase))");
+        sb.AppendLine("                {");
+        sb.AppendLine("                    builder.AddJoin(");
+        sb.AppendLine($"                        EntityId.{info.ModelType!.Name},");
+        sb.AppendLine($"                        StorageEntityId.{parentEntityName},");
+        sb.AppendLine($"                        EntityId.{attachment.ToModelName},");
+        sb.AppendLine($"                        StorageEntityId.{childEntityName},");
+        sb.AppendLine($"                        ColumnId.{attachment.ParentEntityType.Name}.{attachment.ParentJoinColumn},");
+        sb.AppendLine($"                        ColumnId.{attachment.ChildEntityType.Name}.{attachment.ChildJoinColumn},");
+        sb.AppendLine("                        JoinKind.Left,");
+        sb.AppendLine("                        attachChild.OutputAlias);");
+        sb.AppendLine("                }");
+    }
+
+    sb.AppendLine("            }");
+    sb.AppendLine();
+}
     
     private static void EmitGraphVertexResultJoins(
     StringBuilder sb,

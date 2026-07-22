@@ -3,6 +3,8 @@
 public sealed record MappingDefinition
 {
     public required Type Model { get; init; }
+    
+    public string? MutationName { get; set; }
 
     public string? Schema { get; init; }
 

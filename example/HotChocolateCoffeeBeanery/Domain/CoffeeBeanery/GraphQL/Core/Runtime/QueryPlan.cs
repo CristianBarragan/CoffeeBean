@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using CoffeeBeanery.GraphQL.Core.Runtime.Filtering;
 
 namespace CoffeeBeanery.GraphQL.Core.Runtime;
 
@@ -232,20 +233,28 @@ public readonly struct QueryPlan
     public readonly ImmutableArray<JoinSpec> Joins;
     public readonly ImmutableArray<GraphJoinSpec> GraphJoins;
     public readonly ImmutableArray<GraphResultJoinSpec> GraphResultJoins;
+    public readonly EntityFilterMetadata? EntityFilterMetadata;
 
     public QueryPlan(
-        ushort rootEntityId, ushort rootStorageEntityId, string rootOutputAlias,
-        ImmutableArray<ColumnSpec> columns, ImmutableArray<JoinSpec> joins,
+        ushort rootEntityId, 
+        ushort rootStorageEntityId, 
+        string rootOutputAlias,
+        ImmutableArray<ColumnSpec> columns, 
+        ImmutableArray<JoinSpec> joins,
         ImmutableArray<GraphJoinSpec> graphJoins,
-        ImmutableArray<GraphResultJoinSpec> graphResultJoins)
+        ImmutableArray<GraphResultJoinSpec> graphResultJoins,
+        EntityFilterMetadata? entityFilterMetadata = null)
     {
-        RootEntityId        = rootEntityId;
+        RootEntityId = rootEntityId;
         RootStorageEntityId = rootStorageEntityId;
-        RootOutputAlias     = rootOutputAlias;
-        Columns             = columns;
-        Joins               = joins;
-        GraphJoins          = graphJoins;
-        GraphResultJoins    = graphResultJoins;
+        RootOutputAlias = rootOutputAlias;
+
+        Columns = columns;
+        Joins = joins;
+        GraphJoins = graphJoins;
+        GraphResultJoins = graphResultJoins;
+
+        EntityFilterMetadata = entityFilterMetadata;
     }
 
     /// <summary>
@@ -295,12 +304,19 @@ public ref struct QueryPlanBuilder
     private int _graphJoinCount;
     private InlineArray32<GraphResultJoinSpec> _graphResultJoins;
     private int _graphResultJoinCount;
+    private EntityFilterMetadata? _entityFilterMetadata;
 
     public void SetRoot(ushort entityId, ushort storageEntityId, string outputAlias)
     {
         _rootEntityId        = entityId;
         _rootStorageEntityId = storageEntityId;
         _rootOutputAlias     = outputAlias;
+    }
+    
+    public void SetFilter(
+        EntityFilterMetadata? filter)
+    {
+        _entityFilterMetadata = filter;
     }
 
     /// <summary>
@@ -443,12 +459,14 @@ public ref struct QueryPlanBuilder
         for (var i = 0; i < _graphResultJoinCount; i++) graphResultJoins.Add(_graphResultJoins[i]);
 
         return new QueryPlan(
-            _rootEntityId, _rootStorageEntityId,
+            _rootEntityId,
+            _rootStorageEntityId,
             _rootOutputAlias ?? string.Empty,
             cols.MoveToImmutable(),
             joins.MoveToImmutable(),
             graphJoins.MoveToImmutable(),
-            graphResultJoins.MoveToImmutable());
+            graphResultJoins.MoveToImmutable(),
+            _entityFilterMetadata);
     }
 }
 
