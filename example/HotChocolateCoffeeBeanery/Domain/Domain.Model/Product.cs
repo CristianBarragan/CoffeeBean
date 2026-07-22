@@ -38,7 +38,7 @@ public partial class Product
 
 public enum ProductType
 {
-    CreditCard,
-    Mortgage,
-    PersonalLoan
+    PersonalLoanProduct,
+    MortgageProduct,
+    CreditCardProduct
 }

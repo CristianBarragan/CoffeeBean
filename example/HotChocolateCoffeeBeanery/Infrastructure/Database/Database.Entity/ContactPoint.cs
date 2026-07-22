@@ -46,6 +46,10 @@ public class ContactPointEntityConfiguration : IEntityTypeConfiguration<ContactP
         builder.ToTable(nameof(ContactPoint), _schema);
 
         builder.HasKey(c => c.Id);
+        
+        builder.HasOne(c => c.Customer)
+            .WithMany(cu => cu.ContactPoint)
+            .HasForeignKey(c => c.CustomerId);
 
         builder.HasIndex(c => c.ContactPointKey).IsUnique();
 

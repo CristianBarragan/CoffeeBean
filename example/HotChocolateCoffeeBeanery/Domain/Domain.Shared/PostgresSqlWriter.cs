@@ -133,9 +133,25 @@ public sealed class PostgresSqlWriter
             row.TableOverride ??
             _meta.EntityTable[row.StorageEntityId];
 
-
         var conflictCols =
-            _meta.ConflictColumns[row.EntityId];
+            _meta.ConflictColumns[row.StorageEntityId];
+
+
+        var columns =
+            new Dictionary<string, FieldValue>(
+                StringComparer.OrdinalIgnoreCase);
+
+
+        foreach (var value in row.Values)
+        {
+            var column =
+                ResolveColumnName(
+                    row.EntityId,
+                    row.StorageEntityId,
+                    value.FieldId);
+
+            columns[column] = value;
+        }
 
 
         var sb = new StringBuilder();
@@ -148,18 +164,12 @@ public sealed class PostgresSqlWriter
             .Append("\" (");
 
 
-        for (var i = 0; i < row.Values.Length; i++)
+        var index = 0;
+
+        foreach (var column in columns.Keys)
         {
-            if (i > 0)
+            if (index++ > 0)
                 sb.Append(", ");
-
-
-            var column =
-                ResolveColumnName(
-                    row.EntityId,
-                    row.StorageEntityId,
-                    row.Values[i].FieldId);
-
 
             sb.Append('"')
                 .Append(column)
@@ -170,17 +180,18 @@ public sealed class PostgresSqlWriter
         sb.Append(") VALUES (");
 
 
-        for (var i = 0; i < row.Values.Length; i++)
-        {
-            if (i > 0)
-                sb.Append(", ");
+        index = 0;
 
+        foreach (var value in columns.Values)
+        {
+            if (index++ > 0)
+                sb.Append(", ");
 
             AppendFieldValue(
                 sb,
                 row.StorageEntityId,
-                row.Values[i].FieldId,
-                row.Values[i].RawValue);
+                value.FieldId,
+                value.RawValue);
         }
 
 
@@ -191,12 +202,13 @@ public sealed class PostgresSqlWriter
             sb,
             row.EntityId,
             row.StorageEntityId,
-            row.Values,
+            columns.Values.ToImmutableArray(),
             conflictCols);
 
 
         return sb.ToString();
     }
+
 
     private string ResolveColumnName(
         ushort entityId,
@@ -260,8 +272,8 @@ public sealed class PostgresSqlWriter
 
         return mapping;
     }
-
-    private string BuildCteNodeUpsertMerged(
+    
+        private string BuildCteNodeUpsertMerged(
         in MutationCteNode root)
     {
         var schema =
@@ -318,6 +330,7 @@ public sealed class PostgresSqlWriter
             }
         }
 
+
         var columns =
             new Dictionary<string, FieldValue>(
                 StringComparer.OrdinalIgnoreCase);
@@ -332,9 +345,7 @@ public sealed class PostgresSqlWriter
 
 
             if (metadata.StorageEntityId != root.StorageEntityId)
-            {
                 continue;
-            }
 
 
             var column =
@@ -347,7 +358,6 @@ public sealed class PostgresSqlWriter
         }
 
 
-
         var sb = new StringBuilder();
 
 
@@ -356,7 +366,6 @@ public sealed class PostgresSqlWriter
             .Append("\".\"")
             .Append(table)
             .Append("\" (");
-
 
 
         var first = true;
@@ -369,21 +378,21 @@ public sealed class PostgresSqlWriter
 
             first = false;
 
-
             sb.Append('"')
                 .Append(column)
                 .Append('"');
         }
 
 
-
         foreach (var (_, spec) in matched)
         {
+            if (columns.ContainsKey(spec.ForeignKeyColumn))
+                continue;
+
             if (!first)
                 sb.Append(", ");
 
             first = false;
-
 
             sb.Append('"')
                 .Append(spec.ForeignKeyColumn)
@@ -391,9 +400,7 @@ public sealed class PostgresSqlWriter
         }
 
 
-
         sb.Append(") SELECT ");
-
 
 
         first = true;
@@ -421,7 +428,6 @@ public sealed class PostgresSqlWriter
         }
 
 
-
         foreach (var (_, spec) in matched)
         {
             if (!first)
@@ -437,48 +443,57 @@ public sealed class PostgresSqlWriter
         }
 
 
-
         if (matched.Count > 0)
         {
             sb.Append(" FROM ");
 
             var whereConditions = new List<string>();
 
+
             for (var i = 0; i < matched.Count; i++)
             {
                 var (child, spec) = matched[i];
 
-                var naturalKeyValue = ResolveNaturalKeyValue(child, spec);
+                var naturalKeyValue =
+                    ResolveNaturalKeyValue(
+                        child,
+                        spec);
+
 
                 if (i == 0)
                 {
-                    // First table: plain FROM entry, no ON here — Postgres
-                    // doesn't allow ON on the first FROM item.
-                    sb.Append('"').Append(_meta.EntitySchema[child.StorageEntityId]).Append("\".\"")
-                        .Append(_meta.EntityTable[child.StorageEntityId]).Append("\" ").Append(spec.RelatedTableAlias);
+                    sb.Append('"')
+                        .Append(_meta.EntitySchema[child.StorageEntityId])
+                        .Append("\".\"")
+                        .Append(_meta.EntityTable[child.StorageEntityId])
+                        .Append("\" ")
+                        .Append(spec.RelatedTableAlias);
                 }
                 else
                 {
-                    // Subsequent tables: no real join predicate exists between
-                    // sibling natural-key lookups (e.g. InnerCustomer vs
-                    // OuterCustomer aren't related to each other), so join
-                    // unconditionally (ON true) and push each table's own
-                    // filter into WHERE instead.
-                    sb.Append(" JOIN \"").Append(_meta.EntitySchema[child.StorageEntityId]).Append("\".\"")
-                        .Append(_meta.EntityTable[child.StorageEntityId]).Append("\" ").Append(spec.RelatedTableAlias)
+                    sb.Append(" JOIN \"")
+                        .Append(_meta.EntitySchema[child.StorageEntityId])
+                        .Append("\".\"")
+                        .Append(_meta.EntityTable[child.StorageEntityId])
+                        .Append("\" ")
+                        .Append(spec.RelatedTableAlias)
                         .Append(" ON true");
                 }
+
 
                 whereConditions.Add(
                     $"{spec.RelatedTableAlias}.\"{spec.RelatedNaturalKeyColumn}\" = {QuotedValue(naturalKeyValue)}");
             }
 
+
             if (whereConditions.Count > 0)
             {
-                sb.Append(" WHERE ").Append(string.Join(" AND ", whereConditions));
+                sb.Append(" WHERE ")
+                    .Append(string.Join(
+                        " AND ",
+                        whereConditions));
             }
         }
-
 
 
         sb.Append(" ON CONFLICT (");
@@ -489,7 +504,6 @@ public sealed class PostgresSqlWriter
             if (i > 0)
                 sb.Append(", ");
 
-
             sb.Append('"')
                 .Append(conflictCols[i])
                 .Append('"');
@@ -499,11 +513,9 @@ public sealed class PostgresSqlWriter
         sb.Append(") DO UPDATE SET ");
 
 
-
         var updates =
             new HashSet<string>(
                 StringComparer.OrdinalIgnoreCase);
-
 
 
         foreach (var column in columns.Keys)
@@ -517,13 +529,11 @@ public sealed class PostgresSqlWriter
         }
 
 
-
         foreach (var (_, spec) in matched)
         {
             updates.Add(
                 spec.ForeignKeyColumn);
         }
-
 
 
         if (updates.Count == 0)
@@ -535,7 +545,6 @@ public sealed class PostgresSqlWriter
 
             return sb.ToString();
         }
-
 
 
         first = true;
@@ -559,28 +568,53 @@ public sealed class PostgresSqlWriter
 
         return sb.ToString();
     }
-    
-    private static string QuotedValue(string value)
+
+
+    private static string QuotedValue(
+        string value)
     {
         var sb = new StringBuilder();
-        AppendQuotedValue(sb, value);
+
+        AppendQuotedValue(
+            sb,
+            value);
+
         return sb.ToString();
     }
-    
-    private string ResolveNaturalKeyValue(in MutationCteNode child, CteResolutionSpec spec)
+
+
+    private string ResolveNaturalKeyValue(
+        in MutationCteNode child,
+        CteResolutionSpec spec)
     {
         foreach (var value in child.Values)
         {
-            var metadata = ResolveFieldMetadata(child.EntityId, value.FieldId);
-            var columnName = _meta.EntityColumnName[metadata.StorageEntityId][metadata.ColumnId];
+            var metadata =
+                ResolveFieldMetadata(
+                    child.EntityId,
+                    value.FieldId);
 
-            if (string.Equals(columnName, spec.RelatedNaturalKeyColumn, StringComparison.OrdinalIgnoreCase))
+
+            var columnName =
+                _meta.EntityColumnName[
+                    metadata.StorageEntityId]
+                [metadata.ColumnId];
+
+
+            if (string.Equals(
+                    columnName,
+                    spec.RelatedNaturalKeyColumn,
+                    StringComparison.OrdinalIgnoreCase))
+            {
                 return value.RawValue;
+            }
         }
+
 
         throw new InvalidOperationException(
             $"No FieldValue on child '{child.Alias}' matches natural key column '{spec.RelatedNaturalKeyColumn}'.");
     }
+
 
     private void AppendSelect(
         StringBuilder sb,
@@ -599,26 +633,23 @@ public sealed class PostgresSqlWriter
 
             string columnName;
 
-
             if (col.Kind == ColumnKind.GraphSynthetic)
             {
                 columnName =
                     col.RawColumnName ??
                     throw new InvalidOperationException(
-                        $"GraphSynthetic column missing RawColumnName.");
+                        "GraphSynthetic column missing RawColumnName.");
             }
             else
             {
                 var columns =
                     _meta.EntityColumnName[col.StorageEntityId];
 
-
                 if (col.ColumnId >= columns.Length)
                 {
                     throw new IndexOutOfRangeException(
                         $"ColumnId {col.ColumnId} invalid for storage entity {col.StorageEntityId}");
                 }
-
 
                 columnName =
                     columns[col.ColumnId];
@@ -659,7 +690,6 @@ public sealed class PostgresSqlWriter
             plan.RootOutputAlias);
 
 
-
         foreach (var graphJoin in plan.GraphJoins)
         {
             sb.Append('\n');
@@ -669,7 +699,6 @@ public sealed class PostgresSqlWriter
                 graphJoin,
                 plan.RootOutputAlias);
         }
-
 
 
         foreach (var join in plan.Joins)
@@ -683,7 +712,6 @@ public sealed class PostgresSqlWriter
         }
 
 
-
         foreach (var resultJoin in plan.GraphResultJoins)
         {
             sb.Append('\n');
@@ -693,10 +721,8 @@ public sealed class PostgresSqlWriter
                 resultJoin);
         }
     }
-
-
-
-    private void AppendJoin(
+    
+        private void AppendJoin(
         StringBuilder sb,
         in JoinSpec join,
         in QueryPlan plan)
@@ -736,7 +762,6 @@ public sealed class PostgresSqlWriter
         sb.Append(".\"")
             .Append(toColumn)
             .Append("\" = ");
-
 
 
         if (join.SourceKind == JoinSourceKind.GraphVertex)
@@ -835,7 +860,7 @@ public sealed class PostgresSqlWriter
 
         if (converted != null)
         {
-            sb.Append((string)converted);
+            sb.Append(converted);
             return;
         }
 
@@ -882,21 +907,28 @@ public sealed class PostgresSqlWriter
             return;
         }
 
+
         sb.Append(" ON CONFLICT (");
+
 
         for (var i = 0; i < conflictCols.Length; i++)
         {
             if (i > 0)
                 sb.Append(", ");
 
+
             sb.Append('"')
                 .Append(conflictCols[i])
                 .Append('"');
         }
 
+
         sb.Append(") DO UPDATE SET ");
 
-        var updates = new List<string>();
+
+        var updates =
+            new List<string>();
+
 
         foreach (var value in values)
         {
@@ -906,6 +938,7 @@ public sealed class PostgresSqlWriter
                     storageEntityId,
                     value.FieldId);
 
+
             var conflict =
                 conflictCols.Any(x =>
                     string.Equals(
@@ -913,22 +946,34 @@ public sealed class PostgresSqlWriter
                         columnName,
                         StringComparison.OrdinalIgnoreCase));
 
+
             if (conflict)
                 continue;
+
 
             updates.Add(
                 $"\"{columnName}\" = EXCLUDED.\"{columnName}\"");
         }
 
+
         if (updates.Count == 0)
         {
-            sb.Length -= " DO UPDATE SET ".Length;
+            sb.Length -=
+                " DO UPDATE SET ".Length;
+
             sb.Append(" DO NOTHING");
+
             return;
         }
 
-        sb.Append(string.Join(", ", updates));
+
+        sb.Append(
+            string.Join(
+                ", ",
+                updates));
     }
+
+
 
     internal static void AppendQuotedIdentifierStatic(
         StringBuilder sb,
@@ -938,6 +983,8 @@ public sealed class PostgresSqlWriter
             .Append(identifier.Replace("\"", "\"\""))
             .Append('"');
     }
+
+
 
     private void AppendDoUpdateSetFromNames(
         StringBuilder sb,
@@ -972,11 +1019,9 @@ public sealed class PostgresSqlWriter
         sb.Append(") DO UPDATE SET ");
 
 
-
         var updates =
             new HashSet<string>(
                 StringComparer.OrdinalIgnoreCase);
-
 
 
         foreach (var value in values)
@@ -994,7 +1039,6 @@ public sealed class PostgresSqlWriter
         }
 
 
-
         if (updates.Count == 0)
         {
             sb.Length -=
@@ -1004,7 +1048,6 @@ public sealed class PostgresSqlWriter
 
             return;
         }
-
 
 
         var first = true;

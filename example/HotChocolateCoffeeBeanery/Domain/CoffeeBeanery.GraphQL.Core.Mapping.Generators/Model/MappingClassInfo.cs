@@ -179,26 +179,32 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
     public sealed class FieldInfo
     {
         public string SourceName { get; set; } = "";
-        
+
         public bool IsNavigationKey { get; set; }
 
         public string DestinationEntity { get; set; } = "";
 
         public string DestinationName { get; set; } = "";
-        
+
         public string? DestinationColumn { get; set; }
 
         public string? SourceAlias { get; set; }
 
         public string? DestinationAlias { get; set; }
 
-        public Dictionary<string, int>? FromEnum { get; set; }
+        public INamedTypeSymbol? ModelEnumType { get; set; }
 
-        public Dictionary<string, int>? ToEnum { get; set; }
+        public INamedTypeSymbol? EntityEnumType { get; set; }
 
-        public Dictionary<string, string> EnumOverrides { get; } = [];
+        public Dictionary<string, string> EnumOverrides { get; } =
+            new(StringComparer.OrdinalIgnoreCase);
 
-        public HashSet<string> EnumIgnore { get; } = [];
+        public HashSet<string> EnumIgnored { get; } =
+            new(StringComparer.OrdinalIgnoreCase);
+
+        public bool HasEnumTranslation =>
+            ModelEnumType != null &&
+            EntityEnumType != null;
 
         public bool IsGenerated { get; set; }
 

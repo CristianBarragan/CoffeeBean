@@ -64,40 +64,39 @@ internal static class QueryMaterializerEmitter
     }
 
 
-    private static void EmitRowMaterializer(StringBuilder sb, MappingClassInfo info)
-{
-    var model = info.ModelType!.Name;
-
-    sb.AppendLine($"public static class {model}RowMaterializer");
-    sb.AppendLine("{");
-    sb.AppendLine($"    public static {model} Materialize(DbDataReader reader, ushort[] columnMap)");
-    sb.AppendLine("    {");
-    sb.AppendLine($"        var model = new {model}();");
-    sb.AppendLine();
-
-    foreach (var field in info.FieldMaps)
+    private static void EmitRowMaterializer(
+        StringBuilder sb,
+        MappingClassInfo info)
     {
-        if (info.Graph != null &&
-            (string.Equals(field.SourceName, info.Graph.From?.KeyColumn, StringComparison.OrdinalIgnoreCase) ||
-             string.Equals(field.SourceName, info.Graph.To?.KeyColumn, StringComparison.OrdinalIgnoreCase)))
+        var model = info.ModelType!.Name;
+
+        sb.AppendLine($"public static class {model}RowMaterializer");
+        sb.AppendLine("{");
+
+        sb.AppendLine($"    public static {model} Materialize(DbDataReader reader, ushort[] columnMap)");
+        sb.AppendLine("    {");
+        sb.AppendLine($"        var model = new {model}();");
+        sb.AppendLine();
+
+        foreach (var field in info.FieldMaps)
         {
-            continue;
+            if (field.IsNavigationKey)
+                continue;
+
+            sb.AppendLine("        {");
+            sb.AppendLine($"            var ordinal = columnMap[ColumnId.{field.DestinationEntity}.{field.DestinationName}];");
+            sb.AppendLine();
+            sb.AppendLine("            if (ordinal != ushort.MaxValue)");
+            sb.AppendLine($"                model.{field.SourceName} = {ReadValue(field)};");
+            sb.AppendLine();
+            sb.AppendLine("        }");
+            sb.AppendLine();
         }
 
-        sb.AppendLine("        {");
-        sb.AppendLine($"            var ordinal = columnMap[ColumnId.{field.DestinationEntity}.{field.DestinationName}];");
-        sb.AppendLine();
-        sb.AppendLine("            if (ordinal != ushort.MaxValue)");
-        sb.AppendLine($"                model.{field.SourceName} = {ReadValue(field)};");
-        sb.AppendLine();
-        sb.AppendLine("        }");
-        sb.AppendLine();
+        sb.AppendLine("        return model;");
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
     }
-
-    sb.AppendLine("        return model;");
-    sb.AppendLine("    }");
-    sb.AppendLine("}");
-}
     
     private static string ReadValue(FieldInfo field)
     {

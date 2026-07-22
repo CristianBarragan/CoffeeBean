@@ -38,6 +38,10 @@ public class CustomerBankingRelationshipEntityConfiguration : IEntityTypeConfigu
         builder.ToTable(nameof(CustomerBankingRelationship), _schema);
 
         builder.HasKey(c => c.Id);
+        
+        builder.HasOne(c => c.Customer)
+            .WithMany(cu => cu.CustomerBankingRelationship)
+            .HasForeignKey(c => c.CustomerId);
 
         builder.HasIndex(c => c.CustomerBankingRelationshipKey).IsUnique();
 
