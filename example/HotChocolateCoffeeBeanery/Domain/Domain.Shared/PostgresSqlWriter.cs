@@ -857,20 +857,19 @@ public sealed class PostgresSqlWriter
                 columnId,
                 rawValue);
 
+        Console.WriteLine(
+            $"Enum conversion: entity={storageEntityId}, column={columnId}, raw='{rawValue}', converted='{converted}'");
 
-        if (converted != null)
+        if (!string.IsNullOrEmpty(converted))
         {
             sb.Append(converted);
             return;
         }
 
-
         AppendQuotedValue(
             sb,
             rawValue);
     }
-
-
 
     private static void AppendQuotedValue(
         StringBuilder sb,

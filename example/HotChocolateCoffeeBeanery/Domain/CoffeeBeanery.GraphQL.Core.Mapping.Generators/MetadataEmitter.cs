@@ -205,7 +205,7 @@ internal static class MetadataEmitter
 
     sb.AppendLine("        public static string? TryConvert(ushort storageEntityId, ushort columnId, string value)");
     sb.AppendLine("        {");
-    sb.AppendLine("            var normalizedValue = value.Trim().ToUpperInvariant();");
+    sb.AppendLine("            var normalizedValue = value.Trim();");
     sb.AppendLine("            switch (storageEntityId)");
     sb.AppendLine("            {");
 
@@ -231,7 +231,11 @@ internal static class MetadataEmitter
                 field.ModelEnumType!
                     .GetMembers()
                     .OfType<IFieldSymbol>()
-                    .Where(f => f.IsConst && f.HasConstantValue);
+                    .Where(f => f.IsConst && f.HasConstantValue)
+                    .ToDictionary(
+                        x => x.Name,
+                        x => Convert.ToInt32(x.ConstantValue),
+                        StringComparer.Ordinal);
 
             var entityMembers =
                 field.EntityEnumType!
@@ -240,33 +244,32 @@ internal static class MetadataEmitter
                     .Where(f => f.IsConst && f.HasConstantValue)
                     .ToDictionary(
                         x => x.Name,
-                        x => x.Name,
-                        StringComparer.OrdinalIgnoreCase);
+                        x => Convert.ToInt32(x.ConstantValue),
+                        StringComparer.Ordinal);
 
-            foreach (var modelMember in modelMembers)
+            foreach (var pair in modelMembers)
             {
-                if (field.EnumIgnored.Contains(modelMember.Name))
-                    continue;
+                var modelName = pair.Key;
+                var modelValue = pair.Value;
 
+                if (field.EnumIgnored.Contains(modelName))
+                    continue;
 
                 var destinationName =
                     field.EnumOverrides.TryGetValue(
-                        modelMember.Name,
+                        modelName,
                         out var overrideName)
                         ? overrideName
-                        : modelMember.Name;
+                        : modelName;
 
-
-                if (!entityMembers.TryGetValue(
-                        destinationName,
-                        out var destinationNameValue))
+                if (!entityMembers.TryGetValue(destinationName, out var entityValue))
                 {
-                    continue;
+                    throw new InvalidOperationException(
+                        $"Enum mapping '{field.ModelEnumType.Name}.{modelName}' -> '{field.EntityEnumType.Name}.{destinationName}' does not exist.");
                 }
 
-
                 sb.AppendLine(
-                    $"                                \"{modelMember.Name.ToUpperInvariant()}\" => \"{destinationNameValue}\",");
+                    $"                                \"{modelValue}\" => \"{entityValue}\",");
             }
 
             sb.AppendLine("                                _ => null");

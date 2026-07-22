@@ -99,7 +99,8 @@ internal static class MutationMaterializerEmitter
 
         sb.AppendLine($"public static class {model}Dematerializer");
         sb.AppendLine("{");
-        sb.AppendLine($"    public static ImmutableArray<FieldValue> Dematerialize({model} model, MutationEntityMetadata metadata)");
+        sb.AppendLine(
+            $"    public static ImmutableArray<FieldValue> Dematerialize({model} model, MutationEntityMetadata metadata)");
         sb.AppendLine("    {");
         sb.AppendLine("        var builder = ImmutableArray.CreateBuilder<FieldValue>();");
         sb.AppendLine();
@@ -234,98 +235,91 @@ internal static class MutationMaterializerEmitter
 
 
     private static string ConvertFromRaw(FieldInfo field)
-{
-    var propertyType = field.PropertyType;
-
-    if (propertyType == null)
-        return "value.RawValue";
-
-    var isNullable =
-        propertyType is INamedTypeSymbol nullable &&
-        nullable.OriginalDefinition.SpecialType ==
-        SpecialType.System_Nullable_T;
-
-    var underlying =
-        isNullable
-            ? ((INamedTypeSymbol)propertyType).TypeArguments[0]
-            : propertyType;
-
-
-    // Enum
-    if (underlying.TypeKind == TypeKind.Enum)
     {
-        var enumName =
-            underlying.ToDisplayString(
-                SymbolDisplayFormat.FullyQualifiedFormat);
+        var propertyType = field.PropertyType;
 
-        const string normalize =
-            "string.Concat(value.RawValue!.Trim().Split('_').Select(s => char.ToUpperInvariant(s[0]) + s.Substring(1).ToLowerInvariant()))";
+        if (propertyType == null)
+            return "value.RawValue";
 
-        return isNullable
-            ? $"string.IsNullOrWhiteSpace(value.RawValue) ? null : ({enumName})Enum.Parse(typeof({enumName}), string.Concat(value.RawValue.Trim().Split('_').Select(s => char.ToUpperInvariant(s[0]) + s.Substring(1).ToLowerInvariant())), true)"
-            : $"({enumName})Enum.Parse(typeof({enumName}), string.Concat(value.RawValue!.Trim().Split('_').Select(s => char.ToUpperInvariant(s[0]) + s.Substring(1).ToLowerInvariant())), true)";
-    }
+        var isNullable =
+            propertyType is INamedTypeSymbol nullable &&
+            nullable.OriginalDefinition.SpecialType ==
+            SpecialType.System_Nullable_T;
 
-    // String
-    if (underlying.SpecialType == SpecialType.System_String)
-    {
-        return "value.RawValue";
-    }
+        var underlying =
+            isNullable
+                ? ((INamedTypeSymbol)propertyType).TypeArguments[0]
+                : propertyType;
 
+        // Enum
+        if (underlying.TypeKind == TypeKind.Enum)
+        {
+            var enumName =
+                underlying.ToDisplayString(
+                    SymbolDisplayFormat.FullyQualifiedFormat);
 
-    // Guid
-    if (underlying.SpecialType == SpecialType.None &&
-        underlying.Name == "Guid" &&
-        underlying.ContainingNamespace.ToDisplayString() == "System")
-    {
-        return isNullable
-            ? "Guid.TryParse(value.RawValue, out var guid) ? (Guid?)guid : null"
-            : "Guid.Parse(value.RawValue!)";
-    }
+            const string normalize =
+                "string.Concat(value.RawValue!.Trim().Split('_').Select(s => char.ToUpperInvariant(s[0]) + s.Substring(1).ToLowerInvariant()))";
 
-
-    switch (underlying.SpecialType)
-    {
-        case SpecialType.System_Int32:
             return isNullable
-                ? "int.TryParse(value.RawValue, out var i) ? (int?)i : null"
-                : "int.Parse(value.RawValue!)";
+                ? $"string.IsNullOrWhiteSpace(value.RawValue) ? null : ({enumName})Enum.Parse(typeof({enumName}), {normalize}, true)"
+                : $"({enumName})Enum.Parse(typeof({enumName}), {normalize}, true)";
+        }
 
+        // String
+        if (underlying.SpecialType == SpecialType.System_String)
+        {
+            return "value.RawValue";
+        }
 
-        case SpecialType.System_Int64:
+        // Guid
+        if (underlying.SpecialType == SpecialType.None &&
+            underlying.Name == "Guid" &&
+            underlying.ContainingNamespace.ToDisplayString() == "System")
+        {
             return isNullable
-                ? "long.TryParse(value.RawValue, out var l) ? (long?)l : null"
-                : "long.Parse(value.RawValue!)";
+                ? "Guid.TryParse(value.RawValue, out var guid) ? (Guid?)guid : null"
+                : "Guid.Parse(value.RawValue!)";
+        }
 
+        switch (underlying.SpecialType)
+        {
+            case SpecialType.System_Int32:
+                return isNullable
+                    ? "int.TryParse(value.RawValue, out var i) ? (int?)i : null"
+                    : "int.Parse(value.RawValue!)";
 
-        case SpecialType.System_Decimal:
-            return isNullable
-                ? "decimal.TryParse(value.RawValue, out var d) ? (decimal?)d : null"
-                : "decimal.Parse(value.RawValue!)";
+            case SpecialType.System_Int64:
+                return isNullable
+                    ? "long.TryParse(value.RawValue, out var l) ? (long?)l : null"
+                    : "long.Parse(value.RawValue!)";
 
+            case SpecialType.System_Decimal:
+                return isNullable
+                    ? "decimal.TryParse(value.RawValue, out var d) ? (decimal?)d : null"
+                    : "decimal.Parse(value.RawValue!)";
 
-        case SpecialType.System_Boolean:
-            return isNullable
-                ? "bool.TryParse(value.RawValue, out var b) ? (bool?)b : null"
-                : "bool.Parse(value.RawValue!)";
+            case SpecialType.System_Boolean:
+                return isNullable
+                    ? "bool.TryParse(value.RawValue, out var b) ? (bool?)b : null"
+                    : "bool.Parse(value.RawValue!)";
 
+            case SpecialType.System_Double:
+                return isNullable
+                    ? "double.TryParse(value.RawValue, out var dbl) ? (double?)dbl : null"
+                    : "double.Parse(value.RawValue!)";
+        }
 
-        case SpecialType.System_Double:
-            return isNullable
-                ? "double.TryParse(value.RawValue, out var dbl) ? (double?)dbl : null"
-                : "double.Parse(value.RawValue!)";
+        // fallback
+        if (isNullable)
+        {
+            return
+                $"string.IsNullOrEmpty(value.RawValue) ? null : ({underlying.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})Convert.ChangeType(value.RawValue, typeof({underlying.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}))";
+        }
+
+        return
+            $"({propertyType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})Convert.ChangeType(value.RawValue, typeof({propertyType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}))";
     }
-
-
-    // fallback
-    if (isNullable)
-    {
-        return $"string.IsNullOrEmpty(value.RawValue) ? null : ({underlying.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})Convert.ChangeType(value.RawValue, typeof({underlying.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}))";
-    }
-
-    return $"({propertyType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})Convert.ChangeType(value.RawValue, typeof({propertyType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}))";
-}
-
 
     private static string ConvertToRaw(FieldInfo field)
     {
@@ -334,14 +328,30 @@ internal static class MutationMaterializerEmitter
         if (type == null)
             return $"model.{field.SourceName}?.ToString()";
 
+        var isNullable =
+            type is INamedTypeSymbol nullable &&
+            nullable.OriginalDefinition.SpecialType ==
+            SpecialType.System_Nullable_T;
 
-        if (type.IsReferenceType ||
-            IsNullableValueType(type))
+        var underlying =
+            isNullable
+                ? ((INamedTypeSymbol)type).TypeArguments[0]
+                : type;
+
+        // Enum -> emit underlying integer value
+        if (underlying.TypeKind == TypeKind.Enum)
+        {
+            return isNullable
+                ? $"model.{field.SourceName}.HasValue ? Convert.ToInt32(model.{field.SourceName}.Value).ToString(System.Globalization.CultureInfo.InvariantCulture) : null"
+                : $"Convert.ToInt32(model.{field.SourceName}).ToString(System.Globalization.CultureInfo.InvariantCulture)";
+        }
+
+        if (type.IsReferenceType || IsNullableValueType(type))
         {
             return $"model.{field.SourceName}?.ToString()";
         }
 
-
         return $"model.{field.SourceName}.ToString()";
+
     }
 }

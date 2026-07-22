@@ -615,77 +615,126 @@ private static List<JoinHopDefinitionInfo> ParseJoinHops(
     }
 
     private static void ParseEnumMapping(
-        ExpressionSyntax expression,
-        FieldInfo field,
-        SemanticModel semanticModel)
+    ExpressionSyntax expression,
+    FieldInfo field,
+    SemanticModel semanticModel)
+{
+    var typeInfo = semanticModel.GetTypeInfo(expression);
+
+    if (typeInfo.Type is not INamedTypeSymbol genericType)
+        return;
+
+    if (!genericType.IsGenericType || genericType.TypeArguments.Length != 2)
+        return;
+
+    field.ModelEnumType = genericType.TypeArguments[0] as INamedTypeSymbol;
+    field.EntityEnumType = genericType.TypeArguments[1] as INamedTypeSymbol;
+
+    if (field.ModelEnumType == null || field.EntityEnumType == null)
+        return;
+
+    var initializer = expression switch
     {
-        var typeInfo = semanticModel.GetTypeInfo(expression);
+        ObjectCreationExpressionSyntax obj => obj.Initializer,
+        ImplicitObjectCreationExpressionSyntax obj => obj.Initializer,
+        _ => null
+    };
 
-        if (typeInfo.Type is not INamedTypeSymbol genericType)
-            return;
-
-        if (!genericType.IsGenericType ||
-            genericType.TypeArguments.Length != 2)
+    if (initializer != null)
+    {
+        foreach (var assignment in initializer.Expressions.OfType<AssignmentExpressionSyntax>())
         {
-            return;
-        }
-
-        field.ModelEnumType =
-            genericType.TypeArguments[0] as INamedTypeSymbol;
-
-        field.EntityEnumType =
-            genericType.TypeArguments[1] as INamedTypeSymbol;
-
-        if (field.ModelEnumType == null ||
-            field.EntityEnumType == null)
-        {
-            return;
-        }
-
-        var initializer = expression switch
-        {
-            ObjectCreationExpressionSyntax obj =>
-                obj.Initializer,
-
-            ImplicitObjectCreationExpressionSyntax obj =>
-                obj.Initializer,
-
-            _ => null
-        };
-
-        if (initializer == null)
-            return;
-
-        foreach (var assignment in initializer.Expressions
-                     .OfType<AssignmentExpressionSyntax>())
-        {
-            var name =
-                (assignment.Left as IdentifierNameSyntax)
-                ?.Identifier.Text;
+            var name = (assignment.Left as IdentifierNameSyntax)?.Identifier.Text;
 
             switch (name)
             {
                 case "Overrides":
-                    ParseEnumOverrides(
-                        assignment.Right,
-                        field,
-                        semanticModel);
+                    ParseEnumOverrides(assignment.Right, field, semanticModel);
                     break;
 
                 case "Ignore":
-                    ParseEnumIgnore(
-                        assignment.Right,
-                        field);
+                    ParseEnumIgnore(assignment.Right, field, semanticModel);
                     break;
             }
         }
     }
 
+    if (initializer != null)
+    {
+        foreach (var assignment in initializer.Expressions.OfType<AssignmentExpressionSyntax>())
+        {
+            var name = (assignment.Left as IdentifierNameSyntax)?.Identifier.Text;
+
+            switch (name)
+            {
+                case "Overrides":
+                    ParseEnumOverrides(assignment.Right, field, semanticModel);
+                    break;
+
+                case "Ignore":
+                    ParseEnumIgnore(assignment.Right, field, semanticModel);
+                    break;
+            }
+        }
+    }
+}
+
+// private static void BuildEnumConversionMaps(FieldInfo field)
+// {
+//     var modelEnum = field.ModelEnumType!;
+//     var entityEnum = field.EntityEnumType!;
+//
+//     var entityMembersByName =
+//         entityEnum.GetMembers()
+//             .OfType<IFieldSymbol>()
+//             .Where(f => f.IsConst && f.HasConstantValue)
+//             .ToDictionary(
+//                 f => f.Name,
+//                 f => Convert.ToInt32(f.ConstantValue),
+//                 StringComparer.Ordinal);
+//
+//     field.FromEnum = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+//
+//     foreach (var modelMember in modelEnum.GetMembers()
+//                  .OfType<IFieldSymbol>()
+//                  .Where(f => f.IsConst && f.HasConstantValue))
+//     {
+//         if (field.EnumIgnored.Contains(modelMember.Name))
+//             continue;
+//
+//         // Overrides lets the author say "model member X corresponds to
+//         // entity member Y" when the names differ; otherwise assume the
+//         // same name exists on both enums.
+//         var entityMemberName =
+//             field.EnumOverrides.TryGetValue(modelMember.Name, out var overridden)
+//                 ? overridden
+//                 : modelMember.Name;
+//
+//         if (!entityMembersByName.TryGetValue(entityMemberName, out var entityValue))
+//         {
+//             throw new InvalidOperationException(
+//                 $"Enum mapping failed. '{modelEnum.Name}.{modelMember.Name}' maps to '{entityEnum.Name}.{entityMemberName}', but that member does not exist.");
+//         }
+//
+//         field.FromEnum[modelMember.Name] = entityValue;
+//     }
+// }
+
     private static string? EvaluateEnumName(
         ExpressionSyntax expression,
         SemanticModel semanticModel)
     {
-        // nameof(ProductType.CreditCardProduct)
+        if (expression is ImplicitElementAccessSyntax elementAccess)
+        {
+            expression =
+                elementAccess.ArgumentList.Arguments
+                    .FirstOrDefault()
+                    ?.Expression;
+
+            if (expression == null)
+                return null;
+        }
+
         if (expression is InvocationExpressionSyntax invocation &&
             invocation.Expression is IdentifierNameSyntax identifier &&
             identifier.Identifier.Text == "nameof")
@@ -707,13 +756,11 @@ private static List<JoinHopDefinitionInfo> ParseJoinHops(
             };
         }
 
-        // EnumType.Member syntax
         if (expression is MemberAccessExpressionSyntax memberAccess)
         {
             return memberAccess.Name.Identifier.Text;
         }
 
-        // "CreditCardProduct"
         if (expression is LiteralExpressionSyntax literal)
         {
             return literal.Token.ValueText;
@@ -798,19 +845,21 @@ private static string? ExtractNameOf(ExpressionSyntax expression)
     return null;
 }
     
-    private static void ParseEnumIgnore(
-        ExpressionSyntax expression,
-        FieldInfo field)
+private static void ParseEnumIgnore(
+    ExpressionSyntax expression,
+    FieldInfo field,
+    SemanticModel semanticModel)
+{
+    foreach (var value in GetCollectionElements(expression))
     {
-        foreach (var value in GetCollectionElements(expression))
-        {
-            var name =
-                EvaluateStringLikeExpression(value);
+        var name =
+            EvaluateEnumName(value, semanticModel)
+            ?? EvaluateStringLikeExpression(value);
 
-            if (name != null)
-                field.EnumIgnored.Add(name);
-        }
+        if (name != null)
+            field.EnumIgnored.Add(name);
     }
+}
 
 
     private static void ParseGraph(
