@@ -11,7 +11,7 @@
         string[] Schema { get; }           // legacy — [modelId]; use EntitySchema for SQL generation
         string[][] ColumnName { get; }     // legacy — [modelId][columnId]; use EntityColumnName
         string[][] FieldName { get; }      // [modelId][fieldId] camelCase GraphQL field names
-        string[][] ConflictColumns { get; }
+        string[][] EntityConflictColumns { get; }
         CteResolutionSpec[][] CteResolutions { get; }
 
         // ---- Storage-entity-keyed (indexed by StorageEntityId.*) ----

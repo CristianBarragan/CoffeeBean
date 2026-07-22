@@ -9,7 +9,6 @@ public partial class ProductMapping : IMappingDefinition
     public MappingDefinition Definition => new()
     {
         Model = typeof(Product),
-
         MutationName = nameof(Product),
 
         Entities =
@@ -25,24 +24,21 @@ public partial class ProductMapping : IMappingDefinition
             {
                 Entity = typeof(DataEntity.Contract),
                 ModelKey = nameof(Product.ContractKey),
-                EntityKey = nameof(DataEntity.Contract.ContractKey),
-                IsPrimary = false
+                EntityKey = nameof(DataEntity.Contract.ContractKey)
             },
 
             new()
             {
                 Entity = typeof(DataEntity.Transaction),
                 ModelKey = nameof(Product.TransactionKey),
-                EntityKey = nameof(DataEntity.Transaction.TransactionKey),
-                IsPrimary = false
+                EntityKey = nameof(DataEntity.Transaction.TransactionKey)
             },
 
             new()
             {
                 Entity = typeof(DataEntity.CustomerBankingRelationship),
                 ModelKey = nameof(Product.CustomerBankingRelationshipKey),
-                EntityKey = nameof(DataEntity.CustomerBankingRelationship.CustomerBankingRelationshipKey),
-                IsPrimary = false
+                EntityKey = nameof(DataEntity.CustomerBankingRelationship.CustomerBankingRelationshipKey)
             }
         ],
 
@@ -55,7 +51,26 @@ public partial class ProductMapping : IMappingDefinition
                 ColumnKey = nameof(DataEntity.Account.Id)
             }
         ],
+        ForeignKeys =
+        [
+            new()
+            {
+                Entity = typeof(DataEntity.Transaction),
+                Column = nameof(DataEntity.Transaction.AccountId),
 
+                PrincipalEntity = typeof(DataEntity.Account),
+                PrincipalColumn = nameof(DataEntity.Account.Id)
+            },
+
+            new()
+            {
+                Entity = typeof(DataEntity.Transaction),
+                Column = nameof(DataEntity.Transaction.ContractId),
+
+                PrincipalEntity = typeof(DataEntity.Contract),
+                PrincipalColumn = nameof(DataEntity.Contract.Id)
+            },
+        ],
         UpsertKeys =
         [
             new()

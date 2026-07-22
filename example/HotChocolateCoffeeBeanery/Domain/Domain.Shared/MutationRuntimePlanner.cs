@@ -89,6 +89,7 @@ public static class MutationRuntimePlanner
                 continue;
 
             var target = targets.FirstOrDefault(t => t.ColumnId == value.ColumnId);
+
             if (target is null)
                 continue;
 
@@ -106,10 +107,16 @@ public static class MutationRuntimePlanner
 
         foreach (var (storageEntityId, group) in byStorageEntity)
         {
-            builder.AddRow(entityId, storageEntityId, node.OutputAlias, group.ToImmutable(), null, null);
+            builder.AddRow(
+                entityId,
+                storageEntityId,
+                node.OutputAlias,
+                group.ToImmutable(),
+                null,
+                null);
         }
     }
-
+    
     private static void EmitGraphMerge(
         in MutationIR node,
         MutationEntityMetadata metadata,

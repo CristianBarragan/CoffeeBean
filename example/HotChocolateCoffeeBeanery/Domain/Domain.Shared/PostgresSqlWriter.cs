@@ -134,7 +134,7 @@ public sealed class PostgresSqlWriter
             _meta.EntityTable[row.StorageEntityId];
 
         var conflictCols =
-            _meta.ConflictColumns[row.StorageEntityId];
+            _meta.EntityConflictColumns[row.StorageEntityId];
 
 
         var columns =
@@ -288,7 +288,7 @@ public sealed class PostgresSqlWriter
         var conflictCols =
             root.ConflictColumns.Length > 0
                 ? root.ConflictColumns.ToArray()
-                : _meta.ConflictColumns[root.StorageEntityId];
+                : _meta.EntityConflictColumns[root.StorageEntityId];
 
 
         if (root.Values.IsEmpty)
@@ -856,9 +856,6 @@ public sealed class PostgresSqlWriter
                 storageEntityId,
                 columnId,
                 rawValue);
-
-        Console.WriteLine(
-            $"Enum conversion: entity={storageEntityId}, column={columnId}, raw='{rawValue}', converted='{converted}'");
 
         if (!string.IsNullOrEmpty(converted))
         {

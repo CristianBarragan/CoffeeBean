@@ -14,5 +14,5 @@ public enum Schema
 {
     Banking,
     Lending,
-    Account
+    Accounting
 }

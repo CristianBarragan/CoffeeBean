@@ -49,7 +49,7 @@ namespace Database.Entity.Banking.Migrations
                     b.HasIndex("AccountKey")
                         .IsUnique();
 
-                    b.ToTable("Account", "Account");
+                    b.ToTable("Account", "Accounting");
                 });
 
             modelBuilder.Entity("Database.Entity.ContactPoint", b =>

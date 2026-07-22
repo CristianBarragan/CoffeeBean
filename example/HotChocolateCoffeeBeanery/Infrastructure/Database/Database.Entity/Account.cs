@@ -7,7 +7,7 @@ public partial class Account : Process
 {
     public Account()
     {
-        Schema = Entity.Schema.Account;
+        Schema = Entity.Schema.Accounting;
     }
     
     public int Id { get; set; }

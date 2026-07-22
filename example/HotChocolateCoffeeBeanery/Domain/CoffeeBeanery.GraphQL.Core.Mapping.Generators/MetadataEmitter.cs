@@ -20,6 +20,7 @@ internal static class MetadataEmitter
             .Where(m => m.IsModel)
             .GroupBy(m => m.ModelType.Name, System.StringComparer.OrdinalIgnoreCase)
             .Select(g => g.First())
+            .Distinct()
             .OrderBy(m => m.ModelType.Name, System.StringComparer.Ordinal)
             .ToList();
 
@@ -42,35 +43,45 @@ internal static class MetadataEmitter
             PopulateCteUpdateMeta(m, navResult);
         }
 
-        var entityTypes = allMappings
-            .SelectMany(m => m.Definition.Entities)
-            .Where(x => x.EntityType is not null)
-            .Select(x => x.EntityType!)
-            .GroupBy(
-                e => e.Name,
-                StringComparer.Ordinal)
-            .Select(g => g.First())
-            .OrderBy(
-                e => e.Name,
-                StringComparer.Ordinal)
-            .ToList();
+        var entityTypes = new List<INamedTypeSymbol>();
 
-        var entitySchemaLookup = allMappings
-            .SelectMany(m => m.Definition.Entities
-                .Where(x => x.EntityType != null)
-                .Select(x => new
-                {
-                    Entity = x.EntityType!.Name,
-                    Schema = m.Schema
-                }))
-            .Where(x => !string.IsNullOrEmpty(x.Schema))
-            .GroupBy(
-                x => x.Entity,
-                StringComparer.Ordinal)
-            .ToDictionary(
-                g => g.Key,
-                g => g.First().Schema,
-                StringComparer.Ordinal);
+        foreach (var entity in models
+                     .SelectMany(m => m.Definition.Entities)
+                     .Select(e => e.EntityType)
+                     .Where(e => e != null))
+        {
+            if (!entityTypes.Any(x =>
+                    SymbolEqualityComparer.Default.Equals(x, entity)))
+            {
+                entityTypes.Add(entity!);
+            }
+        }
+
+        var entitySchemaLookup =
+            new Dictionary<INamedTypeSymbol,string>(
+                SymbolEqualityComparer.Default);
+
+        foreach (var mapping in models)
+        {
+            foreach (var entity in mapping.Definition.Entities)
+            {
+                if (entity.EntityType == null)
+                    continue;
+
+
+                // Ignore composite model schema
+                if (mapping.Definition.Entities.Count > 1)
+                    continue;
+
+
+                if (string.IsNullOrWhiteSpace(mapping.Schema))
+                    continue;
+
+
+                entitySchemaLookup[entity.EntityType] =
+                    mapping.Schema;
+            }
+        }
 
         var sb = new StringBuilder();
 
@@ -92,14 +103,13 @@ internal static class MetadataEmitter
         EmitFieldNameArray(sb, models);
         EmitFieldToColumnArray(sb, models);
         EmitFieldMappingsArray(sb, models);
-        EmitConflictColumnsArray(sb, models);
+        EmitConflictColumnsArray(sb, entityTypes, allMappings);
         EmitCteResolutionsArray(sb, models);
 
         EmitEntitySchemaArray(
             sb,
             entityTypes,
-            entitySchemaLookup,
-            models);
+            allMappings);
 
         EmitEntityTableArray(
             sb,
@@ -127,32 +137,38 @@ internal static class MetadataEmitter
     }
 
     private static void EmitFieldToColumnArray(
-        StringBuilder sb,
-        List<MappingClassInfo> models)
+    StringBuilder sb,
+    List<MappingClassInfo> models)
+{
+    sb.AppendLine(
+        $"        public static readonly ushort[][] FieldToColumn = new ushort[{models.Count}][]");
+
+    sb.AppendLine("        {");
+
+    foreach (var m in models)
     {
-        sb.AppendLine(
-            $"        public static readonly ushort[][] FieldToColumn = new ushort[{models.Count}][]");
-
-        sb.AppendLine("        {");
-
-        foreach (var m in models)
-        {
-            var mappings = PlannerEmitter.ComputeFieldMappingsEagerPublic(
+        var mappings =
+            PlannerEmitter.ComputeFieldMappingsEagerPublic(
                 m,
-                PlannerEmitter.IsCompositeInfo(m));
+                PlannerEmitter.IsCompositeInfo(m))
+            .ToList();
 
-            if (mappings.Count == 0)
-            {
-                sb.AppendLine(
-                    "            System.Array.Empty<ushort>(),");
-                continue;
-            }
 
-            var ids = new List<ushort>();
+        if (mappings.Count == 0)
+        {
+            sb.AppendLine(
+                "            System.Array.Empty<ushort>(),");
+            continue;
+        }
 
-            foreach (var fm in mappings)
-            {
-                var entity = m.Definition.Entities
+
+        var ids = new List<ushort>();
+
+
+        foreach (var fm in mappings)
+        {
+            var entity =
+                m.Definition.Entities
                     .FirstOrDefault(e =>
                         e.EntityType != null &&
                         string.Equals(
@@ -160,34 +176,60 @@ internal static class MetadataEmitter
                             fm.EntityTypeName,
                             StringComparison.Ordinal));
 
-                if (entity?.EntityType == null)
-                {
-                    ids.Add(ushort.MaxValue);
-                    continue;
-                }
 
-                var columns = IdEmitter.GetScalarProperties(
+            if (entity?.EntityType == null)
+            {
+                ids.Add(ushort.MaxValue);
+                continue;
+            }
+
+
+            var columns =
+                IdEmitter.GetScalarProperties(
                     entity.EntityType);
-                
-                var index = columns.FindIndex(c =>
+
+
+
+            var index =
+                columns.FindIndex(c =>
                     string.Equals(
                         c.Name,
                         fm.ColumnName,
                         StringComparison.OrdinalIgnoreCase));
 
-                ids.Add(
-                    index < 0
-                        ? ushort.MaxValue
-                        : (ushort)index);
+
+            if (index >= 0)
+            {
+                ids.Add((ushort)index);
+                continue;
+            }
+            
+            if (m.Definition.ForeignKeys.Any(f =>
+                    f.Entity != null &&
+                    SymbolEqualityComparer.Default.Equals(
+                        f.Entity,
+                        entity.EntityType) &&
+                    string.Equals(
+                        f.Column,
+                        fm.ColumnName,
+                        StringComparison.OrdinalIgnoreCase)))
+            {
+                ids.Add(ushort.MaxValue);
+                continue;
             }
 
-            sb.AppendLine(
-                $"            new ushort[] {{ {string.Join(", ", ids)} }},");
+            ids.Add(ushort.MaxValue);
         }
 
-        sb.AppendLine("        };");
-        sb.AppendLine();
+
+        sb.AppendLine(
+            $"            new ushort[] {{ {string.Join(", ", ids)} }},");
     }
+
+
+    sb.AppendLine("        };");
+    sb.AppendLine();
+}
     
     private static void EmitEnumConversions(
     StringBuilder sb,
@@ -743,62 +785,126 @@ private static void EmitModelIdConstants(
         sb.AppendLine("        };");
         sb.AppendLine();
     }
-
+    
 private static void EmitConflictColumnsArray(
     StringBuilder sb,
-    List<MappingClassInfo> models)
+    List<INamedTypeSymbol> entityTypes,
+    ImmutableArray<MappingClassInfo> allMappings)
 {
     sb.AppendLine(
-        $"        public static readonly string[][] ConflictColumns = new string[{models.Count}][]");
+        $"        public static readonly string[][] EntityConflictColumns = new string[{entityTypes.Count}][]");
 
-    sb.AppendLine(
-        "        {");
+    sb.AppendLine("        {");
 
 
-    foreach (var m in models)
+    foreach (var entityType in entityTypes)
     {
-        var keys = m.UpsertKeys
-            .Where(k => !string.IsNullOrWhiteSpace(k.Key))
-            .Select(k => k.Key)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var keys = new List<string>();
+
+
+        //
+        // Find the mapping that owns this storage entity
+        //
+        var mappings =
+            allMappings
+                .Where(m =>
+                    m.Definition.Entities.Any(e =>
+                        e.EntityType != null &&
+                        SymbolEqualityComparer.Default.Equals(
+                            e.EntityType,
+                            entityType)))
+                .ToList();
+
+
+        //
+        // Find explicit upsert keys belonging to this entity
+        //
+        foreach (var mapping in mappings)
+        {
+            foreach (var upsertKey in mapping.UpsertKeys)
+            {
+                if (string.IsNullOrWhiteSpace(upsertKey.Key))
+                    continue;
+
+
+                var scalar =
+                    IdEmitter.GetScalarProperties(entityType)
+                        .FirstOrDefault(p =>
+                            string.Equals(
+                                p.Name,
+                                upsertKey.Key,
+                                StringComparison.OrdinalIgnoreCase));
+
+
+                if (scalar != null)
+                {
+                    keys.Add(scalar.Name);
+                }
+            }
+        }
+
+
+        keys =
+            keys
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
 
 
+        //
+        // Fallback: entity primary key/natural key
+        //
         if (keys.Count == 0)
         {
-            keys = m.Definition.Entities
-                .Where(k =>
-                    k.IsPrimary &&
-                    !string.IsNullOrWhiteSpace(k.ToColumn))
-                .Select(k => k.ToColumn!)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            foreach (var mapping in mappings)
+            {
+                var entity =
+                    mapping.Definition.Entities
+                        .FirstOrDefault(e =>
+                            e.IsPrimary &&
+                            e.EntityType != null &&
+                            SymbolEqualityComparer.Default.Equals(
+                                e.EntityType,
+                                entityType));
+
+
+                if (entity != null &&
+                    !string.IsNullOrWhiteSpace(entity.ToColumn))
+                {
+                    keys.Add(entity.ToColumn!);
+                    break;
+                }
+            }
         }
 
 
 
-        if (keys.Count == 0 && PlannerEmitter.IsCompositeInfo(m))
+        //
+        // Final fallback:
+        // Convention: *Key column
+        //
+        if (keys.Count == 0)
         {
-            keys = PlannerEmitter
-                .ComputeFieldMappingsEagerPublic(
-                    m,
-                    composite: true)
-                .Where(f =>
-                    m.Definition.Entities.Any(e =>
-                        e.IsPrimary &&
-                        string.Equals(
-                            e.EntityType?.Name,
-                            f.EntityTypeName,
-                            StringComparison.Ordinal) &&
-                        string.Equals(
-                            e.ToColumn,
-                            f.ColumnName,
-                            StringComparison.OrdinalIgnoreCase)))
-                .Select(f => f.ColumnName)
+            var scalar =
+                IdEmitter.GetScalarProperties(entityType)
+                    .FirstOrDefault(p =>
+                        p.Name.EndsWith(
+                            "Key",
+                            StringComparison.OrdinalIgnoreCase));
+
+
+            if (scalar != null)
+            {
+                keys.Add(scalar.Name);
+            }
+        }
+
+
+
+        keys =
+            keys
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
-        }
 
 
 
@@ -815,9 +921,7 @@ private static void EmitConflictColumnsArray(
     }
 
 
-    sb.AppendLine(
-        "        };");
-
+    sb.AppendLine("        };");
     sb.AppendLine();
 }
 
@@ -944,26 +1048,31 @@ private static void EmitCteResolutionsArray(
     private static void EmitEntitySchemaArray(
         StringBuilder sb,
         List<INamedTypeSymbol> entityTypes,
-        Dictionary<string, string> entitySchemaLookup,
-        List<MappingClassInfo> models)
+        ImmutableArray<MappingClassInfo> allMappings)
     {
         sb.AppendLine(
-            "        /// <summary>Indexed by StorageEntityId.*</summary>");
-
-        sb.AppendLine(
-            $"        public static readonly string[] EntitySchema = new string[{entityTypes.Count}]");
+            "        public static readonly string[] EntitySchema = new string[" +
+            entityTypes.Count +
+            "]");
 
         sb.AppendLine("        {");
 
         foreach (var entity in entityTypes)
         {
-            var schema = "";
+            var schema = string.Empty;
 
-            if (entitySchemaLookup.TryGetValue(
-                    entity.Name,
-                    out var found))
+            var mapping =
+                allMappings
+                    .FirstOrDefault(m =>
+                        m.Definition.Entities.Any(e =>
+                            e.EntityType != null &&
+                            SymbolEqualityComparer.Default.Equals(
+                                e.EntityType,
+                                entity)));
+
+            if (mapping != null)
             {
-                schema = found;
+                schema = mapping.Definition.Schema ?? string.Empty;
             }
 
             sb.AppendLine(
@@ -1079,7 +1188,7 @@ private static void EmitCteResolutionsArray(
             "        public ushort[][] FieldToColumn => EntityMeta.FieldToColumn;");
 
         sb.AppendLine(
-            "        public string[][] ConflictColumns => EntityMeta.ConflictColumns;");
+            "        public string[][] EntityConflictColumns => EntityMeta.EntityConflictColumns;");;
 
         sb.AppendLine(
             "        public CteResolutionSpec[][] CteResolutions => EntityMeta.CteResolutions;");

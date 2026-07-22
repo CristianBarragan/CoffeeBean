@@ -102,6 +102,19 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
             return copy;
         }
     }
+    
+    public sealed record ForeignKeyDefinitionInfo
+    {
+        public required INamedTypeSymbol Entity { get; init; }
+
+        public required string Column { get; init; }
+
+        public required INamedTypeSymbol DependsOn { get; init; }
+
+        public required string Principal { get; init; }
+
+        public string? ModelField { get; init; }
+    }
 
     public sealed class EntityKeyInfo
     {
@@ -298,14 +311,14 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         public bool IsGraph { get; set; }
 
-        
         public List<NavigationDefinitionInfo> Navigations { get; set; } = [];
-        
+
         public List<EntityDefinitionInfo> Entities { get; set; } = [];
 
         public List<PrimaryKeyDefinitionInfo> PrimaryKey { get; set; } = [];
 
-        // Compatibility with existing emitters.
+        public List<ForeignKeyDefinitionInfo> ForeignKeys { get; set; } = [];
+
         public GraphDefinitionInfo? Graph { get; set; }
     }
     

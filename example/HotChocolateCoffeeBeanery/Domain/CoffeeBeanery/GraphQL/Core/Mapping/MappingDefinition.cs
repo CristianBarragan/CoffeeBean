@@ -21,6 +21,19 @@ public sealed record MappingDefinition
     public GraphDefinition? Graph { get; init; }
 
     public IReadOnlyList<NavigationDefinition> Navigations { get; init; } = [];
+    
+    public IReadOnlyList<ForeignKeyDefinition> ForeignKeys { get; init; } = [];
+}
+
+public sealed record ForeignKeyDefinition
+{
+    public required Type Entity { get; init; }
+
+    public required string Column { get; init; }
+
+    public required Type PrincipalEntity { get; init; }
+
+    public required string PrincipalColumn { get; init; }
 }
 
 public sealed record NavigationDefinition

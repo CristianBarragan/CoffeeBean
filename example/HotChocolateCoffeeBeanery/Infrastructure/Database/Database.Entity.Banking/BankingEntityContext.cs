@@ -39,7 +39,7 @@ namespace Database.Entity.Banking
 
             modelBuilder.ApplyConfiguration(new TransactionEntityConfiguration(Schema.Lending.ToString()));
 
-            modelBuilder.ApplyConfiguration(new AccountEntityConfiguration(Schema.Account.ToString()));
+            modelBuilder.ApplyConfiguration(new AccountEntityConfiguration(Schema.Accounting.ToString()));
         }
     }
 }

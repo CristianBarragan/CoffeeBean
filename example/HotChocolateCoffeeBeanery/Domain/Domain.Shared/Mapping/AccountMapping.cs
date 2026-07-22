@@ -10,7 +10,7 @@ public partial class AccountMapping : IMappingDefinition
     {
         Model = typeof(Account),
 
-        Schema = nameof(DataEntity.Schema.Account),
+        Schema = nameof(DataEntity.Schema.Accounting),
 
         Entities =
         [

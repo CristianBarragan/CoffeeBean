@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Database.Entity.Banking.Migrations
 {
     [DbContext(typeof(BankingEntityContext))]
-    [Migration("20260721110651_Initial")]
+    [Migration("20260722194820_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -52,7 +52,7 @@ namespace Database.Entity.Banking.Migrations
                     b.HasIndex("AccountKey")
                         .IsUnique();
 
-                    b.ToTable("Account", "Account");
+                    b.ToTable("Account", "Accounting");
                 });
 
             modelBuilder.Entity("Database.Entity.ContactPoint", b =>

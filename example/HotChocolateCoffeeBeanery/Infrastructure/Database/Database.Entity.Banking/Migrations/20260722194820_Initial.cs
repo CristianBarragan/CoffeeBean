@@ -13,7 +13,7 @@ namespace Database.Entity.Banking.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
-                name: "Account");
+                name: "Accounting");
 
             migrationBuilder.EnsureSchema(
                 name: "Banking");
@@ -23,7 +23,7 @@ namespace Database.Entity.Banking.Migrations
 
             migrationBuilder.CreateTable(
                 name: "Account",
-                schema: "Account",
+                schema: "Accounting",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -155,7 +155,7 @@ namespace Database.Entity.Banking.Migrations
                     table.ForeignKey(
                         name: "FK_Contract_Account_AccountId",
                         column: x => x.AccountId,
-                        principalSchema: "Account",
+                        principalSchema: "Accounting",
                         principalTable: "Account",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -186,7 +186,7 @@ namespace Database.Entity.Banking.Migrations
                     table.ForeignKey(
                         name: "FK_Transaction_Account_AccountId",
                         column: x => x.AccountId,
-                        principalSchema: "Account",
+                        principalSchema: "Accounting",
                         principalTable: "Account",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -199,7 +199,7 @@ namespace Database.Entity.Banking.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_Account_AccountKey",
-                schema: "Account",
+                schema: "Accounting",
                 table: "Account",
                 column: "AccountKey",
                 unique: true);
@@ -318,7 +318,7 @@ namespace Database.Entity.Banking.Migrations
 
             migrationBuilder.DropTable(
                 name: "Account",
-                schema: "Account");
+                schema: "Accounting");
 
             migrationBuilder.DropTable(
                 name: "CustomerBankingRelationship",
