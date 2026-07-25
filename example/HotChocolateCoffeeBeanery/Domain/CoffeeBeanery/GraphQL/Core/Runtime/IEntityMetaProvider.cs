@@ -7,10 +7,10 @@
         string[][] ModelName { get; }
         ushort[][] FieldToColumn { get; }
         FieldMapSpec[][] FieldMappings { get; }
-        string[][] Table { get; }          // legacy — [modelId][0]; use EntityTable for SQL generation
-        string[] Schema { get; }           // legacy — [modelId]; use EntitySchema for SQL generation
-        string[][] ColumnName { get; }     // legacy — [modelId][columnId]; use EntityColumnName
-        string[][] FieldName { get; }      // [modelId][fieldId] camelCase GraphQL field names
+        string[][] Table { get; }
+        string[][] Schema { get; }
+        string[][] ColumnName { get; }
+        string[][] FieldName { get; }
         string[][] EntityConflictColumns { get; }
         CteResolutionSpec[][] CteResolutions { get; }
 

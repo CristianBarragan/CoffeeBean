@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
+using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 using Microsoft.CodeAnalysis;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
 
@@ -41,205 +44,84 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
         };
 
         public static void Apply(
-            MappingClassInfo info,
-            System.Collections.Immutable.ImmutableArray<MappingClassInfo> allMappings)
+    MappingClassInfo info,
+    System.Collections.Immutable.ImmutableArray<MappingClassInfo> allMappings,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+{
+    if (info.Graph != null)
+        return;
+
+    // ... existing modelIndex / navigations / AutoChildAttachments block unchanged ...
+
+    if (info.IsComposite)
+    {
+        BuildCompositeStorageJoinInfo(info, entityGraph);
+    }
+}
+
+private static void BuildCompositeStorageJoinInfo(
+    MappingClassInfo info,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+{
+    var anchor = info.Definition.Entities.FirstOrDefault(e => e.IsPrimary);
+    if (anchor == null)
+        return;
+
+    var compositeTypes = info.Definition.Entities
+        .Select(e => e.EntityType)
+        .ToList();
+
+    var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default) { anchor.EntityType };
+    var queue = new Queue<INamedTypeSymbol>();
+    queue.Enqueue(anchor.EntityType);
+
+    while (queue.Count > 0)
+    {
+        var current = queue.Dequeue();
+
+        foreach (var edge in entityGraph)
         {
-            var modelIndex = allMappings
-                .Where(x => x.ModelType != null)
-                .ToDictionary(
-                    x => x.ModelType,
-                    SymbolEqualityComparer.Default);
+            INamedTypeSymbol? other = null;
+            string? parentColumn = null;
+            string? childColumn = null;
 
-            var existingFieldNames = new HashSet<string>(
-                info.AutoChildAttachments.Select(a => a.FieldName)
-                    .Concat(info.ModelChildren.Select(c => ToGraphQlFieldNameLiteral(c.To))),
-                StringComparer.OrdinalIgnoreCase);
-
-            var navigations = DiscoverNavigations(info.ModelType);
-            
-            foreach (var nav in navigations)
+            if (SymbolEqualityComparer.Default.Equals(edge.PrincipalEntity, current) &&
+                compositeTypes.Any(t => SymbolEqualityComparer.Default.Equals(t, edge.DependentEntity)))
             {
-                if (!modelIndex.TryGetValue(nav.TargetType, out var childMapping))
-                    continue;
-
-                var fieldName = ToGraphQlFieldNameLiteral(nav.PropertyName);
-
-                if (existingFieldNames.Contains(fieldName))
-                    continue;
-
-                info.ModelChildren.Add(new ModelChildInfo
-                {
-                    From = info.ModelType.Name,
-                    To = childMapping.ModelType.Name,
-                    NavigationName = fieldName
-                });
-
-                existingFieldNames.Add(fieldName);
-
-                var parentJoinColumn = $"{info.ModelType.Name}Key";
-
-                var childEntity =
-                    childMapping.Definition.Entities.FirstOrDefault(e =>
-                        e.EntityType
-                            .GetMembers()
-                            .OfType<IPropertySymbol>()
-                            .Any(p =>
-                                string.Equals(
-                                    p.Name,
-                                    parentJoinColumn,
-                                    StringComparison.OrdinalIgnoreCase)));
-
-                if (childEntity == null)
-                    continue;
-
-                info.AutoChildAttachments.Add(
-                    new AutoChildAttachmentInfo
-                    {
-                        FieldName = fieldName,
-                        ToModelName = childMapping.ModelType.Name,
-
-                        ParentEntityType =
-                            info.Definition.Entities
-                                .FirstOrDefault(e => e.IsPrimary)
-                                ?.EntityType
-                            ?? throw new InvalidOperationException(
-                                $"Mapping {info.ModelType.Name} has no primary entity"),
-
-                        ParentJoinColumn = parentJoinColumn,
-
-                        ChildEntityType = childEntity.EntityType,
-
-                        ChildJoinColumn = parentJoinColumn
-                    });
+                other = edge.DependentEntity;
+                parentColumn = edge.PrincipalColumn;
+                childColumn = edge.DependentColumn;
+            }
+            else if (SymbolEqualityComparer.Default.Equals(edge.DependentEntity, current) &&
+                     compositeTypes.Any(t => SymbolEqualityComparer.Default.Equals(t, edge.PrincipalEntity)))
+            {
+                other = edge.PrincipalEntity;
+                parentColumn = edge.DependentColumn;
+                childColumn = edge.PrincipalColumn;
             }
 
+            if (other == null || visited.Contains(other))
+                continue;
 
+            visited.Add(other);
+            queue.Enqueue(other);
 
-            //
-            // Reverse discovery:
-            //
-            // CustomerCustomerEdge
-            //      |
-            //      +-- InnerCustomer : Customer
-            //      +-- OuterCustomer : Customer
-            //
-            // becomes:
-            //
-            // Customer
-            //      |
-            //      +-- CustomerCustomerEdge
-            //
-            //
-            // foreach (var candidate in allMappings)
-            // {
-            //     if (candidate.ModelType == info.ModelType)
-            //         continue;
-            //
-            //     if (candidate.EntityType == null)
-            //         continue;
-            //
-            //
-            //     foreach (var prop in candidate.ModelType
-            //                  .GetMembers()
-            //                  .OfType<IPropertySymbol>()
-            //                  .Where(p => p.GetMethod is not null &&
-            //                              !p.IsStatic))
-            //     {
-            //         var elementType = UnwrapCollection(prop.Type);
-            //         var unwrapped = UnwrapNullable(elementType);
-            //
-            //
-            //         if (unwrapped is not INamedTypeSymbol related)
-            //             continue;
-            //
-            //
-            //         if (!SymbolEqualityComparer.Default.Equals(
-            //                 related,
-            //                 info.ModelType))
-            //             continue;
-            //
-            //
-            //         //
-            //         // Example:
-            //         // candidate = CustomerCustomerEdge
-            //         // related  = Customer
-            //         //
-            //         var fieldName =
-            //             ToGraphQlFieldNameLiteral(
-            //                 candidate.ModelType.Name);
-            //
-            //
-            //         if (existingFieldNames.Contains(fieldName))
-            //             continue;
-            //
-            //
-            //
-            //         info.ModelChildren.Add(
-            //             new ModelChildInfo
-            //             {
-            //                 To = candidate.ModelType.Name
-            //             });
-            //
-            //
-            //         existingFieldNames.Add(fieldName);
-            //
-            //
-            //
-            //         //
-            //         // Try to find the entity carrying the FK.
-            //         //
-            //         // CustomerCustomerEdge has:
-            //         //
-            //         // InnerCustomerKey
-            //         // OuterCustomerKey
-            //         //
-            //         var parentKey =
-            //             $"{info.ModelType.Name}Key";
-            //
-            //
-            //         foreach (var entityLink in candidate.Definition.Entities)
-            //         {
-            //             var fkProperty =
-            //                 entityLink.EntityType
-            //                     .GetMembers()
-            //                     .OfType<IPropertySymbol>()
-            //                     .FirstOrDefault(p =>
-            //                         string.Equals(
-            //                             p.Name,
-            //                             parentKey,
-            //                             StringComparison.OrdinalIgnoreCase));
-            //
-            //
-            //             if (fkProperty == null)
-            //                 continue;
-            //
-            //
-            //
-            //             info.AutoChildAttachments.Add(
-            //                 new AutoChildAttachmentInfo
-            //                 {
-            //                     FieldName = fieldName,
-            //                     ToModelName = candidate.ModelType.Name,
-            //
-            //                     ParentEntityType = info.EntityType,
-            //                     ParentJoinColumn = parentKey,
-            //
-            //                     ChildEntityType = entityLink.EntityType,
-            //                     ChildJoinColumn = fkProperty.Name
-            //                 });
-            //
-            //
-            //             break;
-            //         }
-            //     }
-            // }
+            info.CompositeStorageJoinInfo.Add(new CompositeStorageJoinInfo
+            {
+                ParentEntityType = current,
+                ChildEntityType = other,
+                ParentJoinColumn = parentColumn!,
+                ChildJoinColumn = childColumn!
+            });
         }
-
+    }
+}
+        
         private sealed record NavigationInfo(
             string PropertyName,
             INamedTypeSymbol TargetType,
             bool IsCollection);
-
+        
         private static IEnumerable<NavigationInfo> DiscoverNavigations(INamedTypeSymbol modelType)
         {
             foreach (var property in modelType.GetMembers()
@@ -314,7 +196,32 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
 
             return type;
         }
+        
+        private static void BuildCompositeStorageJoinInfo(
+            MappingClassInfo info,
+            ImmutableArray<MappingClassInfo> allMappings)
+        {
+            var anchor = info.Definition.Entities.FirstOrDefault(e => e.IsPrimary);
+            if (anchor == null)
+                return;
 
+            foreach (var entity in info.Definition.Entities)
+            {
+                if (SymbolEqualityComparer.Default.Equals(entity.EntityType, anchor.EntityType))
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(entity.FromColumn) || string.IsNullOrWhiteSpace(entity.ToColumn))
+                    continue; // no declared join — nothing to emit for this entity
+
+                info.CompositeStorageJoinInfo.Add(new CompositeStorageJoinInfo
+                {
+                    ParentEntityType = anchor.EntityType,
+                    ChildEntityType = entity.EntityType,
+                    ParentJoinColumn = entity.FromColumn!,
+                    ChildJoinColumn = entity.ToColumn!
+                });
+            }
+        }
 
         private static bool IsScalar(ITypeSymbol type)
         {

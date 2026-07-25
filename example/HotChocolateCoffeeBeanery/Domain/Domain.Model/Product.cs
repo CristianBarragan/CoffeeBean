@@ -29,7 +29,9 @@ public partial class Product
     
     public string? AccountNumber { get; set; }
 
-    public decimal? Amount { get; set; }
+    public decimal? TransactionAmount { get; set; }
+    
+    public decimal? ContractAmount { get; set; }
 
     public decimal? Balance { get; set; }
 

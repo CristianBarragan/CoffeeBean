@@ -31,6 +31,58 @@ internal static class IdEmitter
 
         return sb.ToString();
     }
+    
+    public static IEnumerable<IPropertySymbol> GetPrimaryKeyProperties(
+        INamedTypeSymbol entity)
+    {
+        // EF convention: Id
+        var id =
+            entity.GetMembers()
+                .OfType<IPropertySymbol>()
+                .FirstOrDefault(p =>
+                    string.Equals(
+                        p.Name,
+                        "Id",
+                        StringComparison.OrdinalIgnoreCase));
+
+        if (id != null)
+        {
+            yield return id;
+            yield break;
+        }
+
+
+        // EF convention: EntityNameId
+        var entityId =
+            entity.GetMembers()
+                .OfType<IPropertySymbol>()
+                .FirstOrDefault(p =>
+                    string.Equals(
+                        p.Name,
+                        entity.Name + "Id",
+                        StringComparison.OrdinalIgnoreCase));
+
+        if (entityId != null)
+        {
+            yield return entityId;
+            yield break;
+        }
+
+
+        // fallback: any key annotation emitted by your EF pass
+        foreach (var property in entity.GetMembers()
+                     .OfType<IPropertySymbol>())
+        {
+            foreach (var attribute in property.GetAttributes())
+            {
+                if (attribute.AttributeClass?.Name ==
+                    "KeyAttribute")
+                {
+                    yield return property;
+                }
+            }
+        }
+    }
 
     public static string StripEntitySuffix(string entityTypeName)
     {
@@ -214,56 +266,105 @@ internal static class IdEmitter
     }
 
     private static void EmitColumnIds(
-        StringBuilder sb,
-        ImmutableArray<MappingClassInfo> mappings)
+    StringBuilder sb,
+    ImmutableArray<MappingClassInfo> mappings)
+{
+    sb.AppendLine();
+    sb.AppendLine("public static class ColumnId");
+    sb.AppendLine("{");
+
+    var entityNames =
+        new HashSet<string>(
+            StringComparer.OrdinalIgnoreCase);
+
+    var columnsByEntity =
+        new Dictionary<string, HashSet<string>>(
+            StringComparer.OrdinalIgnoreCase);
+
+
+    foreach (var mapping in mappings)
     {
-        sb.AppendLine();
-        sb.AppendLine("public static class ColumnId");
-        sb.AppendLine("{");
-
-        var distinctEntities =
-            mappings
-                .SelectMany(m => m.Definition.Entities)
-                .Where(e => e.EntityType != null)
-                .Select(e => e.EntityType!)
-                .Distinct(SymbolEqualityComparer.Default)
-                .Cast<INamedTypeSymbol>()
-                .OrderBy(e => e.Name)
-                .ToList();
-
-        var columnsByEntity =
-            mappings
-                .SelectMany(m => m.FieldMaps)
-                .GroupBy(f => f.DestinationEntity)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g
-                        .Select(f => f.DestinationName)
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .OrderBy(n => n)
-                        .ToList());
-
-        foreach (var entityType in distinctEntities)
+        foreach (var entity in mapping.Definition.Entities)
         {
-            var entityName = entityType.Name;
+            if (entity.EntityType == null)
+                continue;
 
-            sb.AppendLine($"    public static class {entityName}");
-            sb.AppendLine("    {");
-
-            ushort id = 0;
-
-            if (columnsByEntity.TryGetValue(entityName, out var columns))
-            {
-                foreach (var column in columns)
-                {
-                    sb.AppendLine($"        public const ushort {column} = {id};");
-                    id++;
-                }
-            }
-
-            sb.AppendLine("    }");
+            entityNames.Add(
+                StripEntitySuffix(
+                    entity.EntityType.Name));
         }
 
-        sb.AppendLine("}");
+
+        foreach (var field in mapping.FieldMaps)
+        {
+            var entity =
+                StripEntitySuffix(
+                    field.DestinationEntity);
+
+
+            if (!columnsByEntity.TryGetValue(
+                    entity,
+                    out var columns))
+            {
+                columns =
+                    new HashSet<string>(
+                        StringComparer.OrdinalIgnoreCase);
+
+                columnsByEntity[entity] = columns;
+            }
+
+
+            columns.Add(
+                field.DestinationName);
+        }
     }
+
+
+    foreach (var entityName in entityNames.OrderBy(x => x))
+    {
+        sb.AppendLine(
+            $"    public static class {entityName}");
+
+        sb.AppendLine(
+            "    {");
+
+
+        sb.AppendLine(
+            "        public const ushort Id = 0;");
+
+
+        ushort id = 1;
+
+
+        if (columnsByEntity.TryGetValue(
+                entityName,
+                out var columns))
+        {
+            foreach (var column in columns.OrderBy(x => x))
+            {
+                if (string.Equals(
+                        column,
+                        "Id",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+
+                sb.AppendLine(
+                    $"        public const ushort {column} = {id};");
+
+                id++;
+            }
+        }
+
+
+        sb.AppendLine(
+            "    }");
+    }
+
+
+    sb.AppendLine(
+        "}");
+}
 }

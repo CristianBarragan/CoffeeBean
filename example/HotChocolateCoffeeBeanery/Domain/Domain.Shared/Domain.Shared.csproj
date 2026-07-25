@@ -8,17 +8,12 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
-        <PrivateAssets>all</PrivateAssets>
         <RootNamespace>Domain.Shared</RootNamespace>
 
-        <!-- Source generator debugging -->
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
 
-        <!-- Enable mapping generator global emit -->
         <IsMappingRoot>true</IsMappingRoot>
-
-        <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
     </PropertyGroup>
 
 
@@ -28,11 +23,13 @@
     </ItemGroup>
 
 
-    <!-- Source generator -->
     <ItemGroup>
         <ProjectReference Include="..\CoffeeBeanery.GraphQL.Core.Mapping.Generators\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj"
                           OutputItemType="Analyzer"
-                          ReferenceOutputAssembly="false" />
+                          ReferenceOutputAssembly="false"
+                          PrivateAssets="all" />
+
+        <ProjectReference Include="..\CoffeeBeanery\CoffeeBeanery.csproj" />
     </ItemGroup>
 
 

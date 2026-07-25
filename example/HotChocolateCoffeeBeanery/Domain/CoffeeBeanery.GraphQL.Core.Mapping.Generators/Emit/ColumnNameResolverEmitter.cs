@@ -9,7 +9,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 internal static class ColumnNameResolverEmitter
 {
     public static string Emit(
-        ImmutableArray<MappingClassInfo> mappings)
+    ImmutableArray<MappingClassInfo> mappings)
     {
         var sb = new StringBuilder();
 
@@ -25,17 +25,28 @@ internal static class ColumnNameResolverEmitter
         sb.AppendLine("public static class ColumnNameResolver");
         sb.AppendLine("{");
 
-        sb.AppendLine("    public static string Resolve(\n    ushort storageEntityId,\n    ushort columnId)");
+        sb.AppendLine(
+            "    public static string Resolve(");
+        sb.AppendLine(
+            "        ushort storageEntityId,");
+        sb.AppendLine(
+            "        ushort columnId)");
         sb.AppendLine("    {");
 
         sb.AppendLine("        return (storageEntityId, columnId) switch");
         sb.AppendLine("        {");
-        foreach (var entity in mappings
-                     .SelectMany(x => x.Definition.Entities)
-                     .Where(x => x.EntityType != null)
-                     .Select(x => x.EntityType!.Name)
-                     .Distinct()
-                     .OrderBy(x => x))
+
+
+        var entities =
+            mappings
+                .SelectMany(x => x.Definition.Entities)
+                .Where(x => x.EntityType != null)
+                .Select(x => x.EntityType!.Name)
+                .Distinct()
+                .OrderBy(x => x);
+
+
+        foreach (var entity in entities)
         {
             var columns =
                 mappings
@@ -46,17 +57,43 @@ internal static class ColumnNameResolverEmitter
                             entity,
                             StringComparison.OrdinalIgnoreCase))
                     .Select(x => x.DestinationName)
-                    .Distinct()
-                    .OrderBy(x => x);
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList();
+
+
+            // ColumnId emitter always reserves 0 for Id
+            sb.AppendLine(
+                $"            (StorageEntityId.{entity}, 0) => \"Id\",");
+
+
+            ushort id = 1;
 
             foreach (var column in columns)
             {
+                if (string.Equals(
+                        column,
+                        "Id",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+
                 sb.AppendLine(
-                    $"            (StorageEntityId.{entity}, ColumnId.{entity}.{column}) => \"{column}\",");
+                    $"            (StorageEntityId.{entity}, {id}) => \"{Escape(column)}\",");
+
+                id++;
             }
         }
+
+
         sb.AppendLine(
-            "            _ => throw new ArgumentException(\n    $\"Unknown StorageEntityId {storageEntityId}, ColumnId {columnId}\")");
+            "            _ => throw new ArgumentException(");
+
+        sb.AppendLine(
+            "                $\"Unknown StorageEntityId {storageEntityId}, ColumnId {columnId}\")");
+
 
         sb.AppendLine("        };");
         sb.AppendLine("    }");
@@ -66,5 +103,11 @@ internal static class ColumnNameResolverEmitter
         sb.AppendLine("}");
 
         return sb.ToString();
+    }
+
+    private static string Escape(string value)
+    {
+        return value.Replace("\\", "\\\\")
+            .Replace("\"", "\\\"");
     }
 }

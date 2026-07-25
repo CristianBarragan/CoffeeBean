@@ -381,16 +381,54 @@ public ref struct QueryPlanBuilder
     }
 
     public void AddJoin(
-        ushort fromEntityId, ushort fromStorageEntityId,
-        ushort toEntityId,   ushort toStorageEntityId,
-        ushort fromColumnId, ushort toColumnId,
-        JoinKind kind, string toOutputAlias)
+        ushort fromEntityId,
+        ushort fromStorageEntityId,
+        ushort toEntityId,
+        ushort toStorageEntityId,
+        ushort fromColumnId,
+        ushort toColumnId,
+        JoinKind kind,
+        string toOutputAlias)
     {
+        var uniqueAlias = CreateJoinAlias(
+            toOutputAlias,
+            toStorageEntityId);
+
         _joins[_joinCount++] = new JoinSpec(
-            fromEntityId, fromStorageEntityId,
-            toEntityId,   toStorageEntityId,
-            fromColumnId, toColumnId,
-            kind, toOutputAlias);
+            fromEntityId,
+            fromStorageEntityId,
+            toEntityId,
+            toStorageEntityId,
+            fromColumnId,
+            toColumnId,
+            kind,
+            uniqueAlias);
+    }
+    
+    private string CreateJoinAlias(
+        string outputAlias,
+        ushort storageEntityId)
+    {
+        var baseAlias = outputAlias;
+
+        if (string.IsNullOrWhiteSpace(baseAlias))
+            baseAlias = "Join";
+
+        var count = 0;
+
+        for (var i = 0; i < _joinCount; i++)
+        {
+            var existing = _joins[i];
+
+            if (existing.ToOutputAlias == baseAlias)
+                count++;
+
+        }
+
+        if (count == 0)
+            return $"{baseAlias}_{storageEntityId}";
+
+        return $"{baseAlias}_{storageEntityId}_{count}";
     }
     
     public void AddGraphJoin(

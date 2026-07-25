@@ -54,19 +54,19 @@ public partial class CustomerCustomerEdgeMapping : IMappingDefinition
                     nameof(CustomerCustomerEdge.OuterCustomer)
             }
         ],
-        PrimaryKey =
-        [
-            new()
-            {
-                Entity = typeof(DataEntity.CustomerCustomerRelationship),
-
-                ModelKey =
-                    nameof(DataEntity.CustomerCustomerRelationship.CustomerCustomerRelationshipKey),
-
-                ColumnKey =
-                    nameof(DataEntity.CustomerCustomerRelationship.CustomerCustomerRelationshipKey)
-            }
-        ],
+        // PrimaryKey =
+        // [
+        //     new()
+        //     {
+        //         Entity = typeof(DataEntity.CustomerCustomerRelationship),
+        //
+        //         // ModelKey =
+        //         //     nameof(DataEntity.CustomerCustomerRelationship.CustomerCustomerRelationshipKey),
+        //
+        //         ColumnKey =
+        //             nameof(DataEntity.CustomerCustomerRelationship.CustomerCustomerRelationshipKey)
+        //     }
+        // ],
         UpsertKeys =
         [
             new()
@@ -141,27 +141,29 @@ public partial class CustomerCustomerEdgeMapping : IMappingDefinition
                 {
                     Label = nameof(Customer),
 
-                    // Property stored on the graph node
                     GraphProperty = nameof(Customer.CustomerKey),
 
-                    // FK column in CustomerCustomerRelationship
-                    ForeignKeyColumn = nameof(DataEntity.CustomerCustomerRelationship.InnerCustomerId),
+                    ForeignKeyColumn =
+                        nameof(DataEntity.Customer.CustomerKey),
 
-                    Alias = nameof(DataEntity.CustomerCustomerRelationship.InnerCustomer)
+                    Alias =
+                        nameof(CustomerCustomerEdge.InnerCustomer)
                 },
 
                 To = new VertexDefinition
                 {
                     Label = nameof(Customer),
 
-                    GraphProperty = nameof(Customer.CustomerKey),
+                    GraphProperty =
+                        nameof(Customer.CustomerKey),
 
-                    ForeignKeyColumn = nameof(DataEntity.CustomerCustomerRelationship.OuterCustomerId),
+                    ForeignKeyColumn =
+                        nameof(DataEntity.Customer.CustomerKey),
 
-                    Alias = nameof(DataEntity.CustomerCustomerRelationship.OuterCustomer)
+                    Alias =
+                        nameof(CustomerCustomerEdge.OuterCustomer)
                 },
 
-                // Column used when joining graph results back to SQL
                 FromJoinColumn = nameof(Customer.CustomerKey),
 
                 ToJoinColumn = nameof(Customer.CustomerKey)

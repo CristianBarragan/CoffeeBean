@@ -47,66 +47,71 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                 .ToList();
 
             foreach (var modelProp in modelProperties)
-            {
-                var unwrapped = UnwrapCollection(modelProp.Type);
-                if (!IsScalar(UnwrapNullable(unwrapped)))
-                    continue;
+{
+    var unwrapped = UnwrapCollection(modelProp.Type);
+    if (!IsScalar(UnwrapNullable(unwrapped)))
+        continue;
 
-                var matchedAny = false;
+    var matchedAny = false;
 
-                foreach (var entityType in candidateEntities)
-                {
-                    if (IsExcluded(info, modelProp.Name, entityType.Name))
-                        continue;
+    // If an explicit (or already-generated) map exists for this source
+    // property against ANY entity, that fully resolves it — convention
+    // matching must not also pick up same-named columns on other entities.
+    if (info.FieldMaps.Any(f =>
+            string.Equals(f.SourceName, modelProp.Name, System.StringComparison.OrdinalIgnoreCase)))
+    {
+        continue;
+    }
 
-                    // Skip if any field map (manual or previously auto-generated)
-                    // already covers this source→destination pair.
-                    if (HasAnyFieldMap(info, modelProp.Name, entityType.Name))
-                    {
-                        matchedAny = true;
-                        continue;
-                    }
+    foreach (var entityType in candidateEntities)
+    {
+        if (IsExcluded(info, modelProp.Name, entityType.Name))
+            continue;
 
-                    var entityProp = entityType.GetMembers().OfType<IPropertySymbol>()
-                        .Where(p => p.SetMethod is not null)
-                        .FirstOrDefault(p =>
-                            string.Equals(p.Name, modelProp.Name, System.StringComparison.OrdinalIgnoreCase));
+        var entityProp = entityType.GetMembers().OfType<IPropertySymbol>()
+            .Where(p => p.SetMethod is not null)
+            .FirstOrDefault(p =>
+                string.Equals(p.Name, modelProp.Name, System.StringComparison.OrdinalIgnoreCase));
 
-                    if (entityProp is null)
-                        continue;
+        if (entityProp is null)
+            continue;
 
-                    if (!AreTypesCompatible(modelProp.Type, entityProp.Type))
-                    {
-                        if (reportDiagnostics)
-                            spc.ReportDiagnostic(Diagnostic.Create(
-                                MappingDiagnostics.TypeIncompatible,
-                                modelProp.Locations.FirstOrDefault() ?? Location.None,
-                                info.ModelType.Name, modelProp.Name, modelProp.Type.Name,
-                                entityType.Name, entityProp.Name, entityProp.Type.Name));
-                        continue;
-                    }
+        if (!AreTypesCompatible(modelProp.Type, entityProp.Type))
+        {
+            if (reportDiagnostics)
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    MappingDiagnostics.TypeIncompatible,
+                    modelProp.Locations.FirstOrDefault() ?? Location.None,
+                    info.ModelType.Name, modelProp.Name, modelProp.Type.Name,
+                    entityType.Name, entityProp.Name, entityProp.Type.Name));
+            continue;
+        }
 
-                    matchedAny = true;
+        matchedAny = true;
 
-                    info.FieldMaps.Add(new FieldInfo
-                    {
-                        SourceName = modelProp.Name,
-                        DestinationEntity = entityType.Name,
-                        DestinationName = entityProp.Name,
-                        IsGenerated = true,
-                        PropertyType = modelProp.Type
-                    });
-                }
+        info.FieldMaps.Add(new FieldInfo
+        {
+            SourceName = modelProp.Name,
+            DestinationEntity = entityType.Name,
+            DestinationName = entityProp.Name,
+            IsGenerated = true,
+            PropertyType = modelProp.Type
+        });
 
-                if (!matchedAny && reportDiagnostics)
-                {
-                    spc.ReportDiagnostic(Diagnostic.Create(
-                        MappingDiagnostics.NoMatchingProperty,
-                        modelProp.Locations.FirstOrDefault() ?? Location.None,
-                        info.ModelType.Name, modelProp.Name,
-                        string.Join(", ", candidateEntities.Select(e => e.Name))));
-                }
-            }
+        // Only take the first matching entity for this property —
+        // stop convention-matching once resolved.
+        break;
+    }
+
+    if (!matchedAny && reportDiagnostics)
+    {
+        spc.ReportDiagnostic(Diagnostic.Create(
+            MappingDiagnostics.NoMatchingProperty,
+            modelProp.Locations.FirstOrDefault() ?? Location.None,
+            info.ModelType.Name, modelProp.Name,
+            string.Join(", ", candidateEntities.Select(e => e.Name))));
+    }
+}
         }
 
         private static bool IsExcluded(MappingClassInfo info, string sourceName, string destEntity) =>

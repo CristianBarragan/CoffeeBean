@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-using Microsoft.CodeAnalysis;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
+using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
 
 namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 
 internal static class MutationMetadataEmitter
 {
-    public static string Emit(ImmutableArray<MappingClassInfo> allMappings)
+    public static string Emit(
+        ImmutableArray<MappingClassInfo> allMappings)
     {
         var models =
             allMappings
@@ -33,31 +34,46 @@ internal static class MutationMetadataEmitter
         sb.AppendLine("public static class MutationMetadataRegistry");
         sb.AppendLine("{");
 
-        sb.AppendLine("    private static readonly ImmutableDictionary<ushort, MutationEntityMetadata> _entities =");
-        sb.AppendLine("        ImmutableDictionary.CreateRange(new MutationEntityMetadata[]");
+        sb.AppendLine(
+            "    private static readonly ImmutableDictionary<ushort, MutationEntityMetadata> _entities =");
+
+        sb.AppendLine(
+            "        ImmutableDictionary.CreateRange(new MutationEntityMetadata[]");
+
         sb.AppendLine("        {");
 
         for (var i = 0; i < models.Count; i++)
         {
-            var comma = i < models.Count - 1 ? "," : "";
-
             sb.AppendLine(
-                $"            Create{models[i].ModelType!.Name}(){comma}");
+                $"            Create{models[i].ModelType!.Name}(){(i < models.Count - 1 ? "," : "")}");
         }
 
-        sb.AppendLine("        }.Select(x => new KeyValuePair<ushort, MutationEntityMetadata>(x.EntityId, x)));");
+        sb.AppendLine(
+            "        }.Select(x => new KeyValuePair<ushort, MutationEntityMetadata>(x.EntityId, x)));");
 
         sb.AppendLine();
 
-        sb.AppendLine("    public static int Count => _entities.Count;");
+        sb.AppendLine(
+            "    public static int Count => _entities.Count;");
+
         sb.AppendLine();
 
-        sb.AppendLine("    public static MutationEntityMetadata Get(ushort entityId)");
+        sb.AppendLine(
+            "    public static MutationEntityMetadata Get(ushort entityId)");
+
         sb.AppendLine("    {");
-        sb.AppendLine("        if (!_entities.TryGetValue(entityId, out var metadata))");
-        sb.AppendLine("            throw new ArgumentOutOfRangeException(nameof(entityId));");
+
+        sb.AppendLine(
+            "        if (!_entities.TryGetValue(entityId, out var metadata))");
+
+        sb.AppendLine(
+            "            throw new ArgumentOutOfRangeException(nameof(entityId));");
+
         sb.AppendLine();
-        sb.AppendLine("        return metadata;");
+
+        sb.AppendLine(
+            "        return metadata;");
+
         sb.AppendLine("    }");
 
         sb.AppendLine();
@@ -72,272 +88,646 @@ internal static class MutationMetadataEmitter
 
         return sb.ToString();
     }
-    
-    private static string GetStorageEntityName(
-        MappingClassInfo mapping)
+
+    private static List<(string EntityName, string Schema)> GetStorageEntities(
+    MappingClassInfo info)
     {
-        var modelName = mapping.ModelType!.Name;
+        return info.Definition.Entities
+            .Where(e => e.EntityType != null)
+            .Select(e =>
+            {
+                var name =
+                    IdEmitter.StripEntitySuffix(
+                        e.EntityType!.Name);
 
-        // Prefer a storage entity matching the model name.
-        var entity =
-            mapping.Definition.Entities
-                .FirstOrDefault(e =>
-                    e.EntityType != null &&
-                    e.EntityType.Name.Equals(
-                        modelName + "Entity",
-                        StringComparison.Ordinal))
-                ?.EntityType;
-
-        // If no exact entity exists, use primary.
-        if (entity == null)
-        {
-            entity =
-                mapping.Definition.Entities
-                    .FirstOrDefault(e => e.IsPrimary)
-                    ?.EntityType;
-        }
-
-        // Last fallback.
-        if (entity == null)
-        {
-            entity =
-                mapping.Definition.Entities
-                    .FirstOrDefault()
-                    ?.EntityType;
-        }
-
-        var entityName =
-            entity?.Name ?? modelName;
-
-        const string suffix = "Entity";
-
-        if (entityName.EndsWith(
-                suffix,
-                StringComparison.Ordinal))
-        {
-            entityName =
-                entityName.Substring(
-                    0,
-                    entityName.Length - suffix.Length);
-        }
-
-        return entityName;
+                return (
+                    EntityName: name,
+                    Schema:
+                        e.Schema
+                        ?? info.Schema
+                        ?? "public"
+                );
+            })
+            .ToList();
     }
+
 
     private static void EmitFactory(
     StringBuilder sb,
     MappingClassInfo info)
-{
-    var modelName = info.ModelType!.Name;
-
-    var primaryEntity =
-        info.Definition.Entities.FirstOrDefault(e => e.IsPrimary)
-        ?? info.Definition.Entities.FirstOrDefault();
-
-    if (primaryEntity?.EntityType == null)
     {
-        sb.AppendLine($"    private static MutationEntityMetadata Create{modelName}()");
-        sb.AppendLine("        => throw new InvalidOperationException(" +
-                      $"\"{modelName} has no primary entity — cannot generate mutation metadata.\");");
-        return;
-    }
+        var modelName = info.ModelType!.Name;
 
-    var tableName = GetStorageEntityName(info);
-    var schema = info.Schema ?? "public";
+        var primaryEntity =
+            info.Definition.Entities
+                .FirstOrDefault(e => e.IsPrimary)
+            ?? info.Definition.Entities.FirstOrDefault();
 
-    var hasGraphMetadata =
-        info.Graph != null &&
-        info.Graph.From != null &&
-        info.Graph.To != null;
-
-    var kind =
-        hasGraphMetadata
-            ? "MutationKind.GraphEdge"
-            : "MutationKind.Entity";
-
-    var primaryColumns =
-        info.Definition.PrimaryKey
-            .Select(pk => pk.ColumnKey)
-            .Where(c => !string.IsNullOrWhiteSpace(c))
-            .ToList();
-
-
-    var lines = new List<string>();
-
-
-    //
-    // Normal mapped fields
-    //
-    var grouped =
-        info.FieldMaps
-            .Where(f => !f.IsNavigationKey)
-            .GroupBy(f => f.SourceName, StringComparer.Ordinal)
-            .ToList();
-
-
-    foreach (var group in grouped)
-    {
-        var fieldIdName = group.Key;
-
-        var targetLines = group.Select(target =>
+        if (primaryEntity?.EntityType == null)
         {
-            var isPrimaryKey =
-                info.Definition.PrimaryKey.Any(pk =>
-                    string.Equals(
-                        pk.Entity?.Name,
-                        target.DestinationEntity,
-                        StringComparison.Ordinal) &&
-                    string.Equals(
-                        pk.ColumnKey,
-                        target.DestinationName,
-                        StringComparison.Ordinal));
+            sb.AppendLine(
+                $"    private static MutationEntityMetadata Create{modelName}()");
+
+            sb.AppendLine(
+                $"        => throw new InvalidOperationException(\"{modelName} has no primary entity.\");");
+
+            return;
+        }
 
 
-            var storageEntityName =
-                IdEmitter.StripEntitySuffix(
-                    target.DestinationEntity);
+        var storageEntities =
+            GetStorageEntities(info);
 
 
-            return
-                $"new MutationFieldMetadata(" +
-                $"FieldId.{modelName}.{fieldIdName}, " +
-                $"EntityId.{modelName}, " +
-                $"StorageEntityId.{storageEntityName}, " +
-                $"ColumnId.{storageEntityName}.{target.DestinationName}, " +
-                $"{(isPrimaryKey ? "true" : "false")})";
-        });
+        var tableName =
+            IdEmitter.StripEntitySuffix(
+                primaryEntity.EntityType.Name);
 
 
-        lines.Add(
-            $"                [FieldId.{modelName}.{fieldIdName}] = " +
-            $"ImmutableArray.Create({string.Join(", ", targetLines)})");
-    }
-
-    sb.AppendLine($"    private static MutationEntityMetadata Create{modelName}()");
-    sb.AppendLine("    {");
-    sb.AppendLine("        return new MutationEntityMetadata(");
-    sb.AppendLine($"            EntityId.{modelName},");
-    sb.AppendLine($"            StorageEntityId.{tableName},");
-    sb.AppendLine($"            \"{schema}\",");
-    sb.AppendLine($"            \"{tableName}\",");
+        var primaryStorage =
+            storageEntities.FirstOrDefault(x =>
+                string.Equals(
+                    x.EntityName,
+                    tableName,
+                    StringComparison.OrdinalIgnoreCase));
 
 
-    var isComposite =
-        info.Definition.Entities
-            .Count(e => e.EntityType != null) > 1;
+        if (primaryStorage == default)
+        {
+            primaryStorage =
+                storageEntities.FirstOrDefault();
+
+            if (primaryStorage == default)
+            {
+                sb.AppendLine(
+                    $"    private static MutationEntityMetadata Create{modelName}()");
+
+                sb.AppendLine(
+                    $"        => throw new InvalidOperationException(\"{modelName} has no storage entities.\");");
+
+                return;
+            }
+        }
 
 
-    if (isComposite)
-    {
-        sb.AppendLine("            false,");
-        sb.AppendLine($"            {kind},");
+        var schema =
+            primaryStorage.Schema;
 
-        var upsertColumns =
-            info.UpsertKeys
-                .Select(x =>
-                {
-                    var field =
-                        info.FieldMaps.FirstOrDefault(f =>
-                            string.Equals(
-                                f.SourceName,
-                                x.Key,
-                                StringComparison.Ordinal));
 
-                    return field?.DestinationName ?? x.Key;
-                })
-                .Where(x => !string.IsNullOrWhiteSpace(x))
+        var hasGraphMetadata =
+            info.Graph != null &&
+            info.Graph.From != null &&
+            info.Graph.To != null;
+
+
+        var kind =
+            hasGraphMetadata
+                ? "MutationKind.GraphEdge"
+                : "MutationKind.Entity";
+
+
+        var primaryColumns =
+            info.Definition.PrimaryKey
+                .Select(pk => pk.ColumnKey)
+                .Where(c => !string.IsNullOrWhiteSpace(c))
                 .ToList();
 
 
-        sb.AppendLine(
-            "            ImmutableArray.Create(" +
-            string.Join(", ",
-                upsertColumns.Select(x => $"\"{x}\"")) +
-            "),");
-    }
-    else
-    {
-        sb.AppendLine("            true,");
-        sb.AppendLine($"            {kind},");
+        var grouped =
+            info.FieldMaps
+                .Where(f =>
+                    !IsStorageOnlyField(info, f) &&
+                    (
+                        !IsPrimaryKeyColumn(info, f)
+                        || f.IsNavigationKey
+                    ))
+                .GroupBy(
+                    f => f.SourceName,
+                    StringComparer.Ordinal)
+                .ToList();
+
+
+        var lines =
+            new List<string>();
+
+
+        foreach (var group in grouped)
+        {
+            var fieldIdName =
+                GeneratedIdentifierHelper.Field(group.Key);
+
+
+            var targetLines =
+                group.Select(target =>
+                {
+                    var storageEntityName =
+                        IdEmitter.StripEntitySuffix(
+                            target.DestinationEntity);
+
+
+                    var columnName =
+                        target.DestinationName;
+
+
+                    //
+                    // Graph navigation keys are not physical columns.
+                    // Resolve their storage information from graph metadata.
+                    //
+                    if (target.IsNavigationKey && hasGraphMetadata)
+                    {
+                        var navigationTargets =
+                            group
+                                .Where(x => x.IsNavigationKey)
+                                .ToList();
+
+
+                        var navigationIndex =
+                            navigationTargets.IndexOf(target);
+
+
+                        var foreignKeyColumn =
+                            navigationIndex == 0
+                                ? info.Graph!.From!.ForeignKeyColumn
+                                : info.Graph!.To!.ForeignKeyColumn;
+
+
+                        var parts =
+                            foreignKeyColumn.Split(
+                                new[] { '.' },
+                                StringSplitOptions.RemoveEmptyEntries);
+
+
+                        if (parts.Length == 2)
+                        {
+                            storageEntityName =
+                                IdEmitter.StripEntitySuffix(parts[0]);
+
+                            columnName =
+                                parts[1];
+                        }
+                        else
+                        {
+                            storageEntityName =
+                                IdEmitter.StripEntitySuffix(
+                                    primaryEntity.EntityType.Name);
+
+                            columnName =
+                                foreignKeyColumn;
+                        }
+                    }
+
+
+                    var isPrimaryKey =
+                        info.Definition.PrimaryKey.Any(pk =>
+                            pk.Entity != null &&
+                            string.Equals(
+                                IdEmitter.StripEntitySuffix(pk.Entity.Name),
+                                storageEntityName,
+                                StringComparison.OrdinalIgnoreCase)
+                            &&
+                            string.Equals(
+                                pk.ColumnKey,
+                                columnName,
+                                StringComparison.OrdinalIgnoreCase));
+
+
+                    string columnExpression;
+
+
+                    //
+                    // IMPORTANT:
+                    // Navigation fields do not have ColumnId entries.
+                    // They are resolved through graph metadata.
+                    //
+                    if (target.IsNavigationKey && hasGraphMetadata)
+                    {
+                        columnExpression = "0";
+                    }
+                    else
+                    {
+                        columnExpression =
+                            ColumnIdResolver.Resolve(
+                                storageEntityName,
+                                columnName);
+                    }
+
+                    return
+                        $"new MutationFieldMetadata(" +
+                        $"FieldId.{modelName}.{fieldIdName}, " +
+                        $"EntityId.{modelName}, " +
+                        $"StorageEntityId.{storageEntityName}, " +
+                        $"{columnExpression}, " +
+                        $"{(isPrimaryKey ? "true" : "false")}, " +
+                        $"{(target.IsNavigationKey ? "true" : "false")}, " +
+                        $"\"{Escape(group.Key)}\")";
+
+                })
+                .ToList();
+
+
+            lines.Add(
+                $"                [FieldId.{modelName}.{fieldIdName}] = " +
+                $"ImmutableArray.Create({string.Join(", ", targetLines)})");
+        }
+
 
         sb.AppendLine(
-            "            ImmutableArray.Create(" +
-            string.Join(", ",
-                primaryColumns.Select(c => $"\"{c}\"")) +
-            "),");
+            $"    private static MutationEntityMetadata Create{modelName}()");
+
+        sb.AppendLine("    {");
+
+        sb.AppendLine(
+            "        return new MutationEntityMetadata(");
+
+
+        sb.AppendLine(
+            $"            EntityId.{modelName},");
+
+        sb.AppendLine(
+            $"            StorageEntityId.{tableName},");
+
+        sb.AppendLine(
+            $"            \"{Escape(schema)}\",");
+
+        sb.AppendLine(
+            $"            \"{Escape(tableName)}\",");
+
+
+        var isComposite =
+            info.Definition.Entities.Count(e => e.EntityType != null) > 1;
+
+
+        if (isComposite)
+        {
+            sb.AppendLine("            false,");
+            sb.AppendLine($"            {kind},");
+
+
+            var upsertColumns =
+                info.UpsertKeys
+                    .Select(x =>
+                    {
+                        var field =
+                            info.FieldMaps.FirstOrDefault(f =>
+                                string.Equals(
+                                    f.SourceName,
+                                    x.Key,
+                                    StringComparison.Ordinal));
+
+                        return field?.DestinationName ?? x.Key;
+                    })
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+
+            if (upsertColumns.Count == 0)
+            {
+                sb.AppendLine(
+                    "            ImmutableArray<string>.Empty,");
+            }
+            else
+            {
+                sb.AppendLine(
+                    "            ImmutableArray.Create<string>(" +
+                    string.Join(", ",
+                        upsertColumns.Select(x =>
+                            $"\"{Escape(x)}\"")) +
+                    "),");
+            }
+        }
+        else
+        {
+            sb.AppendLine("            true,");
+            sb.AppendLine($"            {kind},");
+
+
+            if (primaryColumns.Count == 0)
+            {
+                sb.AppendLine(
+                    "            ImmutableArray<string>.Empty,");
+            }
+            else
+            {
+                sb.AppendLine(
+                    "            ImmutableArray.Create<string>(" +
+                    string.Join(", ",
+                        primaryColumns.Select(c =>
+                            $"\"{Escape(c)}\"")) +
+                    "),");
+            }
+        }
+
+
+        sb.AppendLine();
+
+        sb.AppendLine(
+            "            new Dictionary<ushort, ImmutableArray<MutationFieldMetadata>>");
+
+        sb.AppendLine("            {");
+
+
+        if (lines.Count > 0)
+        {
+            sb.AppendLine(
+                string.Join(",\n", lines));
+        }
+
+
+        sb.AppendLine(
+            "            },");
+
+
+        EmitStorageEntities(
+            sb,
+            info);
+
+
+        if (hasGraphMetadata)
+        {
+            sb.AppendLine(",");
+
+            var fromParts =
+                info.Graph!
+                    .From!
+                    .ForeignKeyColumn
+                    .Split(
+                        new[] { '.' },
+                        StringSplitOptions.RemoveEmptyEntries);
+
+            var toParts =
+                info.Graph!
+                    .To!
+                    .ForeignKeyColumn
+                    .Split(
+                        new[] { '.' },
+                        StringSplitOptions.RemoveEmptyEntries);
+
+
+            var fromEntity =
+                fromParts.Length > 1
+                    ? IdEmitter.StripEntitySuffix(fromParts[0])
+                    : null;
+
+            var fromColumn =
+                fromParts.Length > 1
+                    ? fromParts[1]
+                    : fromParts.LastOrDefault();
+
+
+            var toEntity =
+                toParts.Length > 1
+                    ? IdEmitter.StripEntitySuffix(toParts[0])
+                    : null;
+
+            var toColumn =
+                toParts.Length > 1
+                    ? toParts[1]
+                    : toParts.LastOrDefault();
+
+
+            var navigationFields =
+                info.FieldMaps
+                    .Where(f => f.IsNavigationKey)
+                    .ToList();
+
+
+            FieldInfo? fromField = null;
+            FieldInfo? toField = null;
+
+
+            foreach (var field in navigationFields)
+            {
+                var destinationEntity =
+                    IdEmitter.StripEntitySuffix(
+                        field.DestinationEntity);
+
+
+                if (fromField == null &&
+                    string.Equals(
+                        destinationEntity,
+                        fromEntity,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(
+                        field.DestinationName,
+                        fromColumn,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    fromField = field;
+                    continue;
+                }
+
+
+                if (toField == null &&
+                    string.Equals(
+                        destinationEntity,
+                        toEntity,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(
+                        field.DestinationName,
+                        toColumn,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    toField = field;
+                }
+            }
+
+
+            //
+            // Fallback:
+            // If FK metadata does not expose entity names,
+            // resolve by destination column only.
+            //
+            fromField ??=
+                navigationFields.FirstOrDefault(f =>
+                    string.Equals(
+                        f.DestinationName,
+                        fromColumn,
+                        StringComparison.OrdinalIgnoreCase));
+
+
+            toField ??=
+                navigationFields.FirstOrDefault(f =>
+                    f != fromField &&
+                    string.Equals(
+                        f.DestinationName,
+                        toColumn,
+                        StringComparison.OrdinalIgnoreCase));
+
+
+            //
+            // Last fallback:
+            // use ordering from graph metadata, not names.
+            //
+            if (fromField == null &&
+                navigationFields.Count > 0)
+            {
+                fromField = navigationFields[0];
+            }
+
+
+            if (toField == null &&
+                navigationFields.Count > 1)
+            {
+                toField = navigationFields[1];
+            }
+
+
+            sb.AppendLine(
+                $"            graphName: \"{Escape(info.Graph.GraphName)}\",");
+
+            sb.AppendLine(
+                $"            graphEdgeLabel: \"{Escape(info.Graph.EdgeLabel)}\",");
+
+            sb.AppendLine(
+                $"            graphFromVertex: \"{Escape(info.Graph.From.Label)}\",");
+
+            sb.AppendLine(
+                $"            graphToVertex: \"{Escape(info.Graph.To.Label)}\",");
+
+            sb.AppendLine(
+                $"            graphFromColumn: \"{Escape(info.Graph.From.GraphProperty)}\",");
+
+            sb.AppendLine(
+                $"            graphToColumn: \"{Escape(info.Graph.To.GraphProperty)}\",");
+
+
+            sb.AppendLine(
+                fromField != null
+                    ? $"            graphFromFieldId: FieldId.{modelName}.{GeneratedIdentifierHelper.Field(fromField.SourceName)},"
+                    : "            graphFromFieldId: null,");
+
+
+            sb.AppendLine(
+                toField != null
+                    ? $"            graphToFieldId: FieldId.{modelName}.{GeneratedIdentifierHelper.Field(toField.SourceName)}"
+                    : "            graphToFieldId: null");
+        }
+
+
+        sb.AppendLine(
+            "        );");
+
+        sb.AppendLine(
+            "    }");
     }
 
-
-    sb.AppendLine();
-    sb.AppendLine("            new Dictionary<ushort, ImmutableArray<MutationFieldMetadata>>");
-    sb.AppendLine("            {");
-
-
-    sb.AppendLine(string.Join(",\n", lines));
-
-
-    var hasGraph =
-        info.Graph != null &&
-        info.Graph.From != null &&
-        info.Graph.To != null;
-
-
-    sb.AppendLine(
-        hasGraph
-            ? "            },"
-            : "            }");
-
-
-    if (hasGraph)
+    private static bool IsPrimaryKeyColumn(
+        MappingClassInfo info,
+        FieldInfo field)
     {
-        sb.AppendLine($"            graphName: \"{Escape(info.Graph!.GraphName)}\",");
-        sb.AppendLine($"            graphEdgeLabel: \"{Escape(info.Graph.EdgeLabel)}\",");
-        sb.AppendLine($"            graphFromVertex: \"{Escape(info.Graph.From.Label)}\",");
-        sb.AppendLine($"            graphToVertex: \"{Escape(info.Graph.To.Label)}\",");
-        sb.AppendLine($"            graphFromColumn: \"{Escape(info.Graph.From.GraphProperty)}\",");
-        sb.AppendLine($"            graphToColumn: \"{Escape(info.Graph.To.GraphProperty)}\"");
+        return info.Definition.PrimaryKey.Any(pk =>
+            string.Equals(
+                IdEmitter.StripEntitySuffix(pk.Entity.Name),
+                IdEmitter.StripEntitySuffix(field.DestinationEntity),
+                StringComparison.OrdinalIgnoreCase)
+            &&
+            string.Equals(
+                pk.ColumnKey,
+                field.DestinationName,
+                StringComparison.OrdinalIgnoreCase));
     }
 
 
-    sb.AppendLine("        );");
-    sb.AppendLine("    }");
-}
-    
+
+    private static void EmitStorageEntities(
+        StringBuilder sb,
+        MappingClassInfo info)
+    {
+        var entities =
+            info.Definition.Entities
+                .Where(e => e.EntityType != null)
+                .Select(e =>
+                {
+                    var name =
+                        IdEmitter.StripEntitySuffix(
+                            e.EntityType!.Name);
+
+
+                    return new
+                    {
+                        Name = name,
+
+                        Schema =
+                            e.Schema
+                            ?? info.Schema
+                            ?? "public"
+                    };
+                })
+                .ToList();
+
+
+
+        sb.AppendLine(
+            "            ImmutableArray.Create(");
+
+
+
+        for (var i = 0; i < entities.Count; i++)
+        {
+            var comma =
+                i < entities.Count - 1
+                    ? ","
+                    : "";
+
+
+
+            sb.AppendLine(
+                "                new MutationStorageEntityMetadata(");
+
+
+            sb.AppendLine(
+                $"                    StorageEntityId.{entities[i].Name},");
+
+
+            sb.AppendLine(
+                $"                    \"{Escape(entities[i].Schema)}\",");
+
+
+            sb.AppendLine(
+                $"                    \"{Escape(entities[i].Name)}\"){comma}");
+        }
+
+
+
+        sb.AppendLine(
+            "            )");
+    }
+
     private static bool IsStorageOnlyField(
         MappingClassInfo info,
         FieldInfo field)
     {
-        // FK columns are handled by dependency ordering
-        if (info.Definition.ForeignKeys.Any(f =>
-                string.Equals(
-                    f.Column,
-                    field.DestinationName,
-                    StringComparison.Ordinal) &&
-                string.Equals(
-                    f.Entity.Name,
-                    field.DestinationEntity,
-                    StringComparison.Ordinal)))
-        {
-            return true;
-        }
+        //
+        // Primary keys are represented through identity/upsert metadata.
+        //
+        // However navigation keys are NOT storage-only because graph
+        // relationships need them to resolve the edge endpoints.
+        //
+        if (field.IsNavigationKey)
+            return false;
 
 
-        // Primary keys are handled by identity/upsert metadata
-        if (info.Definition.PrimaryKey.Any(pk =>
-                string.Equals(
-                    pk.ColumnKey,
-                    field.DestinationName,
-                    StringComparison.Ordinal) &&
-                string.Equals(
-                    pk.Entity.Name,
-                    field.DestinationEntity,
-                    StringComparison.Ordinal)))
-        {
-            return true;
-        }
+        return info.Definition.PrimaryKey.Any(pk =>
+            string.Equals(
+                IdEmitter.StripEntitySuffix(pk.Entity.Name),
+                IdEmitter.StripEntitySuffix(field.DestinationEntity),
+                StringComparison.OrdinalIgnoreCase)
+            &&
+            string.Equals(
+                pk.ColumnKey,
+                field.DestinationName,
+                StringComparison.OrdinalIgnoreCase));
+    }
 
 
-        return false;
+
+    private static string Escape(
+        string value)
+    {
+        return value
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"");
     }
 
     private static void EmitGraphMetadata(

@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
+using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
 using Microsoft.CodeAnalysis;
 
 namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
@@ -93,7 +94,9 @@ internal static class MutationMaterializerEmitter
     }
 
 
-    private static void EmitDematerializer(StringBuilder sb, MappingClassInfo info)
+    private static void EmitDematerializer(
+        StringBuilder sb,
+        MappingClassInfo info)
     {
         var model = info.ModelType!.Name;
 
@@ -102,7 +105,8 @@ internal static class MutationMaterializerEmitter
         sb.AppendLine(
             $"    public static ImmutableArray<FieldValue> Dematerialize({model} model, MutationEntityMetadata metadata)");
         sb.AppendLine("    {");
-        sb.AppendLine("        var builder = ImmutableArray.CreateBuilder<FieldValue>();");
+        sb.AppendLine(
+            "        var builder = ImmutableArray.CreateBuilder<FieldValue>();");
         sb.AppendLine();
 
         var counter = 0;
@@ -112,7 +116,8 @@ internal static class MutationMaterializerEmitter
             var representative = group.First();
             var variable = $"rawValue{counter++}";
 
-            sb.AppendLine($"        var {variable} = {ConvertToRaw(representative)};");
+            sb.AppendLine(
+                $"        var {variable} = {ConvertToRaw(representative)};");
             sb.AppendLine();
             // Only emit a FieldValue when the model actually has a value for
             // this field. A null here means the client never supplied it (or
@@ -124,13 +129,32 @@ internal static class MutationMaterializerEmitter
             sb.AppendLine($"        if ({variable} is not null)");
             sb.AppendLine("        {");
 
+            sb.AppendLine(
+                $"        if ({variable} is not null)");
+            sb.AppendLine("        {");
+
             foreach (var field in group)
             {
-                sb.AppendLine("            builder.Add(new FieldValue(");
-                sb.AppendLine($"                EntityId.{model},");
-                sb.AppendLine($"                FieldId.{model}.{FieldIdNameHelper.GetName(field)},");
-                sb.AppendLine($"                ColumnId.{field.DestinationEntity}.{field.DestinationName},");
-                sb.AppendLine($"                {variable}));");
+                var columnExpression =
+                    ColumnIdResolver.Resolve(
+                        field.DestinationEntity,
+                        field.DestinationName);
+
+                sb.AppendLine(
+                    "            builder.Add(new FieldValue(");
+
+                sb.AppendLine(
+                    $"                EntityId.{model},");
+
+                sb.AppendLine(
+                    $"                FieldId.{model}.{FieldIdNameHelper.GetName(field)},");
+
+                sb.AppendLine(
+                    $"                {columnExpression},");
+
+                sb.AppendLine(
+                    $"                {variable}));");
+
                 sb.AppendLine();
             }
 
@@ -138,11 +162,12 @@ internal static class MutationMaterializerEmitter
             sb.AppendLine();
         }
 
-        sb.AppendLine("        return builder.ToImmutable();");
+        sb.AppendLine(
+            "        return builder.ToImmutable();");
+
         sb.AppendLine("    }");
         sb.AppendLine("}");
     }
-
 
     private static bool IsNullableValueType(ITypeSymbol? type)
     {

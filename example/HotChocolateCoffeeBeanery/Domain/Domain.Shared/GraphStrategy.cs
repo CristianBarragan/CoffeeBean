@@ -123,17 +123,32 @@ public sealed class ApacheAgeGraphStrategy : IGraphStrategy
                 ";
     }
 
-    private static string BuildGraphSetClause(string edgeKeyColumn, string? edgeKeyValue, ImmutableDictionary<string, string> edgeProperties)
+    private static string BuildGraphSetClause(
+        string edgeKeyColumn,
+        string? edgeKeyValue,
+        ImmutableDictionary<string,string> edgeProperties)
     {
-        var parts = new List<string>();
+        var parts =
+            new List<string>();
+
 
         if (!string.IsNullOrWhiteSpace(edgeKeyValue))
-            parts.Add($"r.{edgeKeyColumn} = '{EscapeCypherValue(edgeKeyValue)}'");
+        {
+            parts.Add(
+                $"r.{edgeKeyColumn} = '{EscapeCypherValue(edgeKeyValue)}'");
+        }
+
 
         foreach (var kvp in edgeProperties)
-            parts.Add($"r.{kvp.Key} = '{EscapeCypherValue(kvp.Value)}'");
+        {
+            parts.Add(
+                $"r.{kvp.Key} = '{EscapeCypherValue(kvp.Value)}'");
+        }
 
-        return parts.Count == 0 ? "" : "SET " + string.Join(", ", parts);
+
+        return parts.Count == 0
+            ? string.Empty
+            : "SET " + string.Join(", ", parts);
     }
 
     private static string EscapeCypherValue(string value) =>

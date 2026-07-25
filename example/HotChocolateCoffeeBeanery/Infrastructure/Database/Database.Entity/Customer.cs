@@ -27,14 +27,8 @@ public partial class Customer : Process
     
     public List<CustomerBankingRelationship>? CustomerBankingRelationship { get; set; }
     
-    // [EntityForeignKey(typeof(CustomerCustomerRelationship), 
-    //     foreignKeyProperty: "OuterCustomerKey", 
-    //     principalKeyProperty: "CustomerKey")]
     public List<CustomerCustomerRelationship>? OuterCustomerCustomerRelationship { get; set; }
     
-    // [EntityForeignKey(typeof(CustomerCustomerRelationship), 
-    //     foreignKeyProperty: "InnerCustomerKey", 
-    //     principalKeyProperty: "CustomerKey")]
     public List<CustomerCustomerRelationship>? InnerCustomerCustomerRelationship { get; set; }
 }
 

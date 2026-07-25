@@ -12,7 +12,19 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Database.Entity.Banking.Migrations
 {
     [DbContext(typeof(BankingEntityContext))]
+<<<<<<< HEAD:example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Entity.Banking/Migrations/20260723165633_Initial.Designer.cs
+<<<<<<< HEAD
+<<<<<<<< HEAD:example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Entity.Banking/Migrations/20260723165633_Initial.Designer.cs
+    [Migration("20260723165633_Initial")]
+========
+    [Migration("20260721110651_Initial")]
+>>>>>>>> 2f54769854732621afb5a5e745337bc8418cf48e:example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Entity.Banking/Migrations/20260721110651_Initial.Designer.cs
+=======
+    [Migration("20260723165633_Initial")]
+>>>>>>> 3202fee (join WIP)
+=======
     [Migration("20260722194820_Initial")]
+>>>>>>> parent of 3202fee (join WIP):example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Entity.Banking/Migrations/20260722194820_Initial.Designer.cs
     partial class Initial
     {
         /// <inheritdoc />

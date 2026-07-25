@@ -38,7 +38,7 @@ public sealed class ProcessService<TModel, TResult> :
 {
     private readonly NpgsqlDataSource _dataSource;
 
-    private readonly IFasterKV<string,string> _cache;
+    private readonly IFasterKV<string, string> _cache;
 
     private readonly AdapterLookup _adapterLookup;
 
@@ -58,12 +58,12 @@ public sealed class ProcessService<TModel, TResult> :
 
     public ProcessService(
         NpgsqlDataSource dataSource,
-        IFasterKV<string,string> cache,
+        IFasterKV<string, string> cache,
         AdapterLookup adapterLookup,
         IEntityMetaProvider meta,
         PostgresSqlWriter sqlWriter,
         IPlannerRegistry plannerRegistry,
-        Func<List<TModel>,List<TResult>> wrap,
+        Func<List<TModel>, List<TResult>> wrap,
         IEnumerable<IQueryPlanContributor>? queryContributors = null,
         IEnumerable<IMutationPlanContributor>? mutationContributors = null)
     {
@@ -83,7 +83,7 @@ public sealed class ProcessService<TModel, TResult> :
             mutationContributors?.ToArray()
             ?? Array.Empty<IMutationPlanContributor>();
     }
-    
+
 
     public async Task<QueryResult<TResult>> MutationProcessAsync(
         string cacheKey,
@@ -208,11 +208,11 @@ public sealed class ProcessService<TModel, TResult> :
                     builder.Build();
             }
         }
-        
-                var selectionSet =
-            selection.SyntaxNode.SelectionSet
-            ?? throw new InvalidOperationException(
-                "Selection has no SelectionSet.");
+
+        var selectionSet =
+    selection.SyntaxNode.SelectionSet
+    ?? throw new InvalidOperationException(
+        "Selection has no SelectionSet.");
 
 
         var selectionIr =
@@ -292,7 +292,6 @@ public sealed class ProcessService<TModel, TResult> :
         var sql =
             string.Join(";", sqlParts);
 
-
         var models =
             await ExecuteAndMaterializeAsync(
                 sql,
@@ -314,7 +313,7 @@ public sealed class ProcessService<TModel, TResult> :
             TotalPageRecords = results.Count
         };
     }
-    
+
 
     public async Task<QueryResult<TResult>> QueryProcessAsync(
         string cacheKey,
@@ -412,12 +411,12 @@ public sealed class ProcessService<TModel, TResult> :
             TotalPageRecords = results.Count
         };
     }
-    
-        private async Task<List<TModel>> ExecuteAndMaterializeAsync(
-        string sql,
-        ushort rootEntityId,
-        QueryPlan queryPlan,
-        CancellationToken ct)
+
+    private async Task<List<TModel>> ExecuteAndMaterializeAsync(
+    string sql,
+    ushort rootEntityId,
+    QueryPlan queryPlan,
+    CancellationToken ct)
     {
         await using var connection =
             await AgeConnectionFactory.OpenAsync(_dataSource);
@@ -516,7 +515,7 @@ public sealed class ProcessService<TModel, TResult> :
             layout,
             rowMatrix);
     }
-    
+
 
     private ushort ResolveRootEntityId(
         string modelName)

@@ -66,22 +66,23 @@ public static class MutationPlannerRuntime
         }
 
 
-        switch (metadata.Kind)
+        if (metadata.Kind == MutationKind.GraphEdge)
         {
-            case MutationKind.Entity:
-                BuildEntityRoot(
-                    node,
-                    ref builder,
-                    metadata);
-                break;
+            BuildGraphEdgeRoot(
+                node,
+                ref builder,
+                metadata);
+
+            return;
+        }
 
 
-            case MutationKind.GraphEdge:
-                BuildGraphEdgeRoot(
-                    node,
-                    ref builder,
-                    metadata);
-                break;
+        if (metadata.Kind == MutationKind.Entity)
+        {
+            BuildEntityRoot(
+                node,
+                ref builder,
+                metadata);
         }
     }
 
@@ -131,9 +132,9 @@ public static class MutationPlannerRuntime
 
 
     private static void BuildGraphEdgeRoot(
-        in MutationIR node,
-        ref MutationPlanBuilder builder,
-        MutationEntityMetadata metadata)
+    in MutationIR node,
+    ref MutationPlanBuilder builder,
+    MutationEntityMetadata metadata)
     {
         string? fromKey = null;
         string? toKey = null;
@@ -142,10 +143,19 @@ public static class MutationPlannerRuntime
         var values =
             ImmutableArray.CreateBuilder<FieldValue>();
 
+        var edgeProperties =
+            ImmutableDictionary.CreateBuilder<string, string>(
+                StringComparer.OrdinalIgnoreCase);
+
+
         foreach (var value in node.Values)
         {
-            if (value.EntityId != metadata.EntityId)
+            if (value.EntityId != metadata.EntityId &&
+                !metadata.IsNavigationField(value.FieldId))
+            {
                 continue;
+            }
+
 
             if (!metadata.TryResolveField(
                     value.FieldId,
@@ -154,6 +164,7 @@ public static class MutationPlannerRuntime
                 continue;
             }
 
+
             values.Add(
                 new FieldValue(
                     value.EntityId,
@@ -161,37 +172,79 @@ public static class MutationPlannerRuntime
                     field.ColumnId,
                     value.RawValue));
 
-            if (value.FieldId == metadata.GraphFromFieldId)
+
+            //
+            // Resolve graph endpoints from navigation metadata.
+            //
+            if (metadata.GraphFromFieldId.HasValue &&
+                value.FieldId == metadata.GraphFromFieldId.Value)
             {
                 fromKey = value.RawValue;
             }
 
-            if (value.FieldId == metadata.GraphToFieldId)
+
+            if (metadata.GraphToFieldId.HasValue &&
+                value.FieldId == metadata.GraphToFieldId.Value)
             {
                 toKey = value.RawValue;
             }
 
+
+            //
+            // Edge primary key.
+            //
             if (field.IsPrimaryKey)
             {
                 edgeKey = value.RawValue;
+                continue;
+            }
+
+
+            //
+            // Edge properties only.
+            //
+            if (!field.IsNavigationKey)
+            {
+                edgeProperties[
+                    field.ColumnId.ToString()] =
+                        value.RawValue;
             }
         }
 
 
-        if (fromKey != null && toKey != null)
+        if (metadata.GraphName != null &&
+            metadata.GraphEdgeLabel != null)
         {
+            if (fromKey == null || toKey == null)
+            {
+                throw new InvalidOperationException(
+                    $"Graph edge '{metadata.GraphEdgeLabel}' is missing endpoint keys. " +
+                    $"From='{fromKey}', To='{toKey}'. " +
+                    $"Expected fields: " +
+                    $"From={metadata.GraphFromFieldId}, " +
+                    $"To={metadata.GraphToFieldId}");
+            }
+
+
             builder.AddGraphMerge(
-                metadata.GraphName!,
-                metadata.GraphEdgeLabel!,
+                metadata.GraphName,
+                metadata.GraphEdgeLabel,
+
                 metadata.GraphFromVertex!,
                 metadata.GraphFromColumn!,
                 fromKey,
+
                 metadata.GraphToVertex!,
                 metadata.GraphToColumn!,
                 toKey,
-                metadata.PrimaryColumns[0],
+
+                metadata.PrimaryColumns.Length > 0
+                    ? metadata.PrimaryColumns[0]
+                    : string.Empty,
+
                 edgeKey,
-                ImmutableDictionary<string, string>.Empty);
+
+                edgeProperties.ToImmutable());
         }
 
 

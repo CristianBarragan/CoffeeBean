@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -9,6 +10,7 @@ using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Parsing;
+using Microsoft.CodeAnalysis.Text;
 
 namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
 {
@@ -18,6 +20,21 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
         public void Initialize(
             IncrementalGeneratorInitializationContext context)
         {
+            context.RegisterSourceOutput(
+                context.CompilationProvider,
+                static (spc, compilation) =>
+                {
+                    var assembly = compilation.AssemblyName;
+
+                    spc.ReportDiagnostic(
+                        Diagnostic.Create(
+                            MappingDiagnostics.EntityGraphDebug,
+                            Location.None,
+                            $"Generator running for {assembly}"
+                        ));
+                });
+
+
             var mappingClasses =
                 context.SyntaxProvider
                     .CreateSyntaxProvider(
@@ -42,14 +59,30 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                             ct));
 
 
-            var entityGraphs =
+            var entityGraphResults =
                 context.CompilationProvider
                     .Select(static (compilation, ct) =>
                         FluentEntityNavigationConvention
                             .EntityForeignKeyGraph
-                            .Build(
-                                compilation,
-                                ct));
+                            .Build(compilation, ct));
+
+            var entityGraphs =
+                entityGraphResults
+                    .Select(static (result, _) => result.Edges);
+
+            context.RegisterSourceOutput(
+                entityGraphResults,
+                static (spc, result) =>
+                {
+                    foreach (var message in result.Diagnostics)
+                    {
+                        spc.ReportDiagnostic(
+                            Diagnostic.Create(
+                                MappingDiagnostics.EntityGraphDebug,
+                                Location.None,
+                                message));
+                    }
+                });
 
 
             var allMappings =
@@ -67,7 +100,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
 
                             CompositeChildAttachmentConvention.Apply(
                                 info,
-                                mappings);
+                                mappings,
+                                entityGraph);
 
                             EntityGraphChildrenInference.Apply(
                                 info,
@@ -91,6 +125,16 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 {
                     var (((info, all), rootModelTypes), entityGraph) =
                         data;
+
+                    foreach (var edge in entityGraph)
+                    {
+                        spc.ReportDiagnostic(
+                            Diagnostic.Create(
+                                MappingDiagnostics.EntityGraphDebug,
+                                Location.None,
+                                $"{edge.PrincipalEntity.Name}.{edge.PrincipalColumn} -> {edge.DependentEntity.Name}.{edge.DependentColumn}"
+                            ));
+                    }
 
                     EmitClass(
                         spc,
@@ -188,13 +232,13 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 ctx.SemanticModel,
                 ct);
         }
-        
-                private static void EmitClass(
-            SourceProductionContext spc,
-            MappingClassInfo info,
-            ImmutableArray<MappingClassInfo> allMappings,
-            ImmutableHashSet<INamedTypeSymbol> rootModelTypes,
-            List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+
+        private static void EmitClass(
+    SourceProductionContext spc,
+    MappingClassInfo info,
+    ImmutableArray<MappingClassInfo> allMappings,
+    ImmutableHashSet<INamedTypeSymbol> rootModelTypes,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
         {
             try
             {
@@ -322,6 +366,23 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                     })
                     .ToImmutableArray();
 
+                foreach (var info in resolvedMappings)
+                {
+                    ModelChildrenInference.Apply(
+                        info,
+                        resolvedMappings);
+
+                    CompositeChildAttachmentConvention.Apply(
+                        info,
+                        resolvedMappings,
+                        entityGraph);
+
+                    EntityGraphChildrenInference.Apply(
+                        info,
+                        resolvedMappings,
+                        entityGraph);
+                }
+
                 var rootEntityTypes =
                     ResolveRootEntityTypes(resolvedMappings, rootModelTypes);
 
@@ -334,9 +395,15 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                         model, resolvedMappings, entityGraph, rootEntityTypes);
                 }
 
-                spc.AddSource("GeneratedIds.g.cs", IdEmitter.Emit(resolvedMappings));
-                
-                
+                var ids =
+                    IdEmitter.Emit(
+                        resolvedMappings);
+
+                spc.AddSource(
+                    "GeneratedIds.g.cs",
+                    SourceText.From(ids, Encoding.UTF8));
+
+
                 spc.AddSource("ColumnNameResolver.g.cs", ColumnNameResolverEmitter.Emit(resolvedMappings));
 
                 spc.AddSource("EntityMeta.g.cs",
@@ -352,7 +419,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                     QueryMaterializerEmitter.Emit(resolvedMappings));
 
                 spc.AddSource("Planners.g.cs",
-                    PlannerEmitter.Emit(resolvedMappings, rootEntityTypes,  entityGraph));
+                    PlannerEmitter.Emit(resolvedMappings, rootEntityTypes, entityGraph));
 
                 spc.AddSource("AdapterTables.g.cs",
                     AdapterEmitter.Emit(resolvedMappings, rootEntityTypes, entityGraph));
@@ -390,10 +457,10 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 // <auto-generated/>
 
                 #error CBM000: Source generator crashed:
-                {ex.GetType().Name}: {ex.Message}
+                //{ex.GetType().Name}: {ex.Message}
                 """);
         }
-        
+
         private static ImmutableHashSet<INamedTypeSymbol> ResolveRootEntityTypes(
             ImmutableArray<MappingClassInfo> allMappings,
             ImmutableHashSet<INamedTypeSymbol> rootModelTypes)

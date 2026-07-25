@@ -13,6 +13,7 @@ public sealed class MutationFieldMetadata
     public ushort ColumnId { get; }
     public bool IsPrimaryKey { get; }
     public bool IsNavigationKey { get; }
+    public string FieldName { get; }
 
     public MutationFieldMetadata(
         ushort fieldId,
@@ -20,7 +21,8 @@ public sealed class MutationFieldMetadata
         ushort storageEntityId,
         ushort columnId,
         bool isPrimaryKey,
-        bool isNavigationKey = false)
+        bool isNavigationKey,
+        string fieldName)
     {
         FieldId = fieldId;
         EntityId = entityId;
@@ -28,6 +30,27 @@ public sealed class MutationFieldMetadata
         ColumnId = columnId;
         IsPrimaryKey = isPrimaryKey;
         IsNavigationKey = isNavigationKey;
+        FieldName = fieldName;
+    }
+}
+
+public sealed class MutationStorageEntityMetadata
+{
+    public ushort StorageEntityId { get; }
+
+    public string Schema { get; }
+
+    public string Table { get; }
+
+
+    public MutationStorageEntityMetadata(
+        ushort storageEntityId,
+        string schema,
+        string table)
+    {
+        StorageEntityId = storageEntityId;
+        Schema = schema;
+        Table = table;
     }
 }
 
@@ -39,6 +62,8 @@ public sealed class MutationEntityMetadata
     public ushort StorageEntityId { get; }
     public string Schema { get; }
     public string Table { get; }
+
+    public ImmutableArray<MutationStorageEntityMetadata> StorageEntities { get; }
     public bool IsRoot { get; }
     public MutationKind Kind { get; }
 
@@ -73,6 +98,7 @@ public sealed class MutationEntityMetadata
         MutationKind kind,
         ImmutableArray<string> primaryColumns,
         Dictionary<ushort, ImmutableArray<MutationFieldMetadata>> fields,
+        ImmutableArray<MutationStorageEntityMetadata> storageEntities = default,
         string? graphName = null,
         string? graphEdgeLabel = null,
         string? graphFromVertex = null,
@@ -90,6 +116,14 @@ public sealed class MutationEntityMetadata
         Kind = kind;
         PrimaryColumns = primaryColumns;
         _fields = fields;
+        StorageEntities =
+            storageEntities.IsDefaultOrEmpty
+                ? ImmutableArray.Create(
+                    new MutationStorageEntityMetadata(
+                        storageEntityId,
+                        schema,
+                        table))
+                : storageEntities;
 
         GraphName = graphName;
         GraphEdgeLabel = graphEdgeLabel;
@@ -99,6 +133,16 @@ public sealed class MutationEntityMetadata
         GraphToColumn = graphToColumn;
         GraphFromFieldId = graphFromFieldId;
         GraphToFieldId = graphToFieldId;
+    }
+
+    public bool IsNavigationField(
+        ushort fieldId)
+    {
+        return _fields.Values
+            .SelectMany(x => x)
+            .Any(x =>
+                x.FieldId == fieldId &&
+                x.IsNavigationKey);
     }
 
     /// <summary>
@@ -112,7 +156,6 @@ public sealed class MutationEntityMetadata
     {
         return _fields.TryGetValue(fieldId, out targets);
     }
-
     /// <summary>
     /// Convenience for callers that only care about a single target
     /// (e.g. graph-edge key fields, which never fan out). Returns the

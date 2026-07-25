@@ -6,17 +6,23 @@
         <OutputType>Library</OutputType>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <EnableEntityForeignKeyEmitter>true</EnableEntityForeignKeyEmitter>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\CoffeeBeanery.GraphQL.Core.Mapping.Generators\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj"
+
+        <ProjectReference Include="..\..\..\Domain\CoffeeBeanery\CoffeeBeanery.csproj" />
+
+        <ProjectReference Include="..\..\..\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj"
                           OutputItemType="Analyzer"
                           ReferenceOutputAssembly="false" />
+
+        <ProjectReference Include="..\Database.Graph\Database.Graph.csproj" />
+
     </ItemGroup>
-    
+
     <ItemGroup>
-      <ProjectReference Include="..\..\..\Domain\CoffeeBeanery\CoffeeBeanery.csproj" />
-      <ProjectReference Include="..\Database.Graph\Database.Graph.csproj" />
+        <CompilerVisibleProperty Include="EnableEntityForeignKeyEmitter" />
     </ItemGroup>
 
     <ItemGroup>

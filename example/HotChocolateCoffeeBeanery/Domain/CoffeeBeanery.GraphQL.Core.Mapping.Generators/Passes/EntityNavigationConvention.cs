@@ -48,58 +48,140 @@ internal static class EntityNavigationConvention
 
         var modelProperties = info.ModelType.GetMembers().OfType<IPropertySymbol>().ToList();
 
-        foreach (var prop in modelProperties)
+foreach (var prop in modelProperties)
+{
+    if (prop.IsStatic)
+        continue;
+
+    var relatedModelType = ResolveElementType(prop.Type);
+    if (relatedModelType == null)
+        continue;
+
+    var childModel = allMappings.FirstOrDefault(m =>
+        m.IsModel &&
+        SymbolEqualityComparer.Default.Equals(m.ModelType, relatedModelType));
+
+    if (childModel == null)
+        continue;
+
+    // ---------------------------------------------------------
+    // Prefer an explicit AliasProperty match.
+    // ---------------------------------------------------------
+
+    var matchingEntity = info.Definition.Entities.FirstOrDefault(e =>
+        e.EntityType != null &&
+        SymbolEqualityComparer.Default.Equals(e.EntityType, childModel.EntityType) &&
+        string.Equals(e.AliasProperty, prop.Name, StringComparison.Ordinal));
+
+    List<INamedTypeSymbol> childEntities;
+
+    if (matchingEntity != null)
+    {
+        childEntities = new List<INamedTypeSymbol>
         {
-            if (prop.IsStatic) continue;
+            matchingEntity.EntityType!
+        };
+    }
+    else
+    {
+        // Fall back to the original convention:
+        // Customer Customer
+        // Account Account
+        if (!string.Equals(prop.Name, relatedModelType.Name, StringComparison.Ordinal))
+            continue;
 
-            var relatedModelType = ResolveElementType(prop.Type);
-            if (relatedModelType == null) continue;
+        childEntities = childModel.Definition.Entities
+            .Where(e => e.EntityType != null)
+            .Select(e => e.EntityType!)
+            .Distinct(SymbolEqualityComparer.Default)
+            .Cast<INamedTypeSymbol>()
+            .ToList();
+    }
 
-            var childModel = allMappings.FirstOrDefault(m =>
-                m.IsModel && SymbolEqualityComparer.Default.Equals(m.ModelType, relatedModelType));
-            if (childModel == null) continue;
+    if (childEntities.Count == 0)
+        continue;
 
-            if (!string.Equals(prop.Name, relatedModelType.Name, StringComparison.Ordinal))
-                continue;
+    var joinPaths = new List<NavigationJoinPath>();
 
-            var isCollection = IsCollection(prop.Type);
-            var childEntities = childModel.Definition.Entities
-                .Where(e => e.EntityType != null)
-                .Select(e => e.EntityType!)
-                .Distinct(SymbolEqualityComparer.Default)
-                .Cast<INamedTypeSymbol>()
-                .ToList();
+    foreach (var targetEntity in childEntities)
+    {
+        var path = FindPathFromAnyParent(targetEntity);
+        if (path == null)
+            continue;
 
-            if (childEntities.Count == 0)
-                continue;
+        joinPaths.Add(new NavigationJoinPath
+        {
+            TargetEntity = targetEntity,
+            Hops = path
+        });
+    }
 
-            var joinPaths = new List<NavigationJoinPath>();
+    if (joinPaths.Count == 0)
+        continue;
 
-            foreach (var targetEntity in childEntities)
-            {
-                var path = FindPathFromAnyParent(targetEntity);
-                if (path == null) continue;
+    result.Navigations.Add(new NavigationInfo
+    {
+        NavigationName = prop.Name,
+        TargetModel = relatedModelType,
+        RelatedEntityType = childModel.EntityType,
+        IsCollection = IsCollection(prop.Type),
+        TargetIsRoot = childEntities.Any(rootEntityTypes.Contains),
+        JoinPaths = joinPaths
+    });
+}
 
-                joinPaths.Add(new NavigationJoinPath
-                {
-                    TargetEntity = targetEntity,
-                    Hops = path
-                });
-            }
+foreach (var child in info.ModelChildren)
+{
+    if (result.Navigations.Any(x =>
+            string.Equals(x.NavigationName, child.NavigationName, StringComparison.Ordinal)))
+        continue;
 
-            if (joinPaths.Count == 0)
-                continue;
+    var childModel = allMappings.FirstOrDefault(m =>
+        m.IsModel &&
+        string.Equals(m.ModelType.Name, child.To, StringComparison.Ordinal));
 
-            result.Navigations.Add(new NavigationInfo
-            {
-                NavigationName = prop.Name,
-                TargetModel = relatedModelType,
-                RelatedEntityType = childModel.EntityType,
-                IsCollection = isCollection,
-                TargetIsRoot = childEntities.Any(rootEntityTypes.Contains),
-                JoinPaths = joinPaths
-            });
-        }
+    if (childModel == null)
+        continue;
+
+    var childEntities = childModel.Definition.Entities
+        .Where(e => e.EntityType != null)
+        .Select(e => e.EntityType!)
+        .Distinct(SymbolEqualityComparer.Default)
+        .Cast<INamedTypeSymbol>()
+        .ToList();
+
+    if (childEntities.Count == 0)
+        continue;
+
+    var joinPaths = new List<NavigationJoinPath>();
+
+    foreach (var targetEntity in childEntities)
+    {
+        var path = FindPathFromAnyParent(targetEntity);
+
+        if (path == null)
+            continue;
+
+        joinPaths.Add(new NavigationJoinPath
+        {
+            TargetEntity = targetEntity,
+            Hops = path
+        });
+    }
+
+    if (joinPaths.Count == 0)
+        continue;
+
+    result.Navigations.Add(new NavigationInfo
+    {
+        NavigationName = child.NavigationName,
+        TargetModel = childModel.ModelType,
+        RelatedEntityType = childModel.EntityType,
+        IsCollection = false,
+        TargetIsRoot = childEntities.Any(rootEntityTypes.Contains),
+        JoinPaths = joinPaths
+    });
+}
 
         foreach (var link in info.Definition.Entities)
         {
@@ -115,8 +197,6 @@ internal static class EntityNavigationConvention
                 NavigationName = link.AliasProperty,
                 TargetModel = link.EntityType,
                 RelatedEntityType = link.EntityType,
-                ForeignKeyProperty = link.AliasProperty + "Id",
-                PrincipalKeyProperty = link.EntityType!.Name + "Key",
                 IsCollection = false,
                 TargetIsRoot = rootEntityTypes.Contains(link.EntityType),
                 JoinPaths = path != null

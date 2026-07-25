@@ -248,6 +248,9 @@ namespace Database.Entity.Banking.Migrations
                     b.Property<int?>("AccountId")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("AccountKey")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal?>("Amount")
                         .HasColumnType("numeric");
 
@@ -256,6 +259,9 @@ namespace Database.Entity.Banking.Migrations
 
                     b.Property<int?>("ContractId")
                         .HasColumnType("integer");
+
+                    b.Property<Guid?>("ContractKey")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("ProcessedDateTime")
                         .ValueGeneratedOnAdd()

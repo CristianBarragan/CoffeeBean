@@ -3,10 +3,15 @@
 public sealed record MappingDefinition
 {
     public required Type Model { get; init; }
-    
-    public string? MutationName { get; set; }
+
+    public string? MutationName { get; init; }
 
     public string? Schema { get; init; }
+
+
+    public string? FromColumn { get; set; } = string.Empty;
+
+    public string? ToColumn { get; set; } = string.Empty;
 
     public IReadOnlyList<EntityDefinition> Entities { get; init; } = [];
 
@@ -15,13 +20,13 @@ public sealed record MappingDefinition
     public IReadOnlyList<PrimaryKeyDefinition> PrimaryKey { get; init; } = [];
 
     public IReadOnlyList<UpsertKeyDefinition> UpsertKeys { get; init; } = [];
-    
+
     public MutationDefinition? Mutation { get; init; }
 
     public GraphDefinition? Graph { get; init; }
 
     public IReadOnlyList<NavigationDefinition> Navigations { get; init; } = [];
-    
+
     public IReadOnlyList<ForeignKeyDefinition> ForeignKeys { get; init; } = [];
 }
 
@@ -83,8 +88,8 @@ public sealed record PrimaryKeyDefinition
 {
     public required Type Entity { get; init; }
 
-    public required string ModelKey { get; init; }
-    
+    // public required string ModelKey { get; init; }
+
     public required string ColumnKey { get; init; }
 }
 

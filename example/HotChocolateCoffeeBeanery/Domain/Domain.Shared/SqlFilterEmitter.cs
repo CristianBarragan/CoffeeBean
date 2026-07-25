@@ -73,12 +73,12 @@ public sealed class SqlFilterEmitter
 
         return filter.Operator switch
         {
-            FilterOperator.Eq =>
-                $"{alias}.\"{column}\" = @{_parameters.Add(filter.Value)}",
-
-
-            FilterOperator.Neq =>
-                $"{alias}.\"{column}\" <> @{_parameters.Add(filter.Value)}",
+            // FilterOperator.Eq =>
+            //     $"{alias}.\"{column}\" = @{_parameters.Add(filter.Value)}",
+            //
+            //
+            // FilterOperator.Neq =>
+            //     $"{alias}.\"{column}\" <> @{_parameters.Add(filter.Value)}",
 
 
             FilterOperator.In =>

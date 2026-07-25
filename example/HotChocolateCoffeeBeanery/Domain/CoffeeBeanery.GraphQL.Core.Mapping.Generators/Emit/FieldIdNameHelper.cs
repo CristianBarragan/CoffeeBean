@@ -19,3 +19,18 @@ internal static class FieldIdNameHelper
         return field.SourceName;
     }
 }
+
+internal static class GeneratedIdentifierHelper
+{
+    public static string Field(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "_";
+
+        if (name.Length == 1)
+            return name.ToUpperInvariant();
+
+        return char.ToUpperInvariant(name[0]) +
+               name.Substring(1);
+    }
+}
