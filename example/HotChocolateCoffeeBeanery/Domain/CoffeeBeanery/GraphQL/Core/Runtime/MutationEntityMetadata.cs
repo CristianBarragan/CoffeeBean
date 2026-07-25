@@ -62,7 +62,7 @@ public sealed class MutationEntityMetadata
     public ushort StorageEntityId { get; }
     public string Schema { get; }
     public string Table { get; }
-
+    
     public ImmutableArray<MutationStorageEntityMetadata> StorageEntities { get; }
     public bool IsRoot { get; }
     public MutationKind Kind { get; }
@@ -144,7 +144,7 @@ public sealed class MutationEntityMetadata
                 x.FieldId == fieldId &&
                 x.IsNavigationKey);
     }
-
+    
     /// <summary>
     /// Resolves all destination targets for a FieldId. Most fields have
     /// exactly one target; composite models (e.g. Product.Amount ->

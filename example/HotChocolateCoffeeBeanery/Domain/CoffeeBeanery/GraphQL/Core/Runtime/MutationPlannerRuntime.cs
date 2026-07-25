@@ -135,130 +135,130 @@ public static class MutationPlannerRuntime
     in MutationIR node,
     ref MutationPlanBuilder builder,
     MutationEntityMetadata metadata)
+{
+    string? fromKey = null;
+    string? toKey = null;
+    string? edgeKey = null;
+
+    var values =
+        ImmutableArray.CreateBuilder<FieldValue>();
+
+    var edgeProperties =
+        ImmutableDictionary.CreateBuilder<string, string>(
+            StringComparer.OrdinalIgnoreCase);
+
+
+    foreach (var value in node.Values)
     {
-        string? fromKey = null;
-        string? toKey = null;
-        string? edgeKey = null;
-
-        var values =
-            ImmutableArray.CreateBuilder<FieldValue>();
-
-        var edgeProperties =
-            ImmutableDictionary.CreateBuilder<string, string>(
-                StringComparer.OrdinalIgnoreCase);
-
-
-        foreach (var value in node.Values)
+        if (value.EntityId != metadata.EntityId &&
+            !metadata.IsNavigationField(value.FieldId))
         {
-            if (value.EntityId != metadata.EntityId &&
-                !metadata.IsNavigationField(value.FieldId))
-            {
-                continue;
-            }
-
-
-            if (!metadata.TryResolveField(
-                    value.FieldId,
-                    out var field))
-            {
-                continue;
-            }
-
-
-            values.Add(
-                new FieldValue(
-                    value.EntityId,
-                    value.FieldId,
-                    field.ColumnId,
-                    value.RawValue));
-
-
-            //
-            // Resolve graph endpoints from navigation metadata.
-            //
-            if (metadata.GraphFromFieldId.HasValue &&
-                value.FieldId == metadata.GraphFromFieldId.Value)
-            {
-                fromKey = value.RawValue;
-            }
-
-
-            if (metadata.GraphToFieldId.HasValue &&
-                value.FieldId == metadata.GraphToFieldId.Value)
-            {
-                toKey = value.RawValue;
-            }
-
-
-            //
-            // Edge primary key.
-            //
-            if (field.IsPrimaryKey)
-            {
-                edgeKey = value.RawValue;
-                continue;
-            }
-
-
-            //
-            // Edge properties only.
-            //
-            if (!field.IsNavigationKey)
-            {
-                edgeProperties[
-                    field.ColumnId.ToString()] =
-                        value.RawValue;
-            }
+            continue;
         }
 
 
-        if (metadata.GraphName != null &&
-            metadata.GraphEdgeLabel != null)
+        if (!metadata.TryResolveField(
+                value.FieldId,
+                out var field))
         {
-            if (fromKey == null || toKey == null)
-            {
-                throw new InvalidOperationException(
-                    $"Graph edge '{metadata.GraphEdgeLabel}' is missing endpoint keys. " +
-                    $"From='{fromKey}', To='{toKey}'. " +
-                    $"Expected fields: " +
-                    $"From={metadata.GraphFromFieldId}, " +
-                    $"To={metadata.GraphToFieldId}");
-            }
-
-
-            builder.AddGraphMerge(
-                metadata.GraphName,
-                metadata.GraphEdgeLabel,
-
-                metadata.GraphFromVertex!,
-                metadata.GraphFromColumn!,
-                fromKey,
-
-                metadata.GraphToVertex!,
-                metadata.GraphToColumn!,
-                toKey,
-
-                metadata.PrimaryColumns.Length > 0
-                    ? metadata.PrimaryColumns[0]
-                    : string.Empty,
-
-                edgeKey,
-
-                edgeProperties.ToImmutable());
+            continue;
         }
 
 
-        builder.AddCteRoot(
-            new MutationCteNode(
-                metadata.EntityId,
-                metadata.StorageEntityId,
-                node.OutputAlias,
-                values.ToImmutable(),
-                ImmutableArray<MutationCteNode>.Empty,
-                metadata.Schema,
-                metadata.Table,
-                metadata.PrimaryColumns));
+        values.Add(
+            new FieldValue(
+                value.EntityId,
+                value.FieldId,
+                field.ColumnId,
+                value.RawValue));
+
+
+        //
+        // Resolve graph endpoints from navigation metadata.
+        //
+        if (metadata.GraphFromFieldId.HasValue &&
+            value.FieldId == metadata.GraphFromFieldId.Value)
+        {
+            fromKey = value.RawValue;
+        }
+
+
+        if (metadata.GraphToFieldId.HasValue &&
+            value.FieldId == metadata.GraphToFieldId.Value)
+        {
+            toKey = value.RawValue;
+        }
+
+
+        //
+        // Edge primary key.
+        //
+        if (field.IsPrimaryKey)
+        {
+            edgeKey = value.RawValue;
+            continue;
+        }
+
+
+        //
+        // Edge properties only.
+        //
+        if (!field.IsNavigationKey)
+        {
+            edgeProperties[
+                field.ColumnId.ToString()] =
+                    value.RawValue;
+        }
     }
+
+
+    if (metadata.GraphName != null &&
+        metadata.GraphEdgeLabel != null)
+    {
+        if (fromKey == null || toKey == null)
+        {
+            throw new InvalidOperationException(
+                $"Graph edge '{metadata.GraphEdgeLabel}' is missing endpoint keys. " +
+                $"From='{fromKey}', To='{toKey}'. " +
+                $"Expected fields: " +
+                $"From={metadata.GraphFromFieldId}, " +
+                $"To={metadata.GraphToFieldId}");
+        }
+
+
+        builder.AddGraphMerge(
+            metadata.GraphName,
+            metadata.GraphEdgeLabel,
+
+            metadata.GraphFromVertex!,
+            metadata.GraphFromColumn!,
+            fromKey,
+
+            metadata.GraphToVertex!,
+            metadata.GraphToColumn!,
+            toKey,
+
+            metadata.PrimaryColumns.Length > 0
+                ? metadata.PrimaryColumns[0]
+                : string.Empty,
+
+            edgeKey,
+
+            edgeProperties.ToImmutable());
+    }
+
+
+    builder.AddCteRoot(
+        new MutationCteNode(
+            metadata.EntityId,
+            metadata.StorageEntityId,
+            node.OutputAlias,
+            values.ToImmutable(),
+            ImmutableArray<MutationCteNode>.Empty,
+            metadata.Schema,
+            metadata.Table,
+            metadata.PrimaryColumns));
+}
 
 
     private static void AddRow(

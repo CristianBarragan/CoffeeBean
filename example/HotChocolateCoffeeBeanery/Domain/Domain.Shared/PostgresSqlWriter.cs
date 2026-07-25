@@ -1084,8 +1084,7 @@ public sealed class PostgresSqlWriter
                 return join.ToOutputAlias;
             }
         }
-
-
+        
         throw new InvalidOperationException(
             $"Cannot resolve join alias. Entity={entityId}, Storage={storageEntityId}");
     }
@@ -1232,33 +1231,21 @@ public sealed class PostgresSqlWriter
             return;
         }
 
-
-
         sb.Append(" ON CONFLICT (");
-
-
 
         for (var i = 0; i < conflictCols.Length; i++)
         {
             if (i > 0)
                 sb.Append(", ");
 
-
             sb.Append('"')
                 .Append(conflictCols[i])
                 .Append('"');
         }
 
-
-
         sb.Append(") DO UPDATE SET ");
 
-
-
-        var updates =
-            new List<string>();
-
-
+        var updates = new List<string>();
 
         foreach (var value in values)
         {
@@ -1268,41 +1255,28 @@ public sealed class PostgresSqlWriter
                     storageEntityId,
                     value.FieldId);
 
-
-
-            if (conflictCols.Any(x =>
+            var conflict =
+                conflictCols.Any(x =>
                     string.Equals(
                         x,
                         columnName,
                         StringComparison.OrdinalIgnoreCase));
 
-
             if (conflict)
                 continue;
-
 
             updates.Add(
                 $"\"{columnName}\" = EXCLUDED.\"{columnName}\"");
         }
 
-
         if (updates.Count == 0)
         {
-            sb.Length -=
-                " DO UPDATE SET ".Length;
-
-
+            sb.Length -= " DO UPDATE SET ".Length;
             sb.Append(" DO NOTHING");
-
-
             return;
         }
 
-
-
         sb.Append(
-            string.Join(
-                ", ",
-                updates));
+            string.Join(", ", updates));
     }
 }

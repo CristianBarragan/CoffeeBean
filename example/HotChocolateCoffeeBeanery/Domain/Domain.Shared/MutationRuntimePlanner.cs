@@ -271,7 +271,7 @@ public static class MutationRuntimePlanner
 
                 if (field.IsPrimaryKey)
                     continue;
-
+                
                 edgeProperties[field.FieldName] =
                     value.RawValue;
             }
@@ -294,3 +294,4 @@ public static class MutationRuntimePlanner
             edgeProperties.ToImmutable());
     }
 }
+    

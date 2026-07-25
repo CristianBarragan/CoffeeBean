@@ -125,7 +125,7 @@ internal static class QueryMaterializerEmitter
         sb.AppendLine("    }");
         sb.AppendLine("}");
     }
-
+    
     private static string ReadValue(FieldInfo field)
     {
         var type = field.PropertyType;
@@ -180,101 +180,101 @@ internal static class QueryMaterializerEmitter
     private static void EmitResultBuilder(
     StringBuilder sb,
     MappingClassInfo info)
+{
+    var model = info.ModelType!.Name;
+
+    sb.AppendLine($"public static class {model}ResultBuilder");
+    sb.AppendLine("{");
+
+    sb.AppendLine($"    public static List<{model}> Build(");
+    sb.AppendLine("        RowLayout layout,");
+    sb.AppendLine("        List<object?[]> rows)");
+    sb.AppendLine("    {");
+
+    sb.AppendLine($"        var results = new List<{model}>();");
+    sb.AppendLine();
+
+    sb.AppendLine("        foreach (var row in rows)");
+    sb.AppendLine("        {");
+
+    sb.AppendLine($"            var model = new {model}();");
+    sb.AppendLine();
+
+    sb.AppendLine($"            var rootIndex = layout.IndexOf(\"{model}\");");
+    sb.AppendLine("            if (rootIndex >= 0 && row[rootIndex] != null)");
+    sb.AppendLine("            {");
+    sb.AppendLine($"                model = ({model})row[rootIndex]!;");
+    sb.AppendLine("            }");
+    sb.AppendLine();
+
+    var emittedProperties = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    var children =
+        info.ModelChildren
+            .Where(x => x.To != "GraphModel")
+            .ToList();
+
+    foreach (var child in children)
     {
-        var model = info.ModelType!.Name;
+        var property = ResolveNavigationProperty(info, child.NavigationName);
 
-        sb.AppendLine($"public static class {model}ResultBuilder");
-        sb.AppendLine("{");
+        if (property == null)
+            continue;
 
-        sb.AppendLine($"    public static List<{model}> Build(");
-        sb.AppendLine("        RowLayout layout,");
-        sb.AppendLine("        List<object?[]> rows)");
-        sb.AppendLine("    {");
+        if (!emittedProperties.Add(property))
+            continue;
 
-        sb.AppendLine($"        var results = new List<{model}>();");
+        var variable = "childIndex_" + property;
+
+        // Use the navigation alias (e.g. "InnerCustomer"/"OuterCustomer"),
+        // not the target model name (e.g. "Customer") — RowLayout
+        // segments are keyed by output alias. Two navigations to the
+        // same target model (as here, both to Customer) would otherwise
+        // collide on the same layout.IndexOf("Customer") lookup and
+        // both resolve to the same (or no) segment.
+        sb.AppendLine($"            var {variable} = layout.IndexOf(\"{child.NavigationName}\");");
         sb.AppendLine();
 
-        sb.AppendLine("        foreach (var row in rows)");
-        sb.AppendLine("        {");
-
-        sb.AppendLine($"            var model = new {model}();");
-        sb.AppendLine();
-
-        sb.AppendLine($"            var rootIndex = layout.IndexOf(\"{model}\");");
-        sb.AppendLine("            if (rootIndex >= 0 && row[rootIndex] != null)");
+        sb.AppendLine($"            if ({variable} >= 0 && row[{variable}] != null)");
         sb.AppendLine("            {");
-        sb.AppendLine($"                model = ({model})row[rootIndex]!;");
-        sb.AppendLine("            }");
-        sb.AppendLine();
 
-        var emittedProperties = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var propertySymbol =
+            info.ModelType!
+                .GetMembers()
+                .OfType<IPropertySymbol>()
+                .FirstOrDefault(x => x.Name == property);
 
-        var children =
-            info.ModelChildren
-                .Where(x => x.To != "GraphModel")
-                .ToList();
-
-        foreach (var child in children)
+        if (propertySymbol != null &&
+            propertySymbol.Type is INamedTypeSymbol named &&
+            named.IsGenericType &&
+            (
+                named.ConstructedFrom.ToDisplayString() == "System.Collections.Generic.List<T>" ||
+                named.ConstructedFrom.ToDisplayString() == "System.Collections.Generic.ICollection<T>" ||
+                named.ConstructedFrom.ToDisplayString() == "System.Collections.Generic.IEnumerable<T>"
+            ))
         {
-            var property = ResolveNavigationProperty(info, child.NavigationName);
-
-            if (property == null)
-                continue;
-
-            if (!emittedProperties.Add(property))
-                continue;
-
-            var variable = "childIndex_" + property;
-
-            // Use the navigation alias (e.g. "InnerCustomer"/"OuterCustomer"),
-            // not the target model name (e.g. "Customer") — RowLayout
-            // segments are keyed by output alias. Two navigations to the
-            // same target model (as here, both to Customer) would otherwise
-            // collide on the same layout.IndexOf("Customer") lookup and
-            // both resolve to the same (or no) segment.
-            sb.AppendLine($"            var {variable} = layout.IndexOf(\"{child.NavigationName}\");");
-            sb.AppendLine();
-
-            sb.AppendLine($"            if ({variable} >= 0 && row[{variable}] != null)");
-            sb.AppendLine("            {");
-
-            var propertySymbol =
-                info.ModelType!
-                    .GetMembers()
-                    .OfType<IPropertySymbol>()
-                    .FirstOrDefault(x => x.Name == property);
-
-            if (propertySymbol != null &&
-                propertySymbol.Type is INamedTypeSymbol named &&
-                named.IsGenericType &&
-                (
-                    named.ConstructedFrom.ToDisplayString() == "System.Collections.Generic.List<T>" ||
-                    named.ConstructedFrom.ToDisplayString() == "System.Collections.Generic.ICollection<T>" ||
-                    named.ConstructedFrom.ToDisplayString() == "System.Collections.Generic.IEnumerable<T>"
-                ))
-            {
-                sb.AppendLine($"                model.{property}.Add(({child.To})row[{variable}]!);");
-            }
-            else
-            {
-                sb.AppendLine($"                model.{property} = ({child.To})row[{variable}]!;");
-            }
-
-            sb.AppendLine("            }");
-            sb.AppendLine();
+            sb.AppendLine($"                model.{property}.Add(({child.To})row[{variable}]!);");
+        }
+        else
+        {
+            sb.AppendLine($"                model.{property} = ({child.To})row[{variable}]!;");
         }
 
-        sb.AppendLine("            results.Add(model);");
-        sb.AppendLine("        }");
+        sb.AppendLine("            }");
         sb.AppendLine();
-        sb.AppendLine("        return results;");
-        sb.AppendLine("    }");
-        sb.AppendLine("}");
     }
 
-    private static string? ResolveNavigationProperty(
-    MappingClassInfo info,
-    string navigation)
+    sb.AppendLine("            results.Add(model);");
+    sb.AppendLine("        }");
+    sb.AppendLine();
+    sb.AppendLine("        return results;");
+    sb.AppendLine("    }");
+    sb.AppendLine("}");
+}
+    
+        private static string? ResolveNavigationProperty(
+        MappingClassInfo info,
+        string navigation)
     {
         var property =
             info.ModelType!

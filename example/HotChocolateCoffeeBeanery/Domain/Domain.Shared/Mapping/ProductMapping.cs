@@ -11,8 +11,6 @@ public partial class ProductMapping : IMappingDefinition
         Model = typeof(Product),
         MutationName = nameof(Product),
 
-        MutationName = nameof(Product),
-
         Entities =
         [
             new()

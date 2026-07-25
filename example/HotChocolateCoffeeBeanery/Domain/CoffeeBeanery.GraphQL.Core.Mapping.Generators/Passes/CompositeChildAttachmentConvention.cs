@@ -45,13 +45,112 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
 
         public static void Apply(
     MappingClassInfo info,
-    System.Collections.Immutable.ImmutableArray<MappingClassInfo> allMappings,
+    ImmutableArray<MappingClassInfo> allMappings,
     List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
 {
     if (info.Graph != null)
         return;
 
-    // ... existing modelIndex / navigations / AutoChildAttachments block unchanged ...
+    if (info.ModelType == null)
+        return;
+
+    var modelIndex = allMappings
+        .Where(m => m.ModelType != null)
+        .ToDictionary(
+            m => m.ModelType!.Name,
+            m => m,
+            StringComparer.Ordinal);
+
+    var existingFieldNames = new HashSet<string>(
+        info.AutoChildAttachments.Select(a => a.FieldName),
+        StringComparer.OrdinalIgnoreCase);
+
+    var anchor = info.Definition.Entities.FirstOrDefault(e => e.IsPrimary);
+
+    foreach (var nav in DiscoverNavigations(info.ModelType))
+    {
+        // Skip self-references.
+        if (SymbolEqualityComparer.Default.Equals(nav.TargetType, info.ModelType))
+            continue;
+
+        // Skip the Wrapper root payload container.
+        if (string.Equals(nav.TargetType.Name, "Wrapper", StringComparison.Ordinal))
+            continue;
+
+        // Skip fields already claimed by a hand-written ChildAttachment.
+        if (existingFieldNames.Contains(nav.PropertyName))
+            continue;
+
+        if (!modelIndex.TryGetValue(nav.TargetType.Name, out var childMapping))
+            continue;
+
+        if (childMapping.ModelType == null)
+            continue;
+
+        // Only apply this convention to composite targets — models with no
+        // single EF navigation property EntityNavigationConvention can resolve.
+        if (!childMapping.IsComposite)
+            continue;
+
+        // Convention: "{ParentModel.Name}Key" must exist on the parent's own
+        // primary entity...
+        var parentKeyPropertyName = info.ModelType.Name + "Key";
+
+        var parentEntityType = anchor?.EntityType;
+
+        string? parentJoinColumn = null;
+
+        if (parentEntityType != null)
+        {
+            var parentProp = parentEntityType.GetMembers()
+                .OfType<IPropertySymbol>()
+                .FirstOrDefault(p =>
+                    string.Equals(p.Name, parentKeyPropertyName, StringComparison.OrdinalIgnoreCase));
+
+            parentJoinColumn = parentProp?.Name;
+        }
+
+        // ...and some entity in the related model's composition must carry
+        // that same column name.
+        INamedTypeSymbol? childEntityType = null;
+        string? childJoinColumn = null;
+
+        if (parentJoinColumn != null)
+        {
+            foreach (var childEntity in childMapping.Definition.Entities)
+            {
+                if (childEntity.EntityType == null)
+                    continue;
+
+                var childProp = childEntity.EntityType.GetMembers()
+                    .OfType<IPropertySymbol>()
+                    .FirstOrDefault(p =>
+                        string.Equals(p.Name, parentJoinColumn, StringComparison.OrdinalIgnoreCase));
+
+                if (childProp != null)
+                {
+                    childEntityType = childEntity.EntityType;
+                    childJoinColumn = childProp.Name;
+                    break;
+                }
+            }
+        }
+
+        // Per the docstring: if neither side matches, still register the
+        // attachment as unresolved (blank join columns) rather than skip it —
+        // NodeBuilder.BuildEdges silently no-ops unresolved attachments.
+        info.AutoChildAttachments.Add(new AutoChildAttachmentInfo
+        {
+            FieldName = nav.PropertyName,
+            ToModelName = childMapping.ModelType.Name,
+            ParentEntityType = parentEntityType!,
+            ChildEntityType = childEntityType ?? parentEntityType!,
+            ParentJoinColumn = parentJoinColumn ?? string.Empty,
+            ChildJoinColumn = childJoinColumn ?? string.Empty
+        });
+
+        existingFieldNames.Add(nav.PropertyName);
+    }
 
     if (info.IsComposite)
     {

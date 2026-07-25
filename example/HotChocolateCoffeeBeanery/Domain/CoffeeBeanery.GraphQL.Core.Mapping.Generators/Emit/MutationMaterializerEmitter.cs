@@ -119,15 +119,6 @@ internal static class MutationMaterializerEmitter
             sb.AppendLine(
                 $"        var {variable} = {ConvertToRaw(representative)};");
             sb.AppendLine();
-            // Only emit a FieldValue when the model actually has a value for
-            // this field. A null here means the client never supplied it (or
-            // it was never set) — writing it as "" instead of omitting it
-            // entirely corrupts non-string columns (enums, ints, dates) with
-            // an invalid empty-string literal. Omitting lets the column's
-            // existing value / DB default stand, matching "field not touched"
-            // semantics rather than "field explicitly cleared".
-            sb.AppendLine($"        if ({variable} is not null)");
-            sb.AppendLine("        {");
 
             sb.AppendLine(
                 $"        if ({variable} is not null)");

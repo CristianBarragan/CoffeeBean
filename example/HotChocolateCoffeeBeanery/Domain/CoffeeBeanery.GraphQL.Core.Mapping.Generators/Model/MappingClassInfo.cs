@@ -6,20 +6,20 @@ using Microsoft.CodeAnalysis;
 
 namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 {
-
+    
     public sealed class MappingClassInfo
     {
         public INamedTypeSymbol ClassSymbol { get; set; } = null!;
 
         // Graph/model type
         public INamedTypeSymbol ModelType { get; set; } = null!;
-
+        
         public bool IsComposite { get; set; }
 
         // Primary Entity type — derived from Definition.Entities where IsPrimary = true.
         // Set explicitly by MappingClassParser after ParseEntities runs.
         public INamedTypeSymbol? EntityType { get; set; }
-
+        
         public IReadOnlyList<EntityDefinitionInfo> ModelToEntity
             => Definition.Entities;
 
@@ -44,7 +44,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public bool IsGraph { get; set; }
 
         public GraphInfo? Graph { get; set; }
-
+        
         public MappingDefinitionInfo Definition { get; set; } = new MappingDefinitionInfo();
 
         public List<FieldInfo> FieldMaps { get; } = new();
@@ -66,7 +66,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public List<CteUpdateMetaInfo> CteUpdateMeta { get; } = new();
 
         public string Id { get; set; } = "";
-
+        
         /// <summary>
         /// Creates an independent copy for pipelines (like the global emitter)
         /// that must not mutate the shared instance produced by the per-class
@@ -105,7 +105,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
             return copy;
         }
     }
-
+    
     public sealed class CompositeStorageJoinInfo
     {
         public INamedTypeSymbol ParentEntityType { get; init; } = null!;
@@ -120,7 +120,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public string From { get; set; } = "";
 
         public string AliasFrom { get; set; } = "";
-
+        
         public string? AliasProperty { get; set; }
 
         public string? FromColumn { get; set; }
@@ -135,7 +135,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         public bool IsPrimary { get; set; }
     }
-
+    
     public sealed record NavigationDefinitionInfo
     {
         public required string NavigationName { get; set; }
@@ -275,7 +275,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
     public sealed class NavigationInfo
     {
         public required string NavigationName { get; init; }
-        public INamedTypeSymbol? TargetModel { get; init; }
+        public INamedTypeSymbol? TargetModel { get; init; }  
         public INamedTypeSymbol? RelatedEntityType { get; init; }
         public string? ForeignKeyProperty { get; init; }     // kept for simple/alias cases
         public string? PrincipalKeyProperty { get; init; }
@@ -284,7 +284,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public bool FkOwnedByDeclaringEntity { get; init; }
         public List<NavigationJoinPath> JoinPaths { get; init; } = [];
     }
-
+    
     public sealed class NavigationJoinPath
     {
         public required INamedTypeSymbol TargetEntity { get; init; }
@@ -299,8 +299,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         public List<Diagnostic> PendingDiagnostics { get; } = new();
     }
-
-
+    
+    
 
     public sealed record MappingDefinitionInfo
     {
@@ -319,7 +319,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         public GraphDefinitionInfo? Graph { get; set; }
     }
-
+    
     public sealed record PrimaryKeyDefinitionInfo
     {
         public required INamedTypeSymbol Entity { get; set; }
