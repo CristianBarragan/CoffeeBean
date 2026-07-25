@@ -23,22 +23,17 @@ internal static class ColumnIdResolver
         var storageEntityName =
             IdEmitter.StripEntitySuffix(entityName);
 
-        if (string.Equals(
-                columnName,
-                "Id",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return "0";
-        }
 
         if (string.Equals(
                 columnName,
                 storageEntityName + "Id",
                 StringComparison.OrdinalIgnoreCase))
         {
-            return "0";
+            return $"ColumnId.{storageEntityName}.Id";
         }
 
-        return $"ColumnId.{storageEntityName}.{columnName}";
+
+        return
+            $"ColumnId.{storageEntityName}.{columnName}";
     }
 }

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CoffeeBeanery.GraphQL.Core.Mapping.Generators")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dabbb51da060931fee387ad1ee6ddb8d906a3e48")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dc91fc2b590b8b9a1c435a961dc2caaa235a1e6a")]
 [assembly: System.Reflection.AssemblyProductAttribute("CoffeeBeanery.GraphQL.Core.Mapping.Generators")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CoffeeBeanery.GraphQL.Core.Mapping.Generators")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

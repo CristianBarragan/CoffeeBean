@@ -1478,17 +1478,37 @@ private static void EmitCteResolutionsArray(
         sb.AppendLine("{");
         sb.AppendLine("    public sealed class GeneratedPlannerRegistry : global::CoffeeBeanery.GraphQL.Core.Runtime.IPlannerRegistry");
         sb.AppendLine("    {");
-        sb.AppendLine("        public void Build(ushort entityId, in global::CoffeeBeanery.GraphQL.Core.Runtime.SelectionIR selection, ref global::CoffeeBeanery.GraphQL.Core.Runtime.QueryPlanBuilder builder)");
-        sb.AppendLine("            => GeneratedPlanners.PlannerRegistry.Build(entityId, selection, ref builder);");
+
+        sb.AppendLine(
+            "        public void Build(ushort entityId, in global::CoffeeBeanery.GraphQL.Core.Runtime.SelectionIR selection, ref global::CoffeeBeanery.GraphQL.Core.Runtime.QueryPlanBuilder builder, bool isRoot)");
+
+        sb.AppendLine(
+            "            => GeneratedPlanners.PlannerRegistry.Build(entityId, selection, ref builder, isRoot);");
+
         sb.AppendLine();
-        sb.AppendLine("        public void BuildMutation(ushort entityId, in global::CoffeeBeanery.GraphQL.Core.Runtime.MutationIR mutation, ref global::CoffeeBeanery.GraphQL.Core.Runtime.MutationPlanBuilder builder)");
-        sb.AppendLine("            => global::CoffeeBeanery.GraphQL.Core.Runtime.MutationRuntimePlanner.Build(entityId, mutation, ref builder);");
+
+        sb.AppendLine(
+            "        public void BuildMutation(ushort entityId, in global::CoffeeBeanery.GraphQL.Core.Runtime.MutationIR mutation, ref global::CoffeeBeanery.GraphQL.Core.Runtime.MutationPlanBuilder builder)");
+
+        sb.AppendLine(
+            "            => global::CoffeeBeanery.GraphQL.Core.Runtime.MutationRuntimePlanner.Build(entityId, mutation, ref builder);");
+
         sb.AppendLine();
-        sb.AppendLine("        public bool IsValidEntity(ushort entityId)");
-        sb.AppendLine("            => GeneratedPlanners.PlannerRegistry.IsValidEntity(entityId);");
+
+        sb.AppendLine(
+            "        public bool IsValidEntity(ushort entityId)");
+
+        sb.AppendLine(
+            "            => GeneratedPlanners.PlannerRegistry.IsValidEntity(entityId);");
+
         sb.AppendLine();
-        sb.AppendLine("        public string GetEntityName(ushort entityId)");
-        sb.AppendLine("            => GeneratedPlanners.PlannerRegistry.GetEntityName(entityId);");
+
+        sb.AppendLine(
+            "        public string GetEntityName(ushort entityId)");
+
+        sb.AppendLine(
+            "            => GeneratedPlanners.PlannerRegistry.GetEntityName(entityId);");
+
         sb.AppendLine("    }");
         sb.AppendLine("}");
     }

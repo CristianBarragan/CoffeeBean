@@ -154,67 +154,73 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
 
     if (info.IsComposite)
     {
-        BuildCompositeStorageJoinInfo(info, entityGraph);
-    }
-}
-
-private static void BuildCompositeStorageJoinInfo(
-    MappingClassInfo info,
-    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
-{
-    var anchor = info.Definition.Entities.FirstOrDefault(e => e.IsPrimary);
-    if (anchor == null)
-        return;
-
-    var compositeTypes = info.Definition.Entities
-        .Select(e => e.EntityType)
-        .ToList();
-
-    var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default) { anchor.EntityType };
-    var queue = new Queue<INamedTypeSymbol>();
-    queue.Enqueue(anchor.EntityType);
-
-    while (queue.Count > 0)
-    {
-        var current = queue.Dequeue();
-
-        foreach (var edge in entityGraph)
+        var anchorDefinition = info.Definition.Entities.FirstOrDefault(e => e.IsPrimary);
+        if (anchorDefinition?.EntityType != null)
         {
-            INamedTypeSymbol? other = null;
-            string? parentColumn = null;
-            string? childColumn = null;
+            var compositeTypes = info.Definition.Entities
+                .Select(e => e.EntityType)
+                .Where(t => t != null)
+                .ToList()!;
 
-            if (SymbolEqualityComparer.Default.Equals(edge.PrincipalEntity, current) &&
-                compositeTypes.Any(t => SymbolEqualityComparer.Default.Equals(t, edge.DependentEntity)))
-            {
-                other = edge.DependentEntity;
-                parentColumn = edge.PrincipalColumn;
-                childColumn = edge.DependentColumn;
-            }
-            else if (SymbolEqualityComparer.Default.Equals(edge.DependentEntity, current) &&
-                     compositeTypes.Any(t => SymbolEqualityComparer.Default.Equals(t, edge.PrincipalEntity)))
-            {
-                other = edge.PrincipalEntity;
-                parentColumn = edge.DependentColumn;
-                childColumn = edge.PrincipalColumn;
-            }
-
-            if (other == null || visited.Contains(other))
-                continue;
-
-            visited.Add(other);
-            queue.Enqueue(other);
-
-            info.CompositeStorageJoinInfo.Add(new CompositeStorageJoinInfo
-            {
-                ParentEntityType = current,
-                ChildEntityType = other,
-                ParentJoinColumn = parentColumn!,
-                ChildJoinColumn = childColumn!
-            });
+            info.CompositeStorageJoinInfo.AddRange(
+                ComputeCompositeJoinChain(anchorDefinition.EntityType, compositeTypes!, entityGraph));
         }
     }
 }
+
+        internal static List<CompositeStorageJoinInfo> ComputeCompositeJoinChain(
+            INamedTypeSymbol startEntity,
+            List<INamedTypeSymbol> compositeTypes,
+            List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+        {
+            var result = new List<CompositeStorageJoinInfo>();
+            var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default) { startEntity };
+            var queue = new Queue<INamedTypeSymbol>();
+            queue.Enqueue(startEntity);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+
+                foreach (var edge in entityGraph)
+                {
+                    INamedTypeSymbol? other = null;
+                    string? parentColumn = null;
+                    string? childColumn = null;
+
+                    if (SymbolEqualityComparer.Default.Equals(edge.PrincipalEntity, current) &&
+                        compositeTypes.Any(t => SymbolEqualityComparer.Default.Equals(t, edge.DependentEntity)))
+                    {
+                        other = edge.DependentEntity;
+                        parentColumn = edge.PrincipalColumn;
+                        childColumn = edge.DependentColumn;
+                    }
+                    else if (SymbolEqualityComparer.Default.Equals(edge.DependentEntity, current) &&
+                             compositeTypes.Any(t => SymbolEqualityComparer.Default.Equals(t, edge.PrincipalEntity)))
+                    {
+                        other = edge.PrincipalEntity;
+                        parentColumn = edge.DependentColumn;
+                        childColumn = edge.PrincipalColumn;
+                    }
+
+                    if (other == null || visited.Contains(other))
+                        continue;
+
+                    visited.Add(other);
+                    queue.Enqueue(other);
+
+                    result.Add(new CompositeStorageJoinInfo
+                    {
+                        ParentEntityType = current,
+                        ChildEntityType = other,
+                        ParentJoinColumn = parentColumn!,
+                        ChildJoinColumn = childColumn!
+                    });
+                }
+            }
+
+            return result;
+        }
         
         private sealed record NavigationInfo(
             string PropertyName,

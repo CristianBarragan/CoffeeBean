@@ -186,7 +186,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                                     relatedEntity);
                         }
 
-
                         results.Add(
                             new DerivedForeignKey(
                                 DeclaringEntityType:
@@ -281,27 +280,46 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
         private static string? FindPrimaryKeyPropertyName(
             INamedTypeSymbol entityType)
         {
-            var id =
+            var properties =
                 entityType.GetMembers()
                     .OfType<IPropertySymbol>()
-                    .FirstOrDefault(x =>
-                        string.Equals(
-                            x.Name,
-                            "Id",
-                            StringComparison.OrdinalIgnoreCase));
+                    .Select(x => x.Name)
+                    .ToList();
 
+
+            // 1. Exact Id
+            var id =
+                properties.FirstOrDefault(x =>
+                    string.Equals(
+                        x,
+                        "Id",
+                        StringComparison.OrdinalIgnoreCase));
 
             if (id != null)
-                return id.Name;
+                return id;
 
 
-            return entityType.GetMembers()
-                .OfType<IPropertySymbol>()
-                .FirstOrDefault(x =>
-                    x.Name.EndsWith(
-                        "Id",
-                        StringComparison.OrdinalIgnoreCase))
-                ?.Name;
+            // 2. EntityName + Key
+            var entityKey =
+                entityType.Name + "Key";
+
+
+            var key =
+                properties.FirstOrDefault(x =>
+                    string.Equals(
+                        x,
+                        entityKey,
+                        StringComparison.OrdinalIgnoreCase));
+
+            if (key != null)
+                return key;
+
+
+            // 3. Any *Key property
+            return properties.FirstOrDefault(x =>
+                x.EndsWith(
+                    "Key",
+                    StringComparison.OrdinalIgnoreCase));
         }
         
                 internal static class EntityGraphPathfinder
@@ -439,164 +457,180 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
 
 
             public static EntityGraphBuildResult Build(
-                Compilation compilation,
-                CancellationToken ct)
+    Compilation compilation,
+    CancellationToken ct)
+{
+    var edges =
+        new List<Edge>();
+
+    var diagnostics =
+        new List<string>();
+
+
+    var attributeType =
+        compilation.GetTypeByMetadataName(
+            "CoffeeBeanery.GraphQL.Core.Mapping.EntityForeignKeyGraphAttribute");
+
+
+    if (attributeType == null)
+    {
+        return new EntityGraphBuildResult(
+            edges,
+            diagnostics);
+    }
+
+
+    AttributeData? found = null;
+
+
+    found =
+        compilation.Assembly
+            .GetAttributes()
+            .FirstOrDefault(a =>
+                SymbolEqualityComparer.Default.Equals(
+                    a.AttributeClass,
+                    attributeType));
+
+
+    if (found == null)
+    {
+        var assemblies =
+            new Queue<IAssemblySymbol>();
+
+        var visited =
+            new HashSet<string>(
+                StringComparer.Ordinal);
+
+
+        foreach (var reference in compilation.References)
+        {
+            if (compilation.GetAssemblyOrModuleSymbol(reference)
+                is IAssemblySymbol assembly)
             {
-                var edges =
-                    new List<Edge>();
-
-                var diagnostics =
-                    new List<string>();
-
-
-                var attributeType =
-                    compilation.GetTypeByMetadataName(
-                        "CoffeeBeanery.GraphQL.Core.Mapping.EntityForeignKeyGraphAttribute");
-
-
-                if (attributeType == null)
-                {
-                    return new EntityGraphBuildResult(
-                        edges,
-                        diagnostics);
-                }
-
-
-                AttributeData? found = null;
-
-
-                found =
-                    compilation.Assembly
-                        .GetAttributes()
-                        .FirstOrDefault(a =>
-                            SymbolEqualityComparer.Default.Equals(
-                                a.AttributeClass,
-                                attributeType));
-
-
-                if (found == null)
-                {
-                    var assemblies =
-                        new Queue<IAssemblySymbol>();
-
-
-                    foreach (var reference in compilation.References)
-                    {
-                        if (compilation.GetAssemblyOrModuleSymbol(reference)
-                            is IAssemblySymbol assembly)
-                        {
-                            assemblies.Enqueue(assembly);
-                        }
-                    }
-
-
-                    var visited =
-                        new HashSet<string>();
-
-
-                    while (assemblies.Count > 0)
-                    {
-                        var assembly =
-                            assemblies.Dequeue();
-
-
-                        if (!visited.Add(
-                                assembly.Name))
-                        {
-                            continue;
-                        }
-
-
-                        found =
-                            assembly.GetAttributes()
-                                .FirstOrDefault(a =>
-                                    a.AttributeClass?.ToDisplayString()
-                                    ==
-                                    "CoffeeBeanery.GraphQL.Core.Mapping.EntityForeignKeyGraphAttribute");
-
-
-                        if (found != null)
-                            break;
-
-
-                        foreach (var reference in assembly.Modules
-                                     .SelectMany(x =>
-                                         x.ReferencedAssemblySymbols))
-                        {
-                            assemblies.Enqueue(reference);
-                        }
-                    }
-                }
-
-
-                if (found == null ||
-                    found.ConstructorArguments.Length == 0)
-                {
-                    return new EntityGraphBuildResult(
-                        edges,
-                        diagnostics);
-                }
-            
-                            var serialized =
-                    found.ConstructorArguments[0].Value
-                    as string;
-
-
-                if (string.IsNullOrWhiteSpace(serialized))
-                {
-                    return new EntityGraphBuildResult(
-                        edges,
-                        diagnostics);
-                }
-
-
-                foreach (var line in serialized.Split(';'))
-                {
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
-
-                    var parts =
-                        line.Split('|');
-
-
-                    if (parts.Length != 4)
-                        continue;
-
-
-                    var dependentType =
-                        compilation.GetTypeByMetadataName(
-                            parts[0]);
-
-
-                    var principalType =
-                        compilation.GetTypeByMetadataName(
-                            parts[2]);
-
-
-                    if (dependentType == null ||
-                        principalType == null)
-                    {
-                        diagnostics.Add(
-                            $"Unable to resolve FK graph types: {parts[0]} -> {parts[2]}");
-
-                        continue;
-                    }
-
-
-                    edges.Add(
-                        new Edge(
-                            dependentType,
-                            parts[1],
-                            principalType,
-                            parts[3]));
-                }
-
-
-                return new EntityGraphBuildResult(
-                    edges,
-                    diagnostics);
+                assemblies.Enqueue(assembly);
             }
+        }
+
+
+        while (assemblies.Count > 0)
+        {
+            ct.ThrowIfCancellationRequested();
+
+
+            var assembly =
+                assemblies.Dequeue();
+
+
+            if (!visited.Add(
+                    assembly.Name))
+            {
+                continue;
+            }
+
+
+            found =
+                assembly.GetAttributes()
+                    .FirstOrDefault(a =>
+                        SymbolEqualityComparer.Default.Equals(
+                            a.AttributeClass,
+                            attributeType));
+
+
+            if (found != null)
+            {
+                break;
+            }
+
+
+            foreach (var reference in assembly.Modules
+                         .SelectMany(x =>
+                             x.ReferencedAssemblySymbols))
+            {
+                assemblies.Enqueue(reference);
+            }
+        }
+    }
+
+
+    if (found == null ||
+        found.ConstructorArguments.Length == 0)
+    {
+        return new EntityGraphBuildResult(
+            edges,
+            diagnostics);
+    }
+
+
+    var serialized =
+        found.ConstructorArguments[0].Value
+        as string;
+
+
+    if (string.IsNullOrWhiteSpace(serialized))
+    {
+        return new EntityGraphBuildResult(
+            edges,
+            diagnostics);
+    }
+
+
+    foreach (var line in serialized.Split(';'))
+    {
+        ct.ThrowIfCancellationRequested();
+
+
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            continue;
+        }
+
+
+        var parts =
+            line.Split('|');
+
+
+        if (parts.Length != 4)
+        {
+            diagnostics.Add(
+                $"Invalid FK graph entry: {line}");
+
+            continue;
+        }
+
+
+        var dependentType =
+            compilation.GetTypeByMetadataName(
+                parts[0]);
+
+
+        var principalType =
+            compilation.GetTypeByMetadataName(
+                parts[2]);
+
+
+        if (dependentType == null ||
+            principalType == null)
+        {
+            diagnostics.Add(
+                $"Unable to resolve FK graph types: {parts[0]} -> {parts[2]}");
+
+            continue;
+        }
+
+
+        edges.Add(
+            new Edge(
+                dependentType,
+                parts[1],
+                principalType,
+                parts[3]));
+    }
+
+
+    return new EntityGraphBuildResult(
+        edges,
+        diagnostics);
+}
         }
 
 

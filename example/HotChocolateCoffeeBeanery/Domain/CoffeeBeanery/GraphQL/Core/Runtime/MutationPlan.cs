@@ -19,14 +19,15 @@ public readonly struct UpsertRow
         string? schemaOverride = null,
         string? tableOverride = null)
     {
-        EntityId        = entityId;
+        EntityId = entityId;
         StorageEntityId = storageEntityId;
         EntityOutputAlias = entityOutputAlias;
-        Values          = values;
-        SchemaOverride  = schemaOverride;
-        TableOverride   = tableOverride;
+        Values = values;
+        SchemaOverride = schemaOverride;
+        TableOverride = tableOverride;
     }
 }
+
 
 public readonly struct CteResolutionSpec
 {
@@ -57,6 +58,7 @@ public readonly struct CteResolutionSpec
     }
 }
 
+
 public readonly struct MutationCteNode
 {
     public readonly ushort EntityId;
@@ -68,6 +70,7 @@ public readonly struct MutationCteNode
     public readonly string? TableOverride;
     public readonly ImmutableArray<string> ConflictColumns;
 
+
     public MutationCteNode(
         ushort entityId,
         ushort storageEntityId,
@@ -78,18 +81,21 @@ public readonly struct MutationCteNode
         string? tableOverride = null,
         ImmutableArray<string> conflictColumns = default)
     {
-        EntityId        = entityId;
+        EntityId = entityId;
         StorageEntityId = storageEntityId;
-        Alias           = alias;
-        Values          = values;
-        Children        = children;
-        SchemaOverride  = schemaOverride;
-        TableOverride   = tableOverride;
-        ConflictColumns = conflictColumns.IsDefault
-            ? ImmutableArray<string>.Empty
-            : conflictColumns;
+        Alias = alias;
+        Values = values;
+        Children = children;
+        SchemaOverride = schemaOverride;
+        TableOverride = tableOverride;
+
+        ConflictColumns =
+            conflictColumns.IsDefault
+                ? ImmutableArray<string>.Empty
+                : conflictColumns;
     }
 }
+
 
 public readonly struct FieldMapSpec
 {
@@ -98,6 +104,7 @@ public readonly struct FieldMapSpec
     public readonly string DestinationName;
     public readonly string SourceAlias;
     public readonly string DestinationAlias;
+
 
     public FieldMapSpec(
         string sourceName,
@@ -114,18 +121,22 @@ public readonly struct FieldMapSpec
     }
 }
 
+
 public readonly struct MutationPlan
 {
     public readonly ImmutableArray<UpsertRow> Rows;
     public readonly ImmutableArray<MutationCteNode> CteRoots;
     public readonly ImmutableArray<GraphMergeSpec> GraphMerges;
 
-    public MutationPlan(ImmutableArray<UpsertRow> rows)
+
+    public MutationPlan(
+        ImmutableArray<UpsertRow> rows)
     {
         Rows = rows;
         CteRoots = ImmutableArray<MutationCteNode>.Empty;
         GraphMerges = ImmutableArray<GraphMergeSpec>.Empty;
     }
+
 
     public MutationPlan(
         ImmutableArray<UpsertRow> rows,
@@ -135,6 +146,7 @@ public readonly struct MutationPlan
         CteRoots = cteRoots;
         GraphMerges = ImmutableArray<GraphMergeSpec>.Empty;
     }
+
 
     public MutationPlan(
         ImmutableArray<UpsertRow> rows,
@@ -146,7 +158,9 @@ public readonly struct MutationPlan
         GraphMerges = graphMerges;
     }
 
+
     public bool HasCte => !CteRoots.IsEmpty;
+
     public bool HasGraphMerges => !GraphMerges.IsEmpty;
 }
 
@@ -160,132 +174,50 @@ public ref struct MutationPlanBuilder
 
     private InlineArray32<GraphMergeSpec> _graphMerges;
     private int _graphMergeCount;
-    
-    private readonly Dictionary<
-        (ushort EntityId, ushort StorageEntityId, string Alias),
-        ImmutableArray<FieldValue>.Builder> _pendingRows = new();
 
-    public void MapField(
-        ushort fieldId,
-        ushort entityId,
-        ushort storageEntityId,
-        ushort columnId)
-    {
-        Console.WriteLine(
-            $"MAP Field={fieldId} Entity={entityId} Storage={storageEntityId} Column={columnId}");
+    private readonly HashSet<GraphMergeKey> _graphMergeKeys;
 
-        _fieldMappings[fieldId] =
-            (entityId, storageEntityId, columnId);
-    }
-    
-    public void AddRowValue(
-        ushort entityId,
-        ushort fieldId,
-        FieldValue value,
-        string alias)
-    {
-        if (!_fieldMappings.TryGetValue(
-                fieldId,
-                out var mapping))
-        {
-            return;
-        }
-
-        var key =
-        (
-            mapping.EntityId,
-            mapping.StorageEntityId,
-            alias
-        );
-
-        if (!_pendingRows.TryGetValue(
-                key,
-                out var values))
-        {
-            values =
-                ImmutableArray.CreateBuilder<FieldValue>();
-
-            _pendingRows[key] = values;
-        }
-
-        if (!values.Any(x => x.FieldId == fieldId))
-        {
-            values.Add(
-                new FieldValue(
-                    mapping.EntityId,
-                    fieldId,
-                    mapping.ColumnId,
-                    value.RawValue));
-        }
-    }
-    
-    public ImmutableArray<FieldValue> GetPendingValues(
-        string alias)
-    {
-        var builder =
-            ImmutableArray.CreateBuilder<FieldValue>();
-
-        foreach (var row in _pendingRows
-                     .OrderBy(x => x.Key.EntityId)
-                     .ThenBy(x => x.Key.StorageEntityId))
-        {
-            if (!string.Equals(
-                    row.Key.Alias,
-                    alias,
-                    StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            builder.AddRange(row.Value);
-        }
-
-        return builder.ToImmutable();
-    }
-    
-    public void FlushRows()
-    {
-        foreach (var row in _pendingRows)
-        {
-            AddRow(
-                row.Key.EntityId,
-                row.Key.StorageEntityId,
-                row.Key.Alias,
-                row.Value.ToImmutable(),
-                null,
-                null);
-        }
-
-
-        _pendingRows.Clear();
-    }
-
-    private readonly Dictionary<
-        ushort,
-        (ushort EntityId, ushort StorageEntityId, ushort ColumnId)> _fieldMappings = new();
 
     public MutationPlanBuilder()
     {
         _rows = default;
         _rowCount = 0;
+
         _cteRoots = default;
         _cteRootCount = 0;
+
         _graphMerges = default;
         _graphMergeCount = 0;
+
+        _graphMergeKeys = new HashSet<GraphMergeKey>();
     }
+
 
     public void AddRow(
-        ushort entityId, ushort storageEntityId, string outputAlias,
+        ushort entityId,
+        ushort storageEntityId,
+        string outputAlias,
         ImmutableArray<FieldValue> values,
-        string? schemaOverride = null, string? tableOverride = null)
+        string? schemaOverride = null,
+        string? tableOverride = null)
     {
-        _rows[_rowCount++] = new UpsertRow(entityId, storageEntityId, outputAlias, values, schemaOverride, tableOverride);
+        _rows[_rowCount++] =
+            new UpsertRow(
+                entityId,
+                storageEntityId,
+                outputAlias,
+                values,
+                schemaOverride,
+                tableOverride);
     }
 
-    public void AddCteRoot(MutationCteNode node)
+
+    public void AddCteRoot(
+        MutationCteNode node)
     {
         _cteRoots[_cteRootCount++] = node;
     }
+
 
     public void AddGraphMerge(
         string graphName,
@@ -298,33 +230,66 @@ public ref struct MutationPlanBuilder
         string toKeyValue,
         string edgeKeyColumn,
         string? edgeKeyValue,
-        ImmutableDictionary<string, string> edgeProperties)
+        ImmutableDictionary<string,string> edgeProperties)
     {
-        _graphMerges[_graphMergeCount++] = new GraphMergeSpec(
-            graphName, edgeLabel,
-            fromLabel, fromKeyColumn, fromKeyValue,
-            toLabel, toKeyColumn, toKeyValue,
-            edgeKeyColumn, edgeKeyValue,
-            edgeProperties);
+        var key =
+            new GraphMergeKey(
+                graphName,
+                edgeLabel,
+                fromLabel,
+                fromKeyColumn,
+                fromKeyValue,
+                toLabel,
+                toKeyColumn,
+                toKeyValue);
+
+
+        if (!_graphMergeKeys.Add(key))
+            return;
+
+
+        _graphMerges[_graphMergeCount++] =
+            new GraphMergeSpec(
+                graphName,
+                edgeLabel,
+                fromLabel,
+                fromKeyColumn,
+                fromKeyValue,
+                toLabel,
+                toKeyColumn,
+                toKeyValue,
+                edgeKeyColumn,
+                edgeKeyValue,
+                edgeProperties);
     }
+
 
     public MutationPlan Build()
     {
-        var rows = ImmutableArray.CreateBuilder<UpsertRow>(_rowCount);
+        var rows =
+            ImmutableArray.CreateBuilder<UpsertRow>(_rowCount);
+
         for (var i = 0; i < _rowCount; i++)
             rows.Add(_rows[i]);
 
-        var graphMerges = ImmutableArray.CreateBuilder<GraphMergeSpec>(_graphMergeCount);
-        for (var i = 0; i < _graphMergeCount; i++)
-            graphMerges.Add(_graphMerges[i]);
 
-        if (_cteRootCount == 0)
-            return new MutationPlan(rows.ToImmutable(), ImmutableArray<MutationCteNode>.Empty, graphMerges.ToImmutable());
+        var ctes =
+            ImmutableArray.CreateBuilder<MutationCteNode>(_cteRootCount);
 
-        var roots = ImmutableArray.CreateBuilder<MutationCteNode>(_cteRootCount);
         for (var i = 0; i < _cteRootCount; i++)
-            roots.Add(_cteRoots[i]);
+            ctes.Add(_cteRoots[i]);
 
-        return new MutationPlan(rows.ToImmutable(), roots.ToImmutable(), graphMerges.ToImmutable());
+
+        var merges =
+            ImmutableArray.CreateBuilder<GraphMergeSpec>(_graphMergeCount);
+
+        for (var i = 0; i < _graphMergeCount; i++)
+            merges.Add(_graphMerges[i]);
+
+
+        return new MutationPlan(
+            rows.ToImmutable(),
+            ctes.ToImmutable(),
+            merges.ToImmutable());
     }
 }

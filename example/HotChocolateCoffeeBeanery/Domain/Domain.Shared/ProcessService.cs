@@ -242,7 +242,8 @@ public sealed class ProcessService<TModel, TResult> :
         _plannerRegistry.Build(
             rootEntityId,
             selectionIr,
-            ref queryBuilder);
+            ref queryBuilder,
+            isRoot: true);
 
 
 
@@ -366,7 +367,8 @@ public sealed class ProcessService<TModel, TResult> :
         _plannerRegistry.Build(
             rootEntityId,
             selectionIr,
-            ref builder);
+            ref builder,
+            isRoot: true);
 
 
 
