@@ -16,6 +16,7 @@ internal static class ColumnIdResolver
         return Resolve(entityName, columnName);
     }
 
+
     public static string Resolve(
         string entityName,
         string columnName)
@@ -24,6 +25,17 @@ internal static class ColumnIdResolver
             IdEmitter.StripEntitySuffix(entityName);
 
 
+        // Primary key of storage entity
+        if (string.Equals(
+                columnName,
+                "Id",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return $"ColumnId.{storageEntityName}.Id";
+        }
+
+
+        // EntityId -> Id FK convention should never emit EntityId
         if (string.Equals(
                 columnName,
                 storageEntityName + "Id",
@@ -33,7 +45,6 @@ internal static class ColumnIdResolver
         }
 
 
-        return
-            $"ColumnId.{storageEntityName}.{columnName}";
+        return $"ColumnId.{storageEntityName}.{columnName}";
     }
 }

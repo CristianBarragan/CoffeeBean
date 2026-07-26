@@ -65,91 +65,422 @@ internal static class PlannerEmitter
 
 
     private static void EmitCompositeStorageJoins(
-        StringBuilder sb,
-        MappingClassInfo info)
+    StringBuilder sb,
+    MappingClassInfo info,
+    ImmutableArray<MappingClassInfo> allMappings,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+{
+    var emitted = new HashSet<string>(
+        StringComparer.OrdinalIgnoreCase);
+
+    var index = 0;
+
+    // Tracks the SQL alias each entity type is reachable under, as this
+    // chain is built up hop by hop. The chain's own root entity (the
+    // first join's parent) is reached via node.OutputAlias — the actual
+    // runtime alias this Build() invocation is running under, whether
+    // it's the query root or a nested attached child. Every subsequent
+    // hop's parent alias must be looked up here rather than re-emitting
+    // the model/entity name as a literal, since a hardcoded name is only
+    // coincidentally correct when this node happens to be the root.
+    var aliasByEntity =
+        new Dictionary<INamedTypeSymbol, string>(
+            SymbolEqualityComparer.Default);
+
+    foreach (var join in info.CompositeStorageJoinInfo)
     {
-        var emitted =
-            new HashSet<string>(
-                StringComparer.OrdinalIgnoreCase);
+        var parentExists =
+            allMappings.Any(x =>
+                x.Definition.Entities.Any(e =>
+                    e.EntityType != null &&
+                    SymbolEqualityComparer.Default.Equals(
+                        e.EntityType,
+                        join.ParentEntityType)));
 
-        var index = 0;
+        var childExists =
+            allMappings.Any(x =>
+                x.Definition.Entities.Any(e =>
+                    e.EntityType != null &&
+                    SymbolEqualityComparer.Default.Equals(
+                        e.EntityType,
+                        join.ChildEntityType)));
 
-        foreach (var join in info.CompositeStorageJoinInfo)
+        if (!parentExists || !childExists)
+            continue;
+
+
+        var key =
+            $"{join.ParentEntityType.Name}->{join.ChildEntityType.Name}";
+
+
+        if (!emitted.Add(key))
+            continue;
+
+
+        var edge =
+            FindEdge(
+                join.ParentEntityType,
+                join.ChildEntityType,
+                entityGraph);
+
+
+        if (edge == null)
         {
-            var parent =
-                IdEmitter.StripEntitySuffix(
-                    join.ParentEntityType.Name);
-
-            var child =
-                IdEmitter.StripEntitySuffix(
-                    join.ChildEntityType.Name);
-
-
-            var key =
-                $"{parent}->{child}";
-
-
-            if (!emitted.Add(key))
-            {
-                continue;
-            }
-
-
-            var parentColumnExpression =
-                ColumnIdResolver.Resolve(
-                    join.ParentEntityType,
-                    join.ParentJoinColumn);
-
-
-            var childColumnExpression =
-                ColumnIdResolver.Resolve(
-                    join.ChildEntityType,
-                    join.ChildJoinColumn);
-
-
-            var childAlias =
-                $"{info.ModelType!.Name}_{child}_{index}";
-
-
-            sb.AppendLine(
-                "            builder.AddJoin(");
-
-
-            sb.AppendLine(
-                $"                EntityId.{join.ParentEntityType.Name},");
-
-            sb.AppendLine(
-                $"                StorageEntityId.{parent},");
-
-
-            sb.AppendLine(
-                $"                EntityId.{join.ChildEntityType.Name},");
-
-            sb.AppendLine(
-                $"                StorageEntityId.{child},");
-
-
-            sb.AppendLine(
-                $"                {parentColumnExpression},");
-
-            sb.AppendLine(
-                $"                {childColumnExpression},");
-
-
-            sb.AppendLine(
-                "                JoinKind.Left,");
-
-
-            sb.AppendLine(
-                $"                \"{childAlias}\");");
-
-
-            sb.AppendLine();
-
-            index++;
+            throw new InvalidOperationException(
+                $"Missing FK edge between {join.ParentEntityType.Name} and {join.ChildEntityType.Name}");
         }
+
+
+        string parentColumn;
+        string childColumn;
+
+
+        if (SymbolEqualityComparer.Default.Equals(
+                edge.PrincipalEntity,
+                join.ParentEntityType))
+        {
+            parentColumn = edge.PrincipalColumn;
+            childColumn = edge.DependentColumn;
+        }
+        else
+        {
+            parentColumn = edge.DependentColumn;
+            childColumn = edge.PrincipalColumn;
+        }
+
+
+        var parentStorage =
+            IdEmitter.StripEntitySuffix(
+                join.ParentEntityType.Name);
+
+
+        var childStorage =
+            IdEmitter.StripEntitySuffix(
+                join.ChildEntityType.Name);
+
+
+        var childAlias =
+            $"{info.ModelType!.Name}_{childStorage}_{index}";
+
+
+        // The parent side's alias: if this is the first hop in the chain
+        // (the composite model's own primary/anchor entity), use
+        // node.OutputAlias — the real runtime alias for this Build()
+        // invocation. Otherwise use whatever alias an earlier hop already
+        // established for this same parent entity.
+        string parentAliasExpr;
+
+        if (aliasByEntity.TryGetValue(join.ParentEntityType, out var knownParentAlias))
+        {
+            parentAliasExpr = $"\"{knownParentAlias}\"";
+        }
+        else
+        {
+            parentAliasExpr = "node.OutputAlias";
+        }
+
+        aliasByEntity[join.ChildEntityType] = childAlias;
+
+
+        sb.AppendLine(
+            "            builder.AddJoin(");
+
+        if (parentAliasExpr == "node.OutputAlias")
+        {
+            sb.AppendLine(
+                "                node.OutputAlias,");
+        }
+        else
+        {
+            sb.AppendLine(
+                $"                {parentAliasExpr},");
+        }
+
+        sb.AppendLine(
+            $"                \"{childAlias}\",");
+
+
+        sb.AppendLine(
+            $"                EntityId.{ResolveRuntimeEntityId(join.ParentEntityType, allMappings)},");
+
+        sb.AppendLine(
+            $"                StorageEntityId.{parentStorage},");
+
+        sb.AppendLine(
+            $"                {ColumnIdResolver.Resolve(join.ParentEntityType, parentColumn)},");
+
+
+        sb.AppendLine(
+            $"                EntityId.{ResolveRuntimeEntityId(join.ChildEntityType, allMappings)},");
+
+        sb.AppendLine(
+            $"                StorageEntityId.{childStorage},");
+
+        sb.AppendLine(
+            $"                {ColumnIdResolver.Resolve(join.ChildEntityType, childColumn)},");
+
+
+        sb.AppendLine(
+            "                JoinKind.Left);");
+
+
+        sb.AppendLine();
+
+        index++;
+    }
+}
+
+
+private static void EmitCompositeChildAttachmentJoins(
+    StringBuilder sb,
+    MappingClassInfo info,
+    ImmutableArray<MappingClassInfo> allMappings,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+{
+    sb.AppendLine(
+        "            foreach (var attachChild in node.Children)");
+
+    sb.AppendLine(
+        "            {");
+
+    var index = 0;
+
+    foreach (var attachment in info.AutoChildAttachments)
+    {
+        var parentEntityName =
+            IdEmitter.StripEntitySuffix(
+                attachment.ParentEntityType.Name);
+
+        var childEntityName =
+            IdEmitter.StripEntitySuffix(
+                attachment.ChildEntityType.Name);
+
+        var edge =
+            FindEdge(
+                attachment.ParentEntityType,
+                attachment.ChildEntityType,
+                entityGraph);
+
+        if (edge == null)
+        {
+            continue;
+        }
+
+        string parentColumn;
+        string childColumn;
+
+        if (SymbolEqualityComparer.Default.Equals(
+                edge.PrincipalEntity,
+                attachment.ParentEntityType))
+        {
+            parentColumn = edge.PrincipalColumn;
+            childColumn = edge.DependentColumn;
+        }
+        else
+        {
+            parentColumn = edge.DependentColumn;
+            childColumn = edge.PrincipalColumn;
+        }
+
+        var attachmentAlias =
+            $"{attachment.ToModelName}_{childEntityName}_{index}";
+
+        sb.AppendLine(
+            $"                if (string.Equals(attachChild.OutputAlias, \"{attachment.FieldName}\", System.StringComparison.OrdinalIgnoreCase))");
+
+        sb.AppendLine(
+            "                {");
+
+        sb.AppendLine(
+            "                    builder.AddJoin(");
+
+        // FIX: the parent side of this attachment is THIS node itself —
+        // its real runtime alias is node.OutputAlias, never a hardcoded
+        // literal of the model/entity name. Hardcoding was only
+        // coincidentally correct when this node happened to be the query
+        // root; when reached as a nested child (e.g. Customer attached
+        // under CustomerCustomerEdge as "InnerCustomer"), the real alias
+        // differs from the model name entirely.
+        sb.AppendLine(
+            "                        node.OutputAlias,");
+
+        sb.AppendLine(
+            $"                        \"{attachmentAlias}\",");
+
+        sb.AppendLine(
+            $"                        EntityId.{ResolveRuntimeEntityId(attachment.ParentEntityType, allMappings)},");
+
+        sb.AppendLine(
+            $"                        StorageEntityId.{parentEntityName},");
+
+        sb.AppendLine(
+            $"                        {ColumnIdResolver.Resolve(attachment.ParentEntityType, parentColumn)},");
+
+        sb.AppendLine(
+            $"                        EntityId.{ResolveRuntimeEntityId(attachment.ChildEntityType, allMappings)},");
+
+        sb.AppendLine(
+            $"                        StorageEntityId.{childEntityName},");
+
+        sb.AppendLine(
+            $"                        {ColumnIdResolver.Resolve(attachment.ChildEntityType, childColumn)},");
+
+        sb.AppendLine(
+            "                        JoinKind.Left);");
+
+        var childMapping =
+            allMappings.FirstOrDefault(m =>
+                m.ModelType != null &&
+                string.Equals(
+                    m.ModelType.Name,
+                    attachment.ToModelName,
+                    StringComparison.Ordinal));
+
+        if (childMapping != null && childMapping.IsComposite)
+        {
+            var compositeTypes =
+                childMapping.Definition.Entities
+                    .Select(e => e.EntityType)
+                    .Where(t => t != null)
+                    .Cast<INamedTypeSymbol>()
+                    .ToList();
+
+            var chain =
+                CompositeChildAttachmentConvention
+                    .ComputeCompositeJoinChain(
+                        attachment.ChildEntityType,
+                        compositeTypes,
+                        entityGraph);
+
+            // Track the alias each hop's parent entity is reachable
+            // under. The chain's own first entity (attachment.ChildEntityType)
+            // was just established above as `attachmentAlias`.
+            var aliasByEntity =
+                new Dictionary<INamedTypeSymbol, string>(
+                    SymbolEqualityComparer.Default)
+                {
+                    [attachment.ChildEntityType] = attachmentAlias
+                };
+
+            var hopIndex = 0;
+
+            foreach (var hop in chain)
+            {
+                var hopEdge =
+                    FindEdge(
+                        hop.ParentEntityType,
+                        hop.ChildEntityType,
+                        entityGraph);
+
+                if (hopEdge == null)
+                {
+                    continue;
+                }
+
+                string hopParentColumn;
+                string hopChildColumn;
+
+                if (SymbolEqualityComparer.Default.Equals(
+                        hopEdge.PrincipalEntity,
+                        hop.ParentEntityType))
+                {
+                    hopParentColumn = hopEdge.PrincipalColumn;
+                    hopChildColumn = hopEdge.DependentColumn;
+                }
+                else
+                {
+                    hopParentColumn = hopEdge.DependentColumn;
+                    hopChildColumn = hopEdge.PrincipalColumn;
+                }
+
+                var hopParentName =
+                    IdEmitter.StripEntitySuffix(
+                        hop.ParentEntityType.Name);
+
+                var hopChildName =
+                    IdEmitter.StripEntitySuffix(
+                        hop.ChildEntityType.Name);
+
+                var hopAlias =
+                    $"{attachmentAlias}_{hopChildName}_{hopIndex}";
+
+                // Look up the parent's actual established alias rather
+                // than emitting a hardcoded entity-name literal.
+                var hopParentAlias =
+                    aliasByEntity.TryGetValue(hop.ParentEntityType, out var known)
+                        ? known
+                        : hopParentName; // fallback, shouldn't normally hit
+
+                aliasByEntity[hop.ChildEntityType] = hopAlias;
+
+                sb.AppendLine(
+                    "                    builder.AddJoin(");
+
+                sb.AppendLine(
+                    $"                        \"{hopParentAlias}\",");
+
+                sb.AppendLine(
+                    $"                        \"{hopAlias}\",");
+
+                sb.AppendLine(
+                    $"                        EntityId.{ResolveRuntimeEntityId(hop.ParentEntityType, allMappings)},");
+
+                sb.AppendLine(
+                    $"                        StorageEntityId.{hopParentName},");
+
+                sb.AppendLine(
+                    $"                        {ColumnIdResolver.Resolve(hop.ParentEntityType, hopParentColumn)},");
+
+                sb.AppendLine(
+                    $"                        EntityId.{ResolveRuntimeEntityId(hop.ChildEntityType, allMappings)},");
+
+                sb.AppendLine(
+                    $"                        StorageEntityId.{hopChildName},");
+
+                sb.AppendLine(
+                    $"                        {ColumnIdResolver.Resolve(hop.ChildEntityType, hopChildColumn)},");
+
+                sb.AppendLine(
+                    "                        JoinKind.Left);");
+
+                hopIndex++;
+            }
+        }
+
+        sb.AppendLine(
+            "                }");
+
+        index++;
     }
 
+    sb.AppendLine(
+        "            }");
+
+    sb.AppendLine();
+}
+
+    private static FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge? FindEdge(
+        INamedTypeSymbol entityA,
+        INamedTypeSymbol entityB,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+    {
+        foreach (var edge in entityGraph)
+        {
+            if (SymbolEqualityComparer.Default.Equals(edge.PrincipalEntity, entityA) &&
+                SymbolEqualityComparer.Default.Equals(edge.DependentEntity, entityB))
+            {
+                return edge;
+            }
+
+            if (SymbolEqualityComparer.Default.Equals(edge.PrincipalEntity, entityB) &&
+                SymbolEqualityComparer.Default.Equals(edge.DependentEntity, entityA))
+            {
+                return edge;
+            }
+        }
+
+        return null;
+    }
 
     private static void EmitPlanner(
         StringBuilder sb,
@@ -199,18 +530,17 @@ internal static class PlannerEmitter
             "            if (isRoot)");
         sb.AppendLine(
             "            {");
-    
+
         sb.AppendLine(
             "                builder.BeginCompositeChain(EntityId." + info.ModelType!.Name + ", \"" + info.ModelType.Name + "\");");
+        
+        if (info.CompositeStorageJoinInfo.Count > 0)
+        {
+            EmitCompositeStorageJoins(sb, info, allMappings, entityGraph);
+        }
 
         sb.AppendLine(
             "            }");
-
-
-        if (info.CompositeStorageJoinInfo.Count > 0)
-        {
-            EmitCompositeStorageJoins(sb, info);
-        }
 
 
         EmitScalarSelection(sb, info);
@@ -300,259 +630,90 @@ internal static class PlannerEmitter
         sb.AppendLine(
             "            }");
     }
+        
 
-
-    private static void EmitCompositeChildAttachmentJoins(
-    StringBuilder sb,
-    MappingClassInfo info,
-    ImmutableArray<MappingClassInfo> allMappings,
-    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
-{
-    sb.AppendLine(
-        "            foreach (var attachChild in node.Children)");
-
-    sb.AppendLine(
-        "            {");
-
-    var index = 0;
-
-    foreach (var attachment in info.AutoChildAttachments)
+    private static string ResolveRuntimeEntityId(
+        INamedTypeSymbol type,
+        ImmutableArray<MappingClassInfo> mappings)
     {
-        if (string.IsNullOrEmpty(attachment.ParentJoinColumn) ||
-            string.IsNullOrEmpty(attachment.ChildJoinColumn))
+        foreach (var mapping in mappings)
         {
-            continue;
-        }
-
-        var parentEntityName =
-            IdEmitter.StripEntitySuffix(
-                attachment.ParentEntityType.Name);
-
-        var childEntityName =
-            IdEmitter.StripEntitySuffix(
-                attachment.ChildEntityType.Name);
-
-
-        var attachmentAlias =
-            $"{attachment.ToModelName}_{childEntityName}_{index}";
-
-
-        sb.AppendLine(
-            $"                if (string.Equals(attachChild.OutputAlias, \"{attachment.FieldName}\", System.StringComparison.OrdinalIgnoreCase))");
-
-        sb.AppendLine(
-            "                {");
-
-
-        // ---------------------------------------------------------
-        // Primary attachment join
-        // ---------------------------------------------------------
-
-        sb.AppendLine(
-            "                    builder.AddJoin(");
-
-        sb.AppendLine(
-            $"                        EntityId.{attachment.ParentEntityType.Name},");
-
-        sb.AppendLine(
-            $"                        StorageEntityId.{parentEntityName},");
-
-        sb.AppendLine(
-            $"                        EntityId.{attachment.ChildEntityType.Name},");
-
-        sb.AppendLine(
-            $"                        StorageEntityId.{childEntityName},");
-
-        sb.AppendLine(
-            $"                        {ColumnIdResolver.Resolve(attachment.ParentEntityType, attachment.ParentJoinColumn)},");
-
-        sb.AppendLine(
-            $"                        {ColumnIdResolver.Resolve(attachment.ChildEntityType, attachment.ChildJoinColumn)},");
-
-        sb.AppendLine(
-            "                        JoinKind.Left,");
-
-        sb.AppendLine(
-            $"                        \"{attachmentAlias}\");");
-
-
-        // ---------------------------------------------------------
-        // Expand child composite storage chain
-        // ---------------------------------------------------------
-
-        var childMapping =
-            allMappings.FirstOrDefault(m =>
-                m.ModelType != null &&
-                string.Equals(
-                    m.ModelType.Name,
-                    attachment.ToModelName,
-                    StringComparison.Ordinal));
-
-
-        if (childMapping != null && childMapping.IsComposite)
-        {
-            var compositeTypes =
-                childMapping.Definition.Entities
-                    .Select(e => e.EntityType)
-                    .Where(t => t != null)
-                    .Cast<INamedTypeSymbol>()
-                    .ToList();
-
-
-            var chain =
-                CompositeChildAttachmentConvention
-                    .ComputeCompositeJoinChain(
-                        attachment.ChildEntityType,
-                        compositeTypes,
-                        entityGraph);
-
-
-            var hopIndex = 0;
-
-            foreach (var hop in chain)
+            foreach (var entity in mapping.Definition.Entities)
             {
-                var hopParentName =
-                    IdEmitter.StripEntitySuffix(
-                        hop.ParentEntityType.Name);
-
-                var hopChildName =
-                    IdEmitter.StripEntitySuffix(
-                        hop.ChildEntityType.Name);
+                if (entity.EntityType == null)
+                    continue;
 
 
-                var hopAlias =
-                    $"{attachmentAlias}_{hopChildName}_{hopIndex}";
-
-
-                sb.AppendLine(
-                    "                    builder.AddJoin(");
-
-
-                sb.AppendLine(
-                    $"                        EntityId.{hop.ParentEntityType.Name},");
-
-                sb.AppendLine(
-                    $"                        StorageEntityId.{hopParentName},");
-
-
-                sb.AppendLine(
-                    $"                        EntityId.{hop.ChildEntityType.Name},");
-
-                sb.AppendLine(
-                    $"                        StorageEntityId.{hopChildName},");
-
-
-                sb.AppendLine(
-                    $"                        {ColumnIdResolver.Resolve(hop.ParentEntityType, hop.ParentJoinColumn)},");
-
-                sb.AppendLine(
-                    $"                        {ColumnIdResolver.Resolve(hop.ChildEntityType, hop.ChildJoinColumn)},");
-
-
-                sb.AppendLine(
-                    "                        JoinKind.Left,");
-
-
-                sb.AppendLine(
-                    $"                        \"{hopAlias}\");");
-
-
-                hopIndex++;
+                if (SymbolEqualityComparer.Default.Equals(
+                        entity.EntityType,
+                        type))
+                {
+                    return IdEmitter.StripEntitySuffix(
+                        entity.EntityType.Name);
+                }
             }
         }
 
 
-        sb.AppendLine(
-            "                }");
-
-
-        index++;
+        throw new InvalidOperationException(
+            $"No EntityId mapping found for '{type.Name}'.");
     }
 
-
-    sb.AppendLine(
-        "            }");
-
-    sb.AppendLine();
-}
-
-
-    private static void EmitGraphVertexResultJoins(
+   private static void EmitGraphVertexResultJoins(
     StringBuilder sb,
     MappingClassInfo info,
     ImmutableArray<MappingClassInfo> allMappings)
 {
     var g = info.Graph!;
 
-
     var graphAlias =
-        info.ModelType!.Name +
-        "_" +
-        g.EdgeLabel +
-        "_graph";
+        $"{info.ModelType!.Name}_{g.EdgeLabel}_graph";
 
 
     sb.AppendLine(
         "            builder.AddGraphJoin(");
 
-
     sb.AppendLine(
         $"                EntityId.{info.ModelType.Name},");
-
 
     sb.AppendLine(
         $"                StorageEntityId.{IdEmitter.StripEntitySuffix(info.EntityType!.Name)},");
 
-
     sb.AppendLine(
         $"                \"{g.GraphName}\",");
-
 
     sb.AppendLine(
         $"                \"{g.EdgeLabel}\",");
 
-
     sb.AppendLine(
         $"                \"{g.EdgeKey}\",");
-
 
     sb.AppendLine(
         $"                \"{g.From.Label}\",");
 
-
     sb.AppendLine(
         $"                \"{g.From.GraphProperty}\",");
-
 
     sb.AppendLine(
         $"                \"{g.From.Alias ?? g.From.Label}\",");
 
-
     sb.AppendLine(
         $"                \"{g.FromJoinColumn}\",");
-
 
     sb.AppendLine(
         $"                \"{g.To.Label}\",");
 
-
     sb.AppendLine(
         $"                \"{g.To.GraphProperty}\",");
-
 
     sb.AppendLine(
         $"                \"{g.To.Alias ?? g.To.Label}\",");
 
-
     sb.AppendLine(
         $"                \"{g.ToJoinColumn}\",");
 
-
     sb.AppendLine(
         $"                \"{graphAlias}\");");
-
-
-    sb.AppendLine();
 
 
     foreach (var (vertex, isFrom) in new[]
@@ -574,8 +735,11 @@ internal static class PlannerEmitter
                     StringComparison.Ordinal));
 
 
-        if (relatedModel?.EntityType == null)
+        if (relatedModel?.EntityType == null ||
+            relatedModel.ModelType == null)
+        {
             continue;
+        }
 
 
         var joinColumn =
@@ -609,7 +773,6 @@ internal static class PlannerEmitter
         sb.AppendLine(
             $"                if (string.Equals(gc.OutputAlias, \"{alias}\", System.StringComparison.OrdinalIgnoreCase))");
 
-
         sb.AppendLine(
             "                {");
 
@@ -617,32 +780,23 @@ internal static class PlannerEmitter
         sb.AppendLine(
             "                    builder.AddGraphResultJoin(");
 
-
-        // FIX 2:
-        // Use the generated graph alias instead of node.OutputAlias + "_graph"
         sb.AppendLine(
             $"                        \"{graphAlias}\",");
-
 
         sb.AppendLine(
             $"                        \"{graphColumnAlias}\",");
 
-
         sb.AppendLine(
-            $"                        EntityId.{relatedModel.ModelType!.Name},");
-
+            $"                        EntityId.{relatedModel.ModelType.Name},");
 
         sb.AppendLine(
             $"                        StorageEntityId.{storageEntityName},");
 
-
         sb.AppendLine(
             $"                        {columnExpression},");
 
-
         sb.AppendLine(
             "                        JoinKind.Left,");
-
 
         sb.AppendLine(
             "                        gc.OutputAlias);");
@@ -651,12 +805,8 @@ internal static class PlannerEmitter
         sb.AppendLine(
             "                }");
 
-
         sb.AppendLine(
             "            }");
-
-
-        sb.AppendLine();
     }
 }
     
@@ -683,9 +833,9 @@ private static List<(
     string EntityTypeName,
     string ColumnName,
     string StorageEntityName)>
-    ComputeFieldMappingsEager(
-        MappingClassInfo info,
-        bool composite)
+ComputeFieldMappingsEager(
+    MappingClassInfo info,
+    bool composite)
 {
     var fields =
         new List<(
@@ -694,31 +844,58 @@ private static List<(
             string ColumnName,
             string StorageEntityName)>();
 
+
     foreach (var field in info.FieldMaps)
     {
         if (field.IsNavigationKey)
             continue;
 
-        var entity =
+
+        var entityTypeName =
             string.IsNullOrWhiteSpace(field.DestinationEntity)
                 ? info.EntityType?.Name ?? info.ModelType!.Name
                 : field.DestinationEntity;
 
-        // Storage entity is the destination entity that actually owns the column.
-        // If you later add explicit storage metadata, replace this assignment.
-        var storageEntity =
-            IdEmitter.StripEntitySuffix(entity);
+
+        // Resolve the actual entity symbol.
+        var entitySymbol =
+            info.Definition.Entities
+                .FirstOrDefault(e =>
+                    e.EntityType != null &&
+                    string.Equals(
+                        IdEmitter.StripEntitySuffix(
+                            e.EntityType.Name),
+                        IdEmitter.StripEntitySuffix(
+                            entityTypeName),
+                        StringComparison.OrdinalIgnoreCase))
+                ?.EntityType;
+
+
+        if (entitySymbol == null)
+        {
+            throw new InvalidOperationException(
+                $"No entity mapping found for '{entityTypeName}' while processing field '{field.SourceName}' on model '{info.ModelType?.Name}'.");
+        }
+
+
+        var storageEntityName =
+            IdEmitter.StripEntitySuffix(
+                entitySymbol.Name);
+
 
         fields.Add(
             (
                 field.SourceName,
-                entity,
+                entitySymbol.Name,
                 field.DestinationName,
-                storageEntity));
+                storageEntityName));
     }
 
+
     var primaryEntityName =
-        info.EntityType?.Name ?? info.ModelType!.Name;
+        info.EntityType?.Name ??
+        info.ModelType!.Name;
+
 
     var resolved =
         new List<(
@@ -726,6 +903,7 @@ private static List<(
             string EntityTypeName,
             string ColumnName,
             string StorageEntityName)>();
+
 
     foreach (var group in fields.GroupBy(
                  f => f.FieldName,
@@ -737,14 +915,18 @@ private static List<(
             continue;
         }
 
+
         var primaryMatches =
             group
                 .Where(f =>
                     string.Equals(
-                        f.EntityTypeName,
-                        primaryEntityName,
-                        StringComparison.Ordinal))
+                        IdEmitter.StripEntitySuffix(
+                            f.EntityTypeName),
+                        IdEmitter.StripEntitySuffix(
+                            primaryEntityName),
+                        StringComparison.OrdinalIgnoreCase))
                 .ToList();
+
 
         if (primaryMatches.Count == 1)
         {
@@ -752,15 +934,18 @@ private static List<(
             continue;
         }
 
+
         if (primaryMatches.Count > 1)
         {
             throw new InvalidOperationException(
-                $"Model '{info.ModelType?.Name}' has multiple field maps for '{group.Key}' from primary entity '{primaryEntityName}'.");
+                $"Model '{info.ModelType?.Name}' has multiple field maps for '{group.Key}' from primary entity.");
         }
+
 
         throw new InvalidOperationException(
             $"Model '{info.ModelType?.Name}' has ambiguous field mappings for '{group.Key}'.");
     }
+
 
     return resolved;
 }
@@ -775,6 +960,7 @@ private static List<(
             info,
             info.IsComposite);
 
+
     if (fields.Count == 0)
         return;
 
@@ -782,19 +968,17 @@ private static List<(
     sb.AppendLine();
     sb.AppendLine(
         "            foreach (var scalar in node.Scalars)");
-
     sb.AppendLine(
         "            {");
 
     sb.AppendLine(
         "                switch (scalar.FieldId)");
-
     sb.AppendLine(
         "                {");
 
 
     foreach (var group in fields.GroupBy(
-                 f => f.FieldName,
+                 x => x.FieldName,
                  StringComparer.Ordinal))
     {
         sb.AppendLine(
@@ -806,41 +990,49 @@ private static List<(
 
         foreach (var field in group)
         {
-            var entityType =
+            var entity =
                 info.Definition.Entities
                     .FirstOrDefault(e =>
+                        e.EntityType != null &&
                         string.Equals(
-                            IdEmitter.StripEntitySuffix(
-                                e.EntityType?.Name ?? ""),
-                            field.EntityTypeName,
+                            IdEmitter.StripEntitySuffix(e.EntityType.Name),
+                            IdEmitter.StripEntitySuffix(field.EntityTypeName),
                             StringComparison.OrdinalIgnoreCase))
                     ?.EntityType;
 
 
-            var columnExpression =
-                entityType != null
-                    ? ColumnIdResolver.Resolve(
-                        entityType,
-                        field.ColumnName)
-                    : ColumnIdResolver.Resolve(
-                        field.EntityTypeName,
-                        field.ColumnName);
+            if (entity == null)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot resolve entity '{field.EntityTypeName}' for '{field.FieldName}'.");
+            }
+
+
+            var storageName =
+                IdEmitter.StripEntitySuffix(entity.Name);
+
+
+            var column =
+                ColumnIdResolver.Resolve(
+                    entity,
+                    field.ColumnName);
 
 
             sb.AppendLine(
                 "                        builder.AddColumn(");
 
 
+            // ALWAYS the model runtime entity
             sb.AppendLine(
-                $"                            EntityId.{info.ModelType.Name},");
-
-
-            sb.AppendLine(
-                $"                            StorageEntityId.{field.EntityTypeName},");
+                $"                            EntityId.{IdEmitter.StripEntitySuffix(info.ModelType.Name)},");
 
 
             sb.AppendLine(
-                $"                            {columnExpression},");
+                $"                            StorageEntityId.{storageName},");
+
+
+            sb.AppendLine(
+                $"                            {column},");
 
 
             sb.AppendLine(
@@ -855,7 +1047,6 @@ private static List<(
         sb.AppendLine(
             "                        break;");
 
-
         sb.AppendLine(
             "                    }");
     }
@@ -863,7 +1054,6 @@ private static List<(
 
     sb.AppendLine(
         "                }");
-
 
     sb.AppendLine(
         "            }");
@@ -933,14 +1123,11 @@ private static List<(
             if (model.ModelType == null)
                 continue;
 
-
             sb.AppendLine(
                 $"            case EntityId.{model.ModelType.Name}:");
 
-
             sb.AppendLine(
                 $"                {model.ModelType.Name}Planner.Build(selection, ref builder, isRoot);");
-
 
             sb.AppendLine(
                 "                return;");
@@ -973,35 +1160,69 @@ private static List<(
     {
         sb.AppendLine();
 
-        sb.AppendLine("    public static bool IsValidEntity(ushort entityId)");
-        sb.AppendLine("        => entityId < (ushort)PlannerCount;");
+        sb.AppendLine(
+            "    public static bool IsValidEntity(ushort entityId)");
+
+        sb.AppendLine(
+            "        => entityId < (ushort)PlannerCount;");
+
         sb.AppendLine();
 
-        sb.AppendLine("    public static string GetEntityName(ushort entityId)");
-        sb.AppendLine("    {");
-        sb.AppendLine("        switch (entityId)");
-        sb.AppendLine("        {");
+
+        sb.AppendLine(
+            "    public static string GetEntityName(ushort entityId)");
+
+        sb.AppendLine(
+            "    {");
+
+        sb.AppendLine(
+            "        switch (entityId)");
+
+        sb.AppendLine(
+            "        {");
+
 
         foreach (var model in models)
         {
             if (model.ModelType == null)
                 continue;
 
-            var name = model.ModelType.Name;
 
-            sb.AppendLine($"            case EntityId.{name}:");
-            sb.AppendLine($"                return \"{name}\";");
+            var name =
+                model.ModelType.Name;
+
+
+            sb.AppendLine(
+                $"            case EntityId.{name}:");
+
+
+            sb.AppendLine(
+                $"                return \"{name}\";");
         }
 
-        sb.AppendLine("            default:");
-        sb.AppendLine("                ThrowUnknownEntity(entityId);");
-        sb.AppendLine("                return string.Empty;");
-        sb.AppendLine("        }");
-        sb.AppendLine("    }");
+
+        sb.AppendLine(
+            "            default:");
+
+        sb.AppendLine(
+            "                ThrowUnknownEntity(entityId);");
+
+        sb.AppendLine(
+            "                return string.Empty;");
+
+        sb.AppendLine(
+            "        }");
+
+        sb.AppendLine(
+            "    }");
+
 
         sb.AppendLine();
 
-        sb.AppendLine("    private static void ThrowUnknownEntity(ushort entityId)");
+
+        sb.AppendLine(
+            "    private static void ThrowUnknownEntity(ushort entityId)");
+
         sb.AppendLine(
             "        => throw new ArgumentException($\"Unknown entity runtime ID: {entityId}\");");
     }

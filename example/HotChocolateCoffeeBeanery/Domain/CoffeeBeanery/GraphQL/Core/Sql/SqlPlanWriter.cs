@@ -21,9 +21,9 @@ public sealed class SqlPlanWriter
     {
         var keyword = join.Kind == JoinKind.Left ? _dialect.LeftJoinKeyword : _dialect.InnerJoinKeyword;
         sb.Append(keyword).Append(' ');
-        AppendQualifiedTable(sb, join.ToStorageEntityId);
+        AppendQualifiedTable(sb, join.ChildStorageEntityId);
         sb.Append(' ');
-        _dialect.AppendQuotedIdentifier(sb, join.ToOutputAlias);
+        _dialect.AppendQuotedIdentifier(sb, join.ChildAlias);
         // ...
     }
 

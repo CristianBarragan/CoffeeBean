@@ -1326,25 +1326,22 @@ private static void EmitCteResolutionsArray(
 
         foreach (var entity in entityTypes)
         {
+            var entityName =
+                IdEmitter.StripEntitySuffix(entity.Name);
+
+            // IMPORTANT: must use the exact same ordering as ColumnId.* constants
+            // (IdEmitter.EmitColumnIds). Both now call GetFullColumnOrder so the
+            // numeric ColumnId values and this runtime name array can never
+            // disagree again — previously this method inserted the PK column
+            // independently while EmitColumnIds did not, causing every column
+            // reference for entities whose PK wasn't already a mapped field to
+            // resolve one index off from its actual physical column.
             var columns =
-                IdEmitter.GetOrderedColumnNames(
-                        entity.Name,
-                        allMappings)
+                IdEmitter.GetFullColumnOrder(
+                        entityName,
+                        allMappings,
+                        entity)
                     .ToList();
-            
-            var primaryKeys =
-                IdEmitter.GetPrimaryKeyProperties(entity)
-                    .Select(x => x.Name)
-                    .ToList();
-
-
-            foreach (var pk in primaryKeys)
-            {
-                if (!columns.Contains(pk, StringComparer.Ordinal))
-                {
-                    columns.Insert(0, pk);
-                }
-            }
 
             sb.AppendLine(
                 $"            new string[{columns.Count}]");

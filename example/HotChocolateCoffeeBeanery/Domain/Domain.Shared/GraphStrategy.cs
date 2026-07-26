@@ -85,24 +85,52 @@ public sealed class ApacheAgeGraphStrategy : IGraphStrategy
         sb.Append(".\"").Append(join.EdgeKeyColumn).Append('"');
     }
 
-    public void AppendGraphResultJoin(StringBuilder sb, in GraphResultJoinSpec join)
+    public void AppendGraphResultJoin(
+        StringBuilder sb,
+        in GraphResultJoinSpec join)
     {
-        var keyword = join.Kind == JoinKind.Left ? "LEFT JOIN" : "JOIN";
-        sb.Append(keyword).Append(' ');
+        var keyword =
+            join.Kind == JoinKind.Left
+                ? "LEFT JOIN"
+                : "JOIN";
 
-        sb.Append('"').Append(_meta.EntitySchema[join.ToStorageEntityId]).Append("\".\"")
-          .Append(_meta.EntityTable[join.ToStorageEntityId]).Append('"');
+        sb.Append(keyword)
+            .Append(' ');
+
+        sb.Append('"')
+            .Append(_meta.EntitySchema[join.ToStorageEntityId])
+            .Append("\".\"")
+            .Append(_meta.EntityTable[join.ToStorageEntityId])
+            .Append('"');
+
         sb.Append(' ');
-        PostgresSqlWriter.AppendQuotedIdentifierStatic(sb, join.ToOutputAlias);
+
+        PostgresSqlWriter.AppendQuotedIdentifierStatic(
+            sb,
+            join.ToOutputAlias);
+
         sb.Append("\n    ON ");
 
-        var toColName = _meta.EntityColumnName[join.ToStorageEntityId][join.ToColumnId];
+        var toColumn =
+            _meta.EntityColumnName
+                    [join.ToStorageEntityId]
+                [join.ToColumnId];
 
-        PostgresSqlWriter.AppendQuotedIdentifierStatic(sb, join.ToOutputAlias);
-        sb.Append(".\"").Append(toColName).Append('"');
-        sb.Append(" = ");
-        PostgresSqlWriter.AppendQuotedIdentifierStatic(sb, join.FromAlias);
-        sb.Append(".\"").Append(join.FromColumnName).Append('"');
+        PostgresSqlWriter.AppendQuotedIdentifierStatic(
+            sb,
+            join.ToOutputAlias);
+
+        sb.Append(".\"")
+            .Append(toColumn)
+            .Append("\" = ");
+
+        PostgresSqlWriter.AppendQuotedIdentifierStatic(
+            sb,
+            join.FromAlias);
+
+        sb.Append(".\"")
+            .Append(join.FromColumnName)
+            .Append('"');
     }
 
     public string BuildGraphMerge(in GraphMergeSpec spec)

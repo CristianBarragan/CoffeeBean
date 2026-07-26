@@ -48,117 +48,114 @@ internal static class MutationMaterializerEmitter
 
 
     private static void EmitMaterializer(
-        StringBuilder sb,
-        MappingClassInfo info)
-    {
-        var model = info.ModelType!.Name;
+    StringBuilder sb,
+    MappingClassInfo info)
+{
+    var model = info.ModelType!.Name;
 
-        sb.AppendLine($"public static class {model}Materializer");
-        sb.AppendLine("{");
+    sb.AppendLine($"public static class {model}Materializer");
+    sb.AppendLine("{");
+
+    sb.AppendLine(
+        $"    public static {model} Materialize(in MutationIR node, MutationEntityMetadata metadata)");
+
+    sb.AppendLine("    {");
+    sb.AppendLine($"        var model = new {model}();");
+    sb.AppendLine();
+
+    sb.AppendLine("        foreach (var value in node.Values)");
+    sb.AppendLine("        {");
+    sb.AppendLine("            switch (value.FieldId)");
+    sb.AppendLine("            {");
+
+    foreach (var group in RelevantFieldsGrouped(info))
+    {
+        var representative = group.First();
 
         sb.AppendLine(
-            $"    public static {model} Materialize(in MutationIR node, MutationEntityMetadata metadata)");
+            $"                case FieldId.{model}.{FieldIdNameHelper.GetName(representative)}:");
 
-        sb.AppendLine("    {");
-        sb.AppendLine($"        var model = new {model}();");
+        sb.AppendLine("                {");
+
+        sb.AppendLine(
+            $"                    model.{representative.SourceName} = {ConvertFromRaw(representative)};");
+
+        sb.AppendLine("                    break;");
+        sb.AppendLine("                }");
+    }
+
+    sb.AppendLine("            }");
+    sb.AppendLine("        }");
+
+    sb.AppendLine();
+    sb.AppendLine("        return model;");
+    sb.AppendLine("    }");
+    sb.AppendLine("}");
+}
+
+
+private static void EmitDematerializer(
+    StringBuilder sb,
+    MappingClassInfo info)
+{
+    var model = info.ModelType!.Name;
+
+    sb.AppendLine($"public static class {model}Dematerializer");
+    sb.AppendLine("{");
+    sb.AppendLine(
+        $"    public static ImmutableArray<FieldValue> Dematerialize({model} model, MutationEntityMetadata metadata)");
+    sb.AppendLine("    {");
+    sb.AppendLine(
+        "        var builder = ImmutableArray.CreateBuilder<FieldValue>();");
+    sb.AppendLine();
+
+    var counter = 0;
+
+    foreach (var group in RelevantFieldsGrouped(info))
+    {
+        var representative = group.First();
+        var variable = $"rawValue{counter++}";
+
+        sb.AppendLine(
+            $"        var {variable} = {ConvertToRaw(representative)};");
         sb.AppendLine();
 
-        sb.AppendLine("        foreach (var value in node.Values)");
+        sb.AppendLine(
+            $"        if ({variable} is not null)");
         sb.AppendLine("        {");
-        sb.AppendLine("            switch (value.FieldId)");
-        sb.AppendLine("            {");
 
-        foreach (var group in RelevantFieldsGrouped(info))
-        {
-            var representative = group.First();
+        var columnExpression =
+            ColumnIdResolver.Resolve(
+                representative.DestinationEntity,
+                representative.DestinationName);
 
-            sb.AppendLine(
-                $"                case FieldId.{model}.{FieldIdNameHelper.GetName(representative)}:");
+        sb.AppendLine(
+            "            builder.Add(new FieldValue(");
 
-            sb.AppendLine("                {");
+        sb.AppendLine(
+            $"                EntityId.{model},");
 
-            sb.AppendLine(
-                $"                    model.{representative.SourceName} = {ConvertFromRaw(representative)};");
+        sb.AppendLine(
+            $"                FieldId.{model}.{FieldIdNameHelper.GetName(representative)},");
 
-            sb.AppendLine("                    break;");
-            sb.AppendLine("                }");
-        }
+        sb.AppendLine(
+            $"                {columnExpression},");
 
-        sb.AppendLine("            }");
+        sb.AppendLine(
+            $"                {variable}));");
+
+        sb.AppendLine();
+
         sb.AppendLine("        }");
-
         sb.AppendLine();
-        sb.AppendLine("        return model;");
-        sb.AppendLine("    }");
-        sb.AppendLine("}");
     }
 
+    sb.AppendLine(
+        "        return builder.ToImmutable();");
 
-    private static void EmitDematerializer(
-        StringBuilder sb,
-        MappingClassInfo info)
-    {
-        var model = info.ModelType!.Name;
-
-        sb.AppendLine($"public static class {model}Dematerializer");
-        sb.AppendLine("{");
-        sb.AppendLine(
-            $"    public static ImmutableArray<FieldValue> Dematerialize({model} model, MutationEntityMetadata metadata)");
-        sb.AppendLine("    {");
-        sb.AppendLine(
-            "        var builder = ImmutableArray.CreateBuilder<FieldValue>();");
-        sb.AppendLine();
-
-        var counter = 0;
-
-        foreach (var group in RelevantFieldsGrouped(info))
-        {
-            var representative = group.First();
-            var variable = $"rawValue{counter++}";
-
-            sb.AppendLine(
-                $"        var {variable} = {ConvertToRaw(representative)};");
-            sb.AppendLine();
-
-            sb.AppendLine(
-                $"        if ({variable} is not null)");
-            sb.AppendLine("        {");
-
-            foreach (var field in group)
-            {
-                var columnExpression =
-                    ColumnIdResolver.Resolve(
-                        field.DestinationEntity,
-                        field.DestinationName);
-
-                sb.AppendLine(
-                    "            builder.Add(new FieldValue(");
-
-                sb.AppendLine(
-                    $"                EntityId.{model},");
-
-                sb.AppendLine(
-                    $"                FieldId.{model}.{FieldIdNameHelper.GetName(field)},");
-
-                sb.AppendLine(
-                    $"                {columnExpression},");
-
-                sb.AppendLine(
-                    $"                {variable}));");
-
-                sb.AppendLine();
-            }
-
-            sb.AppendLine("        }");
-            sb.AppendLine();
-        }
-
-        sb.AppendLine(
-            "        return builder.ToImmutable();");
-
-        sb.AppendLine("    }");
-        sb.AppendLine("}");
-    }
+    sb.AppendLine("    }");
+    sb.AppendLine("}");
+}
 
     private static bool IsNullableValueType(ITypeSymbol? type)
     {

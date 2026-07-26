@@ -12,7 +12,8 @@ public ref struct QueryPlanBuilder
     private InlineArray64<ColumnSpec> _columns;
     private int _columnCount;
 
-    private InlineArray32<JoinSpec> _joins;
+    private ImmutableArray<JoinSpec>.Builder _joins =
+        ImmutableArray.CreateBuilder<JoinSpec>();
     private int _joinCount;
 
     private InlineArray32<GraphJoinSpec> _graphJoins;
@@ -28,7 +29,9 @@ public ref struct QueryPlanBuilder
     public QueryPlanBuilder()
     {
         _columns = default;
-        _joins = default;
+
+        _joins = ImmutableArray.CreateBuilder<JoinSpec>();
+
         _graphJoins = default;
         _graphResultJoins = default;
 
@@ -55,12 +58,7 @@ public ref struct QueryPlanBuilder
         _rootStorageEntityId = storageEntityId;
         _rootAlias = outputAlias;
     }
-
-
-// compatibility overload
-// NOTE: storage id cannot be inferred safely.
-// Keep only for old generated code.
-// New generators should always call the 3 argument overload.
+    
     public void BeginCompositeChain(
         ushort entityId,
         string outputAlias)
@@ -88,6 +86,8 @@ public ref struct QueryPlanBuilder
     }
 
 
+    private HashSet<string>? _usedColumnAliases;
+
     public void AddColumn(
         ushort entityId,
         ushort storageEntityId,
@@ -101,24 +101,43 @@ public ref struct QueryPlanBuilder
                 "Maximum query column count exceeded.");
         }
 
+        _usedColumnAliases ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var finalAlias = columnOutputAlias;
+
+        if (!_usedColumnAliases.Add(finalAlias))
+        {
+            finalAlias =
+                entityOutputAlias +
+                char.ToUpperInvariant(columnOutputAlias[0]) +
+                columnOutputAlias[1..];
+
+            if (!_usedColumnAliases.Add(finalAlias))
+            {
+                finalAlias = $"{entityOutputAlias}_{columnOutputAlias}";
+                _usedColumnAliases.Add(finalAlias);
+            }
+        }
+
         _columns[_columnCount++] =
             new ColumnSpec(
                 entityId,
                 storageEntityId,
                 columnId,
                 entityOutputAlias,
-                columnOutputAlias);
+                finalAlias);
     }
     
     public void AddJoin(
+        string parentAlias,
+        string childAlias,
         ushort fromEntityId,
         ushort fromStorageEntityId,
+        ushort fromColumnId,
         ushort toEntityId,
         ushort toStorageEntityId,
-        ushort fromColumnId,
         ushort toColumnId,
-        JoinKind kind,
-        string toOutputAlias)
+        JoinKind kind)
     {
         var key = new JoinKey(
             fromEntityId,
@@ -126,22 +145,25 @@ public ref struct QueryPlanBuilder
             fromColumnId,
             toEntityId,
             toStorageEntityId,
-            toColumnId);
+            toColumnId,
+            childAlias);
 
         if (!_joinKeys.Add(key))
             return;
 
-
-        _joins[_joinCount++] =
+        _joins.Add(
             new JoinSpec(
+                parentAlias,
+                childAlias,
                 fromEntityId,
                 fromStorageEntityId,
+                fromColumnId,
                 toEntityId,
                 toStorageEntityId,
-                fromColumnId,
                 toColumnId,
-                kind,
-                toOutputAlias);
+                kind));
+
+        _joinCount++;
     }
 
 

@@ -1,155 +1,135 @@
-﻿// using CoffeeBeanery.GraphQL.Core.Sql;
-// using HotChocolate.Language;
-//
-// namespace CoffeeBeanery.GraphQL.Core.Runtime;
-//
-// public static class MutationPlanBuilder
-// {
-//     public static _ExecutionPlan Build(string rootAlias, IValueNode node)
-//     {
-//         var plan = new _ExecutionPlan();
-//         var nextId = 0;
-//
-//         var resolvedRootAlias = ResolveRootAlias(rootAlias, node);
-//         var root = NewNode(
-//             plan,
-//             ref nextId,
-//             resolvedRootAlias,
-//             parentId: null,
-//             fieldName: null);
-//
-//         plan.RootNodeId = root.Id;
-//         WalkNode(plan, ref nextId, root, node);
-//
-//         return plan;
-//     }
-//
-//     private static string ResolveRootAlias(string rootAlias, IValueNode node)
-//     {
-//         if (node is not ObjectValueNode obj)
-//             return rootAlias;
-//
-//         if (NodeRegistry.FrozenEntityTrees.ContainsKey(rootAlias))
-//             return rootAlias;
-//
-//         foreach (var f in obj.Fields)
-//         {
-//             var name = f.Name.Value;
-//
-//             Console.WriteLine($"[WALK] current.Alias={rootAlias}, field={name}, valueType={f.Value.GetType().Name}");
-//             
-//             if (NodeRegistry.FrozenEdgeByAliasAndField.TryGetValue((rootAlias, name), out var edge))
-//             {
-//                 return edge.ToAlias;
-//             }
-//         }
-//
-//         return rootAlias;
-//     }
-//
-//     private static ExecutionNode NewNode(
-//         _ExecutionPlan plan,
-//         ref int nextId,
-//         string alias,
-//         int? parentId,
-//         string? fieldName)
-//     {
-//         var node = new ExecutionNode
-//         {
-//             Id = nextId++,
-//             Alias = alias,
-//             ParentId = parentId,
-//             FieldName = fieldName,
-//             IsEntity = NodeRegistry.FrozenEntityTrees.ContainsKey(alias)
-//         };
-//
-//         plan.Nodes[node.Id] = node;
-//         plan.NodeOrder.Add(node.Id);
-//
-//         if (parentId is { } pid && !plan.Edges.ContainsKey(pid))
-//             plan.Edges[pid] = new List<ExecutionEdge>();
-//
-//         return node;
-//     }
-//
-//     private static void WalkNode(
-//         _ExecutionPlan plan,
-//         ref int nextId,
-//         ExecutionNode current,
-//         IValueNode node)
-//     {
-//         if (node is not ObjectValueNode obj)
-//             return;
-//
-//         foreach (var f in obj.Fields)
-//         {
-//             var name = f.Name.Value;
-//
-//             if (string.Equals(name, NodeRegistry.ToGraphQlFieldName(current.Alias), StringComparison.OrdinalIgnoreCase))
-//             {
-//                 if (f.Value is ObjectValueNode)
-//                     WalkNode(plan, ref nextId, current, f.Value);
-//
-//                 continue;
-//             }
-//
-//             if (f.Value is ObjectValueNode or ListValueNode)
-//             {
-//                 if (NodeRegistry.FrozenEdgeByAliasAndField.TryGetValue((current.Alias, name), out var edge))
-//                 {
-//                     var child = NewNode(plan, ref nextId, edge.ToAlias, current.Id, name);
-//
-//                     plan.Edges[current.Id].Add(new ExecutionEdge
-//                     {
-//                         From = current.Id,
-//                         To = child.Id,
-//                         FieldName = name,
-//                         Kind = edge.Kind,
-//                         FromColumn = edge.FromColumn,
-//                         ToColumn = edge.ToColumn,
-//                         Path = edge.Path
-//                     });
-//
-//                     WalkNode(plan, ref nextId, child, f.Value);
-//                     continue;
-//                 }
-//
-//                 if (f.Value is ObjectValueNode)
-//                 {
-//                     WalkNode(plan, ref nextId, current, f.Value);
-//                     continue;
-//                 }
-//
-//                 if (f.Value is ListValueNode listNode)
-//                 {
-//                     foreach (var item in listNode.Items)
-//                         WalkNode(plan, ref nextId, current, item);
-//
-//                     continue;
-//                 }
-//
-//                 continue;
-//             }
-//
-//             var raw = f.Value.Value?.ToString();
-//             if (raw == null) continue;
-//
-//             foreach (var (_, col) in NodeRegistry.ResolveLeaf(current.Alias, name))
-//                 SetValue(current, col, raw);
-//         }
-//     }
-//
-//     private static void SetValue(ExecutionNode node, string column, string value)
-//     {
-//         for (int i = 0; i < node.Values.Count; i++)
-//         {
-//             if (node.Values[i].Column == column)
-//             {
-//                 node.Values[i] = (column, value);
-//                 return;
-//             }
-//         }
-//
-//         node.Values.Add((column, value));
-//     }
-// }
+﻿
+
+using System.Collections.Immutable;
+
+namespace CoffeeBeanery.GraphQL.Core.Runtime;
+
+public ref struct MutationPlanBuilder
+{
+    private InlineArray32<UpsertRow> _rows;
+    private int _rowCount;
+
+    private InlineArray32<MutationCteNode> _cteRoots;
+    private int _cteRootCount;
+
+    private InlineArray32<GraphMergeSpec> _graphMerges;
+    private int _graphMergeCount;
+
+    private readonly HashSet<GraphMergeKey> _graphMergeKeys;
+
+
+    public MutationPlanBuilder()
+    {
+        _rows = default;
+        _rowCount = 0;
+
+        _cteRoots = default;
+        _cteRootCount = 0;
+
+        _graphMerges = default;
+        _graphMergeCount = 0;
+
+        _graphMergeKeys = new HashSet<GraphMergeKey>();
+    }
+
+
+    public void AddRow(
+        ushort entityId,
+        ushort storageEntityId,
+        string outputAlias,
+        ImmutableArray<FieldValue> values,
+        string? schemaOverride = null,
+        string? tableOverride = null)
+    {
+        _rows[_rowCount++] =
+            new UpsertRow(
+                entityId,
+                storageEntityId,
+                outputAlias,
+                values,
+                schemaOverride,
+                tableOverride);
+    }
+
+
+    public void AddCteRoot(
+        MutationCteNode node)
+    {
+        _cteRoots[_cteRootCount++] = node;
+    }
+
+
+    public void AddGraphMerge(
+        string graphName,
+        string edgeLabel,
+        string fromLabel,
+        string fromKeyColumn,
+        string fromKeyValue,
+        string toLabel,
+        string toKeyColumn,
+        string toKeyValue,
+        string edgeKeyColumn,
+        string? edgeKeyValue,
+        ImmutableDictionary<string,string> edgeProperties)
+    {
+        var key =
+            new GraphMergeKey(
+                graphName,
+                edgeLabel,
+                fromLabel,
+                fromKeyColumn,
+                fromKeyValue,
+                toLabel,
+                toKeyColumn,
+                toKeyValue);
+
+
+        if (!_graphMergeKeys.Add(key))
+            return;
+
+
+        _graphMerges[_graphMergeCount++] =
+            new GraphMergeSpec(
+                graphName,
+                edgeLabel,
+                fromLabel,
+                fromKeyColumn,
+                fromKeyValue,
+                toLabel,
+                toKeyColumn,
+                toKeyValue,
+                edgeKeyColumn,
+                edgeKeyValue,
+                edgeProperties);
+    }
+
+
+    public MutationPlan Build()
+    {
+        var rows =
+            ImmutableArray.CreateBuilder<UpsertRow>(_rowCount);
+
+        for (var i = 0; i < _rowCount; i++)
+            rows.Add(_rows[i]);
+
+
+        var ctes =
+            ImmutableArray.CreateBuilder<MutationCteNode>(_cteRootCount);
+
+        for (var i = 0; i < _cteRootCount; i++)
+            ctes.Add(_cteRoots[i]);
+
+
+        var merges =
+            ImmutableArray.CreateBuilder<GraphMergeSpec>(_graphMergeCount);
+
+        for (var i = 0; i < _graphMergeCount; i++)
+            merges.Add(_graphMerges[i]);
+
+
+        return new MutationPlan(
+            rows.ToImmutable(),
+            ctes.ToImmutable(),
+            merges.ToImmutable());
+    }
+}

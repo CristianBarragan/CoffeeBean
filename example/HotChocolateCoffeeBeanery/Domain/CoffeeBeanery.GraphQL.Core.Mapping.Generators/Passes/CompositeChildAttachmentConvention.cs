@@ -169,58 +169,75 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
 }
 
         internal static List<CompositeStorageJoinInfo> ComputeCompositeJoinChain(
-            INamedTypeSymbol startEntity,
-            List<INamedTypeSymbol> compositeTypes,
-            List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+    INamedTypeSymbol startEntity,
+    List<INamedTypeSymbol> compositeTypes,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+{
+    var result = new List<CompositeStorageJoinInfo>();
+
+    var visited =
+        new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+
+    var queue =
+        new Queue<INamedTypeSymbol>();
+
+    visited.Add(startEntity);
+    queue.Enqueue(startEntity);
+
+    while (queue.Count > 0)
+    {
+        var current = queue.Dequeue();
+
+        foreach (var edge in entityGraph)
         {
-            var result = new List<CompositeStorageJoinInfo>();
-            var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default) { startEntity };
-            var queue = new Queue<INamedTypeSymbol>();
-            queue.Enqueue(startEntity);
+            INamedTypeSymbol? next = null;
+            string? currentColumn = null;
+            string? nextColumn = null;
 
-            while (queue.Count > 0)
+            if (SymbolEqualityComparer.Default.Equals(edge.PrincipalEntity, current))
             {
-                var current = queue.Dequeue();
-
-                foreach (var edge in entityGraph)
-                {
-                    INamedTypeSymbol? other = null;
-                    string? parentColumn = null;
-                    string? childColumn = null;
-
-                    if (SymbolEqualityComparer.Default.Equals(edge.PrincipalEntity, current) &&
-                        compositeTypes.Any(t => SymbolEqualityComparer.Default.Equals(t, edge.DependentEntity)))
-                    {
-                        other = edge.DependentEntity;
-                        parentColumn = edge.PrincipalColumn;
-                        childColumn = edge.DependentColumn;
-                    }
-                    else if (SymbolEqualityComparer.Default.Equals(edge.DependentEntity, current) &&
-                             compositeTypes.Any(t => SymbolEqualityComparer.Default.Equals(t, edge.PrincipalEntity)))
-                    {
-                        other = edge.PrincipalEntity;
-                        parentColumn = edge.DependentColumn;
-                        childColumn = edge.PrincipalColumn;
-                    }
-
-                    if (other == null || visited.Contains(other))
-                        continue;
-
-                    visited.Add(other);
-                    queue.Enqueue(other);
-
-                    result.Add(new CompositeStorageJoinInfo
-                    {
-                        ParentEntityType = current,
-                        ChildEntityType = other,
-                        ParentJoinColumn = parentColumn!,
-                        ChildJoinColumn = childColumn!
-                    });
-                }
+                next = edge.DependentEntity;
+                currentColumn = edge.PrincipalColumn;
+                nextColumn = edge.DependentColumn;
+            }
+            else if (SymbolEqualityComparer.Default.Equals(edge.DependentEntity, current))
+            {
+                next = edge.PrincipalEntity;
+                currentColumn = edge.DependentColumn;
+                nextColumn = edge.PrincipalColumn;
             }
 
-            return result;
+            if (next == null)
+                continue;
+
+            if (!compositeTypes.Any(t =>
+                    SymbolEqualityComparer.Default.Equals(t, next)))
+            {
+                continue;
+            }
+
+            if (visited.Contains(next))
+                continue;
+
+            if (SymbolEqualityComparer.Default.Equals(current, next))
+                continue;
+
+            visited.Add(next);
+            queue.Enqueue(next);
+
+            result.Add(
+                new CompositeStorageJoinInfo
+                {
+                    ParentEntityType = current,
+                    ChildEntityType = next,
+                    ParentJoinColumn = currentColumn!,
+                    ChildJoinColumn = nextColumn!
+                });
         }
+    }
+
+    return result;
+}
         
         private sealed record NavigationInfo(
             string PropertyName,

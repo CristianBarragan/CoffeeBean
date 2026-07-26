@@ -31,58 +31,6 @@ internal static class IdEmitter
 
         return sb.ToString();
     }
-    
-    public static IEnumerable<IPropertySymbol> GetPrimaryKeyProperties(
-        INamedTypeSymbol entity)
-    {
-        // EF convention: Id
-        var id =
-            entity.GetMembers()
-                .OfType<IPropertySymbol>()
-                .FirstOrDefault(p =>
-                    string.Equals(
-                        p.Name,
-                        "Id",
-                        StringComparison.OrdinalIgnoreCase));
-
-        if (id != null)
-        {
-            yield return id;
-            yield break;
-        }
-
-
-        // EF convention: EntityNameId
-        var entityId =
-            entity.GetMembers()
-                .OfType<IPropertySymbol>()
-                .FirstOrDefault(p =>
-                    string.Equals(
-                        p.Name,
-                        entity.Name + "Id",
-                        StringComparison.OrdinalIgnoreCase));
-
-        if (entityId != null)
-        {
-            yield return entityId;
-            yield break;
-        }
-
-
-        // fallback: any key annotation emitted by your EF pass
-        foreach (var property in entity.GetMembers()
-                     .OfType<IPropertySymbol>())
-        {
-            foreach (var attribute in property.GetAttributes())
-            {
-                if (attribute.AttributeClass?.Name ==
-                    "KeyAttribute")
-                {
-                    yield return property;
-                }
-            }
-        }
-    }
 
     public static string StripEntitySuffix(string entityTypeName)
     {
@@ -117,7 +65,7 @@ internal static class IdEmitter
 
         sb.AppendLine("}");
     }
-    
+
     internal static IReadOnlyList<IPropertySymbol> GetScalarProperties(
         INamedTypeSymbol type)
     {
@@ -163,7 +111,28 @@ internal static class IdEmitter
             _ => false
         };
     }
-    
+
+    /// <summary>
+    /// Returns the primary-key scalar properties for an entity — typically
+    /// just the surrogate "Id" property. Used both when computing ColumnId
+    /// constants and when computing the runtime EntityColumnName array, so
+    /// both MUST call GetFullColumnOrder (below) rather than duplicating
+    /// this insertion logic independently — divergence here previously
+    /// caused ColumnId constants and EntityColumnName[] to disagree on
+    /// ordering for any entity whose PK wasn't already a mapped field.
+    /// </summary>
+    internal static List<IPropertySymbol> GetPrimaryKeyProperties(
+        INamedTypeSymbol type)
+    {
+        var idProp = GetScalarProperties(type)
+            .FirstOrDefault(p =>
+                string.Equals(p.Name, "Id", StringComparison.Ordinal));
+
+        return idProp != null
+            ? new List<IPropertySymbol> { idProp }
+            : new List<IPropertySymbol>();
+    }
+
     internal static List<string> GetOrderedColumnNames(
         string entityName,
         ImmutableArray<MappingClassInfo> mappings)
@@ -175,6 +144,42 @@ internal static class IdEmitter
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    /// <summary>
+    /// Single source of truth for an entity's full column ordering,
+    /// including its primary key column inserted at index 0 if it isn't
+    /// already among the mapped field-map columns. EmitColumnIds (numeric
+    /// ColumnId.* constants) and EmitEntityColumnNameArray (the runtime
+    /// string[] indexed by those constants) MUST both call this same
+    /// method — computing the ordering independently in each place is
+    /// exactly what caused ColumnId constants to be off-by-one relative to
+    /// the runtime name array for any entity whose PK column wasn't
+    /// already a mapped scalar field (e.g. CustomerCustomerRelationship).
+    /// </summary>
+    internal static List<string> GetFullColumnOrder(
+        string entityName,
+        ImmutableArray<MappingClassInfo> mappings,
+        INamedTypeSymbol? entityType)
+    {
+        var columns = GetOrderedColumnNames(entityName, mappings);
+
+        if (entityType != null)
+        {
+            var primaryKeys = GetPrimaryKeyProperties(entityType)
+                .Select(x => x.Name)
+                .ToList();
+
+            foreach (var pk in primaryKeys)
+            {
+                if (!columns.Contains(pk, StringComparer.Ordinal))
+                {
+                    columns.Insert(0, pk);
+                }
+            }
+        }
+
+        return columns;
     }
 
     internal static bool IsScalarProperty(
@@ -239,19 +244,17 @@ internal static class IdEmitter
 
         sb.AppendLine("}");
     }
-    
+
     internal static IReadOnlyList<string> GetResolvedFieldNames(
         MappingClassInfo mapping)
     {
         var fields = new HashSet<string>(StringComparer.Ordinal);
 
-        // Convention-discovered scalar properties
         foreach (var prop in GetScalarProperties(mapping.ModelType!))
         {
             fields.Add(prop.Name);
         }
 
-        // Explicit/custom mapping fields
         foreach (var field in mapping.FieldMaps)
         {
             var name = FieldIdNameHelper.GetName(field);
@@ -266,105 +269,44 @@ internal static class IdEmitter
     }
 
     private static void EmitColumnIds(
-    StringBuilder sb,
-    ImmutableArray<MappingClassInfo> mappings)
-{
-    sb.AppendLine();
-    sb.AppendLine("public static class ColumnId");
-    sb.AppendLine("{");
-
-    var entityNames =
-        new HashSet<string>(
-            StringComparer.OrdinalIgnoreCase);
-
-    var columnsByEntity =
-        new Dictionary<string, HashSet<string>>(
-            StringComparer.OrdinalIgnoreCase);
-
-
-    foreach (var mapping in mappings)
+        StringBuilder sb,
+        ImmutableArray<MappingClassInfo> mappings)
     {
-        foreach (var entity in mapping.Definition.Entities)
+        sb.AppendLine();
+        sb.AppendLine("public static class ColumnId");
+        sb.AppendLine("{");
+
+        var distinctEntities =
+            mappings
+                .SelectMany(m => m.Definition.Entities)
+                .Where(e => e.EntityType != null)
+                .Select(e => e.EntityType!)
+                .Distinct(SymbolEqualityComparer.Default)
+                .Cast<INamedTypeSymbol>()
+                .OrderBy(e => e.Name)
+                .ToList();
+
+        foreach (var entityType in distinctEntities)
         {
-            if (entity.EntityType == null)
-                continue;
+            var strippedName = StripEntitySuffix(entityType.Name);
 
-            entityNames.Add(
-                StripEntitySuffix(
-                    entity.EntityType.Name));
-        }
+            var columns =
+                GetFullColumnOrder(
+                    strippedName,
+                    mappings,
+                    entityType);
 
+            sb.AppendLine($"    public static class {strippedName}");
+            sb.AppendLine("    {");
 
-        foreach (var field in mapping.FieldMaps)
-        {
-            var entity =
-                StripEntitySuffix(
-                    field.DestinationEntity);
-
-
-            if (!columnsByEntity.TryGetValue(
-                    entity,
-                    out var columns))
+            for (ushort id = 0; id < columns.Count; id++)
             {
-                columns =
-                    new HashSet<string>(
-                        StringComparer.OrdinalIgnoreCase);
-
-                columnsByEntity[entity] = columns;
+                sb.AppendLine($"        public const ushort {columns[(int)id]} = {id};");
             }
 
-
-            columns.Add(
-                field.DestinationName);
-        }
-    }
-
-
-    foreach (var entityName in entityNames.OrderBy(x => x))
-    {
-        sb.AppendLine(
-            $"    public static class {entityName}");
-
-        sb.AppendLine(
-            "    {");
-
-
-        sb.AppendLine(
-            "        public const ushort Id = 0;");
-
-
-        ushort id = 1;
-
-
-        if (columnsByEntity.TryGetValue(
-                entityName,
-                out var columns))
-        {
-            foreach (var column in columns.OrderBy(x => x))
-            {
-                if (string.Equals(
-                        column,
-                        "Id",
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-
-                sb.AppendLine(
-                    $"        public const ushort {column} = {id};");
-
-                id++;
-            }
+            sb.AppendLine("    }");
         }
 
-
-        sb.AppendLine(
-            "    }");
+        sb.AppendLine("}");
     }
-
-
-    sb.AppendLine(
-        "}");
-}
 }

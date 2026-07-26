@@ -113,6 +113,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         public string ParentJoinColumn { get; init; } = null!;
         public string ChildJoinColumn { get; init; } = null!;
+
+        public bool ParentIsModelRoot { get; init; }
     }
 
     public sealed class EntityKeyInfo

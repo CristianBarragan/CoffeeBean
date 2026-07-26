@@ -17,81 +17,47 @@ public enum JoinSourceKind : byte
 
 public readonly struct JoinSpec
 {
-    public readonly JoinSourceKind SourceKind;
+    // SQL aliases
+    public readonly string ParentAlias;
+    public readonly string ChildAlias;
 
-    public readonly ushort FromEntityId;
-    public readonly ushort FromStorageEntityId;
-    public readonly ushort FromColumnId;
-    
-    public readonly string SqlAlias;
+    // Parent table
+    public readonly ushort ParentEntityId;
+    public readonly ushort ParentStorageEntityId;
+    public readonly ushort ParentColumnId;
 
-    public readonly string? FromGraphAlias;
-    public readonly string? FromRawColumnName;
-
-    public readonly ushort ToEntityId;
-    public readonly ushort ToStorageEntityId;
-    public readonly ushort ToColumnId;
+    // Child table
+    public readonly ushort ChildEntityId;
+    public readonly ushort ChildStorageEntityId;
+    public readonly ushort ChildColumnId;
 
     public readonly JoinKind Kind;
-    public readonly string ToOutputAlias;
-
 
     public JoinSpec(
-        ushort fromEntityId,
-        ushort fromStorageEntityId,
-        ushort toEntityId,
-        ushort toStorageEntityId,
-        ushort fromColumnId,
-        ushort toColumnId,
-        JoinKind kind,
-        string toOutputAlias)
+        string parentAlias,
+        string childAlias,
+        ushort parentEntityId,
+        ushort parentStorageEntityId,
+        ushort parentColumnId,
+        ushort childEntityId,
+        ushort childStorageEntityId,
+        ushort childColumnId,
+        JoinKind kind)
     {
-        SourceKind = JoinSourceKind.Table;
+        ParentAlias = parentAlias;
+        ChildAlias = childAlias;
 
-        FromEntityId = fromEntityId;
-        FromStorageEntityId = fromStorageEntityId;
-        FromColumnId = fromColumnId;
+        ParentEntityId = parentEntityId;
+        ParentStorageEntityId = parentStorageEntityId;
+        ParentColumnId = parentColumnId;
 
-        FromGraphAlias = null;
-        FromRawColumnName = null;
-
-        ToEntityId = toEntityId;
-        ToStorageEntityId = toStorageEntityId;
-        ToColumnId = toColumnId;
+        ChildEntityId = childEntityId;
+        ChildStorageEntityId = childStorageEntityId;
+        ChildColumnId = childColumnId;
 
         Kind = kind;
-        ToOutputAlias = toOutputAlias;
-    }
-
-
-    public JoinSpec(
-        ushort fromEntityId,
-        string fromGraphAlias,
-        string fromRawColumnName,
-        ushort toEntityId,
-        ushort toStorageEntityId,
-        ushort toColumnId,
-        JoinKind kind,
-        string toOutputAlias)
-    {
-        SourceKind = JoinSourceKind.GraphVertex;
-
-        FromEntityId = fromEntityId;
-        FromStorageEntityId = 0;
-        FromColumnId = 0;
-
-        FromGraphAlias = fromGraphAlias;
-        FromRawColumnName = fromRawColumnName;
-
-        ToEntityId = toEntityId;
-        ToStorageEntityId = toStorageEntityId;
-        ToColumnId = toColumnId;
-
-        Kind = kind;
-        ToOutputAlias = toOutputAlias;
     }
 }
-
 
 public readonly struct GraphJoinSpec
 {
@@ -326,7 +292,7 @@ public readonly struct QueryPlan
         RootEntityId = rootEntityId;
         RootStorageEntityId = rootStorageEntityId;
         RootAlias = rootAlias;
-
+        RootOutputAlias = rootAlias;
         Columns = columns;
         Joins = joins;
         GraphJoins = graphJoins;
@@ -374,6 +340,8 @@ public readonly struct JoinKey : IEquatable<JoinKey>
     public readonly ushort ToStorageEntityId;
     public readonly ushort ToColumnId;
 
+    public readonly string ToOutputAlias;
+
 
     public JoinKey(
         ushort fromEntityId,
@@ -381,7 +349,8 @@ public readonly struct JoinKey : IEquatable<JoinKey>
         ushort fromColumnId,
         ushort toEntityId,
         ushort toStorageEntityId,
-        ushort toColumnId)
+        ushort toColumnId,
+        string toOutputAlias)
     {
         FromEntityId = fromEntityId;
         FromStorageEntityId = fromStorageEntityId;
@@ -390,6 +359,8 @@ public readonly struct JoinKey : IEquatable<JoinKey>
         ToEntityId = toEntityId;
         ToStorageEntityId = toStorageEntityId;
         ToColumnId = toColumnId;
+
+        ToOutputAlias = toOutputAlias;
     }
 
 
@@ -399,9 +370,15 @@ public readonly struct JoinKey : IEquatable<JoinKey>
             FromEntityId == other.FromEntityId &&
             FromStorageEntityId == other.FromStorageEntityId &&
             FromColumnId == other.FromColumnId &&
+
             ToEntityId == other.ToEntityId &&
             ToStorageEntityId == other.ToStorageEntityId &&
-            ToColumnId == other.ToColumnId;
+            ToColumnId == other.ToColumnId &&
+
+            string.Equals(
+                ToOutputAlias,
+                other.ToOutputAlias,
+                StringComparison.OrdinalIgnoreCase);
     }
 
 
@@ -417,7 +394,8 @@ public readonly struct JoinKey : IEquatable<JoinKey>
             FromColumnId,
             ToEntityId,
             ToStorageEntityId,
-            ToColumnId);
+            ToColumnId,
+            StringComparer.OrdinalIgnoreCase.GetHashCode(ToOutputAlias));
     }
 }
 
