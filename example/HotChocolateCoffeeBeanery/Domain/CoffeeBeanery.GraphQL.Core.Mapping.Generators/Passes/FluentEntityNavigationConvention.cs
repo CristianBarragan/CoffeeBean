@@ -156,15 +156,101 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
 
                         if (relatedEntity == null)
                             continue;
-                            
-                                                    //
+
+
+                        // ---------------------------------------------------
+                        // Determine which side is dependent (owns the FK
+                        // column) and which is principal (owns the PK the FK
+                        // points at). This is NOT always "entityType" — the
+                        // class whose Configure() this statement lives in.
+                        //
+                        //   HasMany(x => x.Children).WithOne(...).HasForeignKey(...)
+                        //     -> entityType is principal ("one" side);
+                        //        relatedEntity (the "many"/child side) owns
+                        //        the FK column.
+                        //
+                        //   HasOne(x => x.Other).WithMany(...).HasForeignKey(...)
+                        //     -> entityType is dependent (it's configuring its
+                        //        own single FK-holding navigation);
+                        //        relatedEntity is principal.
+                        //
+                        //   HasOne(x => x.Other).WithOne(...).HasForeignKey<T>(...)
+                        //     -> ambiguous from HasOne/WithOne alone; the
+                        //        generic argument on HasForeignKey<T> is the
+                        //        actual dependent side and must be checked
+                        //        explicitly.
+                        //
+                        // Getting this backwards (as a previous version of
+                        // this method did, always treating entityType as
+                        // DeclaringEntityType/dependent) causes every derived
+                        // FK edge to record the wrong entity as owning the FK
+                        // column, and to default RawPrincipalKeyColumn from
+                        // the wrong entity's primary key.
+                        // ---------------------------------------------------
+
+                        INamedTypeSymbol dependentEntityType;
+                        INamedTypeSymbol principalEntityType;
+
+                        var relationshipName = chain[hasIndex].Name;
+
+                        if (relationshipName == "HasMany")
+                        {
+                            // entityType.HasMany(x => x.Children) — entityType
+                            // is principal; relatedEntity is dependent.
+                            principalEntityType = entityType;
+                            dependentEntityType = relatedEntity;
+                        }
+                        else // "HasOne"
+                        {
+                            var fkGenericTarget =
+                                ExtractHasForeignKeyGenericArgument(
+                                    chain[fkIndex].Invocation,
+                                    semanticModel,
+                                    ct);
+
+                            if (fkGenericTarget != null &&
+                                SymbolEqualityComparer.Default.Equals(
+                                    fkGenericTarget,
+                                    entityType))
+                            {
+                                // HasOne(...).WithOne(...).HasForeignKey<TSelf>(...)
+                                // — the FK actually lives on entityType itself.
+                                dependentEntityType = entityType;
+                                principalEntityType = relatedEntity;
+                            }
+                            else if (fkGenericTarget != null &&
+                                     SymbolEqualityComparer.Default.Equals(
+                                         fkGenericTarget,
+                                         relatedEntity))
+                            {
+                                // HasOne(...).WithOne(...).HasForeignKey<TRelated>(...)
+                                // — the FK lives on the related entity.
+                                dependentEntityType = relatedEntity;
+                                principalEntityType = entityType;
+                            }
+                            else
+                            {
+                                // No generic HasForeignKey<T> (plain
+                                // HasOne(...).WithMany(...).HasForeignKey(...)
+                                // form) — entityType is configuring its own
+                                // FK navigation, so entityType is dependent.
+                                dependentEntityType = entityType;
+                                principalEntityType = relatedEntity;
+                            }
+                        }
+
+
+                        //
                         // Real EF principal key.
                         //
                         // Example:
                         //
                         // HasPrincipalKey(x => x.AccountId)
                         //
-                        // If not explicitly configured, EF uses the PK.
+                        // If not explicitly configured, EF uses the PK of
+                        // the PRINCIPAL entity — not whichever entity
+                        // happens to be "relatedEntity" from entityType's
+                        // point of view.
                         //
                         var principalKeyIndex =
                             chain.FindIndex(
@@ -183,16 +269,16 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                         {
                             rawPrincipalKeyColumn =
                                 FindPrimaryKeyPropertyName(
-                                    relatedEntity);
+                                    principalEntityType);
                         }
 
                         results.Add(
                             new DerivedForeignKey(
                                 DeclaringEntityType:
-                                    entityType,
+                                    dependentEntityType,
 
                                 RelatedEntityType:
-                                    relatedEntity,
+                                    principalEntityType,
 
                                 ModelForeignKeyProperty:
                                     rawFkColumn,
@@ -772,7 +858,35 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
 
             return null;
         }
+
+
+        /// <summary>
+        /// Extracts the type argument T from a HasForeignKey&lt;T&gt;(...)
+        /// call, e.g. HasForeignKey&lt;Contract&gt;(c => c.AccountId) returns
+        /// the symbol for Contract. Returns null if HasForeignKey is not the
+        /// generic form (plain HasForeignKey(...) with no type argument).
+        /// </summary>
+        private static INamedTypeSymbol? ExtractHasForeignKeyGenericArgument(
+            InvocationExpressionSyntax invocation,
+            SemanticModel semanticModel,
+            CancellationToken ct)
+        {
+            if (invocation.Expression is not MemberAccessExpressionSyntax
+                {
+                    Name: GenericNameSyntax generic
+                })
+            {
+                return null;
+            }
+
+            if (generic.TypeArgumentList.Arguments.Count != 1)
+                return null;
+
+            var typeArg = generic.TypeArgumentList.Arguments[0];
+
+            var symbolInfo = semanticModel.GetSymbolInfo(typeArg, ct);
+
+            return symbolInfo.Symbol as INamedTypeSymbol;
+        }
     }
 }
-                
-                
