@@ -30,26 +30,63 @@ public static class MutationRuntimePlanner
     in MutationIR? parent,
     ref MutationPlanBuilder builder)
 {
-    var metadata = MutationMetadataRegistry.Get(entityId);
+    var metadata =
+        MutationMetadataRegistry.Get(entityId);
 
-    var model = MutationMaterializerRegistry.Materialize(entityId, node, metadata);
 
-    var childModels = ImmutableArray.CreateBuilder<object>(node.Children.Length);
-    var childNodes = ImmutableArray.CreateBuilder<MutationCteNode>(node.Children.Length);
+    var model =
+        MutationMaterializerRegistry.Materialize(
+            entityId,
+            node,
+            metadata);
+
+
+    var childModels =
+        ImmutableArray.CreateBuilder<object>(
+            node.Children.Length);
+
+
+    var childNodes =
+        ImmutableArray.CreateBuilder<MutationCteNode>(
+            node.Children.Length);
+
 
     foreach (var child in node.Children)
     {
-        var result = BuildCore(child.EntityId, child, node, ref builder);
+        var result =
+            BuildCore(
+                child.EntityId,
+                child,
+                node,
+                ref builder);
+
+
         childNodes.Add(result.Cte);
         childModels.Add(result.Model);
     }
 
-    var context = new MutationInterceptorContext(node, parent, childModels.ToImmutable());
-    MutationInterceptorRegistry.Apply(entityId, model, context);
 
-    var values = MutationDematerializerRegistry.Dematerialize(entityId, model, metadata);
+    var context =
+        new MutationInterceptorContext(
+            node,
+            parent,
+            childModels.ToImmutable());
 
-    // NEW: for graph-edge models, synthesize a fake MutationCteNode per
+
+    MutationInterceptorRegistry.Apply(
+        entityId,
+        model,
+        context);
+
+
+    var values =
+        MutationDematerializerRegistry.Dematerialize(
+            entityId,
+            model,
+            metadata);
+
+
+    // For graph-edge models, synthesize a fake MutationCteNode per
     // endpoint navigation from the raw navigation-key value, so the
     // existing BuildCteNodeUpsertMerged natural-key-JOIN machinery
     // (originally built for real nested children) can resolve
@@ -57,7 +94,7 @@ public static class MutationRuntimePlanner
     // like it already does for ordinary composite children.
     if (metadata.Kind == MutationKind.GraphEdge)
     {
-        var resolutions = metadata.CteUpdateMeta;   // was: _meta.CteResolutions[entityId]
+        var resolutions = metadata.CteUpdateMeta;
 
         foreach (var spec in resolutions)
         {
@@ -85,41 +122,67 @@ public static class MutationRuntimePlanner
         }
     }
 
+
     // Navigation-key values must never appear in the entity's own INSERT
     // column list — they have no real column (placeholder ColumnId = 0)
     // and are resolved via the synthesized child JOINs above instead.
-    var filteredValues = values
-        .Where(v =>
-        {
-            metadata.TryResolveField(v.FieldId, out var m);
-            return !m.IsNavigationKey;
-        })
-        .ToImmutableArray();
+    var filteredValues =
+        values
+            .Where(v =>
+            {
+                metadata.TryResolveField(v.FieldId, out var m);
+                return m == null || !m.IsNavigationKey;
+            })
+            .ToImmutableArray();
 
-    EmitRowsGroupedByStorageEntity(entityId, node, metadata, filteredValues, ref builder);
+
+    EmitRowsGroupedByStorageEntity(
+        entityId,
+        node,
+        metadata,
+        filteredValues,
+        ref builder);
+
 
     if (metadata.Kind == MutationKind.GraphEdge)
     {
-        EmitGraphMerge(node, metadata, ref builder);
+        EmitGraphMerge(
+            node,
+            metadata,
+            ref builder);
     }
 
-    if (!metadata.IsRoot)
+
+    // CTE-node/JOIN-resolution path fires whenever this entity is either
+    // the true mutation root, OR it has its own natural-key resolutions
+    // to perform (as graph-edge models do for their endpoint
+    // navigations) — even though a graph-edge model is never itself
+    // "IsRoot", it still needs BuildCteNodeUpsertMerged's INSERT ...
+    // SELECT ... JOIN ... ON CONFLICT machinery to resolve
+    // InnerCustomer/OuterCustomer's surrogate ids at upsert time.
+    var cteResolutions = metadata.CteUpdateMeta;
+
+    if (metadata.IsRoot || cteResolutions.Length > 0)
     {
-        return (default, model);
+        var cte =
+            new MutationCteNode(
+                entityId,
+                metadata.StorageEntityId,
+                node.OutputAlias,
+                filteredValues,
+                childNodes.ToImmutable(),
+                metadata.Schema,
+                metadata.Table);
+
+
+        builder.AddCteRoot(cte);
+
+
+        return (cte, model);
     }
 
-    var cte = new MutationCteNode(
-        entityId,
-        metadata.StorageEntityId,
-        node.OutputAlias,
-        filteredValues,
-        childNodes.ToImmutable(),
-        metadata.Schema,
-        metadata.Table);
 
-    builder.AddCteRoot(cte);
-
-    return (cte, model);
+    return (default, model);
 }
 
 

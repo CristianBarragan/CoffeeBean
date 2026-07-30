@@ -110,7 +110,7 @@ public ref struct QueryPlanBuilder
             finalAlias =
                 entityOutputAlias +
                 char.ToUpperInvariant(columnOutputAlias[0]) +
-                columnOutputAlias[1..];
+                columnOutputAlias.Substring(1);
 
             if (!_usedColumnAliases.Add(finalAlias))
             {
