@@ -41,7 +41,7 @@ internal static class MutationMetadataEmitter
             if (mapping.Graph != null)
             {
                 var resolutions =
-                    BuildGraphEdgeCteResolutions(mapping);
+                    BuildGraphEdgeCteResolutions(mapping, allMappings);
 
 
                 foreach (var resolution in resolutions)
@@ -213,107 +213,215 @@ internal static class MutationMetadataEmitter
     }
 
 
-    internal static List<GraphEdgeCteResolution> BuildGraphEdgeCteResolutions(
-        MappingClassInfo info)
-    {
-        var result =
-            new List<GraphEdgeCteResolution>();
+    public static List<GraphEdgeCteResolution>
+    BuildGraphEdgeCteResolutions(
+        MappingClassInfo info,
+        ImmutableArray<MappingClassInfo> allMappings)
+{
+    var result =
+        new List<GraphEdgeCteResolution>();
 
-
-        if (info.Graph == null)
-            return result;
-
-
-        var navigationFields =
-            info.FieldMaps
-                .Where(x => x.IsNavigationKey)
-                .ToList();
-
-
-        if (navigationFields.Count < 2)
-            return result;
-
-
-        static string ExtractColumn(string value)
-        {
-            var parts =
-                value.Split(
-                    new[] { '.' },
-                    StringSplitOptions.RemoveEmptyEntries);
-
-            return parts.Length > 1
-                ? parts[1]
-                : parts.LastOrDefault() ?? string.Empty;
-        }
-
-
-        static string ExtractEntity(string value)
-        {
-            var parts =
-                value.Split(
-                    new[] { '.' },
-                    StringSplitOptions.RemoveEmptyEntries);
-
-            return parts.Length > 1
-                ? IdEmitter.StripEntitySuffix(parts[0])
-                : string.Empty;
-        }
-
-
-        var fromField =
-            navigationFields[0];
-
-        var toField =
-            navigationFields[1];
-
-
-        result.Add(
-            new GraphEdgeCteResolution(
-                NavigationAlias:
-                fromField.SourceName,
-
-                ForeignKeyColumn:
-                ExtractColumn(
-                    info.Graph.From.ForeignKeyColumn),
-
-                OwningPrimaryKeyColumn:
-                info.Graph.From.ForeignKeyColumn,
-
-                RelatedEntityTypeName:
-                ExtractEntity(
-                    info.Graph.From.ForeignKeyColumn),
-
-                RelatedSurrogateIdColumn:
-                fromField.DestinationName,
-
-                RelatedNaturalKeyColumn:
-                fromField.DestinationName));
-
-
-        result.Add(
-            new GraphEdgeCteResolution(
-                NavigationAlias:
-                toField.SourceName,
-
-                ForeignKeyColumn:
-                ExtractColumn(
-                    info.Graph.To.ForeignKeyColumn),
-
-                OwningPrimaryKeyColumn:
-                info.Graph.To.ForeignKeyColumn,
-
-                RelatedEntityTypeName:
-                ExtractEntity(
-                    info.Graph.To.ForeignKeyColumn),
-
-                RelatedSurrogateIdColumn:
-                toField.DestinationName,
-
-                RelatedNaturalKeyColumn:
-                toField.DestinationName));
-
-
+    if (info.Graph == null)
         return result;
+
+
+    var navigationFields =
+        info.FieldMaps
+            .Where(x => x.IsNavigationKey)
+            .ToList();
+
+
+    if (navigationFields.Count < 2)
+        return result;
+
+
+    static string ExtractEntity(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var parts =
+            value.Split(
+                new[] { '.' },
+                StringSplitOptions.RemoveEmptyEntries);
+
+        return parts.Length > 1
+            ? IdEmitter.StripEntitySuffix(parts[0])
+            : string.Empty;
+    }
+
+
+    static string ExtractColumn(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var parts =
+            value.Split(
+                new[] { '.' },
+                StringSplitOptions.RemoveEmptyEntries);
+
+        return parts.Length > 1
+            ? parts[1]
+            : parts.LastOrDefault() ?? string.Empty;
+    }
+
+
+    static string ResolvePrimaryKeyColumn(
+        MappingClassInfo mapping)
+    {
+        return mapping.Definition.PrimaryKey
+            .Select(x => x.ColumnKey)
+            .FirstOrDefault(x =>
+                !string.IsNullOrWhiteSpace(x))
+            ?? string.Empty;
+    }
+
+
+    var endpoints =
+        new[]
+        {
+            (
+                Field: navigationFields[0],
+                ForeignKey:
+                    info.Graph.From?.ForeignKeyColumn
+            ),
+            (
+                Field: navigationFields[1],
+                ForeignKey:
+                    info.Graph.To?.ForeignKeyColumn
+            )
+        };
+
+
+    foreach (var endpoint in endpoints)
+    {
+        var relatedEntity =
+            ExtractEntity(
+                endpoint.ForeignKey);
+
+
+        var foreignKeyColumn =
+            ExtractColumn(
+                endpoint.ForeignKey);
+
+
+        MappingClassInfo? relatedMapping = null;
+
+
+        if (!string.IsNullOrWhiteSpace(relatedEntity))
+        {
+            relatedMapping =
+                allMappings.FirstOrDefault(x =>
+                    x.ModelType != null &&
+                    string.Equals(
+                        IdEmitter.StripEntitySuffix(
+                            x.ModelType.Name),
+                        relatedEntity,
+                        StringComparison.OrdinalIgnoreCase));
+        }
+
+
+        if (relatedMapping == null)
+        {
+            relatedMapping =
+                allMappings.FirstOrDefault(x =>
+                    x.ModelType != null &&
+                    string.Equals(
+                        IdEmitter.StripEntitySuffix(
+                            x.ModelType.Name),
+                        IdEmitter.StripEntitySuffix(
+                            endpoint.Field.DestinationEntity),
+                        StringComparison.OrdinalIgnoreCase));
+        }
+
+
+        if (relatedMapping == null)
+        {
+            continue;
+        }
+
+
+        relatedEntity =
+            IdEmitter.StripEntitySuffix(
+                relatedMapping.ModelType!.Name);
+
+
+        var naturalKey =
+            ResolvePrimaryKeyColumn(
+                relatedMapping);
+
+
+        var edgePrimaryKey =
+            info.Definition.PrimaryKey
+                .Select(x => x.ColumnKey)
+                .FirstOrDefault(x =>
+                    !string.IsNullOrWhiteSpace(x))
+            ?? string.Empty;
+
+
+        result.Add(
+            new GraphEdgeCteResolution(
+                NavigationAlias:
+                    endpoint.Field.SourceName,
+
+                ForeignKeyColumn:
+                    foreignKeyColumn,
+
+                OwningPrimaryKeyColumn:
+                    edgePrimaryKey,
+
+                RelatedEntityTypeName:
+                    relatedEntity,
+
+                RelatedSurrogateIdColumn:
+                    naturalKey,
+
+                RelatedNaturalKeyColumn:
+                    naturalKey));
+    }
+
+
+    return result;
+}
+    
+    private static string ResolveRelatedSurrogateIdColumn(
+        MappingClassInfo info,
+        string relatedEntity)
+    {
+        var entity =
+            info.Definition.Entities
+                .FirstOrDefault(e =>
+                    e.EntityType != null &&
+                    string.Equals(
+                        IdEmitter.StripEntitySuffix(e.EntityType.Name),
+                        relatedEntity,
+                        StringComparison.OrdinalIgnoreCase));
+
+        if (entity == null)
+            throw new InvalidOperationException(
+                $"Unable to resolve surrogate key for entity '{relatedEntity}'.");
+
+
+        var primaryKey =
+            info.Definition.PrimaryKey
+                .FirstOrDefault(pk =>
+                    pk.Entity != null &&
+                    string.Equals(
+                        IdEmitter.StripEntitySuffix(pk.Entity.Name),
+                        relatedEntity,
+                        StringComparison.OrdinalIgnoreCase));
+
+
+        if (primaryKey == null ||
+            string.IsNullOrWhiteSpace(primaryKey.ColumnKey))
+        {
+            throw new InvalidOperationException(
+                $"Entity '{relatedEntity}' has no primary key metadata.");
+        }
+
+
+        return primaryKey.ColumnKey;
     }
 
     private static void EmitFactory(

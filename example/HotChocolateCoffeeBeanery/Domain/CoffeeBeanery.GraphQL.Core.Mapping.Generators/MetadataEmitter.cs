@@ -31,7 +31,7 @@ internal static class MetadataEmitter
 
             if (m.Graph != null)
             {
-                foreach (var resolution in MutationMetadataEmitter.BuildGraphEdgeCteResolutions(m))
+                foreach (var resolution in MutationMetadataEmitter.BuildGraphEdgeCteResolutions(m, allMappings))
                 {
                     m.CteUpdateMeta.Add(
                         new CteUpdateMetaInfo
