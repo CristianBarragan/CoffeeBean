@@ -317,7 +317,10 @@
             var conflictCols =
                 _meta.EntityConflictColumns[row.StorageEntityId];
 
-            var insertColumns = new List<string>();
+
+            var insertColumns =
+                new List<string>();
+
 
             foreach (var value in row.Values)
             {
@@ -328,15 +331,27 @@
                         value.FieldId));
             }
 
+
             foreach (var lookup in row.Lookups)
             {
-                insertColumns.Add(
+                var column =
                     _meta.EntityColumnName
                             [lookup.LookupStorageEntityId]
-                        [lookup.TargetColumnId]);
+                        [lookup.TargetColumnId];
+
+
+                if (!insertColumns.Contains(
+                        column,
+                        StringComparer.OrdinalIgnoreCase))
+                {
+                    insertColumns.Add(column);
+                }
             }
 
-            var sb = new StringBuilder();
+
+            var sb =
+                new StringBuilder();
+
 
             sb.Append("INSERT INTO \"")
                 .Append(schema)
@@ -344,18 +359,25 @@
                 .Append(table)
                 .Append("\" (");
 
+
             sb.Append(string.Join(", ",
                 insertColumns.Select(x => $"\"{x}\"")));
 
+
             sb.AppendLine(")");
 
-            WriteLookupSelect(sb, row);
+
+            WriteLookupSelect(
+                sb,
+                row);
+
 
             AppendLookupConflictClause(
                 sb,
                 row,
                 insertColumns,
                 conflictCols);
+
 
             return sb.ToString();
         }
@@ -437,6 +459,25 @@
             sb.AppendLine();
 
             WriteLookupFrom(sb, row);
+        }
+        
+        private string BuildLiteralExpression(
+            ushort storageEntityId,
+            ushort fieldId,
+            string rawValue)
+        {
+            var sb =
+                new StringBuilder();
+
+
+            AppendFieldValue(
+                sb,
+                storageEntityId,
+                fieldId,
+                rawValue);
+
+
+            return sb.ToString();
         }
         
         private void WriteLookupFrom(

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -11,7 +12,11 @@ public static class MutationRuntimePlanner
         in MutationIR node,
         ref MutationPlanBuilder builder)
     {
-        BuildCore(entityId, node, parent: null, ref builder);
+        BuildCore(
+            entityId,
+            node,
+            parent: null,
+            ref builder);
     }
 
 
@@ -20,170 +25,192 @@ public static class MutationRuntimePlanner
         in MutationIR node,
         ref MutationPlanBuilder builder)
     {
-        return BuildCore(entityId, node, parent: null, ref builder);
-    }
-
-
-    private static (MutationCteNode Cte, object Model) BuildCore(
-    ushort entityId,
-    in MutationIR node,
-    in MutationIR? parent,
-    ref MutationPlanBuilder builder)
-{
-    var metadata =
-        MutationMetadataRegistry.Get(entityId);
-
-
-    var model =
-        MutationMaterializerRegistry.Materialize(
+        return BuildCore(
             entityId,
             node,
-            metadata);
-
-
-    var childModels =
-        ImmutableArray.CreateBuilder<object>(
-            node.Children.Length);
-
-
-    var childNodes =
-        ImmutableArray.CreateBuilder<MutationCteNode>(
-            node.Children.Length);
-
-
-    foreach (var child in node.Children)
-    {
-        var result =
-            BuildCore(
-                child.EntityId,
-                child,
-                node,
-                ref builder);
-
-
-        childNodes.Add(result.Cte);
-        childModels.Add(result.Model);
-    }
-
-
-    var context =
-        new MutationInterceptorContext(
-            node,
-            parent,
-            childModels.ToImmutable());
-
-
-    MutationInterceptorRegistry.Apply(
-        entityId,
-        model,
-        context);
-
-
-    var values =
-        MutationDematerializerRegistry.Dematerialize(
-            entityId,
-            model,
-            metadata);
-
-
-    // For graph-edge models, synthesize a fake MutationCteNode per
-    // endpoint navigation from the raw navigation-key value, so the
-    // existing BuildCteNodeUpsertMerged natural-key-JOIN machinery
-    // (originally built for real nested children) can resolve
-    // InnerCustomerKey/OuterCustomerKey -> Customer.Id via JOIN, exactly
-    // like it already does for ordinary composite children.
-    if (metadata.Kind == MutationKind.GraphEdge)
-    {
-        var resolutions = metadata.CteUpdateMeta;
-
-        foreach (var spec in resolutions)
-        {
-            var navValue = values.FirstOrDefault(v =>
-                metadata.TryResolveField(v.FieldId, out var m) &&
-                m.IsNavigationKey &&
-                string.Equals(
-                    m.FieldName,
-                    spec.NavigationAlias + "Key",
-                    StringComparison.OrdinalIgnoreCase));
-
-            if (string.IsNullOrWhiteSpace(navValue.RawValue))
-                continue;
-
-            childNodes.Add(new MutationCteNode(
-                entityId: EntityId.Customer,
-                storageEntityId: StorageEntityId.Customer,
-                alias: spec.NavigationAlias,
-                values: ImmutableArray.Create(new FieldValue(
-                    EntityId.Customer,
-                    FieldId.Customer.CustomerKey,
-                    ColumnId.Customer.CustomerKey,
-                    navValue.RawValue)),
-                children: ImmutableArray<MutationCteNode>.Empty));
-        }
-    }
-
-
-    // Navigation-key values must never appear in the entity's own INSERT
-    // column list — they have no real column (placeholder ColumnId = 0)
-    // and are resolved via the synthesized child JOINs above instead.
-    var filteredValues =
-        values
-            .Where(v =>
-            {
-                metadata.TryResolveField(v.FieldId, out var m);
-                return m == null || !m.IsNavigationKey;
-            })
-            .ToImmutableArray();
-
-
-    EmitRowsGroupedByStorageEntity(
-        entityId,
-        node,
-        metadata,
-        filteredValues,
-        ref builder);
-
-
-    if (metadata.Kind == MutationKind.GraphEdge)
-    {
-        EmitGraphMerge(
-            node,
-            metadata,
+            parent: null,
             ref builder);
     }
 
 
-    // CTE-node/JOIN-resolution path fires whenever this entity is either
-    // the true mutation root, OR it has its own natural-key resolutions
-    // to perform (as graph-edge models do for their endpoint
-    // navigations) — even though a graph-edge model is never itself
-    // "IsRoot", it still needs BuildCteNodeUpsertMerged's INSERT ...
-    // SELECT ... JOIN ... ON CONFLICT machinery to resolve
-    // InnerCustomer/OuterCustomer's surrogate ids at upsert time.
-    var cteResolutions = metadata.CteUpdateMeta;
-
-    if (metadata.IsRoot || cteResolutions.Length > 0)
+    private static (MutationCteNode Cte, object Model) BuildCore(
+        ushort entityId,
+        in MutationIR node,
+        in MutationIR? parent,
+        ref MutationPlanBuilder builder)
     {
-        var cte =
-            new MutationCteNode(
+        var metadata =
+            MutationMetadataRegistry.Get(entityId);
+
+
+        var model =
+            MutationMaterializerRegistry.Materialize(
                 entityId,
-                metadata.StorageEntityId,
-                node.OutputAlias,
-                filteredValues,
-                childNodes.ToImmutable(),
-                metadata.Schema,
-                metadata.Table);
+                node,
+                metadata);
 
 
-        builder.AddCteRoot(cte);
+        var childModels =
+            ImmutableArray.CreateBuilder<object>(
+                node.Children.Length);
 
 
-        return (cte, model);
+        var childNodes =
+            ImmutableArray.CreateBuilder<MutationCteNode>(
+                node.Children.Length);
+
+
+        foreach (var child in node.Children)
+        {
+            var result =
+                BuildCore(
+                    child.EntityId,
+                    child,
+                    node,
+                    ref builder);
+
+
+            childNodes.Add(result.Cte);
+
+            childModels.Add(result.Model);
+        }
+
+
+        var context =
+            new MutationInterceptorContext(
+                node,
+                parent,
+                childModels.ToImmutable());
+
+
+        MutationInterceptorRegistry.Apply(
+            entityId,
+            model,
+            context);
+
+
+        var values =
+            MutationDematerializerRegistry.Dematerialize(
+                entityId,
+                model,
+                metadata);
+
+
+
+        //
+        // Graph edge endpoint resolution.
+        // Creates synthetic CTE children so the normal
+        // CTE join resolver can resolve CustomerKey -> Id.
+        //
+        if (metadata.Kind == MutationKind.GraphEdge)
+        {
+            foreach (var spec in metadata.CteUpdateMeta)
+            {
+                var navigationValue =
+                    values.FirstOrDefault(v =>
+                        metadata.TryResolveField(
+                            v.FieldId,
+                            out var field) &&
+                        field.IsNavigationKey &&
+                        string.Equals(
+                            field.FieldName,
+                            spec.NavigationAlias + "Key",
+                            StringComparison.OrdinalIgnoreCase));
+
+
+                if (string.IsNullOrWhiteSpace(
+                        navigationValue.RawValue))
+                {
+                    continue;
+                }
+
+
+                childNodes.Add(
+                    new MutationCteNode(
+                        EntityId.Customer,
+                        StorageEntityId.Customer,
+                        spec.NavigationAlias,
+                        ImmutableArray.Create(
+                            new FieldValue(
+                                EntityId.Customer,
+                                FieldId.Customer.CustomerKey,
+                                ColumnId.Customer.CustomerKey,
+                                navigationValue.RawValue)),
+                        ImmutableArray<MutationCteNode>.Empty,
+                        null,
+                        null,
+                        ImmutableArray<string>.Empty));
+            }
+        }
+
+
+
+        //
+        // Navigation keys are not database columns.
+        //
+        var filteredValues =
+            values
+                .Where(v =>
+                {
+                    metadata.TryResolveField(
+                        v.FieldId,
+                        out var field);
+
+
+                    return field == null ||
+                           !field.IsNavigationKey;
+                })
+                .ToImmutableArray();
+
+
+
+        EmitRowsGroupedByStorageEntity(
+            entityId,
+            node,
+            metadata,
+            filteredValues,
+            ref builder);
+
+
+
+        if (metadata.Kind == MutationKind.GraphEdge)
+        {
+            EmitGraphMerge(
+                node,
+                metadata,
+                ref builder);
+        }
+
+
+
+        if (metadata.IsRoot ||
+            metadata.CteUpdateMeta.Length > 0)
+        {
+            var cte =
+                new MutationCteNode(
+                    entityId,
+                    metadata.StorageEntityId,
+                    node.OutputAlias,
+                    filteredValues,
+                    childNodes.ToImmutable(),
+                    metadata.Schema,
+                    metadata.Table);
+
+
+            builder.AddCteRoot(cte);
+
+
+            return (
+                cte,
+                model);
+        }
+
+
+
+        return (
+            default,
+            model);
     }
-
-
-    return (default, model);
-}
 
 
 
@@ -198,8 +225,10 @@ public static class MutationRuntimePlanner
             return;
 
 
-        var byStorageEntity =
-            new Dictionary<ushort, ImmutableArray<FieldValue>.Builder>();
+        var groups =
+            new Dictionary<
+                ushort,
+                ImmutableArray<FieldValue>.Builder>();
 
 
         foreach (var value in values)
@@ -214,14 +243,14 @@ public static class MutationRuntimePlanner
 
             foreach (var target in targets)
             {
-                if (!byStorageEntity.TryGetValue(
+                if (!groups.TryGetValue(
                         target.StorageEntityId,
                         out var group))
                 {
                     group =
                         ImmutableArray.CreateBuilder<FieldValue>();
 
-                    byStorageEntity[target.StorageEntityId] =
+                    groups[target.StorageEntityId] =
                         group;
                 }
 
@@ -235,17 +264,20 @@ public static class MutationRuntimePlanner
         }
 
 
-        foreach (var pair in byStorageEntity)
+
+        foreach (var group in groups)
         {
             builder.AddRow(
                 entityId,
-                pair.Key,
+                group.Key,
                 node.OutputAlias,
-                pair.Value.ToImmutable(),
+                group.Value.ToImmutable(),
                 null,
                 null);
         }
     }
+
+
 
     private static void EmitGraphMerge(
         in MutationIR node,
@@ -263,41 +295,44 @@ public static class MutationRuntimePlanner
         }
 
 
+
         string? fromKey = null;
         string? toKey = null;
         string? edgeKey = null;
 
 
+
         foreach (var value in node.Values)
         {
-            if (metadata.GraphFromFieldId.Value == value.FieldId)
+            if (value.FieldId ==
+                metadata.GraphFromFieldId.Value)
             {
                 fromKey = value.RawValue;
             }
 
 
-            if (metadata.GraphToFieldId.Value == value.FieldId)
+            if (value.FieldId ==
+                metadata.GraphToFieldId.Value)
             {
                 toKey = value.RawValue;
             }
 
 
-            if (!metadata.TryResolveFields(
+
+            if (metadata.TryResolveFields(
                     value.FieldId,
                     out var fields))
             {
-                continue;
-            }
-
-
-            foreach (var field in fields)
-            {
-                if (field.IsPrimaryKey)
+                foreach (var field in fields)
                 {
-                    edgeKey = value.RawValue;
+                    if (field.IsPrimaryKey)
+                    {
+                        edgeKey = value.RawValue;
+                    }
                 }
             }
         }
+
 
 
         if (string.IsNullOrWhiteSpace(fromKey) ||
@@ -307,9 +342,11 @@ public static class MutationRuntimePlanner
         }
 
 
-        var edgeProperties =
+
+        var properties =
             ImmutableDictionary.CreateBuilder<string, string>(
                 StringComparer.OrdinalIgnoreCase);
+
 
 
         foreach (var value in node.Values)
@@ -324,17 +361,18 @@ public static class MutationRuntimePlanner
 
             foreach (var field in fields)
             {
-                if (field.IsNavigationKey)
+                if (field.IsNavigationKey ||
+                    field.IsPrimaryKey)
+                {
                     continue;
+                }
 
 
-                if (field.IsPrimaryKey)
-                    continue;
-                
-                edgeProperties[field.FieldName] =
+                properties[field.FieldName] =
                     value.RawValue;
             }
         }
+
 
 
         builder.AddGraphMerge(
@@ -350,7 +388,6 @@ public static class MutationRuntimePlanner
                 ? metadata.PrimaryColumns[0]
                 : string.Empty,
             edgeKey,
-            edgeProperties.ToImmutable());
+            properties.ToImmutable());
     }
 }
-    

@@ -32,7 +32,6 @@ public ref struct MutationPlanBuilder
         _graphMergeKeys = new HashSet<GraphMergeKey>();
     }
 
-
     public void AddRow(
         ushort entityId,
         ushort storageEntityId,
@@ -41,6 +40,11 @@ public ref struct MutationPlanBuilder
         string? schemaOverride = null,
         string? tableOverride = null)
     {
+        if (values.IsDefault)
+        {
+            values = ImmutableArray<FieldValue>.Empty;
+        }
+
         _rows[_rowCount++] =
             new UpsertRow(
                 entityId,

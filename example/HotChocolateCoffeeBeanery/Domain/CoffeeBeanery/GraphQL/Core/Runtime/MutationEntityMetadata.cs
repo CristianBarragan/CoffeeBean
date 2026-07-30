@@ -102,6 +102,17 @@ public sealed class MutationEntityMetadata
     /// FieldId for graph edge destination navigation key.
     /// </summary>
     public ushort? GraphToFieldId { get; }
+    
+    public IEnumerable<MutationFieldMetadata> GetFields()
+    {
+        foreach (var fields in _fields.Values)
+        {
+            foreach (var field in fields)
+            {
+                yield return field;
+            }
+        }
+    }
 
 
     public MutationEntityMetadata(
