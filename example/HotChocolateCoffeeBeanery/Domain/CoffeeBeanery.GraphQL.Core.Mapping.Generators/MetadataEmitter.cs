@@ -31,17 +31,29 @@ internal static class MetadataEmitter
 
             if (m.Graph != null)
             {
-                foreach (var (alias, fk, surrogateId, naturalKey) in MutationMetadataEmitter.BuildGraphEdgeCteResolutions(m))
+                foreach (var resolution in MutationMetadataEmitter.BuildGraphEdgeCteResolutions(m))
                 {
-                    m.CteUpdateMeta.Add(new CteUpdateMetaInfo
-                    {
-                        NavigationAlias = alias,
-                        ForeignKeyColumn = fk,
-                        OwningPrimaryKeyColumn = "Id",
-                        RelatedEntityTypeName = "Customer",
-                        RelatedSurrogateIdColumn = surrogateId,
-                        RelatedNaturalKeyColumn = naturalKey
-                    });
+                    m.CteUpdateMeta.Add(
+                        new CteUpdateMetaInfo
+                        {
+                            NavigationAlias =
+                                resolution.NavigationAlias,
+
+                            ForeignKeyColumn =
+                                resolution.ForeignKeyColumn,
+
+                            OwningPrimaryKeyColumn =
+                                resolution.OwningPrimaryKeyColumn,
+
+                            RelatedEntityTypeName =
+                                resolution.RelatedEntityTypeName,
+
+                            RelatedSurrogateIdColumn =
+                                resolution.RelatedSurrogateIdColumn,
+
+                            RelatedNaturalKeyColumn =
+                                resolution.RelatedNaturalKeyColumn
+                        });
                 }
 
                 continue;
