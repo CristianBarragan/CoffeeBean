@@ -233,16 +233,11 @@ private static void EmitDematerializer(
     private static IEnumerable<List<FieldInfo>> RelevantFieldsGrouped(
         MappingClassInfo info)
     {
-        var fields =
-            info.FieldMaps
-                .Where(field => !field.IsNavigationKey)
-                .ToList();
-
+        var fields = info.FieldMaps
+            .ToList();
 
         return fields
-            .GroupBy(
-                f => f.SourceName,
-                StringComparer.Ordinal)
+            .GroupBy(f => f.SourceName, StringComparer.Ordinal)
             .Select(g => g.ToList());
     }
 

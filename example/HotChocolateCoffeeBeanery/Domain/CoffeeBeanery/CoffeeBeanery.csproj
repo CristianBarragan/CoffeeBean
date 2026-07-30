@@ -56,4 +56,8 @@
     <ItemGroup>
       <Folder Include="GraphQL\Core\Extensions\" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\CoffeeBeanery.GraphQL.Core.Mapping.Generators\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj" />
+    </ItemGroup>
 </Project>

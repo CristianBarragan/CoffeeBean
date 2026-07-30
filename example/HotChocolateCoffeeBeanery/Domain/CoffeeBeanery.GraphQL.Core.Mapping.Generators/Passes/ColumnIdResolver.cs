@@ -1,8 +1,10 @@
 ﻿using System;
-using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
+using System.Collections.Immutable;
+using System.Linq;
+using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
 using Microsoft.CodeAnalysis;
 
-namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
+namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 
 internal static class ColumnIdResolver
 {
@@ -25,26 +27,51 @@ internal static class ColumnIdResolver
             IdEmitter.StripEntitySuffix(entityName);
 
 
-        // Primary key of storage entity
+        // Resolve actual property name first.
+        // Do not invent XxxId names here.
+        var resolvedColumn =
+            ResolveForeignKeyConvention(
+                storageEntityName,
+                columnName);
+
+
+        return $"ColumnId.{storageEntityName}.{resolvedColumn}";
+    }
+
+
+    private static string ResolveForeignKeyConvention(
+        string entityName,
+        string columnName)
+    {
         if (string.Equals(
                 columnName,
                 "Id",
                 StringComparison.OrdinalIgnoreCase))
         {
-            return $"ColumnId.{storageEntityName}.Id";
+            return "Id";
         }
 
 
-        // EntityId -> Id FK convention should never emit EntityId
-        if (string.Equals(
-                columnName,
-                storageEntityName + "Id",
+        if (columnName.EndsWith(
+                "Id",
                 StringComparison.OrdinalIgnoreCase))
         {
-            return $"ColumnId.{storageEntityName}.Id";
+            var prefix =
+                columnName.Substring(
+                    0,
+                    columnName.Length - 2);
+
+
+            if (string.Equals(
+                    prefix,
+                    entityName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return "Id";
+            }
         }
 
 
-        return $"ColumnId.{storageEntityName}.{columnName}";
+        return columnName;
     }
 }

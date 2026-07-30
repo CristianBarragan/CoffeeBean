@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
+using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
 using Microsoft.CodeAnalysis;
 
 namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
@@ -11,7 +12,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 internal static class IdEmitter
 {
     public static string Emit(
-        ImmutableArray<MappingClassInfo> mappings)
+        ImmutableArray<MappingClassInfo> mappings,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
     {
         var sb = new StringBuilder();
 
@@ -25,7 +27,7 @@ internal static class IdEmitter
         EmitEntityIds(sb, mappings);
         EmitStorageEntityIds(sb, mappings);
         EmitFieldIds(sb, mappings);
-        EmitColumnIds(sb, mappings);
+        EmitColumnIds(sb, mappings, entityGraph);
 
         sb.AppendLine("}");
 
@@ -117,9 +119,7 @@ internal static class IdEmitter
     /// just the surrogate "Id" property. Used both when computing ColumnId
     /// constants and when computing the runtime EntityColumnName array, so
     /// both MUST call GetFullColumnOrder (below) rather than duplicating
-    /// this insertion logic independently — divergence here previously
-    /// caused ColumnId constants and EntityColumnName[] to disagree on
-    /// ordering for any entity whose PK wasn't already a mapped field.
+    /// this insertion logic independently.
     /// </summary>
     internal static List<IPropertySymbol> GetPrimaryKeyProperties(
         INamedTypeSymbol type)
@@ -147,20 +147,28 @@ internal static class IdEmitter
     }
 
     /// <summary>
-    /// Single source of truth for an entity's full column ordering,
-    /// including its primary key column inserted at index 0 if it isn't
-    /// already among the mapped field-map columns. EmitColumnIds (numeric
-    /// ColumnId.* constants) and EmitEntityColumnNameArray (the runtime
-    /// string[] indexed by those constants) MUST both call this same
-    /// method — computing the ordering independently in each place is
-    /// exactly what caused ColumnId constants to be off-by-one relative to
-    /// the runtime name array for any entity whose PK column wasn't
-    /// already a mapped scalar field (e.g. CustomerCustomerRelationship).
+    /// Single source of truth for an entity's full column ordering:
+    /// 1. FieldMaps-derived scalar columns (alphabetical)
+    /// 2. Primary key column, inserted at index 0 if not already present
+    /// 3. FK columns this entity owns as the DEPENDENT side of any edge in
+    ///    entityGraph, appended if not already present — these are pure
+    ///    relational plumbing columns (e.g. Transaction.AccountId,
+    ///    Contract.CustomerBankingRelationshipId) that are never surfaced
+    ///    as a GraphQL-facing scalar field, but ARE needed as real ColumnId
+    ///    constants once join emission references them directly (e.g. for
+    ///    composite-entity internal join chains).
+    ///
+    /// EmitColumnIds (numeric ColumnId.* constants) and
+    /// EmitEntityColumnNameArray (the runtime string[] indexed by those
+    /// constants) MUST both call this same method — computing the ordering
+    /// independently in each place is exactly what caused ColumnId
+    /// constants to disagree with the runtime name array previously.
     /// </summary>
     internal static List<string> GetFullColumnOrder(
         string entityName,
         ImmutableArray<MappingClassInfo> mappings,
-        INamedTypeSymbol? entityType)
+        INamedTypeSymbol? entityType,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge>? entityGraph = null)
     {
         var columns = GetOrderedColumnNames(entityName, mappings);
 
@@ -175,6 +183,22 @@ internal static class IdEmitter
                 if (!columns.Contains(pk, StringComparer.Ordinal))
                 {
                     columns.Insert(0, pk);
+                }
+            }
+
+            if (entityGraph != null)
+            {
+                var fkColumns = entityGraph
+                    .Where(e => SymbolEqualityComparer.Default.Equals(e.DependentEntity, entityType))
+                    .Select(e => e.DependentColumn)
+                    .Distinct(StringComparer.Ordinal);
+
+                foreach (var fkCol in fkColumns)
+                {
+                    if (!columns.Contains(fkCol, StringComparer.Ordinal))
+                    {
+                        columns.Add(fkCol);
+                    }
                 }
             }
         }
@@ -270,7 +294,8 @@ internal static class IdEmitter
 
     private static void EmitColumnIds(
         StringBuilder sb,
-        ImmutableArray<MappingClassInfo> mappings)
+        ImmutableArray<MappingClassInfo> mappings,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
     {
         sb.AppendLine();
         sb.AppendLine("public static class ColumnId");
@@ -294,7 +319,8 @@ internal static class IdEmitter
                 GetFullColumnOrder(
                     strippedName,
                     mappings,
-                    entityType);
+                    entityType,
+                    entityGraph);
 
             sb.AppendLine($"    public static class {strippedName}");
             sb.AppendLine("    {");

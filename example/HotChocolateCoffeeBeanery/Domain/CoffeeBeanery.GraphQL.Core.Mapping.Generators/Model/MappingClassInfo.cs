@@ -116,6 +116,13 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
         public bool ParentIsModelRoot { get; init; }
     }
+    
+    internal sealed class PrimaryKeyInfo
+    {
+        public string? Entity { get; set; }
+
+        public string? ColumnKey { get; set; }
+    }
 
     public sealed class EntityKeyInfo
     {

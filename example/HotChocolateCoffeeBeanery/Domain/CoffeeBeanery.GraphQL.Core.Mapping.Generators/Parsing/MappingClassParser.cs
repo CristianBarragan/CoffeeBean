@@ -5,6 +5,7 @@ using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
+using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes;
 
 namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Parsing;
 
@@ -49,12 +50,14 @@ internal static class MappingClassParser
         if (syntax is not PropertyDeclarationSyntax property)
             return info;
 
-        var expression = GetPropertyExpression(property);
+        var expression =
+            GetPropertyExpression(property);
 
         if (expression == null)
             return info;
 
-        var initializer = GetObjectInitializer(expression);
+        var initializer =
+            GetObjectInitializer(expression);
 
         if (initializer == null)
             return info;
@@ -73,42 +76,52 @@ internal static class MappingClassParser
             switch (name)
             {
                 case "Model":
+
                     info.ModelType =
                         GetTypeSymbol(
                             assignment.Right,
                             semanticModel);
+
                     break;
 
 
                 case "Navigations":
+
                     ParseNavigations(
                         assignment.Right,
                         info,
                         semanticModel);
+
                     break;
 
 
                 case "ForeignKeys":
+
                     ParseForeignKeys(
                         assignment.Right,
                         info,
                         semanticModel);
+
                     break;
 
 
                 case "Schema":
+
                     info.Schema =
                         EvaluateStringLikeExpression(
                             assignment.Right,
                             semanticModel);
+
                     break;
 
 
                 case "Entities":
+
                     ParseEntities(
                         assignment.Right,
                         info,
                         semanticModel);
+
                     break;
 
 
@@ -121,26 +134,32 @@ internal static class MappingClassParser
 
 
                 case "UpsertKeys":
+
                     ParseUpsertKeys(
                         assignment.Right,
                         info,
                         semanticModel);
+
                     break;
 
 
                 case "Fields":
+
                     ParseFields(
                         assignment.Right,
                         info,
                         semanticModel);
+
                     break;
 
 
                 case "Graph":
+
                     ParseGraph(
                         assignment.Right,
                         info,
                         semanticModel);
+
                     break;
             }
         }
@@ -158,108 +177,274 @@ internal static class MappingClassParser
             info.Definition.Entities
                 .FirstOrDefault(e => e.IsPrimary)
                 ?.EntityType
-            ?? info.Definition.Entities
+            ??
+            info.Definition.Entities
                 .FirstOrDefault()
                 ?.EntityType;
 
 
+        NormalizeFieldDestinations(info);
+
         ResolvePropertyTypes(info);
+
 
         return info;
     }
-    
-    private static void ParseNavigations(
-    ExpressionSyntax expression,
-    MappingClassInfo info,
-    SemanticModel semanticModel)
-{
-    foreach (var element in GetCollectionElements(expression))
+
+    private static void ParsePrimaryKeys(
+        ExpressionSyntax expression,
+        MappingClassInfo info,
+        SemanticModel semanticModel)
     {
-        var initializer =
-            GetObjectInitializer(element);
-
-        if (initializer == null)
-            continue;
-
-
-        var navigation =
-            new NavigationDefinitionInfo
-            {
-                NavigationName = ""
-            };
-
-
-        foreach (var assignment in initializer.Expressions
-                     .OfType<AssignmentExpressionSyntax>())
+        foreach (var element in GetCollectionElements(expression))
         {
-            var name =
-                (assignment.Left as IdentifierNameSyntax)
-                ?.Identifier.Text;
+            var initializer =
+                GetObjectInitializer(element);
+
+            if (initializer == null)
+                continue;
 
 
-            switch (name)
+            var primaryKey =
+                new PrimaryKeyDefinitionInfo
+                {
+                    Entity = null!,
+                    ModelKey = string.Empty,
+                    ColumnKey = string.Empty
+                };
+
+
+            foreach (var assignment in initializer.Expressions
+                         .OfType<AssignmentExpressionSyntax>())
             {
-                case "NavigationName":
-                    navigation =
-                        navigation with
-                        {
-                            NavigationName =
-                                EvaluateStringLikeExpression(
-                                    assignment.Right,
-                                    semanticModel) ?? ""
-                        };
-                    break;
+                var name =
+                    (assignment.Left as IdentifierNameSyntax)
+                    ?.Identifier.Text;
 
 
-                case "TargetModel":
-                    navigation =
-                        navigation with
-                        {
-                            TargetModel =
-                                GetTypeSymbol(
-                                    assignment.Right,
-                                    semanticModel)
-                        };
-                    break;
+                switch (name)
+                {
+                    case "Entity":
+                        primaryKey.Entity =
+                            GetTypeSymbol(
+                                assignment.Right,
+                                semanticModel);
+                        break;
 
 
-                case "IsCollection":
-                    navigation =
-                        navigation with
-                        {
-                            IsCollection =
-                                assignment.Right
-                                    .ToString()
-                                    .Equals(
-                                        "true",
-                                        StringComparison.OrdinalIgnoreCase)
-                        };
-                    break;
+                    case "ModelKey":
+                        primaryKey.ModelKey =
+                            EvaluateStringLikeExpression(
+                                assignment.Right,
+                                semanticModel)
+                            ?? string.Empty;
+                        break;
 
 
-                case "Paths":
-                    navigation =
-                        navigation with
-                        {
-                            Paths =
-                                ParseJoinPaths(
-                                    assignment.Right,
-                                    semanticModel)
-                        };
-                    break;
+                    case "Column":
+                    case "ColumnKey":
+                        primaryKey.ColumnKey =
+                            EvaluateStringLikeExpression(
+                                assignment.Right,
+                                semanticModel)
+                            ?? string.Empty;
+                        break;
+                }
+            }
+
+
+            if (primaryKey.Entity != null &&
+                !string.IsNullOrWhiteSpace(primaryKey.ColumnKey))
+            {
+                info.Definition.PrimaryKey.Add(
+                    primaryKey);
             }
         }
+    }
 
-
-        if (!string.IsNullOrWhiteSpace(
-                navigation.NavigationName))
+    private static void NormalizeFieldDestinations(
+        MappingClassInfo info)
+    {
+        foreach (var field in info.FieldMaps)
         {
-            info.Definition.Navigations.Add(
-                navigation);
+            if (string.IsNullOrWhiteSpace(field.DestinationName) ||
+                string.IsNullOrWhiteSpace(field.DestinationEntity))
+            {
+                continue;
+            }
+
+
+            var entity =
+                info.Definition.Entities
+                    .FirstOrDefault(x =>
+                        x.EntityType?.Name ==
+                        field.DestinationEntity);
+
+
+            if (entity?.EntityType == null)
+                continue;
+
+
+            var property =
+                entity.EntityType
+                    .GetMembers()
+                    .OfType<IPropertySymbol>()
+                    .FirstOrDefault(x =>
+                        string.Equals(
+                            x.Name,
+                            field.DestinationName,
+                            StringComparison.OrdinalIgnoreCase));
+
+
+            if (property != null)
+            {
+                field.DestinationName =
+                    property.Name;
+            }
         }
     }
-}
+
+    private static void ResolvePropertyTypes(
+        MappingClassInfo info)
+    {
+        if (info.ModelType == null)
+            return;
+
+
+        var properties =
+            info.ModelType
+                .GetMembers()
+                .OfType<IPropertySymbol>()
+                .ToDictionary(
+                    p => p.Name,
+                    StringComparer.OrdinalIgnoreCase);
+
+
+        foreach (var field in info.FieldMaps)
+        {
+            if (field.PropertyType != null)
+                continue;
+
+
+            if (string.IsNullOrWhiteSpace(
+                    field.SourceName))
+            {
+                continue;
+            }
+
+
+            if (properties.TryGetValue(
+                    field.SourceName,
+                    out var property))
+            {
+                field.PropertyType =
+                    property.Type;
+            }
+        }
+    }
     
+        private static void ParseNavigations(
+        ExpressionSyntax expression,
+        MappingClassInfo info,
+        SemanticModel semanticModel)
+    {
+        foreach (var element in GetCollectionElements(expression))
+        {
+            var initializer =
+                GetObjectInitializer(element);
+
+            if (initializer == null)
+                continue;
+
+
+            var navigation =
+                new NavigationDefinitionInfo
+                {
+                    NavigationName = string.Empty
+                };
+
+
+            foreach (var assignment in initializer.Expressions
+                         .OfType<AssignmentExpressionSyntax>())
+            {
+                var name =
+                    (assignment.Left as IdentifierNameSyntax)
+                    ?.Identifier.Text;
+
+
+                switch (name)
+                {
+                    case "NavigationName":
+
+                        navigation =
+                            navigation with
+                            {
+                                NavigationName =
+                                    EvaluateStringLikeExpression(
+                                        assignment.Right,
+                                        semanticModel)
+                                    ?? string.Empty
+                            };
+
+                        break;
+
+
+                    case "TargetModel":
+
+                        navigation =
+                            navigation with
+                            {
+                                TargetModel =
+                                    GetTypeSymbol(
+                                        assignment.Right,
+                                        semanticModel)
+                            };
+
+                        break;
+
+
+                    case "IsCollection":
+
+                        navigation =
+                            navigation with
+                            {
+                                IsCollection =
+                                    assignment.Right
+                                        .ToString()
+                                        .Equals(
+                                            "true",
+                                            StringComparison.OrdinalIgnoreCase)
+                            };
+
+                        break;
+
+
+                    case "Paths":
+
+                        navigation =
+                            navigation with
+                            {
+                                Paths =
+                                    ParseJoinPaths(
+                                        assignment.Right,
+                                        semanticModel)
+                            };
+
+                        break;
+                }
+            }
+
+
+            if (!string.IsNullOrWhiteSpace(
+                    navigation.NavigationName))
+            {
+                info.Definition.Navigations.Add(
+                    navigation);
+            }
+        }
+    }
+
+
     private static void ParseEnumMapping(
         ExpressionSyntax expression,
         FieldInfo field,
@@ -325,349 +510,375 @@ internal static class MappingClassParser
             switch (name)
             {
                 case "Overrides":
+
                     ParseEnumOverrides(
                         assignment.Right,
                         field,
                         semanticModel);
+
                     break;
 
 
                 case "Ignore":
+
                     ParseEnumIgnore(
                         assignment.Right,
                         field,
                         semanticModel);
+
                     break;
             }
         }
     }
-    
+
+
     private static List<JoinPathDefinitionInfo> ParseJoinPaths(
-    ExpressionSyntax expression,
-    SemanticModel semanticModel)
-{
-    var paths =
-        new List<JoinPathDefinitionInfo>();
-
-
-    foreach (var element in GetCollectionElements(expression))
+        ExpressionSyntax expression,
+        SemanticModel semanticModel)
     {
-        var initializer =
-            GetObjectInitializer(element);
-
-        if (initializer == null)
-            continue;
+        var paths =
+            new List<JoinPathDefinitionInfo>();
 
 
-        var path =
-            new JoinPathDefinitionInfo();
-
-
-        foreach (var assignment in initializer.Expressions
-                     .OfType<AssignmentExpressionSyntax>())
+        foreach (var element in GetCollectionElements(expression))
         {
-            var name =
-                (assignment.Left as IdentifierNameSyntax)
-                ?.Identifier.Text;
+            var initializer =
+                GetObjectInitializer(element);
+
+            if (initializer == null)
+                continue;
 
 
-            switch (name)
+            var path =
+                new JoinPathDefinitionInfo();
+
+
+            foreach (var assignment in initializer.Expressions
+                         .OfType<AssignmentExpressionSyntax>())
             {
-                case "TargetEntity":
-                    path =
-                        path with
-                        {
-                            TargetEntity =
-                                GetTypeSymbol(
-                                    assignment.Right,
-                                    semanticModel)
-                        };
-                    break;
+                var name =
+                    (assignment.Left as IdentifierNameSyntax)
+                    ?.Identifier.Text;
 
 
-                case "Hops":
-                    path =
-                        path with
-                        {
-                            Hops =
-                                ParseJoinHops(
-                                    assignment.Right,
-                                    semanticModel)
-                        };
-                    break;
+                switch (name)
+                {
+                    case "TargetEntity":
+
+                        path =
+                            path with
+                            {
+                                TargetEntity =
+                                    GetTypeSymbol(
+                                        assignment.Right,
+                                        semanticModel)
+                            };
+
+                        break;
+
+
+                    case "Hops":
+
+                        path =
+                            path with
+                            {
+                                Hops =
+                                    ParseJoinHops(
+                                        assignment.Right,
+                                        semanticModel)
+                            };
+
+                        break;
+                }
             }
+
+
+            paths.Add(path);
         }
 
 
-        paths.Add(path);
+        return paths;
     }
 
 
-    return paths;
-}
-
-
-
-private static List<JoinHopDefinitionInfo> ParseJoinHops(
-    ExpressionSyntax expression,
-    SemanticModel semanticModel)
-{
-    var hops =
-        new List<JoinHopDefinitionInfo>();
-
-
-    foreach (var element in GetCollectionElements(expression))
+    private static List<JoinHopDefinitionInfo> ParseJoinHops(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel)
     {
-        var initializer =
-            GetObjectInitializer(element);
-
-        if (initializer == null)
-            continue;
+        var hops =
+            new List<JoinHopDefinitionInfo>();
 
 
-        var hop =
-            new JoinHopDefinitionInfo();
-
-
-        foreach (var assignment in initializer.Expressions
-                     .OfType<AssignmentExpressionSyntax>())
+        foreach (var element in GetCollectionElements(expression))
         {
-            var name =
-                (assignment.Left as IdentifierNameSyntax)
-                ?.Identifier.Text;
+            var initializer =
+                GetObjectInitializer(element);
+
+            if (initializer == null)
+                continue;
 
 
-            switch (name)
+            var hop =
+                new JoinHopDefinitionInfo();
+
+
+            foreach (var assignment in initializer.Expressions
+                         .OfType<AssignmentExpressionSyntax>())
             {
-                case "FromEntity":
-                    hop =
-                        hop with
-                        {
-                            FromEntity =
-                                GetTypeSymbol(
-                                    assignment.Right,
-                                    semanticModel)
-                        };
-                    break;
+                var name =
+                    (assignment.Left as IdentifierNameSyntax)
+                    ?.Identifier.Text;
 
 
-                case "FromColumn":
-                    hop =
-                        hop with
-                        {
-                            FromColumn =
-                                EvaluateStringLikeExpression(
-                                    assignment.Right,
-                                    semanticModel)
-                        };
-                    break;
+                switch (name)
+                {
+                    case "FromEntity":
+
+                        hop =
+                            hop with
+                            {
+                                FromEntity =
+                                    GetTypeSymbol(
+                                        assignment.Right,
+                                        semanticModel)
+                            };
+
+                        break;
 
 
-                case "ToEntity":
-                    hop =
-                        hop with
-                        {
-                            ToEntity =
-                                GetTypeSymbol(
-                                    assignment.Right,
-                                    semanticModel)
-                        };
-                    break;
+                    case "FromColumn":
+
+                        hop =
+                            hop with
+                            {
+                                FromColumn =
+                                    EvaluateStringLikeExpression(
+                                        assignment.Right,
+                                        semanticModel)
+                            };
+
+                        break;
 
 
-                case "ToColumn":
-                    hop =
-                        hop with
-                        {
-                            ToColumn =
-                                EvaluateStringLikeExpression(
-                                    assignment.Right,
-                                    semanticModel)
-                        };
-                    break;
+                    case "ToEntity":
+
+                        hop =
+                            hop with
+                            {
+                                ToEntity =
+                                    GetTypeSymbol(
+                                        assignment.Right,
+                                        semanticModel)
+                            };
+
+                        break;
+
+
+                    case "ToColumn":
+
+                        hop =
+                            hop with
+                            {
+                                ToColumn =
+                                    EvaluateStringLikeExpression(
+                                        assignment.Right,
+                                        semanticModel)
+                            };
+
+                        break;
+                }
             }
+
+
+            hops.Add(hop);
         }
 
 
-        hops.Add(hop);
+        return hops;
     }
-
-
-    return hops;
-}
-
-private static void ParseEnumOverrides(
-    ExpressionSyntax expression,
-    FieldInfo field,
-    SemanticModel semanticModel)
-{
-    InitializerExpressionSyntax? initializer =
-        expression switch
-        {
-            InitializerExpressionSyntax init =>
-                init,
-
-            ObjectCreationExpressionSyntax obj =>
-                obj.Initializer,
-
-            ImplicitObjectCreationExpressionSyntax obj =>
-                obj.Initializer,
-
-            _ => null
-        };
-
-
-    if (initializer == null)
-        return;
-
-
-    foreach (var item in initializer.Expressions)
-    {
-        if (item is not AssignmentExpressionSyntax assignment)
-            continue;
-
-
-        var source =
-            EvaluateEnumName(
-                assignment.Left,
-                semanticModel);
-
-
-        var destination =
-            EvaluateEnumName(
-                assignment.Right,
-                semanticModel);
-
-
-        if (source != null &&
-            destination != null)
-        {
-            field.EnumOverrides[source] =
-                destination;
-        }
-    }
-}
-
-
-
-private static void ParseEnumIgnore(
-    ExpressionSyntax expression,
-    FieldInfo field,
-    SemanticModel semanticModel)
-{
-    foreach (var value in GetCollectionElements(expression))
-    {
-        var name =
-            EvaluateEnumName(
-                value,
-                semanticModel)
-            ??
-            EvaluateStringLikeExpression(
-                value,
-                semanticModel);
-
-
-        if (!string.IsNullOrWhiteSpace(name))
-        {
-            field.EnumIgnored.Add(name);
-        }
-    }
-}
-
-
-
-private static string? EvaluateEnumName(
-    ExpressionSyntax expression,
-    SemanticModel semanticModel)
-{
-    if (expression is ImplicitElementAccessSyntax elementAccess)
-    {
-        expression =
-            elementAccess.ArgumentList.Arguments
-                .FirstOrDefault()
-                ?.Expression;
-
-
-        if (expression == null)
-            return null;
-    }
-
-
-    if (expression is InvocationExpressionSyntax invocation &&
-        invocation.Expression is IdentifierNameSyntax identifier &&
-        identifier.Identifier.Text == "nameof")
-    {
-        var argument =
-            invocation.ArgumentList.Arguments
-                .FirstOrDefault()
-                ?.Expression;
-
-
-        return argument switch
-        {
-            MemberAccessExpressionSyntax member =>
-                member.Name.Identifier.Text,
-
-
-            IdentifierNameSyntax id =>
-                id.Identifier.Text,
-
-
-            _ => null
-        };
-    }
-
-
-    if (expression is MemberAccessExpressionSyntax memberAccess)
-    {
-        return memberAccess.Name.Identifier.Text;
-    }
-
-
-    if (expression is LiteralExpressionSyntax literal)
-    {
-        return literal.Token.ValueText;
-    }
-
-
-    return null;
-}
     
-    private static void ResolvePropertyTypes(
-        MappingClassInfo info)
+        private static void ParseEnumOverrides(
+        ExpressionSyntax expression,
+        FieldInfo field,
+        SemanticModel semanticModel)
     {
-        if (info.ModelType == null)
+        InitializerExpressionSyntax? initializer =
+            expression switch
+            {
+                InitializerExpressionSyntax init =>
+                    init,
+
+                ObjectCreationExpressionSyntax obj =>
+                    obj.Initializer,
+
+                ImplicitObjectCreationExpressionSyntax obj =>
+                    obj.Initializer,
+
+                _ => null
+            };
+
+
+        if (initializer == null)
             return;
 
-        var modelProperties =
-            info.ModelType
-                .GetMembers()
-                .OfType<IPropertySymbol>()
-                .ToDictionary(
-                    p => p.Name,
-                    StringComparer.Ordinal);
+
+        foreach (var item in initializer.Expressions)
+        {
+            if (item is not AssignmentExpressionSyntax assignment)
+                continue;
+
+
+            var source =
+                EvaluateEnumName(
+                    assignment.Left,
+                    semanticModel);
+
+
+            var destination =
+                EvaluateEnumName(
+                    assignment.Right,
+                    semanticModel);
+
+
+            if (source != null &&
+                destination != null)
+            {
+                field.EnumOverrides[source] =
+                    destination;
+            }
+        }
+    }
+
+
+    private static void ParseEnumIgnore(
+        ExpressionSyntax expression,
+        FieldInfo field,
+        SemanticModel semanticModel)
+    {
+        foreach (var value in GetCollectionElements(expression))
+        {
+            var name =
+                EvaluateEnumName(
+                    value,
+                    semanticModel)
+                ??
+                EvaluateStringLikeExpression(
+                    value,
+                    semanticModel);
+
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                field.EnumIgnored.Add(name);
+            }
+        }
+    }
+
+
+    private static string? EvaluateEnumName(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel)
+    {
+        if (expression is ImplicitElementAccessSyntax elementAccess)
+        {
+            expression =
+                elementAccess.ArgumentList.Arguments
+                    .FirstOrDefault()
+                    ?.Expression;
+
+
+            if (expression == null)
+                return null;
+        }
+
+
+        if (expression is InvocationExpressionSyntax invocation &&
+            invocation.Expression is IdentifierNameSyntax identifier &&
+            identifier.Identifier.Text == "nameof")
+        {
+            var argument =
+                invocation.ArgumentList.Arguments
+                    .FirstOrDefault()
+                    ?.Expression;
+
+
+            return argument switch
+            {
+                MemberAccessExpressionSyntax member =>
+                    member.Name.Identifier.Text,
+
+
+                IdentifierNameSyntax id =>
+                    id.Identifier.Text,
+
+
+                _ => null
+            };
+        }
+
+
+        if (expression is MemberAccessExpressionSyntax memberAccess)
+        {
+            return memberAccess.Name.Identifier.Text;
+        }
+
+
+        if (expression is LiteralExpressionSyntax literal)
+        {
+            return literal.Token.ValueText;
+        }
+
+
+        return null;
+    }
+
+
+    private static void ResolveDestinationColumns(
+        MappingClassInfo info,
+        IReadOnlyList<FluentEntityNavigationConvention.DerivedForeignKey> foreignKeys)
+    {
+        if (info.EntityType == null)
+            return;
 
 
         foreach (var field in info.FieldMaps)
         {
-            if (field.PropertyType != null)
-                continue;
-
-            if (string.IsNullOrWhiteSpace(field.SourceName))
-                continue;
-
-
-            if (modelProperties.TryGetValue(
-                    field.SourceName,
-                    out var property))
+            if (string.IsNullOrWhiteSpace(
+                    field.DestinationName))
             {
-                field.PropertyType =
-                    property.Type;
+                continue;
             }
+
+
+            var foreignKey =
+                foreignKeys.FirstOrDefault(x =>
+                    SymbolEqualityComparer.Default.Equals(
+                        x.DeclaringEntityType,
+                        info.EntityType)
+                    &&
+                    (
+                        string.Equals(
+                            x.RawForeignKeyColumn,
+                            field.DestinationName,
+                            StringComparison.OrdinalIgnoreCase)
+                        ||
+                        string.Equals(
+                            x.ModelForeignKeyProperty,
+                            field.DestinationName,
+                            StringComparison.OrdinalIgnoreCase)
+                    ));
+
+
+            if (foreignKey == null)
+                continue;
+
+
+            field.DestinationName =
+                foreignKey.ModelForeignKeyProperty;
         }
     }
     
-    private static void ParsePrimaryKeys(
+        private static void ParseForeignKeys(
         ExpressionSyntax expression,
         MappingClassInfo info,
         SemanticModel semanticModel)
@@ -682,8 +893,8 @@ private static string? EvaluateEnumName(
 
 
             INamedTypeSymbol? entity = null;
-            string? modelKey = null;
-            string? columnKey = null;
+            string? column = null;
+            string? modelField = null;
 
 
             foreach (var assignment in initializer.Expressions
@@ -697,46 +908,60 @@ private static string? EvaluateEnumName(
                 switch (name)
                 {
                     case "Entity":
+
                         entity =
                             GetTypeSymbol(
                                 assignment.Right,
                                 semanticModel);
+
                         break;
 
 
-                    case "ModelKey":
-                        modelKey =
+                    case "Column":
+
+                        column =
                             EvaluateStringLikeExpression(
                                 assignment.Right,
                                 semanticModel);
+
                         break;
 
 
-                    case "ColumnKey":
-                        columnKey =
+                    case "ModelField":
+
+                        modelField =
                             EvaluateStringLikeExpression(
                                 assignment.Right,
                                 semanticModel);
+
                         break;
                 }
             }
 
 
-            if (entity != null &&
-                modelKey != null &&
-                columnKey != null)
+            if (entity == null ||
+                string.IsNullOrWhiteSpace(column) ||
+                string.IsNullOrWhiteSpace(modelField))
             {
-                info.Definition.PrimaryKey.Add(
-                    new PrimaryKeyDefinitionInfo
-                    {
-                        Entity = entity,
-                        ModelKey = modelKey,
-                        ColumnKey = columnKey
-                    });
+                continue;
             }
+
+
+            info.FieldMaps.Add(
+                new FieldInfo
+                {
+                    SourceName = modelField,
+                    DestinationEntity =
+                        entity.Name,
+                    DestinationName =
+                        column,
+                    IsNavigationKey = true
+                });
         }
     }
-    
+
+
+
     private static void ParseUpsertKeys(
         ExpressionSyntax expression,
         MappingClassInfo info,
@@ -766,148 +991,43 @@ private static string? EvaluateEnumName(
                 switch (name)
                 {
                     case "Entity":
+
                         entity =
                             EvaluateTypeName(
                                 assignment.Right);
+
                         break;
 
 
                     case "Column":
+
                         column =
                             EvaluateStringLikeExpression(
                                 assignment.Right,
                                 semanticModel);
+
                         break;
                 }
             }
 
 
-            if (entity != null &&
-                column != null)
-            {
-                info.UpsertKeys.Add(
-                    new UpsertKeyInfo
-                    {
-                        Entity = entity,
-                        Key = column
-                    });
-            }
-        }
-    }
-    
-        private static void ParseForeignKeys(
-        ExpressionSyntax expression,
-        MappingClassInfo info,
-        SemanticModel semanticModel)
-    {
-        foreach (var element in GetCollectionElements(expression))
-        {
-            var initializer = GetObjectInitializer(element);
-
-            if (initializer == null)
-                continue;
-
-
-            INamedTypeSymbol? entity = null;
-            string? column = null;
-            INamedTypeSymbol? dependsOn = null;
-            string? principal = null;
-            string? modelField = null;
-
-
-            foreach (var assignment in initializer.Expressions
-                         .OfType<AssignmentExpressionSyntax>())
-            {
-                var name =
-                    (assignment.Left as IdentifierNameSyntax)
-                    ?.Identifier.Text;
-
-
-                switch (name)
-                {
-                    case "Entity":
-                        entity =
-                            GetTypeSymbol(
-                                assignment.Right,
-                                semanticModel);
-                        break;
-
-
-                    case "Column":
-                        column =
-                            EvaluateStringLikeExpression(
-                                assignment.Right,
-                                semanticModel);
-                        break;
-
-
-                    case "DependsOn":
-                        dependsOn =
-                            GetTypeSymbol(
-                                assignment.Right,
-                                semanticModel);
-                        break;
-
-
-                    case "Principal":
-                        principal =
-                            EvaluateStringLikeExpression(
-                                assignment.Right,
-                                semanticModel);
-                        break;
-
-
-                    case "ModelField":
-                        modelField =
-                            EvaluateStringLikeExpression(
-                                assignment.Right,
-                                semanticModel);
-                        break;
-                }
-            }
-
-
-            if (entity == null ||
-                string.IsNullOrWhiteSpace(column) ||
-                string.IsNullOrWhiteSpace(modelField))
+            if (string.IsNullOrWhiteSpace(entity) ||
+                string.IsNullOrWhiteSpace(column))
             {
                 continue;
             }
 
 
-            //
-            // Foreign keys are also mutation fields.
-            //
-            // Example:
-            //
-            // ModelField = "innerCustomerKey"
-            // Entity     = CustomerCustomerRelationship
-            // Column     = CustomerKey
-            //
-            // generates:
-            //
-            // FieldMapInfo(
-            //     "innerCustomerKey",
-            //     "CustomerCustomerRelationship",
-            //     "CustomerKey",
-            //     IsNavigationKey = true
-            // )
-            //
-            info.FieldMaps.Add(
-                new FieldInfo
+            info.UpsertKeys.Add(
+                new UpsertKeyInfo
                 {
-                    SourceName = modelField,
-                    DestinationEntity =
-                        entity.Name,
-                    DestinationName =
-                        column,
-                    IsNavigationKey = true
+                    Entity = entity,
+                    Key = column
                 });
         }
     }
-
-
-    private static void ParseEntities(
+    
+        private static void ParseEntities(
         ExpressionSyntax expression,
         MappingClassInfo info,
         SemanticModel semanticModel)
@@ -936,18 +1056,22 @@ private static string? EvaluateEnumName(
                 switch (name)
                 {
                     case "Entity":
+
                         entity.EntityType =
                             GetTypeSymbol(
                                 assignment.Right,
                                 semanticModel);
+
                         break;
 
 
                     case "Schema":
+
                         entity.Schema =
                             EvaluateStringLikeExpression(
                                 assignment.Right,
                                 semanticModel);
+
                         break;
 
 
@@ -960,6 +1084,7 @@ private static string? EvaluateEnumName(
 
                         entity.ModelKey = value;
                         entity.FromColumn = value;
+
                         break;
                     }
 
@@ -973,25 +1098,30 @@ private static string? EvaluateEnumName(
 
                         entity.EntityKey = value;
                         entity.ToColumn = value;
+
                         break;
                     }
 
 
                     case "AliasProperty":
+
                         entity.AliasProperty =
                             EvaluateStringLikeExpression(
                                 assignment.Right,
                                 semanticModel);
+
                         break;
 
 
                     case "IsPrimary":
+
                         entity.IsPrimary =
                             assignment.Right
                                 .ToString()
                                 .Equals(
                                     "true",
                                     StringComparison.OrdinalIgnoreCase);
+
                         break;
                 }
             }
@@ -1011,8 +1141,10 @@ private static string? EvaluateEnumName(
             info.Definition.Entities[0].IsPrimary = true;
         }
     }
-    
-        private static void ParseFields(
+
+
+
+    private static void ParseFields(
         ExpressionSyntax expression,
         MappingClassInfo info,
         SemanticModel semanticModel)
@@ -1026,7 +1158,8 @@ private static string? EvaluateEnumName(
                 continue;
 
 
-            var field = new FieldInfo();
+            var field =
+                new FieldInfo();
 
 
             foreach (var assignment in initializer.Expressions
@@ -1040,43 +1173,53 @@ private static string? EvaluateEnumName(
                 switch (name)
                 {
                     case "Source":
+
                         field.SourceName =
                             EvaluateStringLikeExpression(
                                 assignment.Right,
                                 semanticModel);
+
                         break;
 
 
                     case "Destination":
+
                         field.DestinationName =
                             EvaluateStringLikeExpression(
                                 assignment.Right,
                                 semanticModel);
+
                         break;
 
 
                     case "Entity":
+
                         field.DestinationEntity =
                             EvaluateTypeName(
                                 assignment.Right);
+
                         break;
 
 
                     case "EnumMapping":
+
                         ParseEnumMapping(
                             assignment.Right,
                             field,
                             semanticModel);
+
                         break;
 
 
                     case "IsNavigationKey":
+
                         field.IsNavigationKey =
                             assignment.Right
                                 .ToString()
                                 .Equals(
                                     "true",
                                     StringComparison.OrdinalIgnoreCase);
+
                         break;
                 }
             }
@@ -1094,19 +1237,10 @@ private static string? EvaluateEnumName(
         }
 
 
-        //
-        // Generate FK navigation fields from entity relationships.
-        //
-        // This covers composite graph edges:
-        //
-        // innerCustomerKey -> CustomerCustomerRelationship.InnerCustomerKey
-        // outerCustomerKey -> CustomerCustomerRelationship.OuterCustomerKey
-        //
         GenerateNavigationKeyFields(info);
     }
-
-
-    private static void GenerateNavigationKeyFields(
+    
+        private static void GenerateNavigationKeyFields(
         MappingClassInfo info)
     {
         foreach (var navigation in info.Definition.Navigations)
@@ -1140,41 +1274,73 @@ private static string? EvaluateEnumName(
                             hop.ToColumn);
 
 
-                    if (!info.FieldMaps.Any(f =>
-                        f.SourceName == fromField &&
-                        f.DestinationEntity ==
-                            relationshipEntity &&
-                        f.DestinationName ==
-                            hop.FromColumn))
+                    if (!string.IsNullOrWhiteSpace(
+                            fromField)
+                        &&
+                        !info.FieldMaps.Any(f =>
+                            string.Equals(
+                                f.SourceName,
+                                fromField,
+                                StringComparison.Ordinal)
+                            &&
+                            string.Equals(
+                                f.DestinationEntity,
+                                relationshipEntity,
+                                StringComparison.Ordinal)
+                            &&
+                            string.Equals(
+                                f.DestinationName,
+                                hop.FromColumn,
+                                StringComparison.Ordinal)))
                     {
                         info.FieldMaps.Add(
                             new FieldInfo
                             {
-                                SourceName = fromField,
+                                SourceName =
+                                    fromField,
+
                                 DestinationEntity =
                                     relationshipEntity,
+
                                 DestinationName =
                                     hop.FromColumn,
+
                                 IsNavigationKey = true
                             });
                     }
 
 
-                    if (!info.FieldMaps.Any(f =>
-                        f.SourceName == toField &&
-                        f.DestinationEntity ==
-                            relationshipEntity &&
-                        f.DestinationName ==
-                            hop.ToColumn))
+                    if (!string.IsNullOrWhiteSpace(
+                            toField)
+                        &&
+                        !info.FieldMaps.Any(f =>
+                            string.Equals(
+                                f.SourceName,
+                                toField,
+                                StringComparison.Ordinal)
+                            &&
+                            string.Equals(
+                                f.DestinationEntity,
+                                relationshipEntity,
+                                StringComparison.Ordinal)
+                            &&
+                            string.Equals(
+                                f.DestinationName,
+                                hop.ToColumn,
+                                StringComparison.Ordinal)))
                     {
                         info.FieldMaps.Add(
                             new FieldInfo
                             {
-                                SourceName = toField,
+                                SourceName =
+                                    toField,
+
                                 DestinationEntity =
                                     relationshipEntity,
+
                                 DestinationName =
                                     hop.ToColumn,
+
                                 IsNavigationKey = true
                             });
                     }
@@ -1184,7 +1350,9 @@ private static string? EvaluateEnumName(
     }
 
 
-    private static string ToCamelCase(string? value)
+
+    private static string ToCamelCase(
+        string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
             return string.Empty;
@@ -1210,7 +1378,8 @@ private static string? EvaluateEnumName(
             return;
 
 
-        var graph = new GraphInfo();
+        var graph =
+            new GraphInfo();
 
 
         foreach (var assignment in initializer.Expressions
@@ -1224,80 +1393,94 @@ private static string? EvaluateEnumName(
             switch (name)
             {
                 case "GraphName":
+
                     graph.GraphName =
                         EvaluateStringLikeExpression(
                             assignment.Right,
-                            semanticModel) ?? "";
+                            semanticModel)
+                        ?? string.Empty;
+
                     break;
 
 
                 case "EdgeLabel":
+
                     graph.EdgeLabel =
                         EvaluateStringLikeExpression(
                             assignment.Right,
-                            semanticModel) ?? "";
+                            semanticModel)
+                        ?? string.Empty;
+
                     break;
 
 
                 case "EdgeKey":
+
                     graph.EdgeKey =
                         EvaluateStringLikeExpression(
                             assignment.Right,
-                            semanticModel) ?? "";
+                            semanticModel)
+                        ?? string.Empty;
+
                     break;
 
 
                 case "From":
+
                     graph.From =
                         ParseVertex(
                             assignment.Right,
                             semanticModel);
+
                     break;
 
 
                 case "To":
+
                     graph.To =
                         ParseVertex(
                             assignment.Right,
                             semanticModel);
+
                     break;
 
 
                 case "FromJoinColumn":
+
                     graph.FromJoinColumn =
                         EvaluateStringLikeExpression(
                             assignment.Right,
-                            semanticModel) ?? "";
+                            semanticModel)
+                        ?? string.Empty;
+
                     break;
 
 
                 case "ToJoinColumn":
+
                     graph.ToJoinColumn =
                         EvaluateStringLikeExpression(
                             assignment.Right,
-                            semanticModel) ?? "";
+                            semanticModel)
+                        ?? string.Empty;
+
                     break;
             }
         }
 
 
-        //
-        // Normalize missing graph edge key.
-        //
-        // For relationship entities the edge key is usually
-        // the primary key column.
-        //
-        if (string.IsNullOrWhiteSpace(graph.EdgeKey))
+        if (string.IsNullOrWhiteSpace(
+                graph.EdgeKey))
         {
-            var pk =
+            var primaryKey =
                 info.Definition.PrimaryKey
                     .FirstOrDefault();
 
 
-            if (pk != null)
+            if (primaryKey != null)
             {
                 graph.EdgeKey =
-                    pk.ColumnKey;
+                    primaryKey.ColumnKey;
             }
         }
 
@@ -1308,96 +1491,112 @@ private static string? EvaluateEnumName(
 
 
     private static VertexInfo? ParseVertex(
-    ExpressionSyntax expression,
-    SemanticModel semanticModel)
-{
-    var initializer =
-        GetObjectInitializer(expression);
-
-    if (initializer == null)
-        return null;
-
-
-    var vertex = new VertexInfo();
-
-
-    foreach (var assignment in initializer.Expressions
-                 .OfType<AssignmentExpressionSyntax>())
+        ExpressionSyntax expression,
+        SemanticModel semanticModel)
     {
-        var name =
-            (assignment.Left as IdentifierNameSyntax)
-            ?.Identifier.Text;
+        var initializer =
+            GetObjectInitializer(expression);
+
+        if (initializer == null)
+            return null;
 
 
-        switch (name)
+        var vertex =
+            new VertexInfo();
+
+
+        foreach (var assignment in initializer.Expressions
+                     .OfType<AssignmentExpressionSyntax>())
         {
-            case "Label":
-                vertex.Label =
-                    EvaluateStringLikeExpression(
-                        assignment.Right,
-                        semanticModel) ?? "";
-                break;
+            var name =
+                (assignment.Left as IdentifierNameSyntax)
+                ?.Identifier.Text;
 
 
-            case "GraphProperty":
-                vertex.GraphProperty =
-                    EvaluateStringLikeExpression(
-                        assignment.Right,
-                        semanticModel) ?? "";
-                break;
+            switch (name)
+            {
+                case "Label":
+
+                    vertex.Label =
+                        EvaluateStringLikeExpression(
+                            assignment.Right,
+                            semanticModel)
+                        ?? string.Empty;
+
+                    break;
 
 
-            case "ForeignKeyColumn":
-                vertex.ForeignKeyColumn =
-                    EvaluateStringLikeExpression(
-                        assignment.Right,
-                        semanticModel) ?? "";
-                break;
+                case "GraphProperty":
+
+                    vertex.GraphProperty =
+                        EvaluateStringLikeExpression(
+                            assignment.Right,
+                            semanticModel)
+                        ?? string.Empty;
+
+                    break;
 
 
-            case "KeyColumn":
-                vertex.KeyColumn =
-                    EvaluateStringLikeExpression(
-                        assignment.Right,
-                        semanticModel) ?? "";
-                break;
+                case "ForeignKeyColumn":
+
+                    vertex.ForeignKeyColumn =
+                        EvaluateStringLikeExpression(
+                            assignment.Right,
+                            semanticModel)
+                        ?? string.Empty;
+
+                    break;
 
 
-            case "Alias":
-                vertex.Alias =
-                    EvaluateStringLikeExpression(
-                        assignment.Right,
-                        semanticModel);
-                break;
+                case "KeyColumn":
+
+                    vertex.KeyColumn =
+                        EvaluateStringLikeExpression(
+                            assignment.Right,
+                            semanticModel)
+                        ?? string.Empty;
+
+                    break;
+
+
+                case "Alias":
+
+                    vertex.Alias =
+                        EvaluateStringLikeExpression(
+                            assignment.Right,
+                            semanticModel);
+
+                    break;
+            }
         }
+
+
+        if (string.IsNullOrWhiteSpace(
+                vertex.KeyColumn))
+        {
+            vertex.KeyColumn =
+                vertex.GraphProperty;
+        }
+
+
+        if (string.IsNullOrWhiteSpace(
+                vertex.ForeignKeyColumn))
+        {
+            vertex.ForeignKeyColumn =
+                vertex.KeyColumn;
+        }
+
+
+        return vertex;
     }
-
-
-    //
-    // Graph FK must always resolve to the vertex key.
-    //
-    if (string.IsNullOrWhiteSpace(vertex.KeyColumn))
-    {
-        vertex.KeyColumn =
-            vertex.GraphProperty;
-    }
-
-
-    if (string.IsNullOrWhiteSpace(vertex.ForeignKeyColumn))
-    {
-        vertex.ForeignKeyColumn =
-            vertex.KeyColumn;
-    }
-
-
-    return vertex;
-}
     
         private static ExpressionSyntax? GetPropertyExpression(
         PropertyDeclarationSyntax property)
     {
         if (property.ExpressionBody != null)
+        {
             return property.ExpressionBody.Expression;
+        }
 
 
         if (property.AccessorList != null)
@@ -1409,7 +1608,9 @@ private static string? EvaluateEnumName(
 
 
             if (getter?.ExpressionBody != null)
+            {
                 return getter.ExpressionBody.Expression;
+            }
 
 
             if (getter?.Body != null)
@@ -1453,8 +1654,10 @@ private static string? EvaluateEnumName(
 
                 foreach (var element in collection.Elements)
                 {
-                    if (element is ExpressionElementSyntax expr)
-                        yield return expr.Expression;
+                    if (element is ExpressionElementSyntax item)
+                    {
+                        yield return item.Expression;
+                    }
                 }
 
                 yield break;
@@ -1463,7 +1666,9 @@ private static string? EvaluateEnumName(
             case ImplicitArrayCreationExpressionSyntax array:
 
                 foreach (var item in array.Initializer.Expressions)
+                {
                     yield return item;
+                }
 
                 yield break;
 
@@ -1473,7 +1678,9 @@ private static string? EvaluateEnumName(
                 if (array.Initializer != null)
                 {
                     foreach (var item in array.Initializer.Expressions)
+                    {
                         yield return item;
+                    }
                 }
 
                 yield break;
@@ -1508,9 +1715,9 @@ private static string? EvaluateEnumName(
 
 
         if (constant.HasValue &&
-            constant.Value is string s)
+            constant.Value is string value)
         {
-            return s;
+            return value;
         }
 
 

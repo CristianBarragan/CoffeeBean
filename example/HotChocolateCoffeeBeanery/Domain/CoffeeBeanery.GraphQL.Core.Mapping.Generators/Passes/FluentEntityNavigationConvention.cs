@@ -307,7 +307,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
 
         public static void AddNavigationKeyFields(
             MappingClassInfo info,
-            IEnumerable<DerivedForeignKey> foreignKeys)
+            IEnumerable<FluentEntityNavigationConvention.DerivedForeignKey> foreignKeys)
         {
             if (info.EntityType == null)
                 return;
@@ -334,32 +334,115 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                     fk.NavigationName + "Key";
 
 
-                var exists =
-                    info.FieldMaps.Any(x =>
+                if (info.FieldMaps.Any(x =>
                         string.Equals(
                             x.SourceName,
                             sourceName,
-                            StringComparison.Ordinal));
-
-
-                if (exists)
+                            StringComparison.Ordinal)))
+                {
                     continue;
+                }
 
 
                 info.FieldMaps.Add(
                     new FieldInfo
                     {
-                        SourceName = sourceName,
+                        SourceName =
+                            sourceName,
 
                         DestinationEntity =
                             fk.DeclaringEntityType.Name,
 
+                        // IMPORTANT:
+                        // This is the actual EF model FK property.
+                        // Never build NavigationName + "Id".
                         DestinationName =
-                            fk.RawForeignKeyColumn,
+                            fk.ModelForeignKeyProperty,
 
-                        IsNavigationKey = true
+                        IsNavigationKey =
+                            true
                     });
             }
+        }
+
+        private static string ResolveActualForeignKeyProperty(
+            INamedTypeSymbol entityType,
+            string foreignKeyName)
+        {
+            var direct =
+                entityType.GetMembers()
+                    .OfType<IPropertySymbol>()
+                    .FirstOrDefault(p =>
+                        string.Equals(
+                            p.Name,
+                            foreignKeyName,
+                            StringComparison.OrdinalIgnoreCase));
+
+
+            if (direct != null)
+            {
+                return direct.Name;
+            }
+
+
+            if (foreignKeyName.EndsWith(
+                    "Id",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                var prefix =
+                    foreignKeyName.Substring(
+                        0,
+                        foreignKeyName.Length - 2);
+
+
+                var keyProperty =
+                    entityType.GetMembers()
+                        .OfType<IPropertySymbol>()
+                        .FirstOrDefault(p =>
+                            string.Equals(
+                                p.Name,
+                                prefix + "Key",
+                                StringComparison.OrdinalIgnoreCase));
+
+
+                if (keyProperty != null)
+                {
+                    return keyProperty.Name;
+                }
+            }
+
+
+            return foreignKeyName;
+        }
+
+        private static string NormalizeForeignKeyColumn(
+            string columnName)
+        {
+            if (string.IsNullOrWhiteSpace(columnName))
+                return columnName;
+
+
+            // EF navigation FK convention:
+            //
+            // AccountId              -> Account
+            // ContractId             -> Contract
+            // CustomerId             -> Customer
+            // CustomerBankingRelationshipId -> CustomerBankingRelationship
+            //
+            // ColumnId enums normally expose the referenced
+            // entity key as EntityName, not EntityNameId.
+
+            if (columnName.EndsWith(
+                    "Id",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return columnName.Substring(
+                    0,
+                    columnName.Length - 2);
+            }
+
+
+            return columnName;
         }
 
 
@@ -540,7 +623,48 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                 List<Edge> Edges,
                 List<string> Diagnostics);
 
+            private static string ResolveColumnName(
+                INamedTypeSymbol entity,
+                string propertyName)
+            {
+                var direct =
+                    entity.GetMembers()
+                        .OfType<IPropertySymbol>()
+                        .FirstOrDefault(p =>
+                            string.Equals(
+                                p.Name,
+                                propertyName,
+                                StringComparison.OrdinalIgnoreCase));
 
+                if (direct != null)
+                    return direct.Name;
+
+
+                if (propertyName.EndsWith(
+                        "Id",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    var prefix =
+                        propertyName.Substring(
+                            0,
+                            propertyName.Length - 2);
+
+                    var keyProperty =
+                        entity.GetMembers()
+                            .OfType<IPropertySymbol>()
+                            .FirstOrDefault(p =>
+                                string.Equals(
+                                    p.Name,
+                                    prefix + "Key",
+                                    StringComparison.OrdinalIgnoreCase));
+
+                    if (keyProperty != null)
+                        return keyProperty.Name;
+                }
+
+
+                return propertyName;
+            }
 
             public static EntityGraphBuildResult Build(
     Compilation compilation,

@@ -29,12 +29,25 @@ internal static class MetadataEmitter
             if (m.CteUpdateMeta.Count > 0)
                 continue;
 
-            var navResult = EntityNavigationConvention.Resolve(
-                m,
-                allMappings,
-                entityGraph,
-                rootEntityTypes);
+            if (m.Graph != null)
+            {
+                foreach (var (alias, fk, surrogateId, naturalKey) in MutationMetadataEmitter.BuildGraphEdgeCteResolutions(m))
+                {
+                    m.CteUpdateMeta.Add(new CteUpdateMetaInfo
+                    {
+                        NavigationAlias = alias,
+                        ForeignKeyColumn = fk,
+                        OwningPrimaryKeyColumn = "Id",
+                        RelatedEntityTypeName = "Customer",
+                        RelatedSurrogateIdColumn = surrogateId,
+                        RelatedNaturalKeyColumn = naturalKey
+                    });
+                }
 
+                continue;
+            }
+
+            var navResult = EntityNavigationConvention.Resolve(m, allMappings, entityGraph, rootEntityTypes);
             PopulateCteUpdateMeta(m, navResult);
         }
 
@@ -118,7 +131,8 @@ internal static class MetadataEmitter
         EmitEntityColumnNameArray(
             sb,
             entityTypes,
-            allMappings);
+            allMappings,
+            entityGraph);
 
         sb.AppendLine("    }");
 
@@ -523,7 +537,7 @@ internal static class MetadataEmitter
 
     private static void EmitFieldMappingsArray( StringBuilder sb, List<MappingClassInfo> models) { sb.AppendLine( $" public static readonly global::CoffeeBeanery.GraphQL.Core.Runtime.FieldMapSpec[][] FieldMappings = " + $"new global::CoffeeBeanery.GraphQL.Core.Runtime.FieldMapSpec[{models.Count}][]"); sb.AppendLine( " {"); foreach (var m in models) { var mappings = PlannerEmitter.ComputeFieldMappingsEagerPublic( m, PlannerEmitter.IsCompositeInfo(m)); if (mappings.Count == 0) { sb.AppendLine( " System.Array.Empty<global::CoffeeBeanery.GraphQL.Core.Runtime.FieldMapSpec>(),"); continue; } sb.AppendLine( " new global::CoffeeBeanery.GraphQL.Core.Runtime.FieldMapSpec[]"); sb.AppendLine( " {"); foreach (var fm in mappings) { sb.AppendLine( " new global::CoffeeBeanery.GraphQL.Core.Runtime.FieldMapSpec("); sb.AppendLine( $" \"{fm.FieldName}\","); sb.AppendLine( $" StorageEntityId.{fm.EntityTypeName},"); sb.AppendLine( $" \"{fm.ColumnName}\","); sb.AppendLine( " \"\","); sb.AppendLine( " \"\""); sb.AppendLine( " ),"); } sb.AppendLine( " },"); } sb.AppendLine( " };"); sb.AppendLine(); }
 
-    private static void PopulateCteUpdateMeta(
+    internal static void PopulateCteUpdateMeta(
     MappingClassInfo info,
     NavigationResolutionResult navResult)
 {
@@ -1314,7 +1328,8 @@ private static void EmitCteResolutionsArray(
     private static void EmitEntityColumnNameArray(
         StringBuilder sb,
         List<INamedTypeSymbol> entityTypes,
-        ImmutableArray<MappingClassInfo> allMappings)
+        ImmutableArray<MappingClassInfo> allMappings,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
     {
         sb.AppendLine(
             "        /// <summary>Indexed by StorageEntityId.* then ColumnId.{EntityName}.*</summary>");
@@ -1329,18 +1344,12 @@ private static void EmitCteResolutionsArray(
             var entityName =
                 IdEmitter.StripEntitySuffix(entity.Name);
 
-            // IMPORTANT: must use the exact same ordering as ColumnId.* constants
-            // (IdEmitter.EmitColumnIds). Both now call GetFullColumnOrder so the
-            // numeric ColumnId values and this runtime name array can never
-            // disagree again — previously this method inserted the PK column
-            // independently while EmitColumnIds did not, causing every column
-            // reference for entities whose PK wasn't already a mapped field to
-            // resolve one index off from its actual physical column.
             var columns =
                 IdEmitter.GetFullColumnOrder(
                         entityName,
                         allMappings,
-                        entity)
+                        entity,
+                        entityGraph)
                     .ToList();
 
             sb.AppendLine(

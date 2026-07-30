@@ -2,33 +2,6 @@
 
 namespace CoffeeBeanery.GraphQL.Core.Runtime;
 
-public readonly struct UpsertRow
-{
-    public readonly ushort EntityId;
-    public readonly ushort StorageEntityId;
-    public readonly string EntityOutputAlias;
-    public readonly ImmutableArray<FieldValue> Values;
-    public readonly string? SchemaOverride;
-    public readonly string? TableOverride;
-
-    public UpsertRow(
-        ushort entityId,
-        ushort storageEntityId,
-        string entityOutputAlias,
-        ImmutableArray<FieldValue> values,
-        string? schemaOverride = null,
-        string? tableOverride = null)
-    {
-        EntityId = entityId;
-        StorageEntityId = storageEntityId;
-        EntityOutputAlias = entityOutputAlias;
-        Values = values;
-        SchemaOverride = schemaOverride;
-        TableOverride = tableOverride;
-    }
-}
-
-
 public readonly struct CteResolutionSpec
 {
     public readonly string NavigationAlias;
@@ -55,6 +28,105 @@ public readonly struct CteResolutionSpec
         RelatedTableAlias = relatedTableAlias;
         RelatedSurrogateIdColumn = relatedSurrogateIdColumn;
         RelatedNaturalKeyColumn = relatedNaturalKeyColumn;
+    }
+}
+
+public readonly struct UpsertRow
+{
+    public readonly ushort EntityId;
+    public readonly ushort StorageEntityId;
+    public readonly string EntityOutputAlias;
+
+    /// <summary>
+    /// Literal values written directly into the INSERT.
+    /// </summary>
+    public readonly ImmutableArray<FieldValue> Values;
+
+    /// <summary>
+    /// Foreign-key values resolved from another table using a natural key.
+    /// When non-empty the SQL writer should emit INSERT ... SELECT instead of INSERT ... VALUES.
+    /// </summary>
+    public readonly ImmutableArray<LookupValue> Lookups;
+
+    public readonly string? SchemaOverride;
+    public readonly string? TableOverride;
+
+    public bool HasLookups => !Lookups.IsDefaultOrEmpty;
+
+    public UpsertRow(
+        ushort entityId,
+        ushort storageEntityId,
+        string entityOutputAlias,
+        ImmutableArray<FieldValue> values,
+        string? schemaOverride = null,
+        string? tableOverride = null,
+        ImmutableArray<LookupValue> lookups = default)
+    {
+        EntityId = entityId;
+        StorageEntityId = storageEntityId;
+        EntityOutputAlias = entityOutputAlias;
+
+        Values =
+            values.IsDefault
+                ? ImmutableArray<FieldValue>.Empty
+                : values;
+
+        SchemaOverride = schemaOverride;
+        TableOverride = tableOverride;
+
+        Lookups =
+            lookups.IsDefault
+                ? ImmutableArray<LookupValue>.Empty
+                : lookups;
+    }
+}
+
+public readonly struct LookupValue
+{
+    /// <summary>
+    /// Column being populated (e.g. InnerCustomerId).
+    /// </summary>
+    public readonly ushort TargetColumnId;
+
+    /// <summary>
+    /// Entity/table to perform the lookup against.
+    /// </summary>
+    public readonly ushort LookupStorageEntityId;
+
+    /// <summary>
+    /// Natural key column (e.g. CustomerKey).
+    /// </summary>
+    public readonly ushort LookupColumnId;
+
+    /// <summary>
+    /// Surrogate key column to return (e.g. Id).
+    /// </summary>
+    public readonly ushort ResultColumnId;
+
+    /// <summary>
+    /// Value to match against the natural key.
+    /// </summary>
+    public readonly object? LookupValueLiteral;
+
+    /// <summary>
+    /// SQL alias for the lookup table.
+    /// </summary>
+    public readonly string Alias;
+
+    public LookupValue(
+        ushort targetColumnId,
+        ushort lookupStorageEntityId,
+        ushort lookupColumnId,
+        ushort resultColumnId,
+        object? lookupValueLiteral,
+        string alias)
+    {
+        TargetColumnId = targetColumnId;
+        LookupStorageEntityId = lookupStorageEntityId;
+        LookupColumnId = lookupColumnId;
+        ResultColumnId = resultColumnId;
+        LookupValueLiteral = lookupValueLiteral;
+        Alias = alias;
     }
 }
 
@@ -157,8 +229,7 @@ public readonly struct MutationPlan
         CteRoots = cteRoots;
         GraphMerges = graphMerges;
     }
-
-
+    
     public bool HasCte => !CteRoots.IsEmpty;
 
     public bool HasGraphMerges => !GraphMerges.IsEmpty;

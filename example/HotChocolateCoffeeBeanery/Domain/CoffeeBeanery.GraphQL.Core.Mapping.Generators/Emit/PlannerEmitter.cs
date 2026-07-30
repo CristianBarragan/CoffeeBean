@@ -826,8 +826,7 @@ private static void EmitCompositeChildAttachmentJoins(
         MappingClassInfo info,
         bool composite)
     => ComputeFieldMappingsEager(info, composite);
-
-
+    
 private static List<(
     string FieldName,
     string EntityTypeName,
@@ -847,7 +846,7 @@ ComputeFieldMappingsEager(
 
     foreach (var field in info.FieldMaps)
     {
-        if (field.IsNavigationKey)
+        if (field.IsNavigationKey && !composite)
             continue;
 
 
@@ -857,16 +856,13 @@ ComputeFieldMappingsEager(
                 : field.DestinationEntity;
 
 
-        // Resolve the actual entity symbol.
         var entitySymbol =
             info.Definition.Entities
                 .FirstOrDefault(e =>
                     e.EntityType != null &&
                     string.Equals(
-                        IdEmitter.StripEntitySuffix(
-                            e.EntityType.Name),
-                        IdEmitter.StripEntitySuffix(
-                            entityTypeName),
+                        IdEmitter.StripEntitySuffix(e.EntityType.Name),
+                        IdEmitter.StripEntitySuffix(entityTypeName),
                         StringComparison.OrdinalIgnoreCase))
                 ?.EntityType;
 
@@ -879,15 +875,15 @@ ComputeFieldMappingsEager(
 
 
         var storageEntityName =
-            IdEmitter.StripEntitySuffix(
-                entitySymbol.Name);
+            IdEmitter.StripEntitySuffix(entitySymbol.Name);
 
 
         fields.Add(
             (
                 field.SourceName,
                 entitySymbol.Name,
-                field.DestinationName,
+                NormalizeColumnName(
+                    field.DestinationName),
                 storageEntityName));
     }
 
@@ -920,10 +916,8 @@ ComputeFieldMappingsEager(
             group
                 .Where(f =>
                     string.Equals(
-                        IdEmitter.StripEntitySuffix(
-                            f.EntityTypeName),
-                        IdEmitter.StripEntitySuffix(
-                            primaryEntityName),
+                        IdEmitter.StripEntitySuffix(f.EntityTypeName),
+                        IdEmitter.StripEntitySuffix(primaryEntityName),
                         StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
@@ -942,6 +936,17 @@ ComputeFieldMappingsEager(
         }
 
 
+        // Composite relationships can have duplicate field names from
+        // different entities. Keep them instead of failing.
+        if (composite)
+        {
+            foreach (var item in group)
+                resolved.Add(item);
+
+            continue;
+        }
+
+
         throw new InvalidOperationException(
             $"Model '{info.ModelType?.Name}' has ambiguous field mappings for '{group.Key}'.");
     }
@@ -950,6 +955,47 @@ ComputeFieldMappingsEager(
     return resolved;
 }
 
+private static string ResolveColumnId(
+    MappingClassInfo info,
+    FieldInfo field)
+{
+    if (info.EntityType == null)
+        throw new InvalidOperationException(
+            "EntityType is required for column resolution.");
+
+
+    var columnName =
+        field.DestinationName;
+
+
+    if (string.IsNullOrWhiteSpace(columnName))
+        throw new InvalidOperationException(
+            $"Missing destination column for {field.SourceName}.");
+
+
+    return ColumnIdResolver.Resolve(
+        info.EntityType,
+        columnName);
+}
+
+private static string NormalizeColumnName(
+    string columnName)
+{
+    if (string.IsNullOrWhiteSpace(columnName))
+        return columnName;
+    
+    if (columnName.EndsWith(
+            "Id",
+            StringComparison.OrdinalIgnoreCase))
+    {
+        return columnName.Substring(
+            0,
+            columnName.Length - 2);
+    }
+
+
+    return columnName;
+}
 
     private static void EmitScalarSelection(
     StringBuilder sb,

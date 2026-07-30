@@ -397,7 +397,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
 
                 var ids =
                     IdEmitter.Emit(
-                        resolvedMappings);
+                        resolvedMappings, entityGraph);
 
                 spc.AddSource(
                     "GeneratedIds.g.cs",
@@ -410,7 +410,7 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                     MetadataEmitter.Emit(resolvedMappings, rootEntityTypes, entityGraph));
 
                 spc.AddSource("MutationMetadataRegistry.g.cs",
-                    MutationMetadataEmitter.Emit(resolvedMappings));
+                    MutationMetadataEmitter.Emit(resolvedMappings, rootEntityTypes, entityGraph));
 
                 spc.AddSource("MutationMaterializers.g.cs",
                     MutationMaterializerEmitter.Emit(resolvedMappings));
