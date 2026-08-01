@@ -5,7 +5,7 @@
     <version>1.0.0</version>
     <authors>CoffeeBeanery.GraphQL.Core.Mapping.Generators</authors>
     <description>Package Description</description>
-    <repository type="git" commit="70b3aaf62963fd0b554ac2e94676a713915c815e" />
+    <repository type="git" commit="a179b1802d9517e58f0cbea6507b7a5fe2ca69e2" />
     <dependencies>
       <group targetFramework=".NETStandard2.0">
         <dependency id="Newtonsoft.Json" version="13.0.3" exclude="Build,Analyzers" />

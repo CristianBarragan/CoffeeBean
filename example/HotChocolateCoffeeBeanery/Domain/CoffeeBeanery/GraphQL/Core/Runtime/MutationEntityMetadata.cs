@@ -2,7 +2,6 @@
 
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model;
 
 namespace CoffeeBeanery.GraphQL.Core.Runtime;
 
