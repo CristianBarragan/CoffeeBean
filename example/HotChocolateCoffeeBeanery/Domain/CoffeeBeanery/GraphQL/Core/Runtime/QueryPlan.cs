@@ -172,6 +172,8 @@ public readonly struct GraphMergeSpec
 
     public readonly ImmutableDictionary<string,string> EdgeProperties;
 
+    public readonly string EdgePropertiesHash;
+
 
     public GraphMergeSpec(
         string graphName,
@@ -203,6 +205,9 @@ public readonly struct GraphMergeSpec
         EdgeProperties =
             edgeProperties ??
             ImmutableDictionary<string,string>.Empty;
+
+        EdgePropertiesHash =
+            GraphMergeKey.NormalizeProperties(EdgeProperties);
     }
 }
 
@@ -409,12 +414,33 @@ internal readonly record struct GraphJoinKey(
     ushort ToColumnId);
 
 
-internal readonly record struct GraphMergeKey(
+public readonly record struct GraphMergeKey(
     string GraphName,
     string EdgeLabel,
+
     string FromLabel,
     string FromKeyColumn,
     string FromKeyValue,
+
     string ToLabel,
     string ToKeyColumn,
-    string ToKeyValue);
+    string ToKeyValue,
+
+    string EdgeKeyColumn,
+    string? EdgeKeyValue,
+
+    string EdgePropertiesHash)
+{
+    public static string NormalizeProperties(
+        ImmutableDictionary<string,string> properties)
+    {
+        return string.Join(
+            "|",
+            properties
+                .OrderBy(
+                    x => x.Key,
+                    StringComparer.Ordinal)
+                .Select(
+                    x => $"{x.Key}={x.Value}"));
+    }
+}

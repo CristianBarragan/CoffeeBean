@@ -172,14 +172,19 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public required string NavigationAlias { get; set; }
 
         public required string ForeignKeyColumn { get; set; }
+        public required ushort ForeignKeyColumnId { get; set; }
 
         public required string OwningPrimaryKeyColumn { get; set; }
+        public required ushort OwningPrimaryKeyColumnId { get; set; }
 
         public required string RelatedEntityTypeName { get; set; }
+        public required ushort RelatedStorageEntityId { get; set; }
 
         public required string RelatedSurrogateIdColumn { get; set; }
+        public required ushort RelatedSurrogateIdColumnId { get; set; }
 
         public required string RelatedNaturalKeyColumn { get; set; }
+        public required ushort RelatedNaturalKeyColumnId { get; set; }
     }
 
     public sealed class AutoChildAttachmentInfo
@@ -187,6 +192,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public required string FieldName { get; set; }
 
         public required string ToModelName { get; set; }
+
+        public required INamedTypeSymbol ChildModelType { get; set; }
 
         public required INamedTypeSymbol ParentEntityType { get; set; }
 
@@ -292,6 +299,14 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         public bool TargetIsRoot { get; init; }
         public bool FkOwnedByDeclaringEntity { get; init; }
         public List<NavigationJoinPath> JoinPaths { get; init; } = [];
+        
+        ushort ForeignKeyColumnId { get; init; }
+
+        ushort RelatedStorageEntityId { get; init; }
+
+        ushort RelatedSurrogateIdColumnId { get; init; }
+
+        ushort RelatedNaturalKeyColumnId { get; init; }
     }
     
     public sealed class NavigationJoinPath
@@ -327,6 +342,14 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
 
 
         public GraphDefinitionInfo? Graph { get; set; }
+        
+        ushort ToColumnId { get; }
+
+        ushort ForeignKeyColumnId { get; }
+
+        ushort RelatedStorageEntityId { get; }
+
+        ushort RelatedSurrogateIdColumnId { get; }
     }
     
     public sealed record PrimaryKeyDefinitionInfo

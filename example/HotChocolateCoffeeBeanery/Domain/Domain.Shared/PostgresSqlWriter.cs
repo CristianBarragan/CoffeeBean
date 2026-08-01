@@ -1,4 +1,4 @@
-﻿    using System;
+﻿using System;
     using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Linq;
@@ -163,37 +163,36 @@
             in QueryPlan query)
         {
             var sb =
-                new StringBuilder(1024);
+                new StringBuilder();
 
 
-            var arms =
-                CollectUpsertArms(mutation);
+            var ctes =
+                BuildMutationCtes(mutation);
 
 
-            if (arms.Count > 0)
+
+            if (ctes.Count > 0)
             {
                 sb.AppendLine("WITH");
 
 
-                for (var i = 0; i < arms.Count; i++)
+                for (var i = 0;
+                     i < ctes.Count;
+                     i++)
                 {
-                    sb.Append("  mut_")
-                        .Append(i)
-                        .Append(" AS (");
+                    sb.Append(ctes[i]);
 
 
-                    sb.Append(arms[i]);
-
-
-                    sb.Append(" RETURNING 1)");
-
-
-                    sb.AppendLine(
-                        i < arms.Count - 1
-                            ? ","
-                            : "");
+                    if (i < ctes.Count - 1)
+                    {
+                        sb.AppendLine(",");
+                    }
                 }
+
+
+                sb.AppendLine();
             }
+
 
 
             AppendSelect(
@@ -201,9 +200,319 @@
                 query);
 
 
+
             return sb.ToString();
         }
+        
+        private List<string> BuildMutationCtes(
+            in MutationPlan mutation)
+        {
+            var result =
+                new List<string>();
 
+            var completed =
+                new HashSet<int>();
+
+            var remaining =
+                new HashSet<int>();
+
+
+            for (var i = 0;
+                 i < mutation.Rows.Length;
+                 i++)
+            {
+                remaining.Add(i);
+            }
+
+
+            var index = 0;
+
+
+            while (remaining.Count > 0)
+            {
+                var progress = false;
+
+
+                foreach (var rowIndex in remaining.ToArray())
+                {
+                    if (!DependenciesSatisfied(
+                            rowIndex,
+                            completed,
+                            mutation.Dependencies))
+                    {
+                        continue;
+                    }
+
+
+                    var sql =
+                        BuildMutationCte(
+                            rowIndex,
+                            index++,
+                            mutation);
+
+
+                    result.Add(sql);
+
+
+                    completed.Add(rowIndex);
+                    remaining.Remove(rowIndex);
+
+
+                    progress = true;
+                }
+
+
+                if (!progress)
+                {
+                    throw new InvalidOperationException(
+                        "Circular mutation dependency detected.");
+                }
+            }
+
+
+            return result;
+        }
+        
+        private string BuildMutationCte(
+            int rowIndex,
+            int cteIndex,
+            in MutationPlan mutation)
+        {
+            var row =
+                mutation.Rows[rowIndex];
+
+
+            var dependencies =
+                mutation.Dependencies
+                    .Where(x =>
+                        x.TargetRow == rowIndex)
+                    .ToImmutableArray();
+
+
+            Console.WriteLine(
+                $"ROW {rowIndex} {row.EntityOutputAlias} deps={dependencies.Length}");
+
+
+            foreach (var dep in dependencies)
+            {
+                Console.WriteLine(
+                    $"  {dep.SourceRow}.{dep.SourceColumn} -> {dep.TargetRow}.{dep.TargetColumn}");
+            }
+
+
+            string sql;
+
+
+            if (dependencies.Length > 0)
+            {
+                sql =
+                    BuildDependentUpsert(
+                        row,
+                        dependencies);
+            }
+            else if (row.HasLookups)
+            {
+                sql =
+                    BuildLookupUpsert(row);
+            }
+            else
+            {
+                sql =
+                    BuildRegularUpsert(row);
+            }
+
+
+            return
+                $"mut_{cteIndex} AS ({sql} RETURNING *)";
+        }
+        
+        private static bool DependenciesSatisfied(
+            int rowIndex,
+            HashSet<int> completed,
+            ImmutableArray<MutationDependency> dependencies)
+        {
+            foreach (var dependency in dependencies)
+            {
+                if (dependency.TargetRow != rowIndex)
+                    continue;
+
+
+                if (!completed.Contains(
+                        dependency.SourceRow))
+                {
+                    return false;
+                }
+            }
+
+
+            return true;
+        }
+        
+        
+        private string BuildDependentUpsert(
+    in UpsertRow row,
+    ImmutableArray<MutationDependency> dependencies)
+{
+    var schema =
+        row.SchemaOverride ??
+        _meta.EntitySchema[row.StorageEntityId];
+
+
+    var table =
+        row.TableOverride ??
+        _meta.EntityTable[row.StorageEntityId];
+
+
+    var conflictCols =
+        _meta.EntityConflictColumns[
+            row.StorageEntityId];
+
+
+    var columns =
+        new List<string>();
+
+
+    var values =
+        new List<string>();
+
+
+    foreach (var value in row.Values)
+    {
+        var column =
+            ResolveColumnName(
+                row.EntityId,
+                row.StorageEntityId,
+                value.FieldId);
+
+
+        columns.Add(column);
+
+
+        var hasDependency =
+            false;
+
+        MutationDependency dependency =
+            default;
+
+
+        foreach (var item in dependencies)
+        {
+            if (string.Equals(
+                    item.TargetColumn,
+                    column,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                dependency = item;
+                hasDependency = true;
+                break;
+            }
+        }
+
+
+        if (hasDependency)
+        {
+            values.Add(
+                BuildDependencyReference(
+                    dependency));
+        }
+        else
+        {
+            values.Add(
+                BuildLiteralExpression(
+                    row.StorageEntityId,
+                    value.FieldId,
+                    value.RawValue));
+        }
+    }
+
+
+    var sb =
+        new StringBuilder();
+
+
+    sb.Append("INSERT INTO \"")
+        .Append(schema)
+        .Append("\".\"")
+        .Append(table)
+        .Append("\" (");
+
+
+    sb.Append(
+        string.Join(
+            ", ",
+            columns.Select(x =>
+                $"\"{x}\"")));
+
+
+    sb.Append(") VALUES (");
+
+
+    sb.Append(
+        string.Join(
+            ", ",
+            values));
+
+
+    sb.Append(')');
+
+
+    AppendDoUpdateSet(
+        sb,
+        row.EntityId,
+        row.StorageEntityId,
+        row.Values,
+        conflictCols);
+
+
+    return sb.ToString();
+}
+        
+        private List<string> CollectGraphMergeCtes(
+            in MutationPlan plan)
+        {
+            var result =
+                new List<string>();
+
+            var seen =
+                new HashSet<GraphMergeKey>();
+
+
+            foreach (var merge in plan.GraphMerges)
+            {
+                var key =
+                    new GraphMergeKey(
+                        merge.GraphName,
+                        merge.EdgeLabel,
+                        merge.FromLabel,
+                        merge.FromKeyColumn,
+                        merge.FromKeyValue,
+                        merge.ToLabel,
+                        merge.ToKeyColumn,
+                        merge.ToKeyValue,
+                        merge.EdgeKeyColumn,
+                        merge.EdgeKeyValue,
+                        merge.EdgePropertiesHash);
+
+
+                if (!seen.Add(key))
+                    continue;
+
+
+                result.Add(
+                    _graphStrategy.BuildGraphMerge(merge));
+            }
+
+
+            return result;
+        }
+
+        
+        private static string BuildDependencyReference(
+            MutationDependency dependency)
+        {
+            return
+                $"(SELECT \"{dependency.SourceColumn}\" FROM mut_{dependency.SourceRow})";
+        }
 
         public string WriteSelect(
             in QueryPlan plan)
@@ -264,20 +573,38 @@
         public string WriteGraphMerges(
             in MutationPlan plan)
         {
-            var sb =
-                new StringBuilder();
+            var sb = new StringBuilder();
 
+            var seen = new HashSet<GraphMergeKey>();
 
             foreach (var merge in plan.GraphMerges)
             {
-                sb.AppendLine(
+                var key = new GraphMergeKey(
+                    merge.GraphName,
+                    merge.EdgeLabel,
+                    merge.FromLabel,
+                    merge.FromKeyColumn,
+                    merge.FromKeyValue,
+                    merge.ToLabel,
+                    merge.ToKeyColumn,
+                    merge.ToKeyValue,
+                    merge.EdgeKeyColumn,
+                    merge.EdgeKeyValue,
+                    GraphMergeKey.NormalizeProperties(
+                        merge.EdgeProperties));
+
+                if (!seen.Add(key))
+                    continue;
+
+                if (sb.Length > 0)
+                    sb.AppendLine(";");
+
+                sb.Append(
                     _graphStrategy.BuildGraphMerge(merge));
             }
 
-
             return sb.ToString();
         }
-
 
         private List<string> CollectUpsertArms(
             in MutationPlan plan)
@@ -959,168 +1286,323 @@
                 $"RawColumn={column.RawColumnName}");
         }
 
+        // -------------------------------------------------------------------
+        // FIXED (2 bugs):
+        //
+        // 1. Identifier quoting: every schema/table/alias/column name below
+        //    used to go through AppendQuotedValue, which wraps its argument
+        //    in SINGLE quotes (it's the literal-VALUE quoter used elsewhere
+        //    for things like `ON alias."col" = 'value'`). Applying it to
+        //    identifiers produced syntactically invalid SQL such as
+        //    LEFT JOIN 'Banking'.'Customer' 'SomeAlias' ON ...
+        //    which Postgres parses as string literals, not table/column
+        //    references, and fails outright. Every occurrence of
+        //    AppendQuotedValue on an identifier here is now
+        //    AppendQuotedIdentifier (double-quoted, with embedded quotes
+        //    escaped) — consistent with every other identifier-emitting
+        //    method in this class (AppendSelect, AppendQualifiedTable, etc).
+        //
+        // 2. Join parent alias: the ON clause used to hardcode
+        //    `plan.RootAlias` as the left-hand side of every join, ignoring
+        //    `join.ParentAlias` entirely. JoinSpec carries a per-join
+        //    ParentAlias specifically so that PlannerEmitter.EmitNavigationJoins
+        //    can emit multi-hop join chains, where hop N's parent is hop
+        //    N-1's alias, not the query root. For single-hop joins straight
+        //    off the root this coincidentally produced correct-looking SQL
+        //    (join.ParentAlias == plan.RootAlias), which is why it wasn't
+        //    obvious from a simple single-hop query. For any multi-hop
+        //    navigation path it silently joined every hop back to the root
+        //    table instead of chaining through the intermediate alias.
+        //    Now uses join.ParentAlias, matching what JoinSpec/AddJoin
+        //    already carry.
+        // -------------------------------------------------------------------
         private void AppendJoin(
-            StringBuilder sb,
-            in JoinSpec join,
-            in QueryPlan plan,
-            string alias)
-        {
-            var tableSchema =
-                _meta.EntitySchema[join.ChildStorageEntityId];
+    StringBuilder sb,
+    in JoinSpec join,
+    in QueryPlan plan,
+    string alias)
+{
+    // ---------------------------------------------------------------
+    // FIXED: bounds must be validated against EVERY metadata array this
+    // method indexes into (EntityTable, EntitySchema, EntityColumnName)
+    // BEFORE any of them are touched. Previously EntityTable/EntitySchema
+    // were indexed unchecked, and only EntityColumnName was validated —
+    // and only after the unchecked accesses already ran. If EntityTable
+    // or EntitySchema is shorter than EntityColumnName for a given
+    // StorageEntityId (or the ID is simply wrong, e.g. from a composite
+    // multi-hop join chain that resolved to an entity your
+    // IEntityMetaProvider never registered), this threw a bare
+    // IndexOutOfRangeException with no context, instead of the
+    // informative InvalidOperationException the method clearly intends
+    // to give you. Now every array this method reads is bounds-checked
+    // up front, and the exception names which side (parent/child), which
+    // StorageEntityId, and which array came up short — enough to trace
+    // straight back to the join/navigation that produced it.
+    // ---------------------------------------------------------------
+    ValidateStorageEntityId(
+        join.ParentStorageEntityId,
+        "Parent");
 
+    ValidateStorageEntityId(
+        join.ChildStorageEntityId,
+        "Child");
 
-            var tableName =
-                _meta.EntityTable[join.ChildStorageEntityId];
+    var parentTable =
+        _meta.EntityTable[join.ParentStorageEntityId];
 
+    var childTable =
+        _meta.EntityTable[join.ChildStorageEntityId];
 
-            sb.Append("LEFT JOIN \"")
-                .Append(tableSchema)
-                .Append("\".\"")
-                .Append(tableName)
-                .Append("\" ");
+    var parentSchema =
+        _meta.EntitySchema[join.ParentStorageEntityId];
 
+    var childSchema =
+        _meta.EntitySchema[join.ChildStorageEntityId];
 
-            AppendQuotedIdentifier(
-                sb,
-                alias);
+    var parentColumns =
+        _meta.EntityColumnName[join.ParentStorageEntityId];
 
+    var childColumns =
+        _meta.EntityColumnName[join.ChildStorageEntityId];
 
-            sb.Append(" ON ");
+    if (join.ParentColumnId >= parentColumns.Length)
+    {
+        throw new InvalidOperationException(
+            $"AppendJoin: cannot resolve FROM column. " +
+            $"ParentStorageEntityId={join.ParentStorageEntityId}, " +
+            $"ParentColumnId={join.ParentColumnId}, " +
+            $"ArrayLength={parentColumns.Length}");
+    }
 
+    if (join.ChildColumnId >= childColumns.Length)
+    {
+        throw new InvalidOperationException(
+            $"AppendJoin: cannot resolve TO column. " +
+            $"ChildStorageEntityId={join.ChildStorageEntityId}, " +
+            $"ChildColumnId={join.ChildColumnId}, " +
+            $"ArrayLength={childColumns.Length}");
+    }
 
-            var fromAlias =
-                ResolveJoinAlias(
-                    plan,
-                    join.ParentStorageEntityId,
-                    join.ParentEntityId,
-                    join.ParentAlias);
+    var parentColumn =
+        parentColumns[join.ParentColumnId];
 
+    var childColumn =
+        childColumns[join.ChildColumnId];
 
-            var fromColumn =
-                _meta.EntityColumnName[
-                        join.ParentStorageEntityId]
-                    [join.ParentColumnId];
+    sb.Append(" LEFT JOIN ");
+    AppendQuotedIdentifier(sb, childSchema);
+    sb.Append('.');
+    AppendQuotedIdentifier(sb, childTable);
+    sb.Append(' ');
+    AppendQuotedIdentifier(sb, alias);
 
+    sb.Append(" ON ");
 
-            var toColumn =
-                _meta.EntityColumnName[
-                        join.ChildStorageEntityId]
-                    [join.ChildColumnId];
+    AppendQuotedIdentifier(sb, alias);
+    sb.Append('.');
+    AppendQuotedIdentifier(sb, childColumn);
 
+    sb.Append(" = ");
 
-            AppendQuotedIdentifier(
-                sb,
-                fromAlias);
-
-
-            sb.Append(".\"")
-                .Append(fromColumn)
-                .Append("\" = ");
-
-
-            AppendQuotedIdentifier(
-                sb,
-                alias);
-
-
-            sb.Append(".\"")
-                .Append(toColumn)
-                .Append('"');
-        }
+    AppendQuotedIdentifier(sb, join.ParentAlias);
+    sb.Append('.');
+    AppendQuotedIdentifier(sb, parentColumn);
+}
 
 
         private string ResolveJoinAlias(
-            in QueryPlan plan,
-            ushort storageEntityId,
-            ushort entityId,
-            string? requestedAlias = null)
+    in QueryPlan plan,
+    ushort storageEntityId,
+    ushort entityId,
+    string? requestedAlias = null)
+{
+    static string RequireAlias(
+        string? alias,
+        string reason)
+    {
+        if (string.IsNullOrWhiteSpace(alias))
         {
-            static string Validate(
-                string? alias,
-                string reason)
-            {
-                if (string.IsNullOrWhiteSpace(alias))
-                {
-                    throw new InvalidOperationException(
-                        $"SQL alias was empty ({reason}).");
-                }
-
-                return alias;
-            }
-
-
-            if (!string.IsNullOrWhiteSpace(requestedAlias))
-            {
-                if (string.Equals(
-                        plan.RootOutputAlias,
-                        requestedAlias,
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    return requestedAlias;
-                }
-
-
-                foreach (var join in plan.Joins)
-                {
-                    if (string.Equals(
-                            join.ChildAlias,
-                            requestedAlias,
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        return requestedAlias;
-                    }
-                }
-            }
-
-
-            if (plan.RootStorageEntityId == storageEntityId)
-            {
-                return Validate(
-                    plan.RootOutputAlias,
-                    "root");
-            }
-
-
-            foreach (var join in plan.Joins)
-            {
-                if (join.ChildStorageEntityId == storageEntityId)
-                {
-                    return Validate(
-                        join.ChildAlias,
-                        "child storage");
-                }
-            }
-
-
-            foreach (var join in plan.Joins)
-            {
-                if (join.ParentStorageEntityId == storageEntityId)
-                {
-                    return Validate(
-                        join.ParentAlias,
-                        "parent storage");
-                }
-            }
-
-
-            foreach (var graph in plan.GraphResultJoins)
-            {
-                if (graph.ToStorageEntityId == storageEntityId)
-                {
-                    return Validate(
-                        graph.ToOutputAlias,
-                        "graph result");
-                }
-            }
-
-
             throw new InvalidOperationException(
-                $"Cannot resolve join alias.\n" +
-                $"Entity={entityId}\n" +
-                $"Storage={storageEntityId}\n" +
-                $"RootAlias={plan.RootAlias}\n" +
-                $"RootOutputAlias={plan.RootOutputAlias}");
+                $"Missing SQL alias. Reason={reason}");
         }
+
+        return alias;
+    }
+
+
+    // Explicit alias
+    if (!string.IsNullOrWhiteSpace(requestedAlias))
+    {
+        if (string.Equals(
+                plan.RootAlias,
+                requestedAlias,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return requestedAlias;
+        }
+
+
+        if (string.Equals(
+                plan.RootOutputAlias,
+                requestedAlias,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return requestedAlias;
+        }
+
+
+        foreach (var join in plan.Joins)
+        {
+            if (string.Equals(
+                    join.ChildAlias,
+                    requestedAlias,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return requestedAlias;
+            }
+        }
+
+
+        foreach (var graph in plan.GraphJoins)
+        {
+            if (string.Equals(
+                    graph.JoinAlias,
+                    requestedAlias,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return requestedAlias;
+            }
+        }
+
+
+        foreach (var graph in plan.GraphResultJoins)
+        {
+            if (string.Equals(
+                    graph.ToOutputAlias,
+                    requestedAlias,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return requestedAlias;
+            }
+        }
+    }
+
+
+
+    // Root storage
+    if (plan.RootStorageEntityId == storageEntityId)
+    {
+        return RequireAlias(
+            plan.RootAlias,
+            "root storage");
+    }
+
+
+
+    // Normal relational joins
+    foreach (var join in plan.Joins)
+    {
+        if (join.ChildStorageEntityId == storageEntityId)
+        {
+            return RequireAlias(
+                join.ChildAlias,
+                "child storage");
+        }
+    }
+
+
+    foreach (var join in plan.Joins)
+    {
+        if (join.ParentStorageEntityId == storageEntityId)
+        {
+            return RequireAlias(
+                join.ParentAlias,
+                "parent storage");
+        }
+    }
+
+
+
+    // Graph joins
+    foreach (var graph in plan.GraphJoins)
+    {
+        if (graph.StorageEntityId == storageEntityId)
+        {
+            return RequireAlias(
+                graph.JoinAlias,
+                "graph storage");
+        }
+    }
+
+
+
+    // Graph result joins
+    foreach (var graph in plan.GraphResultJoins)
+    {
+        if (graph.ToStorageEntityId == storageEntityId)
+        {
+            return RequireAlias(
+                graph.ToOutputAlias,
+                "graph result target");
+        }
+    }
+
+    throw new InvalidOperationException(
+        $"Cannot resolve join alias.\n" +
+        $"Entity={entityId}\n" +
+        $"Storage={storageEntityId}\n" +
+        $"RootAlias={plan.RootAlias}\n" +
+        $"RootOutputAlias={plan.RootOutputAlias}");
+}
+
+        /// <summary>
+        /// Validates a StorageEntityId against every metadata array
+        /// AppendJoin reads (EntityTable, EntitySchema, EntityColumnName)
+        /// before any of them are indexed. Throws an InvalidOperationException
+        /// naming the side (parent/child), the offending ID, which array
+        /// came up short, and its actual length — so a bad ID from a
+        /// generated composite/navigation join chain fails loudly with
+        /// enough context to trace back to its source, instead of a bare
+        /// unhandled IndexOutOfRangeException.
+        /// </summary>
+        private void ValidateStorageEntityId(
+            ushort storageEntityId,
+            string side)
+        {
+            if (storageEntityId >= _meta.EntityTable.Length)
+            {
+                throw new InvalidOperationException(
+                    $"{side}StorageEntityId={storageEntityId} is outside " +
+                    $"EntityTable (Length={_meta.EntityTable.Length}). " +
+                    $"This usually means a generated join references a " +
+                    $"StorageEntityId that IEntityMetaProvider never " +
+                    $"registered — check the composite/navigation join " +
+                    $"chain that produced this join.");
+            }
+
+            if (storageEntityId >= _meta.EntitySchema.Length)
+            {
+                throw new InvalidOperationException(
+                    $"{side}StorageEntityId={storageEntityId} is outside " +
+                    $"EntitySchema (Length={_meta.EntitySchema.Length}). " +
+                    $"This usually means a generated join references a " +
+                    $"StorageEntityId that IEntityMetaProvider never " +
+                    $"registered — check the composite/navigation join " +
+                    $"chain that produced this join.");
+            }
+
+            if (storageEntityId >= _meta.EntityColumnName.Length)
+            {
+                throw new InvalidOperationException(
+                    $"{side}StorageEntityId={storageEntityId} is outside " +
+                    $"EntityColumnName (Length={_meta.EntityColumnName.Length}). " +
+                    $"This usually means a generated join references a " +
+                    $"StorageEntityId that IEntityMetaProvider never " +
+                    $"registered — check the composite/navigation join " +
+                    $"chain that produced this join.");
+            }
+        }
+
 
         private void AppendQualifiedTable(
             StringBuilder sb,

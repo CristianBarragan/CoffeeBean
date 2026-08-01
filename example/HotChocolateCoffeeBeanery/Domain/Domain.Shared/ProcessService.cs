@@ -29,7 +29,21 @@ public interface IProcessService<M>
         CancellationToken cancellationToken);
 }
 
+public interface IQueryPlanContributor
+{
+    void Contribute(
+        ushort entityId,
+        in SelectionIR selection,
+        ref QueryPlanBuilder builder);
+}
 
+public interface IMutationPlanContributor
+{
+    void Contribute(
+        ushort entityId,
+        in MutationIR mutation,
+        ref MutationPlanBuilder builder);
+}
 
 public sealed class ProcessService<TModel, TResult> :
     IProcessService<TResult>
@@ -85,6 +99,7 @@ public sealed class ProcessService<TModel, TResult> :
     }
 
 
+
     public async Task<QueryResult<TResult>> MutationProcessAsync(
         string cacheKey,
         ISelection selection,
@@ -94,8 +109,10 @@ public sealed class ProcessService<TModel, TResult> :
         var rootEntityId =
             ResolveRootEntityId(modelName);
 
+
         var rootStorageEntityId =
             ResolveRootStorageEntityId(modelName);
+
 
         var rootOutputAlias =
             modelName;
@@ -107,20 +124,27 @@ public sealed class ProcessService<TModel, TResult> :
         var mutationArg =
             selection.SyntaxNode.Arguments
                 .FirstOrDefault(a =>
-                    !string.Equals(a.Name.Value, "where",
+                    !string.Equals(
+                        a.Name.Value,
+                        "where",
                         StringComparison.OrdinalIgnoreCase)
                     &&
-                    !string.Equals(a.Name.Value, "order",
+                    !string.Equals(
+                        a.Name.Value,
+                        "order",
                         StringComparison.OrdinalIgnoreCase)
                     &&
-                    !string.Equals(a.Name.Value, "first",
+                    !string.Equals(
+                        a.Name.Value,
+                        "first",
                         StringComparison.OrdinalIgnoreCase)
                     &&
-                    !string.Equals(a.Name.Value, "last",
+                    !string.Equals(
+                        a.Name.Value,
+                        "last",
                         StringComparison.OrdinalIgnoreCase));
-
-
-        if (mutationArg?.Value is ObjectValueNode wrapperObj)
+                        
+                                if (mutationArg?.Value is ObjectValueNode wrapperObj)
         {
             var entityFieldName =
                 char.ToLowerInvariant(rootOutputAlias[0])
@@ -172,10 +196,12 @@ public sealed class ProcessService<TModel, TResult> :
             }
 
 
+
             if (mutations.Count > 0)
             {
                 var builder =
                     new MutationPlanBuilder();
+
 
 
                 foreach (var mutation in mutations)
@@ -184,14 +210,17 @@ public sealed class ProcessService<TModel, TResult> :
                         MutationOptimizer.Optimize(mutation);
 
 
+
                     if (!MutationOptimizer.HasWork(optimized))
                         continue;
+
 
 
                     MutationRuntimePlanner.Build(
                         rootEntityId,
                         optimized,
                         ref builder);
+
 
 
                     foreach (var contributor in _mutationContributors)
@@ -204,15 +233,19 @@ public sealed class ProcessService<TModel, TResult> :
                 }
 
 
+
                 mutationPlan =
                     builder.Build();
             }
         }
 
+
+
         var selectionSet =
-    selection.SyntaxNode.SelectionSet
-    ?? throw new InvalidOperationException(
-        "Selection has no SelectionSet.");
+            selection.SyntaxNode.SelectionSet
+            ?? throw new InvalidOperationException(
+                "Selection has no SelectionSet.");
+
 
 
         var selectionIr =
@@ -223,6 +256,7 @@ public sealed class ProcessService<TModel, TResult> :
                 _adapterLookup);
 
 
+
         selectionIr =
             SelectionOptimizer.Optimize(selectionIr);
 
@@ -230,6 +264,7 @@ public sealed class ProcessService<TModel, TResult> :
 
         var queryBuilder =
             new QueryPlanBuilder();
+
 
 
         queryBuilder.SetRoot(
@@ -256,45 +291,24 @@ public sealed class ProcessService<TModel, TResult> :
         }
 
 
+
         var queryPlan =
             queryBuilder.Build();
 
 
 
-        var sqlParts =
-            new List<string>();
-
-
-        if (mutationPlan.HasValue)
-        {
-            var upsert =
-                _sqlWriter.WriteUpserts(
-                    mutationPlan.Value);
-
-
-            var graph =
-                _sqlWriter.WriteGraphMerges(
-                    mutationPlan.Value);
-
-
-            if (!string.IsNullOrWhiteSpace(upsert))
-                sqlParts.Add(upsert);
-
-
-            if (!string.IsNullOrWhiteSpace(graph))
-                sqlParts.Add(graph);
-        }
-
-
-        sqlParts.Add(
-            _sqlWriter.WriteSelect(queryPlan));
-
-
         var sql =
-            string.Join(";", sqlParts);
+            mutationPlan.HasValue
+                ? _sqlWriter.WriteUpsertThenSelect(
+                    mutationPlan.Value,
+                    queryPlan)
+                : _sqlWriter.WriteSelect(
+                    queryPlan);
+
+
 
         var models =
-            await ExecuteAndMaterializeAsync(
+            await ExecuteMutationAndMaterializeAsync(
                 sql,
                 rootEntityId,
                 queryPlan,
@@ -314,9 +328,8 @@ public sealed class ProcessService<TModel, TResult> :
             TotalPageRecords = results.Count
         };
     }
-
-
-    public async Task<QueryResult<TResult>> QueryProcessAsync(
+    
+        public async Task<QueryResult<TResult>> QueryProcessAsync(
         string cacheKey,
         ISelection selection,
         string modelName,
@@ -325,11 +338,14 @@ public sealed class ProcessService<TModel, TResult> :
         var rootEntityId =
             ResolveRootEntityId(modelName);
 
+
         var rootStorageEntityId =
             ResolveRootStorageEntityId(modelName);
 
+
         var rootOutputAlias =
             modelName;
+
 
 
         var selectionSet =
@@ -355,6 +371,7 @@ public sealed class ProcessService<TModel, TResult> :
 
         var builder =
             new QueryPlanBuilder();
+
 
 
         builder.SetRoot(
@@ -414,38 +431,170 @@ public sealed class ProcessService<TModel, TResult> :
         };
     }
 
-    private async Task<List<TModel>> ExecuteAndMaterializeAsync(
-    string sql,
-    ushort rootEntityId,
-    QueryPlan queryPlan,
-    CancellationToken ct)
+
+
+    private async Task<List<TModel>> ExecuteMutationAndMaterializeAsync(
+        string sql,
+        ushort rootEntityId,
+        QueryPlan queryPlan,
+        CancellationToken ct)
     {
         await using var connection =
             await AgeConnectionFactory.OpenAsync(_dataSource);
+
+
+
+        await using var transaction =
+            await connection.BeginTransactionAsync(ct);
+
+
+
+        try
+        {
+            await using var command =
+                connection.CreateCommand();
+
+
+
+            command.Transaction =
+                transaction;
+
+
+
+            command.CommandText =
+                sql;
+
+
+
+            await using var reader =
+                await command.ExecuteReaderAsync(ct);
+
+
+
+            while (reader.FieldCount == 0)
+            {
+                if (!await reader.NextResultAsync(ct))
+                {
+                    throw new InvalidOperationException(
+                        "Mutation completed but no SELECT result returned.");
+                }
+            }
+
+
+
+            var layout =
+                RowLayout.FromQueryPlan(queryPlan);
+
+
+
+            var segmentMaps =
+                new ushort[layout.Segments.Length][];
+
+
+
+            for (var i = 0;
+                 i < layout.Segments.Length;
+                 i++)
+            {
+                var segment =
+                    layout.Segments[i];
+
+
+
+                var columnCount =
+                    _meta.EntityColumnName[
+                        segment.StorageEntityId]
+                        .Length;
+
+
+
+                segmentMaps[i] =
+                    queryPlan.BuildColumnMap(
+                        segment.StorageEntityId,
+                        segment.EntityOutputAlias,
+                        (ushort)columnCount);
+            }
+
+
+
+            var rowMatrix =
+                new List<object?[]>();
+
+
+
+            while (await reader.ReadAsync(ct))
+            {
+                var row =
+                    new object?[layout.Segments.Length];
+
+
+
+                for (var i = 0;
+                     i < layout.Segments.Length;
+                     i++)
+                {
+                    var segment =
+                        layout.Segments[i];
+
+
+
+                    row[i] =
+                        MaterializerRegistry.Materialize(
+                            segment.StorageEntityId,
+                            reader,
+                            segmentMaps[i]);
+                }
+
+
+
+                rowMatrix.Add(row);
+            }
+
+
+
+            await reader.DisposeAsync();
+
+
+
+            await transaction.CommitAsync(ct);
+
+
+
+            return ResultBuilderRegistry.Build<TModel>(
+                rootEntityId,
+                layout,
+                rowMatrix);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
+    }
+    
+        private async Task<List<TModel>> ExecuteAndMaterializeAsync(
+        string sql,
+        ushort rootEntityId,
+        QueryPlan queryPlan,
+        CancellationToken ct)
+    {
+        await using var connection =
+            await AgeConnectionFactory.OpenAsync(_dataSource);
+
 
 
         await using var command =
             connection.CreateCommand();
 
 
-        command.CommandText = sql;
+
+        command.CommandText =
+            sql;
 
 
 
         await using var reader =
             await command.ExecuteReaderAsync(ct);
-
-
-
-        // Skip mutation result sets.
-        while (reader.FieldCount == 0)
-        {
-            if (!await reader.NextResultAsync(ct))
-            {
-                throw new InvalidOperationException(
-                    "No SELECT result set returned.");
-            }
-        }
 
 
 
@@ -459,10 +608,13 @@ public sealed class ProcessService<TModel, TResult> :
 
 
 
-        for (var i = 0; i < layout.Segments.Length; i++)
+        for (var i = 0;
+             i < layout.Segments.Length;
+             i++)
         {
             var segment =
                 layout.Segments[i];
+
 
 
             var columnCount =
@@ -493,10 +645,13 @@ public sealed class ProcessService<TModel, TResult> :
 
 
 
-            for (var i = 0; i < layout.Segments.Length; i++)
+            for (var i = 0;
+                 i < layout.Segments.Length;
+                 i++)
             {
                 var segment =
                     layout.Segments[i];
+
 
 
                 row[i] =
@@ -505,6 +660,7 @@ public sealed class ProcessService<TModel, TResult> :
                         reader,
                         segmentMaps[i]);
             }
+
 
 
             rowMatrix.Add(row);
@@ -519,10 +675,13 @@ public sealed class ProcessService<TModel, TResult> :
     }
 
 
+
     private ushort ResolveRootEntityId(
         string modelName)
     {
-        for (ushort i = 0; i < _meta.ModelName.Length; i++)
+        for (ushort i = 0;
+             i < _meta.ModelName.Length;
+             i++)
         {
             if (string.Equals(
                     _meta.ModelName[i][0],
@@ -532,6 +691,7 @@ public sealed class ProcessService<TModel, TResult> :
                 return i;
             }
         }
+
 
 
         throw new InvalidOperationException(
@@ -576,24 +736,4 @@ public sealed class ProcessService<TModel, TResult> :
         throw new InvalidOperationException(
             $"No storage entity found for '{modelName}'.");
     }
-}
-
-
-
-public interface IQueryPlanContributor
-{
-    void Contribute(
-        ushort entityId,
-        in SelectionIR selection,
-        ref QueryPlanBuilder builder);
-}
-
-
-
-public interface IMutationPlanContributor
-{
-    void Contribute(
-        ushort entityId,
-        in MutationIR mutation,
-        ref MutationPlanBuilder builder);
 }

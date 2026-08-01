@@ -46,6 +46,100 @@ internal static class EntityNavigationConvention
             return null;
         }
 
+        // ---------------------------------------------------------------
+        // FIXED: FindPathFromAnyParent's BFS is keyed purely by entity
+        // TYPE, so when two edges connect the same pair of entity types
+        // (e.g. CustomerCustomerRelationship -> Customer via BOTH
+        // InnerCustomerId and OuterCustomerId), it can only ever return
+        // one of them — every caller asking for a path between that same
+        // type-pair gets back the identical edge, regardless of which
+        // specific navigation/alias they meant. This silently collapsed
+        // InnerCustomer and OuterCustomer onto the same join.
+        //
+        // When the caller already knows which specific FK column it wants
+        // (an AliasProperty-matched entity link's declared ToColumn), this
+        // looks for that exact edge directly — checked BEFORE falling back
+        // to the generic (and inherently ambiguous, for parallel edges)
+        // BFS pathfinder.
+        // ---------------------------------------------------------------
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge>? FindDirectEdgeForColumn(
+            INamedTypeSymbol targetEntity,
+            string? expectedColumn)
+        {
+            if (string.IsNullOrWhiteSpace(expectedColumn))
+                return null;
+
+            foreach (var sourceEntity in parentEntities)
+            {
+                var edge = entityGraph.FirstOrDefault(e =>
+                    (
+                        SymbolEqualityComparer.Default.Equals(e.DependentEntity, sourceEntity) &&
+                        SymbolEqualityComparer.Default.Equals(e.PrincipalEntity, targetEntity) &&
+                        string.Equals(e.DependentColumn, expectedColumn, StringComparison.OrdinalIgnoreCase)
+                    )
+                    ||
+                    (
+                        SymbolEqualityComparer.Default.Equals(e.PrincipalEntity, sourceEntity) &&
+                        SymbolEqualityComparer.Default.Equals(e.DependentEntity, targetEntity) &&
+                        string.Equals(e.PrincipalColumn, expectedColumn, StringComparison.OrdinalIgnoreCase)
+                    ));
+
+                if (edge != null)
+                {
+                    return new List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> { edge };
+                }
+            }
+
+            return null;
+        }
+
+        // ---------------------------------------------------------------
+        // FIXED: when resolving a composite child (e.g. Product, spanning
+        // Account/Transaction/Contract/CustomerBankingRelationship), this
+        // used to treat EVERY one of the child's backing entities as an
+        // equally valid navigation target, hand all of them to
+        // PlannerEmitter as candidate JoinPaths, and let
+        // `.OrderBy(p => p.Hops.Count).FirstOrDefault()` pick whichever
+        // was NEAREST in the FK graph — not necessarily the composite's
+        // actual anchor entity. From Customer, CustomerBankingRelationship
+        // is 1 hop away while Product's real anchor (Account) is 4 hops
+        // away, so the join silently resolved to CustomerBankingRelationship
+        // instead of Account, and Product's own internal composite-chain
+        // joins (which assume they start FROM Account) ended up referencing
+        // an alias nothing had actually introduced.
+        //
+        // A composite child has exactly one correct entry point: whichever
+        // entity its own MappingDefinition marks IsPrimary — the same
+        // "anchor" concept CompositeChildAttachmentConvention already uses
+        // when building a composite's OWN internal join chain. Resolving
+        // the navigation FK path against every backing entity conflates
+        // "nearest reachable entity" with "correct composite entry point,"
+        // which are different questions. Restricting to just the anchor
+        // fixes that, and falls back to the old any-entity behavior only
+        // if the composite has no explicit IsPrimary entity (shouldn't
+        // normally happen, but avoids silently producing zero navigations
+        // for a composite whose mapping is incomplete).
+        // ---------------------------------------------------------------
+        List<INamedTypeSymbol> ResolveNavigationTargetEntities(MappingClassInfo childModel)
+        {
+            var anchor =
+                childModel.Definition.Entities
+                    .FirstOrDefault(e => e.IsPrimary && e.EntityType != null)
+                    ?.EntityType;
+
+            if (anchor != null)
+            {
+                return new List<INamedTypeSymbol> { anchor };
+            }
+
+            return childModel.Definition.Entities
+                .Where(e => e.EntityType != null)
+                .Select(e => e.EntityType!)
+                .Distinct(SymbolEqualityComparer.Default)
+                .Cast<INamedTypeSymbol>()
+                .ToList();
+        }
+
         var modelProperties = info.ModelType.GetMembers().OfType<IPropertySymbol>().ToList();
 
 foreach (var prop in modelProperties)
@@ -90,12 +184,7 @@ foreach (var prop in modelProperties)
         if (!string.Equals(prop.Name, relatedModelType.Name, StringComparison.Ordinal))
             continue;
 
-        childEntities = childModel.Definition.Entities
-            .Where(e => e.EntityType != null)
-            .Select(e => e.EntityType!)
-            .Distinct(SymbolEqualityComparer.Default)
-            .Cast<INamedTypeSymbol>()
-            .ToList();
+        childEntities = ResolveNavigationTargetEntities(childModel);
     }
 
     if (childEntities.Count == 0)
@@ -105,7 +194,13 @@ foreach (var prop in modelProperties)
 
     foreach (var targetEntity in childEntities)
     {
-        var path = FindPathFromAnyParent(targetEntity);
+        // Try the column-specific direct edge first (disambiguates
+        // parallel edges to the same entity type, e.g. Inner/OuterCustomer),
+        // then fall back to generic BFS pathfinding.
+        var path =
+            FindDirectEdgeForColumn(targetEntity, matchingEntity?.ToColumn)
+            ?? FindPathFromAnyParent(targetEntity);
+
         if (path == null)
             continue;
 
@@ -143,12 +238,7 @@ foreach (var child in info.ModelChildren)
     if (childModel == null)
         continue;
 
-    var childEntities = childModel.Definition.Entities
-        .Where(e => e.EntityType != null)
-        .Select(e => e.EntityType!)
-        .Distinct(SymbolEqualityComparer.Default)
-        .Cast<INamedTypeSymbol>()
-        .ToList();
+    var childEntities = ResolveNavigationTargetEntities(childModel);
 
     if (childEntities.Count == 0)
         continue;
@@ -190,7 +280,10 @@ foreach (var child in info.ModelChildren)
                     string.Equals(x.NavigationName, link.AliasProperty, StringComparison.Ordinal)))
                 continue;
 
-            var path = FindPathFromAnyParent(link.EntityType!);
+            // Column-specific direct edge first, same disambiguation as above.
+            var path =
+                FindDirectEdgeForColumn(link.EntityType!, link.ToColumn)
+                ?? FindPathFromAnyParent(link.EntityType!);
 
             result.Navigations.Add(new NavigationInfo
             {

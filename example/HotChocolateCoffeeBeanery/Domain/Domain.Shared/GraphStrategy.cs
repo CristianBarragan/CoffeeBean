@@ -133,22 +133,44 @@ public sealed class ApacheAgeGraphStrategy : IGraphStrategy
             .Append('"');
     }
 
+    // public string BuildGraphMerge(in GraphMergeSpec spec)
+    // {
+    //     var setClause = BuildGraphSetClause(spec.EdgeKeyColumn, spec.EdgeKeyValue, spec.EdgeProperties);
+    //     return $@"
+    //             ;CREATE TEMP TABLE temp_merge AS SELECT 1 
+    //             FROM ag_catalog.cypher(
+    //                 '{spec.GraphName}',
+    //                 $$
+    //                 MERGE (a:{spec.FromLabel} {{ {spec.FromKeyColumn}: '{EscapeCypherValue(spec.FromKeyValue)}' }})
+    //                 MERGE (b:{spec.ToLabel} {{ {spec.ToKeyColumn}: '{EscapeCypherValue(spec.ToKeyValue)}' }})
+    //                 MERGE (a)-[r:{spec.EdgeLabel}]->(b)
+    //                 {setClause}
+    //                 RETURN r.{spec.EdgeLabel}::text
+    //                 $$
+    //             ) AS (r text); DROP TABLE temp_merge;
+    //             ";
+    // }
+    
     public string BuildGraphMerge(in GraphMergeSpec spec)
     {
-        var setClause = BuildGraphSetClause(spec.EdgeKeyColumn, spec.EdgeKeyValue, spec.EdgeProperties);
+        var setClause =
+            BuildGraphSetClause(
+                spec.EdgeKeyColumn,
+                spec.EdgeKeyValue,
+                spec.EdgeProperties);
+
         return $@"
-                ;CREATE TEMP TABLE temp_merge AS SELECT 1 
-                FROM ag_catalog.cypher(
-                    '{spec.GraphName}',
-                    $$
-                    MERGE (a:{spec.FromLabel} {{ {spec.FromKeyColumn}: '{EscapeCypherValue(spec.FromKeyValue)}' }})
-                    MERGE (b:{spec.ToLabel} {{ {spec.ToKeyColumn}: '{EscapeCypherValue(spec.ToKeyValue)}' }})
-                    MERGE (a)-[r:{spec.EdgeLabel}]->(b)
-                    {setClause}
-                    RETURN r.{spec.EdgeLabel}::text
-                    $$
-                ) AS (r text); DROP TABLE temp_merge;
-                ";
+SELECT 1
+FROM ag_catalog.cypher(
+    '{spec.GraphName}',
+    $$
+    MERGE (a:{spec.FromLabel} {{ {spec.FromKeyColumn}: '{EscapeCypherValue(spec.FromKeyValue)}' }})
+    MERGE (b:{spec.ToLabel} {{ {spec.ToKeyColumn}: '{EscapeCypherValue(spec.ToKeyValue)}' }})
+    MERGE (a)-[r:{spec.EdgeLabel}]->(b)
+    {setClause}
+    RETURN r.{spec.EdgeLabel}::text
+    $$
+) AS (r text)";
     }
 
     private static string BuildGraphSetClause(

@@ -193,12 +193,38 @@ public readonly struct FieldMapSpec
     }
 }
 
+public readonly struct MutationDependency
+{
+    public readonly int SourceRow;
+    public readonly int TargetRow;
+    public readonly string SourceColumn;
+    public readonly string TargetColumn;
+
+
+    public MutationDependency(
+        int sourceRow,
+        int targetRow,
+        string sourceColumn,
+        string targetColumn)
+    {
+        SourceRow = sourceRow;
+        TargetRow = targetRow;
+        SourceColumn = sourceColumn;
+        TargetColumn = targetColumn;
+    }
+}
+
+
 
 public readonly struct MutationPlan
 {
-    public readonly ImmutableArray<UpsertRow> Rows;
-    public readonly ImmutableArray<MutationCteNode> CteRoots;
-    public readonly ImmutableArray<GraphMergeSpec> GraphMerges;
+    public ImmutableArray<UpsertRow> Rows { get; }
+
+    public ImmutableArray<MutationCteNode> CteRoots { get; }
+
+    public ImmutableArray<GraphMergeSpec> GraphMerges { get; }
+
+    public ImmutableArray<MutationDependency> Dependencies { get; }
 
 
     public MutationPlan(
@@ -207,6 +233,7 @@ public readonly struct MutationPlan
         Rows = rows;
         CteRoots = ImmutableArray<MutationCteNode>.Empty;
         GraphMerges = ImmutableArray<GraphMergeSpec>.Empty;
+        Dependencies = ImmutableArray<MutationDependency>.Empty;
     }
 
 
@@ -217,6 +244,7 @@ public readonly struct MutationPlan
         Rows = rows;
         CteRoots = cteRoots;
         GraphMerges = ImmutableArray<GraphMergeSpec>.Empty;
+        Dependencies = ImmutableArray<MutationDependency>.Empty;
     }
 
 
@@ -228,9 +256,19 @@ public readonly struct MutationPlan
         Rows = rows;
         CteRoots = cteRoots;
         GraphMerges = graphMerges;
+        Dependencies = ImmutableArray<MutationDependency>.Empty;
     }
-    
-    public bool HasCte => !CteRoots.IsEmpty;
 
-    public bool HasGraphMerges => !GraphMerges.IsEmpty;
+
+    public MutationPlan(
+        ImmutableArray<UpsertRow> rows,
+        ImmutableArray<MutationCteNode> cteRoots,
+        ImmutableArray<GraphMergeSpec> graphMerges,
+        ImmutableArray<MutationDependency> dependencies)
+    {
+        Rows = rows;
+        CteRoots = cteRoots;
+        GraphMerges = graphMerges;
+        Dependencies = dependencies;
+    }
 }

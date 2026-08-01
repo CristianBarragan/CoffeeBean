@@ -150,7 +150,7 @@ public ref struct QueryPlanBuilder
 
         if (!_joinKeys.Add(key))
             return;
-
+        
         _joins.Add(
             new JoinSpec(
                 parentAlias,

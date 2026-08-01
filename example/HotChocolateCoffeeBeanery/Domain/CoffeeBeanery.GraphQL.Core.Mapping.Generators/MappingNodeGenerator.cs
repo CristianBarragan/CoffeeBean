@@ -412,11 +412,21 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                 spc.AddSource("MutationMetadataRegistry.g.cs",
                     MutationMetadataEmitter.Emit(resolvedMappings, rootEntityTypes, entityGraph));
 
+                // FIXED (compile break): MutationMaterializerEmitter.Emit
+                // now requires entityGraph — its EmitDematerializer calls
+                // ColumnIdResolver.Resolve, which needs it to compute
+                // column indices via GetFullColumnOrder (same fix as
+                // PlannerEmitter/MutationMetadataEmitter).
                 spc.AddSource("MutationMaterializers.g.cs",
-                    MutationMaterializerEmitter.Emit(resolvedMappings));
+                    MutationMaterializerEmitter.Emit(resolvedMappings, entityGraph));
 
+                // FIXED (compile break): QueryMaterializerEmitter.Emit
+                // now requires entityGraph for the same reason — its
+                // EmitRowMaterializer calls ColumnIdResolver.Resolve to
+                // build the columnMap[columnId] lookups that read values
+                // back out of a DbDataReader.
                 spc.AddSource("QueryMaterializers.g.cs",
-                    QueryMaterializerEmitter.Emit(resolvedMappings));
+                    QueryMaterializerEmitter.Emit(resolvedMappings, entityGraph));
 
                 spc.AddSource("Planners.g.cs",
                     PlannerEmitter.Emit(resolvedMappings, rootEntityTypes,  entityGraph));

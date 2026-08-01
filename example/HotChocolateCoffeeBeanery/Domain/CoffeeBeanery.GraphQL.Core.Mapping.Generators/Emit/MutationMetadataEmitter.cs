@@ -13,11 +13,21 @@ internal static class MutationMetadataEmitter
 {
     internal sealed record GraphEdgeCteResolution(
         string NavigationAlias,
+
         string ForeignKeyColumn,
+        ushort ForeignKeyColumnId,
+
         string OwningPrimaryKeyColumn,
+        ushort OwningPrimaryKeyColumnId,
+
         string RelatedEntityTypeName,
+        ushort RelatedStorageEntityId,
+
         string RelatedSurrogateIdColumn,
-        string RelatedNaturalKeyColumn);
+        ushort RelatedSurrogateIdColumnId,
+
+        string RelatedNaturalKeyColumn,
+        ushort RelatedNaturalKeyColumnId);
 
 
     public static string Emit(
@@ -28,6 +38,10 @@ internal static class MutationMetadataEmitter
         var models =
             allMappings
                 .Where(x => x.ModelType != null)
+                .GroupBy(
+                    x => x.ModelType!.Name,
+                    StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.First())
                 .OrderBy(x => x.ModelType!.Name)
                 .ToList();
 
@@ -41,7 +55,10 @@ internal static class MutationMetadataEmitter
             if (mapping.Graph != null)
             {
                 var resolutions =
-                    BuildGraphEdgeCteResolutions(mapping, allMappings);
+                    BuildGraphEdgeCteResolutions(
+                        mapping,
+                        allMappings,
+                        entityGraph);
 
 
                 foreach (var resolution in resolutions)
@@ -55,17 +72,32 @@ internal static class MutationMetadataEmitter
                             ForeignKeyColumn =
                                 resolution.ForeignKeyColumn,
 
+                            ForeignKeyColumnId =
+                                resolution.ForeignKeyColumnId,
+
                             OwningPrimaryKeyColumn =
                                 resolution.OwningPrimaryKeyColumn,
+
+                            OwningPrimaryKeyColumnId =
+                                resolution.OwningPrimaryKeyColumnId,
 
                             RelatedEntityTypeName =
                                 resolution.RelatedEntityTypeName,
 
+                            RelatedStorageEntityId =
+                                resolution.RelatedStorageEntityId,
+
                             RelatedSurrogateIdColumn =
                                 resolution.RelatedSurrogateIdColumn,
 
+                            RelatedSurrogateIdColumnId =
+                                resolution.RelatedSurrogateIdColumnId,
+
                             RelatedNaturalKeyColumn =
-                                resolution.RelatedNaturalKeyColumn
+                                resolution.RelatedNaturalKeyColumn,
+
+                            RelatedNaturalKeyColumnId =
+                                resolution.RelatedNaturalKeyColumnId
                         });
                 }
 
@@ -82,9 +114,21 @@ internal static class MutationMetadataEmitter
                     rootEntityTypes);
 
 
+            // ---------------------------------------------------------------
+            // FIXED: this call was missing the entityGraph argument that
+            // MetadataEmitter.PopulateCteUpdateMeta now requires (added
+            // there so its internal column-index resolution routes through
+            // ColumnIdResolver/GetFullColumnOrder instead of a raw
+            // GetScalarProperties lookup — see MetadataEmitter.cs's own
+            // FIXED comment on that method). Without this, the project
+            // fails to compile with CS7036 (no argument given for required
+            // parameter 'entityGraph').
+            // ---------------------------------------------------------------
             MetadataEmitter.PopulateCteUpdateMeta(
                 mapping,
-                navResult);
+                navResult,
+                allMappings,
+                entityGraph);
         }
 
 
@@ -122,7 +166,6 @@ internal static class MutationMetadataEmitter
 
 
         sb.AppendLine("        {");
-
 
         for (var i = 0; i < models.Count; i++)
         {
@@ -176,7 +219,9 @@ internal static class MutationMetadataEmitter
         {
             EmitFactory(
                 sb,
-                model);
+                model,
+                allMappings,
+                entityGraph);
 
             sb.AppendLine();
         }
@@ -212,11 +257,38 @@ internal static class MutationMetadataEmitter
             .ToList();
     }
 
+    private static ushort ResolveColumnId(
+        MappingClassInfo mapping,
+        string column,
+        ImmutableArray<MappingClassInfo> allMappings,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+    {
+        foreach (var entity in mapping.Definition.Entities)
+        {
+            if (entity.EntityType == null)
+                continue;
 
+            var id =
+                ColumnIdResolver.ResolveId(
+                    entity.EntityType,
+                    column,
+                    allMappings,
+                    entityGraph);
+
+            if (id != ushort.MaxValue)
+            {
+                return id;
+            }
+        }
+
+        return ushort.MaxValue;
+    }
+    
     public static List<GraphEdgeCteResolution>
     BuildGraphEdgeCteResolutions(
         MappingClassInfo info,
-        ImmutableArray<MappingClassInfo> allMappings)
+        ImmutableArray<MappingClassInfo> allMappings,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
 {
     var result =
         new List<GraphEdgeCteResolution>();
@@ -270,10 +342,29 @@ internal static class MutationMetadataEmitter
     static string ResolvePrimaryKeyColumn(
         MappingClassInfo mapping)
     {
-        return mapping.Definition.PrimaryKey
-            .Select(x => x.ColumnKey)
-            .FirstOrDefault(x =>
-                !string.IsNullOrWhiteSpace(x))
+        var declared =
+            mapping.Definition.PrimaryKey
+                .Select(x => x.ColumnKey)
+                .FirstOrDefault(x =>
+                    !string.IsNullOrWhiteSpace(x));
+
+        if (!string.IsNullOrWhiteSpace(declared))
+            return declared;
+
+        // ---------------------------------------------------------------
+        // FIXED: composite/graph-edge models (like CustomerCustomerEdge)
+        // never populate Definition.PrimaryKey — EmitFactory already knows
+        // this and falls back to info.UpsertKeys for exactly this reason
+        // when building the conflict-column array for ON CONFLICT. This
+        // method previously only checked Definition.PrimaryKey, so for a
+        // graph-edge model it always returned "" — which is why the
+        // generated CreateCustomerCustomerEdge() showed
+        // OwningPrimaryKeyColumnId = 65535 (ushort.MaxValue) instead of a
+        // real column index.
+        // ---------------------------------------------------------------
+        return mapping.UpsertKeys
+            .Select(x => x.Key)
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))
             ?? string.Empty;
     }
 
@@ -352,38 +443,150 @@ internal static class MutationMetadataEmitter
                 relatedMapping);
 
 
+        // ---------------------------------------------------------------
+        // FIXED: previously used ResolvePrimaryKeyColumn(info) here too,
+        // which reads ONLY Definition.PrimaryKey — always empty for a
+        // graph-edge model like CustomerCustomerEdge. Now shares the same
+        // UpsertKeys-aware fallback as the related-entity lookup above,
+        // matching the convention EmitFactory already applies when
+        // building the ON CONFLICT column list for this same model.
+        // ---------------------------------------------------------------
         var edgePrimaryKey =
-            info.Definition.PrimaryKey
-                .Select(x => x.ColumnKey)
-                .FirstOrDefault(x =>
-                    !string.IsNullOrWhiteSpace(x))
-            ?? string.Empty;
+            ResolvePrimaryKeyColumn(
+                info);
+
+
+        // ---------------------------------------------------------------
+        // FIXED: RelatedSurrogateIdColumn and RelatedNaturalKeyColumn were
+        // both being set to the SAME value (naturalKey) — they must never
+        // be the same thing. The surrogate/physical key (what a CTE JOIN
+        // actually needs to look up the related row's generated identity)
+        // and the natural/business key (what the mutation payload actually
+        // carries, e.g. CustomerKey) are two different columns whenever an
+        // entity has both. Now resolved separately: GetPkPropertyName
+        // (the same helper MetadataEmitter.PopulateCteUpdateMeta already
+        // uses for this exact purpose) for the surrogate key, and
+        // ResolvePrimaryKeyColumn (declared PrimaryKey / UpsertKeys) for
+        // the natural key.
+        // ---------------------------------------------------------------
+        var relatedEntityType =
+            relatedMapping.EntityType
+            ?? relatedMapping.Definition.Entities
+                .FirstOrDefault(e => e.IsPrimary)
+                ?.EntityType;
+
+        var relatedSurrogateColumn =
+            relatedEntityType != null
+                ? MetadataEmitter.GetPkPropertyName(relatedEntityType)
+                : naturalKey;
+
+
+        var foreignKeyColumnId =
+            ResolveColumnId(
+                info,
+                foreignKeyColumn,
+                allMappings,
+                entityGraph);
+
+
+        var owningPrimaryKeyColumnId =
+            ResolveColumnId(
+                info,
+                edgePrimaryKey,
+                allMappings,
+                entityGraph);
+
+
+        var relatedNaturalKeyColumnId =
+            ResolveColumnId(
+                relatedMapping,
+                naturalKey,
+                allMappings,
+                entityGraph);
+
+
+        var relatedSurrogateColumnId =
+            ResolveColumnId(
+                relatedMapping,
+                relatedSurrogateColumn,
+                allMappings,
+                entityGraph);
 
 
         result.Add(
             new GraphEdgeCteResolution(
                 NavigationAlias:
-                    endpoint.Field.SourceName,
+                endpoint.Field.SourceName,
 
                 ForeignKeyColumn:
-                    foreignKeyColumn,
+                foreignKeyColumn,
+
+                ForeignKeyColumnId:
+                foreignKeyColumnId,
 
                 OwningPrimaryKeyColumn:
-                    edgePrimaryKey,
+                edgePrimaryKey,
+
+                OwningPrimaryKeyColumnId:
+                owningPrimaryKeyColumnId,
 
                 RelatedEntityTypeName:
-                    relatedEntity,
+                relatedEntity,
+
+                ResolveStorageEntityId(
+                    allMappings,
+                    relatedMapping.ModelType!),
 
                 RelatedSurrogateIdColumn:
-                    naturalKey,
+                relatedSurrogateColumn,
+
+                RelatedSurrogateIdColumnId:
+                relatedSurrogateColumnId,
 
                 RelatedNaturalKeyColumn:
-                    naturalKey));
+                naturalKey,
+
+                RelatedNaturalKeyColumnId:
+                relatedNaturalKeyColumnId));
     }
 
 
     return result;
 }
+    
+    private static ushort ResolveStorageEntityId(
+        ImmutableArray<MappingClassInfo> mappings,
+        INamedTypeSymbol entityType)
+    {
+        var name =
+            IdEmitter.StripEntitySuffix(
+                entityType.Name);
+
+
+        var entities =
+            mappings
+                .SelectMany(x => x.Definition.Entities)
+                .Where(x => x.EntityType != null)
+                .Select(x =>
+                    IdEmitter.StripEntitySuffix(
+                        x.EntityType!.Name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x, StringComparer.Ordinal)
+                .ToList();
+
+
+        var index =
+            entities.FindIndex(x =>
+                string.Equals(
+                    x,
+                    name,
+                    StringComparison.OrdinalIgnoreCase));
+
+
+        return index < 0
+            ? (ushort)0
+            : (ushort)index;
+    }
     
     private static string ResolveRelatedSurrogateIdColumn(
         MappingClassInfo info,
@@ -425,315 +628,370 @@ internal static class MutationMetadataEmitter
     }
 
     private static void EmitFactory(
-        StringBuilder sb,
-        MappingClassInfo info)
+    StringBuilder sb,
+    MappingClassInfo info,
+    ImmutableArray<MappingClassInfo> allMappings,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+{
+    var modelName =
+        info.ModelType!.Name;
+
+
+    var primaryEntity =
+        info.Definition.Entities
+            .FirstOrDefault(e => e.IsPrimary)
+        ?? info.Definition.Entities.FirstOrDefault();
+
+
+    if (primaryEntity?.EntityType == null)
     {
-        var modelName =
-            info.ModelType!.Name;
+        sb.AppendLine(
+            $"    private static MutationEntityMetadata Create{modelName}()");
+
+        sb.AppendLine(
+            $"        => throw new InvalidOperationException(\"{modelName} has no primary entity.\");");
+
+        return;
+    }
 
 
-        var primaryEntity =
-            info.Definition.Entities
-                .FirstOrDefault(e => e.IsPrimary)
-            ?? info.Definition.Entities.FirstOrDefault();
+    var storageEntities =
+        GetStorageEntities(info);
 
 
-        if (primaryEntity?.EntityType == null)
+    var tableName =
+        IdEmitter.StripEntitySuffix(
+            primaryEntity.EntityType.Name);
+
+
+    var primaryStorage =
+        storageEntities.FirstOrDefault(x =>
+            string.Equals(
+                x.EntityName,
+                tableName,
+                StringComparison.OrdinalIgnoreCase));
+
+
+    if (primaryStorage == default)
+    {
+        primaryStorage =
+            storageEntities.FirstOrDefault();
+
+
+        if (primaryStorage == default)
         {
             sb.AppendLine(
                 $"    private static MutationEntityMetadata Create{modelName}()");
 
             sb.AppendLine(
-                $"        => throw new InvalidOperationException(\"{modelName} has no primary entity.\");");
+                $"        => throw new InvalidOperationException(\"{modelName} has no storage entities.\");");
 
             return;
         }
+    }
 
 
-        var storageEntities =
-            GetStorageEntities(info);
+    var schema =
+        primaryStorage.Schema;
 
 
-        var tableName =
-            IdEmitter.StripEntitySuffix(
-                primaryEntity.EntityType.Name);
+    var hasGraphMetadata =
+        info.Graph != null &&
+        info.Graph.From != null &&
+        info.Graph.To != null;
 
 
-        var primaryStorage =
-            storageEntities.FirstOrDefault(x =>
-                string.Equals(
-                    x.EntityName,
-                    tableName,
-                    StringComparison.OrdinalIgnoreCase));
+    var kind =
+        hasGraphMetadata
+            ? "MutationKind.GraphEdge"
+            : "MutationKind.Entity";
 
 
-        if (primaryStorage == default)
-        {
-            primaryStorage =
-                storageEntities.FirstOrDefault();
+    var primaryColumns =
+        info.Definition.PrimaryKey
+            .Select(pk => pk.ColumnKey)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
 
 
-            if (primaryStorage == default)
+    var grouped =
+        info.FieldMaps
+            .Where(f =>
+                !IsStorageOnlyField(info, f)
+                &&
+                (
+                    !IsPrimaryKeyColumn(info, f)
+                    ||
+                    f.IsNavigationKey
+                ))
+            .GroupBy(
+                f => f.SourceName,
+                StringComparer.Ordinal)
+            .ToList();
+
+
+    var lines =
+        new List<string>();
+
+
+    foreach (var group in grouped)
+    {
+        var fieldIdName =
+            GeneratedIdentifierHelper.Field(
+                group.Key);
+
+
+        var targets =
+            group.ToList();
+
+
+        var targetLines =
+            targets.Select(target =>
             {
-                sb.AppendLine(
-                    $"    private static MutationEntityMetadata Create{modelName}()");
-
-                sb.AppendLine(
-                    $"        => throw new InvalidOperationException(\"{modelName} has no storage entities.\");");
-
-                return;
-            }
-        }
+                var storageEntityName =
+                    IdEmitter.StripEntitySuffix(
+                        target.DestinationEntity);
 
 
-        var schema =
-            primaryStorage.Schema;
+                var columnName =
+                    target.DestinationName;
 
 
-        var hasGraphMetadata =
-            info.Graph != null &&
-            info.Graph.From != null &&
-            info.Graph.To != null;
+                if (target.IsNavigationKey && hasGraphMetadata)
+                {
+                    var navigationTargets =
+                        targets
+                            .Where(x => x.IsNavigationKey)
+                            .ToList();
 
 
-        var kind =
-            hasGraphMetadata
-                ? "MutationKind.GraphEdge"
-                : "MutationKind.Entity";
+                    var navigationIndex =
+                        navigationTargets.IndexOf(target);
 
 
-        var primaryColumns =
-            info.Definition.PrimaryKey
-                .Select(pk => pk.ColumnKey)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .ToList();
+                    var fk =
+                        navigationIndex == 0
+                            ? info.Graph!.From.ForeignKeyColumn
+                            : info.Graph!.To.ForeignKeyColumn;
 
+                    var parts =
+                        fk.Split(
+                            new[] { '.' },
+                            StringSplitOptions.RemoveEmptyEntries);
 
-        var grouped =
-            info.FieldMaps
-                .Where(f =>
-                    !IsStorageOnlyField(info, f)
-                    &&
-                    (
-                        !IsPrimaryKeyColumn(info, f)
-                        ||
-                        f.IsNavigationKey
-                    ))
-                .GroupBy(
-                    f => f.SourceName,
-                    StringComparer.Ordinal)
-                .ToList();
-
-
-        var lines =
-            new List<string>();
-
-
-        foreach (var group in grouped)
-        {
-            var fieldIdName =
-                GeneratedIdentifierHelper.Field(
-                    group.Key);
-
-
-            var targetLines =
-                group.Select(target =>
+                    if (parts.Length == 2)
                     {
-                        var storageEntityName =
-                            IdEmitter.StripEntitySuffix(
-                                target.DestinationEntity);
+                        storageEntityName =
+                            IdEmitter.StripEntitySuffix(parts[0]);
+
+                        columnName =
+                            parts[1];
+                    }
+                }
 
 
-                        var columnName =
-                            target.DestinationName;
+                var isPrimaryKey =
+                    info.Definition.PrimaryKey.Any(pk =>
+                        string.Equals(
+                            IdEmitter.StripEntitySuffix(pk.Entity.Name),
+                            storageEntityName,
+                            StringComparison.OrdinalIgnoreCase)
+                        &&
+                        string.Equals(
+                            pk.ColumnKey,
+                            columnName,
+                            StringComparison.OrdinalIgnoreCase));
 
 
-                        if (target.IsNavigationKey && hasGraphMetadata)
-                        {
-                            var navigationTargets =
-                                group
-                                    .Where(x => x.IsNavigationKey)
-                                    .ToList();
+                ushort columnExpression;
 
-
-                            var navigationIndex =
-                                navigationTargets.IndexOf(target);
-
-
-                            var fk =
-                                navigationIndex == 0
-                                    ? info.Graph!.From.ForeignKeyColumn
-                                    : info.Graph!.To.ForeignKeyColumn;
-
-
-                            var parts =
-                                fk.Split(
-                                    new[] { '.' },
-                                    StringSplitOptions.RemoveEmptyEntries);
-
-
-                            if (parts.Length == 2)
-                            {
-                                storageEntityName =
-                                    IdEmitter.StripEntitySuffix(
-                                        parts[0]);
-
-                                columnName =
-                                    parts[1];
-                            }
-                        }
-
-
-                        var isPrimaryKey =
-                            info.Definition.PrimaryKey.Any(pk =>
+                if (target.IsNavigationKey && hasGraphMetadata)
+                {
+                    var matchedEntity =
+                        info.Definition.Entities
+                            .FirstOrDefault(e =>
+                                e.EntityType != null &&
                                 string.Equals(
-                                    IdEmitter.StripEntitySuffix(pk.Entity.Name),
+                                    IdEmitter.StripEntitySuffix(e.EntityType.Name),
                                     storageEntityName,
-                                    StringComparison.OrdinalIgnoreCase)
-                                &&
-                                string.Equals(
-                                    pk.ColumnKey,
-                                    columnName,
                                     StringComparison.OrdinalIgnoreCase));
 
 
-                        var columnExpression =
-                            target.IsNavigationKey && hasGraphMetadata
-                                ? "0"
-                                : ColumnIdResolver.Resolve(
-                                    storageEntityName,
-                                    columnName);
-
-
-                        return
-                            $"new MutationFieldMetadata(" +
-                            $"FieldId.{modelName}.{fieldIdName}, " +
-                            $"EntityId.{modelName}, " +
-                            $"StorageEntityId.{storageEntityName}, " +
-                            $"{columnExpression}, " +
-                            $"{(isPrimaryKey ? "true" : "false")}, " +
-                            $"{(target.IsNavigationKey ? "true" : "false")}, " +
-                            $"\"{Escape(group.Key)}\")";
-
-                    })
-                    .ToList();
-
-
-            lines.Add(
-                $"                [FieldId.{modelName}.{fieldIdName}] = " +
-                $"ImmutableArray.Create({string.Join(", ", targetLines)})");
-        }
-
-
-        sb.AppendLine(
-            $"    private static MutationEntityMetadata Create{modelName}()");
-
-        sb.AppendLine("    {");
-
-        sb.AppendLine(
-            "        return new MutationEntityMetadata(");
-
-
-        sb.AppendLine(
-            $"            EntityId.{modelName},");
-
-
-        sb.AppendLine(
-            $"            StorageEntityId.{tableName},");
-
-
-        sb.AppendLine(
-            $"            \"{Escape(schema)}\",");
-
-
-        sb.AppendLine(
-            $"            \"{Escape(tableName)}\",");
-
-
-        var isComposite =
-            info.Definition.Entities.Count(e => e.EntityType != null) > 1;
-
-
-        if (isComposite)
-        {
-            sb.AppendLine("            false,");
-            sb.AppendLine($"            {kind},");
-
-
-            var upsertColumns =
-                info.UpsertKeys
-                    .Select(x =>
+                    if (matchedEntity?.EntityType == null)
                     {
-                        var field =
-                            info.FieldMaps.FirstOrDefault(f =>
+                        throw new InvalidOperationException(
+                            $"Model '{modelName}' has no entity for navigation storage '{storageEntityName}'.");
+                    }
+
+
+                    columnExpression =
+                        ColumnIdResolver.Resolve(
+                            matchedEntity.EntityType,
+                            columnName,
+                            allMappings,
+                            entityGraph);
+                }
+                else if (target.IsNavigationKey)
+                {
+                    columnExpression = 0;
+                }
+                else
+                {
+                    var matchedEntity =
+                        info.Definition.Entities
+                            .FirstOrDefault(e =>
+                                e.EntityType != null &&
                                 string.Equals(
-                                    f.SourceName,
-                                    x.Key,
-                                    StringComparison.Ordinal));
-
-                        return field?.DestinationName ?? x.Key;
-                    })
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
+                                    IdEmitter.StripEntitySuffix(e.EntityType.Name),
+                                    storageEntityName,
+                                    StringComparison.OrdinalIgnoreCase));
 
 
-            EmitStringArray(
-                sb,
-                upsertColumns);
-        }
-        else
-        {
-            sb.AppendLine("            true,");
-            sb.AppendLine($"            {kind},");
+                    if (matchedEntity?.EntityType == null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Model '{modelName}' has no registered entity matching storage entity '{storageEntityName}' " +
+                            $"while resolving column '{columnName}' for field '{target.SourceName}'.");
+                    }
 
 
-            EmitStringArray(
-                sb,
-                primaryColumns);
-        }
+                    columnExpression =
+                        ColumnIdResolver.Resolve(
+                            matchedEntity.EntityType,
+                            columnName,
+                            allMappings,
+                            entityGraph);
+                }
 
 
-        sb.AppendLine();
+                return
+                    $"new MutationFieldMetadata(" +
+                    $"FieldId.{modelName}.{fieldIdName}, " +
+                    $"EntityId.{modelName}, " +
+                    $"StorageEntityId.{storageEntityName}, " +
+                    $"{columnExpression}, " +
+                    $"{(isPrimaryKey ? "true" : "false")}, " +
+                    $"{(target.IsNavigationKey ? "true" : "false")}, " +
+                    $"\"{Escape(group.Key)}\")";
+
+            })
+            .ToList();
 
 
-        sb.AppendLine(
-            "            new Dictionary<ushort, ImmutableArray<MutationFieldMetadata>>");
-
-        sb.AppendLine("            {");
-
-
-        if (lines.Count > 0)
-        {
-            sb.AppendLine(
-                string.Join(",\n", lines));
-        }
-
-
-        sb.AppendLine(
-            "            },");
-
-
-        EmitStorageEntities(
-            sb,
-            info);
-
-
-        if (hasGraphMetadata)
-        {
-            EmitGraphMetadata(
-                sb,
-                info,
-                modelName);
-        }
-
-
-        sb.AppendLine(
-            "        );");
-
-
-        sb.AppendLine(
-            "    }");
+        lines.Add(
+            $"                [FieldId.{modelName}.{fieldIdName}] = " +
+            $"ImmutableArray.Create({string.Join(", ", targetLines)})");
     }
+
+    sb.AppendLine(
+        $"    private static MutationEntityMetadata Create{modelName}()");
+
+    sb.AppendLine("    {");
+
+    sb.AppendLine(
+        "        return new MutationEntityMetadata(");
+
+
+    sb.AppendLine(
+        $"            EntityId.{modelName},");
+
+
+    sb.AppendLine(
+        $"            StorageEntityId.{tableName},");
+
+
+    sb.AppendLine(
+        $"            \"{Escape(schema)}\",");
+
+
+    sb.AppendLine(
+        $"            \"{Escape(tableName)}\",");
+
+
+    var isComposite =
+        info.Definition.Entities.Count(e => e.EntityType != null) > 1;
+
+
+    if (isComposite)
+    {
+        sb.AppendLine("            false,");
+        sb.AppendLine($"            {kind},");
+
+
+        var upsertColumns =
+            info.UpsertKeys
+                .Select(x =>
+                {
+                    var field =
+                        info.FieldMaps.FirstOrDefault(f =>
+                            string.Equals(
+                                f.SourceName,
+                                x.Key,
+                                StringComparison.Ordinal));
+
+                    return field?.DestinationName ?? x.Key;
+                })
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+
+        EmitStringArray(
+            sb,
+            upsertColumns);
+    }
+    else
+    {
+        sb.AppendLine("            true,");
+        sb.AppendLine($"            {kind},");
+
+
+        EmitStringArray(
+            sb,
+            primaryColumns);
+    }
+
+
+    sb.AppendLine();
+
+
+    sb.AppendLine(
+        "            new Dictionary<ushort, ImmutableArray<MutationFieldMetadata>>");
+
+    sb.AppendLine("            {");
+
+
+    if (lines.Count > 0)
+    {
+        sb.AppendLine(
+            string.Join(",\n", lines));
+    }
+
+
+    sb.AppendLine(
+        "            },");
+
+
+    EmitStorageEntities(
+        sb,
+        info);
+
+
+    if (hasGraphMetadata)
+    {
+        EmitGraphMetadata(
+            sb,
+            info,
+            modelName);
+    }
+
+
+    sb.AppendLine(
+        "        );");
+
+
+    sb.AppendLine(
+        "    }");
+}
 
     private static void EmitStringArray(
         StringBuilder sb,
@@ -878,12 +1136,10 @@ internal static class MutationMetadataEmitter
                 var meta =
                     info.CteUpdateMeta[i];
 
-
                 var comma =
                     i < info.CteUpdateMeta.Count - 1
                         ? ","
                         : "";
-
 
                 sb.AppendLine(
                     "                new CteUpdateMetaInfo");
@@ -891,30 +1147,38 @@ internal static class MutationMetadataEmitter
                 sb.AppendLine(
                     "                {");
 
-
                 sb.AppendLine(
                     $"                    NavigationAlias = \"{Escape(meta.NavigationAlias)}\",");
-
 
                 sb.AppendLine(
                     $"                    ForeignKeyColumn = \"{Escape(meta.ForeignKeyColumn)}\",");
 
+                sb.AppendLine(
+                    $"                    ForeignKeyColumnId = {meta.ForeignKeyColumnId},");
 
                 sb.AppendLine(
                     $"                    OwningPrimaryKeyColumn = \"{Escape(meta.OwningPrimaryKeyColumn)}\",");
 
+                sb.AppendLine(
+                    $"                    OwningPrimaryKeyColumnId = {meta.OwningPrimaryKeyColumnId},");
 
                 sb.AppendLine(
                     $"                    RelatedEntityTypeName = \"{Escape(meta.RelatedEntityTypeName)}\",");
 
+                sb.AppendLine(
+                    $"                    RelatedStorageEntityId = {meta.RelatedStorageEntityId},");
 
                 sb.AppendLine(
                     $"                    RelatedSurrogateIdColumn = \"{Escape(meta.RelatedSurrogateIdColumn)}\",");
 
+                sb.AppendLine(
+                    $"                    RelatedSurrogateIdColumnId = {meta.RelatedSurrogateIdColumnId},");
 
                 sb.AppendLine(
-                    $"                    RelatedNaturalKeyColumn = \"{Escape(meta.RelatedNaturalKeyColumn)}\"");
+                    $"                    RelatedNaturalKeyColumn = \"{Escape(meta.RelatedNaturalKeyColumn)}\",");
 
+                sb.AppendLine(
+                    $"                    RelatedNaturalKeyColumnId = {meta.RelatedNaturalKeyColumnId}");
 
                 sb.AppendLine(
                     $"                }}{comma}");

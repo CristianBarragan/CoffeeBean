@@ -36,7 +36,7 @@ internal static class IdEmitter
 
     public static string StripEntitySuffix(string entityTypeName)
     {
-        const string suffix = "Entity";
+        const string suffix = "Key";
 
         return entityTypeName.EndsWith(suffix, StringComparison.Ordinal)
             ? entityTypeName.Substring(0, entityTypeName.Length - suffix.Length)
@@ -88,9 +88,6 @@ internal static class IdEmitter
 
         var type = property.Type;
 
-        if (type.TypeKind == TypeKind.Enum)
-            return true;
-
         var namedType = type as INamedTypeSymbol;
 
         var underlying =
@@ -98,10 +95,13 @@ internal static class IdEmitter
                 ? namedType.TypeArguments[0]
                 : type;
 
+        if (underlying.TypeKind == TypeKind.Enum)
+            return true;
+
         if (underlying.ToDisplayString() == "System.Guid")
             return true;
 
-        return type.SpecialType switch
+        return underlying.SpecialType switch
         {
             SpecialType.System_String => true,
             SpecialType.System_Int32 => true,

@@ -100,7 +100,8 @@ public static class MutationRuntimePlanner
         //
         // Graph edge endpoint resolution.
         // Creates synthetic CTE children so the normal
-        // CTE join resolver can resolve CustomerKey -> Id.
+        // CTE join resolver can resolve the navigation's natural key
+        // column -> its related entity's real surrogate/primary key.
         //
         if (metadata.Kind == MutationKind.GraphEdge)
         {
@@ -123,18 +124,34 @@ public static class MutationRuntimePlanner
                 {
                     continue;
                 }
-
+                
+                if (!EntityMeta.TryGetEntityId(
+                        spec.RelatedEntityTypeName,
+                        out var relatedEntityId))
+                {
+                    continue;
+                }
 
                 childNodes.Add(
                     new MutationCteNode(
-                        EntityId.Customer,
-                        StorageEntityId.Customer,
+                        relatedEntityId,
+                        spec.RelatedStorageEntityId,
                         spec.NavigationAlias,
                         ImmutableArray.Create(
                             new FieldValue(
-                                EntityId.Customer,
-                                FieldId.Customer.CustomerKey,
-                                ColumnId.Customer.CustomerKey,
+                                relatedEntityId,
+                                // FieldId 0 is a placeholder here, same
+                                // convention MutationMetadataEmitter/
+                                // MutationMaterializerEmitter already use
+                                // for navigation-key fields with no real
+                                // FieldId of their own (see EmitFactory's
+                                // "columnExpression = 0" branch and
+                                // MutationMaterializerEmitter's dematerializer
+                                // comment). The value that actually matters
+                                // for CTE resolution is the ColumnId below,
+                                // not this FieldId.
+                                0,
+                                spec.RelatedNaturalKeyColumnId,
                                 navigationValue.RawValue)),
                         ImmutableArray<MutationCteNode>.Empty,
                         null,
@@ -169,6 +186,13 @@ public static class MutationRuntimePlanner
             node,
             metadata,
             filteredValues,
+            ref builder);
+
+
+        EmitMutationDependencies(
+            entityId,
+            node,
+            metadata,
             ref builder);
 
 
@@ -212,70 +236,200 @@ public static class MutationRuntimePlanner
             model);
     }
 
-
-
-    private static void EmitRowsGroupedByStorageEntity(
+    private static void EmitMutationDependencies(
         ushort entityId,
         in MutationIR node,
         MutationEntityMetadata metadata,
-        ImmutableArray<FieldValue> values,
         ref MutationPlanBuilder builder)
     {
-        if (values.Length == 0)
+        if (metadata.CteUpdateMeta.Length == 0)
             return;
 
 
-        var groups =
-            new Dictionary<
-                ushort,
-                ImmutableArray<FieldValue>.Builder>();
-
-
-        foreach (var value in values)
+        foreach (var spec in metadata.CteUpdateMeta)
         {
-            if (!metadata.TryResolveFields(
-                    value.FieldId,
-                    out var targets))
+            var navigationField =
+                node.Values.FirstOrDefault(v =>
+                    metadata.TryResolveField(
+                        v.FieldId,
+                        out var field) &&
+                    string.Equals(
+                        field.FieldName,
+                        spec.NavigationAlias + "Key",
+                        StringComparison.OrdinalIgnoreCase));
+
+
+            if (string.IsNullOrWhiteSpace(
+                    navigationField.RawValue))
             {
                 continue;
             }
 
 
-            foreach (var target in targets)
+            if (!metadata.TryResolveField(
+                    navigationField.FieldId,
+                    out var targetField))
             {
-                if (!groups.TryGetValue(
-                        target.StorageEntityId,
-                        out var group))
-                {
-                    group =
-                        ImmutableArray.CreateBuilder<FieldValue>();
-
-                    groups[target.StorageEntityId] =
-                        group;
-                }
-
-
-                if (target.ColumnId != value.ColumnId)
-                    continue;
-
-
-                group.Add(value);
+                continue;
             }
-        }
 
 
+            if (!builder.TryGetRow(
+                    spec.NavigationAlias,
+                    out var sourceRow))
+            {
+                continue;
+            }
 
-        foreach (var group in groups)
-        {
-            builder.AddRow(
-                entityId,
-                group.Key,
-                node.OutputAlias,
-                group.Value.ToImmutable(),
-                null,
-                null);
+
+            if (!builder.TryGetRow(
+                    node.OutputAlias,
+                    out var targetRow))
+            {
+                continue;
+            }
+
+
+            // ---------------------------------------------------------
+            // FIXED: this used to hardcode the literal string "Id" as the
+            // source row's join/surrogate column for EVERY navigation
+            // dependency — the same class of bug as the "?? Id" fallback
+            // already removed from FluentEntityNavigationConvention, and
+            // wrong for exactly the same reason: this codebase's dominant
+            // key convention is "{Entity}Key", not "Id" (see CustomerKey,
+            // ContractKey, AccountKey throughout). spec.RelatedSurrogateIdColumn
+            // already holds the correctly-resolved surrogate/primary key
+            // column name for the source row's related entity (computed by
+            // GetPkPropertyName/ResolveColumnId upstream in
+            // MetadataEmitter.PopulateCteUpdateMeta or
+            // MutationMetadataEmitter.BuildGraphEdgeCteResolutions) — use
+            // that instead of assuming "Id" everywhere.
+            // ---------------------------------------------------------
+            builder.AddDependency(
+                sourceRow,
+                targetRow,
+                spec.RelatedSurrogateIdColumn,
+                targetField.FieldName);
         }
     }
+
+    private static void EmitRowsGroupedByStorageEntity(
+    ushort entityId,
+    in MutationIR node,
+    MutationEntityMetadata metadata,
+    ImmutableArray<FieldValue> values,
+    ref MutationPlanBuilder builder)
+{
+    if (values.Length == 0)
+        return;
+
+    var groupedValues =
+        new Dictionary<ushort, ImmutableArray<FieldValue>.Builder>();
+
+    var groupedLookups =
+        new Dictionary<ushort, ImmutableArray<LookupValue>.Builder>();
+
+    foreach (var value in values)
+    {
+        if (!metadata.TryResolveFields(
+                value.FieldId,
+                out var targets))
+        {
+            continue;
+        }
+
+        foreach (var target in targets)
+        {
+            if (!groupedValues.TryGetValue(
+                    target.StorageEntityId,
+                    out var valueGroup))
+            {
+                valueGroup =
+                    ImmutableArray.CreateBuilder<FieldValue>();
+
+                groupedValues[target.StorageEntityId] =
+                    valueGroup;
+            }
+
+            if (!groupedLookups.TryGetValue(
+                    target.StorageEntityId,
+                    out var lookupGroup))
+            {
+                lookupGroup =
+                    ImmutableArray.CreateBuilder<LookupValue>();
+
+                groupedLookups[target.StorageEntityId] =
+                    lookupGroup;
+            }
+
+            //
+            // Cross-storage FK / navigation-key lookup — checked FIRST,
+            // for every target regardless of IsNavigationKey. A field
+            // with a matching CteUpdateMeta entry must ALWAYS resolve
+            // via JOIN lookup, never as a literal value. Previously the
+            // IsNavigationKey check ran first and unconditionally
+            // `continue`d, which skipped this matching logic entirely —
+            // the field's raw value (e.g. InnerCustomerKey's Guid) was
+            // silently dropped instead of producing a JOIN, and the
+            // placeholder ColumnId 0 from a DIFFERENT field ended up
+            // being inserted as a literal value instead.
+            //
+            var spec =
+                metadata.CteUpdateMeta.FirstOrDefault(x =>
+                    string.Equals(
+                        x.NavigationAlias + "Key",
+                        target.FieldName,
+                        StringComparison.OrdinalIgnoreCase));
+
+            if (spec != null)
+            {
+                lookupGroup.Add(
+                    new LookupValue(
+                        target.ColumnId,
+                        metadata.StorageEntityId,
+                        spec.RelatedNaturalKeyColumnId,
+                        spec.RelatedSurrogateIdColumnId,
+                        value.RawValue,
+                        spec.NavigationAlias + spec.RelatedEntityTypeName));
+
+                continue;
+            }
+
+            //
+            // Navigation fields with no matching CteUpdateMeta entry are
+            // pure metadata (no real column, e.g. graph-edge endpoint
+            // keys resolved entirely via the graph merge) — never emit
+            // as a literal INSERT value.
+            //
+            if (target.IsNavigationKey)
+            {
+                continue;
+            }
+
+            //
+            // Normal column — literal value on this storage table.
+            //
+            valueGroup.Add(value);
+        }
+    }
+
+    foreach (var pair in groupedValues)
+    {
+        groupedLookups.TryGetValue(
+            pair.Key,
+            out var lookups);
+
+        builder.AddRow(
+            entityId,
+            pair.Key,
+            node.OutputAlias,
+            pair.Value.ToImmutable(),
+            null,
+            null,
+            lookups?.ToImmutable()
+                ?? ImmutableArray<LookupValue>.Empty);
+    }
+}
 
 
 

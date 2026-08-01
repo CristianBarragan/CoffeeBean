@@ -13,7 +13,7 @@
         <!-- Debug generated output while developing -->
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
-
+        <WarningsAsErrors>IDE0051;IDE0052</WarningsAsErrors>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <RootNamespace>CoffeeBeanery.GraphQL.Core.Mapping.Generators</RootNamespace>
     </PropertyGroup>

@@ -272,6 +272,31 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                                     principalEntityType);
                         }
 
+
+                        // ---------------------------------------------------
+                        // No more silent "?? Id" fallback here. Every other
+                        // convention in this codebase keys off "{Entity}Key",
+                        // never a literal "Id" — defaulting to "Id" when
+                        // FindPrimaryKeyPropertyName can't resolve anything
+                        // was a hardcoded guess that could silently point a
+                        // join at a column that doesn't exist. If neither
+                        // HasPrincipalKey(...) nor any of the naming
+                        // conventions in FindPrimaryKeyPropertyName resolve a
+                        // column, that's a real configuration gap and must
+                        // fail loudly at generation time, not produce a
+                        // plausible-looking wrong join at runtime.
+                        // ---------------------------------------------------
+                        if (string.IsNullOrWhiteSpace(rawPrincipalKeyColumn))
+                        {
+                            throw new InvalidOperationException(
+                                $"Unable to determine a principal key column for " +
+                                $"'{principalEntityType.Name}' while deriving the " +
+                                $"foreign key from '{dependentEntityType.Name}." +
+                                $"{navigationName}'. Configure HasPrincipalKey(...) " +
+                                $"explicitly in the fluent mapping for " +
+                                $"'{principalEntityType.Name}'.");
+                        }
+
                         results.Add(
                             new DerivedForeignKey(
                                 DeclaringEntityType:
@@ -284,13 +309,13 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                                     rawFkColumn,
 
                                 ModelPrincipalKeyProperty:
-                                    rawPrincipalKeyColumn ?? "Id",
+                                    rawPrincipalKeyColumn,
 
                                 RawForeignKeyColumn:
                                     rawFkColumn,
 
                                 RawPrincipalKeyColumn:
-                                    rawPrincipalKeyColumn ?? "Id",
+                                    rawPrincipalKeyColumn,
 
                                 NavigationName:
                                     navigationName,
@@ -365,87 +390,33 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
             }
         }
 
-        private static string ResolveActualForeignKeyProperty(
-            INamedTypeSymbol entityType,
-            string foreignKeyName)
-        {
-            var direct =
-                entityType.GetMembers()
-                    .OfType<IPropertySymbol>()
-                    .FirstOrDefault(p =>
-                        string.Equals(
-                            p.Name,
-                            foreignKeyName,
-                            StringComparison.OrdinalIgnoreCase));
+
+        // ---------------------------------------------------------------
+        // REMOVED: ResolveActualForeignKeyProperty(...)
+        // REMOVED: NormalizeForeignKeyColumn(...)
+        //
+        // Both were confirmed dead by repo-wide search — never called from
+        // CollectAll, AddNavigationKeyFields, or anywhere outside this file.
+        // Their logic (strip "Id" suffix, try "{prefix}Key") is already
+        // covered by EntityForeignKeyGraph.ResolveColumnName below, which is
+        // the version that's actually wired into the live FK graph. Keeping
+        // two independent, silently-diverging implementations of the same
+        // guess was itself a source of the hardcoded-key smell — deleted
+        // rather than kept "just in case".
+        // ---------------------------------------------------------------
 
 
-            if (direct != null)
-            {
-                return direct.Name;
-            }
-
-
-            if (foreignKeyName.EndsWith(
-                    "Id",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                var prefix =
-                    foreignKeyName.Substring(
-                        0,
-                        foreignKeyName.Length - 2);
-
-
-                var keyProperty =
-                    entityType.GetMembers()
-                        .OfType<IPropertySymbol>()
-                        .FirstOrDefault(p =>
-                            string.Equals(
-                                p.Name,
-                                prefix + "Key",
-                                StringComparison.OrdinalIgnoreCase));
-
-
-                if (keyProperty != null)
-                {
-                    return keyProperty.Name;
-                }
-            }
-
-
-            return foreignKeyName;
-        }
-
-        private static string NormalizeForeignKeyColumn(
-            string columnName)
-        {
-            if (string.IsNullOrWhiteSpace(columnName))
-                return columnName;
-
-
-            // EF navigation FK convention:
-            //
-            // AccountId              -> Account
-            // ContractId             -> Contract
-            // CustomerId             -> Customer
-            // CustomerBankingRelationshipId -> CustomerBankingRelationship
-            //
-            // ColumnId enums normally expose the referenced
-            // entity key as EntityName, not EntityNameId.
-
-            if (columnName.EndsWith(
-                    "Id",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return columnName.Substring(
-                    0,
-                    columnName.Length - 2);
-            }
-
-
-            return columnName;
-        }
-
-
+        /// <summary>
+        /// Fallback convention chain used ONLY when a fluent mapping doesn't
+        /// explicitly declare HasPrincipalKey(...). This still guesses by
+        /// name — that can't be fully eliminated without requiring every
+        /// entity config to be 100% explicit — but every guess here inspects
+        /// the entity's REAL declared properties (never fabricates a literal
+        /// like "Id" that might not exist). Order matters: exact "Id" is
+        /// EF's own default convention, "{Entity}Key" is this codebase's
+        /// dominant business-key convention, and "any *Key property" is a
+        /// last-resort, single-property-only fallback.
+        /// </summary>
         private static string? FindPrimaryKeyPropertyName(
             INamedTypeSymbol entityType)
         {
@@ -484,14 +455,24 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                 return key;
 
 
-            // 3. Any *Key property
-            return properties.FirstOrDefault(x =>
-                x.EndsWith(
-                    "Key",
-                    StringComparison.OrdinalIgnoreCase));
+            // 3. Any single *Key property — only safe when there's exactly
+            // one candidate; multiple *Key properties means this guess is
+            // ambiguous and callers should treat a null return here as a
+            // hard failure, not silently pick the first one.
+            var keyCandidates =
+                properties
+                    .Where(x =>
+                        x.EndsWith(
+                            "Key",
+                            StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+            return keyCandidates.Count == 1
+                ? keyCandidates[0]
+                : null;
         }
-        
-                internal static class EntityGraphPathfinder
+
+        internal static class EntityGraphPathfinder
         {
             public static List<EntityForeignKeyGraph.Edge>? FindPath(
                 List<EntityForeignKeyGraph.Edge> edges,
@@ -667,180 +648,192 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
             }
 
             public static EntityGraphBuildResult Build(
-    Compilation compilation,
-    CancellationToken ct)
-{
-    var edges =
-        new List<Edge>();
-
-    var diagnostics =
-        new List<string>();
-
-
-    var attributeType =
-        compilation.GetTypeByMetadataName(
-            "CoffeeBeanery.GraphQL.Core.Mapping.EntityForeignKeyGraphAttribute");
-
-
-    if (attributeType == null)
-    {
-        return new EntityGraphBuildResult(
-            edges,
-            diagnostics);
-    }
-
-
-    AttributeData? found = null;
-
-
-    found =
-        compilation.Assembly
-            .GetAttributes()
-            .FirstOrDefault(a =>
-                SymbolEqualityComparer.Default.Equals(
-                    a.AttributeClass,
-                    attributeType));
-
-
-    if (found == null)
-    {
-        var assemblies =
-            new Queue<IAssemblySymbol>();
-
-        var visited =
-            new HashSet<string>(
-                StringComparer.Ordinal);
-
-
-        foreach (var reference in compilation.References)
-        {
-            if (compilation.GetAssemblyOrModuleSymbol(reference)
-                is IAssemblySymbol assembly)
+                Compilation compilation,
+                CancellationToken ct)
             {
-                assemblies.Enqueue(assembly);
+                var edges =
+                    new List<Edge>();
+
+                var diagnostics =
+                    new List<string>();
+
+
+                var attributeType =
+                    compilation.GetTypeByMetadataName(
+                        "CoffeeBeanery.GraphQL.Core.Mapping.EntityForeignKeyGraphAttribute");
+
+
+                if (attributeType == null)
+                {
+                    return new EntityGraphBuildResult(
+                        edges,
+                        diagnostics);
+                }
+
+
+                AttributeData? found = null;
+
+
+                found =
+                    compilation.Assembly
+                        .GetAttributes()
+                        .FirstOrDefault(a =>
+                            SymbolEqualityComparer.Default.Equals(
+                                a.AttributeClass,
+                                attributeType));
+
+
+                if (found == null)
+                {
+                    var assemblies =
+                        new Queue<IAssemblySymbol>();
+
+                    var visited =
+                        new HashSet<string>(
+                            StringComparer.Ordinal);
+
+
+                    foreach (var reference in compilation.References)
+                    {
+                        if (compilation.GetAssemblyOrModuleSymbol(reference)
+                            is IAssemblySymbol assembly)
+                        {
+                            assemblies.Enqueue(assembly);
+                        }
+                    }
+
+
+                    while (assemblies.Count > 0)
+                    {
+                        ct.ThrowIfCancellationRequested();
+
+
+                        var assembly =
+                            assemblies.Dequeue();
+
+
+                        if (!visited.Add(
+                                assembly.Name))
+                        {
+                            continue;
+                        }
+
+
+                        found =
+                            assembly.GetAttributes()
+                                .FirstOrDefault(a =>
+                                    SymbolEqualityComparer.Default.Equals(
+                                        a.AttributeClass,
+                                        attributeType));
+
+
+                        if (found != null)
+                        {
+                            break;
+                        }
+
+
+                        foreach (var reference in assembly.Modules
+                                     .SelectMany(x =>
+                                         x.ReferencedAssemblySymbols))
+                        {
+                            assemblies.Enqueue(reference);
+                        }
+                    }
+                }
+
+
+                if (found == null ||
+                    found.ConstructorArguments.Length == 0)
+                {
+                    return new EntityGraphBuildResult(
+                        edges,
+                        diagnostics);
+                }
+
+
+                var serialized =
+                    found.ConstructorArguments[0].Value
+                    as string;
+
+
+                if (string.IsNullOrWhiteSpace(serialized))
+                {
+                    return new EntityGraphBuildResult(
+                        edges,
+                        diagnostics);
+                }
+
+
+                foreach (var line in serialized.Split(';'))
+                {
+                    ct.ThrowIfCancellationRequested();
+
+
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        continue;
+                    }
+
+
+                    var parts =
+                        line.Split('|');
+
+
+                    if (parts.Length != 4)
+                    {
+                        diagnostics.Add(
+                            $"Invalid FK graph entry: {line}");
+
+                        continue;
+                    }
+
+
+                    var dependentType =
+                        compilation.GetTypeByMetadataName(
+                            parts[0]);
+
+
+                    var principalType =
+                        compilation.GetTypeByMetadataName(
+                            parts[2]);
+
+
+                    if (dependentType == null ||
+                        principalType == null)
+                    {
+                        diagnostics.Add(
+                            $"Unable to resolve FK graph types: {parts[0]} -> {parts[2]}");
+
+                        continue;
+                    }
+
+
+                    var dependentColumn =
+                        ResolveColumnName(
+                            dependentType,
+                            parts[1]);
+
+
+                    var principalColumn =
+                        ResolveColumnName(
+                            principalType,
+                            parts[3]);
+
+
+                    edges.Add(
+                        new Edge(
+                            dependentType,
+                            dependentColumn,
+                            principalType,
+                            principalColumn));
+                }
+
+
+                return new EntityGraphBuildResult(
+                    edges,
+                    diagnostics);
             }
-        }
-
-
-        while (assemblies.Count > 0)
-        {
-            ct.ThrowIfCancellationRequested();
-
-
-            var assembly =
-                assemblies.Dequeue();
-
-
-            if (!visited.Add(
-                    assembly.Name))
-            {
-                continue;
-            }
-
-
-            found =
-                assembly.GetAttributes()
-                    .FirstOrDefault(a =>
-                        SymbolEqualityComparer.Default.Equals(
-                            a.AttributeClass,
-                            attributeType));
-
-
-            if (found != null)
-            {
-                break;
-            }
-
-
-            foreach (var reference in assembly.Modules
-                         .SelectMany(x =>
-                             x.ReferencedAssemblySymbols))
-            {
-                assemblies.Enqueue(reference);
-            }
-        }
-    }
-
-
-    if (found == null ||
-        found.ConstructorArguments.Length == 0)
-    {
-        return new EntityGraphBuildResult(
-            edges,
-            diagnostics);
-    }
-
-
-    var serialized =
-        found.ConstructorArguments[0].Value
-        as string;
-
-
-    if (string.IsNullOrWhiteSpace(serialized))
-    {
-        return new EntityGraphBuildResult(
-            edges,
-            diagnostics);
-    }
-
-
-    foreach (var line in serialized.Split(';'))
-    {
-        ct.ThrowIfCancellationRequested();
-
-
-        if (string.IsNullOrWhiteSpace(line))
-        {
-            continue;
-        }
-
-
-        var parts =
-            line.Split('|');
-
-
-        if (parts.Length != 4)
-        {
-            diagnostics.Add(
-                $"Invalid FK graph entry: {line}");
-
-            continue;
-        }
-
-
-        var dependentType =
-            compilation.GetTypeByMetadataName(
-                parts[0]);
-
-
-        var principalType =
-            compilation.GetTypeByMetadataName(
-                parts[2]);
-
-
-        if (dependentType == null ||
-            principalType == null)
-        {
-            diagnostics.Add(
-                $"Unable to resolve FK graph types: {parts[0]} -> {parts[2]}");
-
-            continue;
-        }
-
-
-        edges.Add(
-            new Edge(
-                dependentType,
-                parts[1],
-                principalType,
-                parts[3]));
-    }
-
-
-    return new EntityGraphBuildResult(
-        edges,
-        diagnostics);
-}
         }
 
 

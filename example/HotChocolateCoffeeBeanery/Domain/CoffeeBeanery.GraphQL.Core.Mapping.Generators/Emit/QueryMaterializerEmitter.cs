@@ -11,7 +11,29 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 
 internal static class QueryMaterializerEmitter
 {
-    public static string Emit(ImmutableArray<MappingClassInfo> mappings)
+    // ---------------------------------------------------------------
+    // FIXED: Emit() previously only took `mappings`, and EmitRowMaterializer
+    // called ColumnIdResolver.Resolve(entityType, columnName) with no
+    // entityGraph — the same drift already fixed in PlannerEmitter,
+    // MutationMetadataEmitter, and MutationMaterializerEmitter. This is the
+    // materializer that reads columns back OUT of a DbDataReader using
+    // `columnMap[columnId]`; if this file's column indices disagreed with
+    // the indices PlannerEmitter used to build that columnMap in the first
+    // place, rows would materialize with values read from the wrong
+    // ordinal (or silently miss a column entirely) rather than crash —
+    // arguably worse than the AppendJoin crash, since it can produce wrong
+    // data instead of failing loudly. entityGraph is now threaded through
+    // from Emit() into EmitRowMaterializer so this uses the same
+    // GetFullColumnOrder-backed ColumnIdResolver as every other emitter.
+    //
+    // NOTE: the caller of QueryMaterializerEmitter.Emit(...) (wherever the
+    // source generator drives this file, not shown here) needs to be
+    // updated to pass the same entityGraph it already threads into
+    // PlannerEmitter.Emit / MutationMetadataEmitter.Emit.
+    // ---------------------------------------------------------------
+    public static string Emit(
+        ImmutableArray<MappingClassInfo> mappings,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
     {
         var sb = new StringBuilder();
 
@@ -51,7 +73,7 @@ internal static class QueryMaterializerEmitter
 
         foreach (var info in models)
         {
-            EmitRowMaterializer(sb, info);
+            EmitRowMaterializer(sb, info, mappings, entityGraph);
             sb.AppendLine();
 
             EmitResultBuilder(sb, info);
@@ -67,7 +89,9 @@ internal static class QueryMaterializerEmitter
 
     private static void EmitRowMaterializer(
         StringBuilder sb,
-        MappingClassInfo info)
+        MappingClassInfo info,
+        ImmutableArray<MappingClassInfo> allMappings,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
     {
         var model = info.ModelType!.Name;
 
@@ -98,16 +122,27 @@ internal static class QueryMaterializerEmitter
                             StringComparison.OrdinalIgnoreCase))
                     ?.EntityType;
 
-            var columnExpression =
-                entityType != null
-                    ? ColumnIdResolver.Resolve(
-                        entityType,
-                        field.DestinationName)
-                    : $"ColumnId.{entityName}.{field.DestinationName}";
+
+            if (entityType == null)
+            {
+                throw new InvalidOperationException(
+                    $"Unable to resolve entity '{entityName}' for field '{field.SourceName}' on model '{model}'.");
+            }
+
+
+            var columnId =
+                ColumnIdResolver.Resolve(
+                    entityType,
+                    field.DestinationName,
+                    allMappings,
+                    entityGraph);
+
 
             sb.AppendLine("        {");
+
             sb.AppendLine(
-                $"            var ordinal = columnMap[{columnExpression}];");
+                $"            var ordinal = columnMap[{columnId}];");
+
             sb.AppendLine();
 
             sb.AppendLine(
@@ -117,12 +152,14 @@ internal static class QueryMaterializerEmitter
                 $"                model.{field.SourceName} = {ReadValue(field)};");
 
             sb.AppendLine();
+
             sb.AppendLine("        }");
             sb.AppendLine();
         }
 
         sb.AppendLine("        return model;");
         sb.AppendLine("    }");
+
         sb.AppendLine("}");
     }
     

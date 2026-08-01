@@ -11,7 +11,29 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 
 internal static class MutationMaterializerEmitter
 {
-    public static string Emit(ImmutableArray<MappingClassInfo> mappings)
+    // ---------------------------------------------------------------
+    // FIXED: Emit() previously only took `mappings`, and EmitDematerializer
+    // called ColumnIdResolver.Resolve(entityType, columnName) with no
+    // entityGraph. ColumnIdResolver now resolves column indices via
+    // IdEmitter.GetFullColumnOrder (the same method IdEmitter.EmitColumnIds
+    // uses for ColumnId.* and PlannerEmitter now uses for every join/column
+    // index it bakes into GeneratedPlanners) — which requires both
+    // `mappings` and `entityGraph` to correctly include PK-first insertion
+    // and entityGraph-derived dependent-side FK columns. Without
+    // entityGraph, a field whose column only exists because of an FK-graph
+    // edge (not a FieldMaps-declared scalar or PK) would fail to resolve.
+    // Both are now threaded through from Emit() into EmitDematerializer,
+    // matching the same call shape used by PlannerEmitter and
+    // MutationMetadataEmitter.
+    //
+    // NOTE: the caller of MutationMaterializerEmitter.Emit(...) (wherever
+    // the source generator drives this file, not shown here) needs to be
+    // updated to pass the same entityGraph it already threads into
+    // PlannerEmitter.Emit / MutationMetadataEmitter.Emit.
+    // ---------------------------------------------------------------
+    public static string Emit(
+        ImmutableArray<MappingClassInfo> mappings,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
     {
         var sb = new StringBuilder();
 
@@ -37,7 +59,7 @@ internal static class MutationMaterializerEmitter
             EmitMaterializer(sb, info);
             sb.AppendLine();
 
-            EmitDematerializer(sb, info);
+            EmitDematerializer(sb, info, mappings, entityGraph);
             sb.AppendLine();
         }
 
@@ -96,7 +118,9 @@ internal static class MutationMaterializerEmitter
 
 private static void EmitDematerializer(
     StringBuilder sb,
-    MappingClassInfo info)
+    MappingClassInfo info,
+    ImmutableArray<MappingClassInfo> allMappings,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
 {
     var model = info.ModelType!.Name;
 
@@ -112,43 +136,78 @@ private static void EmitDematerializer(
     var counter = 0;
 
     foreach (var group in RelevantFieldsGrouped(info))
+{
+    var representative = group.First();
+    var variable = $"rawValue{counter++}";
+
+    sb.AppendLine(
+        $"        var {variable} = {ConvertToRaw(representative)};");
+    sb.AppendLine();
+
+    sb.AppendLine(
+        $"        if ({variable} is not null)");
+    sb.AppendLine("        {");
+
+    ushort columnExpression;
+
+    if (representative.IsNavigationKey)
     {
-        var representative = group.First();
-        var variable = $"rawValue{counter++}";
-
-        sb.AppendLine(
-            $"        var {variable} = {ConvertToRaw(representative)};");
-        sb.AppendLine();
-
-        sb.AppendLine(
-            $"        if ({variable} is not null)");
-        sb.AppendLine("        {");
-
-        var columnExpression =
-            ColumnIdResolver.Resolve(
-                representative.DestinationEntity,
-                representative.DestinationName);
-
-        sb.AppendLine(
-            "            builder.Add(new FieldValue(");
-
-        sb.AppendLine(
-            $"                EntityId.{model},");
-
-        sb.AppendLine(
-            $"                FieldId.{model}.{FieldIdNameHelper.GetName(representative)},");
-
-        sb.AppendLine(
-            $"                {columnExpression},");
-
-        sb.AppendLine(
-            $"                {variable}));");
-
-        sb.AppendLine();
-
-        sb.AppendLine("        }");
-        sb.AppendLine();
+        // Navigation-key fields' DestinationEntity is deliberately a
+        // related entity (e.g. Customer for ContactPoint.CustomerKey),
+        // not one of info's own registered entities — there is no real
+        // physical column to resolve here. The raw value is only needed
+        // downstream (MutationRuntimePlanner's CTE natural-key
+        // resolution); the placeholder ColumnId 0 mirrors the same
+        // convention MutationMetadataEmitter already uses for these
+        // fields.
+        columnExpression = 0;
     }
+    else
+    {
+        var entityType =
+            info.Definition.Entities
+                .FirstOrDefault(e =>
+                    e.EntityType != null &&
+                    string.Equals(
+                        IdEmitter.StripEntitySuffix(e.EntityType.Name),
+                        IdEmitter.StripEntitySuffix(representative.DestinationEntity),
+                        StringComparison.OrdinalIgnoreCase))
+                ?.EntityType;
+
+        if (entityType == null)
+        {
+            throw new InvalidOperationException(
+                $"Cannot resolve entity '{representative.DestinationEntity}' for column '{representative.DestinationName}'.");
+        }
+
+        columnExpression =
+            ColumnIdResolver.Resolve(
+                entityType,
+                representative.DestinationName,
+                allMappings,
+                entityGraph);
+    }
+
+    sb.AppendLine(
+        "            builder.Add(new FieldValue(");
+
+    sb.AppendLine(
+        $"                EntityId.{model},");
+
+    sb.AppendLine(
+        $"                FieldId.{model}.{FieldIdNameHelper.GetName(representative)},");
+
+    sb.AppendLine(
+        $"                {columnExpression},");
+
+    sb.AppendLine(
+        $"                {variable}));");
+
+    sb.AppendLine();
+
+    sb.AppendLine("        }");
+    sb.AppendLine();
+}
 
     sb.AppendLine(
         "        return builder.ToImmutable();");
