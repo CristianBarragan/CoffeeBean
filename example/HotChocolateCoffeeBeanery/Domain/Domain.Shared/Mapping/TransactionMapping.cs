@@ -56,15 +56,15 @@ public partial class TransactionMapping : IMappingDefinition
         //     }
         // ],
 
-        // PrimaryKey =
-        // [
-        //     new()
-        //     {
-        //         Entity = typeof(DataEntity.Transaction),
-        //         // ModelKey = nameof(Transaction.TransactionKey),
-        //         ColumnKey = nameof(DataEntity.Transaction.Id)
-        //     }
-        // ],
+        PrimaryKey =
+        [
+            new()
+            {
+                Entity = typeof(DataEntity.Transaction),
+                // ModelKey = nameof(Transaction.TransactionKey),
+                ColumnKey = nameof(DataEntity.Transaction.Id)
+            }
+        ],
 
         UpsertKeys =
         [

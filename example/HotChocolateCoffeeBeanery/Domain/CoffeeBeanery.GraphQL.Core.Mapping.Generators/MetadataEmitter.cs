@@ -97,19 +97,51 @@ internal static class MetadataEmitter
                 entityGraph);
         }
 
-        var entityTypes = new List<INamedTypeSymbol>();
-
-        foreach (var entity in models
-                     .SelectMany(m => m.Definition.Entities)
-                     .Select(e => e.EntityType)
-                     .Where(e => e != null))
-        {
-            if (!entityTypes.Any(x =>
-                    SymbolEqualityComparer.Default.Equals(x, entity)))
-            {
-                entityTypes.Add(entity!);
-            }
-        }
+        // ---------------------------------------------------------------
+        // FIXED: this list determines the ARRAY ORDER for EntityColumnName,
+        // EntityTable, and EntitySchema below -- arrays that are indexed at
+        // runtime by StorageEntityId.* constants. Those constants (emitted
+        // by IdEmitter.EmitStorageEntityIds) are assigned by taking every
+        // entity's stripped name, deduplicating, and sorting ALPHABETICALLY:
+        //
+        //     mappings.SelectMany(...).Select(StripEntitySuffix)
+        //         .Distinct(Ordinal).OrderBy(x => x, Ordinal)
+        //
+        // This list was instead built in FIRST-ENCOUNTERED order while
+        // iterating `models` (itself sorted alphabetically by MODEL name,
+        // not entity name) and each model's own Definition.Entities in
+        // whatever order they were declared in BuildMap(). Those two
+        // orderings have no reason to agree -- and for any composite model
+        // whose Definition.Entities isn't itself alphabetical (e.g. Product
+        // listing Account, Contract, Transaction, CustomerBankingRelationship
+        // in FK-chain order), they didn't. The result: EntityColumnName[i]
+        // (and EntityTable[i]/EntitySchema[i]) could silently hold a
+        // DIFFERENT entity's data than whatever entity StorageEntityId
+        // value `i` actually refers to -- exactly the class of bug behind
+        // "AppendJoin: cannot resolve TO column. ChildStorageEntityId=2,
+        // ChildColumnId=5, ArrayLength=5": index 2 (Contract, by the real
+        // alphabetical StorageEntityId numbering) was reading some OTHER
+        // entity's shorter column array.
+        //
+        // Rebuilt here with the exact same ordering rule
+        // EmitStorageEntityIds uses, so entityTypes[i]'s stripped name is
+        // guaranteed to equal the i-th name in that same alphabetically
+        // sorted distinct list -- i.e. index i here always corresponds to
+        // StorageEntityId value i.
+        // ---------------------------------------------------------------
+        var entityTypes =
+            models
+                .SelectMany(m => m.Definition.Entities)
+                .Where(e => e.EntityType != null)
+                .Select(e => e.EntityType!)
+                .GroupBy(
+                    e => IdEmitter.StripEntitySuffix(e.Name),
+                    StringComparer.Ordinal)
+                .OrderBy(
+                    g => g.Key,
+                    StringComparer.Ordinal)
+                .Select(g => g.First())
+                .ToList();
 
         var entitySchemaLookup =
             new Dictionary<INamedTypeSymbol,string>(

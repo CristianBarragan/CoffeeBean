@@ -28,6 +28,10 @@ public sealed record MappingDefinition
     public IReadOnlyList<NavigationDefinition> Navigations { get; init; } = [];
     
     public IReadOnlyList<ForeignKeyDefinition> ForeignKeys { get; init; } = [];
+    
+    public Type? Entity { get; init; }
+    
+    public string? Key { get; init; }
 }
 
 public sealed record ForeignKeyDefinition

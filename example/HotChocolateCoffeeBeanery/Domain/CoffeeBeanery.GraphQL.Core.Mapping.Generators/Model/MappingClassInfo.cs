@@ -350,6 +350,8 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Model
         ushort RelatedStorageEntityId { get; }
 
         ushort RelatedSurrogateIdColumnId { get; }
+        public Type? Entity { get; init; }
+        public string? Key { get; init; }
     }
     
     public sealed record PrimaryKeyDefinitionInfo

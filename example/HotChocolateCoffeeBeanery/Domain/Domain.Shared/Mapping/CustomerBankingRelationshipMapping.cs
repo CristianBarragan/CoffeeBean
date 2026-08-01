@@ -27,13 +27,13 @@ public partial class CustomerBankingRelationshipMapping : IMappingDefinition
                 IsPrimary = true
             }
         ],
-        // PrimaryKey = [new()
-        // {
-        //     Entity = typeof(DataEntity.CustomerBankingRelationship),
-        //     // ModelKey = nameof(DataEntity.CustomerBankingRelationship.CustomerBankingRelationshipKey),
-        //     ColumnKey =
-        //         nameof(DataEntity.CustomerBankingRelationship.Id)
-        // }],
+        PrimaryKey = [new()
+        {
+            Entity = typeof(DataEntity.CustomerBankingRelationship),
+            // ModelKey = nameof(DataEntity.CustomerBankingRelationship.CustomerBankingRelationshipKey),
+            ColumnKey =
+                nameof(DataEntity.CustomerBankingRelationship.Id)
+        }],
         UpsertKeys =
         [
             new()

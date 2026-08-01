@@ -62,6 +62,21 @@ internal static class MappingClassParser
         if (initializer == null)
             return info;
 
+        // ---------------------------------------------------------------
+        // NEW: single-entity shorthand. Lets a non-composite mapping write
+        //   Entity = typeof(DataEntity.Contract),
+        //   Key    = nameof(DataEntity.Contract.ContractKey)
+        // instead of a full Entities = [ new() { Entity = ..., ModelKey =
+        // ..., EntityKey = ..., IsPrimary = true } ] block. Captured here,
+        // expanded into a real EntityDefinitionInfo entry below — AFTER
+        // the assignment loop, and ONLY if the author didn't also write an
+        // explicit Entities = [...] block. If both are present, the
+        // explicit Entities block wins (this is purely additive; nothing
+        // about the existing Entities/PrimaryKey/UpsertKeys behavior
+        // changes for mappings that don't use the shorthand).
+        // ---------------------------------------------------------------
+        INamedTypeSymbol? entityShorthand = null;
+        string? keyShorthand = null;
 
         foreach (var assignment in initializer.Expressions
                      .OfType<AssignmentExpressionSyntax>())
@@ -125,6 +140,30 @@ internal static class MappingClassParser
                     break;
 
 
+                case "Entity":
+
+                    // Top-level shorthand only — distinct from the nested
+                    // "Entity" case inside ParseEntities/ParseForeignKeys/
+                    // ParseFields, which operate on their own local `name`
+                    // variable in their own method scope and are unaffected.
+                    entityShorthand =
+                        GetTypeSymbol(
+                            assignment.Right,
+                            semanticModel);
+
+                    break;
+
+
+                case "Key":
+
+                    keyShorthand =
+                        EvaluateStringLikeExpression(
+                            assignment.Right,
+                            semanticModel);
+
+                    break;
+
+
                 case "PrimaryKey":
                     ParsePrimaryKeys(
                         assignment.Right,
@@ -161,6 +200,77 @@ internal static class MappingClassParser
                         semanticModel);
 
                     break;
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // NEW: expand the Entity/Key shorthand into a real single-entity
+        // Entities[] entry, but only if the author didn't already supply
+        // an explicit Entities = [...] block (ParseEntities would have
+        // populated info.Definition.Entities above if they had).
+        // ---------------------------------------------------------------
+        if (info.Definition.Entities.Count == 0 &&
+            entityShorthand != null)
+        {
+            info.Definition.Entities.Add(
+                new EntityDefinitionInfo
+                {
+                    EntityType = entityShorthand,
+                    ModelKey = keyShorthand,
+                    EntityKey = keyShorthand,
+                    FromColumn = keyShorthand,
+                    ToColumn = keyShorthand,
+                    IsPrimary = true
+                });
+        }
+
+        // ---------------------------------------------------------------
+        // NEW: synthesize PrimaryKey/UpsertKeys from the primary entity's
+        // key when the author left those collections empty. Explicit
+        // PrimaryKey/UpsertKeys declarations (parsed above, if present)
+        // always win — this only fills a gap, never overrides.
+        //
+        // ModelKey is a required member on PrimaryKeyDefinitionInfo, so it
+        // must be set here even though the mapping author didn't type it
+        // out — sourced from the same Entities[] entry's ModelKey/
+        // FromColumn (the model-side property name), falling back to the
+        // column name itself if ModelKey was never separately specified.
+        // ---------------------------------------------------------------
+        if (info.Definition.PrimaryKey.Count == 0)
+        {
+            var primaryEntry =
+                info.Definition.Entities
+                    .FirstOrDefault(e => e.IsPrimary && e.EntityType != null);
+
+            if (primaryEntry != null &&
+                !string.IsNullOrWhiteSpace(primaryEntry.ToColumn))
+            {
+                info.Definition.PrimaryKey.Add(
+                    new PrimaryKeyDefinitionInfo
+                    {
+                        Entity = primaryEntry.EntityType!,
+                        ModelKey =
+                            primaryEntry.FromColumn
+                            ?? primaryEntry.ModelKey
+                            ?? primaryEntry.ToColumn,
+                        ColumnKey = primaryEntry.ToColumn
+                    });
+            }
+        }
+
+        if (info.UpsertKeys.Count == 0)
+        {
+            foreach (var entity in info.Definition.Entities
+                         .Where(e =>
+                             e.EntityType != null &&
+                             !string.IsNullOrWhiteSpace(e.ToColumn)))
+            {
+                info.UpsertKeys.Add(
+                    new UpsertKeyInfo
+                    {
+                        Entity = entity.EntityType!.Name,
+                        Key = entity.ToColumn!
+                    });
             }
         }
 
