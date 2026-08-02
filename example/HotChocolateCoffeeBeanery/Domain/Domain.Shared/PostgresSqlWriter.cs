@@ -223,22 +223,16 @@
             var remaining =
                 new HashSet<int>();
 
-
-            for (var i = 0;
-                 i < mutation.Rows.Length;
-                 i++)
+            for (var i = 0; i < mutation.Rows.Length; i++)
             {
                 remaining.Add(i);
             }
 
-
-            var index = 0;
-
+            var cteIndex = 0;
 
             while (remaining.Count > 0)
             {
                 var progress = false;
-
 
                 foreach (var rowIndex in remaining.ToArray())
                 {
@@ -250,24 +244,17 @@
                         continue;
                     }
 
-
-                    var sql =
+                    result.Add(
                         BuildMutationCte(
                             rowIndex,
-                            index++,
-                            mutation);
-
-
-                    result.Add(sql);
-
+                            cteIndex++,
+                            mutation));
 
                     completed.Add(rowIndex);
                     remaining.Remove(rowIndex);
 
-
                     progress = true;
                 }
-
 
                 if (!progress)
                 {
@@ -275,7 +262,6 @@
                         "Circular mutation dependency detected.");
                 }
             }
-
 
             return result;
         }
@@ -364,112 +350,103 @@
         row.SchemaOverride ??
         _meta.EntitySchema[row.StorageEntityId];
 
-
     var table =
         row.TableOverride ??
         _meta.EntityTable[row.StorageEntityId];
 
-
-    var conflictCols =
-        _meta.EntityConflictColumns[
-            row.StorageEntityId];
-
-
-    var columns =
+    var insertColumns =
         new List<string>();
 
-
-    var values =
+    var insertValues =
         new List<string>();
-
 
     foreach (var value in row.Values)
     {
         var column =
-            ResolveColumnName(
-                row.EntityId,
-                row.StorageEntityId,
-                value.FieldId);
+            _meta.EntityColumnName[
+                row.StorageEntityId]
+            [value.ColumnId];
 
+        insertColumns.Add(column);
 
-        columns.Add(column);
+        MutationDependency? dependency = null;
 
-
-        var hasDependency =
-            false;
-
-        MutationDependency dependency =
-            default;
-
-
-        foreach (var item in dependencies)
+        foreach (var dep in dependencies)
         {
             if (string.Equals(
-                    item.TargetColumn,
+                    dep.TargetColumn,
                     column,
                     StringComparison.OrdinalIgnoreCase))
             {
-                dependency = item;
-                hasDependency = true;
+                dependency = dep;
                 break;
             }
         }
 
-
-        if (hasDependency)
+        if (dependency.HasValue)
         {
-            values.Add(
+            insertValues.Add(
                 BuildDependencyReference(
-                    dependency));
+                    dependency.Value));
         }
         else
         {
-            values.Add(
+            insertValues.Add(
                 BuildLiteralExpression(
                     row.StorageEntityId,
-                    value.FieldId,
+                    value.ColumnId,
                     value.RawValue));
         }
     }
 
-
     var sb =
         new StringBuilder();
 
+    sb.Append("INSERT INTO ");
 
-    sb.Append("INSERT INTO \"")
-        .Append(schema)
-        .Append("\".\"")
-        .Append(table)
-        .Append("\" (");
+    AppendQuotedIdentifier(
+        sb,
+        schema);
 
+    sb.Append('.');
 
-    sb.Append(
-        string.Join(
-            ", ",
-            columns.Select(x =>
-                $"\"{x}\"")));
+    AppendQuotedIdentifier(
+        sb,
+        table);
 
+    sb.Append(" (");
+
+    for (var i = 0; i < insertColumns.Count; i++)
+    {
+        if (i > 0)
+        {
+            sb.Append(", ");
+        }
+
+        AppendQuotedIdentifier(
+            sb,
+            insertColumns[i]);
+    }
 
     sb.Append(") VALUES (");
 
+    for (var i = 0; i < insertValues.Count; i++)
+    {
+        if (i > 0)
+        {
+            sb.Append(", ");
+        }
 
-    sb.Append(
-        string.Join(
-            ", ",
-            values));
-
+        sb.Append(insertValues[i]);
+    }
 
     sb.Append(')');
 
-
     AppendDoUpdateSet(
         sb,
-        row.EntityId,
         row.StorageEntityId,
         row.Values,
-        conflictCols);
-
+        row.ConflictColumns);
 
     return sb.ToString();
 }
@@ -648,7 +625,8 @@
             return arms;
         }
 
-        private string BuildLookupUpsert(in UpsertRow row)
+        private string BuildLookupUpsert(
+            in UpsertRow row)
         {
             var schema =
                 row.SchemaOverride ??
@@ -658,31 +636,21 @@
                 row.TableOverride ??
                 _meta.EntityTable[row.StorageEntityId];
 
-            var conflictCols =
-                _meta.EntityConflictColumns[row.StorageEntityId];
-
+            var conflictColumns =
+                row.ConflictColumns;
 
             var insertColumns =
                 new List<string>();
 
-
+            //
+            // Literal columns
+            //
             foreach (var value in row.Values)
             {
-                insertColumns.Add(
-                    ResolveColumnName(
-                        row.EntityId,
-                        row.StorageEntityId,
-                        value.FieldId));
-            }
-
-
-            foreach (var lookup in row.Lookups)
-            {
                 var column =
-                    _meta.EntityColumnName
-                            [lookup.LookupStorageEntityId]
-                        [lookup.TargetColumnId];
-
+                    _meta.EntityColumnName[
+                            row.StorageEntityId]
+                        [value.ColumnId];
 
                 if (!insertColumns.Contains(
                         column,
@@ -692,36 +660,66 @@
                 }
             }
 
+            //
+            // FK columns resolved through lookups
+            //
+            foreach (var lookup in row.Lookups)
+            {
+                var column =
+                    _meta.EntityColumnName[
+                            row.StorageEntityId]
+                        [lookup.TargetColumnId];
+
+                if (!insertColumns.Contains(
+                        column,
+                        StringComparer.OrdinalIgnoreCase))
+                {
+                    insertColumns.Add(column);
+                }
+            }
 
             var sb =
                 new StringBuilder();
 
+            sb.Append("INSERT INTO ");
 
-            sb.Append("INSERT INTO \"")
-                .Append(schema)
-                .Append("\".\"")
-                .Append(table)
-                .Append("\" (");
+            AppendQuotedIdentifier(
+                sb,
+                schema);
 
+            sb.Append('.');
 
-            sb.Append(string.Join(", ",
-                insertColumns.Select(x => $"\"{x}\"")));
+            AppendQuotedIdentifier(
+                sb,
+                table);
 
+            sb.Append(" (");
+
+            for (var i = 0;
+                 i < insertColumns.Count;
+                 i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(", ");
+                }
+
+                AppendQuotedIdentifier(
+                    sb,
+                    insertColumns[i]);
+            }
 
             sb.AppendLine(")");
-
 
             WriteLookupSelect(
                 sb,
                 row);
 
-
             AppendLookupConflictClause(
                 sb,
                 row,
                 insertColumns,
-                conflictCols);
-
+                conflictColumns);
 
             return sb.ToString();
         }
@@ -730,27 +728,62 @@
             StringBuilder sb,
             in UpsertRow row,
             List<string> insertColumns,
-            string[] conflictColumns)
+            ImmutableArray<ConflictColumn> conflictColumns)
         {
-            if (conflictColumns.Length == 0)
+            if (conflictColumns.IsDefaultOrEmpty)
             {
                 sb.Append("ON CONFLICT DO NOTHING");
                 return;
             }
 
             sb.Append("ON CONFLICT (");
-            sb.Append(string.Join(", ",
-                conflictColumns.Select(x => $"\"{x}\"")));
+
+            for (var i = 0; i < conflictColumns.Length; i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(", ");
+                }
+
+                AppendQuotedIdentifier(
+                    sb,
+                    _meta.EntityColumnName[row.StorageEntityId]
+                        [conflictColumns[i].ColumnId]);
+            }
+
             sb.AppendLine(")");
 
-            var updates = insertColumns
-                .Where(x =>
-                    !conflictColumns.Contains(
-                        x,
-                        StringComparer.OrdinalIgnoreCase))
-                .Select(x =>
-                    $"\"{x}\" = EXCLUDED.\"{x}\"")
-                .ToList();
+            var updates =
+                new List<string>();
+
+            foreach (var column in insertColumns)
+            {
+                var isConflict = false;
+
+                foreach (var conflict in conflictColumns)
+                {
+                    var conflictName =
+                        _meta.EntityColumnName[row.StorageEntityId]
+                            [conflict.ColumnId];
+
+                    if (string.Equals(
+                            conflictName,
+                            column,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        isConflict = true;
+                        break;
+                    }
+                }
+
+                if (isConflict)
+                {
+                    continue;
+                }
+
+                updates.Add(
+                    $"\"{column}\" = EXCLUDED.\"{column}\"");
+            }
 
             if (updates.Count == 0)
             {
@@ -770,10 +803,15 @@
 
             var first = true;
 
+            //
+            // Literal values
+            //
             foreach (var value in row.Values)
             {
                 if (!first)
+                {
                     sb.Append(", ");
+                }
 
                 AppendFieldValue(
                     sb,
@@ -784,42 +822,51 @@
                 first = false;
             }
 
+            //
+            // FK values resolved from lookup tables
+            //
             foreach (var lookup in row.Lookups)
             {
                 if (!first)
+                {
                     sb.Append(", ");
+                }
 
-                sb.Append(lookup.Alias)
-                    .Append(".\"")
-                    .Append(
-                        _meta.EntityColumnName
-                                [lookup.LookupStorageEntityId]
-                            [lookup.ResultColumnId])
-                    .Append('"');
+                AppendQuotedIdentifier(
+                    sb,
+                    lookup.Alias);
+
+                sb.Append('.');
+
+                AppendQuotedIdentifier(
+                    sb,
+                    _meta.EntityColumnName[
+                            lookup.LookupStorageEntityId]
+                        [lookup.ResultColumnId]);
 
                 first = false;
             }
 
             sb.AppendLine();
 
-            WriteLookupFrom(sb, row);
+            WriteLookupFrom(
+                sb,
+                row);
         }
         
         private string BuildLiteralExpression(
             ushort storageEntityId,
-            ushort fieldId,
+            ushort columnId,
             string rawValue)
         {
             var sb =
                 new StringBuilder();
 
-
             AppendFieldValue(
                 sb,
                 storageEntityId,
-                fieldId,
+                columnId,
                 rawValue);
-
 
             return sb.ToString();
         }
@@ -828,9 +875,12 @@
             StringBuilder sb,
             in UpsertRow row)
         {
-            for (var i = 0; i < row.Lookups.Length; i++)
+            for (var i = 0;
+                 i < row.Lookups.Length;
+                 i++)
             {
-                var lookup = row.Lookups[i];
+                var lookup =
+                    row.Lookups[i];
 
                 var schema =
                     _meta.EntitySchema[
@@ -840,31 +890,55 @@
                     _meta.EntityTable[
                         lookup.LookupStorageEntityId];
 
+                var naturalKeyColumn =
+                    _meta.EntityColumnName[
+                            lookup.LookupStorageEntityId]
+                        [lookup.LookupColumnId];
+
                 if (i == 0)
+                {
                     sb.Append("FROM ");
+                }
                 else
+                {
                     sb.Append("JOIN ");
+                }
 
-                sb.Append('"')
-                    .Append(schema)
-                    .Append("\".\"")
-                    .Append(table)
-                    .Append("\" ")
-                    .Append(lookup.Alias)
-                    .AppendLine();
+                AppendQuotedIdentifier(
+                    sb,
+                    schema);
 
-                sb.Append("    ON ")
-                    .Append(lookup.Alias)
-                    .Append(".\"")
-                    .Append(
-                        _meta.EntityColumnName
-                                [lookup.LookupStorageEntityId]
-                            [lookup.LookupColumnId])
-                    .Append("\" = ");
+                sb.Append('.');
+
+                AppendQuotedIdentifier(
+                    sb,
+                    table);
+
+                sb.Append(' ');
+
+                AppendQuotedIdentifier(
+                    sb,
+                    lookup.Alias);
+
+                sb.AppendLine();
+
+                sb.Append("    ON ");
+
+                AppendQuotedIdentifier(
+                    sb,
+                    lookup.Alias);
+
+                sb.Append('.');
+
+                AppendQuotedIdentifier(
+                    sb,
+                    naturalKeyColumn);
+
+                sb.Append(" = ");
 
                 AppendQuotedValue(
                     sb,
-                    lookup.LookupValueLiteral?.ToString() ?? "");
+                    lookup.LookupValueLiteral?.ToString() ?? string.Empty);
 
                 sb.AppendLine();
             }
@@ -874,12 +948,10 @@
             StringBuilder sb,
             ushort storageEntityId,
             ImmutableArray<FieldValue> values,
-            ImmutableArray<LookupValue> lookups)
+            ImmutableArray<LookupValue> lookups,
+            ImmutableArray<ConflictColumn> conflictColumns)
         {
-            var conflicts =
-                _meta.EntityConflictColumns[storageEntityId];
-
-            if (conflicts.Length == 0)
+            if (conflictColumns.IsDefaultOrEmpty)
             {
                 sb.Append(" ON CONFLICT DO NOTHING");
                 return;
@@ -887,84 +959,84 @@
 
             sb.Append(" ON CONFLICT (");
 
-            sb.Append(string.Join(", ",
-                conflicts.Select(x => $"\"{x}\"")));
+            for (var i = 0; i < conflictColumns.Length; i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(", ");
+                }
+
+                var column =
+                    _meta.EntityColumnName[
+                            storageEntityId]
+                        [conflictColumns[i].FieldId];
+
+                AppendQuotedIdentifier(
+                    sb,
+                    column);
+            }
 
             sb.Append(") DO UPDATE SET ");
 
-            var assignments =
-                new List<string>();
+            var first = true;
 
             foreach (var value in values)
             {
                 var column =
-                    _meta.EntityColumnName[storageEntityId][value.ColumnId];
+                    _meta.EntityColumnName[
+                            storageEntityId]
+                        [value.ColumnId];
 
-                if (conflicts.Contains(
-                        column,
-                        StringComparer.OrdinalIgnoreCase))
+                if (conflictColumns.Any(x =>
+                        x.FieldId == value.ColumnId))
                 {
                     continue;
                 }
 
-                assignments.Add(
-                    $"\"{column}\" = EXCLUDED.\"{column}\"");
-            }
+                if (!first)
+                {
+                    sb.Append(", ");
+                }
 
+                first = false;
+
+                AppendQuotedIdentifier(sb, column);
+                sb.Append(" = EXCLUDED.");
+                AppendQuotedIdentifier(sb, column);
+            }
 
             foreach (var lookup in lookups)
             {
                 var column =
-                    _meta.EntityColumnName[storageEntityId]
+                    _meta.EntityColumnName[
+                            storageEntityId]
                         [lookup.TargetColumnId];
 
-
-                if (conflicts.Contains(
-                        column,
-                        StringComparer.OrdinalIgnoreCase))
+                if (conflictColumns.Any(x =>
+                        x.FieldId == lookup.TargetColumnId))
                 {
                     continue;
                 }
 
-                assignments.Add(
-                    $"\"{column}\" = EXCLUDED.\"{column}\"");
+                if (!first)
+                {
+                    sb.Append(", ");
+                }
+
+                first = false;
+
+                AppendQuotedIdentifier(sb, column);
+                sb.Append(" = EXCLUDED.");
+                AppendQuotedIdentifier(sb, column);
             }
 
-
-            if (assignments.Count == 0)
+            if (first)
             {
+                sb.Length -= " DO UPDATE SET ".Length;
                 sb.Append("DO NOTHING");
-                return;
             }
-
-
-            sb.Append(
-                string.Join(", ", assignments));
         }
-
-        private string ResolveStorageColumnName(
-            ushort entityId,
-            ushort fieldId)
-        {
-            var entity =
-                MutationMetadataRegistry.Get(entityId);
-
-
-            if (!entity.TryResolveField(
-                    fieldId,
-                    out var mapping))
-            {
-                throw new InvalidOperationException(
-                    $"Missing field metadata. Entity={entityId}, Field={fieldId}");
-            }
-
-
-            return _meta.EntityColumnName[
-                    mapping.StorageEntityId]
-                [mapping.ColumnId];
-        }
-
-
+        
         private string BuildRegularUpsert(
             in UpsertRow row)
         {
@@ -972,144 +1044,86 @@
                 row.SchemaOverride ??
                 _meta.EntitySchema[row.StorageEntityId];
 
-
             var table =
                 row.TableOverride ??
                 _meta.EntityTable[row.StorageEntityId];
-
-
-            var conflictCols =
-                _meta.EntityConflictColumns[
-                    row.StorageEntityId];
-
 
             var columns =
                 new Dictionary<string, FieldValue>(
                     StringComparer.OrdinalIgnoreCase);
 
-
             foreach (var value in row.Values)
             {
                 var column =
-                    ResolveColumnName(
-                        row.EntityId,
-                        row.StorageEntityId,
-                        value.FieldId);
-
+                    _meta.EntityColumnName[
+                            row.StorageEntityId]
+                        [value.ColumnId];
 
                 columns[column] = value;
             }
 
-
             var sb =
                 new StringBuilder();
 
+            sb.Append("INSERT INTO ");
 
-            sb.Append("INSERT INTO \"")
-                .Append(schema)
-                .Append("\".\"")
-                .Append(table)
-                .Append("\" (");
+            AppendQuotedIdentifier(
+                sb,
+                schema);
 
+            sb.Append('.');
 
-            var index = 0;
+            AppendQuotedIdentifier(
+                sb,
+                table);
 
+            sb.Append(" (");
+
+            var first = true;
 
             foreach (var column in columns.Keys)
             {
-                if (index++ > 0)
+                if (!first)
+                {
                     sb.Append(", ");
+                }
 
+                AppendQuotedIdentifier(
+                    sb,
+                    column);
 
-                sb.Append('"')
-                    .Append(column)
-                    .Append('"');
+                first = false;
             }
-
 
             sb.Append(") VALUES (");
 
-
-            index = 0;
-
+            first = true;
 
             foreach (var value in columns.Values)
             {
-                if (index++ > 0)
+                if (!first)
+                {
                     sb.Append(", ");
-
+                }
 
                 AppendFieldValue(
                     sb,
                     row.StorageEntityId,
-                    value.FieldId,
+                    value.ColumnId,
                     value.RawValue);
-            }
 
+                first = false;
+            }
 
             sb.Append(')');
 
-
             AppendDoUpdateSet(
                 sb,
-                row.EntityId,
                 row.StorageEntityId,
-                columns.Values.ToImmutableArray(),
-                conflictCols);
-
+                row.Values,
+                row.ConflictColumns);
 
             return sb.ToString();
-        }
-
-
-        private string ResolveColumnName(
-            ushort entityId,
-            ushort storageEntityId,
-            ushort fieldId)
-        {
-            var entity =
-                MutationMetadataRegistry.Get(entityId);
-
-
-            if (!entity.TryResolveField(
-                    fieldId,
-                    out var mapping))
-            {
-                throw new Exception(
-                    $"Field mapping missing.\n" +
-                    $"Entity={entityId}\n" +
-                    $"Field={fieldId}");
-            }
-
-
-            if (mapping.StorageEntityId != storageEntityId)
-            {
-                throw new Exception(
-                    $"Storage mismatch.\n" +
-                    $"Entity={entityId}\n" +
-                    $"Field={fieldId}\n" +
-                    $"ExpectedStorage={storageEntityId}\n" +
-                    $"ActualStorage={mapping.StorageEntityId}");
-            }
-
-
-            var columns =
-                _meta.EntityColumnName[storageEntityId];
-
-
-            if (mapping.ColumnId >= columns.Length)
-            {
-                throw new Exception(
-                    $"Column mapping out of range.\n" +
-                    $"Entity={entityId}\n" +
-                    $"Field={fieldId}\n" +
-                    $"StorageEntity={storageEntityId}\n" +
-                    $"ColumnId={mapping.ColumnId}\n" +
-                    $"ColumnCount={columns.Length}");
-            }
-
-
-            return columns[mapping.ColumnId];
         }
 
         private MutationFieldMetadata ResolveFieldMetadata(
@@ -1136,119 +1150,119 @@
 
 
         private void AppendSelect(
-            StringBuilder sb,
-            QueryPlan plan)
+    StringBuilder sb,
+    QueryPlan plan)
+{
+    sb.AppendLine("SELECT DISTINCT");
+
+
+    for (int i = 0; i < plan.Columns.Length; i++)
+    {
+        var column =
+            plan.Columns[i];
+
+
+        if (i > 0)
         {
-            sb.AppendLine("SELECT DISTINCT");
-
-
-            for (int i = 0; i < plan.Columns.Length; i++)
-            {
-                var column =
-                    plan.Columns[i];
-
-
-                if (i > 0)
-                {
-                    sb.AppendLine(",");
-                }
-
-
-                if (column.Kind == ColumnKind.GraphSynthetic)
-                {
-                    var alias =
-                        ResolveGraphSyntheticAlias(
-                            plan,
-                            column);
-
-
-                    sb.Append("    \"")
-                        .Append(alias)
-                        .Append("\".\"")
-                        .Append(column.RawColumnName)
-                        .Append("\" AS \"")
-                        .Append(column.ColumnOutputAlias)
-                        .Append('"');
-
-
-                    continue;
-                }
-
-
-                var tableAlias =
-                    ResolveJoinAlias(
-                        plan,
-                        column.StorageEntityId,
-                        column.EntityId);
-
-
-                var columnName =
-                    _meta.EntityColumnName[
-                            column.StorageEntityId]
-                        [column.ColumnId];
-
-
-                sb.Append("    \"")
-                    .Append(tableAlias)
-                    .Append("\".\"")
-                    .Append(columnName)
-                    .Append("\" AS \"")
-                    .Append(column.ColumnOutputAlias)
-                    .Append('"');
-            }
-
-
-            sb.AppendLine();
-
-
-            sb.Append("FROM ");
-
-
-            AppendQualifiedTable(
-                sb,
-                plan.RootStorageEntityId);
-
-
-            sb.Append(' ');
-
-
-            AppendQuotedIdentifier(
-                sb,
-                plan.RootAlias);
-
-
-            foreach (var graphJoin in plan.GraphJoins)
-            {
-                sb.Append('\n');
-
-                _graphStrategy.AppendGraphJoin(
-                    sb,
-                    graphJoin,
-                    plan.RootAlias);
-            }
-
-
-            foreach (var resultJoin in plan.GraphResultJoins)
-            {
-                sb.Append('\n');
-
-                _graphStrategy.AppendGraphResultJoin(
-                    sb,
-                    resultJoin);
-            }
-
-
-            foreach (var join in plan.Joins)
-            {
-                sb.Append('\n');
-
-                AppendJoin(
-                    sb,
-                    join,
-                    plan,
-                    join.ChildAlias);
-            }
+            sb.AppendLine(",");
         }
+
+
+        if (column.Kind == ColumnKind.GraphSynthetic)
+        {
+            var alias =
+                ResolveGraphSyntheticAlias(
+                    plan,
+                    column);
+
+
+            sb.Append("    \"")
+                .Append(alias)
+                .Append("\".\"")
+                .Append(column.RawColumnName)
+                .Append("\" AS \"")
+                .Append(column.ColumnOutputAlias)
+                .Append('"');
+
+
+            continue;
+        }
+        
+        var tableAlias =
+            ResolveJoinAlias(
+                plan,
+                column.StorageEntityId,
+                column.EntityId,
+                column.EntityOutputAlias);
+
+
+        var columnName =
+            _meta.EntityColumnName[
+                    column.StorageEntityId]
+                [column.ColumnId];
+
+
+        sb.Append("    \"")
+            .Append(tableAlias)
+            .Append("\".\"")
+            .Append(columnName)
+            .Append("\" AS \"")
+            .Append(column.ColumnOutputAlias)
+            .Append('"');
+    }
+
+
+    sb.AppendLine();
+
+
+    sb.Append("FROM ");
+
+
+    AppendQualifiedTable(
+        sb,
+        plan.RootStorageEntityId);
+
+
+    sb.Append(' ');
+
+
+    AppendQuotedIdentifier(
+        sb,
+        plan.RootAlias);
+
+
+    foreach (var graphJoin in plan.GraphJoins)
+    {
+        sb.Append('\n');
+
+        _graphStrategy.AppendGraphJoin(
+            sb,
+            graphJoin,
+            plan.RootAlias);
+    }
+
+
+    foreach (var resultJoin in plan.GraphResultJoins)
+    {
+        sb.Append('\n');
+
+        _graphStrategy.AppendGraphResultJoin(
+            sb,
+            resultJoin);
+    }
+
+
+    foreach (var join in plan.Joins)
+    {
+        sb.Append('\n');
+
+        AppendJoin(
+            sb,
+            join,
+            plan,
+            join.ChildAlias);
+    }
+}
 
 
         private static string ResolveGraphSyntheticAlias(
@@ -1658,7 +1672,7 @@
 
             if (!string.IsNullOrEmpty(converted))
             {
-                sb.Append(converted);
+                sb.Append((string)converted);
                 return;
             }
 
@@ -1692,74 +1706,63 @@
 
         private void AppendDoUpdateSet(
             StringBuilder sb,
-            ushort entityId,
             ushort storageEntityId,
             ImmutableArray<FieldValue> values,
-            string[] conflictCols)
+            ImmutableArray<ConflictColumn> conflictColumns)
         {
-            if (conflictCols.Length == 0)
+            if (conflictColumns.IsDefaultOrEmpty)
             {
                 sb.Append(" ON CONFLICT DO NOTHING");
                 return;
             }
 
-
             sb.Append(" ON CONFLICT (");
 
-
-            for (var i = 0; i < conflictCols.Length; i++)
+            for (var i = 0; i < conflictColumns.Length; i++)
             {
                 if (i > 0)
                     sb.Append(", ");
 
-
-                sb.Append('"')
-                    .Append(conflictCols[i])
-                    .Append('"');
+                AppendQuotedIdentifier(
+                    sb,
+                    _meta.EntityColumnName[storageEntityId][conflictColumns[i].ColumnId]);
             }
 
+            sb.Append(") ");
 
-            sb.Append(") DO UPDATE SET ");
-
-
-            var updates =
-                new List<string>();
-
+            var updates = new List<string>();
 
             foreach (var value in values)
             {
-                var columnName =
-                    ResolveColumnName(
-                        entityId,
-                        storageEntityId,
-                        value.FieldId);
+                var column =
+                    _meta.EntityColumnName[storageEntityId][value.ColumnId];
 
+                var isConflict = false;
 
-                if (conflictCols.Any(x =>
-                        string.Equals(
-                            x,
-                            columnName,
-                            StringComparison.OrdinalIgnoreCase)))
+                foreach (var conflict in conflictColumns)
                 {
-                    continue;
+                    if (conflict.ColumnId == value.ColumnId)
+                    {
+                        isConflict = true;
+                        break;
+                    }
                 }
 
+                if (isConflict)
+                    continue;
 
                 updates.Add(
-                    $"\"{columnName}\" = EXCLUDED.\"{columnName}\"");
+                    $"\"{column}\" = EXCLUDED.\"{column}\"");
             }
-
 
             if (updates.Count == 0)
             {
-                sb.Length -= " DO UPDATE SET ".Length;
-                sb.Append(" DO NOTHING");
+                sb.Append("DO NOTHING");
                 return;
             }
 
-
-            sb.Append(
-                string.Join(", ", updates));
+            sb.Append("DO UPDATE SET ");
+            sb.Append(string.Join(", ", updates));
         }
 
         private List<string> BuildCteNodeUpsertMerged(
@@ -1781,87 +1784,4 @@
 
             return statements;
         }
-        
-        private string ResolvePrimaryKeyColumn(
-            ushort storageEntityId)
-        {
-            var conflictColumns =
-                _meta.EntityConflictColumns[
-                    storageEntityId];
-
-            if (conflictColumns.Length == 1)
-            {
-                return conflictColumns[0];
-            }
-
-
-            var columns =
-                _meta.EntityColumnName[
-                    storageEntityId];
-
-
-            foreach (var column in columns)
-            {
-                if (string.Equals(
-                        column,
-                        "Id",
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    return column;
-                }
-            }
-
-
-            throw new InvalidOperationException(
-                $"Cannot resolve primary key column for storage entity {storageEntityId}");
-        }
-
-
-        private string ResolveNaturalKeyValue(
-            in MutationCteNode child,
-            CteResolutionSpec spec)
-        {
-            foreach (var value in child.Values)
-            {
-                var metadata =
-                    ResolveFieldMetadata(
-                        child.EntityId,
-                        value.FieldId);
-
-
-                var columnName =
-                    _meta.EntityColumnName[
-                            metadata.StorageEntityId]
-                        [metadata.ColumnId];
-
-
-                if (string.Equals(
-                        columnName,
-                        spec.RelatedNaturalKeyColumn,
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    return value.RawValue;
-                }
-            }
-
-
-            throw new InvalidOperationException(
-                $"No FieldValue on child '{child.Alias}' matches natural key column '{spec.RelatedNaturalKeyColumn}'.");
-        }
-
-        private static string QuotedValue(
-            string value)
-        {
-            var sb =
-                new StringBuilder();
-
-
-            AppendQuotedValue(
-                sb,
-                value);
-
-
-            return sb.ToString();
-        }
-
     }

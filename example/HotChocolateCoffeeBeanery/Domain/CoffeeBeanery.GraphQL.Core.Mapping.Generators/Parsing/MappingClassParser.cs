@@ -269,7 +269,10 @@ internal static class MappingClassParser
                     new UpsertKeyInfo
                     {
                         Entity = entity.EntityType!.Name,
-                        Key = entity.ToColumn!
+                        Key =
+                            entity.ModelKey
+                            ?? entity.FromColumn
+                            ?? entity.ToColumn!
                     });
             }
         }

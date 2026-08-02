@@ -112,7 +112,8 @@ public static class MutationPlannerRuntime
             null,
             null,
             lookups?.ToImmutable()
-                ?? ImmutableArray<LookupValue>.Empty);
+                ?? ImmutableArray<LookupValue>.Empty,
+            metadata.PrimaryColumns);
     }
 
     if (!metadata.IsRoot)
@@ -170,7 +171,6 @@ public static class MutationPlannerRuntime
                     value.RawValue));
         }
 
-
         builder.AddCteRoot(
             new MutationCteNode(
                 metadata.EntityId,
@@ -200,7 +200,6 @@ public static class MutationPlannerRuntime
         ImmutableDictionary.CreateBuilder<string, string>(
             StringComparer.OrdinalIgnoreCase);
 
-
     foreach (var value in node.Values)
     {
         if (value.EntityId != metadata.EntityId &&
@@ -209,7 +208,6 @@ public static class MutationPlannerRuntime
             continue;
         }
 
-
         if (!metadata.TryResolveField(
                 value.FieldId,
                 out var field))
@@ -217,14 +215,12 @@ public static class MutationPlannerRuntime
             continue;
         }
 
-
         values.Add(
             new FieldValue(
                 value.EntityId,
                 value.FieldId,
                 field.ColumnId,
                 value.RawValue));
-
 
         //
         // Resolve graph endpoints from navigation metadata.
@@ -235,13 +231,11 @@ public static class MutationPlannerRuntime
             fromKey = value.RawValue;
         }
 
-
         if (metadata.GraphToFieldId.HasValue &&
             value.FieldId == metadata.GraphToFieldId.Value)
         {
             toKey = value.RawValue;
         }
-
 
         //
         // Edge primary key.
@@ -251,7 +245,6 @@ public static class MutationPlannerRuntime
             edgeKey = value.RawValue;
             continue;
         }
-
 
         //
         // Edge properties only.
@@ -263,7 +256,6 @@ public static class MutationPlannerRuntime
                     value.RawValue;
         }
     }
-
 
     if (metadata.GraphName != null &&
         metadata.GraphEdgeLabel != null)
@@ -278,7 +270,6 @@ public static class MutationPlannerRuntime
                 $"To={metadata.GraphToFieldId}");
         }
 
-
         builder.AddGraphMerge(
             metadata.GraphName,
             metadata.GraphEdgeLabel,
@@ -292,14 +283,13 @@ public static class MutationPlannerRuntime
             toKey,
 
             metadata.PrimaryColumns.Length > 0
-                ? metadata.PrimaryColumns[0]
+                ? metadata.PrimaryColumns[0].ColumnName
                 : string.Empty,
 
             edgeKey,
 
             edgeProperties.ToImmutable());
     }
-
 
     builder.AddCteRoot(
         new MutationCteNode(

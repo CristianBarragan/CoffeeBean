@@ -67,7 +67,7 @@ public sealed class MutationEntityMetadata
 
     public string Table { get; }
 
-    public ImmutableArray<string> PrimaryColumns { get; }
+    public ImmutableArray<ConflictColumn> PrimaryColumns { get; }
 
     public ImmutableArray<MutationStorageEntityMetadata> StorageEntities { get; }
 
@@ -113,7 +113,6 @@ public sealed class MutationEntityMetadata
         }
     }
 
-
     public MutationEntityMetadata(
         ushort entityId,
         ushort storageEntityId,
@@ -121,7 +120,7 @@ public sealed class MutationEntityMetadata
         string table,
         bool isRoot,
         MutationKind kind,
-        ImmutableArray<string> primaryColumns,
+        ImmutableArray<ConflictColumn> primaryColumns,
         Dictionary<ushort, ImmutableArray<MutationFieldMetadata>> fields,
         ImmutableArray<CteUpdateMetaInfo> cteUpdateMeta,
         ImmutableArray<MutationStorageEntityMetadata> storageEntities = default,

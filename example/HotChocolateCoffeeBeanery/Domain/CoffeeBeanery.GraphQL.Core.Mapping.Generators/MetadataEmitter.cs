@@ -32,13 +32,6 @@ internal static class MetadataEmitter
 
             if (m.Graph != null)
             {
-                // ---------------------------------------------------------
-                // NOTE: MutationMetadataEmitter.BuildGraphEdgeCteResolutions
-                // now requires (info, allMappings, entityGraph) — a third
-                // required argument added when its own internal ResolveColumnId
-                // was switched to ColumnIdResolver.ResolveId. This call site
-                // was previously missing entityGraph; fixed here to match.
-                // ---------------------------------------------------------
                 foreach (var resolution in MutationMetadataEmitter.BuildGraphEdgeCteResolutions(
                              m, allMappings, entityGraph))
                 {
@@ -245,10 +238,10 @@ internal static class MetadataEmitter
     }
     
     internal static void PopulateCteUpdateMeta(
-        MappingClassInfo info,
-        NavigationResolutionResult navResult,
-        ImmutableArray<MappingClassInfo> allMappings,
-        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+    MappingClassInfo info,
+    NavigationResolutionResult navResult,
+    ImmutableArray<MappingClassInfo> allMappings,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
 {
     var primaryEntry =
         info.Definition.Entities
@@ -256,35 +249,12 @@ internal static class MetadataEmitter
                 x.IsPrimary &&
                 x.EntityType != null);
 
-
     if (primaryEntry?.EntityType == null ||
         string.IsNullOrWhiteSpace(primaryEntry.ToColumn))
     {
         return;
     }
 
-
-    static string EntityName(INamedTypeSymbol type)
-        => IdEmitter.StripEntitySuffix(type.Name);
-
-
-    // ---------------------------------------------------------------
-    // FIXED: this local function used to call IdEmitter.GetScalarProperties
-    // directly — raw declaration order, no PK-first insertion, no
-    // entityGraph-derived FK-column append. That's the SAME ordering bug
-    // already fixed in ColumnIdResolver, PlannerEmitter, and
-    // MutationMetadataEmitter: a DIFFERENT scheme than
-    // IdEmitter.GetFullColumnOrder, which is what actually generates the
-    // ColumnId.* constants those other files' outputs are indexed against.
-    // CteUpdateMeta's *ColumnId fields are consumed by
-    // MutationRuntimePlanner at runtime to slice into columnMap/FieldValue
-    // arrays built using GetFullColumnOrder ordering — so a mismatch here
-    // wasn't cosmetic, it could point a CTE natural-key resolution at the
-    // wrong physical column.
-    //
-    // Now delegates to ColumnIdResolver.ResolveId, the single
-    // GetFullColumnOrder-backed source of truth used everywhere else.
-    // ---------------------------------------------------------------
     ushort ResolveColumnId(
         INamedTypeSymbol entityType,
         string columnName)
@@ -296,56 +266,49 @@ internal static class MetadataEmitter
             entityGraph);
     }
 
-
     ushort ResolveStorageId(
         INamedTypeSymbol entityType)
     {
-        var name =
-            IdEmitter.StripEntitySuffix(
-                entityType.Name);
+        var stripped =
+            IdEmitter.StripEntitySuffix(entityType.Name);
+
+        var ordered =
+            allMappings
+                .SelectMany(m => m.Definition.Entities)
+                .Where(e => e.EntityType != null)
+                .Select(e => IdEmitter.StripEntitySuffix(e.EntityType!.Name))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(x => x, StringComparer.Ordinal)
+                .ToList();
 
         var index =
-            allMappings
-                .SelectMany(x => x.Definition.Entities)
-                .Where(x => x.EntityType != null)
-                .Select(x =>
-                    IdEmitter.StripEntitySuffix(
-                        x.EntityType!.Name))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(x => x, StringComparer.Ordinal)
-                .ToList()
-                .FindIndex(x =>
-                    string.Equals(
-                        x,
-                        name,
-                        StringComparison.OrdinalIgnoreCase));
+            ordered.FindIndex(x =>
+                string.Equals(
+                    x,
+                    stripped,
+                    StringComparison.Ordinal));
 
         return index < 0
             ? (ushort)0
             : (ushort)index;
     }
 
-
     var primaryEntityType =
         primaryEntry.EntityType;
-
-
 
     foreach (var nav in navResult.Navigations)
     {
         if (nav.RelatedEntityType == null)
             continue;
 
-
         if (string.IsNullOrWhiteSpace(nav.ForeignKeyProperty))
             continue;
-
 
         var naturalKey =
             info.Definition.Entities
                 .FirstOrDefault(x =>
                     x.EntityType != null &&
-                    x.ToColumn != null &&
+                    !string.IsNullOrWhiteSpace(x.ToColumn) &&
                     (
                         string.Equals(
                             x.AliasProperty,
@@ -358,29 +321,21 @@ internal static class MetadataEmitter
                             StringComparison.OrdinalIgnoreCase)
                     ));
 
-
-        if (naturalKey == null ||
-            string.IsNullOrWhiteSpace(naturalKey.ToColumn))
-        {
+        if (naturalKey == null)
             continue;
-        }
-
 
         if (info.CteUpdateMeta.Any(x =>
-                string.Equals(
-                    x.NavigationAlias,
-                    nav.NavigationName,
-                    StringComparison.OrdinalIgnoreCase)))
+            string.Equals(
+                x.NavigationAlias,
+                nav.NavigationName,
+                StringComparison.OrdinalIgnoreCase)))
         {
             continue;
         }
-
 
         var surrogate =
             GetPkPropertyName(
                 nav.RelatedEntityType);
-
-
 
         info.CteUpdateMeta.Add(
             new CteUpdateMetaInfo
@@ -388,58 +343,46 @@ internal static class MetadataEmitter
                 NavigationAlias =
                     nav.NavigationName,
 
-
                 ForeignKeyColumn =
                     nav.ForeignKeyProperty,
-
 
                 ForeignKeyColumnId =
                     ResolveColumnId(
                         primaryEntityType,
                         nav.ForeignKeyProperty),
 
-
                 OwningPrimaryKeyColumn =
                     primaryEntry.ToColumn!,
-
 
                 OwningPrimaryKeyColumnId =
                     ResolveColumnId(
                         primaryEntityType,
                         primaryEntry.ToColumn!),
 
-
                 RelatedEntityTypeName =
                     nav.RelatedEntityType.Name,
-
 
                 RelatedStorageEntityId =
                     ResolveStorageId(
                         nav.RelatedEntityType),
 
-
                 RelatedSurrogateIdColumn =
                     surrogate,
-
 
                 RelatedSurrogateIdColumnId =
                     ResolveColumnId(
                         nav.RelatedEntityType,
                         surrogate),
 
-
                 RelatedNaturalKeyColumn =
                     naturalKey.ToColumn!,
-
-
-                RelatedNaturalKeyColumnId =
+                
+                                RelatedNaturalKeyColumnId =
                     ResolveColumnId(
                         nav.RelatedEntityType,
                         naturalKey.ToColumn!)
             });
     }
-
-
 
     foreach (var link in info.Definition.Entities.Where(x =>
                  !x.IsPrimary &&
@@ -456,16 +399,12 @@ internal static class MetadataEmitter
             continue;
         }
 
-
         var fk =
             link.AliasProperty + "Id";
-
 
         var surrogate =
             GetPkPropertyName(
                 link.EntityType!);
-
-
 
         info.CteUpdateMeta.Add(
             new CteUpdateMetaInfo
@@ -473,49 +412,39 @@ internal static class MetadataEmitter
                 NavigationAlias =
                     link.AliasProperty!,
 
-
                 ForeignKeyColumn =
                     fk,
-
 
                 ForeignKeyColumnId =
                     ResolveColumnId(
                         primaryEntityType,
                         fk),
 
-
                 OwningPrimaryKeyColumn =
                     primaryEntry.ToColumn!,
-
 
                 OwningPrimaryKeyColumnId =
                     ResolveColumnId(
                         primaryEntityType,
                         primaryEntry.ToColumn!),
 
-
                 RelatedEntityTypeName =
                     link.EntityType.Name,
-
 
                 RelatedStorageEntityId =
                     ResolveStorageId(
                         link.EntityType),
 
-
                 RelatedSurrogateIdColumn =
                     surrogate,
-
 
                 RelatedSurrogateIdColumnId =
                     ResolveColumnId(
                         link.EntityType,
                         surrogate),
 
-
                 RelatedNaturalKeyColumn =
                     link.ToColumn!,
-
 
                 RelatedNaturalKeyColumnId =
                     ResolveColumnId(
@@ -524,93 +453,72 @@ internal static class MetadataEmitter
             });
     }
 }
-
-    // ---------------------------------------------------------------
-    // FIXED: this used to compute column indices with a raw
-    // IdEmitter.GetScalarProperties lookup, and — when that lookup
-    // missed — a SECOND, independent fallback search into
-    // m.Definition.PrimaryKey to find a PK match. Both of these were
-    // reimplementing logic that GetFullColumnOrder already does
-    // correctly (PK inserted first, then declared scalar columns, then
-    // entityGraph-derived FK columns appended) — as its own doc comment
-    // warns, computing the ordering independently in more than one place
-    // is exactly how ColumnId.* drifted out of sync with runtime arrays
-    // before. FieldToColumn's ushort values are looked up against
-    // EntityColumnName (built from GetFullColumnOrder) at runtime, so
-    // this MUST use the same ordering or field->column lookups silently
-    // point at the wrong column name.
-    //
-    // Now takes allMappings/entityGraph and resolves every index through
-    // ColumnIdResolver.ResolveId; the manual PK-fallback search is gone
-    // since GetFullColumnOrder already guarantees the PK is present and
-    // first.
-    // ---------------------------------------------------------------
+    
+    
+    
     private static void EmitFieldToColumnArray(
-    StringBuilder sb,
-    List<MappingClassInfo> models,
-    ImmutableArray<MappingClassInfo> allMappings,
-    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
-{
-    sb.AppendLine(
-        $"        public static readonly ushort[][] FieldToColumn = new ushort[{models.Count}][]");
-
-    sb.AppendLine("        {");
-
-    foreach (var m in models)
+        StringBuilder sb,
+        List<MappingClassInfo> models,
+        ImmutableArray<MappingClassInfo> allMappings,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
     {
-        var mappings =
-            PlannerEmitter.ComputeFieldMappingsEagerPublic(
-                m,
-                PlannerEmitter.IsCompositeInfo(m))
-            .ToList();
+        sb.AppendLine(
+            $"        public static readonly ushort[][] FieldToColumn = new ushort[{models.Count}][]");
 
-        if (mappings.Count == 0)
+        sb.AppendLine("        {");
+
+        foreach (var model in models)
         {
-            sb.AppendLine(
-                "            System.Array.Empty<ushort>(),");
-            continue;
-        }
+            var mappings =
+                PlannerEmitter.ComputeFieldMappingsEagerPublic(
+                        model,
+                        PlannerEmitter.IsCompositeInfo(model))
+                    .ToList();
 
-        var ids = new List<ushort>();
-
-        foreach (var fm in mappings)
-        {
-            var entity =
-                m.Definition.Entities
-                    .FirstOrDefault(e =>
-                        e.EntityType != null &&
-                        string.Equals(
-                            e.EntityType.Name,
-                            fm.EntityTypeName,
-                            StringComparison.Ordinal));
-
-
-            if (entity?.EntityType == null)
+            if (mappings.Count == 0)
             {
-                ids.Add(ushort.MaxValue);
+                sb.AppendLine(
+                    "            System.Array.Empty<ushort>(),");
                 continue;
             }
 
+            var columnIds =
+                new List<ushort>();
 
-            var index =
-                ColumnIdResolver.ResolveId(
-                    entity.EntityType,
-                    fm.ColumnName,
-                    allMappings,
-                    entityGraph);
+            foreach (var mapping in mappings)
+            {
+                var entity =
+                    model.Definition.Entities
+                        .FirstOrDefault(e =>
+                            e.EntityType != null &&
+                            string.Equals(
+                                IdEmitter.StripEntitySuffix(e.EntityType.Name),
+                                IdEmitter.StripEntitySuffix(mapping.EntityTypeName),
+                                StringComparison.OrdinalIgnoreCase));
 
-            ids.Add(index);
+                if (entity?.EntityType == null)
+                {
+                    columnIds.Add(ushort.MaxValue);
+                    continue;
+                }
+
+                var columnId =
+                    ColumnIdResolver.ResolveId(
+                        entity.EntityType,
+                        mapping.ColumnName,
+                        allMappings,
+                        entityGraph);
+
+                columnIds.Add(columnId);
+            }
+
+            sb.AppendLine(
+                $"            new ushort[] {{ {string.Join(", ", columnIds)} }},");
         }
 
-
-        sb.AppendLine(
-            $"            new ushort[] {{ {string.Join(", ", ids)} }},");
+        sb.AppendLine("        };");
+        sb.AppendLine();
     }
-
-
-    sb.AppendLine("        };");
-    sb.AppendLine();
-}
     
     private static List<(string EntityName, string Schema)> GetStorageEntities(
         List<INamedTypeSymbol> entityTypes,
@@ -1343,19 +1251,15 @@ private static void EmitConflictColumnsArray(
     ImmutableArray<MappingClassInfo> allMappings)
 {
     sb.AppendLine(
-        $"        public static readonly string[][] EntityConflictColumns = new string[{entityTypes.Count}][]");
+        $"        public static readonly ConflictColumn[][] EntityConflictColumns = new ConflictColumn[{entityTypes.Count}][]");
 
     sb.AppendLine("        {");
 
-
     foreach (var entityType in entityTypes)
     {
-        var keys = new List<string>();
+        var entityName =
+            IdEmitter.StripEntitySuffix(entityType.Name);
 
-
-        //
-        // Find the mapping that owns this storage entity
-        //
         var mappings =
             allMappings
                 .Where(m =>
@@ -1366,9 +1270,15 @@ private static void EmitConflictColumnsArray(
                             entityType)))
                 .ToList();
 
+        var emitted =
+            new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+
+        sb.AppendLine("            new ConflictColumn[]");
+        sb.AppendLine("            {");
 
         //
-        // Find explicit upsert keys belonging to this entity
+        // Explicit Upsert keys that actually belong to THIS entity.
         //
         foreach (var mapping in mappings)
         {
@@ -1377,64 +1287,73 @@ private static void EmitConflictColumnsArray(
                 if (string.IsNullOrWhiteSpace(upsertKey.Key))
                     continue;
 
-
-                var scalar =
-                    IdEmitter.GetScalarProperties(entityType)
-                        .FirstOrDefault(p =>
-                            string.Equals(
-                                p.Name,
-                                upsertKey.Key,
-                                StringComparison.OrdinalIgnoreCase));
-
-
-                if (scalar != null)
-                {
-                    keys.Add(scalar.Name);
-                }
-            }
-        }
-
-
-        keys =
-            keys
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-
-
-        //
-        // Fallback: entity primary key/natural key
-        //
-        if (keys.Count == 0)
-        {
-            foreach (var mapping in mappings)
-            {
-                var entity =
+                var entityEntry =
                     mapping.Definition.Entities
                         .FirstOrDefault(e =>
                             e.IsPrimary &&
                             e.EntityType != null &&
                             SymbolEqualityComparer.Default.Equals(
                                 e.EntityType,
-                                entityType));
+                                entityType) &&
+                            string.Equals(
+                                e.ToColumn,
+                                upsertKey.Key,
+                                StringComparison.OrdinalIgnoreCase));
 
+                if (entityEntry == null)
+                    continue;
 
-                if (entity != null &&
-                    !string.IsNullOrWhiteSpace(entity.ToColumn))
-                {
-                    keys.Add(entity.ToColumn!);
-                    break;
-                }
+                if (!emitted.Add(upsertKey.Key))
+                    continue;
+
+                sb.AppendLine(
+                    $"                new ConflictColumn(" +
+                    $"FieldId.{mapping.ModelType!.Name}.{upsertKey.Key}, " +
+                    $"ColumnId.{entityName}.{upsertKey.Key}, " +
+                    $"\"{upsertKey.Key}\"),");
             }
         }
 
+        //
+        // Primary key fallback.
+        //
+        if (emitted.Count == 0)
+        {
+            foreach (var mapping in mappings)
+            {
+                var entity =
+                    mapping.Definition.Entities.FirstOrDefault(e =>
+                        e.IsPrimary &&
+                        e.EntityType != null &&
+                        SymbolEqualityComparer.Default.Equals(
+                            e.EntityType,
+                            entityType));
 
+                if (entity == null ||
+                    string.IsNullOrWhiteSpace(entity.ToColumn))
+                {
+                    continue;
+                }
+
+                var column = entity.ToColumn!;
+
+                if (!emitted.Add(column))
+                    continue;
+
+                sb.AppendLine(
+                    $"                new ConflictColumn(" +
+                    $"FieldId.{mapping.ModelType!.Name}.{column}, " +
+                    $"ColumnId.{entityName}.{column}, " +
+                    $"\"{column}\"),");
+
+                break;
+            }
+        }
 
         //
-        // Final fallback:
-        // Convention: *Key column
+        // Convention fallback (*Key on this entity only)
         //
-        if (keys.Count == 0)
+        if (emitted.Count == 0)
         {
             var scalar =
                 IdEmitter.GetScalarProperties(entityType)
@@ -1443,34 +1362,21 @@ private static void EmitConflictColumnsArray(
                             "Key",
                             StringComparison.OrdinalIgnoreCase));
 
-
             if (scalar != null)
             {
-                keys.Add(scalar.Name);
+                var mapping =
+                    mappings.First();
+
+                sb.AppendLine(
+                    $"                new ConflictColumn(" +
+                    $"FieldId.{mapping.ModelType!.Name}.{scalar.Name}, " +
+                    $"ColumnId.{entityName}.{scalar.Name}, " +
+                    $"\"{scalar.Name}\"),");
             }
         }
 
-
-
-        keys =
-            keys
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-
-
-        if (keys.Count == 0)
-        {
-            sb.AppendLine(
-                "            System.Array.Empty<string>(),");
-        }
-        else
-        {
-            sb.AppendLine(
-                $"            new string[] {{ {string.Join(", ", keys.Select(k => $"\"{k}\""))} }},");
-        }
+        sb.AppendLine("            },");
     }
-
 
     sb.AppendLine("        };");
     sb.AppendLine();
@@ -1483,9 +1389,7 @@ private static void EmitCteResolutionsArray(
     sb.AppendLine(
         $"        public static readonly global::CoffeeBeanery.GraphQL.Core.Runtime.CteResolutionSpec[][] CteResolutions = new global::CoffeeBeanery.GraphQL.Core.Runtime.CteResolutionSpec[{models.Count}][]");
 
-    sb.AppendLine(
-        "        {");
-
+    sb.AppendLine("        {");
 
     foreach (var m in models)
     {
@@ -1493,102 +1397,53 @@ private static void EmitCteResolutionsArray(
         {
             sb.AppendLine(
                 "            System.Array.Empty<global::CoffeeBeanery.GraphQL.Core.Runtime.CteResolutionSpec>(),");
-
             continue;
         }
-
-
-        var primaryEntity =
-            m.Definition.Entities
-                .FirstOrDefault(e => e.IsPrimary)
-                ?.EntityType;
-
-
-        var entityColumns =
-            primaryEntity == null
-                ? new Dictionary<string, ushort>(
-                    StringComparer.OrdinalIgnoreCase)
-                :
-                IdEmitter.GetScalarProperties(primaryEntity)
-                    .Select((c, i) =>
-                        new
-                        {
-                            Name = c.Name,
-                            Index = (ushort)i
-                        })
-                    .ToDictionary(
-                        x => x.Name,
-                        x => x.Index,
-                        StringComparer.OrdinalIgnoreCase);
-
-
 
         sb.AppendLine(
             "            new global::CoffeeBeanery.GraphQL.Core.Runtime.CteResolutionSpec[]");
 
-        sb.AppendLine(
-            "            {");
-
+        sb.AppendLine("            {");
 
         foreach (var cte in m.CteUpdateMeta)
         {
-            entityColumns.TryGetValue(
-                cte.OwningPrimaryKeyColumn,
-                out var pkColumnId);
-
-
-
             var tableAlias =
                 cte.NavigationAlias +
                 cte.RelatedEntityTypeName;
 
-
-
             sb.AppendLine(
                 "                new global::CoffeeBeanery.GraphQL.Core.Runtime.CteResolutionSpec(");
-
 
             sb.AppendLine(
                 $"                    \"{cte.NavigationAlias}\",");
 
-
             sb.AppendLine(
                 $"                    \"{cte.ForeignKeyColumn}\",");
-
 
             sb.AppendLine(
                 $"                    \"{cte.OwningPrimaryKeyColumn}\",");
 
-
+            // Use the ID already resolved when CteUpdateMeta was built.
             sb.AppendLine(
-                $"                    {pkColumnId},");
-
+                $"                    {cte.OwningPrimaryKeyColumnId},");
 
             sb.AppendLine(
                 $"                    \"{tableAlias}\",");
 
-
             sb.AppendLine(
                 $"                    \"{cte.RelatedSurrogateIdColumn}\",");
 
-
             sb.AppendLine(
                 $"                    \"{cte.RelatedNaturalKeyColumn}\"");
-
 
             sb.AppendLine(
                 "                ),");
         }
 
-
-        sb.AppendLine(
-            "            },");
+        sb.AppendLine("            },");
     }
 
-
-    sb.AppendLine(
-        "        };");
-
+    sb.AppendLine("        };");
     sb.AppendLine();
 }
 
@@ -1726,7 +1581,7 @@ private static void EmitCteResolutionsArray(
             "        public ushort[][] FieldToColumn => EntityMeta.FieldToColumn;");
 
         sb.AppendLine(
-            "        public string[][] EntityConflictColumns => EntityMeta.EntityConflictColumns;");;
+            "        public ConflictColumn[][] EntityConflictColumns => EntityMeta.EntityConflictColumns;");;
 
         sb.AppendLine(
             "        public CteResolutionSpec[][] CteResolutions => EntityMeta.CteResolutions;");

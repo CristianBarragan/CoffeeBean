@@ -49,7 +49,8 @@ public ref struct MutationPlanBuilder
         ImmutableArray<FieldValue> values,
         string? schemaOverride = null,
         string? tableOverride = null,
-        ImmutableArray<LookupValue> lookups = default)
+        ImmutableArray<LookupValue> lookups = default,
+        ImmutableArray<ConflictColumn> conflictColumns = default)
     {
         if (values.IsDefault)
             values = ImmutableArray<FieldValue>.Empty;
@@ -57,9 +58,10 @@ public ref struct MutationPlanBuilder
         if (lookups.IsDefault)
             lookups = ImmutableArray<LookupValue>.Empty;
 
+        if (conflictColumns.IsDefault)
+            conflictColumns = ImmutableArray<ConflictColumn>.Empty;
 
         var index = _rowCount;
-
 
         _rows[_rowCount++] =
             new UpsertRow(
@@ -69,8 +71,8 @@ public ref struct MutationPlanBuilder
                 values,
                 schemaOverride,
                 tableOverride,
-                lookups);
-
+                lookups,
+                conflictColumns);
 
         return index;
     }

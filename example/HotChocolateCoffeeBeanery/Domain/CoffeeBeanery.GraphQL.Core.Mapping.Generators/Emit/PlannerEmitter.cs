@@ -314,221 +314,232 @@ internal static class PlannerEmitter
     /// next hop can join off it correctly.
     /// </summary>
     private static void EmitNavigationJoins(
-        StringBuilder sb,
-        MappingClassInfo info,
-        ImmutableArray<MappingClassInfo> allMappings,
-        NavigationResolutionResult navResult,
-        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+    StringBuilder sb,
+    MappingClassInfo info,
+    ImmutableArray<MappingClassInfo> allMappings,
+    NavigationResolutionResult navResult,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+{
+    foreach (var navigation in navResult.Navigations)
     {
-        foreach (var navigation in navResult.Navigations)
+        var joinPath =
+            navigation.JoinPaths
+                .Where(p => p.Hops.Count > 0)
+                .OrderBy(p => p.Hops.Count)
+                .FirstOrDefault();
+
+        if (joinPath == null)
+            continue;
+
+        var navigationRequested =
+            $"__hasChild_{navigation.NavigationName}";
+
+        var navigationChildAlias =
+            $"__childAlias_{navigation.NavigationName}";
+
+        sb.AppendLine(
+            $"            var {navigationRequested} = false;");
+
+        sb.AppendLine(
+            $"            string? {navigationChildAlias} = null;");
+
+        sb.AppendLine(
+            "            foreach (var __navChild in node.Children)");
+
+        sb.AppendLine(
+            "            {");
+
+        sb.AppendLine(
+            $"                if (string.Equals(__navChild.OutputAlias, \"{navigation.NavigationName}\", System.StringComparison.OrdinalIgnoreCase))");
+
+        sb.AppendLine(
+            "                {");
+
+        sb.AppendLine(
+            $"                    {navigationRequested} = true;");
+
+        sb.AppendLine(
+            $"                    {navigationChildAlias} = __navChild.OutputAlias;");
+
+        sb.AppendLine(
+            "                    break;");
+
+        sb.AppendLine(
+            "                }");
+
+        sb.AppendLine(
+            "            }");
+
+        sb.AppendLine();
+
+        sb.AppendLine(
+            $"            if ({navigationRequested})");
+
+        sb.AppendLine(
+            "            {");
+
+        var aliasByEntity =
+            new Dictionary<INamedTypeSymbol, string>(
+                SymbolEqualityComparer.Default);
+
+        var firstHop = joinPath.Hops[0];
+
+        var parentSeedEntity =
+            info.Definition.Entities
+                .FirstOrDefault(e =>
+                    e.EntityType != null &&
+                    (SymbolEqualityComparer.Default.Equals(
+                         e.EntityType, firstHop.DependentEntity) ||
+                     SymbolEqualityComparer.Default.Equals(
+                         e.EntityType, firstHop.PrincipalEntity)))
+                ?.EntityType;
+
+        if (parentSeedEntity == null && info.EntityType != null &&
+            (SymbolEqualityComparer.Default.Equals(info.EntityType, firstHop.DependentEntity) ||
+             SymbolEqualityComparer.Default.Equals(info.EntityType, firstHop.PrincipalEntity)))
         {
-            var joinPath =
-                navigation.JoinPaths
-                    .Where(p => p.Hops.Count > 0)
-                    .OrderBy(p => p.Hops.Count)
-                    .FirstOrDefault();
+            parentSeedEntity = info.EntityType;
+        }
 
-            if (joinPath == null)
-                continue;
+        if (parentSeedEntity != null)
+        {
+            aliasByEntity[parentSeedEntity] = "node.OutputAlias";
+        }
 
-            // ---------------------------------------------------------------
-            // FIXED: this navigation's joins used to be emitted
-            // unconditionally — every navigation the model supports
-            // (Product, ContactPoint, customerBankingRelationship,
-            // customerCustomerEdge, ...) got baked into Build() as a
-            // flat, always-executed builder.AddJoin(...) sequence,
-            // regardless of whether any given query's selection set
-            // actually asked for that nested field. That's real, wasted
-            // work per query (extra LEFT JOINs the planner, and the
-            // database, have to process for data nobody selected) and is
-            // exactly the "too many visits to the same entities" pattern —
-            // EmitGraphVertexResultJoins already avoids this for graph
-            // joins by checking node.Children at runtime before emitting;
-            // this applies the same pattern here; a navigation's join
-            // chain is only executed when node.Children actually contains
-            // a child whose OutputAlias matches this navigation, i.e. the
-            // navigation was genuinely part of the requested selection.
-            // ---------------------------------------------------------------
-            var navigationRequested =
-                $"__hasChild_{navigation.NavigationName}";
+        var index = 0;
+        var lastHopIndex = joinPath.Hops.Count - 1;
+
+        foreach (var edge in joinPath.Hops)
+        {
+            var fromIsDependent =
+                aliasByEntity.ContainsKey(edge.DependentEntity);
+
+            var fromEntity =
+                fromIsDependent
+                    ? edge.DependentEntity
+                    : edge.PrincipalEntity;
+
+            var toEntity =
+                fromIsDependent
+                    ? edge.PrincipalEntity
+                    : edge.DependentEntity;
+
+            var fromColumn =
+                fromIsDependent
+                    ? edge.DependentColumn
+                    : edge.PrincipalColumn;
+
+            var toColumn =
+                fromIsDependent
+                    ? edge.PrincipalColumn
+                    : edge.DependentColumn;
+
+            if (!aliasByEntity.TryGetValue(fromEntity, out var fromAlias))
+            {
+                throw new InvalidOperationException(
+                    $"Navigation '{navigation.NavigationName}' on " +
+                    $"'{info.ModelType!.Name}' has a disconnected join " +
+                    $"path: no known alias for '{fromEntity.Name}' when " +
+                    $"processing hop -> '{toEntity.Name}'.");
+            }
+
+            var fromStorageEntity =
+                ResolveStorageEntityOrThrow(fromEntity, allMappings);
+
+            var toStorageEntity =
+                ResolveStorageEntityOrThrow(toEntity, allMappings);
+
+            var fromStorageName =
+                IdEmitter.StripEntitySuffix(fromStorageEntity.Name);
+
+            var toStorageName =
+                IdEmitter.StripEntitySuffix(toStorageEntity.Name);
+
+            var resolvedFromColumn =
+                ResolveStorageColumnName(fromStorageEntity, fromColumn);
+
+            var resolvedToColumn =
+                ResolveStorageColumnName(toStorageEntity, toColumn);
+
+            var fromColumnId =
+                ResolveStorageColumnId(
+                    fromEntity, fromStorageName, resolvedFromColumn, allMappings, entityGraph);
+
+            var toColumnId =
+                ResolveStorageColumnId(
+                    toEntity, toStorageName, resolvedToColumn, allMappings, entityGraph);
+            
+            bool isLastHop =
+                index == lastHopIndex;
+
+            string toAliasExpression;
+            string toAliasForDictionary;
+
+            if (isLastHop)
+            {
+                toAliasExpression =
+                    navigationChildAlias!;
+
+                toAliasForDictionary =
+                    navigationChildAlias!;
+            }
+            else
+            {
+                var literalAlias =
+                    $"{info.ModelType!.Name}_{navigation.NavigationName}_{toStorageName}_{index}";
+
+                toAliasExpression =
+                    $"\"{literalAlias}\"";
+
+                toAliasForDictionary =
+                    literalAlias;
+            }
+
+            aliasByEntity[toEntity] = toAliasForDictionary;
 
             sb.AppendLine(
-                $"            var {navigationRequested} = false;");
+                "            builder.AddJoin(");
 
             sb.AppendLine(
-                "            foreach (var __navChild in node.Children)");
+                fromAlias == "node.OutputAlias"
+                    ? "                node.OutputAlias,"
+                    : $"                \"{fromAlias}\",");
 
             sb.AppendLine(
-                "            {");
+                isLastHop
+                    ? $"                {toAliasExpression}!,"
+                    : $"                {toAliasExpression},");
 
             sb.AppendLine(
-                $"                if (string.Equals(__navChild.OutputAlias, \"{navigation.NavigationName}\", System.StringComparison.OrdinalIgnoreCase))");
+                $"                EntityId.{ResolveRuntimeEntityId(fromEntity, allMappings)},");
 
             sb.AppendLine(
-                "                {");
+                $"                StorageEntityId.{fromStorageName},");
 
             sb.AppendLine(
-                $"                    {navigationRequested} = true;");
+                $"                {fromColumnId},");
 
             sb.AppendLine(
-                "                    break;");
+                $"                EntityId.{ResolveRuntimeEntityId(toEntity, allMappings)},");
 
             sb.AppendLine(
-                "                }");
+                $"                StorageEntityId.{toStorageName},");
 
             sb.AppendLine(
-                "            }");
+                $"                {toColumnId},");
+
+            sb.AppendLine(
+                "                JoinKind.Left);");
 
             sb.AppendLine();
 
-            sb.AppendLine(
-                $"            if ({navigationRequested})");
-
-            sb.AppendLine(
-                "            {");
-
-            var aliasByEntity =
-                new Dictionary<INamedTypeSymbol, string>(
-                    SymbolEqualityComparer.Default);
-
-            // Seed the alias map with whichever of the parent's backing
-            // entities the first hop actually starts from, so the first
-            // AddJoin call correctly uses node.OutputAlias as its parent
-            // alias rather than guessing the IsPrimary anchor.
-            var firstHop = joinPath.Hops[0];
-
-            var parentSeedEntity =
-                info.Definition.Entities
-                    .FirstOrDefault(e =>
-                        e.EntityType != null &&
-                        (SymbolEqualityComparer.Default.Equals(
-                             e.EntityType, firstHop.DependentEntity) ||
-                         SymbolEqualityComparer.Default.Equals(
-                             e.EntityType, firstHop.PrincipalEntity)))
-                    ?.EntityType;
-
-            if (parentSeedEntity == null && info.EntityType != null &&
-                (SymbolEqualityComparer.Default.Equals(info.EntityType, firstHop.DependentEntity) ||
-                 SymbolEqualityComparer.Default.Equals(info.EntityType, firstHop.PrincipalEntity)))
-            {
-                parentSeedEntity = info.EntityType;
-            }
-
-            if (parentSeedEntity != null)
-            {
-                aliasByEntity[parentSeedEntity] = "node.OutputAlias";
-            }
-
-            var index = 0;
-
-            foreach (var edge in joinPath.Hops)
-            {
-                var fromIsDependent =
-                    aliasByEntity.ContainsKey(edge.DependentEntity);
-
-                var fromEntity =
-                    fromIsDependent
-                        ? edge.DependentEntity
-                        : edge.PrincipalEntity;
-
-                var toEntity =
-                    fromIsDependent
-                        ? edge.PrincipalEntity
-                        : edge.DependentEntity;
-
-                var fromColumn =
-                    fromIsDependent
-                        ? edge.DependentColumn
-                        : edge.PrincipalColumn;
-
-                var toColumn =
-                    fromIsDependent
-                        ? edge.PrincipalColumn
-                        : edge.DependentColumn;
-
-                if (!aliasByEntity.TryGetValue(fromEntity, out var fromAlias))
-                {
-                    // Disconnected hop chain — fail loudly at generation
-                    // time rather than emit a join with an undefined alias.
-                    throw new InvalidOperationException(
-                        $"Navigation '{navigation.NavigationName}' on " +
-                        $"'{info.ModelType!.Name}' has a disconnected join " +
-                        $"path: no known alias for '{fromEntity.Name}' when " +
-                        $"processing hop -> '{toEntity.Name}'.");
-                }
-
-                var fromStorageEntity =
-                    ResolveStorageEntityOrThrow(fromEntity, allMappings);
-
-                var toStorageEntity =
-                    ResolveStorageEntityOrThrow(toEntity, allMappings);
-
-                var fromStorageName =
-                    IdEmitter.StripEntitySuffix(fromStorageEntity.Name);
-
-                var toStorageName =
-                    IdEmitter.StripEntitySuffix(toStorageEntity.Name);
-
-                var resolvedFromColumn =
-                    ResolveStorageColumnName(fromEntity, fromStorageEntity, fromColumn);
-
-                var resolvedToColumn =
-                    ResolveStorageColumnName(toEntity, toStorageEntity, toColumn);
-
-                var fromColumnId =
-                    ResolveStorageColumnId(
-                        fromEntity, fromStorageName, resolvedFromColumn, allMappings);
-
-                var toColumnId =
-                    ResolveStorageColumnId(
-                        toEntity, toStorageName, resolvedToColumn, allMappings);
-
-                var toAlias =
-                    $"{info.ModelType!.Name}_{navigation.NavigationName}_{toStorageName}_{index}";
-
-                aliasByEntity[toEntity] = toAlias;
-
-                sb.AppendLine(
-                    "            builder.AddJoin(");
-
-                sb.AppendLine(
-                    fromAlias == "node.OutputAlias"
-                        ? "                node.OutputAlias,"
-                        : $"                \"{fromAlias}\",");
-
-                sb.AppendLine(
-                    $"                \"{toAlias}\",");
-
-                sb.AppendLine(
-                    $"                EntityId.{ResolveRuntimeEntityId(fromEntity, allMappings)},");
-
-                sb.AppendLine(
-                    $"                StorageEntityId.{fromStorageName},");
-
-                sb.AppendLine(
-                    $"                {fromColumnId},");
-
-                sb.AppendLine(
-                    $"                EntityId.{ResolveRuntimeEntityId(toEntity, allMappings)},");
-
-                sb.AppendLine(
-                    $"                StorageEntityId.{toStorageName},");
-
-                sb.AppendLine(
-                    $"                {toColumnId},");
-
-                sb.AppendLine(
-                    "                JoinKind.Left);");
-
-                sb.AppendLine();
-
-                index++;
-            }
-
-            sb.AppendLine(
-                "            }");
+            index++;
         }
+
+        sb.AppendLine(
+            "            }");
     }
+}
     
     private static void EmitGraphVertexResultJoins(
     StringBuilder sb,
@@ -1236,14 +1247,12 @@ internal sealed record ChildLinkInfo(
                     
                                 var resolvedParentColumn =
                 ResolveStorageColumnName(
-                    join.ParentEntityType,
                     parentStorageEntity,
                     parentColumn);
 
 
             var resolvedChildColumn =
                 ResolveStorageColumnName(
-                    join.ChildEntityType,
                     childStorageEntity,
                     childColumn);
 
@@ -1258,14 +1267,13 @@ internal sealed record ChildLinkInfo(
                 IdEmitter.StripEntitySuffix(
                     childStorageEntity.Name);
 
-
-
             var parentColumnId =
                 ResolveStorageColumnId(
                     join.ParentEntityType,
                     parentStorage,
                     resolvedParentColumn,
-                    allMappings);
+                    allMappings,
+                    entityGraph);
 
 
             var childColumnId =
@@ -1273,8 +1281,8 @@ internal sealed record ChildLinkInfo(
                     join.ChildEntityType,
                     childStorage,
                     resolvedChildColumn,
-                    allMappings);
-
+                    allMappings,
+                    entityGraph);
 
             if (childColumnId == ushort.MaxValue)
             {
@@ -1384,67 +1392,38 @@ internal sealed record ChildLinkInfo(
         INamedTypeSymbol entityType,
         string storageEntity,
         string columnName,
-        ImmutableArray<MappingClassInfo> allMappings)
+        ImmutableArray<MappingClassInfo> allMappings,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
     {
-        foreach (var mapping in allMappings)
-        {
-            foreach (var entity in mapping.Definition.Entities)
-            {
-                if (entity.EntityType == null)
-                    continue;
+        var storage =
+            ResolveStorageEntityOrThrow(
+                entityType,
+                allMappings);
 
+        var resolvedColumn =
+            ResolveStorageColumnName(
+                storage,
+                columnName);
 
-                if (!SymbolEqualityComparer.Default.Equals(
-                        entity.EntityType,
-                        entityType))
-                    continue;
-
-
-                var storage =
-                    IdEmitter.StripEntitySuffix(
-                        entity.EntityType.Name);
-
-
-                if (!string.Equals(
-                        storage,
-                        storageEntity,
-                        StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-
-                var columns =
-                    IdEmitter.GetScalarProperties(
-                        entity.EntityType);
-
-
-                for (ushort i = 0; i < columns.Count; i++)
-                {
-                    if (string.Equals(
-                            columns[i].Name,
-                            columnName,
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        return i;
-                    }
-                }
-
-
-                throw new InvalidOperationException(
-                    $"Column '{columnName}' not found in storage '{storageEntity}' for entity '{entityType.Name}'.");
-            }
-        }
-
-
-        throw new InvalidOperationException(
-            $"Storage entity '{storageEntity}' not found for '{entityType.Name}'.");
+        return ColumnIdResolver.ResolveId(
+            storage,
+            resolvedColumn,
+            allMappings,
+            entityGraph);
     }
     
-        private static string ResolveStorageColumnName(
-        INamedTypeSymbol modelEntity,
+    private static string ResolveStorageColumnName(
         INamedTypeSymbol storageEntity,
         string column)
     {
-        var direct =
+        if (string.IsNullOrWhiteSpace(column))
+        {
+            throw new ArgumentException(
+                "Column name cannot be null or empty.",
+                nameof(column));
+        }
+
+        var property =
             storageEntity.GetMembers()
                 .OfType<IPropertySymbol>()
                 .FirstOrDefault(p =>
@@ -1453,140 +1432,58 @@ internal sealed record ChildLinkInfo(
                         column,
                         StringComparison.OrdinalIgnoreCase));
 
-        if (direct != null)
-            return direct.Name;
-
-
-        if (column.EndsWith(
-                "Id",
-                StringComparison.OrdinalIgnoreCase))
+        if (property != null)
         {
-            var prefix =
-                column.Substring(
-                    0,
-                    column.Length - 2);
-
-
-            var key =
-                storageEntity.GetMembers()
-                    .OfType<IPropertySymbol>()
-                    .FirstOrDefault(p =>
-                        string.Equals(
-                            p.Name,
-                            prefix + "Key",
-                            StringComparison.OrdinalIgnoreCase));
-
-
-            if (key != null)
-                return key.Name;
+            return property.Name;
         }
 
-
-        var entityKey =
-            storageEntity.GetMembers()
-                .OfType<IPropertySymbol>()
-                .FirstOrDefault(p =>
-                    string.Equals(
-                        p.Name,
-                        IdEmitter.StripEntitySuffix(modelEntity.Name) + "Key",
-                        StringComparison.OrdinalIgnoreCase));
-
-
-        if (entityKey != null &&
-            string.Equals(
-                column,
-                "Id",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return entityKey.Name;
-        }
-
-
-        return column;
+        throw new InvalidOperationException(
+            $"Storage entity '{storageEntity.Name}' does not contain a column named '{column}'.");
     }
 
-
-
     private static INamedTypeSymbol ResolveStorageEntityOrThrow(
-        INamedTypeSymbol modelEntity,
+        INamedTypeSymbol entityType,
         ImmutableArray<MappingClassInfo> allMappings)
     {
+        // Prefer an exact symbol match.
         foreach (var mapping in allMappings)
         {
-            var entity =
-                mapping.Definition.Entities
-                    .FirstOrDefault(e =>
-                        e.EntityType != null &&
-                        string.Equals(
-                            IdEmitter.StripEntitySuffix(
-                                e.EntityType.Name),
-                            IdEmitter.StripEntitySuffix(
-                                modelEntity.Name),
-                            StringComparison.OrdinalIgnoreCase));
-
-
-            if (entity?.EntityType != null)
+            foreach (var entity in mapping.Definition.Entities)
             {
-                return entity.EntityType;
+                if (entity.EntityType != null &&
+                    SymbolEqualityComparer.Default.Equals(
+                        entity.EntityType,
+                        entityType))
+                {
+                    return entity.EntityType;
+                }
             }
         }
 
+        // Fall back to a stripped-name match only if necessary.
+        var strippedName =
+            IdEmitter.StripEntitySuffix(entityType.Name);
+
+        foreach (var mapping in allMappings)
+        {
+            foreach (var entity in mapping.Definition.Entities)
+            {
+                if (entity.EntityType == null)
+                    continue;
+
+                if (string.Equals(
+                        IdEmitter.StripEntitySuffix(entity.EntityType.Name),
+                        strippedName,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return entity.EntityType;
+                }
+            }
+        }
 
         throw new InvalidOperationException(
-            $"Unable to resolve storage entity for '{modelEntity.Name}'.");
+            $"Unable to resolve storage entity for '{entityType.ToDisplayString()}'.");
     }
-
-
-    // ---------------------------------------------------------------
-    // REMOVED: ResolveStorageJoinColumn(...) and ResolveJoinColumnId(...)
-    //
-    // Both were unreferenced duplicates of ResolveStorageColumnName(...) +
-    // ResolveStorageColumnId(...) above — same "Id" -> "{prefix}Key" ->
-    // "{Entity}Key" guessing chain, reimplemented a second time and never
-    // actually called from anywhere in this file's emit path. Having two
-    // independent copies of the same convention is itself a way for
-    // hardcoded-column logic to silently drift out of sync; confirm via
-    //
-    //   Get-ChildItem -Recurse -Filter *.cs | Select-String -Pattern "ResolveStorageJoinColumn|ResolveJoinColumnId"
-    //
-    // that nothing outside this file referenced them before deleting from
-    // your actual copy — in this cleaned version they're gone.
-    // ---------------------------------------------------------------
-
-
-
-    private static void EmitCompositeChildAttachmentJoins(
-        StringBuilder sb,
-        MappingClassInfo info,
-        ImmutableArray<MappingClassInfo> allMappings,
-        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
-    {
-        // ---------------------------------------------------------------
-        // REMOVED FROM THE EMIT PATH: this method is no longer called by
-        // EmitChildSelection (see the FIXED comment block there). It's kept
-        // here, unused, only so a diff against the original file is easy to
-        // review. Once you've confirmed EmitNavigationJoins covers every
-        // case this was meant to handle, delete this method entirely along
-        // with info.AutoChildAttachments if nothing else in the pipeline
-        // still reads that list (e.g. schema field registration outside
-        // codegen) — check with:
-        //
-        //   Get-ChildItem -Recurse -Filter *.cs | Select-String -Pattern "AutoChildAttachments" -SimpleMatch
-        //
-        // If every remaining hit is inside CompositeChildAttachmentConvention
-        // itself, the whole AutoChildAttachments mechanism (and the naming-
-        // convention fallback inside that pass) can come out too, and
-        // EntityNavigationConvention becomes the single source of truth for
-        // ALL child-navigation join resolution, not just the non-composite
-        // case it originally covered.
-        // ---------------------------------------------------------------
-        throw new InvalidOperationException(
-            "EmitCompositeChildAttachmentJoins is retired — EmitNavigationJoins " +
-            "replaces it. This method should not be called; if you're seeing " +
-            "this exception, something is still wired to the old path.");
-    }
-
-
 
     private static FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge? FindEdge(
         INamedTypeSymbol entityA,
@@ -1626,72 +1523,53 @@ internal sealed record ChildLinkInfo(
         INamedTypeSymbol type,
         ImmutableArray<MappingClassInfo> mappings)
     {
+        // Exact entity match.
         foreach (var mapping in mappings)
         {
+            if (mapping.ModelType == null)
+                continue;
+
             if (mapping.EntityType != null &&
                 SymbolEqualityComparer.Default.Equals(
                     mapping.EntityType,
                     type))
             {
-                if (mapping.ModelType != null)
-                    return mapping.ModelType.Name;
+                return mapping.ModelType.Name;
             }
-
 
             foreach (var entity in mapping.Definition.Entities)
             {
-                if (entity.EntityType == null)
-                    continue;
-
-
-                if (!SymbolEqualityComparer.Default.Equals(
+                if (entity.EntityType != null &&
+                    SymbolEqualityComparer.Default.Equals(
                         entity.EntityType,
                         type))
                 {
-                    continue;
-                }
-
-
-                // IMPORTANT:
-                // Runtime EntityId comes from the planner/model name,
-                // NOT the storage entity name.
-                if (mapping.ModelType != null)
-                {
                     return mapping.ModelType.Name;
                 }
-
-
-                return IdEmitter.StripEntitySuffix(
-                    entity.EntityType.Name);
             }
         }
 
+        // Fallback by stripped storage name.
+        var stripped =
+            IdEmitter.StripEntitySuffix(type.Name);
 
-        // fallback by name
         foreach (var mapping in mappings)
         {
-            foreach (var entity in mapping.Definition.Entities)
+            if (mapping.ModelType == null)
+                continue;
+
+            if (mapping.Definition.Entities.Any(e =>
+                    e.EntityType != null &&
+                    string.Equals(
+                        IdEmitter.StripEntitySuffix(e.EntityType.Name),
+                        stripped,
+                        StringComparison.OrdinalIgnoreCase)))
             {
-                if (entity.EntityType == null)
-                    continue;
-
-
-                if (string.Equals(
-                        IdEmitter.StripEntitySuffix(entity.EntityType.Name),
-                        IdEmitter.StripEntitySuffix(type.Name),
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    if (mapping.ModelType != null)
-                        return mapping.ModelType.Name;
-
-                    return IdEmitter.StripEntitySuffix(
-                        entity.EntityType.Name);
-                }
+                return mapping.ModelType.Name;
             }
         }
 
-
         throw new InvalidOperationException(
-            $"No runtime EntityId mapping found for '{type.Name}'.");
+            $"Unable to resolve runtime EntityId for '{type.ToDisplayString()}'.");
     }
 }

@@ -33,13 +33,67 @@ internal static class IdEmitter
 
         return sb.ToString();
     }
+    
+    internal static ushort GetFieldId(
+        MappingClassInfo mapping,
+        string fieldName)
+    {
+        var fields =
+            GetResolvedFieldNames(mapping);
+
+        for (ushort i = 0; i < fields.Count; i++)
+        {
+            if (string.Equals(
+                    fields[(int)i],
+                    fieldName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Unable to resolve FieldId for '{fieldName}' on '{mapping.ModelType?.Name}'.");
+    }
+    
+    internal static ushort GetColumnId(
+        ImmutableArray<MappingClassInfo> mappings,
+        INamedTypeSymbol entityType,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph,
+        string columnName)
+    {
+        var columns =
+            GetFullColumnOrder(
+                StripEntitySuffix(entityType.Name),
+                mappings,
+                entityType,
+                entityGraph);
+
+        for (ushort i = 0; i < columns.Count; i++)
+        {
+            if (string.Equals(
+                    columns[(int)i],
+                    columnName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Unable to resolve ColumnId for '{columnName}' on '{entityType.Name}'.");
+    }
 
     public static string StripEntitySuffix(string entityTypeName)
     {
-        const string suffix = "Key";
+        const string suffix = "Entity";
 
-        return entityTypeName.EndsWith(suffix, StringComparison.Ordinal)
-            ? entityTypeName.Substring(0, entityTypeName.Length - suffix.Length)
+        return entityTypeName.EndsWith(
+            suffix,
+            StringComparison.Ordinal)
+            ? entityTypeName.Substring(
+                0,
+                entityTypeName.Length - suffix.Length)
             : entityTypeName;
     }
 

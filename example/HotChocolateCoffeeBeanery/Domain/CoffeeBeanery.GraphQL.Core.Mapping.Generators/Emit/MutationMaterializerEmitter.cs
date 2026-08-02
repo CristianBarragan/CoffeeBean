@@ -11,26 +11,6 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Emit;
 
 internal static class MutationMaterializerEmitter
 {
-    // ---------------------------------------------------------------
-    // FIXED: Emit() previously only took `mappings`, and EmitDematerializer
-    // called ColumnIdResolver.Resolve(entityType, columnName) with no
-    // entityGraph. ColumnIdResolver now resolves column indices via
-    // IdEmitter.GetFullColumnOrder (the same method IdEmitter.EmitColumnIds
-    // uses for ColumnId.* and PlannerEmitter now uses for every join/column
-    // index it bakes into GeneratedPlanners) — which requires both
-    // `mappings` and `entityGraph` to correctly include PK-first insertion
-    // and entityGraph-derived dependent-side FK columns. Without
-    // entityGraph, a field whose column only exists because of an FK-graph
-    // edge (not a FieldMaps-declared scalar or PK) would fail to resolve.
-    // Both are now threaded through from Emit() into EmitDematerializer,
-    // matching the same call shape used by PlannerEmitter and
-    // MutationMetadataEmitter.
-    //
-    // NOTE: the caller of MutationMaterializerEmitter.Emit(...) (wherever
-    // the source generator drives this file, not shown here) needs to be
-    // updated to pass the same entityGraph it already threads into
-    // PlannerEmitter.Emit / MutationMetadataEmitter.Emit.
-    // ---------------------------------------------------------------
     public static string Emit(
         ImmutableArray<MappingClassInfo> mappings,
         List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)

@@ -44,9 +44,17 @@ public readonly struct UpsertRow
 
     /// <summary>
     /// Foreign-key values resolved from another table using a natural key.
-    /// When non-empty the SQL writer should emit INSERT ... SELECT instead of INSERT ... VALUES.
+    /// When non-empty the SQL writer should emit INSERT ... SELECT instead
+    /// of INSERT ... VALUES.
     /// </summary>
     public readonly ImmutableArray<LookupValue> Lookups;
+
+    /// <summary>
+    /// Columns that participate in the ON CONFLICT clause.
+    /// These are resolved during planning so the SQL writer
+    /// never has to consult metadata again.
+    /// </summary>
+    public readonly ImmutableArray<ConflictColumn> ConflictColumns;
 
     public readonly string? SchemaOverride;
     public readonly string? TableOverride;
@@ -60,7 +68,8 @@ public readonly struct UpsertRow
         ImmutableArray<FieldValue> values,
         string? schemaOverride = null,
         string? tableOverride = null,
-        ImmutableArray<LookupValue> lookups = default)
+        ImmutableArray<LookupValue> lookups = default,
+        ImmutableArray<ConflictColumn> conflictColumns = default)
     {
         EntityId = entityId;
         StorageEntityId = storageEntityId;
@@ -71,13 +80,35 @@ public readonly struct UpsertRow
                 ? ImmutableArray<FieldValue>.Empty
                 : values;
 
-        SchemaOverride = schemaOverride;
-        TableOverride = tableOverride;
-
         Lookups =
             lookups.IsDefault
                 ? ImmutableArray<LookupValue>.Empty
                 : lookups;
+
+        ConflictColumns =
+            conflictColumns.IsDefault
+                ? ImmutableArray<ConflictColumn>.Empty
+                : conflictColumns;
+
+        SchemaOverride = schemaOverride;
+        TableOverride = tableOverride;
+    }
+}
+
+public readonly struct ConflictColumn
+{
+    public readonly ushort FieldId;
+    public readonly ushort ColumnId;
+    public readonly string ColumnName;
+
+    public ConflictColumn(
+        ushort fieldId,
+        ushort columnId,
+        string columnName)
+    {
+        FieldId = fieldId;
+        ColumnId = columnId;
+        ColumnName = columnName;
     }
 }
 
@@ -140,8 +171,7 @@ public readonly struct MutationCteNode
     public readonly ImmutableArray<MutationCteNode> Children;
     public readonly string? SchemaOverride;
     public readonly string? TableOverride;
-    public readonly ImmutableArray<string> ConflictColumns;
-
+    public readonly ImmutableArray<ConflictColumn> ConflictColumns;
 
     public MutationCteNode(
         ushort entityId,
@@ -151,7 +181,7 @@ public readonly struct MutationCteNode
         ImmutableArray<MutationCteNode> children,
         string? schemaOverride = null,
         string? tableOverride = null,
-        ImmutableArray<string> conflictColumns = default)
+        ImmutableArray<ConflictColumn> conflictColumns = default)
     {
         EntityId = entityId;
         StorageEntityId = storageEntityId;
@@ -163,7 +193,7 @@ public readonly struct MutationCteNode
 
         ConflictColumns =
             conflictColumns.IsDefault
-                ? ImmutableArray<string>.Empty
+                ? ImmutableArray<ConflictColumn>.Empty
                 : conflictColumns;
     }
 }

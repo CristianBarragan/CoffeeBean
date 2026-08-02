@@ -156,7 +156,7 @@ public static class MutationRuntimePlanner
                         ImmutableArray<MutationCteNode>.Empty,
                         null,
                         null,
-                        ImmutableArray<string>.Empty));
+                        ImmutableArray<ConflictColumn>.Empty));
             }
         }
 
@@ -412,6 +412,21 @@ public static class MutationRuntimePlanner
                 ? navigationAlias
                 : node.OutputAlias;
 
+        var conflictColumns =
+            ImmutableArray.CreateBuilder<ConflictColumn>();
+
+        foreach (var primaryColumn in metadata.PrimaryColumns)
+        {
+            var conflictValue =
+                pair.Value.FirstOrDefault(v =>
+                    v.FieldId == primaryColumn.FieldId);
+
+            if (conflictValue.FieldId == 0)
+                continue;
+
+            conflictColumns.Add(primaryColumn);
+        }
+
         builder.AddRow(
             entityId,
             pair.Key,
@@ -420,11 +435,10 @@ public static class MutationRuntimePlanner
             null,
             null,
             lookups?.ToImmutable()
-                ?? ImmutableArray<LookupValue>.Empty);
+                ?? ImmutableArray<LookupValue>.Empty,
+            conflictColumns.ToImmutable());
     }
 }
-
-
 
     private static void EmitGraphMerge(
         in MutationIR node,
@@ -532,7 +546,7 @@ public static class MutationRuntimePlanner
             metadata.GraphToColumn!,
             toKey,
             metadata.PrimaryColumns.Length > 0
-                ? metadata.PrimaryColumns[0]
+                ? metadata.PrimaryColumns[0].ColumnName
                 : string.Empty,
             edgeKey,
             properties.ToImmutable());

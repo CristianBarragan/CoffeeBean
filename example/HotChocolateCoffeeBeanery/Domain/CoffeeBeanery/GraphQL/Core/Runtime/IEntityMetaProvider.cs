@@ -11,7 +11,7 @@
         string[][] Schema { get; }
         string[][] ColumnName { get; }
         string[][] FieldName { get; }
-        string[][] EntityConflictColumns { get; }
+        ConflictColumn[][] EntityConflictColumns { get; }
         CteResolutionSpec[][] CteResolutions { get; }
 
         // ---- Storage-entity-keyed (indexed by StorageEntityId.*) ----

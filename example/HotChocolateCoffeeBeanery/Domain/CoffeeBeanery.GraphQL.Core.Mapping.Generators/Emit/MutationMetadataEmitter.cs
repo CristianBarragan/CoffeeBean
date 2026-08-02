@@ -409,188 +409,134 @@ BuildGraphEdgeCteResolutions(
 
 
     foreach (var endpoint in endpoints)
-    {
-        var relatedEntity =
-            ExtractEntity(
-                endpoint.ForeignKey);
+{
+    var foreignKeyColumn =
+        ExtractColumn(
+            endpoint.ForeignKey);
 
+    var endpointEntity =
+        string.Equals(
+            endpoint.NavigationAlias,
+            info.Graph.From.Alias,
+            StringComparison.OrdinalIgnoreCase)
+                ? info.Graph.From.Label
+                : info.Graph.To.Label;
 
+    var relatedMapping =
+        allMappings.FirstOrDefault(x =>
+            !ReferenceEquals(x, info) &&
+            x.Definition.Entities.Any(e =>
+                e.IsPrimary &&
+                e.EntityType != null &&
+                string.Equals(
+                    IdEmitter.StripEntitySuffix(
+                        e.EntityType.Name),
+                    endpointEntity,
+                    StringComparison.OrdinalIgnoreCase)));
 
-        var foreignKeyColumn =
-            ExtractColumn(
-                endpoint.ForeignKey);
+    if (relatedMapping == null)
+        continue;
 
+    var relatedEntityType =
+        relatedMapping.Definition.Entities
+            .Where(e => e.EntityType != null)
+            .Select(e => e.EntityType!)
+            .FirstOrDefault(e =>
+                string.Equals(
+                    IdEmitter.StripEntitySuffix(
+                        e.Name),
+                    endpointEntity,
+                    StringComparison.OrdinalIgnoreCase));
 
+    if (relatedEntityType == null)
+        continue;
 
-        MappingClassInfo? relatedMapping = null;
+    var relatedEntity =
+        IdEmitter.StripEntitySuffix(
+            relatedEntityType.Name);
 
+    var relatedNaturalKeyColumn =
+        ResolvePrimaryKeyColumn(
+            relatedMapping);
 
+    var relatedSurrogateColumn =
+        MetadataEmitter.GetPkPropertyName(
+            relatedEntityType);
 
-        if (!string.IsNullOrWhiteSpace(relatedEntity))
-        {
-            relatedMapping =
-                allMappings.FirstOrDefault(x =>
-                    x.ModelType != null &&
-                    string.Equals(
-                        IdEmitter.StripEntitySuffix(
-                            x.ModelType.Name),
-                        relatedEntity,
-                        StringComparison.OrdinalIgnoreCase));
-        }
+    var owningPrimaryKeyColumn =
+        ResolvePrimaryKeyColumn(
+            info);
 
+    //
+    // IMPORTANT:
+    // Foreign key belongs to the related vertex entity.
+    // NOT the graph edge entity.
+    //
+    var foreignKeyColumnId =
+        ResolveColumnId(
+            relatedMapping,
+            foreignKeyColumn,
+            allMappings,
+            entityGraph);
 
+    var owningPrimaryKeyColumnId =
+        ResolveColumnId(
+            info,
+            owningPrimaryKeyColumn,
+            allMappings,
+            entityGraph);
 
-        if (relatedMapping == null)
-        {
-            relatedMapping =
-                allMappings.FirstOrDefault(x =>
-                    x.Definition.Entities.Any(e =>
-                        e.EntityType != null &&
-                        string.Equals(
-                            IdEmitter.StripEntitySuffix(
-                                e.EntityType.Name),
-                            IdEmitter.StripEntitySuffix(
-                                endpoint.Field.DestinationEntity),
-                            StringComparison.OrdinalIgnoreCase)));
-        }
+    var relatedNaturalKeyColumnId =
+        ResolveColumnId(
+            relatedMapping,
+            relatedNaturalKeyColumn,
+            allMappings,
+            entityGraph);
 
+    var relatedSurrogateColumnId =
+        ResolveColumnId(
+            relatedMapping,
+            relatedSurrogateColumn,
+            allMappings,
+            entityGraph);
 
+    result.Add(
+        new GraphEdgeCteResolution(
+            NavigationAlias:
+                endpoint.NavigationAlias,
 
-        if (relatedMapping == null)
-            continue;
-
-
-
-        relatedEntity =
-            IdEmitter.StripEntitySuffix(
-                relatedMapping.ModelType!.Name);
-
-
-
-        var relatedNaturalKeyColumn =
-            ResolvePrimaryKeyColumn(
-                relatedMapping);
-
-
-
-        var relatedEntityType =
-            relatedMapping.Definition.Entities
-                .FirstOrDefault(e =>
-                    e.IsPrimary &&
-                    e.EntityType != null)
-                ?.EntityType
-            ??
-            relatedMapping.EntityType
-            ??
-            relatedMapping.Definition.Entities
-                .FirstOrDefault(e =>
-                    e.EntityType != null)
-                ?.EntityType;
-
-
-
-        var relatedSurrogateColumn =
-            relatedEntityType != null
-                ? MetadataEmitter.GetPkPropertyName(
-                    relatedEntityType)
-                : relatedNaturalKeyColumn;
-
-
-
-        var owningPrimaryKeyColumn =
-            ResolvePrimaryKeyColumn(
-                info);
-
-
-
-        //
-        // IMPORTANT:
-        // Foreign key belongs to the related vertex entity.
-        // NOT the graph edge entity.
-        //
-        var foreignKeyColumnId =
-            ResolveColumnId(
-                relatedMapping,
+            ForeignKeyColumn:
                 foreignKeyColumn,
-                allMappings,
-                entityGraph);
 
+            ForeignKeyColumnId:
+                foreignKeyColumnId,
 
-
-        var owningPrimaryKeyColumnId =
-            ResolveColumnId(
-                info,
+            OwningPrimaryKeyColumn:
                 owningPrimaryKeyColumn,
-                allMappings,
-                entityGraph);
 
+            OwningPrimaryKeyColumnId:
+                owningPrimaryKeyColumnId,
 
+            RelatedEntityTypeName:
+                relatedEntity,
 
-        var relatedNaturalKeyColumnId =
-            ResolveColumnId(
-                relatedMapping,
-                relatedNaturalKeyColumn,
-                allMappings,
-                entityGraph);
+            RelatedStorageEntityId:
+                ResolveStorageEntityId(
+                    allMappings,
+                    relatedEntityType),
 
-
-
-        var relatedSurrogateColumnId =
-            ResolveColumnId(
-                relatedMapping,
+            RelatedSurrogateIdColumn:
                 relatedSurrogateColumn,
-                allMappings,
-                entityGraph);
 
+            RelatedSurrogateIdColumnId:
+                relatedSurrogateColumnId,
 
+            RelatedNaturalKeyColumn:
+                relatedNaturalKeyColumn,
 
-        result.Add(
-            new GraphEdgeCteResolution(
-                NavigationAlias:
-                    endpoint.NavigationAlias,
-
-
-                ForeignKeyColumn:
-                    foreignKeyColumn,
-
-
-                ForeignKeyColumnId:
-                    foreignKeyColumnId,
-
-
-                OwningPrimaryKeyColumn:
-                    owningPrimaryKeyColumn,
-
-
-                OwningPrimaryKeyColumnId:
-                    owningPrimaryKeyColumnId,
-
-
-                RelatedEntityTypeName:
-                    relatedEntity,
-
-
-                RelatedStorageEntityId:
-                    ResolveStorageEntityId(
-                        allMappings,
-                        relatedMapping.ModelType!),
-
-
-                RelatedSurrogateIdColumn:
-                    relatedSurrogateColumn,
-
-
-                RelatedSurrogateIdColumnId:
-                    relatedSurrogateColumnId,
-
-
-                RelatedNaturalKeyColumn:
-                    relatedNaturalKeyColumn,
-
-
-                RelatedNaturalKeyColumnId:
-                    relatedNaturalKeyColumnId));
-    }
+            RelatedNaturalKeyColumnId:
+                relatedNaturalKeyColumnId));
+}
 
 
     return result;
@@ -935,6 +881,49 @@ private static string ResolveRelatedSurrogateIdColumn(
     return primaryKey.ColumnKey;
 }
 
+private static void EmitConflictColumnArray(
+    StringBuilder sb,
+    MappingClassInfo info,
+    string modelName,
+    IReadOnlyList<string> keys,
+    ImmutableArray<MappingClassInfo> allMappings,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+{
+    if (keys.Count == 0)
+    {
+        sb.AppendLine(
+            "            ImmutableArray<ConflictColumn>.Empty,");
+
+        return;
+    }
+
+    sb.AppendLine(
+        "            ImmutableArray.Create(");
+
+    for (var i = 0; i < keys.Count; i++)
+    {
+        var key = keys[i];
+
+        var comma =
+            i < keys.Count - 1
+                ? ","
+                : "";
+
+        var columnId =
+            ResolveColumnId(
+                info,
+                key,
+                allMappings,
+                entityGraph);
+
+        sb.AppendLine(
+            $"                new ConflictColumn(FieldId.{modelName}.{key}, {columnId}, \"{Escape(key)}\"){comma}");
+    }
+
+    sb.AppendLine(
+        "            ),");
+}
+
     private static void EmitFactory(
     StringBuilder sb,
     MappingClassInfo info,
@@ -1082,31 +1071,55 @@ private static string ResolveRelatedSurrogateIdColumn(
 
                 var index =
                     navigationTargets.IndexOf(target);
-
-
-
-                var fk =
+                
+                var alias =
                     index == 0
-                        ? info.Graph!.From.ForeignKeyColumn
-                        : info.Graph!.To.ForeignKeyColumn;
+                        ? info.Graph!.From.Alias
+                        : info.Graph!.To.Alias;
 
+                var owningEntityType =
+                    info.Definition.Entities
+                        .FirstOrDefault(e => e.IsPrimary && e.EntityType != null)
+                        ?.EntityType;
 
+                var relatedEntityTypeForFk =
+                    info.Definition.Entities
+                        .FirstOrDefault(e =>
+                            e.EntityType != null &&
+                            string.Equals(
+                                IdEmitter.StripEntitySuffix(e.EntityType.Name),
+                                storageEntityName,
+                                StringComparison.OrdinalIgnoreCase))
+                        ?.EntityType;
 
-                var parts =
-                    fk.Split(
-                        new[] { '.' },
-                        StringSplitOptions.RemoveEmptyEntries);
+                var expectedFkColumn =
+                    !string.IsNullOrWhiteSpace(alias)
+                        ? alias + "Id"
+                        : null;
 
-
-
-                if (parts.Length == 2)
+                if (owningEntityType != null &&
+                    relatedEntityTypeForFk != null &&
+                    expectedFkColumn != null)
                 {
-                    storageEntityName =
-                        IdEmitter.StripEntitySuffix(
-                            parts[0]);
+                    var fkEdge =
+                        entityGraph.FirstOrDefault(e =>
+                            SymbolEqualityComparer.Default.Equals(
+                                e.DependentEntity, owningEntityType) &&
+                            SymbolEqualityComparer.Default.Equals(
+                                e.PrincipalEntity, relatedEntityTypeForFk) &&
+                            string.Equals(
+                                e.DependentColumn,
+                                expectedFkColumn,
+                                StringComparison.OrdinalIgnoreCase));
 
-                    columnName =
-                        parts[1];
+                    if (fkEdge != null)
+                    {
+                        storageEntityName =
+                            IdEmitter.StripEntitySuffix(owningEntityType.Name);
+
+                        columnName =
+                            fkEdge.DependentColumn;
+                    }
                 }
             }
 
@@ -1205,14 +1218,15 @@ private static string ResolveRelatedSurrogateIdColumn(
 
 
 
-    EmitStringArray(
+    EmitConflictColumnArray(
         sb,
+        info,
+        modelName,
         isComposite
-            ? info.UpsertKeys
-                .Select(x => x.Key)
-                .Distinct()
-                .ToList()
-            : primaryColumns);
+            ? info.UpsertKeys.Select(x => x.Key).Distinct().ToList()
+            : primaryColumns,
+        allMappings,
+        entityGraph);
 
 
 
@@ -1470,45 +1484,6 @@ private static string ResolveRelatedSurrogateIdColumn(
         $"on storage entity '{storageEntityName}' " +
         $"for field '{field.SourceName}'.");
 }
-
-    private static void EmitStringArray(
-        StringBuilder sb,
-        IReadOnlyList<string> values)
-    {
-        if (values.Count == 0)
-        {
-            sb.AppendLine(
-                "            ImmutableArray<string>.Empty,");
-
-            return;
-        }
-
-
-
-        sb.AppendLine(
-            "            ImmutableArray.Create<string>(" +
-            string.Join(
-                ", ",
-                values.Select(x =>
-                    $"\"{Escape(x)}\"")) +
-            "),");
-    }
-
-    private static bool IsPrimaryKeyColumn(
-        MappingClassInfo info,
-        FieldInfo field)
-    {
-        return info.Definition.PrimaryKey.Any(pk =>
-            string.Equals(
-                IdEmitter.StripEntitySuffix(pk.Entity.Name),
-                IdEmitter.StripEntitySuffix(field.DestinationEntity),
-                StringComparison.OrdinalIgnoreCase)
-            &&
-            string.Equals(
-                pk.ColumnKey,
-                field.DestinationName,
-                StringComparison.OrdinalIgnoreCase));
-    }
     
     private static void EmitStorageEntities(
     StringBuilder sb,
