@@ -14,26 +14,18 @@ namespace Domain.Shared;
 /// </summary>
 public interface IGraphStrategy
 {
-    /// <summary>
-    /// Appends a join that resolves graph edges into tabular from/to key
-    /// columns aliased as join.JoinAlias, joined back to primaryOutputAlias
-    /// on join.EdgeKeyColumn.
-    /// </summary>
-    void AppendGraphJoin(StringBuilder sb, in GraphJoinSpec join, string primaryOutputAlias);
+    void AppendGraphJoin(
+        StringBuilder sb,
+        in GraphJoinSpec join,
+        string primaryOutputAlias);
 
-    /// <summary>
-    /// Appends a join that resolves a column living on a graph subquery's
-    /// output (rather than a stored ColumnId) — mirrors a normal join but
-    /// for edge-derived columns.
-    /// </summary>
-    void AppendGraphResultJoin(StringBuilder sb, in GraphResultJoinSpec join);
+    void AppendGraphResultJoin(
+        StringBuilder sb,
+        in GraphResultJoinSpec join);
 
-    /// <summary>
-    /// Produces the statement(s) that merge (upsert) a graph edge. Returns
-    /// a single string; multi-statement strategies join their parts
-    /// internally.
-    /// </summary>
-    string BuildGraphMerge(in GraphMergeSpec spec);
+    string BuildGraphMerge(
+        int index,
+        in GraphMergeSpec spec);
 }
 
 public sealed class ApacheAgeGraphStrategy : IGraphStrategy
@@ -132,26 +124,10 @@ public sealed class ApacheAgeGraphStrategy : IGraphStrategy
             .Append(join.FromColumnName)
             .Append('"');
     }
-
-    // public string BuildGraphMerge(in GraphMergeSpec spec)
-    // {
-    //     var setClause = BuildGraphSetClause(spec.EdgeKeyColumn, spec.EdgeKeyValue, spec.EdgeProperties);
-    //     return $@"
-    //             ;CREATE TEMP TABLE temp_merge AS SELECT 1 
-    //             FROM ag_catalog.cypher(
-    //                 '{spec.GraphName}',
-    //                 $$
-    //                 MERGE (a:{spec.FromLabel} {{ {spec.FromKeyColumn}: '{EscapeCypherValue(spec.FromKeyValue)}' }})
-    //                 MERGE (b:{spec.ToLabel} {{ {spec.ToKeyColumn}: '{EscapeCypherValue(spec.ToKeyValue)}' }})
-    //                 MERGE (a)-[r:{spec.EdgeLabel}]->(b)
-    //                 {setClause}
-    //                 RETURN r.{spec.EdgeLabel}::text
-    //                 $$
-    //             ) AS (r text); DROP TABLE temp_merge;
-    //             ";
-    // }
     
-    public string BuildGraphMerge(in GraphMergeSpec spec)
+    public string BuildGraphMerge(
+        int index,
+        in GraphMergeSpec spec)
     {
         var setClause =
             BuildGraphSetClause(
@@ -160,17 +136,20 @@ public sealed class ApacheAgeGraphStrategy : IGraphStrategy
                 spec.EdgeProperties);
 
         return $@"
-SELECT 1
-FROM ag_catalog.cypher(
-    '{spec.GraphName}',
-    $$
-    MERGE (a:{spec.FromLabel} {{ {spec.FromKeyColumn}: '{EscapeCypherValue(spec.FromKeyValue)}' }})
-    MERGE (b:{spec.ToLabel} {{ {spec.ToKeyColumn}: '{EscapeCypherValue(spec.ToKeyValue)}' }})
-    MERGE (a)-[r:{spec.EdgeLabel}]->(b)
-    {setClause}
-    RETURN r.{spec.EdgeLabel}::text
-    $$
-) AS (r text)";
+merge_{index} AS
+(
+    SELECT 1
+    FROM ag_catalog.cypher(
+        '{spec.GraphName}',
+        $$
+        MERGE (a:{spec.FromLabel} {{ {spec.FromKeyColumn}: '{EscapeCypherValue(spec.FromKeyValue)}' }})
+        MERGE (b:{spec.ToLabel} {{ {spec.ToKeyColumn}: '{EscapeCypherValue(spec.ToKeyValue)}' }})
+        MERGE (a)-[r:{spec.EdgeLabel}]->(b)
+        {setClause}
+        RETURN 1
+        $$
+    ) AS (dummy integer)
+)";
     }
 
     private static string BuildGraphSetClause(
@@ -205,27 +184,26 @@ FROM ag_catalog.cypher(
         value.Replace("\\", "\\\\").Replace("'", "\\'");
 }
 
-/// <summary>
-/// Placeholder for a relational-edge-table graph strategy. NOT a working
-/// implementation — every method throws. Wiring depends on confirming
-/// whether an edge table already exists (name/columns) and whether
-/// "recursive CTE" here means true variable-depth traversal (WITH RECURSIVE
-/// over an edges table) or just a non-recursive CTE replacing a single-hop
-/// Cypher MATCH. Both open questions block writing this for real.
-/// </summary>
 public sealed class RecursiveCteGraphStrategy : IGraphStrategy
 {
-    public void AppendGraphJoin(StringBuilder sb, in GraphJoinSpec join, string primaryOutputAlias)
+    public void AppendGraphJoin(
+        StringBuilder sb,
+        in GraphJoinSpec join,
+        string primaryOutputAlias)
         => throw new NotImplementedException(
             "RecursiveCteGraphStrategy.AppendGraphJoin: needs the relational edge table's schema " +
             "(table/column names) and confirmation of whether traversal depth is fixed at one hop " +
             "or variable, before this can be written.");
 
-    public void AppendGraphResultJoin(StringBuilder sb, in GraphResultJoinSpec join)
+    public void AppendGraphResultJoin(
+        StringBuilder sb,
+        in GraphResultJoinSpec join)
         => throw new NotImplementedException(
             "RecursiveCteGraphStrategy.AppendGraphResultJoin: same blocker as AppendGraphJoin.");
 
-    public string BuildGraphMerge(in GraphMergeSpec spec)
+    public string BuildGraphMerge(
+        int index,
+        in GraphMergeSpec spec)
         => throw new NotImplementedException(
             "RecursiveCteGraphStrategy.BuildGraphMerge: needs the edge table's schema to build an " +
             "INSERT ... ON CONFLICT against it instead of a Cypher MERGE.");

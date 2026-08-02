@@ -331,6 +331,62 @@ internal static class PlannerEmitter
             if (joinPath == null)
                 continue;
 
+            // ---------------------------------------------------------------
+            // FIXED: this navigation's joins used to be emitted
+            // unconditionally — every navigation the model supports
+            // (Product, ContactPoint, customerBankingRelationship,
+            // customerCustomerEdge, ...) got baked into Build() as a
+            // flat, always-executed builder.AddJoin(...) sequence,
+            // regardless of whether any given query's selection set
+            // actually asked for that nested field. That's real, wasted
+            // work per query (extra LEFT JOINs the planner, and the
+            // database, have to process for data nobody selected) and is
+            // exactly the "too many visits to the same entities" pattern —
+            // EmitGraphVertexResultJoins already avoids this for graph
+            // joins by checking node.Children at runtime before emitting;
+            // this applies the same pattern here; a navigation's join
+            // chain is only executed when node.Children actually contains
+            // a child whose OutputAlias matches this navigation, i.e. the
+            // navigation was genuinely part of the requested selection.
+            // ---------------------------------------------------------------
+            var navigationRequested =
+                $"__hasChild_{navigation.NavigationName}";
+
+            sb.AppendLine(
+                $"            var {navigationRequested} = false;");
+
+            sb.AppendLine(
+                "            foreach (var __navChild in node.Children)");
+
+            sb.AppendLine(
+                "            {");
+
+            sb.AppendLine(
+                $"                if (string.Equals(__navChild.OutputAlias, \"{navigation.NavigationName}\", System.StringComparison.OrdinalIgnoreCase))");
+
+            sb.AppendLine(
+                "                {");
+
+            sb.AppendLine(
+                $"                    {navigationRequested} = true;");
+
+            sb.AppendLine(
+                "                    break;");
+
+            sb.AppendLine(
+                "                }");
+
+            sb.AppendLine(
+                "            }");
+
+            sb.AppendLine();
+
+            sb.AppendLine(
+                $"            if ({navigationRequested})");
+
+            sb.AppendLine(
+                "            {");
+
             var aliasByEntity =
                 new Dictionary<INamedTypeSymbol, string>(
                     SymbolEqualityComparer.Default);
@@ -468,6 +524,9 @@ internal static class PlannerEmitter
 
                 index++;
             }
+
+            sb.AppendLine(
+                "            }");
         }
     }
     

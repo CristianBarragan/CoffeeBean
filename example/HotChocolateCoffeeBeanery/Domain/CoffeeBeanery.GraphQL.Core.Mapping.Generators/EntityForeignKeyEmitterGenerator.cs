@@ -124,11 +124,38 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators
                             return;
 
 
+                        // ---------------------------------------------------------
+                        // FIXED: ToDisplayString() on a nullable-annotated reference
+                        // type (e.g. Account.Contract is declared `Contract? Contract`)
+                        // includes a trailing '?' in its output — e.g.
+                        // "Database.Entity.Contract?" instead of
+                        // "Database.Entity.Contract". That '?' is not part of the CLR
+                        // metadata name, so GetTypeByMetadataName(...) on the read side
+                        // (EntityForeignKeyGraph.Build) silently fails to resolve it and
+                        // drops the edge entirely — with no crash, just a missing FK
+                        // edge for every entity whose relevant navigation property
+                        // happens to be nullable-annotated. This was the actual root
+                        // cause of Contract's AccountId FK never appearing in the
+                        // generated column/join output: it had no non-annotated
+                        // duplicate to fall back on, unlike a few other entities in this
+                        // graph that happened to get serialized from both a nullable and
+                        // non-nullable navigation direction.
+                        //
+                        // Stripping the trailing '?' here (at serialization) is the real
+                        // fix; EntityForeignKeyGraph.Build also strips defensively on
+                        // the read side in case any other producer of this format makes
+                        // the same mistake in the future.
+                        // ---------------------------------------------------------
+                        static string StripNullableAnnotation(string typeName) =>
+                            typeName.EndsWith("?", StringComparison.Ordinal)
+                                ? typeName.Substring(0, typeName.Length - 1)
+                                : typeName;
+
                         var edgeLines =
                             result.Keys.Select(k =>
-                                $"{k.DeclaringEntityType.ToDisplayString()}|" +
+                                $"{StripNullableAnnotation(k.DeclaringEntityType.ToDisplayString())}|" +
                                 $"{k.RawForeignKeyColumn}|" +
-                                $"{k.RelatedEntityType.ToDisplayString()}|" +
+                                $"{StripNullableAnnotation(k.RelatedEntityType.ToDisplayString())}|" +
                                 $"{k.RawPrincipalKeyColumn}");
 
 

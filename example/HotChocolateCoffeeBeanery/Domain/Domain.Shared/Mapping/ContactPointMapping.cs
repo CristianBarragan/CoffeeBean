@@ -12,52 +12,19 @@ public partial class ContactPointMapping : IMappingDefinition
 
         Schema = nameof(DataEntity.Schema.Banking),
 
-        Entities =
-        [
-            new()
-            {
-                Entity = typeof(DataEntity.ContactPoint),
+        Entity = typeof(DataEntity.ContactPoint),
 
-                ModelKey =
-                    nameof(ContactPoint.ContactPointKey),
-
-                EntityKey =
-                    nameof(DataEntity.ContactPoint.ContactPointKey),
-
-                IsPrimary = true
-            }
-        ],
-        PrimaryKey = [new()
-        {
-            Entity = typeof(DataEntity.ContactPoint),
-        
-            // ModelKey = nameof(ContactPoint.ContactPointKey),
-            ColumnKey = 
-                nameof(DataEntity.ContactPoint.Id)
-        }],
-        UpsertKeys =
-        [
-            new()
-            {
-                Entity = typeof(DataEntity.ContactPoint),
-
-                Column =
-                    nameof(DataEntity.ContactPoint.ContactPointKey)
-            }
-        ],
+        Key = nameof(ContactPoint.ContactPointKey),
 
         Fields =
         [
             new()
             {
-                Source =
-                    nameof(ContactPoint.ContactPointType),
+                Source = nameof(ContactPoint.ContactPointType),
 
-                Entity =
-                    typeof(DataEntity.ContactPoint),
+                Entity = typeof(DataEntity.ContactPoint),
 
-                Destination =
-                    nameof(DataEntity.ContactPoint.ContactPointType),
+                Destination = nameof(DataEntity.ContactPoint.ContactPointType),
 
                 EnumMapping =
                     new EnumMappingDefinition<

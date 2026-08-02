@@ -165,41 +165,48 @@
             var sb =
                 new StringBuilder();
 
-
             var ctes =
                 BuildMutationCtes(mutation);
 
+            var graphCtes =
+                CollectGraphMergeCtes(mutation);
 
-
-            if (ctes.Count > 0)
+            if (ctes.Count > 0 || graphCtes.Count > 0)
             {
                 sb.AppendLine("WITH");
 
+                var first = true;
 
-                for (var i = 0;
-                     i < ctes.Count;
-                     i++)
+                foreach (var cte in ctes)
                 {
-                    sb.Append(ctes[i]);
-
-
-                    if (i < ctes.Count - 1)
+                    if (!first)
                     {
                         sb.AppendLine(",");
                     }
+
+                    sb.Append(cte);
+
+                    first = false;
                 }
 
+                foreach (var cte in graphCtes)
+                {
+                    if (!first)
+                    {
+                        sb.AppendLine(",");
+                    }
+
+                    sb.Append(cte);
+
+                    first = false;
+                }
 
                 sb.AppendLine();
             }
 
-
-
             AppendSelect(
                 sb,
                 query);
-
-
 
             return sb.ToString();
         }
@@ -476,6 +483,7 @@
             var seen =
                 new HashSet<GraphMergeKey>();
 
+            var index = 0;
 
             foreach (var merge in plan.GraphMerges)
             {
@@ -493,15 +501,16 @@
                         merge.EdgeKeyValue,
                         merge.EdgePropertiesHash);
 
-
                 if (!seen.Add(key))
+                {
                     continue;
-
+                }
 
                 result.Add(
-                    _graphStrategy.BuildGraphMerge(merge));
+                    _graphStrategy.BuildGraphMerge(
+                        index++,
+                        merge));
             }
-
 
             return result;
         }
@@ -535,36 +544,33 @@
             var sb =
                 new StringBuilder();
 
-
             var arms =
                 CollectUpsertArms(plan);
-
 
             for (var i = 0; i < arms.Count; i++)
             {
                 if (i > 0)
+                {
                     sb.AppendLine(";");
-
+                }
 
                 sb.Append(
                     arms[i]);
             }
 
-
             var graphSql =
                 WriteGraphMerges(plan);
-
 
             if (!string.IsNullOrWhiteSpace(graphSql))
             {
                 if (sb.Length > 0)
+                {
                     sb.AppendLine(";");
-
+                }
 
                 sb.Append(
                     graphSql.TrimEnd());
             }
-
 
             return sb.ToString();
         }
@@ -573,34 +579,45 @@
         public string WriteGraphMerges(
             in MutationPlan plan)
         {
-            var sb = new StringBuilder();
+            var sb =
+                new StringBuilder();
 
-            var seen = new HashSet<GraphMergeKey>();
+            var seen =
+                new HashSet<GraphMergeKey>();
+
+            var index = 0;
 
             foreach (var merge in plan.GraphMerges)
             {
-                var key = new GraphMergeKey(
-                    merge.GraphName,
-                    merge.EdgeLabel,
-                    merge.FromLabel,
-                    merge.FromKeyColumn,
-                    merge.FromKeyValue,
-                    merge.ToLabel,
-                    merge.ToKeyColumn,
-                    merge.ToKeyValue,
-                    merge.EdgeKeyColumn,
-                    merge.EdgeKeyValue,
-                    GraphMergeKey.NormalizeProperties(
-                        merge.EdgeProperties));
+                var key =
+                    new GraphMergeKey(
+                        merge.GraphName,
+                        merge.EdgeLabel,
+                        merge.FromLabel,
+                        merge.FromKeyColumn,
+                        merge.FromKeyValue,
+                        merge.ToLabel,
+                        merge.ToKeyColumn,
+                        merge.ToKeyValue,
+                        merge.EdgeKeyColumn,
+                        merge.EdgeKeyValue,
+                        GraphMergeKey.NormalizeProperties(
+                            merge.EdgeProperties));
 
                 if (!seen.Add(key))
+                {
                     continue;
+                }
 
                 if (sb.Length > 0)
-                    sb.AppendLine(";");
+                {
+                    sb.AppendLine(",");
+                }
 
                 sb.Append(
-                    _graphStrategy.BuildGraphMerge(merge));
+                    _graphStrategy.BuildGraphMerge(
+                        index++,
+                        merge));
             }
 
             return sb.ToString();

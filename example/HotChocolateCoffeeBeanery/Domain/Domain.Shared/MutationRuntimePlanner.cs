@@ -329,6 +329,9 @@ public static class MutationRuntimePlanner
     var groupedLookups =
         new Dictionary<ushort, ImmutableArray<LookupValue>.Builder>();
 
+    var groupedAliases =
+        new Dictionary<ushort, string>();
+
     foreach (var value in values)
     {
         if (!metadata.TryResolveFields(
@@ -362,18 +365,6 @@ public static class MutationRuntimePlanner
                     lookupGroup;
             }
 
-            //
-            // Cross-storage FK / navigation-key lookup — checked FIRST,
-            // for every target regardless of IsNavigationKey. A field
-            // with a matching CteUpdateMeta entry must ALWAYS resolve
-            // via JOIN lookup, never as a literal value. Previously the
-            // IsNavigationKey check ran first and unconditionally
-            // `continue`d, which skipped this matching logic entirely —
-            // the field's raw value (e.g. InnerCustomerKey's Guid) was
-            // silently dropped instead of producing a JOIN, and the
-            // placeholder ColumnId 0 from a DIFFERENT field ended up
-            // being inserted as a literal value instead.
-            //
             var spec =
                 metadata.CteUpdateMeta.FirstOrDefault(x =>
                     string.Equals(
@@ -383,32 +374,27 @@ public static class MutationRuntimePlanner
 
             if (spec != null)
             {
+                groupedAliases[target.StorageEntityId] =
+                    spec.NavigationAlias;
+
                 lookupGroup.Add(
                     new LookupValue(
                         target.ColumnId,
-                        metadata.StorageEntityId,
+                        spec.RelatedStorageEntityId,
                         spec.RelatedNaturalKeyColumnId,
                         spec.RelatedSurrogateIdColumnId,
                         value.RawValue,
-                        spec.NavigationAlias + spec.RelatedEntityTypeName));
+                        spec.NavigationAlias +
+                        spec.RelatedEntityTypeName));
 
                 continue;
             }
 
-            //
-            // Navigation fields with no matching CteUpdateMeta entry are
-            // pure metadata (no real column, e.g. graph-edge endpoint
-            // keys resolved entirely via the graph merge) — never emit
-            // as a literal INSERT value.
-            //
             if (target.IsNavigationKey)
             {
                 continue;
             }
 
-            //
-            // Normal column — literal value on this storage table.
-            //
             valueGroup.Add(value);
         }
     }
@@ -419,10 +405,17 @@ public static class MutationRuntimePlanner
             pair.Key,
             out var lookups);
 
+        var alias =
+            groupedAliases.TryGetValue(
+                pair.Key,
+                out var navigationAlias)
+                ? navigationAlias
+                : node.OutputAlias;
+
         builder.AddRow(
             entityId,
             pair.Key,
-            node.OutputAlias,
+            alias,
             pair.Value.ToImmutable(),
             null,
             null,

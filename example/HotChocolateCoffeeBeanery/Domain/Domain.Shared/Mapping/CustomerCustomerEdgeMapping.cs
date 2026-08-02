@@ -44,6 +44,7 @@ public partial class CustomerCustomerEdgeMapping : IMappingDefinition
             new()
             {
                 Entity = typeof(DataEntity.Customer),
+
                 ModelKey =
                     nameof(CustomerCustomerEdge.OuterCustomerKey),
 
@@ -52,79 +53,6 @@ public partial class CustomerCustomerEdgeMapping : IMappingDefinition
 
                 AliasProperty =
                     nameof(CustomerCustomerEdge.OuterCustomer)
-            }
-        ],
-        PrimaryKey =
-        [
-            new()
-            {
-                Entity = typeof(DataEntity.CustomerCustomerRelationship),
-        
-                // ModelKey =
-                //     nameof(DataEntity.CustomerCustomerRelationship.CustomerCustomerRelationshipKey),
-        
-                ColumnKey =
-                    nameof(DataEntity.CustomerCustomerRelationship.CustomerCustomerRelationshipKey)
-            }
-        ],
-        UpsertKeys =
-        [
-            new()
-            {
-                Entity =
-                    typeof(DataEntity.CustomerCustomerRelationship),
-
-                Column =
-                    nameof(DataEntity.CustomerCustomerRelationship.CustomerCustomerRelationshipKey)
-            }
-        ],
-        Fields =
-        [
-            new()
-            {
-                Source =
-                    nameof(CustomerCustomerEdge.CustomerCustomerRelationshipType),
-
-                Entity =
-                    typeof(DataEntity.CustomerCustomerRelationship),
-
-                Destination =
-                    nameof(DataEntity.CustomerCustomerRelationship.CustomerCustomerRelationshipType),
-
-                EnumMapping =
-                    new EnumMappingDefinition
-                    <
-                        CustomerCustomerRelationshipType,
-                        DataEntity.CustomerCustomerRelationshipType
-                    >()
-            },
-
-            new()
-            {
-                Source =
-                    nameof(CustomerCustomerEdge.InnerCustomerKey),
-
-                Entity =
-                    typeof(DataEntity.Customer),
-
-                Destination =
-                    nameof(DataEntity.Customer.CustomerKey),
-
-                IsNavigationKey = true
-            },
-
-            new()
-            {
-                Source =
-                    nameof(CustomerCustomerEdge.OuterCustomerKey),
-
-                Entity =
-                    typeof(DataEntity.Customer),
-
-                Destination =
-                    nameof(DataEntity.Customer.CustomerKey),
-
-                IsNavigationKey = true
             }
         ],
 
@@ -167,6 +95,54 @@ public partial class CustomerCustomerEdgeMapping : IMappingDefinition
                 FromJoinColumn = nameof(Customer.CustomerKey),
 
                 ToJoinColumn = nameof(Customer.CustomerKey)
+            },
+
+        Fields =
+        [
+            new()
+            {
+                Source =
+                    nameof(CustomerCustomerEdge.CustomerCustomerRelationshipType),
+
+                Entity =
+                    typeof(DataEntity.CustomerCustomerRelationship),
+
+                Destination =
+                    nameof(DataEntity.CustomerCustomerRelationship.CustomerCustomerRelationshipType),
+
+                EnumMapping =
+                    new EnumMappingDefinition<
+                        CustomerCustomerRelationshipType,
+                        DataEntity.CustomerCustomerRelationshipType>()
+            },
+
+            new()
+            {
+                Source =
+                    nameof(CustomerCustomerEdge.InnerCustomerKey),
+
+                Entity =
+                    typeof(DataEntity.Customer),
+
+                Destination =
+                    nameof(DataEntity.Customer.CustomerKey),
+
+                IsNavigationKey = true
+            },
+
+            new()
+            {
+                Source =
+                    nameof(CustomerCustomerEdge.OuterCustomerKey),
+
+                Entity =
+                    typeof(DataEntity.Customer),
+
+                Destination =
+                    nameof(DataEntity.Customer.CustomerKey),
+
+                IsNavigationKey = true
             }
+        ]
     };
 }

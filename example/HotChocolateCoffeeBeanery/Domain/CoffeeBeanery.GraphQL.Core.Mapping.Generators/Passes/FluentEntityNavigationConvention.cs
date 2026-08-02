@@ -789,14 +789,33 @@ namespace CoffeeBeanery.GraphQL.Core.Mapping.Generators.Passes
                     }
 
 
+                    // ---------------------------------------------------------------
+                    // FIXED (defense in depth): a metadata name never legitimately
+                    // contains '?' — that's a nullable-reference-type source/display
+                    // annotation, not part of the CLR type name. If a producer of
+                    // this serialized format calls ToDisplayString() on an
+                    // INamedTypeSymbol without suppressing nullable annotations (the
+                    // bug fixed at the source in EntityForeignKeyEmitterGenerator),
+                    // GetTypeByMetadataName silently returns null for a name like
+                    // "Database.Entity.Contract?" and the edge is dropped with only
+                    // a diagnostic — no crash, just a missing FK edge downstream.
+                    // Stripping defensively here means a similar mistake anywhere
+                    // else that produces this format degrades gracefully instead of
+                    // silently losing edges again.
+                    // ---------------------------------------------------------------
+                    static string StripNullableAnnotation(string typeName) =>
+                        typeName.EndsWith("?", StringComparison.Ordinal)
+                            ? typeName.Substring(0, typeName.Length - 1)
+                            : typeName;
+
                     var dependentType =
                         compilation.GetTypeByMetadataName(
-                            parts[0]);
+                            StripNullableAnnotation(parts[0]));
 
 
                     var principalType =
                         compilation.GetTypeByMetadataName(
-                            parts[2]);
+                            StripNullableAnnotation(parts[2]));
 
 
                     if (dependentType == null ||

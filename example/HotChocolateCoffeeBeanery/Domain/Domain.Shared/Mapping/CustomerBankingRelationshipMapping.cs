@@ -12,36 +12,24 @@ public partial class CustomerBankingRelationshipMapping : IMappingDefinition
 
         Schema = nameof(DataEntity.Schema.Banking),
 
-        Entities =
+        Entity = typeof(DataEntity.CustomerBankingRelationship),
+
+        Key = nameof(CustomerBankingRelationship.CustomerBankingRelationshipKey),
+        
+        Fields =
         [
             new()
             {
-                Entity = typeof(DataEntity.CustomerBankingRelationship),
+                Source =
+                    nameof(CustomerBankingRelationship.Contract),
 
-                ModelKey =
-                    nameof(CustomerBankingRelationship.CustomerBankingRelationshipKey),
+                Entity =
+                    typeof(DataEntity.Contract),
 
-                EntityKey =
-                    nameof(DataEntity.CustomerBankingRelationship.CustomerBankingRelationshipKey),
+                Destination =
+                    nameof(DataEntity.Contract.CustomerBankingRelationshipId),
 
-                IsPrimary = true
-            }
-        ],
-        PrimaryKey = [new()
-        {
-            Entity = typeof(DataEntity.CustomerBankingRelationship),
-            // ModelKey = nameof(DataEntity.CustomerBankingRelationship.CustomerBankingRelationshipKey),
-            ColumnKey =
-                nameof(DataEntity.CustomerBankingRelationship.Id)
-        }],
-        UpsertKeys =
-        [
-            new()
-            {
-                Entity = typeof(DataEntity.CustomerBankingRelationship),
-
-                Column =
-                    nameof(DataEntity.CustomerBankingRelationship.CustomerBankingRelationshipKey)
+                IsNavigationKey = true
             }
         ]
     };

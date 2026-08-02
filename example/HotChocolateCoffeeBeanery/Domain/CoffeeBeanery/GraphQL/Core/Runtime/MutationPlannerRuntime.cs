@@ -8,83 +8,136 @@ namespace CoffeeBeanery.GraphQL.Core.Runtime;
 public static class MutationPlannerRuntime
 {
     public static void Build(
-        in MutationIR node,
-        ref MutationPlanBuilder builder,
-        MutationEntityMetadata metadata)
-    {
-        var rows =
-            new Dictionary<
-                MutationRowKey,
-                ImmutableArray<FieldValue>.Builder>();
+    in MutationIR node,
+    ref MutationPlanBuilder builder,
+    MutationEntityMetadata metadata)
+{
+    var valuesByRow =
+        new Dictionary<
+            MutationRowKey,
+            ImmutableArray<FieldValue>.Builder>();
 
-        foreach (var value in node.Values)
+    var lookupsByRow =
+        new Dictionary<
+            MutationRowKey,
+            ImmutableArray<LookupValue>.Builder>();
+
+    foreach (var value in node.Values)
+    {
+        if (!metadata.TryResolveField(
+                value.FieldId,
+                out var field))
         {
-            if (!metadata.TryResolveField(
-                    value.FieldId,
-                    out var field))
+            continue;
+        }
+
+        //
+        // Navigation keys are not written directly.
+        // They become FK lookups.
+        //
+        if (field.IsNavigationKey)
+        {
+            var spec =
+                metadata.CteUpdateMeta.FirstOrDefault(x =>
+                    string.Equals(
+                        x.NavigationAlias + "Key",
+                        field.FieldName,
+                        StringComparison.OrdinalIgnoreCase));
+
+            if (spec == null)
             {
                 continue;
             }
 
-            AddRow(
-                rows,
-                field.EntityId,
-                field.StorageEntityId,
-                node.OutputAlias,
-                new FieldValue(
+            var key =
+                new MutationRowKey(
                     field.EntityId,
-                    value.FieldId,
+                    field.StorageEntityId,
+                    spec.NavigationAlias);
+
+            if (!lookupsByRow.TryGetValue(
+                    key,
+                    out var lookupValues))
+            {
+                lookupValues =
+                    ImmutableArray.CreateBuilder<LookupValue>();
+
+                lookupsByRow[key] = lookupValues;
+            }
+
+            lookupValues.Add(
+                new LookupValue(
                     field.ColumnId,
-                    value.RawValue));
+                    metadata.StorageEntityId,
+                    spec.RelatedNaturalKeyColumnId,
+                    spec.RelatedSurrogateIdColumnId,
+                    value.RawValue,
+                    spec.NavigationAlias +
+                    spec.RelatedEntityTypeName));
+
+            continue;
         }
 
-
-        foreach (var child in node.Children)
-        {
-            Build(
-                child,
-                ref builder,
-                metadata);
-        }
-
-
-        foreach (var row in rows)
-        {
-            builder.AddRow(
-                row.Key.EntityId,
-                row.Key.StorageEntityId,
-                row.Key.Alias,
-                row.Value.ToImmutable(),
-                null,
-                null);
-        }
-
-
-        if (!metadata.IsRoot)
-        {
-            return;
-        }
-
-
-        if (metadata.Kind == MutationKind.GraphEdge)
-        {
-            BuildGraphEdgeRoot(
-                node,
-                ref builder,
-                metadata);
-
-            return;
-        }
-
-
-        if (metadata.Kind == MutationKind.Entity)
-        {
-            BuildEntityRoot(
-                node,
-                ref builder,
-                metadata);
-        }
+        AddRow(
+            valuesByRow,
+            field.EntityId,
+            field.StorageEntityId,
+            node.OutputAlias,
+            new FieldValue(
+                field.EntityId,
+                value.FieldId,
+                field.ColumnId,
+                value.RawValue));
     }
+
+    foreach (var child in node.Children)
+    {
+        Build(
+            child,
+            ref builder,
+            metadata);
+    }
+
+    foreach (var row in valuesByRow)
+    {
+        lookupsByRow.TryGetValue(
+            row.Key,
+            out var lookups);
+
+        builder.AddRow(
+            row.Key.EntityId,
+            row.Key.StorageEntityId,
+            row.Key.Alias,
+            row.Value.ToImmutable(),
+            null,
+            null,
+            lookups?.ToImmutable()
+                ?? ImmutableArray<LookupValue>.Empty);
+    }
+
+    if (!metadata.IsRoot)
+    {
+        return;
+    }
+
+    if (metadata.Kind == MutationKind.GraphEdge)
+    {
+        BuildGraphEdgeRoot(
+            node,
+            ref builder,
+            metadata);
+
+        return;
+    }
+
+    if (metadata.Kind == MutationKind.Entity)
+    {
+        BuildEntityRoot(
+            node,
+            ref builder,
+            metadata);
+    }
+}
 
 
     private static void BuildEntityRoot(

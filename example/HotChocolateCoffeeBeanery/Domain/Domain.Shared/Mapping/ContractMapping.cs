@@ -12,37 +12,8 @@ public partial class ContractMapping : IMappingDefinition
 
         Schema = nameof(DataEntity.Schema.Lending),
 
-        Entities =
-        [
-            new()
-            {
-                Entity = typeof(DataEntity.Contract),
+        Entity = typeof(DataEntity.Contract),
 
-                ModelKey =
-                    nameof(Contract.ContractKey),
-
-                EntityKey =
-                    nameof(DataEntity.Contract.ContractKey),
-
-                IsPrimary = true
-            }
-        ],
-        PrimaryKey = [new()
-        {
-            Entity = typeof(DataEntity.Contract),
-            // ModelKey = nameof(DataEntity.Contract.Id),
-            ColumnKey =
-                nameof(DataEntity.Contract.Id)
-        }],
-        UpsertKeys =
-        [
-            new()
-            {
-                Entity = typeof(DataEntity.Contract),
-
-                Column =
-                    nameof(DataEntity.Contract.ContractKey)
-            }
-        ]
+        Key = nameof(Contract.ContractKey)
     };
 }

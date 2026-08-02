@@ -12,39 +12,8 @@ public partial class AccountMapping : IMappingDefinition
 
         Schema = nameof(DataEntity.Schema.Accounting),
 
-        Entities =
-        [
-            new()
-            {
-                Entity = typeof(DataEntity.Account),
+        Entity = typeof(DataEntity.Account),
 
-                ModelKey =
-                    nameof(Account.AccountKey),
-
-                EntityKey =
-                    nameof(DataEntity.Account.AccountKey),
-
-                IsPrimary = true
-            }
-        ],
-        PrimaryKey = [ new()
-        {
-            Entity = typeof(DataEntity.Account),
-        
-            // ModelKey = nameof(Account.AccountKey),
-            
-            ColumnKey =
-                nameof(DataEntity.Account.Id)
-        }],
-        UpsertKeys =
-        [
-            new()
-            {
-                Entity = typeof(DataEntity.Account),
-
-                Column =
-                    nameof(DataEntity.Account.AccountKey)
-            }
-        ]
+        Key = nameof(Account.AccountKey)
     };
 }
