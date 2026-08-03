@@ -28,3 +28,12 @@ example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Graph/bin/*
 example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Graph/obj/*
 src/CoffeeBeanery/bin/*
 src/CoffeeBeanery/obj/*
+example/HotChocolateCoffeeBeanery/Domain/CoffeeBeanery.GraphQL.Core.Mapping.Generators/bin/Debug/CoffeeBeanery.GraphQL.Core.Mapping.Generators.1.0.0.nupkg
+example/HotChocolateCoffeeBeanery/Domain/CoffeeBeanery.GraphQL.Core.Mapping.Generators/bin/Debug/CoffeeBeanery.GraphQL.Core.Mapping.Generators.1.0.0.nupkg
+example/HotChocolateCoffeeBeanery/Domain/CoffeeBeanery.GraphQL.Core.Mapping.Generators/obj/Debug/CoffeeBeanery.GraphQL.Core.Mapping.Generators.1.0.0.nuspec
+example/HotChocolateCoffeeBeanery/Domain/CoffeeBeanery.GraphQL.Core.Mapping.Generators/obj/Debug/netstandard2.0/CoffeeBeanery.GraphQL.Core.Mapping.Generators.AssemblyInfo.cs
+example/HotChocolateCoffeeBeanery/Domain/CoffeeBeanery.GraphQL.Core.Mapping.Generators/obj/Debug/netstandard2.0/CoffeeBeanery.GraphQL.Core.Mapping.Generators.sourcelink.json
+example/HotChocolateCoffeeBeanery/Domain/CoffeeBeanery.GraphQL.Core.Mapping.Generators/bin/Debug/CoffeeBeanery.GraphQL.Core.Mapping.Generators.1.0.0.nupkg
+example/HotChocolateCoffeeBeanery/Domain/CoffeeBeanery.GraphQL.Core.Mapping.Generators/obj/Debug/CoffeeBeanery.GraphQL.Core.Mapping.Generators.1.0.0.nuspec
+example/HotChocolateCoffeeBeanery/Domain/CoffeeBeanery.GraphQL.Core.Mapping.Generators/bin/Debug/CoffeeBeanery.GraphQL.Core.Mapping.Generators.1.0.0.nupkg
+example/HotChocolateCoffeeBeanery/Domain/CoffeeBeanery.GraphQL.Core.Mapping.Generators/obj/Debug/netstandard2.0/CoffeeBeanery.GraphQL.Core.Mapping.Generators.AssemblyInfo.cs

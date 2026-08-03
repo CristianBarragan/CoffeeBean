@@ -417,11 +417,28 @@ public static class MutationRuntimePlanner
 
         foreach (var primaryColumn in metadata.PrimaryColumns)
         {
-            var conflictValue =
-                pair.Value.FirstOrDefault(v =>
+            // ---------------------------------------------------------
+            // FIXED: FirstOrDefault(...).FieldId == 0 used to stand in
+            // for "no matching value was found" — but FieldId is an
+            // alphabetically-assigned per-model index starting at 0
+            // (IdEmitter.GetResolvedFieldNames sorts field names
+            // ordinally, then EmitFieldIds numbers them from 0). Any
+            // model whose alphabetically-first field happens to BE its
+            // primary key (e.g. CustomerCustomerEdge, where
+            // "CustomerCustomerRelationshipKey" < "...RelationshipType"
+            // alphabetically) legitimately has FieldId 0 for that column
+            // — indistinguishable from default(FieldValue).FieldId, which
+            // is also 0. That silently dropped the PK from every
+            // ON CONFLICT clause for any such entity, even though the
+            // value was present and correct. Checking for existence
+            // directly (Any) rather than inspecting the FieldId of a
+            // possibly-default struct removes the ambiguity.
+            // ---------------------------------------------------------
+            var hasValue =
+                pair.Value.Any(v =>
                     v.FieldId == primaryColumn.FieldId);
 
-            if (conflictValue.FieldId == 0)
+            if (!hasValue)
                 continue;
 
             conflictColumns.Add(primaryColumn);

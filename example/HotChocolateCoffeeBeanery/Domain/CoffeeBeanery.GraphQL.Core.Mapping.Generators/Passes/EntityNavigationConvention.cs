@@ -196,52 +196,78 @@ internal static class EntityNavigationConvention
     }
 
     foreach (var child in info.ModelChildren)
+{
+    // ---------------------------------------------------------------
+    // FIXED: dedup against already-resolved navigations must be
+    // case-insensitive. ModelChildrenInference derives NavigationName
+    // by lowercasing the first character of the model's own property
+    // name (e.g. "InnerCustomer" -> "innerCustomer"). The modelProperties
+    // loop above already resolves the SAME property correctly (with
+    // proper FK disambiguation via AliasProperty), using the PascalCase
+    // property name as-is. An ordinal comparison here never recognizes
+    // "innerCustomer" as a duplicate of "InnerCustomer", so this loop
+    // went on to add a second, redundant navigation for the identical
+    // target -- resolved via the unguarded FindPathFromAnyParent (no
+    // FK disambiguation), which silently picked whichever parallel edge
+    // came first (here: OuterCustomerId instead of InnerCustomerId).
+    // At runtime both navigation blocks match the same real child alias
+    // case-insensitively, so BOTH joins fire against the same alias with
+    // different (one wrong) FK columns.
+    // ---------------------------------------------------------------
+    if (result.Navigations.Any(x =>
+            string.Equals(x.NavigationName, child.NavigationName, StringComparison.OrdinalIgnoreCase)))
+        continue;
+
+    var childModel = allMappings.FirstOrDefault(m =>
+        m.IsModel &&
+        string.Equals(m.ModelType.Name, child.To, StringComparison.Ordinal));
+
+    if (childModel == null)
+        continue;
+
+    var childEntities = ResolveNavigationTargetEntities(childModel);
+
+    if (childEntities.Count == 0)
+        continue;
+
+    var matchingLink =
+        info.Definition.Entities
+            .FirstOrDefault(e =>
+                e.EntityType != null &&
+                !string.IsNullOrWhiteSpace(e.AliasProperty) &&
+                string.Equals(e.AliasProperty, child.NavigationName, StringComparison.OrdinalIgnoreCase));
+
+    var joinPaths = new List<NavigationJoinPath>();
+
+    foreach (var targetEntity in childEntities)
     {
-        if (result.Navigations.Any(x =>
-                string.Equals(x.NavigationName, child.NavigationName, StringComparison.Ordinal)))
+        var path =
+            FindDirectEdgeForColumn(targetEntity, ExpectedFkColumn(matchingLink))
+            ?? FindPathFromAnyParent(targetEntity);
+
+        if (path == null)
             continue;
 
-        var childModel = allMappings.FirstOrDefault(m =>
-            m.IsModel &&
-            string.Equals(m.ModelType.Name, child.To, StringComparison.Ordinal));
-
-        if (childModel == null)
-            continue;
-
-        var childEntities = ResolveNavigationTargetEntities(childModel);
-
-        if (childEntities.Count == 0)
-            continue;
-
-        var joinPaths = new List<NavigationJoinPath>();
-
-        foreach (var targetEntity in childEntities)
+        joinPaths.Add(new NavigationJoinPath
         {
-            var path = FindPathFromAnyParent(targetEntity);
-
-            if (path == null)
-                continue;
-
-            joinPaths.Add(new NavigationJoinPath
-            {
-                TargetEntity = targetEntity,
-                Hops = path
-            });
-        }
-
-        if (joinPaths.Count == 0)
-            continue;
-
-        result.Navigations.Add(new NavigationInfo
-        {
-            NavigationName = child.NavigationName,
-            TargetModel = childModel.ModelType,
-            RelatedEntityType = childModel.EntityType,
-            IsCollection = false,
-            TargetIsRoot = childEntities.Any(rootEntityTypes.Contains),
-            JoinPaths = joinPaths
+            TargetEntity = targetEntity,
+            Hops = path
         });
     }
+
+    if (joinPaths.Count == 0)
+        continue;
+
+    result.Navigations.Add(new NavigationInfo
+    {
+        NavigationName = child.NavigationName,
+        TargetModel = childModel.ModelType,
+        RelatedEntityType = childModel.EntityType,
+        IsCollection = false,
+        TargetIsRoot = childEntities.Any(rootEntityTypes.Contains),
+        JoinPaths = joinPaths
+    });
+}
 
     foreach (var link in info.Definition.Entities)
     {
