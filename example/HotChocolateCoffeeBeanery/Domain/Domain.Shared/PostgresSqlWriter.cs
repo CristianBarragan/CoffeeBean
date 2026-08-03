@@ -373,10 +373,7 @@
 
         foreach (var dep in dependencies)
         {
-            if (string.Equals(
-                    dep.TargetColumn,
-                    column,
-                    StringComparison.OrdinalIgnoreCase))
+            if (dep.TargetColumnId == value.ColumnId)
             {
                 dependency = dep;
                 break;

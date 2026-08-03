@@ -1029,6 +1029,11 @@ private static void EmitConflictColumnArray(
                 StringComparer.Ordinal)
             .ToList();
 
+    var allNavigationKeyFields =
+        info.FieldMaps
+            .Where(f => f.IsNavigationKey)
+            .ToList();
+
 
 
     var fieldLines =
@@ -1063,15 +1068,9 @@ private static void EmitConflictColumnArray(
             if (target.IsNavigationKey &&
                 hasGraphMetadata)
             {
-                var navigationTargets =
-                    group
-                        .Where(x => x.IsNavigationKey)
-                        .ToList();
-
-
                 var index =
-                    navigationTargets.IndexOf(target);
-                
+                    allNavigationKeyFields.IndexOf(target);
+
                 var alias =
                     index == 0
                         ? info.Graph!.From.Alias

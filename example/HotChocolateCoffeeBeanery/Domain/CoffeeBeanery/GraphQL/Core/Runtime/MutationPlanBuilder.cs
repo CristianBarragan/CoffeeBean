@@ -112,7 +112,8 @@ public ref struct MutationPlanBuilder
         int sourceRow,
         int targetRow,
         string sourceColumn,
-        string targetColumn)
+        string targetColumn,
+        ushort targetColumnId)
     {
         if (sourceRow < 0 ||
             targetRow < 0)
@@ -126,7 +127,8 @@ public ref struct MutationPlanBuilder
                 sourceRow,
                 targetRow,
                 sourceColumn,
-                targetColumn);
+                targetColumn,
+                targetColumnId);
     }
 
 

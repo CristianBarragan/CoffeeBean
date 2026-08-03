@@ -179,13 +179,11 @@ public static class MutationRuntimePlanner
                 })
                 .ToImmutableArray();
 
-
-
         EmitRowsGroupedByStorageEntity(
             entityId,
             node,
             metadata,
-            filteredValues,
+            values,
             ref builder);
 
 
@@ -237,81 +235,66 @@ public static class MutationRuntimePlanner
     }
 
     private static void EmitMutationDependencies(
-        ushort entityId,
-        in MutationIR node,
-        MutationEntityMetadata metadata,
-        ref MutationPlanBuilder builder)
+    ushort entityId,
+    in MutationIR node,
+    MutationEntityMetadata metadata,
+    ref MutationPlanBuilder builder)
+{
+    if (metadata.CteUpdateMeta.Length == 0)
+        return;
+
+
+    foreach (var spec in metadata.CteUpdateMeta)
     {
-        if (metadata.CteUpdateMeta.Length == 0)
-            return;
+        var navigationField =
+            node.Values.FirstOrDefault(v =>
+                metadata.TryResolveField(
+                    v.FieldId,
+                    out var field) &&
+                string.Equals(
+                    field.FieldName,
+                    spec.NavigationAlias + "Key",
+                    StringComparison.OrdinalIgnoreCase));
 
 
-        foreach (var spec in metadata.CteUpdateMeta)
+        if (string.IsNullOrWhiteSpace(
+                navigationField.RawValue))
         {
-            var navigationField =
-                node.Values.FirstOrDefault(v =>
-                    metadata.TryResolveField(
-                        v.FieldId,
-                        out var field) &&
-                    string.Equals(
-                        field.FieldName,
-                        spec.NavigationAlias + "Key",
-                        StringComparison.OrdinalIgnoreCase));
-
-
-            if (string.IsNullOrWhiteSpace(
-                    navigationField.RawValue))
-            {
-                continue;
-            }
-
-
-            if (!metadata.TryResolveField(
-                    navigationField.FieldId,
-                    out var targetField))
-            {
-                continue;
-            }
-
-
-            if (!builder.TryGetRow(
-                    spec.NavigationAlias,
-                    out var sourceRow))
-            {
-                continue;
-            }
-
-
-            if (!builder.TryGetRow(
-                    node.OutputAlias,
-                    out var targetRow))
-            {
-                continue;
-            }
-
-
-            // ---------------------------------------------------------
-            // FIXED: this used to hardcode the literal string "Id" as the
-            // source row's join/surrogate column for EVERY navigation
-            // dependency — the same class of bug as the "?? Id" fallback
-            // already removed from FluentEntityNavigationConvention, and
-            // wrong for exactly the same reason: this codebase's dominant
-            // key convention is "{Entity}Key", not "Id" (see CustomerKey,
-            // ContractKey, AccountKey throughout). spec.RelatedSurrogateIdColumn
-            // already holds the correctly-resolved surrogate/primary key
-            // column name for the source row's related entity (computed by
-            // GetPkPropertyName/ResolveColumnId upstream in
-            // MetadataEmitter.PopulateCteUpdateMeta or
-            // MutationMetadataEmitter.BuildGraphEdgeCteResolutions) — use
-            // that instead of assuming "Id" everywhere.
-            // ---------------------------------------------------------
-            builder.AddDependency(
-                sourceRow,
-                targetRow,
-                spec.RelatedSurrogateIdColumn,
-                targetField.FieldName);
+            continue;
         }
+
+
+        if (!metadata.TryResolveField(
+                navigationField.FieldId,
+                out var targetField))
+        {
+            continue;
+        }
+
+
+        if (!builder.TryGetRow(
+                spec.NavigationAlias,
+                out var sourceRow))
+        {
+            continue;
+        }
+
+
+        if (!builder.TryGetRow(
+                node.OutputAlias,
+                out var targetRow))
+        {
+            continue;
+        }
+
+        builder.AddDependency(
+            sourceRow,
+            targetRow,
+            spec.RelatedSurrogateIdColumn,
+            targetField.FieldName,
+            targetField.ColumnId);
     }
+}
 
     private static void EmitRowsGroupedByStorageEntity(
     ushort entityId,
@@ -374,18 +357,32 @@ public static class MutationRuntimePlanner
 
             if (spec != null)
             {
-                groupedAliases[target.StorageEntityId] =
-                    spec.NavigationAlias;
+                if (builder.TryGetRow(
+                        spec.NavigationAlias,
+                        out _))
+                {
+                    valueGroup.Add(
+                        new FieldValue(
+                            target.EntityId,
+                            value.FieldId,
+                            target.ColumnId,
+                            value.RawValue));
+                }
+                else
+                {
+                    groupedAliases[target.StorageEntityId] =
+                        spec.NavigationAlias;
 
-                lookupGroup.Add(
-                    new LookupValue(
-                        target.ColumnId,
-                        spec.RelatedStorageEntityId,
-                        spec.RelatedNaturalKeyColumnId,
-                        spec.RelatedSurrogateIdColumnId,
-                        value.RawValue,
-                        spec.NavigationAlias +
-                        spec.RelatedEntityTypeName));
+                    lookupGroup.Add(
+                        new LookupValue(
+                            target.ColumnId,
+                            spec.RelatedStorageEntityId,
+                            spec.RelatedNaturalKeyColumnId,
+                            spec.RelatedSurrogateIdColumnId,
+                            value.RawValue,
+                            spec.NavigationAlias +
+                            spec.RelatedEntityTypeName));
+                }
 
                 continue;
             }
@@ -417,23 +414,6 @@ public static class MutationRuntimePlanner
 
         foreach (var primaryColumn in metadata.PrimaryColumns)
         {
-            // ---------------------------------------------------------
-            // FIXED: FirstOrDefault(...).FieldId == 0 used to stand in
-            // for "no matching value was found" — but FieldId is an
-            // alphabetically-assigned per-model index starting at 0
-            // (IdEmitter.GetResolvedFieldNames sorts field names
-            // ordinally, then EmitFieldIds numbers them from 0). Any
-            // model whose alphabetically-first field happens to BE its
-            // primary key (e.g. CustomerCustomerEdge, where
-            // "CustomerCustomerRelationshipKey" < "...RelationshipType"
-            // alphabetically) legitimately has FieldId 0 for that column
-            // — indistinguishable from default(FieldValue).FieldId, which
-            // is also 0. That silently dropped the PK from every
-            // ON CONFLICT clause for any such entity, even though the
-            // value was present and correct. Checking for existence
-            // directly (Any) rather than inspecting the FieldId of a
-            // possibly-default struct removes the ambiguity.
-            // ---------------------------------------------------------
             var hasValue =
                 pair.Value.Any(v =>
                     v.FieldId == primaryColumn.FieldId);
@@ -456,7 +436,7 @@ public static class MutationRuntimePlanner
             conflictColumns.ToImmutable());
     }
 }
-
+    
     private static void EmitGraphMerge(
         in MutationIR node,
         MutationEntityMetadata metadata,

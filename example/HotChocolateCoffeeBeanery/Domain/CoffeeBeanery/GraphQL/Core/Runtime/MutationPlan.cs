@@ -229,21 +229,22 @@ public readonly struct MutationDependency
     public readonly int TargetRow;
     public readonly string SourceColumn;
     public readonly string TargetColumn;
-
+    public readonly ushort TargetColumnId;
 
     public MutationDependency(
         int sourceRow,
         int targetRow,
         string sourceColumn,
-        string targetColumn)
+        string targetColumn,
+        ushort targetColumnId)
     {
         SourceRow = sourceRow;
         TargetRow = targetRow;
         SourceColumn = sourceColumn;
         TargetColumn = targetColumn;
+        TargetColumnId = targetColumnId;
     }
 }
-
 
 
 public readonly struct MutationPlan

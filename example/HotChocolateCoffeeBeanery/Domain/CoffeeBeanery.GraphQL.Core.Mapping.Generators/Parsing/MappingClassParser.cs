@@ -263,7 +263,26 @@ internal static class MappingClassParser
             foreach (var entity in info.Definition.Entities
                          .Where(e =>
                              e.EntityType != null &&
-                             !string.IsNullOrWhiteSpace(e.ToColumn)))
+                             !string.IsNullOrWhiteSpace(e.ToColumn) &&
+                             // Entities linked via AliasProperty are
+                             // navigation/FK references resolved via CTE
+                             // lookup (e.g. InnerCustomer/OuterCustomer ->
+                             // Customer) — their own row is written by a
+                             // SEPARATE recursive mutation node with its
+                             // own metadata, not by this model's own
+                             // upsert. Including them here produced a
+                             // conflict column (e.g. "CustomerKey") that
+                             // doesn't correspond to any FieldId on THIS
+                             // model at all (only InnerCustomerKey/
+                             // OuterCustomerKey do) — a compile error if
+                             // resolution is strict, or a silently
+                             // unmatched/no-op conflict column if not.
+                             // Entities WITHOUT AliasProperty (genuine
+                             // composite backing tables this same mutation
+                             // inserts into directly, e.g. Product's
+                             // Transaction/Contract/CustomerBankingRelationship)
+                             // are unaffected and still synthesize correctly.
+                             string.IsNullOrWhiteSpace(e.AliasProperty)))
             {
                 info.UpsertKeys.Add(
                     new UpsertKeyInfo
