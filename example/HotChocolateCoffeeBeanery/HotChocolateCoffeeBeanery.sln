@@ -34,6 +34,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Database.Graph.Banking", "I
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeBeanery.GraphQL.Core.Mapping.Generators", "Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj", "{92AD2E61-8703-4B53-96E0-461F0CF380C2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeBeanery.GraphQL.Core.Foundation", "Domain\CoffeeBeanery.GraphQL.Core.Foundation\CoffeeBeanery.GraphQL.Core.Foundation.csproj", "{A83A6DA3-E500-4ADC-A941-13AD16636B34}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -80,6 +82,10 @@ Global
 		{92AD2E61-8703-4B53-96E0-461F0CF380C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{92AD2E61-8703-4B53-96E0-461F0CF380C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{92AD2E61-8703-4B53-96E0-461F0CF380C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A83A6DA3-E500-4ADC-A941-13AD16636B34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A83A6DA3-E500-4ADC-A941-13AD16636B34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A83A6DA3-E500-4ADC-A941-13AD16636B34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A83A6DA3-E500-4ADC-A941-13AD16636B34}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -96,6 +102,7 @@ Global
 		{8E147C37-E42E-463C-85ED-DBB561FA1C8B} = {81914BA5-1D71-4DC9-AA56-BF7154A729D2}
 		{92AD2E61-8703-4B53-96E0-461F0CF380C2} = {E36EDE6E-0BF8-40DA-A441-0E44963953B3}
 		{DF0F14E6-DFDD-B217-2FE1-61237D99902C} = {81914BA5-1D71-4DC9-AA56-BF7154A729D2}
+		{A83A6DA3-E500-4ADC-A941-13AD16636B34} = {E36EDE6E-0BF8-40DA-A441-0E44963953B3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9E7DAC60-7C53-4FEF-8B0F-911DD21D9054}
