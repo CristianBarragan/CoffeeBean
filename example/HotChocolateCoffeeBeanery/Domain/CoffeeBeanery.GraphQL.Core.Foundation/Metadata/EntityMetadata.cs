@@ -1,2 +1,7 @@
 namespace CoffeeBeanery.GraphQL.Core.Foundation.Metadata;
-public sealed record EntityMetadata(EntityId Id, string Name, string TableName, IReadOnlyList<FieldMetadata> Fields);
+
+public sealed record EntityMetadata(
+    EntityId EntityId,
+    string Name,
+    IReadOnlyList<ColumnMetadata> Columns
+);

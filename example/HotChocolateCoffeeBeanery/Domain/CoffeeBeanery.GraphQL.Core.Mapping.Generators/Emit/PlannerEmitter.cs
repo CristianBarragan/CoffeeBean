@@ -26,6 +26,9 @@ internal static class PlannerEmitter
         sb.AppendLine("using System.Collections.Immutable;");
         sb.AppendLine();
         sb.AppendLine("using CoffeeBeanery.GraphQL.Core.Runtime;");
+        sb.AppendLine("using CoffeeBeanery.GraphQL.Core.Foundation;");
+        sb.AppendLine("using CoffeeBeanery.GraphQL.Core.Foundation.Metadata;");
+        sb.AppendLine("using CoffeeBeanery.GraphQL.Core.Foundation.QueryPlan;");
         sb.AppendLine();
         sb.AppendLine("namespace CoffeeBeanery.GraphQL.Core.Runtime;");
         sb.AppendLine();
@@ -85,9 +88,78 @@ internal static class PlannerEmitter
             rootEntityTypes,
             entityGraph);
 
+        sb.AppendLine();
+
+        EmitBuildQueryNode(
+            sb,
+            info,
+            allMappings,
+            rootEntityTypes,
+            entityGraph);
+
         sb.AppendLine("    }");
     }
-    
+
+    // -----------------------------------------------------------------
+    // BuildQueryNode: additive, new-architecture counterpart to Build.
+    // Returns a Foundation.QueryPlan.QueryNode tree instead of driving
+    // QueryPlanBuilder imperatively. Nothing about the existing Build
+    // method above (or its callers) changes -- this is a second, parallel
+    // entry point so callers can migrate one at a time.
+    //
+    // Unlike Build, this does not re-derive FK/column resolution itself:
+    // composite-entity scans come from GeneratedMetadata.{Model}.Entities
+    // (a ready ModelEntityBinding chain -- see QueryNodeBuilder.ScanComposite),
+    // and navigation/graph joins come from GeneratedMetadata.GetJoin(...),
+    // both already emitted by IdEmitter from the same FK graph.
+    //
+    // NOTE: graph (vertex) children are not yet handled here -- GraphEdgeNode
+    // needs QueryPlanTranslator's graph-join lowering wired up first. A
+    // graph child is currently just skipped (not thrown); see EmitChildSelectionQueryNode.
+    // -----------------------------------------------------------------
+    private static void EmitBuildQueryNode(
+        StringBuilder sb,
+        MappingClassInfo info,
+        ImmutableArray<MappingClassInfo> allMappings,
+        ImmutableHashSet<INamedTypeSymbol> rootEntityTypes,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+    {
+        if (info.ModelType == null || info.EntityType == null)
+            return;
+
+        var modelName = info.ModelType.Name;
+        var primaryStorage = IdEmitter.StripEntitySuffix(info.EntityType.Name);
+
+        sb.AppendLine(
+            "        public static QueryNode BuildQueryNode(in SelectionIR node, bool isRoot)");
+        sb.AppendLine("        {");
+
+        sb.AppendLine(
+            $"            QueryNode __plan = isRoot");
+        sb.AppendLine(
+            $"                ? QueryNodeBuilder.ScanComposite(GeneratedMetadata.{modelName})");
+        sb.AppendLine(
+            $"                : new ScanNode(GeneratedMetadata.GetEntity(StorageEntityId.{primaryStorage}));");
+
+        EmitScalarSelectionQueryNode(
+            sb,
+            info,
+            allMappings,
+            entityGraph);
+
+        EmitChildSelectionQueryNode(
+            sb,
+            info,
+            allMappings,
+            rootEntityTypes,
+            entityGraph);
+
+        sb.AppendLine();
+        sb.AppendLine(
+            $"            return new MaterializeNode(__plan, GeneratedMetadata.{modelName});");
+        sb.AppendLine("        }");
+    }
+
     private static void EmitBuild(
         StringBuilder sb,
         MappingClassInfo info,
@@ -305,14 +377,65 @@ internal static class PlannerEmitter
     }
 
     /// <summary>
-    /// Emits builder.AddJoin(...) calls for every navigation resolved by
-    /// EntityNavigationConvention.Resolve — real FK-graph paths, not the
-    /// old "{ParentModel}Key" naming convention. For each navigation, uses
-    /// the shortest available join path into the child; if that path has
-    /// multiple hops (e.g. parent -> A -> B -> child-composite-entity), the
-    /// whole hop chain is emitted, with each hop's alias tracked so the
-    /// next hop can join off it correctly.
+    /// BuildQueryNode counterpart to EmitChildSelection. Unlike the old
+    /// method, this does NOT need a separate "walk every child" loop at
+    /// the end: recursing into PlannerRegistry.BuildQueryNode(child) for
+    /// each resolved navigation already returns that child's full subtree
+    /// (its own columns and further nested children included), so a
+    /// single JoinNode per navigation is enough.
+    ///
+    /// Graph-vertex children are intentionally skipped for now (see
+    /// EmitBuildQueryNode remarks) -- GraphEdgeNode needs GraphMetadata's
+    /// graph-name/edge-label wiring confirmed through QueryPlanTranslator
+    /// before this can join them in.
     /// </summary>
+    private static void EmitChildSelectionQueryNode(
+        StringBuilder sb,
+        MappingClassInfo info,
+        ImmutableArray<MappingClassInfo> allMappings,
+        ImmutableHashSet<INamedTypeSymbol> rootEntityTypes,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+    {
+        var navResult =
+            EntityNavigationConvention.Resolve(
+                info,
+                allMappings,
+                entityGraph,
+                rootEntityTypes);
+
+        var hasNavigations =
+            navResult != null &&
+            navResult.Navigations.Count > 0;
+
+        var hasGraph =
+            info.Graph != null &&
+            !string.IsNullOrWhiteSpace(
+                info.Graph.GraphName);
+
+        if (!hasNavigations && !hasGraph)
+            return;
+
+        sb.AppendLine();
+
+        if (hasNavigations)
+        {
+            EmitNavigationJoinsQueryNode(
+                sb,
+                info,
+                allMappings,
+                navResult!,
+                entityGraph);
+        }
+
+        if (hasGraph)
+        {
+            sb.AppendLine(
+                $"            // NOTE: graph-vertex children (\"{info.Graph!.GraphName}\") are not yet joined");
+            sb.AppendLine(
+                "            // into QueryNode -- see PlannerEmitter.EmitBuildQueryNode remarks.");
+        }
+    }
+
     private static void EmitNavigationJoins(
     StringBuilder sb,
     MappingClassInfo info,
@@ -540,7 +663,142 @@ internal static class PlannerEmitter
             "            }");
     }
 }
-    
+
+    /// <summary>
+    /// BuildQueryNode counterpart to EmitNavigationJoins. Same hop
+    /// resolution (same from/to orientation per hop, seeded the same way
+    /// from parentSeedEntity), but instead of resolving columns itself and
+    /// calling builder.AddJoin, it looks the join up via
+    /// GeneratedMetadata.GetJoin(fromStorageId, toStorageId) -- already
+    /// generated by IdEmitter from this same entityGraph edge set -- and
+    /// nests it as a JoinNode. Intermediate hops get a bare ScanNode; the
+    /// last hop joins against the child's own recursively-built subtree so
+    /// the child's columns/further children come along in one call.
+    /// </summary>
+    private static void EmitNavigationJoinsQueryNode(
+    StringBuilder sb,
+    MappingClassInfo info,
+    ImmutableArray<MappingClassInfo> allMappings,
+    NavigationResolutionResult navResult,
+    List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+{
+    foreach (var navigation in navResult.Navigations)
+    {
+        var joinPath =
+            navigation.JoinPaths
+                .Where(p => p.Hops.Count > 0)
+                .OrderBy(p => p.Hops.Count)
+                .FirstOrDefault();
+
+        if (joinPath == null)
+            continue;
+
+        var childVar =
+            $"__navChild_{navigation.NavigationName}";
+
+        var childPlanVar =
+            $"__childPlan_{navigation.NavigationName}";
+
+        sb.AppendLine(
+            $"            foreach (var {childVar} in node.Children)");
+        sb.AppendLine(
+            "            {");
+        sb.AppendLine(
+            $"                if (!string.Equals({childVar}.OutputAlias, \"{navigation.NavigationName}\", System.StringComparison.OrdinalIgnoreCase))");
+        sb.AppendLine(
+            "                    continue;");
+        sb.AppendLine();
+        sb.AppendLine(
+            $"                var {childPlanVar} = PlannerRegistry.BuildQueryNode({childVar}.EntityId, {childVar}, isRoot: false);");
+        sb.AppendLine();
+
+        var seenEntities =
+            new Dictionary<INamedTypeSymbol, bool>(
+                SymbolEqualityComparer.Default);
+
+        var firstHop = joinPath.Hops[0];
+
+        var parentSeedEntity =
+            info.Definition.Entities
+                .FirstOrDefault(e =>
+                    e.EntityType != null &&
+                    (SymbolEqualityComparer.Default.Equals(
+                         e.EntityType, firstHop.DependentEntity) ||
+                     SymbolEqualityComparer.Default.Equals(
+                         e.EntityType, firstHop.PrincipalEntity)))
+                ?.EntityType;
+
+        if (parentSeedEntity == null && info.EntityType != null &&
+            (SymbolEqualityComparer.Default.Equals(info.EntityType, firstHop.DependentEntity) ||
+             SymbolEqualityComparer.Default.Equals(info.EntityType, firstHop.PrincipalEntity)))
+        {
+            parentSeedEntity = info.EntityType;
+        }
+
+        if (parentSeedEntity != null)
+        {
+            seenEntities[parentSeedEntity] = true;
+        }
+
+        var index = 0;
+        var lastHopIndex = joinPath.Hops.Count - 1;
+
+        foreach (var edge in joinPath.Hops)
+        {
+            var fromIsDependent =
+                seenEntities.ContainsKey(edge.DependentEntity);
+
+            var fromEntity =
+                fromIsDependent
+                    ? edge.DependentEntity
+                    : edge.PrincipalEntity;
+
+            var toEntity =
+                fromIsDependent
+                    ? edge.PrincipalEntity
+                    : edge.DependentEntity;
+
+            if (!seenEntities.ContainsKey(fromEntity))
+            {
+                throw new InvalidOperationException(
+                    $"Navigation '{navigation.NavigationName}' on " +
+                    $"'{info.ModelType!.Name}' has a disconnected join " +
+                    $"path: '{fromEntity.Name}' was not seen before " +
+                    $"processing hop -> '{toEntity.Name}'.");
+            }
+
+            var fromStorageEntity =
+                ResolveStorageEntityOrThrow(fromEntity, allMappings);
+
+            var toStorageEntity =
+                ResolveStorageEntityOrThrow(toEntity, allMappings);
+
+            var fromStorageName =
+                IdEmitter.StripEntitySuffix(fromStorageEntity.Name);
+
+            var toStorageName =
+                IdEmitter.StripEntitySuffix(toStorageEntity.Name);
+
+            bool isLastHop =
+                index == lastHopIndex;
+
+            seenEntities[toEntity] = true;
+
+            sb.AppendLine(
+                isLastHop
+                    ? $"                __plan = new JoinNode(__plan, {childPlanVar}, GeneratedMetadata.GetJoin(StorageEntityId.{fromStorageName}, StorageEntityId.{toStorageName})!);"
+                    : $"                __plan = new JoinNode(__plan, new ScanNode(GeneratedMetadata.GetEntity(StorageEntityId.{toStorageName})), GeneratedMetadata.GetJoin(StorageEntityId.{fromStorageName}, StorageEntityId.{toStorageName})!);");
+
+            index++;
+        }
+
+        sb.AppendLine(
+            "                break;");
+        sb.AppendLine(
+            "            }");
+    }
+}
+
     private static void EmitGraphVertexResultJoins(
     StringBuilder sb,
     MappingClassInfo info,
@@ -830,7 +1088,101 @@ internal static class PlannerEmitter
     sb.AppendLine(
         "            }");
 }
-    
+
+    /// <summary>
+    /// BuildQueryNode counterpart to EmitScalarSelection: same FieldId
+    /// switch (so it stays valid whatever the client actually selected),
+    /// but each case appends a FieldBinding instead of calling
+    /// builder.AddColumn. TargetFieldId carries the generated FieldId --
+    /// materialization resolves the wire alias later via SelectionIR,
+    /// it is deliberately not baked into the logical plan.
+    /// </summary>
+    private static void EmitScalarSelectionQueryNode(
+        StringBuilder sb,
+        MappingClassInfo info,
+        ImmutableArray<MappingClassInfo> allMappings,
+        List<FluentEntityNavigationConvention.EntityForeignKeyGraph.Edge> entityGraph)
+    {
+        var fields =
+            ComputeFieldMappingsEagerPublic(
+                info,
+                info.IsComposite);
+
+        if (fields.Count == 0)
+            return;
+
+        sb.AppendLine();
+        sb.AppendLine(
+            "            var __fields = new List<FieldBinding>();");
+        sb.AppendLine(
+            "            foreach (var scalar in node.Scalars)");
+        sb.AppendLine(
+            "            {");
+        sb.AppendLine(
+            "                switch (scalar.FieldId)");
+        sb.AppendLine(
+            "                {");
+
+        foreach (var group in fields.GroupBy(
+                     x => x.FieldName,
+                     StringComparer.Ordinal))
+        {
+            sb.AppendLine(
+                $"                    case FieldId.{info.ModelType!.Name}.{group.Key}:");
+            sb.AppendLine(
+                "                    {");
+
+            foreach (var field in group)
+            {
+                var entity =
+                    info.Definition.Entities
+                        .FirstOrDefault(e =>
+                            e.EntityType != null &&
+                            string.Equals(
+                                IdEmitter.StripEntitySuffix(e.EntityType.Name),
+                                IdEmitter.StripEntitySuffix(field.EntityTypeName),
+                                StringComparison.OrdinalIgnoreCase))
+                        ?.EntityType;
+
+                if (entity == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot resolve entity '{field.EntityTypeName}' for field '{field.FieldName}'.");
+                }
+
+                var storageName =
+                    IdEmitter.StripEntitySuffix(entity.Name);
+
+                var column =
+                    ColumnIdResolver.Resolve(
+                        entity,
+                        field.ColumnName,
+                        allMappings,
+                        entityGraph);
+
+                sb.AppendLine(
+                    "                        __fields.Add(new FieldBinding(" +
+                    $"new ColumnReference(GeneratedMetadata.GetEntity(StorageEntityId.{storageName}), {column}), " +
+                    "scalar.FieldId));");
+            }
+
+            sb.AppendLine(
+                "                        break;");
+            sb.AppendLine(
+                "                    }");
+        }
+
+        sb.AppendLine(
+            "                }");
+        sb.AppendLine(
+            "            }");
+        sb.AppendLine();
+        sb.AppendLine(
+            "            if (__fields.Count > 0)");
+        sb.AppendLine(
+            "                __plan = new ProjectionNode(__plan, __fields);");
+    }
+
     private static string ResolveCompositeAlias(
         MappingClassInfo info,
         INamedTypeSymbol entity,
@@ -1005,6 +1357,56 @@ internal static class PlannerEmitter
         sb.AppendLine(
             "        }");
 
+
+        sb.AppendLine(
+            "    }");
+
+        sb.AppendLine();
+
+        sb.AppendLine(
+            "    public static QueryNode BuildQueryNode(");
+
+        sb.AppendLine(
+            "        ushort entityId,");
+
+        sb.AppendLine(
+            "        in SelectionIR selection,");
+
+        sb.AppendLine(
+            "        bool isRoot)");
+
+        sb.AppendLine(
+            "    {");
+
+        sb.AppendLine(
+            "        switch (entityId)");
+
+        sb.AppendLine(
+            "        {");
+
+        foreach (var model in models)
+        {
+            if (model.ModelType == null)
+                continue;
+
+            sb.AppendLine(
+                $"            case EntityId.{model.ModelType.Name}:");
+
+            sb.AppendLine(
+                $"                return {model.ModelType.Name}Planner.BuildQueryNode(selection, isRoot);");
+        }
+
+        sb.AppendLine(
+            "            default:");
+
+        sb.AppendLine(
+            "                ThrowUnknownEntity(entityId);");
+
+        sb.AppendLine(
+            "                return default!;");
+
+        sb.AppendLine(
+            "        }");
 
         sb.AppendLine(
             "    }");

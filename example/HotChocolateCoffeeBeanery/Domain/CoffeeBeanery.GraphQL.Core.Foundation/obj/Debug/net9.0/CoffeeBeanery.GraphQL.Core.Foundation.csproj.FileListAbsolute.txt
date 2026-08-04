@@ -1,0 +1,12 @@
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Foundation\bin\Debug\net9.0\CoffeeBeanery.GraphQL.Core.Foundation.deps.json
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Foundation\bin\Debug\net9.0\CoffeeBeanery.GraphQL.Core.Foundation.dll
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Foundation\bin\Debug\net9.0\CoffeeBeanery.GraphQL.Core.Foundation.pdb
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Foundation\obj\Debug\net9.0\CoffeeBeanery.GraphQL.Core.Foundation.GeneratedMSBuildEditorConfig.editorconfig
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Foundation\obj\Debug\net9.0\CoffeeBeanery.GraphQL.Core.Foundation.AssemblyInfoInputs.cache
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Foundation\obj\Debug\net9.0\CoffeeBeanery.GraphQL.Core.Foundation.AssemblyInfo.cs
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Foundation\obj\Debug\net9.0\CoffeeBeanery.GraphQL.Core.Foundation.csproj.CoreCompileInputs.cache
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Foundation\obj\Debug\net9.0\CoffeeBeanery.GraphQL.Core.Foundation.sourcelink.json
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Foundation\obj\Debug\net9.0\CoffeeBeanery.GraphQL.Core.Foundation.dll
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Foundation\obj\Debug\net9.0\refint\CoffeeBeanery.GraphQL.Core.Foundation.dll
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Foundation\obj\Debug\net9.0\CoffeeBeanery.GraphQL.Core.Foundation.pdb
+C:\CoffeeBeanery\example\HotChocolateCoffeeBeanery\Domain\CoffeeBeanery.GraphQL.Core.Foundation\obj\Debug\net9.0\ref\CoffeeBeanery.GraphQL.Core.Foundation.dll

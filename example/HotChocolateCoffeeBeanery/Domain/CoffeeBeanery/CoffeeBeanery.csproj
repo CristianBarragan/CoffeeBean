@@ -51,6 +51,7 @@
         <ProjectReference Include="..\CoffeeBeanery.GraphQL.Core.Mapping.Generators\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj"
                           OutputItemType="Analyzer"
                           ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\CoffeeBeanery.GraphQL.Core.Foundation\CoffeeBeanery.GraphQL.Core.Foundation.csproj" />
     </ItemGroup>
     
     <ItemGroup>
