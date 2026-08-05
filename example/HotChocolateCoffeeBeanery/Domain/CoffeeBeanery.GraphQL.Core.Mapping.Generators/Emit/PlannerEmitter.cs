@@ -113,9 +113,10 @@ internal static class PlannerEmitter
     // and navigation/graph joins come from GeneratedMetadata.GetJoin(...),
     // both already emitted by IdEmitter from the same FK graph.
     //
-    // NOTE: graph (vertex) children are not yet handled here -- GraphEdgeNode
-    // needs QueryPlanTranslator's graph-join lowering wired up first. A
-    // graph child is currently just skipped (not thrown); see EmitChildSelectionQueryNode.
+    // Graph-vertex children now wire into GraphEdgeNode too (see
+    // EmitChildSelectionQueryNode), matched by vertex alias-or-label
+    // against each child's OutputAlias, mirroring the convention already
+    // established in the old pipeline's EmitGraphVertexResultJoins.
     // -----------------------------------------------------------------
     private static void EmitBuildQueryNode(
         StringBuilder sb,
@@ -384,10 +385,10 @@ internal static class PlannerEmitter
     /// (its own columns and further nested children included), so a
     /// single JoinNode per navigation is enough.
     ///
-    /// Graph-vertex children are intentionally skipped for now (see
-    /// EmitBuildQueryNode remarks) -- GraphEdgeNode needs GraphMetadata's
-    /// graph-name/edge-label wiring confirmed through QueryPlanTranslator
-    /// before this can join them in.
+    /// Graph-vertex children are matched by vertex alias-or-label against
+    /// each child's OutputAlias, then wrapped into one GraphEdgeNode over
+    /// __plan (both sides accumulated first so a query selecting both
+    /// vertices doesn't produce two separate graph joins).
     /// </summary>
     private static void EmitChildSelectionQueryNode(
         StringBuilder sb,
@@ -429,10 +430,23 @@ internal static class PlannerEmitter
 
         if (hasGraph)
         {
-            sb.AppendLine(
-                $"            // NOTE: graph-vertex children (\"{info.Graph!.GraphName}\") are not yet joined");
-            sb.AppendLine(
-                "            // into QueryNode -- see PlannerEmitter.EmitBuildQueryNode remarks.");
+            var graph = info.Graph!;
+            var fromAlias = string.IsNullOrEmpty(graph.From?.Alias) ? graph.From?.Label ?? "" : graph.From!.Alias!;
+            var toAlias = string.IsNullOrEmpty(graph.To?.Alias) ? graph.To?.Label ?? "" : graph.To!.Alias!;
+
+            sb.AppendLine("            QueryNode? __graphFrom = null;");
+            sb.AppendLine("            QueryNode? __graphTo = null;");
+            sb.AppendLine();
+            sb.AppendLine("            foreach (var gc in node.Children)");
+            sb.AppendLine("            {");
+            sb.AppendLine($"                if (string.Equals(gc.OutputAlias, \"{fromAlias}\", System.StringComparison.OrdinalIgnoreCase))");
+            sb.AppendLine("                    __graphFrom = PlannerRegistry.BuildQueryNode(gc.EntityId, gc, isRoot: false);");
+            sb.AppendLine($"                else if (string.Equals(gc.OutputAlias, \"{toAlias}\", System.StringComparison.OrdinalIgnoreCase))");
+            sb.AppendLine("                    __graphTo = PlannerRegistry.BuildQueryNode(gc.EntityId, gc, isRoot: false);");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+            sb.AppendLine("            if (__graphFrom != null || __graphTo != null)");
+            sb.AppendLine($"                __plan = new GraphEdgeNode(__plan, GeneratedMetadata.{info.ModelType!.Name}Graph, __graphFrom, __graphTo);");
         }
     }
 

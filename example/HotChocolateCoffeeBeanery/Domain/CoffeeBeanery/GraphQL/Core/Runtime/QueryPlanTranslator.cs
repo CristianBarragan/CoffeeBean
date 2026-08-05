@@ -20,10 +20,12 @@ namespace CoffeeBeanery.GraphQL.Core.Runtime;
 ///   (table-scoped). Both are populated with the same value below, which
 ///   is very likely wrong for composite models — flagging rather than
 ///   guessing further.
-/// - GraphEdgeNode is not translated to AddGraphJoin/AddGraphResultJoin
-///   yet: GraphMetadata doesn't currently carry the graph/edge label
-///   strings (GraphName, EdgeLabel, EdgeKeyColumn, vertex Alias) that
-///   AddGraphJoin needs. Left as a stub — see TranslateGraphEdge below.
+/// - GraphEdgeNode -> AddGraphJoin/AddGraphResultJoin mirrors the
+///   convention already established in the old SelectionIR-driven
+///   pipeline's PlannerEmitter.EmitGraphVertexResultJoins (graph alias =
+///   "{EdgeEntityName}_{EdgeLabel}_graph", vertex alias-or-label doubles
+///   as both the AddGraphJoin alias and the AddGraphResultJoin column-alias
+///   prefix). Not independently verified against a running query yet.
 /// </summary>
 public static class QueryPlanTranslator
 {
@@ -128,21 +130,83 @@ public static class QueryPlanTranslator
     }
 
     /// <summary>
-    /// STUB: GraphMetadata needs GraphName/EdgeLabel/EdgeKeyColumn and each
-    /// VertexMetadata needs a graph-property name + SQL alias before this
-    /// can call builder.AddGraphJoin/AddGraphResultJoin faithfully. Wire up
-    /// once that's added to Foundation.Metadata.GraphMetadata.
+    /// Mirrors the (already correct, working) convention from the old
+    /// SelectionIR-driven pipeline's EmitGraphVertexResultJoins: the graph
+    /// join's own alias is "{EdgeEntityName}_{EdgeLabel}_graph"; each
+    /// vertex's alias-or-label is both what AddGraphJoin's from/to alias
+    /// params want AND the column alias prefix AddGraphResultJoin needs
+    /// ("{alias}{joinColumn}"). Either vertex side is only wired up with
+    /// AddGraphResultJoin if that side was actually supplied (i.e. actually
+    /// selected as a child in this query) -- unlike a JoinNode, a graph
+    /// edge's two sides are independently optional.
     /// </summary>
     private static string TranslateGraphEdge(
         FoundationQuery.GraphEdgeNode graphEdge,
         ref QueryPlanBuilder builder,
         Dictionary<string, int> aliasCounts)
     {
-        var fromAlias = Walk(graphEdge.From, ref builder, aliasCounts);
-        Walk(graphEdge.To, ref builder, aliasCounts);
+        var sourceAlias = Walk(graphEdge.Source, ref builder, aliasCounts);
 
-        // TODO: builder.AddGraphJoin(...) / AddGraphResultJoin(...) once
-        // GraphMetadata carries enough to fill those calls in.
-        return fromAlias;
+        var graph = graphEdge.Graph;
+        var edgeStorageId = graph.EdgeEntity.EntityId.Value;
+        var graphAlias = $"{graph.EdgeEntity.Name}_{graph.EdgeLabel}_graph";
+
+        builder.AddGraphJoin(
+            edgeStorageId,
+            edgeStorageId,
+            graph.GraphName,
+            graph.EdgeLabel,
+            graph.EdgeKeyColumn,
+            graph.From.Label,
+            graph.From.GraphProperty,
+            graph.From.Alias,
+            graph.From.JoinColumn,
+            graph.To.Label,
+            graph.To.GraphProperty,
+            graph.To.Alias,
+            graph.To.JoinColumn,
+            graphAlias);
+
+        if (graphEdge.From is not null)
+        {
+            Walk(graphEdge.From, ref builder, aliasCounts);
+            AddGraphResultJoin(ref builder, graphAlias, graph.From);
+        }
+
+        if (graphEdge.To is not null)
+        {
+            Walk(graphEdge.To, ref builder, aliasCounts);
+            AddGraphResultJoin(ref builder, graphAlias, graph.To);
+        }
+
+        return sourceAlias;
+    }
+
+    private static void AddGraphResultJoin(
+        ref QueryPlanBuilder builder,
+        string graphAlias,
+        CoffeeBeanery.GraphQL.Core.Foundation.Metadata.VertexMetadata vertex)
+    {
+        var columnAlias = vertex.Alias + vertex.JoinColumn;
+
+        var columnId = 0;
+
+        foreach (var column in vertex.ConnectedEntity.Columns)
+        {
+            if (string.Equals(column.Name, vertex.JoinColumn, System.StringComparison.Ordinal))
+            {
+                columnId = column.Id.Value;
+                break;
+            }
+        }
+
+        builder.AddGraphResultJoin(
+            graphAlias,
+            columnAlias,
+            vertex.ConnectedEntity.EntityId.Value,
+            vertex.ConnectedEntity.EntityId.Value,
+            (ushort)columnId,
+            JoinKind.Left,
+            vertex.Alias);
     }
 }

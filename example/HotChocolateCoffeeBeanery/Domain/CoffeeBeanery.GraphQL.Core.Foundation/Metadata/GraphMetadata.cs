@@ -5,7 +5,7 @@ public sealed record GraphMetadata(
     string GraphName,
     string EdgeLabel,
     string EdgeKeyColumn,
+    EntityMetadata EdgeEntity,
     VertexMetadata From,
-    VertexMetadata To,
-    EntityMetadata EdgeEntity
+    VertexMetadata To
 );

@@ -56,7 +56,7 @@ internal static class IdEmitter
                 .Select(e => e.EntityType!)
                 .Distinct(SymbolEqualityComparer.Default)
                 .Cast<INamedTypeSymbol>()
-                .OrderBy(e => e.Name)
+                .OrderBy(e => StripEntitySuffix(e.Name), StringComparer.Ordinal)
                 .ToList();
 
         sb.AppendLine();
@@ -94,21 +94,12 @@ internal static class IdEmitter
         sb.AppendLine("    };");
         sb.AppendLine();
         sb.AppendLine("    public static EntityMetadata GetEntity(ushort storageEntityId) =>");
-        sb.AppendLine("        storageEntityId switch");
-        sb.AppendLine("        {");
-
-        foreach (var entityType in distinctEntities)
-        {
-            var strippedName = StripEntitySuffix(entityType.Name);
-            var index = distinctEntities.FindIndex(e => SymbolEqualityComparer.Default.Equals(e, entityType));
-            sb.AppendLine($"            StorageEntityId.{strippedName} => Entities[{index}],");
-        }
-
-        sb.AppendLine("            _ => throw new global::System.ArgumentOutOfRangeException(nameof(storageEntityId), storageEntityId, \"Unknown StorageEntityId.\"),");
-        sb.AppendLine("        };");
+        sb.AppendLine($"        storageEntityId < {distinctEntities.Count} ? Entities[storageEntityId] :");
+        sb.AppendLine("        throw new global::System.ArgumentOutOfRangeException(nameof(storageEntityId), storageEntityId, \"Unknown StorageEntityId.\");");
 
         EmitJoinGraph(sb, entityGraph, distinctEntities);
         EmitModelMetadata(sb, mappings);
+        EmitGraphMetadata(sb, mappings);
 
         sb.AppendLine("}");
     }
@@ -131,19 +122,27 @@ internal static class IdEmitter
         sb.AppendLine("        (fromEntityId, toEntityId) switch");
         sb.AppendLine("        {");
 
-        var emittedPatterns = new HashSet<(string From, string To)>();
+        var entityIds = new Dictionary<string, ushort>(StringComparer.Ordinal);
+        for (var i = 0; i < distinctEntities.Count; i++)
+        {
+            entityIds[StripEntitySuffix(distinctEntities[i].Name)] = (ushort)i;
+        }
+
+        var emittedPatterns = new HashSet<(ushort From, ushort To)>();
 
         foreach (var edge in entityGraph)
         {
             var dependent = StripEntitySuffix(edge.DependentEntity.Name);
             var principal = StripEntitySuffix(edge.PrincipalEntity.Name);
+            var dependentId = entityIds[dependent];
+            var principalId = entityIds[principal];
 
-            if (emittedPatterns.Add((dependent, principal)))
+            if (emittedPatterns.Add((dependentId, principalId)))
             {
                 EmitJoinCase(sb, dependent, principal, edge.DependentColumn, edge.PrincipalColumn, forward: true);
             }
 
-            if (emittedPatterns.Add((principal, dependent)))
+            if (emittedPatterns.Add((principalId, dependentId)))
             {
                 EmitJoinCase(sb, dependent, principal, edge.DependentColumn, edge.PrincipalColumn, forward: false);
             }
@@ -213,6 +212,50 @@ internal static class IdEmitter
         }
 
         sb.AppendLine("        }");
+    }
+
+    private static void EmitGraphMetadata(
+        StringBuilder sb,
+        ImmutableArray<MappingClassInfo> mappings)
+    {
+        var graphMappings =
+            mappings
+                .Where(m => m.Graph != null && !string.IsNullOrWhiteSpace(m.Graph!.GraphName) && m.EntityType != null)
+                .OrderBy(m => m.ModelType?.Name ?? "", StringComparer.Ordinal)
+                .ToList();
+
+        if (graphMappings.Count == 0)
+            return;
+
+        sb.AppendLine();
+
+        ushort graphId = 0;
+
+        foreach (var mapping in graphMappings)
+        {
+            var modelName = mapping.ModelType?.Name ?? "Unknown";
+            var edgeEntity = StripEntitySuffix(mapping.EntityType!.Name);
+            var graph = mapping.Graph!;
+
+            var fromLabel = graph.From?.Label ?? "";
+            var toLabel = graph.To?.Label ?? "";
+            var fromAlias = string.IsNullOrEmpty(graph.From?.Alias) ? fromLabel : graph.From!.Alias!;
+            var toAlias = string.IsNullOrEmpty(graph.To?.Alias) ? toLabel : graph.To!.Alias!;
+            var fromConnectedEntity = StripEntitySuffix(fromLabel);
+            var toConnectedEntity = StripEntitySuffix(toLabel);
+
+            sb.AppendLine($"    public static readonly GraphMetadata {modelName}Graph = new GraphMetadata(");
+            sb.AppendLine($"        new GraphId({graphId}),");
+            sb.AppendLine($"        \"{graph.GraphName}\",");
+            sb.AppendLine($"        \"{graph.EdgeLabel}\",");
+            sb.AppendLine($"        \"{graph.EdgeKey}\",");
+            sb.AppendLine($"        GetEntity(StorageEntityId.{edgeEntity}),");
+            sb.AppendLine($"        new VertexMetadata(\"{fromLabel}\", \"{graph.From?.GraphProperty}\", \"{graph.FromJoinColumn}\", \"{fromAlias}\", GetEntity(StorageEntityId.{fromConnectedEntity})),");
+            sb.AppendLine($"        new VertexMetadata(\"{toLabel}\", \"{graph.To?.GraphProperty}\", \"{graph.ToJoinColumn}\", \"{toAlias}\", GetEntity(StorageEntityId.{toConnectedEntity})));");
+            sb.AppendLine();
+
+            graphId++;
+        }
     }
 
     private static void EmitModelMetadata(
@@ -298,6 +341,27 @@ internal static class IdEmitter
         }
 
         sb.AppendLine("    };");
+
+        sb.AppendLine();
+        sb.AppendLine(
+            "    public static ModelMetadata GetModel(ushort modelEntityId)");
+        sb.AppendLine(
+            "    {");
+        sb.AppendLine(
+            "        foreach (var model in Models)");
+        sb.AppendLine(
+            "        {");
+        sb.AppendLine(
+            "            if (model.Id.Value == modelEntityId)");
+        sb.AppendLine(
+            "                return model;");
+        sb.AppendLine(
+            "        }");
+        sb.AppendLine();
+        sb.AppendLine(
+            "        throw new global::System.ArgumentOutOfRangeException(nameof(modelEntityId), modelEntityId, \"No ModelMetadata for this EntityId.\");");
+        sb.AppendLine(
+            "    }");
     }
     
     internal static ushort GetFieldId(

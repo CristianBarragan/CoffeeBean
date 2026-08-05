@@ -74,9 +74,26 @@ public static class MutationPlanTranslator
         var storageId = mutation.Entity.EntityId.Value;
 
         var values = ImmutableArray.CreateBuilder<FieldValue>();
+        var conflictColumns = ImmutableArray.CreateBuilder<ConflictColumn>();
 
         foreach (var column in mutation.Columns)
         {
+            var columnName = "";
+
+            foreach (var c in mutation.Entity.Columns)
+            {
+                if (c.Id.Value == column.Column.ColumnId)
+                {
+                    columnName = c.Name;
+                    break;
+                }
+            }
+
+            if (column.IsPrimaryKey)
+            {
+                conflictColumns.Add(new ConflictColumn(column.SourceFieldId, column.Column.ColumnId, columnName));
+            }
+
             if (column.ValueKind != FoundationMeta.MutationValueKind.Input &&
                 column.ValueKind != FoundationMeta.MutationValueKind.Constant)
             {
@@ -91,16 +108,21 @@ public static class MutationPlanTranslator
                 continue;
 
             values.Add(new FieldValue(
+                storageId,
+                column.SourceFieldId,
                 column.Column.ColumnId,
                 raw));
         }
 
         // NOTE: same entityId/storageEntityId value used for both -- see
-        // class remarks.
+        // class remarks. lookups/schemaOverride/tableOverride are still
+        // not populated -- deferred along with CTE-dependency and
+        // graph-merge translation (see class remarks).
         builder.AddRow(
             storageId,
             storageId,
             alias,
-            values.ToImmutable());
+            values.ToImmutable(),
+            conflictColumns: conflictColumns.ToImmutable());
     }
 }

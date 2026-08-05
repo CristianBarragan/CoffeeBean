@@ -5,7 +5,8 @@ public sealed record ModelMetadata(
     string Name,
     Type ClrType,
     IReadOnlyList<FieldMetadata> Fields,
-    IReadOnlyList<ModelEntityBinding> Entities
+    IReadOnlyList<ModelEntityBinding> Entities,
+    ColumnReference? PrimaryKey = null
 );
 
 public sealed record ModelEntityBinding(

@@ -19,9 +19,10 @@ public sealed record JoinNode(
 ) : QueryNode;
 
 public sealed record GraphEdgeNode(
+    QueryNode Source,
     GraphMetadata Graph,
-    QueryNode From,
-    QueryNode To
+    QueryNode? From,
+    QueryNode? To
 ) : QueryNode;
 
 public sealed record ProjectionNode(
