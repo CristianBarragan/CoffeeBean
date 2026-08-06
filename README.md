@@ -8,7 +8,7 @@
 [![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/)
 [![Native AOT](https://img.shields.io/badge/Native%20AOT-friendly-blue)](docs/10-Performance/Native-AOT.md)
 [![HotChocolate](https://img.shields.io/badge/GraphQL-Hot%20Chocolate-e10098)](docs/05-GraphQL/README.md)
-[![CodeQL](https://github.com/coffee-beanery/coffee-beanery/.github/workflows/badge.svg)](.github/workflows/codeql.yml)
+[![CodeQL](.github/workflows/badge.svg)](.github/workflows/codeql.yml)
 
 </div>
 
