@@ -26,15 +26,17 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain.Model", "Domain\Doma
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Database.Entity", "Infrastructure\Database\Database.Entity\Database.Entity.csproj", "{0AA7CA93-7B06-4154-A51A-EA06C35FA14F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeBeanery", "Domain\CoffeeBeanery\CoffeeBeanery.csproj", "{D5CAA015-AE1D-4024-B8D1-C9B26721F144}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeBeanery.Runtime", "Domain\CoffeeBeanery.Runtime\CoffeeBeanery.Runtime.csproj", "{D5CAA015-AE1D-4024-B8D1-C9B26721F144}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeBeanery.GraphQL", "Domain\CoffeeBeanery.GraphQL\CoffeeBeanery.GraphQL.csproj", "{1B2C3D4E-5F60-4A7B-8C9D-0E1F2A3B4C5D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Database.Graph", "Infrastructure\Database\Database.Graph\Database.Graph.csproj", "{6BC2D57F-1D80-47A0-A33E-A2AE4CCAD0A4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Database.Graph.Banking", "Infrastructure\Database\Database.Graph.Banking\Database.Graph.Banking.csproj", "{8E147C37-E42E-463C-85ED-DBB561FA1C8B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeBeanery.GraphQL.Core.Mapping.Generators", "Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj", "{92AD2E61-8703-4B53-96E0-461F0CF380C2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeBeanery.Mapping.Generators", "Domain\CoffeeBeanery.Mapping.Generators\CoffeeBeanery.Mapping.Generators.csproj", "{92AD2E61-8703-4B53-96E0-461F0CF380C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeBeanery.GraphQL.Core.Foundation", "Domain\CoffeeBeanery.GraphQL.Core.Foundation\CoffeeBeanery.GraphQL.Core.Foundation.csproj", "{A83A6DA3-E500-4ADC-A941-13AD16636B34}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeBeanery.Foundation", "Domain\CoffeeBeanery.Foundation\CoffeeBeanery.Foundation.csproj", "{A83A6DA3-E500-4ADC-A941-13AD16636B34}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -86,6 +88,10 @@ Global
 		{A83A6DA3-E500-4ADC-A941-13AD16636B34}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A83A6DA3-E500-4ADC-A941-13AD16636B34}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A83A6DA3-E500-4ADC-A941-13AD16636B34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B2C3D4E-5F60-4A7B-8C9D-0E1F2A3B4C5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B2C3D4E-5F60-4A7B-8C9D-0E1F2A3B4C5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B2C3D4E-5F60-4A7B-8C9D-0E1F2A3B4C5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B2C3D4E-5F60-4A7B-8C9D-0E1F2A3B4C5D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -103,6 +109,7 @@ Global
 		{92AD2E61-8703-4B53-96E0-461F0CF380C2} = {E36EDE6E-0BF8-40DA-A441-0E44963953B3}
 		{DF0F14E6-DFDD-B217-2FE1-61237D99902C} = {81914BA5-1D71-4DC9-AA56-BF7154A729D2}
 		{A83A6DA3-E500-4ADC-A941-13AD16636B34} = {E36EDE6E-0BF8-40DA-A441-0E44963953B3}
+		{1B2C3D4E-5F60-4A7B-8C9D-0E1F2A3B4C5D} = {E36EDE6E-0BF8-40DA-A441-0E44963953B3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9E7DAC60-7C53-4FEF-8B0F-911DD21D9054}

@@ -11,9 +11,9 @@
 
     <ItemGroup>
 
-        <ProjectReference Include="..\..\..\Domain\CoffeeBeanery\CoffeeBeanery.csproj" />
+        <ProjectReference Include="..\..\..\Domain\CoffeeBeanery.Runtime\CoffeeBeanery.Runtime.csproj" />
 
-        <ProjectReference Include="..\..\..\Domain\CoffeeBeanery.GraphQL.Core.Mapping.Generators\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj"
+        <ProjectReference Include="..\..\..\Domain\CoffeeBeanery.Mapping.Generators\CoffeeBeanery.Mapping.Generators.csproj"
                           OutputItemType="Analyzer"
                           ReferenceOutputAssembly="false" />
 

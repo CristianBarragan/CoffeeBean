@@ -24,12 +24,12 @@
 
 
     <ItemGroup>
-        <ProjectReference Include="..\CoffeeBeanery.GraphQL.Core.Mapping.Generators\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj"
+        <ProjectReference Include="..\CoffeeBeanery.Mapping.Generators\CoffeeBeanery.Mapping.Generators.csproj"
                           OutputItemType="Analyzer"
                           ReferenceOutputAssembly="false"
                           PrivateAssets="all" />
 
-        <ProjectReference Include="..\CoffeeBeanery\CoffeeBeanery.csproj" />
+        <ProjectReference Include="..\CoffeeBeanery.Runtime\CoffeeBeanery.Runtime.csproj" />
     </ItemGroup>
 
 
@@ -42,11 +42,6 @@
 
         <PackageReference Include="FasterKv.Cache.Core" Version="1.0.2" />
 
-        <PackageReference Include="HotChocolate" Version="15.1.12" />
-        <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.12" />
-        <PackageReference Include="HotChocolate.Data" Version="15.1.12" />
-        <PackageReference Include="HotChocolate.Types" Version="15.1.12" />
-        <PackageReference Include="HotChocolate.Types.Analyzers" Version="15.1.12" />
 
         <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.0" />
 

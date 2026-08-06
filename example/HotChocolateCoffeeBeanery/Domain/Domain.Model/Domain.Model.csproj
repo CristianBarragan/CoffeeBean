@@ -17,6 +17,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\Infrastructure\Database\Database.Entity.Banking\Database.Entity.Banking.csproj" />
-      <ProjectReference Include="..\CoffeeBeanery\CoffeeBeanery.csproj" />
+      <ProjectReference Include="..\CoffeeBeanery.Runtime\CoffeeBeanery.Runtime.csproj" />
     </ItemGroup>
 </Project>

@@ -13,9 +13,6 @@
         <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
         <PackageReference Include="HotChocolate" Version="15.1.12" />
         <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.12" />
-        <PackageReference Include="HotChocolate.Data" Version="15.1.12" />
-        <PackageReference Include="HotChocolate.Types" Version="15.1.12" />
-        <PackageReference Include="HotChocolate.Types.Analyzers" Version="15.1.12" />
         <PackageReference Include="Konnektr.Npgsql.Age" Version="2.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.7" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0"/>
@@ -36,6 +33,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\Domain\Domain.Shared\Domain.Shared.csproj" />
+      <ProjectReference Include="..\..\Domain\CoffeeBeanery.GraphQL\CoffeeBeanery.GraphQL.csproj" />
     </ItemGroup>
 
 </Project>

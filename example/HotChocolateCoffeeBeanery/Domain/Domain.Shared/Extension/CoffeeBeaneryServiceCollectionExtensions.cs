@@ -1,4 +1,6 @@
-﻿using CoffeeBeanery.GraphQL.Core.Mapping;
+﻿using CoffeeBeanery.GraphQL.Core.Foundation;
+using CoffeeBeanery.GraphQL.Core.Foundation.Metadata;
+using CoffeeBeanery.GraphQL.Core.Mapping;
 using CoffeeBeanery.GraphQL.Core.Runtime;
 using CoffeeBeanery.GraphQL.Core.Sql;
 using CoffeeBeanery.Service;
@@ -55,6 +57,15 @@ namespace Domain.Shared.Extension
             services.AddSingleton<IPlannerRegistry, GeneratedPlannerRegistry>();
             services.AddSingleton(AdapterTables.Build());
 
+            // IMetadataProvider is the Foundation-facing abstraction over the
+            // same generated data IEntityMetaProvider exposes above.
+            // GeneratedMetadataProvider.Instance forwards to the generated
+            // static GeneratedMetadata class, so registering it here doesn't
+            // change any behavior -- it just gives DI consumers (ProcessService,
+            // Filtering/MutationOperationBuilder overloads) something to
+            // resolve instead of reaching for the static class directly.
+            services.AddSingleton<IMetadataProvider>(GeneratedMetadataProvider.Instance);
+
             // ---- SQL writer ----
             services.AddSingleton<PostgresSqlWriter>();
 
@@ -65,7 +76,6 @@ namespace Domain.Shared.Extension
                 new ProcessService<CustomerCustomerEdge, Wrapper>(
                     sp.GetRequiredService<NpgsqlDataSource>(),
                     sp.GetRequiredService<IFasterKV<string, string>>(),
-                    sp.GetRequiredService<AdapterLookup>(),
                     sp.GetRequiredService<IEntityMetaProvider>(),
                     sp.GetRequiredService<PostgresSqlWriter>(),
                     sp.GetRequiredService<IPlannerRegistry>(),
@@ -76,7 +86,8 @@ namespace Domain.Shared.Extension
                             CustomerCustomerEdge = edges,
                             Model = Model.Model.CustomerCustomerEdge
                         }
-                    }));
+                    },
+                    metadataProvider: sp.GetRequiredService<IMetadataProvider>()));
             
             return services;
         }
