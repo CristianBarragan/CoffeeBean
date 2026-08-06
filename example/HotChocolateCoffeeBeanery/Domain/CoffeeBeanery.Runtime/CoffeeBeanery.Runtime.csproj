@@ -48,8 +48,4 @@
                           ReferenceOutputAssembly="false" />
         <ProjectReference Include="..\CoffeeBeanery.Foundation\CoffeeBeanery.Foundation.csproj" />
     </ItemGroup>
-    
-    <ItemGroup>
-      <Folder Include="GraphQL\Core\Extensions\" />
-    </ItemGroup>
 </Project>

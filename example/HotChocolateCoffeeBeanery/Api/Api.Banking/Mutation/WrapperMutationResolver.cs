@@ -3,6 +3,7 @@ using CoffeeBeanery.GraphQL.Core.Sql;
 using CoffeeBeanery.Service;
 using Domain.Model;
 using Domain.Shared;
+using HotChocolate.Data;
 using HotChocolate.Resolvers;
 using HotChocolate.Types.Pagination;
 

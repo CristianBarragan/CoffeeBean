@@ -12,7 +12,7 @@
 
     <!--
         Schema/Types/Resolvers/Middleware/DI for the GraphQL transport.
-        This is the ONLY project that references HotChocolate -- Runtime
+        This is the ONLY project that references HotChocolate Runtime
         and Domain.Shared never do, by construction (see HotChocolateAdapter
         remarks in Adapter/). Depends on Runtime (for the Sql/Filtering
         namespaces the resolvers and adapter code use directly) and
