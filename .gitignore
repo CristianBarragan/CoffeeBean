@@ -32,3 +32,13 @@ coverage/
 # Temp
 *.tmp
 *.cache
+
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# Rider
+*.DotSettings.user
+
+# Build logs
+*.binlog
