@@ -223,7 +223,7 @@ public ref struct QueryPlanBuilder
     }
 
 
-    public QueryPlan Build()
+    public PhysicalQueryPlan Build()
     {
         var columns =
             ImmutableArray.CreateBuilder<ColumnSpec>(_columnCount);
@@ -253,7 +253,7 @@ public ref struct QueryPlanBuilder
             graphResultJoins.Add(_graphResultJoins[i]);
 
 
-        return new QueryPlan(
+        return new PhysicalQueryPlan(
             _rootEntityId,
             _rootStorageEntityId,
             _rootAlias ?? string.Empty,

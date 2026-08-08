@@ -60,7 +60,7 @@ public static class PagingSqlWriter
     /// row whose key value was never fetched. Safe to always do: adding
     /// an already-declared column to a ProjectionNode.Fields list that
     /// wasn't otherwise selected just fills in a previously-absent slot
-    /// in QueryPlan.BuildColumnMap's per-entity map (sized to the
+    /// in PhysicalQueryPlan.BuildColumnMap's per-entity map (sized to the
     /// entity's full column count, not just what was selected) -- it
     /// does not disturb any other field's mapping.
     /// </summary>

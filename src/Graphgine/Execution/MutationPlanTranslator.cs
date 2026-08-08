@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using FoundationMutation = Foundgine.Core.MutationPlan;
+using FoundationMutation = Foundgine.Planning;
 using FoundationMeta = Foundgine.Metadata;
 
 namespace Graphgine.Execution;
 
 /// <summary>
 /// Lowers Foundation's MutationOperation list onto the existing, working
-/// MutationPlanBuilder/MutationPlan. Same seam as QueryPlanTranslator:
+/// MutationPlanBuilder/PhysicalMutationPlan. Same seam as QueryPlanTranslator:
 /// SqlMutationCompiler etc. are untouched and still only ever see a
-/// MutationPlan.
+/// PhysicalMutationPlan.
 ///
 /// FIRST PASS / DIRECTIONAL:
 /// - Foundation's MutationColumn describes the SHAPE of a mutation column
@@ -27,7 +27,7 @@ public static class MutationPlanTranslator
 {
     /// <param name="operations">Foundation mutation operations, in write order.</param>
     /// <param name="valueResolver">Given a source field id, returns the raw literal string to write, or null if not supplied.</param>
-    public static MutationPlan FromMutationOperations(
+    public static PhysicalMutationPlan FromMutationOperations(
         IReadOnlyList<FoundationMutation.MutationOperation> operations,
         Func<ushort, string?> valueResolver)
     {
@@ -42,11 +42,23 @@ public static class MutationPlanTranslator
                     AddEntityMutation(entityMutation, ref builder, aliasCounts, valueResolver);
                     break;
 
-                case FoundationMutation.GraphMutation:
-                case FoundationMutation.RelationshipMutation:
-                    // TODO: translate to builder.AddGraphMerge(...) / AddDependency(...)
-                    // once the CTE/graph-merge wiring rules are confirmed.
-                    break;
+                case FoundationMutation.GraphMutation graphMutation:
+                    throw new NotSupportedException(
+                        "MutationPlanTranslator: GraphMutation operations are not " +
+                        "translated yet (no AddGraphMerge/CTE-wiring translation " +
+                        "implemented). Silently dropping this operation would " +
+                        "make the requested write disappear without error, so " +
+                        "this fails loudly instead until the translation exists. " +
+                        $"Entity='{graphMutation.GetType().Name}'.");
+
+                case FoundationMutation.RelationshipMutation relationshipMutation:
+                    throw new NotSupportedException(
+                        "MutationPlanTranslator: RelationshipMutation operations " +
+                        "are not translated yet (no dependency-wiring translation " +
+                        "implemented). Silently dropping this operation would " +
+                        "make the requested write disappear without error, so " +
+                        "this fails loudly instead until the translation exists. " +
+                        $"Entity='{relationshipMutation.GetType().Name}'.");
 
                 default:
                     throw new NotSupportedException(

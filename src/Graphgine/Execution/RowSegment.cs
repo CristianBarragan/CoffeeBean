@@ -31,7 +31,7 @@ public sealed class RowLayout
         _aliasIndex = aliasIndex;
     }
 
-    public static RowLayout FromQueryPlan(in QueryPlan plan)
+    public static RowLayout FromQueryPlan(in PhysicalQueryPlan plan)
     {
         var segments = ImmutableArray.CreateBuilder<RowSegment>();
         string? currentAlias = null;

@@ -16,7 +16,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Foundgine.Core\Foundgine.Core.csproj" />
+        <ProjectReference Include="..\Foundgine.Builders\Foundgine.Builders.csproj" />
+        <ProjectReference Include="..\Foundgine.Planning\Foundgine.Planning.csproj" />
         <ProjectReference Include="..\Foundgine.Foundation\Foundgine.Foundation.csproj" />
         <ProjectReference Include="..\Foundgine.Metadata\Foundgine.Metadata.csproj" />
         <ProjectReference Include="..\Foundgine.Diagnostics\Foundgine.Diagnostics.csproj" />

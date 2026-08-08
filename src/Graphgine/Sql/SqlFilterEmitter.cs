@@ -8,12 +8,15 @@ namespace Graphgine.Sql;
 public sealed class SqlFilterEmitter
 {
     private readonly SqlFilterParameterBag _parameters;
+    private readonly Foundgine.Metadata.IMetadataProvider _metadata;
 
 
     public SqlFilterEmitter(
-        SqlFilterParameterBag parameters)
+        SqlFilterParameterBag parameters,
+        Foundgine.Metadata.IMetadataProvider metadata)
     {
         _parameters = parameters;
+        _metadata = metadata;
     }
 
 
@@ -66,7 +69,7 @@ public sealed class SqlFilterEmitter
         string alias)
     {
         var column =
-            ColumnNameResolver.Resolve(
+            ResolveColumnName(
                 filter.FieldMetadata.StorageEntityId,
                 filter.FieldMetadata.ColumnId);
 
@@ -120,12 +123,12 @@ public sealed class SqlFilterEmitter
          *   AND p.Amount = @p1
          * )
          *
-         * The join metadata already exists in QueryPlan.
+         * The join metadata already exists in PhysicalQueryPlan.
          * For now this keeps the emitter contract intact.
          */
 
         throw new NotSupportedException(
-            "Navigation filter emission requires QueryPlan join metadata.");
+            "Navigation filter emission requires PhysicalQueryPlan join metadata.");
     }
 
 
@@ -226,5 +229,23 @@ public sealed class SqlFilterEmitter
                 parts)
             +
             ")";
+    }
+
+
+    private string ResolveColumnName(
+        ushort storageEntityId,
+        ushort columnId)
+    {
+        var entity =
+            _metadata.GetEntity(storageEntityId);
+
+        foreach (var column in entity.Columns)
+        {
+            if (column.Id.Value == columnId)
+                return column.Name;
+        }
+
+        throw new InvalidOperationException(
+            $"Column id {columnId} not found on entity '{entity.Name}'.");
     }
 }

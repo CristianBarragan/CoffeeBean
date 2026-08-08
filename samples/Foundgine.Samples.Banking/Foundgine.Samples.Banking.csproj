@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Foundgine.Samples.Banking</RootNamespace>
+        <Description>
+            Answers "why is Foundgine not just Graphgine?" with a repository
+            sample instead of a slide: a Domain -&gt; Metadata -&gt; QueryPlan -&gt;
+            ProviderPlan -&gt; execution pipeline for a tiny banking schema, with
+            no GraphQL, no HotChocolate, and no Graphgine.* project anywhere in
+            this project's dependency graph. Compare to
+            samples/Graphgine.Samples.Banking, which is the same domain idea
+            fronted by GraphQL.
+        </Description>
+    </PropertyGroup>
+
+    <!--
+      Deliberately references only the platform, never Graphgine or anything
+      GraphQL-shaped. If a future change makes that untrue, ArchitectureTests.cs
+      won't catch it (samples/ isn't in its scope), but it would defeat the
+      entire point of this sample existing.
+    -->
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Foundgine.Metadata\Foundgine.Metadata.csproj" />
+        <ProjectReference Include="..\..\src\Foundgine.Builders\Foundgine.Builders.csproj" />
+        <ProjectReference Include="..\..\src\Foundgine.Execution.Contracts\Foundgine.Execution.Contracts.csproj" />
+        <ProjectReference Include="..\..\src\Foundgine.Providers\Foundgine.Providers.csproj" />
+    </ItemGroup>
+
+</Project>

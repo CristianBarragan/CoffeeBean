@@ -5,10 +5,10 @@ namespace Graphgine.Execution;
 
 /// <summary>
 /// Lowers a Foundation logical QueryNode tree onto the existing, working
-/// QueryPlanBuilder/QueryPlan physical representation. This is the seam
+/// QueryPlanBuilder/PhysicalQueryPlan physical representation. This is the seam
 /// between Foundation's provider-agnostic model and this project's
 /// existing SQL/graph execution engine (SqlQueryCompiler etc.), which is
-/// left completely untouched — it still only ever sees a QueryPlan.
+/// left completely untouched — it still only ever sees a PhysicalQueryPlan.
 ///
 /// FIRST PASS / DIRECTIONAL:
 /// - Alias assignment (EntityName, EntityName1, EntityName2, ...) is a
@@ -29,7 +29,7 @@ namespace Graphgine.Execution;
 /// </summary>
 public static class QueryPlanTranslator
 {
-    public static QueryPlan FromQueryNode(FoundationQuery.QueryNode root)
+    public static PhysicalQueryPlan FromQueryNode(FoundationQuery.QueryNode root)
     {
         var builder = new QueryPlanBuilder();
         var aliasCounts = new Dictionary<string, int>(System.StringComparer.OrdinalIgnoreCase);

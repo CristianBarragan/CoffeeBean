@@ -11,10 +11,10 @@ Source → destination, and why.
 | `...Foundation.Metadata` | `Foundgine.Metadata` |
 | `...Foundation.Diagnostics` | `Foundgine.Diagnostics` |
 | `...Foundation.QueryPlan` | `Foundgine.Builders` |
-| `...Foundation.MutationPlan` | `Foundgine.Core` (`Foundgine.Core.MutationPlan`) |
+| `...Foundation.MutationPlan` | `Foundgine.Planning` (moved a second time, out of `Foundgine.Core.MutationPlan` — see "Foundgine.Core split" below) |
 | `...Foundation.ProviderPlan` | `Foundgine.Execution.Contracts` (moved a second time — see "Post-merge architecture fixes" below) |
 | `...Foundation.Runtime` | `Foundgine.Execution.Contracts` (moved a second time — see below) |
-| `...Foundation.Provider` | `Foundgine.Core` (`Foundgine.Core.Provider`) |
+| `...Foundation.Provider` | `Foundgine.Providers` (moved a second time, out of `Foundgine.Core.Provider` — see "Foundgine.Core split" below) |
 
 `QueryPlan` became its own project (`Foundgine.Builders`) rather than folding into
 `Foundgine.Core`, because it's pure tree/builder infrastructure with no execution
@@ -60,11 +60,12 @@ applied. `Program.cs`'s `services.AddCoffeeBeanery<T>(...)` call was renamed to
 itself doesn't have a home yet (see `src/Graphgine.AspNetCore/README.md`).
 
 `src/CoffeeBeanery/` (the older monolithic library, ~5,000 lines, no clean
-platform/product seam) was **not** split — it's preserved unmodified under
-`legacy/CoffeeBeanery/`. It duplicates a lot of what's in `Graphgine`/`Foundgine.Core`
-now (its own `Mapper`, `NodeMap`, `SqlQueryCompiler`, etc.) and should probably be
-deleted once the new structure is confirmed to cover its use cases — kept for now
-so nothing was silently lost.
+platform/product seam) was **not** split — it was preserved unmodified under
+`legacy/CoffeeBeanery/` while the new structure was confirmed to cover its use
+cases, so nothing was silently lost. That confirmation is done: the directory
+has since been deleted ahead of the first public release (full history remains
+in git). It duplicated what now lives in `Graphgine`/`Foundgine.Core` (its own
+`Mapper`, `NodeMap`, `SqlQueryCompiler`, etc.).
 
 ## Post-merge architecture fixes
 
@@ -87,3 +88,24 @@ left over from the rename, deleted. `Foundgine.Core`, `Foundgine.Abstractions`, 
 is now moot — Postgres-specific code (the old `GraphStrategy`, `PostgresSqlWriter`,
 `SqlFilterEmitter`/`SqlFilterParameterBag`, and now `UnitOfWork`) all lives in
 `Graphgine.Sql`.
+
+## Foundgine.Core split
+
+A later review flagged `Foundgine.Core` as the architecture's one remaining
+catch-all: its `MutationPlan/` and `Provider/` subfolders had zero references
+to each other's types, and only `MutationPlan` was actually consumed outside
+the project (by `Graphgine`). That's the "real dependency violation" bar the
+architecture's own rule (freeze the project list until one appears — see
+README) sets for splitting further, so it was split along that seam:
+
+| From | To |
+|---|---|
+| `Foundgine.Core/MutationPlan/*.cs` (`MutationKind`, `MutationOperation`, `MutationPlan`) | `Foundgine.Planning/` |
+| `Foundgine.Core/Provider/*.cs` (`SqlExecutionProvider`, `GraphExecutionProvider`, `CacheExecutionProvider`) | `Foundgine.Providers/` |
+
+`Graphgine.csproj`'s `ProjectReference` on `Foundgine.Core` became a reference
+on `Foundgine.Planning` only — it never needed the provider implementations.
+`Foundgine.Providers` keeps the same single `ProjectReference` on
+`Foundgine.Execution.Contracts` that `Foundgine.Core` had. See
+`tests/Foundgine.Tests/ArchitectureTests.cs` for the test that now enforces
+this shape going forward.

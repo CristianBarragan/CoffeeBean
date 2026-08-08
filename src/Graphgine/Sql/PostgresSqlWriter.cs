@@ -11,13 +11,19 @@
     {
         private readonly IEntityMetaProvider _meta;
         private readonly IGraphStrategy _graphStrategy;
+        private readonly IMutationMetadataProvider _mutationMetadata;
+        private readonly IEnumConversionProvider _enumConversions;
 
         public PostgresSqlWriter(
             IEntityMetaProvider meta,
-            IGraphStrategy graphStrategy)
+            IGraphStrategy graphStrategy,
+            IMutationMetadataProvider mutationMetadata,
+            IEnumConversionProvider enumConversions)
         {
             _meta = meta;
             _graphStrategy = graphStrategy;
+            _mutationMetadata = mutationMetadata;
+            _enumConversions = enumConversions;
         }
 
 
@@ -32,7 +38,7 @@
 
 
         private static void ValidatePlanAliases(
-            QueryPlan plan)
+            PhysicalQueryPlan plan)
         {
             var aliases =
                 new Dictionary<string, string>(
@@ -159,8 +165,8 @@
 
 
         public string WriteUpsertThenSelect(
-            in MutationPlan mutation,
-            in QueryPlan query)
+            in PhysicalMutationPlan mutation,
+            in PhysicalQueryPlan query)
         {
             var sb =
                 new StringBuilder();
@@ -212,7 +218,7 @@
         }
         
         private List<string> BuildMutationCtes(
-            in MutationPlan mutation)
+            in PhysicalMutationPlan mutation)
         {
             var result =
                 new List<string>();
@@ -269,7 +275,7 @@
         private string BuildMutationCte(
             int rowIndex,
             int cteIndex,
-            in MutationPlan mutation)
+            in PhysicalMutationPlan mutation)
         {
             var row =
                 mutation.Rows[rowIndex];
@@ -449,7 +455,7 @@
 }
         
         private List<string> CollectGraphMergeCtes(
-            in MutationPlan plan)
+            in PhysicalMutationPlan plan)
         {
             var result =
                 new List<string>();
@@ -498,7 +504,7 @@
         }
 
         public string WriteSelect(
-            in QueryPlan plan)
+            in PhysicalQueryPlan plan)
         {
             var sb =
                 new StringBuilder(512);
@@ -513,7 +519,7 @@
         }
 
         public string WriteUpserts(
-            in MutationPlan plan)
+            in PhysicalMutationPlan plan)
         {
             var sb =
                 new StringBuilder();
@@ -551,7 +557,7 @@
 
 
         public string WriteGraphMerges(
-            in MutationPlan plan)
+            in PhysicalMutationPlan plan)
         {
             var sb =
                 new StringBuilder();
@@ -598,7 +604,7 @@
         }
 
         private List<string> CollectUpsertArms(
-            in MutationPlan plan)
+            in PhysicalMutationPlan plan)
         {
             var arms =
                 new List<string>(plan.Rows.Length);
@@ -1127,28 +1133,15 @@
             ushort entityId,
             ushort fieldId)
         {
-            var entity =
-                MutationMetadataRegistry.Get(entityId);
-
-
-            if (!entity.TryResolveField(
-                    fieldId,
-                    out var mapping))
-            {
-                throw new Exception(
-                    $"Field metadata missing.\n" +
-                    $"Entity={entityId}\n" +
-                    $"Field={fieldId}");
-            }
-
-
-            return mapping;
+            return _mutationMetadata.ResolveField(
+                entityId,
+                fieldId);
         }
 
 
         private void AppendSelect(
     StringBuilder sb,
-    QueryPlan plan)
+    PhysicalQueryPlan plan)
 {
     sb.AppendLine("SELECT DISTINCT");
 
@@ -1263,7 +1256,7 @@
 
 
         private static string ResolveGraphSyntheticAlias(
-            QueryPlan plan,
+            PhysicalQueryPlan plan,
             ColumnSpec column)
         {
             foreach (var graph in plan.GraphResultJoins)
@@ -1347,7 +1340,7 @@
         private void AppendJoin(
     StringBuilder sb,
     in JoinSpec join,
-    in QueryPlan plan,
+    in PhysicalQueryPlan plan,
     string alias)
 {
     // ---------------------------------------------------------------
@@ -1439,7 +1432,7 @@
 
 
         private string ResolveJoinAlias(
-    in QueryPlan plan,
+    in PhysicalQueryPlan plan,
     ushort storageEntityId,
     ushort entityId,
     string? requestedAlias = null)
@@ -1661,7 +1654,7 @@
             string rawValue)
         {
             var converted =
-                EnumConversions.TryConvert(
+                _enumConversions.TryConvert(
                     storageEntityId,
                     columnId,
                     rawValue);
@@ -1763,7 +1756,7 @@
         }
 
         private List<string> BuildCteNodeUpsertMerged(
-            in MutationPlan plan)
+            in PhysicalMutationPlan plan)
         {
             var statements = new List<string>();
 

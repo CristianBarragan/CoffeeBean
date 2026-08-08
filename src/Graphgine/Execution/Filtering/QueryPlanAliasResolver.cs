@@ -6,9 +6,9 @@ namespace Graphgine.Execution.Filtering;
 
 /// <summary>
 /// Resolves which SQL alias a storage entity maps to within a specific
-/// QueryPlan -- needed anywhere a field belonging to a joined (not root)
+/// PhysicalQueryPlan -- needed anywhere a field belonging to a joined (not root)
 /// entity needs to be referenced in hand-written SQL (ordering; later,
-/// navigation filters). QueryPlan itself doesn't index this by entity, so
+/// navigation filters). PhysicalQueryPlan itself doesn't index this by entity, so
 /// this is a linear scan of Joins, matching QueryPlanTranslator's own
 /// alias-per-join convention.
 ///
@@ -21,12 +21,10 @@ namespace Graphgine.Execution.Filtering;
 public static class QueryPlanAliasResolver
 {
     public static string ResolveAlias(
-        in QueryPlan plan,
+        in PhysicalQueryPlan plan,
         ushort storageEntityId)
     {
-        var found =
-            (string? Alias, int Count)
-            (null, 0);
+        (string? Alias, int Count) found = (null, 0);
 
         if (plan.RootStorageEntityId == storageEntityId)
         {
