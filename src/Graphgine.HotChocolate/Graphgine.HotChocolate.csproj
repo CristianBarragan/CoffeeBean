@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <Description>The HotChocolate integration for Graphgine. This is the only project allowed to reference HotChocolate types directly: HotChocolateAdapter converts HotChocolate's execution AST into Graphgine's protocol-neutral SelectionIR/MutationIR, and ContextResolverHelper builds HotChocolate Relay connections from Graphgine query results. No other Graphgine or Foundgine project should take a HotChocolate dependency.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="HotChocolate" Version="15.1.12" />
+        <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.12" />
+        <PackageReference Include="HotChocolate.Data" Version="15.1.12" />
+        <PackageReference Include="HotChocolate.Types" Version="15.1.12" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Graphgine\Graphgine.csproj" />
+    </ItemGroup>
+
+</Project>

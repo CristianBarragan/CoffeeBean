@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <Description>Serialization conventions for the platform's metadata and execution-result types. Placeholder: see README.md in this folder.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Foundgine.Metadata\Foundgine.Metadata.csproj" />
+    </ItemGroup>
+
+</Project>

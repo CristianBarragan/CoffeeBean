@@ -1,30 +1,44 @@
-*.pdb
-*.dll
-*.props
+# CPR / AI checkpoints
+cpr-checkpoints/
+**/cpr-checkpoints/
+
+# AI / Copilot
+.github/copilot/
+.copilot/
+
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# Rider
+.idea/
+*.DotSettings.user
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+*.binlog
+
+# Test
+TestResults/
+coverage/
+
+# Temp
+*.tmp
 *.cache
-*.targets
-*.exe
-example/HotChocolateCoffeeBeanery/.idea/*
-example/HotChocolateCoffeeBeanery/Api/Api.Banking/bin/*
-example/HotChocolateCoffeeBeanery/Api/Api.Banking/cpr-checkpoints/*
-example/HotChocolateCoffeeBeanery/Api/Api.Banking/obj/*
-src/CoffeeBeanery/.idea/*
-example/HotChocolateCoffeeBeanery/Domain/CoffeeBeanery/bin/*
-example/HotChocolateCoffeeBeanery/Domain/CoffeeBeanery/obj/*
-example/HotChocolateCoffeeBeanery/Domain/Domain.Model/bin/*
-example/HotChocolateCoffeeBeanery/Domain/Domain.Model/obj/*
-example/HotChocolateCoffeeBeanery/Domain/Domain.Shared/bin/*
-example/HotChocolateCoffeeBeanery/Domain/Domain.Shared/obj/*
-example/HotChocolateCoffeeBeanery/HotChocolateCoffeeBeanery.sln.DotSettings.user
-example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Entity.Banking/bin/*
-example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Entity.Banking/obj/*
-example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Graph.Banking/bin/*
-example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Graph.Banking/obj/*
-example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Common/bin/*
-example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Common/obj/*
-example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Entity/bin/*
-example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Entity/obj/*
-example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Graph/bin/*
-example/HotChocolateCoffeeBeanery/Infrastructure/Database/Database.Graph/obj/*
-src/CoffeeBeanery/bin/*
-src/CoffeeBeanery/obj/*
+
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# Rider
+*.DotSettings.user
+
+# Build logs
+*.binlog
