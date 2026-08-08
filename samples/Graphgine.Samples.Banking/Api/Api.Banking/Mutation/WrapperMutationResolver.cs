@@ -3,7 +3,6 @@ using Graphgine.Execution;
 using Graphgine.Sql;
 using Graphgine;
 using Domain.Model;
-using HotChocolate.Data;
 using HotChocolate.Resolvers;
 using HotChocolate.Types.Pagination;
 
