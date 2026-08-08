@@ -1,43 +1,43 @@
-[Home](../../README.md) → [Documentation](../README.md) → **Source Generators**
-
 # Source Generators
 
-The Roslyn incremental source generator is what makes Coffee Beanery's "compile-time first"
-principle real rather than aspirational. It reads your EF Core mapping classes and emits the
-runtime's execution plan — no reflection, no runtime model discovery.
+`Graphgine.SourceGenerators` is the Roslyn source-generator project behind the compile-time-oriented
+architecture.
 
----
+## Purpose
 
-## Contents
+The generator reads mapping information during compilation and emits strongly typed runtime
+artifacts such as:
 
-- [Mapping Generator](Mapping-Generator.md) — the concrete generator shipped today, and what it requires of your mapping code
-- [Diagnostics](Diagnostics.md) — the CBMAP diagnostic codes and known risk areas
-- [Pipeline Stages](Pipeline-Stages.md) — the 12-stage compilation pipeline
+- stable identifiers
+- metadata
+- planner support
+- materializers
+- mutation-related generated structures
+- mapping-derived adapter support
 
----
+The goal is to avoid repeatedly rediscovering application structure at request time.
 
-## Philosophy
+## Generator versus analyzer
 
-## Philosophy
+These are intentionally separate:
 
-The Generator has one responsibility:
+```text
+Graphgine.SourceGenerators → generates code
+Graphgine.Analyzers         → reports diagnostics
+```
 
-> Analyze once during compilation so Runtime never has to analyze again.
+`Graphgine.Analyzers` is currently a placeholder project.
 
-Everything expensive should happen here.
+## Important accuracy note
 
-Runtime should consume generated artifacts rather than discover application structure dynamically.
+Do not describe the current framework as absolutely reflection-free or fully Native AOT verified.
+The compile-time-first design strongly reduces runtime discovery, but the repository still contains
+runtime and integration work that must be validated before making absolute claims.
 
----
+## Pipeline
 
----
+See:
 
-## Related Documentation
-
-- [Foundation → Metadata](../03-Foundation/Metadata.md)
-- [Architecture → Request Pipeline](../02-Architecture/Request-Pipeline.md)
-- [Performance → Native AOT](../10-Performance/Native-AOT.md)
-
----
-
-← Previous: [GraphQL](../05-GraphQL/README.md)  |  Next: [Dependency Injection](../07-Dependency-Injection/README.md) →
+- [Mapping Generator](Mapping-Generator.md)
+- [Pipeline Stages](Pipeline-Stages.md)
+- [Diagnostics](Diagnostics.md)

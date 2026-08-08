@@ -6,8 +6,8 @@
 
 - [The bold statement](#the-bold-statement)
 - [Philosophy](#philosophy)
-- [What Coffee Beanery is](#what-coffee-beanery-is)
-- [What Coffee Beanery doesn't want to own](#what-coffee-beanery-doesnt-want-to-own)
+- [What Foundgine is](#what-coffee-beanery-is)
+- [What Foundgine doesn't want to own](#what-coffee-beanery-doesnt-want-to-own)
 - [Mission](#mission)
 - [Vision statement](#vision-statement)
 - [Roadmap by phase](#roadmap-by-phase)
@@ -16,7 +16,7 @@
 
 ## The bold statement
 
-> Coffee Beanery is a compile-time execution engine that transforms business models into
+> Foundgine is a compile-time execution engine that transforms business models into
 > deterministic execution plans, independent of transport, database, or infrastructure.
 > **Everything else is an adapter.**
 
@@ -25,14 +25,14 @@ in this documentation set is a consequence of it.
 
 A shorter version of the same idea, if you need an elevator pitch:
 
-> Coffee Beanery is the compile-time execution engine for .NET applications. It transforms
+> Foundgine is the compile-time execution engine for .NET applications. It transforms
 > business models into deterministic execution plans while allowing developers to choose the
 > best transport, persistence, and infrastructure technologies without changing the business
 > model.
 
 And the front-page version:
 
-> Coffee Beanery separates business intent from execution. Model your domain once. Generate
+> Foundgine separates business intent from execution. Model your domain once. Generate
 > deterministic execution plans. Integrate with the best tools — not replace them.
 
 ## Philosophy
@@ -40,17 +40,17 @@ And the front-page version:
 > Software should describe what the business does, not how infrastructure works.
 
 Applications should not be written *around* SQL, GraphQL, REST, Kafka, gRPC, databases, or
-ORMs. Instead, they should describe the business. Coffee Beanery transforms those business
+ORMs. Instead, they should describe the business. Foundgine transforms those business
 models into optimized execution plans that different providers can execute.
 
-**The application owns the business. Coffee Beanery owns the execution.**
+**The application owns the business. Foundgine owns the execution.**
 
 ```
                  Transport
         GraphQL   REST   gRPC
                 │
                 ▼
-      Coffee Beanery Planner
+      Foundgine Planner
                 │
                 ▼
          Execution Providers
@@ -62,14 +62,14 @@ models into optimized execution plans that different providers can execute.
           Infrastructure
 ```
 
-## What Coffee Beanery is
+## What Foundgine is
 
-Coffee Beanery is **not** an ORM. It is **not** a GraphQL framework. It is **not** a workflow
+Foundgine is **not** an ORM. It is **not** a GraphQL framework. It is **not** a workflow
 engine. It is **not** a database abstraction layer. It is a **compile-time execution engine**.
 Its one responsibility is to transform business intent into deterministic execution plans.
 Everything else is delegated to a provider.
 
-## What Coffee Beanery doesn't want to own
+## What Foundgine doesn't want to own
 
 This is equally important, and it's a deliberate scope boundary, not an oversight. Coffee
 Beanery intentionally does not compete with the best-in-class tools it sits between:
@@ -80,7 +80,7 @@ Beanery intentionally does not compete with the best-in-class tools it sits betw
 - **Kafka** remains a messaging platform (future provider — not built yet).
 - **Temporal** remains a workflow engine (future provider — not built yet).
 
-Coffee Beanery sits *between* the transport and the infrastructure, generating the execution
+Foundgine sits *between* the transport and the infrastructure, generating the execution
 plan that connects them.
 
 ## Mission

@@ -40,7 +40,7 @@
 
 ---
 
-> This document describes the long-term technical roadmap for the CoffeeBeanery framework. It outlines the expected evolution of the architecture while preserving the project's core design principles.
+> This document describes the long-term technical roadmap for the Foundgine framework. It outlines the expected evolution of the architecture while preserving the project's core design principles.
 
 The roadmap is intentionally organized around architectural capabilities rather than release dates.
 
@@ -48,7 +48,7 @@ The roadmap is intentionally organized around architectural capabilities rather 
 
 ## Vision
 
-CoffeeBeanery aims to become a compile-time-first data access framework capable of supporting multiple transports, multiple SQL dialects, and graph-based querying through a shared execution engine.
+Foundgine aims to become a compile-time-first data access framework capable of supporting multiple transports, multiple SQL dialects, and graph-based querying through a shared execution engine.
 
 The long-term architecture is:
 
@@ -315,19 +315,19 @@ These tools should consume generated metadata where possible.
 Potential ecosystem projects:
 
 ```
-CoffeeBeanery.Mongo
+Foundgine.Mongo
 
-CoffeeBeanery.Redis
+Foundgine.Redis
 
-CoffeeBeanery.Cosmos
+Foundgine.Cosmos
 
-CoffeeBeanery.Elasticsearch
+Foundgine.Elasticsearch
 
-CoffeeBeanery.Blazor
+Foundgine.Blazor
 
-CoffeeBeanery.OpenApi
+Foundgine.OpenApi
 
-CoffeeBeanery.Cli
+Foundgine.Cli
 ```
 
 Each project integrates through Foundation contracts.
@@ -336,7 +336,7 @@ Each project integrates through Foundation contracts.
 
 ## Success Criteria
 
-CoffeeBeanery will be considered architecturally complete when:
+Foundgine will be considered architecturally complete when:
 
 - Runtime contains no reflection.
 - Generated code implements all required contracts.
@@ -369,7 +369,7 @@ Architectural consistency is more valuable than short-term convenience.
 
 ## Summary
 
-The CoffeeBeanery roadmap is focused on evolving the framework through compile-time generation, transport independence, and dependency inversion.
+The Foundgine roadmap is focused on evolving the framework through compile-time generation, transport independence, and dependency inversion.
 
 Rather than adding isolated features, each phase strengthens the overall architecture, ensuring the framework remains performant, maintainable, extensible, and capable of supporting new transports and storage providers without compromising its core design.
 

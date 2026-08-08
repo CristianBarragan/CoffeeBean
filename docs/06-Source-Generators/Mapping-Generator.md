@@ -2,7 +2,7 @@
 
 # Mapping Generator
 
-`CoffeeBeanery.GraphQL.Core.Mapping.Generators` is the concrete generator shipped in Phase 1.
+`Foundgine.GraphQL.Core.Mapping.Generators` is the concrete generator shipped in Phase 1.
 It replaces `NodeBuilder<TContext>`'s five reflective passes — `InferModelChildren`,
 `GenerateReflectedFieldMaps`, `ResolveFieldMapAliases`, `BuildTree`, `BuildModel` — with a
 compile-time equivalent, so the mapping layer is Native AOT / trim safe with zero runtime
@@ -27,7 +27,7 @@ is Native AOT / trim safe with zero runtime reflection.
 
 **Status: not yet build-verified.** This sandbox has no .NET SDK, so the project
 has been written and self-reviewed carefully but not compiled against your real
-`CoffeeBeanery.GraphQL.Core.Mapping` / `.Sql` assemblies. Treat the first build
+`Foundgine.GraphQL.Core.Mapping` / `.Sql` assemblies. Treat the first build
 as the real validation step — see "Known risk areas" below for where I'd look
 first if something doesn't compile.
 
@@ -42,7 +42,7 @@ first if something doesn't compile.
 
 2. **`BaseModelMappingRegistration<T>.Register()` must be `virtual`.**
    The generated partial provides `public override void Register()`, which
-   builds `ModelNodeTree` / `CoffeeBeanery.GraphQL.Core.Sql.EntityNodeTree` / `ModelNode` / `EntityNode`
+   builds `ModelNodeTree` / `Foundgine.GraphQL.Core.Sql.EntityNodeTree` / `ModelNode` / `EntityNode`
    directly and calls `NodeRegistry.RegisterNode(...)` — it never calls
    `BuildMap()` or touches `NodeBuilder` at runtime. `BuildMap()` itself stays
    in your hand-written file purely as the *source of truth the generator
@@ -56,7 +56,7 @@ first if something doesn't compile.
 4. **Reference the generator as an analyzer**, not a normal assembly reference:
    ```xml
    <ItemGroup>
-     <ProjectReference Include="..\CoffeeBeanery.GraphQL.Core.Mapping.Generators\CoffeeBeanery.GraphQL.Core.Mapping.Generators.csproj"
+     <ProjectReference Include="..\Foundgine.GraphQL.Core.Mapping.Generators\Foundgine.GraphQL.Core.Mapping.Generators.csproj"
                         OutputItemType="Analyzer"
                         ReferenceOutputAssembly="false" />
    </ItemGroup>

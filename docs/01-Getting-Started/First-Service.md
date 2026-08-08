@@ -14,7 +14,7 @@
 
 ## What you're running
 
-The bundled sample, `example/HotChocolateCoffeeBeanery`, models a small Banking domain:
+The bundled sample, `samples/Graphgine.Samples.Banking`, models a small Banking domain:
 customers, accounts, contracts, and transactions. It's wired end to end through Coffee
 Beanery's Phase 1 stack:
 
@@ -27,9 +27,9 @@ EF Core mapping classes  →  generated execution plan  →  Hot Chocolate (Grap
 | Project | Role |
 |---|---|
 | `Api/Api.Banking` | The ASP.NET Core host — Hot Chocolate endpoint, query/mutation resolvers |
-| `Domain/CoffeeBeanery` | The framework runtime, wired into this specific solution |
-| `Domain/CoffeeBeanery.GraphQL.Core.Foundation` | Foundation contracts (see [Foundation](../03-Foundation/README.md)) |
-| `Domain/CoffeeBeanery.GraphQL.Core.Mapping.Generators` | The Roslyn source generator (see [Source Generators](../06-Source-Generators/README.md)) |
+| `Domain/Foundgine` | The framework runtime, wired into this specific solution |
+| `Domain/Foundgine.GraphQL.Core.Foundation` | Foundation contracts (see [Foundation](../03-Foundation/README.md)) |
+| `Domain/Foundgine.GraphQL.Core.Mapping.Generators` | The Roslyn source generator (see [Source Generators](../06-Source-Generators/README.md)) |
 | `Domain/Domain.Model`, `Domain/Domain.Shared` | The business/domain model and shared mapping DSL |
 | `Infrastructure/Database/*` | EF Core entity models, migrations, and the PostgreSQL/AGE providers |
 
@@ -79,7 +79,7 @@ query {
 
 ## What just happened
 
-1. Hot Chocolate parsed the GraphQL request and handed it to Coffee Beanery's [runtime](../04-Runtime/README.md).
+1. Hot Chocolate parsed the GraphQL request and handed it to Foundgine's [runtime](../04-Runtime/README.md).
 2. The generated [query planner](../04-Runtime/Queries.md) resolved the requested fields against
    compile-time metadata — no reflection, no runtime type discovery.
 3. A single batched SQL statement was built and executed via Dapper against PostgreSQL.

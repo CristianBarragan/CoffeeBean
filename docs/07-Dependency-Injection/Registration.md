@@ -20,11 +20,11 @@ Each transport owns its own composition root.
 Examples:
 
 ```
-CoffeeBeanery.GraphQL
+Foundgine.GraphQL
 
-CoffeeBeanery.WebApi
+Foundgine.WebApi
 
-CoffeeBeanery.Grpc
+Foundgine.Grpc
 ```
 
 Each project registers Runtime plus generated services.

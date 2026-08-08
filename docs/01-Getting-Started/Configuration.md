@@ -13,7 +13,7 @@
 
 ## Connection strings
 
-Coffee Beanery reads standard ASP.NET Core configuration. The sample's
+Foundgine reads standard ASP.NET Core configuration. The sample's
 `appsettings.json` looks like:
 
 ```json

@@ -22,7 +22,7 @@
 
 ---
 
-> The CoffeeBeanery Mapping Generator is organized as a deterministic compilation pipeline. Each stage has a single responsibility, consumes immutable input, and produces immutable output for the next stage.
+> The Foundgine Mapping Generator is organized as a deterministic compilation pipeline. Each stage has a single responsibility, consumes immutable input, and produces immutable output for the next stage.
 
 This document describes every stage of that pipeline.
 
@@ -130,7 +130,7 @@ The remainder of the pipeline should operate on semantic information rather than
 
 ## Stage 3 — Parsing
 
-The parser converts Roslyn symbols into CoffeeBeanery's internal model.
+The parser converts Roslyn symbols into Foundgine's internal model.
 
 Example objects:
 
@@ -435,7 +435,7 @@ Everything generated during compilation replaces runtime reflection and dynamic 
 
 ## Summary
 
-The CoffeeBeanery code generation pipeline transforms application models into immutable runtime artifacts through a series of deterministic compilation stages.
+The Foundgine code generation pipeline transforms application models into immutable runtime artifacts through a series of deterministic compilation stages.
 
 ---
 

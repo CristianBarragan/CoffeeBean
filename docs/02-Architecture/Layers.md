@@ -2,13 +2,13 @@
 
 # Layers
 
-> **Note on today's physical layout.** The target layout below (`CoffeeBeanery.Foundation`,
-> `CoffeeBeanery.Runtime`, `CoffeeBeanery.Sql`, etc. as separate projects) is the direction
+> **Note on today's physical layout.** The target layout below (`Foundgine.Foundation`,
+> `Foundgine.Runtime`, `Foundgine.Sql`, etc. as separate projects) is the direction
 > the solution is organized toward. Today, Foundation, Runtime, SQL, and GraphQL concerns
-> live as folders inside the single `src/CoffeeBeanery` project (`GraphQL/Core/Runtime`,
+> live as folders inside the single `src/Foundgine` project (`GraphQL/Core/Runtime`,
 > `GraphQL/Core/Sql`, `GraphQL/Core/Mapping`, `GraphQL/Core/GraphQL`), and the mapping
 > generator lives in its own project
-> (`CoffeeBeanery.GraphQL.Core.Mapping.Generators` in the sample solution).
+> (`Foundgine.GraphQL.Core.Mapping.Generators` in the sample solution).
 > The dependency *rules* below already hold; the project *split* is incremental. See
 > [Vision → Roadmap by phase](Vision.md#roadmap-by-phase).
 
@@ -29,7 +29,7 @@
 
 ---
 
-> This document defines the recommended repository layout for the CoffeeBeanery framework. The structure is designed to enforce architectural boundaries, support independent evolution of components, and simplify long-term maintenance.
+> This document defines the recommended repository layout for the Foundgine framework. The structure is designed to enforce architectural boundaries, support independent evolution of components, and simplify long-term maintenance.
 
 ---
 
@@ -51,39 +51,39 @@ Every project should have one primary purpose.
 ## Solution Layout
 
 ```
-CoffeeBeanery.sln
+Foundgine.sln
 
 src/
 
-    CoffeeBeanery.Foundation/
+    Foundgine.Foundation/
 
-    CoffeeBeanery.Runtime/
+    Foundgine.Runtime/
 
-    CoffeeBeanery.Sql/
+    Foundgine.Sql/
 
-    CoffeeBeanery.Mapping.Generators/
+    Foundgine.Mapping.Generators/
 
-    CoffeeBeanery.GraphQL/
+    Foundgine.GraphQL/
 
-    CoffeeBeanery.Grpc/
+    Foundgine.Grpc/
 
-    CoffeeBeanery.WebApi/
+    Foundgine.WebApi/
 
 tests/
 
-    CoffeeBeanery.Foundation.Tests/
+    Foundgine.Foundation.Tests/
 
-    CoffeeBeanery.Runtime.Tests/
+    Foundgine.Runtime.Tests/
 
-    CoffeeBeanery.Sql.Tests/
+    Foundgine.Sql.Tests/
 
-    CoffeeBeanery.Mapping.Generators.Tests/
+    Foundgine.Mapping.Generators.Tests/
 
-    CoffeeBeanery.GraphQL.Tests/
+    Foundgine.GraphQL.Tests/
 
-    CoffeeBeanery.Grpc.Tests/
+    Foundgine.Grpc.Tests/
 
-    CoffeeBeanery.WebApi.Tests/
+    Foundgine.WebApi.Tests/
 ```
 
 Each project should be independently buildable and testable.
@@ -93,7 +93,7 @@ Each project should be independently buildable and testable.
 ## Foundation
 
 ```
-CoffeeBeanery.Foundation
+Foundgine.Foundation
 
 Metadata/
 
@@ -133,7 +133,7 @@ Foundation is the most stable project in the solution.
 ## Runtime
 
 ```
-CoffeeBeanery.Runtime
+Foundgine.Runtime
 
 Planner/
 
@@ -171,7 +171,7 @@ Foundation
 ## SQL
 
 ```
-CoffeeBeanery.Sql
+Foundgine.Sql
 
 PostgreSql/
 
@@ -207,7 +207,7 @@ Runtime
 ## Mapping Generator
 
 ```
-CoffeeBeanery.Mapping.Generators
+Foundgine.Mapping.Generators
 
 Parser/
 
@@ -299,7 +299,7 @@ Generated code should contain registrations and precomputed data, not business l
 ## GraphQL
 
 ```
-CoffeeBeanery.GraphQL
+Foundgine.GraphQL
 
 Schema/
 
@@ -327,7 +327,7 @@ Runtime
 ## gRPC *(future phase — not implemented today)*
 
 ```
-CoffeeBeanery.Grpc
+Foundgine.Grpc
 
 Services/
 
@@ -353,7 +353,7 @@ Runtime
 ## Web API *(future phase — not implemented today)*
 
 ```
-CoffeeBeanery.WebApi
+Foundgine.WebApi
 
 Controllers/
 
@@ -385,19 +385,19 @@ Recommended layout:
 ```
 tests/
 
-CoffeeBeanery.Foundation.Tests
+Foundgine.Foundation.Tests
 
-CoffeeBeanery.Runtime.Tests
+Foundgine.Runtime.Tests
 
-CoffeeBeanery.Sql.Tests
+Foundgine.Sql.Tests
 
-CoffeeBeanery.Mapping.Generators.Tests
+Foundgine.Mapping.Generators.Tests
 
-CoffeeBeanery.GraphQL.Tests
+Foundgine.GraphQL.Tests
 
-CoffeeBeanery.Grpc.Tests
+Foundgine.Grpc.Tests
 
-CoffeeBeanery.WebApi.Tests
+Foundgine.WebApi.Tests
 ```
 
 Tests should mirror the production structure where practical.
@@ -458,19 +458,19 @@ This layout enables future additions without disturbing existing layers.
 Potential new projects include:
 
 ```
-CoffeeBeanery.Mongo
+Foundgine.Mongo
 
-CoffeeBeanery.Cosmos
+Foundgine.Cosmos
 
-CoffeeBeanery.Redis
+Foundgine.Redis
 
-CoffeeBeanery.Elasticsearch
+Foundgine.Elasticsearch
 
-CoffeeBeanery.Blazor
+Foundgine.Blazor
 
-CoffeeBeanery.OpenApi
+Foundgine.OpenApi
 
-CoffeeBeanery.Cli
+Foundgine.Cli
 ```
 
 Each new project integrates through Foundation contracts rather than modifying Runtime.
@@ -479,7 +479,7 @@ Each new project integrates through Foundation contracts rather than modifying R
 
 ## Summary
 
-The repository structure reinforces CoffeeBeanery's architectural principles:
+The repository structure reinforces Foundgine's architectural principles:
 
 - Stable Foundation contracts
 - Transport-agnostic Runtime
@@ -490,7 +490,7 @@ The repository structure reinforces CoffeeBeanery's architectural principles:
 - Clear project boundaries
 - Long-term maintainability
 
-By organizing the solution around responsibilities rather than technologies, CoffeeBeanery remains modular, extensible, and adaptable as the framework grows.
+By organizing the solution around responsibilities rather than technologies, Foundgine remains modular, extensible, and adaptable as the framework grows.
 
 ---
 

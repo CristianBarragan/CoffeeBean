@@ -1,48 +1,41 @@
-[Home](../../README.md) → [Documentation](../README.md) → [GraphQL](README.md) → **Schema**
-
 # Schema
 
-## Contents
+Graphgine is designed to derive GraphQL-facing behavior from domain and mapping metadata rather than
+maintaining an unrelated second description of the domain.
 
-- [Where the schema comes from](#where-the-schema-comes-from)
-- [Node metadata](#node-metadata)
-- [Wrapper resolvers](#wrapper-resolvers)
+## Where metadata comes from
 
----
+The current architecture is:
 
-## Where the schema comes from
+```text
+Domain / EF Core mappings
+        ↓
+Graphgine.SourceGenerators
+        ↓
+generated metadata
+        ↓
+Graphgine planning/runtime
+        ↓
+Graphgine.HotChocolate
+```
 
-The GraphQL schema is composed from the same EF Core mapping classes that drive the rest of
-Coffee Beanery — there's no separate schema-first `.graphql` file to keep in sync. Each
-mapping class (a `BaseModelMappingRegistration<T>`) contributes a node to the schema, built
-from the `NodeMap` / `NodeTree` structures under `GraphQL/Core/GraphQL` and
-`GraphQL/Core/Mapping` in the runtime project. See
-[Foundation → Metadata](../03-Foundation/Metadata.md) for the underlying metadata shapes and
-[Source Generators → Mapping Generator](../06-Source-Generators/Mapping-Generator.md) for how
-those mapping classes are compiled into that metadata.
+The exact schema-generation surface is still evolving. Do not assume that every generated artifact
+described in historical Coffee Beanery documentation exists in the current runtime.
 
-## Node metadata
+## Graph-shaped metadata
 
-At the framework level, the schema is a graph of nodes and edges (`NodeTree`, `Edge`,
-`GraphMap`, `LinkKey` — see `GraphQL/Core/Sql`), which is also what powers the graph-shaped
-read path over PostgreSQL + Apache AGE described in
-[Persistence → PostgreSQL & AGE](../08-Persistence/PostgreSQL-AGE.md).
+Graphgine models entities, relationships, joins, graph nodes and edges as explicit structures. Those
+structures are also used by SQL and graph planning.
 
-## Wrapper resolvers
+See:
 
-The sample exposes queries and mutations through thin wrapper resolvers —
-`WrapperQueryResolver` and `WrapperMutationResolver` in `Api/Api.Banking` — that delegate
-into the runtime rather than hand-writing per-field resolution logic. See
-[Resolvers](Resolvers.md) for how that handoff works.
-
----
-
-## Related Documentation
-
-- [Resolvers](Resolvers.md)
 - [Foundation → Metadata](../03-Foundation/Metadata.md)
-- [Getting Started → First Service](../01-Getting-Started/First-Service.md)
+- [Source Generators](../06-Source-Generators/README.md)
+- [Persistence → PostgreSQL & AGE](../08-Persistence/PostgreSQL-AGE.md)
 
----
+## Resolver boundary
 
-← Previous: [GraphQL](README.md)  |  Next: [Resolvers](Resolvers.md) →
+Hot Chocolate-facing resolvers belong in the adapter/product layer. Foundgine platform contracts
+must remain independent of Hot Chocolate.
+
+See [Resolvers](Resolvers.md).

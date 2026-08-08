@@ -1,42 +1,43 @@
-[Home](../../README.md) → [Documentation](../README.md) → **Getting Started**
-
 # Getting Started
 
-This section gets a Coffee Beanery-backed service running locally and explains the moving
-parts you just started. If you want the philosophy first, see
-[Architecture → Vision](../02-Architecture/Vision.md).
+Foundgine is currently an architecture-first framework under active development. Graphgine is the
+first product built on it.
 
----
+This section explains the repository and the current Banking sample. The sample is a migration
+fixture and should not yet be described as a guaranteed one-command production quick start.
 
 ## Contents
 
-- [Installation](Installation.md) — prerequisites, PostgreSQL + Apache AGE setup, cloning the repo
-- [First Service](First-Service.md) — running the sample and understanding the request path
-- [Configuration](Configuration.md) — connection strings, DI registration, appsettings
-- [FAQ](FAQ.md) — the questions people ask in the first hour
+- [Installation](Installation.md)
+- [First Service](First-Service.md)
+- [Configuration](Configuration.md)
+- [FAQ](FAQ.md)
 
----
+## Repository layout
 
-## The shortest possible path
-
-```bash
-git clone https://github.com/coffee-beanery/coffee-beanery.git
-cd coffee-beanery/example/HotChocolateCoffeeBeanery
-dotnet build
-dotnet run --project Api/Api.Banking
+```text
+src/Foundgine.*       reusable platform
+src/Graphgine*        GraphQL product
+samples/*             current examples
+tests/*               test projects
+legacy/*              historical implementation
+docs/*                architecture documentation
 ```
 
-That assumes PostgreSQL with Apache AGE is already reachable at the connection string in
-`appsettings.json`. If it isn't yet, start with [Installation](Installation.md).
+## First validation
 
----
+With the .NET 9 SDK installed:
 
-## Related Documentation
+```bash
+dotnet restore Foundgine.sln
+dotnet build Foundgine.sln
+dotnet test Foundgine.sln
+```
 
-- [Architecture](../02-Architecture/README.md)
-- [Samples](../11-Samples/README.md)
-- [Reference → FAQ](../13-Reference/FAQ.md)
+The repository should make those commands mandatory CI gates before the project is presented as
+production-ready.
 
----
+## Next
 
-← Previous: [Documentation Home](../README.md)  |  Next: [Architecture](../02-Architecture/README.md) →
+Start with [Architecture](../02-Architecture/README.md) if you want to understand the dependency
+boundaries before running code.

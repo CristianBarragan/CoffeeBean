@@ -13,7 +13,7 @@
 
 ## Core Principles
 
-CoffeeBeanery follows six performance principles:
+Foundgine follows six performance principles:
 
 - Compile-time over runtime
 - Immutable metadata
