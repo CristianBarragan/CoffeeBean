@@ -2,7 +2,7 @@
 
 Source → destination, and why.
 
-## Platform (from `example/.../Domain/Foundgine.Foundation/`)
+## Platform (from `example/.../Domain/CoffeeBeanery.Foundation/`)
 
 | Old namespace | New namespace / project |
 |---|---|
@@ -21,17 +21,17 @@ Source → destination, and why.
 concerns — it matches "Builder infrastructure" in the target architecture more
 than "Pipeline abstractions."
 
-## Product (from `example/.../Domain/Foundgine.Runtime/`)
+## Product (from `example/.../Domain/CoffeeBeanery.Runtime/`)
 
 | Old namespace | New namespace / project |
 |---|---|
-| `Foundgine.CQRS` | `Foundgine.Foundation.CQRS` — generic CQRS, not GraphQL-specific, moved to the platform |
-| `Foundgine.Service` (`QueryResult<M>`) | `Graphgine` |
+| `CoffeeBeanery.CQRS` | `Foundgine.Foundation.CQRS` — generic CQRS, not GraphQL-specific, moved to the platform |
+| `CoffeeBeanery.Service` (`QueryResult<M>`) | `Graphgine` |
 | `...GraphQL.Core.Mapping` | `Graphgine.Mapping` |
 | `...GraphQL.Core.Sql` | `Graphgine.Sql` |
 | `...GraphQL.Core.Runtime` (+ `.Filtering`, `.Paging`) | `Graphgine.Execution` (+ `.Filtering`, `.Paging`) |
 
-## HotChocolate adapter (from `example/.../Domain/Foundgine.GraphQL/`)
+## HotChocolate adapter (from `example/.../Domain/CoffeeBeanery.GraphQL/`)
 
 | Old file | New location |
 |---|---|
@@ -40,10 +40,10 @@ than "Pipeline abstractions."
 | `Adapter/FilterQueryExtension.cs`, `Adapter/WhereCompiler.cs` | `src/Graphgine.HotChocolate/`, namespace `Graphgine.Execution.Filtering` |
 | `Mutation/*.cs`, `Query/WrapperQueryResolver.cs` | **`samples/Graphgine.Samples.Banking/Api/Api.Banking/`** — these declared `namespace Api.Banking.Mutation` / `Api.Banking.Query`, i.e. they're sample-app resolvers, not library code, even though they physically sat inside the library project before |
 
-## Source generator (from `example/.../Domain/Foundgine.Mapping.Generators/`)
+## Source generator (from `example/.../Domain/CoffeeBeanery.Mapping.Generators/`)
 
 Moved wholesale to `src/Graphgine.SourceGenerators/`, namespace
-`Foundgine.GraphQL.Core.Mapping.Generators` → `Graphgine.SourceGenerators`.
+`CoffeeBeanery.GraphQL.Core.Mapping.Generators` → `Graphgine.SourceGenerators`.
 Kept as `netstandard2.0` (required for Roslyn components) and does **not**
 `ProjectReference` any other Foundgine/Graphgine project, same as before — a
 source generator can't take a normal project dependency and still run in the
@@ -52,16 +52,16 @@ by name instead (see `Emit/IdEmitter.cs`).
 
 ## Everything else
 
-`samples/Graphgine.Samples.Banking/{Api,Domain/Domain.Model,Infrastructure,Test}`
+`example/HotChocolateCoffeeBeanery/{Api,Domain/Domain.Model,Infrastructure,Test}`
 moved to `samples/Graphgine.Samples.Banking/` with the same internal layout,
 `ProjectReference` paths repointed at `src/`, and the same namespace rewrite
 applied. `Program.cs`'s `services.AddCoffeeBeanery<T>(...)` call was renamed to
 `services.AddGraphgine<T>(...)` for consistency, though that extension method
 itself doesn't have a home yet (see `src/Graphgine.AspNetCore/README.md`).
 
-`src/Foundgine/` (the older monolithic library, ~5,000 lines, no clean
+`src/CoffeeBeanery/` (the older monolithic library, ~5,000 lines, no clean
 platform/product seam) was **not** split — it's preserved unmodified under
-`legacy/Foundgine/`. It duplicates a lot of what's in `Graphgine`/`Foundgine.Core`
+`legacy/CoffeeBeanery/`. It duplicates a lot of what's in `Graphgine`/`Foundgine.Core`
 now (its own `Mapper`, `NodeMap`, `SqlQueryCompiler`, etc.) and should probably be
 deleted once the new structure is confirmed to cover its use cases — kept for now
 so nothing was silently lost.
@@ -83,7 +83,7 @@ migrated code" section for the reasoning; the file moves were:
 `Foundgine.Foundation/CQRS/IQuery.cs` also had an unused `using Graphgine.Execution;`
 left over from the rename, deleted. `Foundgine.Core`, `Foundgine.Abstractions`, and
 `Foundgine.Foundation`'s `.csproj` descriptions were updated to match. The
-`Foundgine.Runtime.Postgres` reference this doc previously flagged as stale
+`CoffeeBeanery.Runtime.Postgres` reference this doc previously flagged as stale
 is now moot — Postgres-specific code (the old `GraphStrategy`, `PostgresSqlWriter`,
 `SqlFilterEmitter`/`SqlFilterParameterBag`, and now `UnitOfWork`) all lives in
 `Graphgine.Sql`.

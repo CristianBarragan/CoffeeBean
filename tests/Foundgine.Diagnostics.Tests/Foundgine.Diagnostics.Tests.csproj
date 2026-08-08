@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Graphgine\Graphgine.csproj" />
+        <ProjectReference Include="..\..\src\Foundgine.Diagnostics\Foundgine.Diagnostics.csproj" />
     </ItemGroup>
 
 </Project>
