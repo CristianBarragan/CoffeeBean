@@ -1,61 +1,39 @@
-[Home](../../README.md) → [Documentation](../README.md) → **Samples**
-
 # Samples
 
-## Contents
+## Banking sample
 
-- [The Banking sample](#the-banking-sample)
-- [Solution layout](#solution-layout)
-- [Running it](#running-it)
+The current sample is:
 
----
+`samples/Graphgine.Samples.Banking`
 
-## The Banking sample
+It demonstrates the intended combination of:
 
-`example/HotChocolateCoffeeBeanery` is the one sample in the repository today, and it's the
-canonical reference for every layer of Coffee Beanery working together: EF Core mapping
-classes, the [mapping generator](../06-Source-Generators/Mapping-Generator.md), the
-[runtime](../04-Runtime/README.md), [Hot Chocolate](../05-GraphQL/README.md), and
-[PostgreSQL + Apache AGE](../08-Persistence/PostgreSQL-AGE.md), modeling a small Banking
-domain (customers, accounts, contracts, transactions).
-
-It uses:
-
-- Dapper
+- domain models
+- Entity Framework Core mapping
+- Graphgine source generation
 - Hot Chocolate
-- Entity Framework (as the mapping source, not the execution engine — see
-  [Persistence → Dapper & EF Core](../08-Persistence/Dapper-EFCore.md))
-- PostgreSQL
-- FasterKV (in-process cache)
+- PostgreSQL / Npgsql
+- Apache AGE-oriented graph support
 
-## Solution layout
+The domain includes customers, contact points, contracts, accounts, transactions, products and
+customer-to-customer relationships.
 
-| Project | Role |
-|---|---|
-| `Api/Api.Banking` | ASP.NET Core host, GraphQL endpoint, query/mutation resolvers |
-| `Domain/CoffeeBeanery` | The framework runtime |
-| `Domain/CoffeeBeanery.GraphQL.Core.Foundation` | Foundation contracts |
-| `Domain/CoffeeBeanery.GraphQL.Core.Mapping.Generators` | The Roslyn mapping generator |
-| `Domain/Domain.Model`, `Domain/Domain.Shared` | Business/domain model and mapping DSL |
-| `Infrastructure/Command` | Command-side infrastructure |
-| `Infrastructure/Database/Database.Entity*` | EF Core entity models + migrations (relational) |
-| `Infrastructure/Database/Database.Graph*` | Apache AGE graph models + migrations |
-| `Test` | Test project |
+## Important status note
 
-## Running it
+The Banking sample still contains historical wiring from the Coffee Beanery implementation and
+must be repaired and validated before it is advertised as a guaranteed clone-and-run example.
 
-See [Getting Started → Installation](../01-Getting-Started/Installation.md) and
-[Getting Started → First Service](../01-Getting-Started/First-Service.md) for the full
-walkthrough, including PostgreSQL/AGE setup.
+In particular, sample references to old service-registration and processing abstractions should be
+treated as migration work rather than current platform API guarantees.
 
----
+## Source of truth
 
-## Related Documentation
+Use the current project files under `samples/Graphgine.Samples.Banking` and the `src/` projects
+rather than historical paths in `legacy/`.
+
+## Related
 
 - [Getting Started](../01-Getting-Started/README.md)
 - [GraphQL](../05-GraphQL/README.md)
-- [Performance → Benchmarks](../10-Performance/Benchmarks.md)
-
----
-
-← Previous: [Performance](../10-Performance/README.md)  |  Next: [Contributing](../12-Contributing/README.md) →
+- [Persistence](../08-Persistence/README.md)
+- [Source Generators](../06-Source-Generators/README.md)

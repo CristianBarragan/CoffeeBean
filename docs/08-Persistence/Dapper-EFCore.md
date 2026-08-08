@@ -13,7 +13,7 @@
 
 ## Two different jobs
 
-It's easy to assume Coffee Beanery is "an EF Core + Dapper hybrid ORM." It's more precise to
+It's easy to assume Foundgine is "an EF Core + Dapper hybrid ORM." It's more precise to
 say: **EF Core supplies metadata, Dapper executes.** They're not layered or composed at
 runtime — EF Core's mapping classes are read by the
 [mapping generator](../06-Source-Generators/Mapping-Generator.md) at compile time, and by

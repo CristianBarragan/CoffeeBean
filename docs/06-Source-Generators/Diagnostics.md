@@ -30,7 +30,7 @@ for the full pattern.
 ## Known Risk Areas
 
 
-> The Diagnostics subsystem is responsible for identifying architectural, modeling, and configuration issues during compilation rather than execution. Instead of allowing invalid applications to fail at runtime, CoffeeBeanery reports deterministic compiler diagnostics with actionable guidance, enabling developers to correct problems before the application is ever executed.
+> The Diagnostics subsystem is responsible for identifying architectural, modeling, and configuration issues during compilation rather than execution. Instead of allowing invalid applications to fail at runtime, Foundgine reports deterministic compiler diagnostics with actionable guidance, enabling developers to correct problems before the application is ever executed.
 
 Diagnostics are part of the framework.
 
@@ -675,7 +675,7 @@ They improve the framework without increasing runtime complexity.
 
 The Diagnostics & Analyzer Architecture transforms structural, architectural, provider, and planning errors into clear compile-time diagnostics, allowing developers to correct issues before execution begins.
 
-By combining incremental analyzers, deterministic validation, stable diagnostic identifiers, actionable messages, IDE integration, and optional code fixes, CoffeeBeanery delivers a modern developer experience while preserving a lightweight Runtime and strengthening the architectural integrity of the framework.
+By combining incremental analyzers, deterministic validation, stable diagnostic identifiers, actionable messages, IDE integration, and optional code fixes, Foundgine delivers a modern developer experience while preserving a lightweight Runtime and strengthening the architectural integrity of the framework.
 
 The generator's own README additionally flags these concrete risk areas for the first real
 build against your mapping code:

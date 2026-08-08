@@ -13,7 +13,7 @@
 
 ## Why PostgreSQL is Phase 1
 
-PostgreSQL is Coffee Beanery's first execution provider, wired through Npgsql
+PostgreSQL is Foundgine's first execution provider, wired through Npgsql
 (`Npgsql.EntityFrameworkCore.PostgreSQL`). Nothing in the [runtime](../04-Runtime/README.md)
 or [Foundation contracts](../03-Foundation/Contracts.md) assumes PostgreSQL specifically —
 see [Provider Architecture](#provider-architecture) below — but it's the only provider that's
@@ -30,7 +30,7 @@ recursive joins.
 
 ## Provider Architecture
 
-> Providers are the abstraction layer between the CoffeeBeanery Runtime and a specific persistence technology. They translate execution plans into provider-specific operations while preserving the semantics established during planning. Providers understand databases, transports, and protocols—but they never understand the application's domain model.
+> Providers are the abstraction layer between the Foundgine Runtime and a specific persistence technology. They translate execution plans into provider-specific operations while preserving the semantics established during planning. Providers understand databases, transports, and protocols—but they never understand the application's domain model.
 
 Providers encapsulate infrastructure.
 

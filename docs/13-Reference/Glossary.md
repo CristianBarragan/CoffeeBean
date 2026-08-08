@@ -38,7 +38,7 @@
 
 ---
 
-> This glossary defines the core terminology used throughout the CoffeeBeanery framework. The terms below have specific architectural meanings and should be used consistently across documentation, code, and discussions.
+> This glossary defines the core terminology used throughout the Foundgine framework. The terms below have specific architectural meanings and should be used consistently across documentation, code, and discussions.
 
 ---
 
@@ -356,7 +356,7 @@ Defines:
 - identifiers
 - planning primitives
 
-Foundation references no other CoffeeBeanery project.
+Foundation references no other Foundgine project.
 
 ---
 
@@ -423,13 +423,13 @@ This keeps Runtime reusable and testable.
 
 Ahead-of-Time compilation supported through compile-time generation and the avoidance of runtime reflection.
 
-CoffeeBeanery is designed to remain fully compatible with Native AOT.
+Foundgine is designed to remain fully compatible with Native AOT.
 
 ---
 
 ## Summary
 
-Using this terminology consistently helps maintain a shared architectural language across the CoffeeBeanery codebase. Contributors should prefer these definitions when naming types, writing documentation, reviewing pull requests, and discussing future design decisions.
+Using this terminology consistently helps maintain a shared architectural language across the Foundgine codebase. Contributors should prefer these definitions when naming types, writing documentation, reviewing pull requests, and discussing future design decisions.
 
 ---
 

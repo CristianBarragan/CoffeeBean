@@ -1,159 +1,44 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Performance](README.md) → **Native AOT**
-
 # Native AOT
 
-## Contents
+Native AOT is an architectural consideration, not a currently verified product claim.
 
-- [Why Native AOT?](#why-native-aot)
-- [Design Principles](#design-principles)
-- [Dynamic Features to Avoid](#dynamic-features-to-avoid)
-- [Testing Native AOT](#testing-native-aot)
-- [Performance Benefits](#performance-benefits)
+## Why it matters
 
----
+A compile-time-oriented execution model can reduce runtime discovery and make Native AOT easier to
+support. It can also improve startup characteristics when dynamic infrastructure is avoided.
 
-## Why Native AOT?
+## Current design direction
 
-Native AOT provides:
+The project prefers:
 
-- Faster startup
-- Lower memory usage
-- Smaller deployment footprint
-- Better container performance
-- Reduced cold-start latency
-- Improved cloud scalability
+- generated metadata
+- generated registries
+- explicit provider plans
+- deterministic SQL generation
+- source-generated serialization where appropriate
+- minimal runtime assembly scanning
 
-Supporting Native AOT also encourages better architectural discipline.
+## Do not make this claim yet
 
----
+The repository should **not** currently be marketed as:
 
-## Design Principles
+- fully Native AOT compatible
+- zero-reflection everywhere
+- zero-runtime-code-generation everywhere
 
-CoffeeBeanery achieves Native AOT compatibility by avoiding runtime features that require dynamic analysis.
+Those statements require repeatable AOT builds and integration tests.
 
-Key principles include:
+## Validation required
 
-- No runtime reflection
-- No runtime code generation
-- No expression compilation
-- No dynamic proxy generation
-- No runtime metadata discovery
+A future AOT CI job should verify:
 
-Everything required for execution is generated during compilation.
+1. compilation
+2. application startup
+3. metadata resolution
+4. query execution
+5. mutation execution
+6. materialization
+7. GraphQL request execution
 
----
-
-## Dynamic Features to Avoid
-
-Avoid introducing:
-
-- Reflection
-- DynamicMethod
-- Reflection.Emit
-- Expression.Compile()
-- Runtime IL generation
-- Dynamic proxies
-- Runtime assembly scanning
-
-These features either reduce AOT compatibility or require additional configuration.
-
----
-
-## Collections
-
-Prefer static, immutable collections.
-
-Examples:
-
-```csharp
-ImmutableArray<T>
-
-ImmutableDictionary<TKey, TValue>
-```
-
-Generated metadata should be initialized once and reused for the application's lifetime.
-
----
-
-## Generic Code
-
-Prefer closed generic registrations where practical.
-
-Avoid runtime generic construction using reflection.
-
-Generated registries should reference concrete implementations directly.
-
----
-
-## Serialization
-
-Where serialization is required, prefer source-generated serializers.
-
-Example:
-
-```csharp
-[JsonSerializable(typeof(Customer))]
-internal partial class CoffeeBeaneryJsonContext
-    : JsonSerializerContext
-{
-}
-```
-
-Avoid reflection-based serializers.
-
----
-
-## SQL
-
-SQL generation should remain purely deterministic.
-
-SQL writers should consume immutable execution plans without inspecting CLR types.
-
-This naturally aligns with Native AOT constraints.
-
----
-
-## Testing Native AOT
-
-Native AOT should be validated continuously.
-
-Recommended checks:
-
-- Successful AOT compilation
-- Runtime execution
-- Query execution
-- Mutation execution
-- Materialization
-- Metadata resolution
-
-These tests help prevent accidental introduction of unsupported runtime features.
-
----
-
-## Performance Benefits
-
-Designing for Native AOT also improves traditional JIT execution.
-
-Benefits include:
-
-- Fewer allocations
-- Reduced startup work
-- Simpler execution paths
-- Better cache locality
-- More predictable performance
-
-Compile-time optimization benefits every deployment model.
-
----
-
----
-
-## Related Documentation
-
-- [Benchmarks](Benchmarks.md)
-- [Source Generators](../06-Source-Generators/README.md)
-- [Foundation → Components](../03-Foundation/Components.md)
-
----
-
-← Previous: [Performance](README.md)  |  Next: [Benchmarks](Benchmarks.md) →
+See [Source Generators](../06-Source-Generators/README.md) and
+[Performance](README.md).

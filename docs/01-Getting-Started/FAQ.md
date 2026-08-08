@@ -21,7 +21,7 @@ language.
 ## Does this replace Hot Chocolate or Dapper?
 
 No — it deliberately doesn't. Hot Chocolate remains the GraphQL framework, Dapper remains
-the SQL executor. Coffee Beanery sits between your domain model and those tools, generating
+the SQL executor. Foundgine sits between your domain model and those tools, generating
 the execution plan that connects them. See
 [Architecture → Vision](../02-Architecture/Vision.md#what-coffee-beanery-is) for the full
 positioning.

@@ -13,7 +13,7 @@
 
 ## Current State
 
-Coffee Beanery does not yet have a first-class eventing or pub/sub system. What exists
+Foundgine does not yet have a first-class eventing or pub/sub system. What exists
 today is narrower: **interceptors** as an extension point in the execution pipeline, and
 structured logging/diagnostics hooks at the runtime level.
 

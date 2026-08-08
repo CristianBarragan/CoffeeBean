@@ -14,7 +14,7 @@
 
 ## Philosophy
 
-CoffeeBeanery is built around a few simple principles.
+Foundgine is built around a few simple principles.
 
 - Compile-time first
 - Immutable by default

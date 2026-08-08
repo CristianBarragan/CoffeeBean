@@ -12,7 +12,7 @@
 
 ## The wrapper pattern
 
-Rather than one Hot Chocolate resolver method per field, Coffee Beanery routes GraphQL
+Rather than one Hot Chocolate resolver method per field, Foundgine routes GraphQL
 requests through a small number of wrapper resolvers (`WrapperQueryResolver`,
 `WrapperMutationResolver`) that parse the incoming field selection and hand it to the
 runtime's [query planner](../04-Runtime/Queries.md) or

@@ -14,27 +14,27 @@
 
 ## Prerequisites
 
-Coffee Beanery targets **.NET 9** (`net9.0`) and is built and tested on x64. You'll need:
+Foundgine targets **.NET 9** (`net9.0`) and is built and tested on x64. You'll need:
 
 - [.NET 9 SDK](https://dotnet.microsoft.com/download)
 - **PostgreSQL** with the **Apache AGE** extension enabled (used for the graph read path — see [Persistence → PostgreSQL & AGE](../08-Persistence/PostgreSQL-AGE.md))
 - Optionally, a local Redis or FasterKV-compatible cache — the sample uses `FasterKv.Cache.Core` in-process, so no external cache server is required to get started
 
-Coffee Beanery's runtime package pulls in Hot Chocolate, Dapper.Contrib, EF Core (design-time,
+Foundgine's runtime package pulls in Hot Chocolate, Dapper.Contrib, EF Core (design-time,
 for mapping metadata), Npgsql, AutoMapper, and Z.Dapper.Plus. You don't need to install these
 separately — `dotnet restore` handles it.
 
 ## Clone the repository
 
 ```bash
-git clone https://github.com/coffee-beanery/coffee-beanery.git
+git clone https://github.com/CristianBarragan/Foundgine.git
 cd coffee-beanery
 ```
 
 The repository has two top-level trees:
 
-- `src/CoffeeBeanery` — the framework itself
-- `example/HotChocolateCoffeeBeanery` — a full sample application (Banking domain) that
+- `src/Foundgine` — the framework itself
+- `samples/Graphgine.Samples.Banking` — a full sample application (Banking domain) that
   exercises the framework end to end
 
 ## Set up PostgreSQL and Apache AGE
@@ -42,7 +42,7 @@ The repository has two top-level trees:
 1. Provision a PostgreSQL instance (local Docker container or a managed instance).
 2. Install and enable the [Apache AGE](https://age.apache.org/) extension on the target database.
 3. Create the database referenced by the sample's connection string (`BankingDB` by default —
-   see `example/HotChocolateCoffeeBeanery/Api/Api.Banking/appsettings.json`).
+   see `samples/Graphgine.Samples.Banking/Api/Api.Banking/appsettings.json`).
 4. Apply the EF Core migrations under `Infrastructure/Database/Database.Entity.Banking/Migrations`
    and `Infrastructure/Database/Database.Graph.Banking/Migrations`.
 
@@ -51,7 +51,7 @@ Update `ConnectionStrings:BankingConnectionString` in `appsettings.json` to poin
 ## Restore and build
 
 ```bash
-cd example/HotChocolateCoffeeBeanery
+cd samples/Graphgine.Samples.Banking
 dotnet restore
 dotnet build
 ```

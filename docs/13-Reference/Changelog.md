@@ -11,7 +11,7 @@
 
 ## Unreleased
 
-Coffee Beanery has not yet cut a tagged, versioned release — Phase 1 (EF Core mapping +
+Foundgine has not yet cut a tagged, versioned release — Phase 1 (EF Core mapping +
 Hot Chocolate + PostgreSQL + Dapper, see [Vision](../02-Architecture/Vision.md)) is under
 active development against the `main` branch. This page is a placeholder for the moment
 there's a first tagged version, rather than a fabricated version history.
@@ -22,7 +22,7 @@ Notable recent documentation work:
   described at [Documentation Home](../README.md).
 - Regenerated `README.md`, `llms.txt`, `llms-full.md`, and `AI.SEO.md` to match.
 - Archived the previous, duplicated documentation set under
-  [`docs/archive`](../archive/README.md) for history.
+  [`docs/archive`](README.md) for history.
 
 ## Format
 

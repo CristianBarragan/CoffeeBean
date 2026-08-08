@@ -12,7 +12,7 @@
 ## The Five Core Principles
 
 Every other principle in this document is a refinement of these five. If a design decision
-can't be justified by at least one of them, it doesn't belong in Coffee Beanery.
+can't be justified by at least one of them, it doesn't belong in Foundgine.
 
 **1. Business First**
 The domain is the source of truth. Infrastructure exists to serve it.
@@ -39,13 +39,13 @@ These are the day-to-day engineering principles that fall out of the five core p
 above — stable guidance for anyone implementing a new provider, transport, or generator
 stage.
 
-> This document captures the fundamental engineering principles that guide every architectural and implementation decision within CoffeeBeanery. These principles are intentionally long-lived and should remain stable even as individual implementations evolve.
+> This document captures the fundamental engineering principles that guide every architectural and implementation decision within Foundgine. These principles are intentionally long-lived and should remain stable even as individual implementations evolve.
 
 ---
 
 ### Introduction
 
-CoffeeBeanery is designed around a simple idea:
+Foundgine is designed around a simple idea:
 
 > **Move complexity to compile time so runtime can remain simple, deterministic, and fast.**
 
@@ -373,7 +373,7 @@ No layer should bypass another through direct implementation knowledge.
 
 ### 20. Long-Term Maintainability
 
-CoffeeBeanery is intended to evolve over many years.
+Foundgine is intended to evolve over many years.
 
 Short-term convenience should never compromise long-term architectural consistency.
 
@@ -391,7 +391,7 @@ over minimal implementation effort.
 
 ### Summary
 
-These principles define the architectural identity of CoffeeBeanery.
+These principles define the architectural identity of Foundgine.
 
 They guide every decision—from project organization and source generation to SQL serialization and runtime execution.
 
@@ -404,7 +404,7 @@ When multiple implementation options exist, the preferred choice is the one that
 - Transport independence
 - Clear architectural boundaries
 
-By consistently applying these principles, CoffeeBeanery remains performant, maintainable, extensible, and adaptable as the framework continues to grow.
+By consistently applying these principles, Foundgine remains performant, maintainable, extensible, and adaptable as the framework continues to grow.
 
 ---
 

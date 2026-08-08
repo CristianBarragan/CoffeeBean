@@ -2,8 +2,8 @@
 
 ## Supported Versions
 
-Coffee Beanery has not yet cut a tagged, versioned release — see the
-[Changelog](docs/13-Reference/Changelog.md) and [Roadmap](docs/00-Overview/Roadmap.md).
+Foundgine has not yet cut a tagged, versioned release — see the
+[Changelog](13-Reference/Changelog.md) and [Roadmap](13-Reference/Roadmap.md).
 Until a first release ships, only the `main` branch is supported.
 
 ## Reporting a Vulnerability

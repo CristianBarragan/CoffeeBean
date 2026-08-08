@@ -60,7 +60,7 @@ gRPC
 WebApi
 ```
 
-Foundation references no other CoffeeBeanery project.
+Foundation references no other Foundgine project.
 
 ---
 

@@ -7,7 +7,7 @@ Extended architecture FAQ. For first-hour setup questions, see
 
 ## Contents
 
-- [Why does CoffeeBeanery use Source Generators?](#why-does-coffeebeanery-use-source-generators)
+- [Why does Foundgine use Source Generators?](#why-does-coffeebeanery-use-source-generators)
 - [Why not use reflection?](#why-not-use-reflection)
 - [Why split Foundation from Runtime?](#why-split-foundation-from-runtime)
 - [Why generate metadata?](#why-generate-metadata)
@@ -21,24 +21,24 @@ Extended architecture FAQ. For first-hour setup questions, see
 - [Why avoid static generated classes?](#why-avoid-static-generated-classes)
 - [Why does Runtime avoid Roslyn?](#why-does-runtime-avoid-roslyn)
 - [Why prioritize Native AOT?](#why-prioritize-native-aot)
-- [Can CoffeeBeanery support databases other than PostgreSQL?](#can-coffeebeanery-support-databases-other-than-postgresql)
-- [Can CoffeeBeanery support transports other than GraphQL?](#can-coffeebeanery-support-transports-other-than-graphql)
+- [Can Foundgine support databases other than PostgreSQL?](#can-coffeebeanery-support-databases-other-than-postgresql)
+- [Can Foundgine support transports other than GraphQL?](#can-coffeebeanery-support-transports-other-than-graphql)
 - [Why generate identifiers?](#why-generate-identifiers)
 - [What belongs in Foundation?](#what-belongs-in-foundation)
 - [What belongs in Runtime?](#what-belongs-in-runtime)
 - [What belongs in the Generator?](#what-belongs-in-the-generator)
-- [What makes CoffeeBeanery different?](#what-makes-coffeebeanery-different)
+- [What makes Foundgine different?](#what-makes-coffeebeanery-different)
 - [Summary](#summary)
 
 ---
 
-> This document answers the most common questions about CoffeeBeanery's architecture, design decisions, and development philosophy.
+> This document answers the most common questions about Foundgine's architecture, design decisions, and development philosophy.
 
 ---
 
-## Why does CoffeeBeanery use Source Generators?
+## Why does Foundgine use Source Generators?
 
-CoffeeBeanery performs most framework analysis during compilation rather than runtime.
+Foundgine performs most framework analysis during compilation rather than runtime.
 
 This includes:
 
@@ -225,7 +225,7 @@ Keeping Roslyn isolated within the Generator reduces complexity and improves por
 
 ## Why prioritize Native AOT?
 
-Native AOT aligns naturally with CoffeeBeanery's architecture.
+Native AOT aligns naturally with Foundgine's architecture.
 
 Compile-time generation eliminates the need for:
 
@@ -238,7 +238,7 @@ The resulting framework performs well in both JIT and AOT environments.
 
 ---
 
-## Can CoffeeBeanery support databases other than PostgreSQL?
+## Can Foundgine support databases other than PostgreSQL?
 
 Yes.
 
@@ -256,7 +256,7 @@ Future providers may include:
 
 ---
 
-## Can CoffeeBeanery support transports other than GraphQL?
+## Can Foundgine support transports other than GraphQL?
 
 Yes.
 
@@ -340,9 +340,9 @@ Generated code becomes Runtime's input.
 
 ---
 
-## What makes CoffeeBeanery different?
+## What makes Foundgine different?
 
-CoffeeBeanery differs from many data frameworks by emphasizing:
+Foundgine differs from many data frameworks by emphasizing:
 
 - Compile-time analysis
 - Immutable metadata
@@ -358,7 +358,7 @@ The framework is designed so Runtime executes precomputed artifacts rather than 
 
 ## Summary
 
-CoffeeBeanery's design choices consistently favor compile-time computation, immutable models, clear architectural boundaries, and reusable execution components.
+Foundgine's design choices consistently favor compile-time computation, immutable models, clear architectural boundaries, and reusable execution components.
 
 Understanding these principles makes the rest of the framework significantly easier to understand and extend.
 

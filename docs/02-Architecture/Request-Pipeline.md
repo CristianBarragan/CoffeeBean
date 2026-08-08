@@ -13,13 +13,13 @@
 
 ---
 
-> This document follows a request from the moment an application calls CoffeeBeanery until the final object is returned. It explains which project is responsible for each stage and how compile-time generation and runtime execution interact.
+> This document follows a request from the moment an application calls Foundgine until the final object is returned. It explains which project is responsible for each stage and how compile-time generation and runtime execution interact.
 
 ---
 
 ## Overview
 
-CoffeeBeanery is divided into two major phases:
+Foundgine is divided into two major phases:
 
 ```
 Compile Time
@@ -92,7 +92,7 @@ Roslyn exposes:
 
 ## Phase 3 — Parsing
 
-CoffeeBeanery parses Roslyn symbols.
+Foundgine parses Roslyn symbols.
 
 ```
 Roslyn Symbols
@@ -112,7 +112,7 @@ RelationshipNode
 
 Roslyn APIs disappear after this stage.
 
-The remaining pipeline uses CoffeeBeanery's internal model.
+The remaining pipeline uses Foundgine's internal model.
 
 ---
 
@@ -517,7 +517,7 @@ Each layer remains focused on its own responsibility.
 
 ## Summary
 
-CoffeeBeanery performs all expensive analysis during compilation, generating immutable runtime artifacts that are consumed by a lightweight execution engine.
+Foundgine performs all expensive analysis during compilation, generating immutable runtime artifacts that are consumed by a lightweight execution engine.
 
 ---
 

@@ -11,13 +11,13 @@
 
 ---
 
-> CoffeeBeanery is designed to be extended through well-defined contracts rather than inheritance or runtime discovery. This document describes the framework's extensibility model and identifies the supported extension points.
+> Foundgine is designed to be extended through well-defined contracts rather than inheritance or runtime discovery. This document describes the framework's extensibility model and identifies the supported extension points.
 
 ---
 
 ## Philosophy
 
-CoffeeBeanery follows the **Open/Closed Principle**.
+Foundgine follows the **Open/Closed Principle**.
 
 The framework should be:
 
@@ -54,7 +54,7 @@ Runtime never depends upon application code directly.
 
 ## Extension Categories
 
-CoffeeBeanery exposes extension points in several areas:
+Foundgine exposes extension points in several areas:
 
 ```
 Metadata
@@ -298,7 +298,7 @@ No Runtime changes should be required.
 
 ## Storage Providers
 
-Although CoffeeBeanery currently targets PostgreSQL, the architecture supports additional storage engines.
+Although Foundgine currently targets PostgreSQL, the architecture supports additional storage engines.
 
 Potential future providers:
 
@@ -338,7 +338,7 @@ Future emitters can generate additional compile-time artifacts without affecting
 
 ## Best Practices
 
-When extending CoffeeBeanery:
+When extending Foundgine:
 
 - Prefer interfaces over inheritance
 - Preserve immutability
@@ -353,7 +353,7 @@ Extensions should integrate with the framework rather than bypass it.
 
 ## Summary
 
-CoffeeBeanery is intentionally extensible through Foundation contracts.
+Foundgine is intentionally extensible through Foundation contracts.
 
 By exposing clear interfaces for metadata, planning, SQL generation, materialization, graph strategies, and transports, the framework can evolve without compromising its core architecture of compile-time generation, immutable execution plans, and transport-independent Runtime.
 

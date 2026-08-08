@@ -24,7 +24,7 @@ before proposing one.
 
 ---
 
-> This document records the major architectural decisions that shape the CoffeeBeanery framework. It is intended to provide context for contributors and future maintainers, explaining not only **what** the architecture is, but **why** specific design choices were made.
+> This document records the major architectural decisions that shape the Foundgine framework. It is intended to provide context for contributors and future maintainers, explaining not only **what** the architecture is, but **why** specific design choices were made.
 
 ---
 
@@ -40,7 +40,7 @@ Traditional GraphQL frameworks perform extensive runtime analysis using reflecti
 
 ### Decision
 
-CoffeeBeanery moves as much work as possible from runtime to compile time using Roslyn Incremental Source Generators.
+Foundgine moves as much work as possible from runtime to compile time using Roslyn Incremental Source Generators.
 
 Compilation is responsible for:
 
@@ -94,7 +94,7 @@ Foundation defines:
 - Runtime primitives
 - Identifiers
 
-Foundation references no other CoffeeBeanery project.
+Foundation references no other Foundgine project.
 
 ### Consequences
 
@@ -334,7 +334,7 @@ Accepted
 
 ### Context
 
-CoffeeBeanery is intended to support multiple client technologies.
+Foundgine is intended to support multiple client technologies.
 
 ### Decision
 
@@ -360,7 +360,7 @@ Native AOT imposes restrictions on reflection and runtime code generation.
 
 ### Decision
 
-CoffeeBeanery avoids:
+Foundgine avoids:
 
 - Reflection
 - Expression compilation
@@ -377,7 +377,7 @@ Applications remain compatible with Native AOT while retaining high performance.
 
 ## Summary
 
-These architectural decisions establish the core principles of CoffeeBeanery:
+These architectural decisions establish the core principles of Foundgine:
 
 - Compile-time first
 - Immutable metadata

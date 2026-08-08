@@ -493,7 +493,7 @@ WHERE (Customer."CustomerKey" IN (
 
 ## Observations
 
-- The `Product` model spans **4 physical tables** across 3 PostgreSQL schemas. In a resolver-chain GraphQL implementation this relationship alone would trigger N+1 queries at every nesting level. Coffee Beanery compiles the entire graph into **1 SELECT** regardless of entity count or depth.
+- The `Product` model spans **4 physical tables** across 3 PostgreSQL schemas. In a resolver-chain GraphQL implementation this relationship alone would trigger N+1 queries at every nesting level. Foundgine compiles the entire graph into **1 SELECT** regardless of entity count or depth.
 - All property access in the mapping layer uses **pre-compiled `Expression` delegates** (populated by `BulkMapper.Compile` at startup), eliminating reflection overhead from the hot path entirely.
 - Scaling from 1 to 3 customers (3× entities, 3× upserts, 3× assertions) added only **3 ms** to average response time (13 ms → 16 ms). Total end-to-end duration remained **identical at 239 ms**.
 - Max response time increased by only **11 ms** (67 ms → 78 ms) when handling 3× the data.

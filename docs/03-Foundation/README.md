@@ -2,7 +2,7 @@
 
 # Foundation
 
-Foundation is the dependency-free contract layer everything else in Coffee Beanery builds
+Foundation is the dependency-free contract layer everything else in Foundgine builds
 on. It defines *what* the system talks about — metadata shapes, planning primitives,
 interfaces, identifiers — without knowing *how* any of it gets executed.
 

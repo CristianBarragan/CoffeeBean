@@ -39,7 +39,7 @@ Foundation never owns:
 ## Project Structure
 
 ```
-CoffeeBeanery.Foundation
+Foundgine.Foundation
 
 Metadata/
 

@@ -1,7 +1,7 @@
-site_name: Coffee Beanery
-site_description: "Model the business. Generate the execution. Coffee Beanery is a compile-time execution engine that turns EF Core mappings into deterministic execution plans."
-repo_url: https://github.com/coffee-beanery/coffee-beanery
-repo_name: coffee-beanery/coffee-beanery
+site_name: Foundgine
+site_description: "Foundgine is a .NET execution platform. Graphgine is its first GraphQL-oriented product."
+repo_url: https://github.com/CristianBarragan/Foundgine
+repo_name: CristianBarragan/Foundgine
 docs_dir: docs
 site_dir: site
 
@@ -51,6 +51,7 @@ plugins:
 
 nav:
   - Home: README.md
+  - Current Status: CURRENT-STATUS.md
   - Getting Started:
       - Overview: 01-Getting-Started/README.md
       - Installation: 01-Getting-Started/Installation.md

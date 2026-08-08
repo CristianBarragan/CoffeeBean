@@ -2,7 +2,7 @@
 
 # Architecture
 
-Coffee Beanery is a compile-time execution engine. This section explains the vision, the
+Foundgine is a compile-time execution engine. This section explains the vision, the
 principles that constrain every design decision, how the codebase is layered, how a request
 actually flows through the system, and how the projects depend on one another.
 
