@@ -1,1 +1,0 @@
-﻿global using CoffeeBeanery.GraphQL.Core.Runtime;
