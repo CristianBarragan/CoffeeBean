@@ -1,148 +1,164 @@
-<div align="center">
+# Foundgine
 
-# Coffee Beanery
-
-**Model the business. Generate the execution.**
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4)](https://dotnet.microsoft.com/)
-[![Native AOT](https://img.shields.io/badge/Native%20AOT-friendly-blue)](docs/10-Performance/Native-AOT.md)
-[![HotChocolate](https://img.shields.io/badge/GraphQL-Hot%20Chocolate-e10098)](docs/05-GraphQL/README.md)
-[![CodeQL](.github/workflows/badge.svg)](.github/workflows/codeql.yml)
-
-</div>
-
----
-
-> Coffee Beanery is a compile-time execution engine that transforms business models into
-> deterministic execution plans, independent of transport, database, or infrastructure.
-> **Everything else is an adapter.**
-
-Coffee Beanery is **not** an ORM, a GraphQL framework, a workflow engine, or a database
-abstraction layer. It's a compile-time execution engine: its one job is to turn business
-intent — expressed as EF Core mappings — into a deterministic execution plan. Today that
-plan is carried in by [Hot Chocolate](https://chillicream.com/docs/hotchocolate) (GraphQL),
-executed against PostgreSQL, and run through [Dapper](https://github.com/DapperLib/Dapper).
-None of those three are replaced — Coffee Beanery sits between them and the domain model.
-
-**The application owns the business. Coffee Beanery owns the execution.**
+Foundgine is an extensible application-framework and infrastructure platform for
+.NET. **Graphgine** is the GraphQL engine built on top of it — the first product
+on the platform, formerly known as GraphQLCoffeeBeanery.
 
 ```
-                 Transport
-        GraphQL   REST   gRPC
-                │
-                ▼
-      Coffee Beanery Planner
-                │
-                ▼
-         Execution Providers
-      PostgreSQL  SQL Server
-         Kafka     Temporal
-         Redis      HTTP
-                │
-                ▼
-          Infrastructure
+Applications
+     ▲
+     │
+  Graphgine
+     ▲
+     │
+┌─────────────────────┐
+│      Foundgine       │
+│                       │
+│ Abstractions          │
+│ Foundation            │
+│ Metadata              │
+│ Diagnostics           │
+│ Builders              │
+│ Core                  │
+│ Reflection            │
+│ Serialization         │
+└─────────────────────┘
+     ▲
+     │
+   .NET
 ```
 
-Only the top-left and top-middle-left boxes are built today — see
-[Phase 1 vs. future phases](docs/02-Architecture/Vision.md#roadmap-by-phase) below. The
-diagram is the destination, not a claim about what ships now.
+## Dependency direction
 
----
+Strict rule, enforced by the `ProjectReference`s in every `.csproj` (verified —
+see "Architecture fixes" below):
 
-## Why Coffee Beanery
-
-Traditional GraphQL-over-EF stacks discover their query shape, joins, and mappings at
-request time, through reflection and expression-tree interpretation. Coffee Beanery moves
-that discovery to **compile time**, using a Roslyn incremental source generator that reads
-your EF Core mapping classes and emits the planner, materializers, and SQL-shaping metadata
-your application runs against. The result:
-
-- ✔ **Source-Generator Driven** — mapping metadata, planners, and materializers are emitted at compile time, not discovered via reflection at runtime.
-- ✔ **Native AOT Friendly** — no runtime reflection on the request path; see [Native AOT](docs/10-Performance/Native-AOT.md).
-- ✔ **GraphQL First (today)** — [Hot Chocolate](docs/05-GraphQL/README.md) is the Phase 1 transport; REST and gRPC are future adapters onto the same planner.
-- ✔ **Deterministic Execution** — every request runs a known, generated execution plan rather than an interpreted one.
-- ✔ **Provider-Based** — PostgreSQL + [Apache AGE](docs/08-Persistence/PostgreSQL-AGE.md) is the Phase 1 provider; the planner itself doesn't change when new providers are added.
-- ✔ **CQRS-Shaped Runtime** — separate [query](docs/04-Runtime/Queries.md) and [mutation](docs/04-Runtime/Mutations.md) execution paths.
-- ✔ **Dependency Injection Native** — see [Dependency Injection](docs/07-Dependency-Injection/README.md).
-
-## Core Principles
-
-**1. Business First** — the domain is the source of truth; infrastructure exists to serve it.
-**2. Compile-Time by Default** — discover as much as possible during compilation; avoid runtime reflection and dynamic behavior whenever practical.
-**3. Deterministic Execution** — every request executes through a known, generated execution plan.
-**4. Provider-Based Architecture** — execution is delegated to providers; the planner doesn't change when a provider does.
-**5. Transport Agnostic** — GraphQL, REST, and gRPC are all just ways of entering the same execution engine.
-
-See [Principles](docs/02-Architecture/Principles.md) for the full, extended list.
-
----
-
-## Quick Start
-
-Coffee Beanery isn't published as a standalone NuGet package yet — Phase 1 projects
-reference the source directly. The fastest way to see it running is the bundled sample:
-
-```bash
-git clone https://github.com/coffee-beanery/coffee-beanery.git
-cd coffee-beanery/example/HotChocolateCoffeeBeanery
-
-# Requires a local PostgreSQL instance with the Apache AGE extension —
-# see docs/01-Getting-Started/Installation.md for the full setup.
-dotnet build
-dotnet run --project Api/Api.Banking
+```
+Graphgine
+    │
+    ▼
+Foundgine.Core
+    ▼
+Foundgine.Execution.Contracts   (ExecutionContext, ProviderPlan, IExecutionProvider)
+    ▼
+Foundgine.Builders / Foundgine.Metadata
+    ▼
+Foundgine.Foundation
+    ▼
+Foundgine.Abstractions
 ```
 
-Then open the Banana Cake Pop GraphQL IDE at `http://localhost:4300/graphql` and run a
-query against the sample Banking domain.
+Foundgine never references Graphgine — not in any `.csproj`, and not in any
+`using` inside a `.cs` file either. Graphgine is simply a consumer of the
+platform, the same way a second product would be.
 
-Full walkthrough: **[Getting Started → First Service](docs/01-Getting-Started/First-Service.md)**
+### Architecture fixes applied to the migrated code
 
----
+The mechanical namespace rewrite from the CoffeeBeanery prototype carried over
+a few dependency-direction violations that the `ProjectReference`s alone
+didn't catch (mostly stray `using`s and types that were in the wrong project
+to begin with). These have been fixed:
 
-## Documentation
+- **`IExecutionProvider` no longer lives in `Foundgine.Abstractions`.** It
+  needs `ProviderPlan`/`ExecutionContext`, which pulled `Foundgine.Core` in as
+  a dependency of the bottom-most project — exactly backwards. Those types
+  (`ExecutionContext`, `ExecutionOptions`, `ExecutionResult`,
+  `ExecutionStatistics`, `ExecutionRow`, `ProviderPlan`, `ProviderNode`,
+  `IExecutionProvider`) now live together in a new project,
+  **`Foundgine.Execution.Contracts`**, which depends only on
+  `Foundgine.Metadata`. `Foundgine.Core` depends on it (for its concrete
+  `SqlExecutionProvider`/`GraphExecutionProvider`/`CacheExecutionProvider`),
+  not the other way around. `Foundgine.Abstractions` is back to zero
+  dependencies — just `IEntity`, `IPlanner`, `IOptimizer`, `IMaterializer`.
+- **`Foundgine.Foundation` no longer references `Graphgine`.** `CQRS/IQuery.cs`
+  had a stray, unused `using Graphgine.Execution;` left over from the rename.
+- **`Foundgine.Foundation` no longer depends on Npgsql.** `UnitOfWork` and
+  `UnitOfWorkContext` were Postgres-specific (`NpgsqlConnection`,
+  `NpgsqlTransaction`) but lived in the platform's foundation layer, which is
+  supposed to be usable by a Postgres, SQL Server, Mongo, or non-database
+  product alike. Both moved to `Graphgine.Sql`, next to the repo's other
+  Postgres-specific code (`AgeConnectionFactory`, `PostgresSqlWriter`).
+  `Foundgine.Foundation/CQRS` now holds only the generic, database-agnostic
+  contracts and dispatchers: `ICommand`, `IQuery`, `CommandDispatcher`,
+  `QueryDispatcher`.
+- **Fixed a latent, unrelated build gap**: `CommandDispatcher`/`QueryDispatcher`
+  use `Microsoft.Extensions.DependencyInjection`'s `IServiceProvider`/
+  `GetRequiredService` but `Foundgine.Foundation.csproj` never referenced the
+  package. Added `Microsoft.Extensions.DependencyInjection.Abstractions`.
 
-Coffee Beanery's documentation is organized like a framework, not a folder of notes.
-Start at the **[Documentation Home](docs/README.md)**, or jump straight to a section:
+Not yet done, and worth doing before adding features rather than after:
+architecture tests that enforce these rules automatically (e.g. "Abstractions
+must not reference anything") instead of relying on this document; the SQL,
+Graph, and Cache execution providers, the recursive-CTE graph strategy, and
+mutation-merge translation are still real `NotImplementedException`
+placeholders, not just naming issues; and `Foundgine.Tests`/`Graphgine.Tests`
+are still empty scaffolding rather than actual coverage.
 
-| Section | What's there |
-|---|---|
-| [01 · Getting Started](docs/01-Getting-Started/README.md) | Install, first service, configuration, FAQ |
-| [02 · Architecture](docs/02-Architecture/README.md) | Vision, principles, layers, request pipeline, dependency graph |
-| [03 · Foundation](docs/03-Foundation/README.md) | Contracts, metadata, extensibility |
-| [04 · Runtime](docs/04-Runtime/README.md) | Execution, queries, mutations, events |
-| [05 · GraphQL](docs/05-GraphQL/README.md) | Schema, resolvers, paging/filtering/sorting |
-| [06 · Source Generators](docs/06-Source-Generators/README.md) | The mapping generator, diagnostics, pipeline stages |
-| [07 · Dependency Injection](docs/07-Dependency-Injection/README.md) | Registration, lifetimes |
-| [08 · Persistence](docs/08-Persistence/README.md) | PostgreSQL + AGE, Dapper/EF Core, caching |
-| [09 · AI & LLM Readiness](docs/09-AI/README.md) | `llms.txt`, docs built for machine + human consumption |
-| [10 · Performance](docs/10-Performance/README.md) | Native AOT, benchmarks |
-| [11 · Samples](docs/11-Samples/README.md) | The bundled Banking sample |
-| [12 · Contributing](docs/12-Contributing/README.md) | Workflow, code style, testing, ADR process |
-| [13 · Reference](docs/13-Reference/README.md) | ADRs, FAQ, glossary, roadmap, changelog, migration guides |
+## Layout
 
-## Sample Project
+```
+Foundgine/
+├── Foundgine.sln
+├── src/
+│   ├── Foundgine.Abstractions/     platform contracts (IEntity, IPlanner, IOptimizer, ...)
+│   ├── Foundgine.Foundation/       Guard/Result/Optional primitives + generic CQRS
+│   ├── Foundgine.Metadata/         entity/field/column/relationship metadata model
+│   ├── Foundgine.Diagnostics/      diagnostic events, scopes, listeners
+│   ├── Foundgine.Builders/         generic query-plan tree + builder infrastructure
+│   ├── Foundgine.Execution.Contracts/  execution context, ProviderPlan, IExecutionProvider
+│   ├── Foundgine.Core/             mutation plans + the concrete SQL/Graph/Cache execution providers
+│   ├── Foundgine.Reflection/       (placeholder — see project README)
+│   ├── Foundgine.Serialization/    (placeholder — see project README)
+│   │
+│   ├── Graphgine/                  GraphQL mapping, SQL graph structures, execution compilers
+│   ├── Graphgine.HotChocolate/     the only project allowed to reference HotChocolate directly
+│   ├── Graphgine.AspNetCore/       (placeholder — see project README)
+│   ├── Graphgine.Analyzers/        (placeholder — see project README)
+│   └── Graphgine.SourceGenerators/ Roslyn generator for mapping-derived metadata
+│
+├── samples/
+│   └── Graphgine.Samples.Banking/  the former HotChocolateCoffeeBeanery example app
+├── tests/
+│   ├── Foundgine.Tests/            placeholder xunit project
+│   └── Graphgine.Tests/            placeholder xunit project
+├── benchmarks/                     empty — no benchmark project existed to migrate
+├── docs/
+└── legacy/
+    └── CoffeeBeanery/              the original monolithic library, unmodified
+```
 
-The [`example/HotChocolateCoffeeBeanery`](example/HotChocolateCoffeeBeanery) solution is a
-Banking domain exercised end-to-end: EF Core mapping classes → generated planner → Hot
-Chocolate GraphQL API → Dapper execution against PostgreSQL, with a graph read model on
-Apache AGE. See [Samples](docs/11-Samples/README.md).
+## How this was assembled — read this before you build
 
-## Roadmap
+This restructuring is based on a prototype that was already partially built inside
+this repo, under `example/HotChocolateCoffeeBeanery/Domain/` (`CoffeeBeanery.Foundation`,
+`CoffeeBeanery.Runtime`, `CoffeeBeanery.GraphQL`, `CoffeeBeanery.Mapping.Generators`).
+That prototype already implemented almost exactly the platform/product split
+described above, so it — not the older monolithic `src/CoffeeBeanery/` library —
+is what got renamed and promoted into `src/` here. The monolithic library is
+GraphQL-and-SQL code with no clean seam between "generic platform" and
+"GraphQL product," so it wasn't a good source to split from directly; it's
+preserved as-is under `legacy/CoffeeBeanery/` rather than discarded.
 
-Phase 1 is EF Core mapping + Hot Chocolate + PostgreSQL + Dapper. Everything past that —
-additional providers, additional transports, additional infrastructure adapters — is
-tracked as an extension of the same execution engine, not a change in direction. See the
-full [Roadmap](docs/13-Reference/Roadmap.md).
+Because of that:
 
-## Contributing
+- **Real, working content**: `Foundgine.Abstractions/.Foundation/.Metadata/.Diagnostics/.Builders/.Core`,
+  `Graphgine`, `Graphgine.HotChocolate`, `Graphgine.SourceGenerators`, and the
+  `Graphgine.Samples.Banking` sample all carry real migrated code with namespaces
+  mechanically rewritten (e.g. `CoffeeBeanery.GraphQL.Core.Foundation.Metadata` →
+  `Foundgine.Metadata`, `CoffeeBeanery.GraphQL.Core.Runtime` → `Graphgine.Execution`).
+- **Placeholders**: `Foundgine.Reflection`, `Foundgine.Serialization`,
+  `Graphgine.AspNetCore`, and `Graphgine.Analyzers` have no corresponding code in
+  the source repo to extract yet. Each has a `README.md` explaining what belongs
+  there and why it's empty for now, rather than guessed-at filler code.
+- **Stale references carried over**: the original prototype referenced two
+  projects that don't exist anywhere in the repo (`Domain.Shared`,
+  `CoffeeBeanery.Runtime.Postgres`). Those references were dropped/commented
+  with a note at the point they occurred instead of silently fabricated.
+- **Not verified to `dotnet build`**: the prototype this is based on wasn't a
+  complete, buildable solution to begin with (see above), so this restructuring
+  preserves its actual completeness level under the new names/paths rather than
+  claiming a green build that wouldn't reflect reality. Treat this as a structural
+  migration, not a build-verified one — plan to fix compile errors as you wire it
+  up, the same way you would have in the original prototype.
 
-Contributions are welcome — architecture proposals, generator improvements, provider
-adapters, and documentation fixes alike. Start with
-[Contributing](docs/12-Contributing/README.md) and the [Code Style](docs/12-Contributing/Code-Style.md)
-guide, and see the [ADR process](docs/12-Contributing/ADR-Process.md) before proposing an
-architectural change.
-
-## License
-
-Coffee Beanery is licensed under the [MIT License](LICENSE).
+See `docs/MIGRATION.md` for the full file-by-file mapping.

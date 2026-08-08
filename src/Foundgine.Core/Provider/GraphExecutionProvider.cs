@@ -1,10 +1,11 @@
 using Foundgine.Execution.Contracts;
+using ExecutionContext = Foundgine.Execution.Contracts.ExecutionContext;
 
 namespace Foundgine.Core.Provider;
 
-public sealed class CacheExecutionProvider : IExecutionProvider
+public sealed class GraphExecutionProvider : IExecutionProvider
 {
-    public ProviderKind Kind => ProviderKind.Cache;
+    public ProviderKind Kind => ProviderKind.Graph;
 
     public async IAsyncEnumerable<ExecutionRow> ExecuteAsync(
         ProviderPlan plan,
