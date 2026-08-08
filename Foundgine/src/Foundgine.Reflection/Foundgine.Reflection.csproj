@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <Description>Reflection and compiled-expression helpers (member access, getter/setter caches) for the platform. Placeholder: see README.md in this folder.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Foundgine.Abstractions\Foundgine.Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>

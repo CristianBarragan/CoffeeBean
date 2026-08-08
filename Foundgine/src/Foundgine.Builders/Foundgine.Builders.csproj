@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <Description>Generic query-plan tree and builder infrastructure (QueryNode, QueryPlan, QueryNodeBuilder) that products assemble their execution plans with.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Foundgine.Metadata\Foundgine.Metadata.csproj" />
+    </ItemGroup>
+
+</Project>

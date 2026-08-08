@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <Description>ASP.NET Core hosting integration for Graphgine (e.g. an AddGraphgine()/MapGraphgine() service-collection and endpoint wiring). Placeholder: see README.md in this folder.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Graphgine.HotChocolate\Graphgine.HotChocolate.csproj" />
+    </ItemGroup>
+
+</Project>
