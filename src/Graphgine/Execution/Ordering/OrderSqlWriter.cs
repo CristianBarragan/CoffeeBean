@@ -19,7 +19,7 @@ public sealed record ResolvedOrderTerm(
 
 /// <summary>
 /// Resolves OrderCompiler's parsed terms into real (alias, column)
-/// references for a specific QueryPlan, and builds ORDER BY / compound
+/// references for a specific PhysicalQueryPlan, and builds ORDER BY / compound
 /// keyset cursor SQL from them.
 ///
 /// KNOWN LIMITATION: a navigation term (e.g. `customer.firstNaming`) can
@@ -51,12 +51,12 @@ public static class OrderSqlWriter
 {
     /// <summary>
     /// Phase 1: resolves each term's navigation path down to a real field,
-    /// using only the entity graph -- no QueryPlan needed yet. Callers use
+    /// using only the entity graph -- no PhysicalQueryPlan needed yet. Callers use
     /// this to force each term's column into the query's projection
     /// (mirrors PagingSqlWriter.EnsurePrimaryKeySelected) BEFORE
-    /// translating to a QueryPlan, then call ResolveAliases afterward with
+    /// translating to a PhysicalQueryPlan, then call ResolveAliases afterward with
     /// the translated plan to get real SQL aliases. Split into two phases
-    /// specifically because alias resolution needs the QueryPlan's actual
+    /// specifically because alias resolution needs the PhysicalQueryPlan's actual
     /// Joins, which don't exist until after translation -- but forcing a
     /// column into the projection has to happen before translation.
     /// </summary>
@@ -122,7 +122,7 @@ public static class OrderSqlWriter
 
     /// <summary>
     /// Phase 2: resolves each already-field-resolved term's real SQL alias
-    /// against a translated QueryPlan. Call after ensuring every term's
+    /// against a translated PhysicalQueryPlan. Call after ensuring every term's
     /// column (via ResolveFields) was forced into the projection and the
     /// QueryNode translated -- otherwise QueryPlanAliasResolver will
     /// correctly throw "not part of this query's plan" for any navigation
@@ -130,7 +130,8 @@ public static class OrderSqlWriter
     /// </summary>
     public static List<ResolvedOrderTerm> ResolveAliases(
         List<(RuntimeFieldMetadata Field, SortDirection Direction)> fieldTerms,
-        in QueryPlan plan)
+        in PhysicalQueryPlan plan,
+        Foundgine.Metadata.IMetadataProvider metadata)
     {
         var resolved =
             new List<ResolvedOrderTerm>();
@@ -145,7 +146,8 @@ public static class OrderSqlWriter
             var columnName =
                 ResolveColumnName(
                     field.StorageEntityId,
-                    field.ColumnId);
+                    field.ColumnId,
+                    metadata);
 
             resolved.Add(
                 new ResolvedOrderTerm(
@@ -274,10 +276,11 @@ public static class OrderSqlWriter
 
     private static string ResolveColumnName(
         ushort storageEntityId,
-        ushort columnId)
+        ushort columnId,
+        Foundgine.Metadata.IMetadataProvider metadata)
     {
         var entity =
-            GeneratedMetadata.GetEntity(storageEntityId);
+            metadata.GetEntity(storageEntityId);
 
         foreach (var column in entity.Columns)
         {

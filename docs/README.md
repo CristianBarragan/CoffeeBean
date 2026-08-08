@@ -33,11 +33,11 @@ Application / Domain
         ↓
      Graphgine
         ↓
-  Foundgine.Core
+Foundgine.Planning / Foundgine.Builders
         ↓
-Foundgine.Execution.Contracts
+Foundgine.Execution.Contracts / Foundgine.Providers
         ↓
-Foundgine.Metadata / Builders
+Foundgine.Metadata
         ↓
 Foundgine.Foundation
         ↓

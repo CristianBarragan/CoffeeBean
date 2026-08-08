@@ -234,6 +234,8 @@ internal static class MetadataEmitter
 
         EmitGeneratedPlannerRegistry(sb);
 
+        EmitGeneratedEnumConversionProvider(sb);
+
         return sb.ToString();
     }
     
@@ -1637,6 +1639,32 @@ private static void EmitCteResolutionsArray(
 
         sb.AppendLine("}");
 
+        sb.AppendLine();
+    }
+
+
+// ---------------------------------------------------------------
+// GeneratedEnumConversionProvider
+// ---------------------------------------------------------------
+
+    private static void EmitGeneratedEnumConversionProvider(StringBuilder sb)
+    {
+        sb.AppendLine("namespace Graphgine.Execution");
+        sb.AppendLine("{");
+
+        sb.AppendLine(
+            "    public sealed class GeneratedEnumConversionProvider : global::Graphgine.Execution.IEnumConversionProvider");
+
+        sb.AppendLine("    {");
+
+        sb.AppendLine(
+            "        public string? TryConvert(ushort storageEntityId, ushort columnId, string value)");
+
+        sb.AppendLine(
+            "            => EnumConversions.TryConvert(storageEntityId, columnId, value);");
+
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
         sb.AppendLine();
     }
 

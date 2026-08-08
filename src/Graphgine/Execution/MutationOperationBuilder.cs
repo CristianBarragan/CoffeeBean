@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Foundgine;
 using Foundgine.Metadata;
-using FoundationMutation = Foundgine.Core.MutationPlan;
+using FoundationMutation = Foundgine.Planning;
 using FoundationMeta = Foundgine.Metadata;
 
 namespace Graphgine.Execution;
@@ -56,10 +56,8 @@ public static class MutationOperationBuilder
         Build(
             in MutationIR node,
             MutationEntityMetadata metadata,
-            IMetadataProvider? metadataProvider = null)
+            IMetadataProvider metadataProvider)
     {
-        metadataProvider ??= GeneratedMetadataProvider.Instance;
-
         var rows =
             new Dictionary<(ushort EntityId, ushort StorageEntityId), List<FoundationMeta.MutationColumn>>();
 

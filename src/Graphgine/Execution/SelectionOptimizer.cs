@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Graphgine.Execution;
@@ -12,7 +13,7 @@ namespace Graphgine.Execution;
 ///
 ///   HotChocolateAdapter → SelectionIR (with IsConditional markers)
 ///   SelectionOptimizer  → SelectionIR (conditionals resolved/removed)
-///   PlannerRegistry     → QueryPlan
+///   PlannerRegistry     → PhysicalQueryPlan
 ///
 /// The adapter marks fields as IsConditional but does not evaluate
 /// directives (it has no access to variable values). This pass does.
@@ -68,20 +69,32 @@ public static class SelectionOptimizer
 
             foreach (var child in node.Children)
             {
-                // A child is conditional if the adapter marked it so.
-                // For this pass we treat IsConditional as "skip unless
-                // variable evaluation says keep".  Since the adapter sets
-                // IsConditional when it sees @skip or @include but does not
-                // evaluate the argument, we conservatively keep the child
-                // (the optimizer is currently a no-op for variable-driven
-                // directives without a concrete variable map).
-                if (child.IsConditional && vars is not null)
+                // A child marked IsConditional came from an @skip/@include
+                // directive the adapter saw but did not evaluate (literal
+                // if:true/if:false are already resolved by the adapter, so
+                // by the time IsConditional reaches here it is always
+                // variable-driven). SelectionIR currently only carries a
+                // bare IsConditional flag — it does not carry which
+                // directive (@skip vs @include) or which variable name was
+                // referenced, so there is no way to actually resolve this
+                // correctly here, with or without a variable map.
+                //
+                // Silently keeping the field (the old behavior) is worse
+                // than an explicit failure: it makes the API's claimed
+                // contract ("resolves @skip/@include") false while looking
+                // like optimization occurred, and can return fields the
+                // client explicitly asked to have skipped/included
+                // conditionally. Fail loudly instead until SelectionIR
+                // carries the directive kind + variable name needed to
+                // evaluate this for real (see class remarks).
+                if (child.IsConditional)
                 {
-                    // In a real implementation you would evaluate the
-                    // @skip(if:) / @include(if:) argument against vars here.
-                    // For v1 we keep all conditional fields unless the caller
-                    // passes an explicit prune list.
-                    // TODO: parse directive arguments from a richer IR in v2.
+                    throw new NotSupportedException(
+                        "SelectionOptimizer cannot resolve this @skip/@include " +
+                        "directive: SelectionIR only records that a field is " +
+                        "conditional, not which directive or variable it " +
+                        "depends on. Runtime directive evaluation is not yet " +
+                        "implemented — see SelectionOptimizer remarks.");
                 }
 
                 builder.Add(Prune(child, vars));

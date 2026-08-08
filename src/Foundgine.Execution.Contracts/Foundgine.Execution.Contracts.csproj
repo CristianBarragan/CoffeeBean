@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
-        <Description>The contract boundary between the platform and its execution providers: execution context/options/results, the physical ProviderPlan tree, and IExecutionProvider itself. Sits below Foundgine.Core (which supplies the concrete SQL/Graph/Cache providers) and depends only on Foundgine.Metadata, so a provider implementation never needs to reference Foundgine.Core to exist.</Description>
+        <Description>The contract boundary between the platform and its execution providers: execution context/options/results, the physical ProviderPlan tree, and IExecutionProvider itself. Sits below Foundgine.Providers (which supplies the concrete SQL/Graph/Cache implementations) and depends only on Foundgine.Metadata, so a provider implementation never needs anything above this layer to exist.</Description>
     </PropertyGroup>
 
     <ItemGroup>

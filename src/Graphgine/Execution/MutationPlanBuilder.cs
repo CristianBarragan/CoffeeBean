@@ -244,7 +244,7 @@ public ref struct MutationPlanBuilder
 
 
 
-    public MutationPlan Build()
+    public PhysicalMutationPlan Build()
     {
         var rows =
             ImmutableArray.CreateBuilder<UpsertRow>(
@@ -295,7 +295,7 @@ public ref struct MutationPlanBuilder
 
 
 
-        return new MutationPlan(
+        return new PhysicalMutationPlan(
             rows.ToImmutable(),
             ctes.ToImmutable(),
             merges.ToImmutable(),

@@ -211,7 +211,53 @@ internal static class MutationMetadataEmitter
 
     sb.AppendLine("}");
 
+    sb.AppendLine();
+
+    EmitGeneratedMutationMetadataProvider(sb);
+
     return sb.ToString();
+}
+
+
+// ---------------------------------------------------------------
+// GeneratedMutationMetadataProvider
+// ---------------------------------------------------------------
+
+private static void EmitGeneratedMutationMetadataProvider(StringBuilder sb)
+{
+    sb.AppendLine(
+        "public sealed class GeneratedMutationMetadataProvider : global::Graphgine.Execution.IMutationMetadataProvider");
+
+    sb.AppendLine("{");
+
+    sb.AppendLine(
+        "    public global::Graphgine.Execution.MutationFieldMetadata ResolveField(ushort entityId, ushort fieldId)");
+
+    sb.AppendLine("    {");
+
+    sb.AppendLine(
+        "        var entity = MutationMetadataRegistry.Get(entityId);");
+
+    sb.AppendLine();
+
+    sb.AppendLine(
+        "        if (!entity.TryResolveField(fieldId, out var mapping))");
+
+    sb.AppendLine("        {");
+
+    sb.AppendLine(
+        "            throw new Exception($\"Field metadata missing.\\nEntity={entityId}\\nField={fieldId}\");");
+
+    sb.AppendLine("        }");
+
+    sb.AppendLine();
+
+    sb.AppendLine(
+        "        return mapping;");
+
+    sb.AppendLine("    }");
+    sb.AppendLine("}");
+    sb.AppendLine();
 }
 
 

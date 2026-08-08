@@ -55,12 +55,4 @@ public static class RuntimeEntityMetadataRegistry
             fields,
             new List<RuntimeNavigationMetadata>());
     }
-
-    /// <summary>
-    /// Back-compat overload -- forwards to the same generated singleton
-    /// the static GeneratedMetadata class itself would have used. New
-    /// callers should prefer the IMetadataProvider overload above.
-    /// </summary>
-    public static RuntimeEntityMetadata GetRootOnly(ushort modelEntityId)
-        => GetRootOnly(modelEntityId, GeneratedMetadataProvider.Instance);
 }

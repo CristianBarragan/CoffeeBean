@@ -19,7 +19,8 @@ Applications
 │ Metadata              │
 │ Diagnostics           │
 │ Builders              │
-│ Core                  │
+│ Planning              │
+│ Providers             │
 │ Reflection            │
 │ Serialization         │
 └─────────────────────┘
@@ -31,15 +32,20 @@ Applications
 ## Dependency direction
 
 Strict rule, enforced by the `ProjectReference`s in every `.csproj` (verified —
-see "Architecture fixes" below):
+see "Architecture fixes" below) and by `tests/Foundgine.Tests/ArchitectureTests.cs`,
+which parses the `.csproj` graph directly and fails the build if a disallowed
+`ProjectReference` or a dependency cycle is introduced:
 
 ```
 Graphgine
     │
     ▼
-Foundgine.Core
+Foundgine.Planning              (MutationOperation, MutationPlan)
     ▼
 Foundgine.Execution.Contracts   (ExecutionContext, ProviderPlan, IExecutionProvider)
+    ▲
+    │
+Foundgine.Providers             (SqlExecutionProvider, GraphExecutionProvider, CacheExecutionProvider)
     ▼
 Foundgine.Builders / Foundgine.Metadata
     ▼
@@ -47,6 +53,15 @@ Foundgine.Foundation
     ▼
 Foundgine.Abstractions
 ```
+
+`Foundgine.Planning` and `Foundgine.Providers` are peers, not a chain — they
+used to be two subfolders of a single `Foundgine.Core` project
+(`Foundgine.Core.MutationPlan` and `Foundgine.Core.Provider`) that never
+referenced each other's types. Once nothing in the repo took a dependency on
+both halves of `Core` for a shared reason, keeping them bundled was just the
+"put it somewhere" catch-all the root README used to warn against, so they
+were split into their own projects along the seam that already existed.
+`Graphgine` only ever needed the mutation-planning half.
 
 Foundgine never references Graphgine — not in any `.csproj`, and not in any
 `using` inside a `.cs` file either. Graphgine is simply a consumer of the
@@ -60,13 +75,13 @@ didn't catch (mostly stray `using`s and types that were in the wrong project
 to begin with). These have been fixed:
 
 - **`IExecutionProvider` no longer lives in `Foundgine.Abstractions`.** It
-  needs `ProviderPlan`/`ExecutionContext`, which pulled `Foundgine.Core` in as
-  a dependency of the bottom-most project — exactly backwards. Those types
-  (`ExecutionContext`, `ExecutionOptions`, `ExecutionResult`,
-  `ExecutionStatistics`, `ExecutionRow`, `ProviderPlan`, `ProviderNode`,
-  `IExecutionProvider`) now live together in a new project,
+  needs `ProviderPlan`/`ExecutionContext`, which would otherwise pull the
+  provider-implementation layer in as a dependency of the bottom-most project
+  — exactly backwards. Those types (`ExecutionContext`, `ExecutionOptions`,
+  `ExecutionResult`, `ExecutionStatistics`, `ExecutionRow`, `ProviderPlan`,
+  `ProviderNode`, `IExecutionProvider`) now live together in a new project,
   **`Foundgine.Execution.Contracts`**, which depends only on
-  `Foundgine.Metadata`. `Foundgine.Core` depends on it (for its concrete
+  `Foundgine.Metadata`. `Foundgine.Providers` depends on it (for its concrete
   `SqlExecutionProvider`/`GraphExecutionProvider`/`CacheExecutionProvider`),
   not the other way around. `Foundgine.Abstractions` is back to zero
   dependencies — just `IEntity`, `IPlanner`, `IOptimizer`, `IMaterializer`.
@@ -86,12 +101,13 @@ to begin with). These have been fixed:
   `GetRequiredService` but `Foundgine.Foundation.csproj` never referenced the
   package. Added `Microsoft.Extensions.DependencyInjection.Abstractions`.
 
-Not yet done: architecture tests that enforce these rules automatically (e.g.
-"Abstractions must not reference anything") instead of relying on this
-document; and the SQL, Graph, and Cache execution providers, the
-recursive-CTE graph strategy, and mutation-merge translation are still real
-`NotImplementedException` placeholders — see "Tests" below for what's
-actually covered now vs. still a stub.
+Not yet done, and worth doing before adding features rather than after:
+architecture tests that enforce these rules automatically (e.g. "Abstractions
+must not reference anything") instead of relying on this document; the SQL,
+Graph, and Cache execution providers, the recursive-CTE graph strategy, and
+mutation-merge translation are still real `NotImplementedException`
+placeholders, not just naming issues; and `Foundgine.Tests`/`Graphgine.Tests`
+are still empty scaffolding rather than actual coverage.
 
 ## Layout
 
@@ -105,7 +121,8 @@ Foundgine/
 │   ├── Foundgine.Diagnostics/      diagnostic events, scopes, listeners
 │   ├── Foundgine.Builders/         generic query-plan tree + builder infrastructure
 │   ├── Foundgine.Execution.Contracts/  execution context, ProviderPlan, IExecutionProvider
-│   ├── Foundgine.Core/             mutation plans + the concrete SQL/Graph/Cache execution providers
+│   ├── Foundgine.Planning/         mutation plans (MutationOperation, MutationPlan) — a mutation isn't a query
+│   ├── Foundgine.Providers/        the concrete SQL/Graph/Cache execution providers (not yet implemented)
 │   ├── Foundgine.Reflection/       (placeholder — see project README)
 │   ├── Foundgine.Serialization/    (placeholder — see project README)
 │   │
@@ -116,21 +133,21 @@ Foundgine/
 │   └── Graphgine.SourceGenerators/ Roslyn generator for mapping-derived metadata
 │
 ├── samples/
+│   ├── Foundgine.Samples.Banking/  same domain, no GraphQL — see its own README
 │   └── Graphgine.Samples.Banking/  the former HotChocolateCoffeeBeanery example app
-├── tests/                          one real xunit project per testable layer
-│   ├── Foundgine.Foundation.Tests/
-│   ├── Foundgine.Metadata.Tests/
-│   ├── Foundgine.Builders.Tests/
-│   ├── Foundgine.Diagnostics.Tests/
-│   ├── Foundgine.Execution.Contracts.Tests/
-│   ├── Foundgine.Core.Tests/
-│   ├── Graphgine.Tests/
-│   └── Graphgine.HotChocolate.Tests/
+├── tests/
+│   ├── Foundgine.Tests/            architecture/dependency-direction tests + a placeholder for the rest
+│   └── Graphgine.Tests/            placeholder xunit project
 ├── benchmarks/                     empty — no benchmark project existed to migrate
-├── docs/
-└── legacy/
-    └── CoffeeBeanery/              the original monolithic library, unmodified
+└── docs/
 ```
+
+> The original monolithic `CoffeeBeanery` library previously lived under
+> `legacy/CoffeeBeanery/` during the platform/product split. It has been removed
+> ahead of the first public release so the repository reflects the current
+> architecture rather than the prototype it was extracted from — nothing in
+> `src/`, `samples/`, or `tests/` referenced it. Its full history, including the
+> original code, is preserved in git (see any commit before its removal).
 
 ## How this was assembled — read this before you build
 
@@ -141,8 +158,10 @@ That prototype already implemented almost exactly the platform/product split
 described above, so it — not the older monolithic `src/CoffeeBeanery/` library —
 is what got renamed and promoted into `src/` here. The monolithic library is
 GraphQL-and-SQL code with no clean seam between "generic platform" and
-"GraphQL product," so it wasn't a good source to split from directly; it's
-preserved as-is under `legacy/CoffeeBeanery/` rather than discarded.
+"GraphQL product," so it wasn't a good source to split from directly. It was
+kept as-is under `legacy/CoffeeBeanery/` during the split for reference, then
+removed ahead of the first public release (see the note in the tree diagram
+above) once nothing else in the repo depended on it.
 
 Because of that:
 
@@ -167,59 +186,3 @@ Because of that:
   up, the same way you would have in the original prototype.
 
 See `docs/MIGRATION.md` for the full file-by-file mapping.
-
-## Tests
-
-Every project with real, non-trivial logic has its own xunit test project in
-`tests/`, named after the layer it covers (`Foundgine.Metadata` →
-`Foundgine.Metadata.Tests`, etc.), rather than one catch-all test project —
-so a change to a single layer only needs to touch and re-run its own tests.
-
-- `Foundgine.Foundation.Tests` — `Guard`/`Optional`/`Result`/`ValueList`, and the
-  CQRS `CommandDispatcher`/`QueryDispatcher` against a real `IServiceProvider`.
-- `Foundgine.Metadata.Tests` — strong-id equality/hashing, `MetadataRegistry`,
-  and `JoinGraph`'s forward/reverse edge indexing.
-- `Foundgine.Builders.Tests` — `QueryNodeBuilder.ScanComposite` across
-  single-entity, two-entity, and three-entity (left-deep join chain) models.
-- `Foundgine.Diagnostics.Tests` — verifies `FoundgineDiagnostics`' `ActivitySource`
-  and `Meter` actually emit activities/measurements when a listener is attached.
-- `Foundgine.Execution.Contracts.Tests` — the context/options/result/row records,
-  the `ProviderNode` hierarchy, and `IExecutionProvider` against a stub implementation.
-- `Foundgine.Core.Tests` — `MutationPlan`/`MutationOperation`, and documents (via
-  `Assert.ThrowsAsync<NotImplementedException>`) that the Sql/Cache/Graph providers
-  are still unimplemented skeletons, so that test starts failing the moment one
-  of them gets a real body and needs its own real test written.
-- `Graphgine.Tests` — `ExpressionHelper.GetMemberName`'s lambda parsing, the
-  `Sql` value objects (`EntityKey`, `Pagination`, `UpsertKey`, ...), `FilterValue`,
-  and both `IGraphStrategy` implementations (Apache AGE Cypher generation, and
-  that the recursive-CTE strategy still throws `NotImplementedException` everywhere).
-- `Graphgine.HotChocolate.Tests` — `WhereCompiler` and `OrderCompiler` against
-  hand-built `HotChocolate.Language` AST nodes (no live GraphQL server needed),
-  covering scalar shorthand, explicit operators, `and`/`or`, navigation, and
-  `some`/`all`/`none` collection filters.
-
-`Foundgine.Abstractions` (pure interfaces) and the four placeholder projects
-(`Foundgine.Reflection`, `Foundgine.Serialization`, `Graphgine.AspNetCore`,
-`Graphgine.Analyzers`) have no test project yet, for the same reason they have
-no real code yet — see each one's own `README.md`. `Graphgine.SourceGenerators`
-also has no test project: testing a Roslyn incremental generator properly needs
-`Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing`-style harness tests
-that snapshot generated output, which is a different shape of test than the
-rest of this list and deliberately left as a follow-up rather than done half-way.
-
-**Not restored or run.** This sandbox has no network access to nuget.org, so
-none of these were actually `dotnet test`-verified — they're written directly
-against the real public API of each file (verified by reading the source, not
-guessed), but treat them the same as the rest of the migration: check they
-compile and pass once you restore, and expect to fix the odd signature
-mismatch (HotChocolate.Language's exact node constructors in particular).
-
-### Integration tests
-
-Everything above is unit-level: no database, no running server. The
-integration coverage lives outside `tests/`, next to the sample it exercises,
-in `samples/Graphgine.Samples.Banking/Test/` — an Apidog project/CLI-export
-suite that runs GraphQL `wrapper` mutations/queries against a live
-`Api.Banking` instance backed by real Postgres/AGE, covering the relational
-path, the graph-traversal path, and filtering. See that folder's own
-`README.md` for what each scenario covers and how to run it.

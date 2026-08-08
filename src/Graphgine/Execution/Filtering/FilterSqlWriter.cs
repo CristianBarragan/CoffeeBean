@@ -36,10 +36,8 @@ public static class FilterSqlWriter
         ushort rootStorageEntityId,
         string rootAlias,
         FilterCompilationContext context,
-        IMetadataProvider? metadata = null)
+        IMetadataProvider metadata)
     {
-        metadata ??= GeneratedMetadataProvider.Instance;
-
         var sb = new StringBuilder();
 
         WriteExpression(

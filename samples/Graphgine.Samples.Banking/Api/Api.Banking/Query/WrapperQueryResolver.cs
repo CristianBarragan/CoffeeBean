@@ -2,11 +2,13 @@ using Graphgine.HotChocolate;
 using Graphgine.Execution;
 using Graphgine.Execution.Filtering;
 using Graphgine;
+using Foundgine;
 using Domain.Model;
 using HotChocolate.Resolvers;
 using HotChocolate.Types.Pagination;
 using Graphgine.Sql;
 using System.Collections.Immutable;
+using HotChocolate.Data;
 using Microsoft.Extensions.Logging;
 
 namespace Api.Banking.Query;
@@ -92,7 +94,9 @@ public class WrapperQueryResolver
                     rootEntityId,
                     new FilterMetadataResolver(
                         ImmutableArray.Create(
-                            RuntimeEntityMetadataRegistry.GetRootOnly(rootEntityId))));
+                            RuntimeEntityMetadataRegistry.GetRootOnly(
+                                rootEntityId,
+                                GeneratedMetadataProvider.Instance))));
 
             var request = new PagedQueryRequest
             {

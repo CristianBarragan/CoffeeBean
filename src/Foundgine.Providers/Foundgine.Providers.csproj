@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <Description>Concrete execution providers (SQL, Graph, Cache) that implement Foundgine.Execution.Contracts.IExecutionProvider to carry a ProviderPlan to a result. Split out from the former "Foundgine.Core" grab-bag because provider implementations and mutation planning (now Foundgine.Planning) are independent subsystems that never referenced each other's types.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Foundgine.Execution.Contracts\Foundgine.Execution.Contracts.csproj" />
+    </ItemGroup>
+
+    <!--
+      The Sql/Cache/Graph execution providers here are currently thin
+      skeletons (see file comments) — add the matching PackageReference
+      (Npgsql, FasterKv.Cache.Core, etc.) once each provider grows a real
+      implementation.
+    -->
+
+</Project>
