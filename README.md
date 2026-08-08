@@ -2,6 +2,8 @@
 
 **Foundgine is a compile-time-first execution platform for .NET. Graphgine is its first product: a GraphQL execution engine built on the Foundgine platform.**
 
+Foundgine is under construction, refer to legacy folder containing former GraphQL-CoffeeBeanery repo. Once Foundfine and Graphgine are stable, GraphQL-CoffeeBeanery will be removed
+
 Foundgine is being shaped around a strict separation between:
 
 - **platform contracts and primitives** — `Foundgine.*`
