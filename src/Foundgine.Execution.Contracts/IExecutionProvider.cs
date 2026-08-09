@@ -20,4 +20,17 @@ public interface IExecutionProvider
         ProviderPlan plan,
         ExecutionContext context,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Executes a physical mutation plan as a single atomic unit, returning
+    /// one <see cref="MutationResult"/> per operation in
+    /// <see cref="ProviderMutationPlan.Operations"/> order. Not streamed like
+    /// <see cref="ExecuteAsync"/> — a mutation's outcome (rows affected) is
+    /// known only once every write in the plan has either all committed or
+    /// all rolled back.
+    /// </summary>
+    Task<IReadOnlyList<MutationResult>> ExecuteMutationAsync(
+        ProviderMutationPlan plan,
+        ExecutionContext context,
+        CancellationToken cancellationToken = default);
 }

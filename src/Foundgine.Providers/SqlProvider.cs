@@ -61,6 +61,13 @@ public sealed class SqlExecutionProvider : IExecutionProvider
         command.CommandText =
             translation.CommandText;
 
+        foreach (var parameter in translation.Parameters)
+        {
+            command.Parameters.AddWithValue(
+                parameter.Name,
+                parameter.Value ?? DBNull.Value);
+        }
+
         await using var reader =
             await command
                 .ExecuteReaderAsync(cancellationToken)
@@ -74,6 +81,74 @@ public sealed class SqlExecutionProvider : IExecutionProvider
                 reader,
                 translation.Columns);
         }
+    }
+
+    /// <summary>
+    /// Executes every operation in <paramref name="plan"/> as a single SQLite
+    /// transaction — either every INSERT/UPDATE/DELETE in the plan commits,
+    /// or none of them do. This is what lets a caller create a Customer, an
+    /// Account, and a Transaction "together": one <see cref="ProviderMutationPlan"/>
+    /// with three operations, one transaction, one commit.
+    /// </summary>
+    public async Task<IReadOnlyList<MutationResult>> ExecuteMutationAsync(
+        ProviderMutationPlan plan,
+        ExecutionContext context,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(context);
+
+        var connectionString =
+            ResolveConnectionString(context);
+
+        var translation =
+            SqlTextTranslator.TranslateMutation(plan);
+
+        await using var connection =
+            new SqliteConnection(connectionString);
+
+        await connection
+            .OpenAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        await using var transaction =
+            (SqliteTransaction)await connection
+                .BeginTransactionAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+        var results = new List<MutationResult>(translation.Statements.Count);
+
+        foreach (var statement in translation.Statements)
+        {
+            await using var command =
+                connection.CreateCommand();
+
+            command.Transaction = transaction;
+            command.CommandText = statement.CommandText;
+
+            foreach (var parameter in statement.Parameters)
+            {
+                command.Parameters.AddWithValue(
+                    parameter.Name,
+                    parameter.Value ?? DBNull.Value);
+            }
+
+            var rowsAffected =
+                await command
+                    .ExecuteNonQueryAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+            results.Add(
+                new MutationResult(
+                    statement.EntityId,
+                    rowsAffected));
+        }
+
+        await transaction
+            .CommitAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return results;
     }
 
     private static string ResolveConnectionString(
