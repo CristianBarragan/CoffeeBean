@@ -75,6 +75,67 @@ public class SqlTextTranslatorTests
     }
 
     [Fact]
+    public void Translate_SelfJoinChain_GivesEachOccurrenceItsOwnAlias()
+    {
+        // The review's own example: Employee -> Manager -> Manager, where
+        // every occurrence is the *same* EntityMetadata. Before this fix,
+        // aliasByEntity was keyed by EntityMetadata, so the second and
+        // third scans would silently overwrite the first occurrence's
+        // alias entry and the ON clauses would resolve to the wrong table.
+        var employee = Entity(1, "Employee", "Id", "Name", "ManagerId");
+        var managesUp = new JoinMetadata(
+            new JoinCondition(new ColumnReference(employee, 3), new ColumnReference(employee, 1)),
+            JoinKind.Left);
+
+        // Built the same way SqlPlanCompiler.CompileComposite would: each
+        // occurrence gets its own SqlScanNode instance, and each join
+        // carries explicit LeftOccurrence/RightOccurrence references to
+        // exactly which occurrence it binds — not just "Employee".
+        var mia = new SqlScanNode(employee);
+        var vic = new SqlScanNode(employee);
+        var carol = new SqlScanNode(employee);
+        var miaToVic = new SqlJoinNode(mia, vic, managesUp, mia, vic);
+        var plan = new ProviderPlan(new SqlJoinNode(miaToVic, carol, managesUp, vic, carol));
+
+        var translation = SqlTextTranslator.Translate(plan);
+
+        // Three distinct occurrences of the same entity must get three
+        // distinct aliases, in scan order.
+        Assert.Contains("\"Employee\" AS t0", translation.CommandText);
+        Assert.Contains("\"Employee\" AS t1", translation.CommandText);
+        Assert.Contains("\"Employee\" AS t2", translation.CommandText);
+
+        // The two ON clauses must bind to the correct, distinct pair of
+        // occurrences each — t0/t1 for Mia->Vic, t1/t2 for Vic->Carol —
+        // never both resolving against the same alias.
+        Assert.Contains("ON t0.\"ManagerId\" = t1.\"Id\"", translation.CommandText);
+        Assert.Contains("ON t1.\"ManagerId\" = t2.\"Id\"", translation.CommandText);
+
+        // 3 occurrences x 3 columns each = 9 selected columns, none merged
+        // together the way an entity-keyed dictionary would have.
+        Assert.Equal(9, translation.Columns.Count);
+    }
+
+    [Fact]
+    public void Translate_HandBuiltJoin_WithoutOccurrenceReferences_StillFallsBackToEntityTypeLookup()
+    {
+        // A JoinNode built by hand (bypassing CompositeNode/SqlPlanCompiler
+        // entirely, as this whole test file already does elsewhere) has no
+        // LeftOccurrence/RightOccurrence set. As long as it doesn't itself
+        // scan the same entity twice, the entity-type fallback still
+        // resolves it correctly — this fix doesn't regress that path.
+        var customer = Entity(1, "Customer", "Id");
+        var account = Entity(2, "Account", "Id", "CustomerId");
+        var join = new JoinMetadata(
+            new JoinCondition(new ColumnReference(account, 2), new ColumnReference(customer, 1)), JoinKind.Inner);
+        var plan = new ProviderPlan(new SqlJoinNode(new SqlScanNode(customer), new SqlScanNode(account), join));
+
+        var translation = SqlTextTranslator.Translate(plan);
+
+        Assert.Contains("ON t1.\"CustomerId\" = t0.\"Id\"", translation.CommandText);
+    }
+
+    [Fact]
     public void Translate_ThreeWayJoin_RegistersAllThreeEntities()
     {
         var customer = Entity(1, "Customer", "Id");

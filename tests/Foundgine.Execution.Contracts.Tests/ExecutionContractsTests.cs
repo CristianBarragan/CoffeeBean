@@ -78,12 +78,19 @@ public class ExecutionRowTests
     [Fact]
     public void Entities_AreKeyedByEntityId()
     {
-        var row = new ExecutionRow(new Dictionary<ushort, object?[]>
-        {
-            [1] = new object?[] { "Bob", 42 },
-        });
+        var row = new ExecutionRow(
+        [
+            new EntityOccurrence(
+                new EntityId(1),
+                0,
+                ["Bob", 42])
+        ]);
 
-        Assert.Equal(new object?[] { "Bob", 42 }, row.Entities[1]);
+        var entity = Assert.Single(row.Occurrences);
+
+        Assert.Equal(new EntityId(1), entity.EntityId);
+        Assert.Equal(0, entity.OccurrenceIndex);
+        Assert.Equal(new object?[] { "Bob", 42 }, entity.Values);
     }
 }
 
@@ -140,10 +147,13 @@ public class IExecutionProviderTests
         public async IAsyncEnumerable<ExecutionRow> ExecuteAsync(
             ProviderPlan plan,
             ExecutionContext context,
-            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+            [System.Runtime.CompilerServices.EnumeratorCancellation]
+            CancellationToken cancellationToken = default)
         {
             await Task.Yield();
-            yield return new ExecutionRow(new Dictionary<ushort, object?[]>());
+
+            yield return new ExecutionRow(
+                Array.Empty<EntityOccurrence>());
         }
     }
 

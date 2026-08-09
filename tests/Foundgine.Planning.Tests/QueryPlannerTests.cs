@@ -65,50 +65,62 @@ public class QueryPlannerTests
     }
 
     [Fact]
-    public void Plan_WithEmptyPath_ProducesASingleScan()
+    public void Plan_WithEmptyPath_ProducesACompositeNode_WithNoChildren()
     {
         var (metadata, joins, customer, _, _, _) = BuildBankingGraph();
         var planner = new QueryPlanner(metadata, joins);
 
         var plan = planner.Plan(QueryIntent.Linear(customer.EntityId, Array.Empty<EntityId>()));
 
-        var scan = Assert.IsType<ScanNode>(plan.Root);
-        Assert.Same(customer, scan.Entity);
+        var composite = Assert.IsType<CompositeNode>(plan.Root);
+        Assert.Same(customer, composite.Entity);
+        Assert.Empty(composite.Children);
     }
 
     [Fact]
-    public void Plan_CustomerToAccount_ProducesAJoinNode_UsingTheRegisteredJoin()
+    public void Plan_CustomerToAccount_ProducesACompositeNode_WithOneChildEdge_UsingTheRegisteredJoin()
     {
         var (metadata, joins, customer, account, _, _) = BuildBankingGraph();
         var planner = new QueryPlanner(metadata, joins);
 
         var plan = planner.Plan(QueryIntent.Linear(customer.EntityId, new[] { account.EntityId }));
 
-        var join = Assert.IsType<JoinNode>(plan.Root);
-        var left = Assert.IsType<ScanNode>(join.Left);
-        var right = Assert.IsType<ScanNode>(join.Right);
-        Assert.Same(customer, left.Entity);
-        Assert.Same(account, right.Entity);
+        var composite = Assert.IsType<CompositeNode>(plan.Root);
+        Assert.Same(customer, composite.Entity);
+        var edge = Assert.Single(composite.Children);
+        Assert.Same(account, edge.Child.Entity);
+        Assert.Empty(edge.Child.Children);
         Assert.True(joins.TryGetJoin(customer.EntityId, account.EntityId, out var expected));
-        Assert.Equal(expected, join.Join);
+        Assert.Equal(expected, edge.Join);
     }
 
     [Fact]
-    public void Plan_CustomerToAccountToTransaction_ProducesANestedJoinChain()
+    public void Plan_CustomerToAccountToTransaction_ProducesANestedCompositeChain()
     {
         // This is the exact "🔴 NOW" checklist scenario: Customer -> Account
         // -> Transaction, planned dynamically rather than hand-assembled.
+        //
+        // TECH-DEBT-001: the plan now preserves this as a nested
+        // CompositeNode tree rather than flattening it into a JoinNode
+        // chain at planning time — flattening is SqlPlanCompiler's job.
         var (metadata, joins, customer, account, transaction, _) = BuildBankingGraph();
         var planner = new QueryPlanner(metadata, joins);
 
         var plan = planner.Plan(QueryIntent.Linear(customer.EntityId, new[] { account.EntityId, transaction.EntityId }));
 
-        var outerJoin = Assert.IsType<JoinNode>(plan.Root);
-        Assert.Same(transaction, Assert.IsType<ScanNode>(outerJoin.Right).Entity);
+        var customerNode = Assert.IsType<CompositeNode>(plan.Root);
+        Assert.Same(customer, customerNode.Entity);
 
-        var innerJoin = Assert.IsType<JoinNode>(outerJoin.Left);
-        Assert.Same(customer, Assert.IsType<ScanNode>(innerJoin.Left).Entity);
-        Assert.Same(account, Assert.IsType<ScanNode>(innerJoin.Right).Entity);
+        var toAccount = Assert.Single(customerNode.Children);
+        Assert.Same(account, toAccount.Child.Entity);
+        Assert.True(joins.TryGetJoin(customer.EntityId, account.EntityId, out var expectedCustomerToAccount));
+        Assert.Equal(expectedCustomerToAccount, toAccount.Join);
+
+        var toTransaction = Assert.Single(toAccount.Child.Children);
+        Assert.Same(transaction, toTransaction.Child.Entity);
+        Assert.Empty(toTransaction.Child.Children);
+        Assert.True(joins.TryGetJoin(account.EntityId, transaction.EntityId, out var expectedAccountToTransaction));
+        Assert.Equal(expectedAccountToTransaction, toTransaction.Join);
     }
 
     [Fact]
@@ -126,7 +138,7 @@ public class QueryPlannerTests
 
         var projection = Assert.IsType<ProjectionNode>(plan.Root);
         Assert.Same(fields, projection.Fields);
-        Assert.IsType<JoinNode>(projection.Source);
+        Assert.IsType<CompositeNode>(projection.Source);
     }
 
     [Fact]
@@ -157,11 +169,14 @@ public class QueryPlannerTests
     // ------------------------------------------------------------------
     // Branching: FOUND-002. QueryIntent.Branches is a tree, so a Customer
     // can fan out to Accounts *and* ContactPoints in the same intent,
-    // rather than only a single linear path.
+    // rather than only a single linear path. Since TECH-DEBT-001,
+    // QueryPlan.Root preserves that exact tree shape as a CompositeNode
+    // instead of flattening it — so these tests assert on the tree
+    // directly, rather than walking a flattened join chain.
     // ------------------------------------------------------------------
 
     [Fact]
-    public void Plan_CustomerToAccountsAndContactPoints_JoinsBothSiblingBranches()
+    public void Plan_CustomerToAccountsAndContactPoints_ProducesTwoSiblingChildEdges()
     {
         var (metadata, joins, customer, account, _, contactPoint) = BuildBankingGraph();
         var planner = new QueryPlanner(metadata, joins);
@@ -176,31 +191,35 @@ public class QueryPlannerTests
 
         var plan = planner.Plan(intent);
 
-        // Two siblings under Customer means two JoinNodes, both ultimately
-        // scanning Customer once. Walk the (left-associated) chain and
-        // collect every entity it scans, since the exact tree shape is an
-        // implementation detail — what matters is that every entity in the
-        // intent ends up joined together correctly.
-        var scannedEntities = CollectScannedEntities(plan.Root);
-        Assert.Equal(
-            new[] { customer, account, contactPoint },
-            scannedEntities);
+        var composite = Assert.IsType<CompositeNode>(plan.Root);
+        Assert.Same(customer, composite.Entity);
+        Assert.Equal(2, composite.Children.Count);
 
-        var outerJoin = Assert.IsType<JoinNode>(plan.Root);
-        Assert.Same(contactPoint, Assert.IsType<ScanNode>(outerJoin.Right).Entity);
+        var toAccount = composite.Children[0];
+        Assert.Same(account, toAccount.Child.Entity);
+        Assert.Empty(toAccount.Child.Children);
+        Assert.True(joins.TryGetJoin(customer.EntityId, account.EntityId, out var expectedAccountJoin));
+        Assert.Equal(expectedAccountJoin, toAccount.Join);
+
+        var toContactPoint = composite.Children[1];
+        Assert.Same(contactPoint, toContactPoint.Child.Entity);
+        Assert.Empty(toContactPoint.Child.Children);
         Assert.True(joins.TryGetJoin(customer.EntityId, contactPoint.EntityId, out var expectedContactJoin));
-        Assert.Equal(expectedContactJoin, outerJoin.Join);
+        Assert.Equal(expectedContactJoin, toContactPoint.Join);
     }
 
     [Fact]
-    public void Plan_CustomerToAccountsToTransactionsAndContactPoints_JoinsTheWholeTree()
+    public void Plan_CustomerToAccountsToTransactionsAndContactPoints_PreservesTheFullTreeShape()
     {
-        // The exact FOUND-002 example:
+        // The exact FOUND-002 example, and the exact TECH-DEBT-001 concern:
         //
         //   Customer
         //   ├── Accounts
         //   │    └── Transactions
         //   └── ContactPoints
+        //
+        // must come back out of the planner still shaped like that tree,
+        // not as (((Customer JOIN Account) JOIN Transaction) JOIN ContactPoint).
         var (metadata, joins, customer, account, transaction, contactPoint) = BuildBankingGraph();
         var planner = new QueryPlanner(metadata, joins);
 
@@ -216,9 +235,23 @@ public class QueryPlannerTests
 
         var plan = planner.Plan(intent);
 
-        Assert.Equal(
-            new[] { customer, account, transaction, contactPoint },
-            CollectScannedEntities(plan.Root));
+        var composite = Assert.IsType<CompositeNode>(plan.Root);
+        Assert.Same(customer, composite.Entity);
+        Assert.Equal(2, composite.Children.Count);
+
+        // Accounts branch: Customer -> Account -> Transaction, nested two
+        // levels deep, exactly matching the requested shape.
+        var accountEdge = composite.Children[0];
+        Assert.Same(account, accountEdge.Child.Entity);
+        var transactionEdge = Assert.Single(accountEdge.Child.Children);
+        Assert.Same(transaction, transactionEdge.Child.Entity);
+        Assert.Empty(transactionEdge.Child.Children);
+
+        // ContactPoints branch: a direct sibling of Accounts under
+        // Customer, not nested underneath it.
+        var contactPointEdge = composite.Children[1];
+        Assert.Same(contactPoint, contactPointEdge.Child.Entity);
+        Assert.Empty(contactPointEdge.Child.Children);
     }
 
     [Fact]
@@ -243,29 +276,5 @@ public class QueryPlannerTests
 
         Assert.Contains("Account", ex.Message);
         Assert.Contains("ContactPoint", ex.Message);
-    }
-
-    private static IReadOnlyList<EntityMetadata> CollectScannedEntities(QueryNode node)
-    {
-        var found = new List<EntityMetadata>();
-        Visit(node);
-        return found;
-
-        void Visit(QueryNode current)
-        {
-            switch (current)
-            {
-                case ScanNode scan:
-                    found.Add(scan.Entity);
-                    break;
-                case JoinNode join:
-                    Visit(join.Left);
-                    Visit(join.Right);
-                    break;
-                case ProjectionNode projection:
-                    Visit(projection.Source);
-                    break;
-            }
-        }
     }
 }

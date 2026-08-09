@@ -42,6 +42,89 @@ public class SqlPlanCompilerTests
     }
 
     [Fact]
+    public void Compile_CompositeNode_WithNoChildren_ProducesASqlScanNode()
+    {
+        var customer = Entity(1, "Customer", "Id");
+        var plan = new QueryPlan(new CompositeNode(customer, Array.Empty<CompositeEdge>()));
+
+        var compiled = SqlPlanCompiler.Compile(plan);
+
+        var scan = Assert.IsType<SqlScanNode>(compiled.Root);
+        Assert.Same(customer, scan.Entity);
+    }
+
+    [Fact]
+    public void Compile_CompositeNode_LinearChain_FlattensIntoNestedSqlJoinNodes()
+    {
+        // Customer -> Account -> Transaction as a CompositeNode tree should
+        // compile to the same nested SqlJoinNode chain a hand-built
+        // QueryPlan of JoinNodes would have.
+        var customer = Entity(1, "Customer", "Id");
+        var account = Entity(2, "Account", "Id", "CustomerId");
+        var transaction = Entity(3, "Transaction", "Id", "AccountId");
+        var customerToAccount = new JoinMetadata(
+            new JoinCondition(new ColumnReference(account, 2), new ColumnReference(customer, 1)), JoinKind.Inner);
+        var accountToTransaction = new JoinMetadata(
+            new JoinCondition(new ColumnReference(transaction, 2), new ColumnReference(account, 1)), JoinKind.Inner);
+
+        var composite = new CompositeNode(
+            customer,
+            new[]
+            {
+                new CompositeEdge(
+                    customerToAccount,
+                    new CompositeNode(
+                        account,
+                        new[] { new CompositeEdge(accountToTransaction, new CompositeNode(transaction, Array.Empty<CompositeEdge>())) })),
+            });
+
+        var compiled = SqlPlanCompiler.Compile(new QueryPlan(composite));
+
+        var outerJoin = Assert.IsType<SqlJoinNode>(compiled.Root);
+        Assert.Same(accountToTransaction, outerJoin.Join);
+        Assert.Same(transaction, Assert.IsType<SqlScanNode>(outerJoin.Right).Entity);
+
+        var innerJoin = Assert.IsType<SqlJoinNode>(outerJoin.Left);
+        Assert.Same(customerToAccount, innerJoin.Join);
+        Assert.Same(customer, Assert.IsType<SqlScanNode>(innerJoin.Left).Entity);
+        Assert.Same(account, Assert.IsType<SqlScanNode>(innerJoin.Right).Entity);
+    }
+
+    [Fact]
+    public void Compile_CompositeNode_WithSiblingBranches_JoinsBothSiblingsOntoTheSameRoot()
+    {
+        // Customer ├── Account └── ContactPoint: two children of the same
+        // parent should both end up joined into a single connected chain,
+        // not lose one branch or nest one under the other.
+        var customer = Entity(1, "Customer", "Id");
+        var account = Entity(2, "Account", "Id", "CustomerId");
+        var contactPoint = Entity(3, "ContactPoint", "Id", "CustomerId");
+        var customerToAccount = new JoinMetadata(
+            new JoinCondition(new ColumnReference(account, 2), new ColumnReference(customer, 1)), JoinKind.Inner);
+        var customerToContactPoint = new JoinMetadata(
+            new JoinCondition(new ColumnReference(contactPoint, 2), new ColumnReference(customer, 1)), JoinKind.Inner);
+
+        var composite = new CompositeNode(
+            customer,
+            new[]
+            {
+                new CompositeEdge(customerToAccount, new CompositeNode(account, Array.Empty<CompositeEdge>())),
+                new CompositeEdge(customerToContactPoint, new CompositeNode(contactPoint, Array.Empty<CompositeEdge>())),
+            });
+
+        var compiled = SqlPlanCompiler.Compile(new QueryPlan(composite));
+
+        var outerJoin = Assert.IsType<SqlJoinNode>(compiled.Root);
+        Assert.Same(customerToContactPoint, outerJoin.Join);
+        Assert.Same(contactPoint, Assert.IsType<SqlScanNode>(outerJoin.Right).Entity);
+
+        var innerJoin = Assert.IsType<SqlJoinNode>(outerJoin.Left);
+        Assert.Same(customerToAccount, innerJoin.Join);
+        Assert.Same(customer, Assert.IsType<SqlScanNode>(innerJoin.Left).Entity);
+        Assert.Same(account, Assert.IsType<SqlScanNode>(innerJoin.Right).Entity);
+    }
+
+    [Fact]
     public void Compile_ProjectionNode_ProducesSqlProjectionNode_PreservingFields()
     {
         var customer = Entity(1, "Customer", "Id", "Name");

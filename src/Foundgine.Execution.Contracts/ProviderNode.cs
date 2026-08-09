@@ -13,10 +13,30 @@ public sealed record SqlScanNode(
     EntityMetadata Entity
 ) : ProviderNode;
 
+/// <summary>
+/// A SQL join between two subtrees.
+///
+/// <see cref="LeftOccurrence"/>/<see cref="RightOccurrence"/> are optional
+/// pointers to the exact <see cref="SqlScanNode"/> instance each side of
+/// this join binds to — occurrence identity, not just entity type. A
+/// compiler that scans the same <see cref="EntityMetadata"/> more than
+/// once in one plan (e.g. <c>Employee -> Manager -> Manager</c>) should
+/// populate these so <see cref="Foundgine.Providers.SqlTextTranslator"/>
+/// can resolve each join's aliases against the correct occurrence instead
+/// of falling back to "the alias last registered for this entity type",
+/// which silently collapses repeated entities onto one alias.
+///
+/// Left as optional (rather than required) so a hand-built plan that never
+/// repeats an entity — the common case, and every existing call site as of
+/// this change — doesn't need to thread them through; <see cref="Foundgine.Providers.SqlTextTranslator"/>
+/// falls back to entity-type lookup when they're absent.
+/// </summary>
 public sealed record SqlJoinNode(
     ProviderNode Left,
     ProviderNode Right,
-    JoinMetadata Join
+    JoinMetadata Join,
+    SqlScanNode? LeftOccurrence = null,
+    SqlScanNode? RightOccurrence = null
 ) : ProviderNode;
 
 public sealed record SqlProjectionNode(
