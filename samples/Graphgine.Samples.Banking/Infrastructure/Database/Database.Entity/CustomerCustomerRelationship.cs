@@ -16,9 +16,11 @@ public partial class CustomerCustomerRelationship : Process
     public Guid? CustomerCustomerRelationshipKey { get; set; }
     
     public int? OuterCustomerId { get; set; }
+    public Guid? OuterCustomerKey { get; set; }
     public Customer? OuterCustomer { get; set; }
     
     public int? InnerCustomerId { get; set; }
+    public Guid? InnerCustomerKey { get; set; }
     
     public Customer? InnerCustomer { get; set; }
 

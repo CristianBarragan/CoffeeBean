@@ -2,14 +2,19 @@
 
 # Layers
 
-> **Note on today's physical layout.** The target layout below (`Foundgine.Foundation`,
-> `Foundgine.Runtime`, `Foundgine.Sql`, etc. as separate projects) is the direction
-> the solution is organized toward. Today, Foundation, Runtime, SQL, and GraphQL concerns
-> live as folders inside the single `src/Foundgine` project (`GraphQL/Core/Runtime`,
-> `GraphQL/Core/Sql`, `GraphQL/Core/Mapping`, `GraphQL/Core/GraphQL`), and the mapping
-> generator lives in its own project
-> (`Foundgine.GraphQL.Core.Mapping.Generators` in the sample solution).
-> The dependency *rules* below already hold; the project *split* is incremental. See
+> **Note on today's physical layout.** The layout below is real, not aspirational,
+> for the platform side: `Foundgine.Abstractions`, `Foundgine.Foundation`,
+> `Foundgine.Metadata`, `Foundgine.Builders`, `Foundgine.Planning`,
+> `Foundgine.Execution.Contracts`, `Foundgine.Providers`, `Foundgine.Diagnostics`,
+> `Foundgine.Reflection`, and `Foundgine.Serialization` are already separate
+> projects, not folders inside one monolith. What's still aspirational is the
+> *product* side below Foundation-and-below: `Graphgine` (the GraphQL product)
+> exists today; `Foundgine.Grpc`/`Foundgine.WebApi` and a generic
+> `Foundgine.Sql`/`Foundgine.GraphQL` split do not — see
+> [Dependency Graph](Dependency-Graph.md) for the actual current project graph,
+> which this page's diagrams and per-project sections describe a *future*
+> version of. The dependency *rules* below already hold; the project *split*
+> for the non-Graphgine transports is what's still incremental. See
 > [Vision → Roadmap by phase](Vision.md#roadmap-by-phase).
 
 ## Contents

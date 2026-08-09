@@ -67,7 +67,7 @@ namespace Database.Entity.Banking.Migrations
                     ContactPointKey = table.Column<Guid>(type: "uuid", nullable: false),
                     ContactPointType = table.Column<int>(type: "integer", nullable: true),
                     ContactPointValue = table.Column<string>(type: "text", nullable: true),
-                    CustomerKey = table.Column<int>(type: "integer", nullable: true),
+                    CustomerKey = table.Column<Guid>(type: "uuid", nullable: true),
                     CustomerId = table.Column<int>(type: "integer", nullable: true),
                     ProcessedDateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "(now() at time zone 'utc')")
                 },
@@ -114,7 +114,9 @@ namespace Database.Entity.Banking.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     CustomerCustomerRelationshipKey = table.Column<Guid>(type: "uuid", nullable: true),
                     OuterCustomerId = table.Column<int>(type: "integer", nullable: true),
+                    OuterCustomerKey = table.Column<Guid>(type: "uuid", nullable: true),
                     InnerCustomerId = table.Column<int>(type: "integer", nullable: true),
+                    InnerCustomerKey = table.Column<Guid>(type: "uuid", nullable: true),
                     CustomerCustomerRelationshipType = table.Column<int>(type: "integer", nullable: true),
                     ProcessedDateTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "(now() at time zone 'utc')")
                 },
