@@ -81,10 +81,11 @@ public static class SqlTextTranslator
                 "also appear as a Scan somewhere in the plan.");
         }
 
-        var columnName = ColumnName(entity, columnId);
-        var resultAlias = $"{alias}_{columnName}";
+        var domainColumnName = DomainColumnName(entity, columnId);
+        var physicalColumnName = ColumnName(entity, columnId);
+        var resultAlias = $"{alias}_{domainColumnName}";
 
-        selectItems.Add($"{alias}.{Quote(columnName)} AS {Quote(resultAlias)}");
+        selectItems.Add($"{alias}.{Quote(physicalColumnName)} AS {Quote(resultAlias)}");
         columns.Add(new SqlColumnMap(entity, columnId, resultAlias));
     }
 
@@ -101,7 +102,7 @@ public static class SqlTextTranslator
                 var alias = $"t{counter++}";
                 orderedAliases.Add((scan.Entity, alias));
                 aliasByEntity[scan.Entity] = alias;
-                return $"{Quote(scan.Entity.Name)} AS {alias}";
+                return $"{Quote(scan.Entity.EffectiveStorageName)} AS {alias}";
             }
 
             case SqlJoinNode join:
@@ -144,6 +145,18 @@ public static class SqlTextTranslator
     }
 
     private static string ColumnName(EntityMetadata entity, ushort columnId)
+    {
+        foreach (var column in entity.Columns)
+        {
+            if (column.Id.Value == columnId)
+                return column.EffectiveStorageName;
+        }
+
+        throw new InvalidOperationException(
+            $"Entity '{entity.Name}' has no column with id {columnId}.");
+    }
+
+    private static string DomainColumnName(EntityMetadata entity, ushort columnId)
     {
         foreach (var column in entity.Columns)
         {

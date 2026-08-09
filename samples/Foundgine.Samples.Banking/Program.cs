@@ -35,9 +35,9 @@ Console.WriteLine();
 //    "Customer, joined to Account, joined to Transaction" — the planner
 //    discovers both joins from the JoinGraph. It contains no
 //    Banking-specific code at all.
-var intent = new QueryIntent(
-    Root: BankingMetadata.Customer.EntityId,
-    Path: new[] { BankingMetadata.Account.EntityId, BankingMetadata.Transaction.EntityId });
+var intent = QueryIntent.Linear(
+    root: BankingMetadata.Customer.EntityId,
+    path: new[] { BankingMetadata.Account.EntityId, BankingMetadata.Transaction.EntityId });
 
 var planner = new QueryPlanner(registry, joins);
 var logicalPlan = planner.Plan(intent);

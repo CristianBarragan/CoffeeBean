@@ -98,4 +98,41 @@ public class SqlTextTranslatorTests
         Assert.Contains("t1", translation.CommandText);
         Assert.Contains("t2", translation.CommandText);
     }
+
+    [Fact]
+    public void Translate_WithStorageNames_EmitsThePhysicalTableAndColumnNames_NotTheDomainOnes()
+    {
+        // The architecture review's "ugly physical schema" checkpoint, at
+        // the translator unit level: EntityMetadata/ColumnMetadata.Name
+        // stay the domain-facing identity, StorageName is what actually
+        // ends up in the generated SQL text.
+        var customer = new EntityMetadata(
+            new EntityId(1), "Customer",
+            new ColumnMetadata[]
+            {
+                new(new ColumnId(1), "Id", StorageName: "customer_pk"),
+                new(new ColumnId(2), "Name", StorageName: "full_name"),
+            },
+            StorageName: "crm_customer");
+
+        var plan = new ProviderPlan(new SqlScanNode(customer));
+
+        var translation = SqlTextTranslator.Translate(plan);
+
+        Assert.Equal(
+            "SELECT t0.\"customer_pk\" AS \"t0_Id\", t0.\"full_name\" AS \"t0_Name\" FROM \"crm_customer\" AS t0",
+            translation.CommandText);
+
+        // No domain name leaked into the physical identifiers.
+        Assert.DoesNotContain("\"Customer\"", translation.CommandText);
+        Assert.DoesNotContain("\"Id\"", translation.CommandText);
+        Assert.DoesNotContain("\"Name\"", translation.CommandText);
+
+        // But the domain name is still what SqlColumnMap reports back —
+        // downstream code (SqlExecutionProvider) never needs to know the
+        // physical names either.
+        Assert.All(translation.Columns, c => Assert.Same(customer, c.Entity));
+        Assert.Contains(translation.Columns, c => c.ResultAlias == "t0_Id");
+        Assert.Contains(translation.Columns, c => c.ResultAlias == "t0_Name");
+    }
 }
