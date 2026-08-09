@@ -1,191 +1,321 @@
 # Foundgine
 
-Foundgine is an extensible application-framework and infrastructure platform for
-.NET. **Graphgine** is the GraphQL engine built on top of it — the first product
-on the platform, formerly known as GraphQLCoffeeBeanery.
+**Foundgine turns a .NET application's domain model into a safe, executable interface for AI agents.**
 
+It is a domain-semantic and execution layer for AI-native applications.
+
+Foundgine is deliberately **not** another LLM framework, RAG framework, MCP server implementation, ORM, workflow engine, or database.
+
+```text
+        Claude / ChatGPT / Cursor / other agents
+                         │
+                     MCP / API
+                         │
+                         ▼
+                ┌─────────────────┐
+                │    Foundgine    │
+                │                 │
+                │ Domain semantics│
+                │ Resolution      │
+                │ Policy          │
+                │ Planning        │
+                │ Execution       │
+                │ Verification    │
+                │ Evidence        │
+                └────────┬────────┘
+                         │
+              ┌──────────┼──────────┐
+              ▼          ▼          ▼
+          Structured   Domain     External
+             data      actions     systems
+              │          │
+              ▼          ▼
+          Database   Application services
 ```
-Applications
-     ▲
-     │
-  Graphgine
-     ▲
-     │
-┌─────────────────────┐
-│      Foundgine       │
-│                       │
-│ Abstractions          │
-│ Foundation            │
-│ Metadata              │
-│ Diagnostics           │
-│ Builders              │
-│ Planning              │
-│ Providers             │
-│ Reflection            │
-│ Serialization         │
-└─────────────────────┘
-     ▲
-     │
-   .NET
+
+## The problem
+
+AI agents are good at reasoning about language, but an application is not language.
+
+A real application has:
+
+- entities
+- identities
+- relationships
+- business operations
+- authorization rules
+- data sources
+- side effects
+- verification requirements
+
+Today, developers commonly bridge that gap by writing a growing collection of custom tools.
+
+Foundgine's thesis is:
+
+> **The application already contains the domain knowledge. Compile and expose that knowledge as a constrained semantic execution surface instead of teaching every agent the application independently.**
+
+## The core lifecycle
+
+```text
+DOMAIN MODEL
+     ↓
+SEMANTIC MODEL
+     ↓
+AI INTENT
+     ↓
+RESOLUTION
+     ↓
+POLICY / AUTHORIZATION
+     ↓
+EXECUTION PLAN
+     ↓
+PREVIEW
+     ↓
+EXECUTE
+     ↓
+VERIFY
+     ↓
+EVIDENCE
+     ↓
+AI RESPONSE
 ```
 
-## Dependency direction
+Not every request requires every stage. Reads can be simpler; mutations should normally pass through policy, preview/approval, execution and verification.
 
-Strict rule, enforced by the `ProjectReference`s in every `.csproj` (verified —
-see "Architecture fixes" below) and by `tests/Foundgine.Tests/ArchitectureTests.cs`,
-which parses the `.csproj` graph directly and fails the build if a disallowed
-`ProjectReference` or a dependency cycle is introduced:
+## What Foundgine owns
 
+Foundgine owns the application-domain boundary:
+
+- semantic entity and relationship metadata
+- identity and entity resolution
+- constrained query planning
+- domain-action descriptors
+- policy-aware planning
+- execution plans
+- execution-provider contracts
+- verification
+- evidence
+
+## What Foundgine deliberately does not own
+
+Use existing technologies for:
+
+- LLM inference
+- model hosting
+- generic agent orchestration
+- generic RAG
+- vector databases
+- MCP protocol implementation
+- authentication infrastructure
+- workflow engines
+- message brokers
+- ORM/database management
+- hosting
+
+Foundgine integrates with those technologies rather than recreating them.
+
+## Current repository
+
+The active solution currently contains:
+
+```text
+src/
+├── Foundgine.Abstractions/
+├── Foundgine.Foundation/
+├── Foundgine.Metadata/
+├── Foundgine.Diagnostics/
+├── Foundgine.Builders/
+├── Foundgine.Execution.Contracts/
+├── Foundgine.Planning/
+└── Foundgine.Providers/
+
+samples/
+└── Foundgine.Samples.Banking/
+
+tests/
+├── Foundgine.Tests/
+├── Foundgine.Foundation.Tests/
+├── Foundgine.Metadata.Tests/
+├── Foundgine.Builders.Tests/
+├── Foundgine.Diagnostics.Tests/
+├── Foundgine.Execution.Contracts.Tests/
+├── Foundgine.Planning.Tests/
+└── Foundgine.Providers.Tests/
 ```
-Graphgine
-    │
-    ▼
-Foundgine.Planning              (MutationOperation, MutationPlan)
-    ▼
-Foundgine.Execution.Contracts   (ExecutionContext, ProviderPlan, IExecutionProvider)
-    ▲
-    │
-Foundgine.Providers             (SqlExecutionProvider, GraphExecutionProvider, CacheExecutionProvider)
-    ▼
-Foundgine.Builders / Foundgine.Metadata
-    ▼
-Foundgine.Foundation
-    ▼
+
+The active tree intentionally contains no GraphQL product project. Historical GraphQL/Graphgine work remains under `archive/`.
+
+## Current E2E proof
+
+The canonical sample is:
+
+`samples/Foundgine.Samples.Banking`
+
+It currently proves:
+
+```text
+Customer
+   ↓
+Account
+   ↓
+Transaction
+```
+
+through:
+
+```text
+Domain
+  ↓
+Metadata
+  ↓
+Dynamic Planner
+  ↓
+QueryPlan
+  ↓
+ProviderPlan
+  ↓
+SQL
+  ↓
+real SQLite database
+  ↓
+Result
+```
+
+The sample uses real SQLite and does not depend on GraphQL, Hot Chocolate, or Graphgine.
+
+Run it with:
+
+```bash
+dotnet run --project samples/Foundgine.Samples.Banking
+```
+
+This is the first proof, not the final product.
+
+## The next proof
+
+The immediate goal is to extend the Banking sample upward:
+
+```text
+"Find Ada's checking account."
+        ↓
+semantic resolution
+        ↓
+policy
+        ↓
+execution plan
+        ↓
+real database
+        ↓
+evidence
+```
+
+Then:
+
+```text
+"Refund Ada's last transaction."
+        ↓
+resolve
+        ↓
+authorize
+        ↓
+preview
+        ↓
+approve
+        ↓
+execute
+        ↓
+verify
+        ↓
+evidence
+```
+
+See [Proof Milestones](docs/00-Direction/Milestones.md).
+
+## Architecture
+
+Foundgine separates stable domain contracts from planning and execution:
+
+```text
 Foundgine.Abstractions
+        ↓
+Foundgine.Foundation
+        ↓
+Foundgine.Metadata
+        ↓
+Foundgine.Builders
+        ↓
+Foundgine.Planning
+        ↓
+Foundgine.Execution.Contracts
+        ↓
+Foundgine.Providers
 ```
 
-`Foundgine.Planning` and `Foundgine.Providers` are peers, not a chain — they
-used to be two subfolders of a single `Foundgine.Core` project
-(`Foundgine.Core.MutationPlan` and `Foundgine.Core.Provider`) that never
-referenced each other's types. Once nothing in the repo took a dependency on
-both halves of `Core` for a shared reason, keeping them bundled was just the
-"put it somewhere" catch-all the root README used to warn against, so they
-were split into their own projects along the seam that already existed.
-`Graphgine` only ever needed the mutation-planning half.
+These are architectural boundaries, not a claim that every provider capability is complete.
 
-Foundgine never references Graphgine — not in any `.csproj`, and not in any
-`using` inside a `.cs` file either. Graphgine is simply a consumer of the
-platform, the same way a second product would be.
+See:
 
-### Architecture fixes applied to the migrated code
+- [Architecture](docs/02-Architecture/README.md)
+- [Direction](docs/00-Direction/README.md)
+- [Current Status](docs/CURRENT-STATUS.md)
 
-The mechanical namespace rewrite from the CoffeeBeanery prototype carried over
-a few dependency-direction violations that the `ProjectReference`s alone
-didn't catch (mostly stray `using`s and types that were in the wrong project
-to begin with). These have been fixed:
+## Important status
 
-- **`IExecutionProvider` no longer lives in `Foundgine.Abstractions`.** It
-  needs `ProviderPlan`/`ExecutionContext`, which would otherwise pull the
-  provider-implementation layer in as a dependency of the bottom-most project
-  — exactly backwards. Those types (`ExecutionContext`, `ExecutionOptions`,
-  `ExecutionResult`, `ExecutionStatistics`, `ExecutionRow`, `ProviderPlan`,
-  `ProviderNode`, `IExecutionProvider`) now live together in a new project,
-  **`Foundgine.Execution.Contracts`**, which depends only on
-  `Foundgine.Metadata`. `Foundgine.Providers` depends on it (for its concrete
-  `SqlExecutionProvider`/`GraphExecutionProvider`/`CacheExecutionProvider`),
-  not the other way around. `Foundgine.Abstractions` is back to zero
-  dependencies — just `IEntity`, `IPlanner`, `IOptimizer`, `IMaterializer`.
-- **`Foundgine.Foundation` no longer references `Graphgine`.** `CQRS/IQuery.cs`
-  had a stray, unused `using Graphgine.Execution;` left over from the rename.
-- **`Foundgine.Foundation` no longer depends on Npgsql.** `UnitOfWork` and
-  `UnitOfWorkContext` were Postgres-specific (`NpgsqlConnection`,
-  `NpgsqlTransaction`) but lived in the platform's foundation layer, which is
-  supposed to be usable by a Postgres, SQL Server, Mongo, or non-database
-  product alike. Both moved to `Graphgine.Postgres`, a dedicated project so the
-  core `Graphgine` engine keeps zero Npgsql/EF package dependencies (the repo's
-  other Postgres-specific *code* that doesn't touch a live connection, like
-  `PostgresSqlWriter`, stayed in `Graphgine.Sql` inside the main `Graphgine`
-  project — see the "Graphgine.Postgres split" entry in `docs/MIGRATION.md`).
-  `Foundgine.Foundation/CQRS` now holds only the generic, database-agnostic
-  contracts and dispatchers: `ICommand`, `IQuery`, `CommandDispatcher`,
-  `QueryDispatcher`.
-- **Fixed a latent, unrelated build gap**: `CommandDispatcher`/`QueryDispatcher`
-  use `Microsoft.Extensions.DependencyInjection`'s `IServiceProvider`/
-  `GetRequiredService` but `Foundgine.Foundation.csproj` never referenced the
-  package. Added `Microsoft.Extensions.DependencyInjection.Abstractions`.
+Foundgine is an active architecture and proof-of-concept project.
 
-Not yet done, and worth doing before adding features rather than after:
-architecture tests that enforce these rules automatically (e.g. "Abstractions
-must not reference anything") instead of relying on this document; the SQL,
-Graph, and Cache execution providers, the recursive-CTE graph strategy, and
-mutation-merge translation are still real `NotImplementedException`
-placeholders, not just naming issues; and `Foundgine.Tests`/`Graphgine.Tests`
-are still empty scaffolding rather than actual coverage.
+The lower execution path has a real Banking E2E proof. The AI-native layers are the next development phase:
 
-## Layout
+- semantic domain model
+- resolution
+- actions
+- policy
+- preview/approval
+- verification
+- evidence
+- MCP adapter
 
-```
-Foundgine/
-├── Foundgine.sln
-├── src/
-│   ├── Foundgine.Abstractions/     platform contracts (IEntity, IPlanner, IOptimizer, ...)
-│   ├── Foundgine.Foundation/       Guard/Result/Optional primitives + generic CQRS
-│   ├── Foundgine.Metadata/         entity/field/column/relationship metadata model
-│   ├── Foundgine.Diagnostics/      diagnostic events, scopes, listeners
-│   ├── Foundgine.Builders/         generic query-plan tree + builder infrastructure
-│   ├── Foundgine.Execution.Contracts/  execution context, ProviderPlan, IExecutionProvider
-│   ├── Foundgine.Planning/         mutation plans (MutationOperation, MutationPlan) — a mutation isn't a query
-│   ├── Foundgine.Providers/        the concrete SQL/Graph/Cache execution providers (not yet implemented)
-│   ├── Foundgine.Reflection/       (placeholder — see project README)
-│   ├── Foundgine.Serialization/    (placeholder — see project README)
-│   │
-│   ├── Graphgine/                  GraphQL mapping, SQL graph structures, execution compilers
-│   ├── Graphgine.HotChocolate/     the only project allowed to reference HotChocolate directly
-│   ├── Graphgine.AspNetCore/       (placeholder — see project README)
-│   ├── Graphgine.Analyzers/        (placeholder — see project README)
-│   └── Graphgine.SourceGenerators/ Roslyn generator for mapping-derived metadata
-│
-├── samples/
-│   ├── Foundgine.Samples.Banking/  same domain, no GraphQL — see its own README
-│   └── Graphgine.Samples.Banking/  the former HotChocolateCoffeeBeanery example app
-├── tests/
-│   ├── Foundgine.Tests/            architecture/dependency-direction tests + a placeholder for the rest
-│   └── Graphgine.Tests/            placeholder xunit project
-├── benchmarks/                     empty — no benchmark project existed to migrate
-└── docs/
+Do not interpret the repository as a production-ready AI agent platform yet.
+
+## Why not another AI framework?
+
+Because the goal is deliberately narrower.
+
+```text
+AI frameworks
+    own reasoning/orchestration
+
+Databases / ORMs
+    own persistence
+
+MCP
+    owns agent-tool protocol
+
+Workflow engines
+    own durable workflows
+
+Foundgine
+    owns application-domain semantics
+    and safe execution
 ```
 
-> The original monolithic `CoffeeBeanery` library previously lived under
-> `legacy/CoffeeBeanery/` during the platform/product split. It has been removed
-> ahead of the first public release so the repository reflects the current
-> architecture rather than the prototype it was extracted from — nothing in
-> `src/`, `samples/`, or `tests/` referenced it. Its full history, including the
-> original code, is preserved in git (see any commit before its removal).
+That boundary is the product.
 
-## How this was assembled — read this before you build
+## Documentation
 
-This restructuring is based on a prototype that was already partially built inside
-this repo, under `legacy/HotChocolateCoffeeBeanery/Domain/` (`CoffeeBeanery.Foundation`,
-`CoffeeBeanery.Runtime`, `CoffeeBeanery.GraphQL`, `CoffeeBeanery.Mapping.Generators`).
-That prototype already implemented almost exactly the platform/product split
-described above, so it — not the older monolithic `src/CoffeeBeanery/` library —
-is what got renamed and promoted into `src/` here. The monolithic library is
-GraphQL-and-SQL code with no clean seam between "generic platform" and
-"GraphQL product," so it wasn't a good source to split from directly. It was
-kept as-is under `legacy/CoffeeBeanery/` during the split for reference, then
-removed ahead of the first public release (see the note in the tree diagram
-above) once nothing else in the repo depended on it.
+- [Direction](docs/00-Direction/README.md)
+- [Proof Milestones](docs/00-Direction/Milestones.md)
+- [Documentation Hub](docs/README.md)
+- [Architecture](docs/02-Architecture/README.md)
+- [Foundation](docs/03-Foundation/README.md)
+- [Runtime](docs/04-Runtime/README.md)
+- [AI Integration](docs/09-AI/README.md)
+- [Banking Sample](docs/11-Samples/README.md)
+- [Roadmap](docs/13-Reference/Roadmap.md)
+- [Current Status](docs/CURRENT-STATUS.md)
+- [Security](docs/SECURITY.md)
+- [AI/LLM context](llms.txt)
+- [Full AI context](llms-full.md)
 
-Because of that:
+## License
 
-- **Real, working content**: `Foundgine.Abstractions/.Foundation/.Metadata/.Diagnostics/.Builders/.Core`,
-  `Graphgine`, `Graphgine.HotChocolate`, `Graphgine.SourceGenerators`, and the
-  `Graphgine.Samples.Banking` sample all carry real migrated code with namespaces
-  mechanically rewritten (e.g. `CoffeeBeanery.GraphQL.Core.Foundation.Metadata` →
-  `Foundgine.Metadata`, `CoffeeBeanery.GraphQL.Core.Runtime` → `Graphgine.Execution`).
-- **Placeholders**: `Foundgine.Reflection`, `Foundgine.Serialization`,
-  `Graphgine.AspNetCore`, and `Graphgine.Analyzers` have no corresponding code in
-  the source repo to extract yet. Each has a `README.md` explaining what belongs
-  there and why it's empty for now, rather than guessed-at filler code.
-- **Stale references carried over**: the original prototype referenced two
-  projects that don't exist anywhere in the repo (`Domain.Shared`,
-  `CoffeeBeanery.Runtime.Postgres`). Those references were dropped/commented
-  with a note at the point they occurred instead of silently fabricated.
-- **Not verified to `dotnet build`**: the prototype this is based on wasn't a
-  complete, buildable solution to begin with (see above), so this restructuring
-  preserves its actual completeness level under the new names/paths rather than
-  claiming a green build that wouldn't reflect reality. Treat this as a structural
-  migration, not a build-verified one — plan to fix compile errors as you wire it
-  up, the same way you would have in the original prototype.
-
-See `docs/MIGRATION.md` for the full file-by-file mapping.
+MIT

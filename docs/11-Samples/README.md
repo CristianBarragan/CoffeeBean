@@ -1,39 +1,93 @@
+[Home](../../README.md) → [Documentation](../README.md) → **Samples**
+
 # Samples
 
-## Banking sample
+## Foundgine.Samples.Banking
 
-The current sample is:
+The canonical Foundgine proof domain is:
 
-`samples/Graphgine.Samples.Banking`
+```text
+Customer
+   ↓
+Account
+   ↓
+Transaction
+```
 
-It demonstrates the intended combination of:
+The active sample is deliberately a console application with no GraphQL layer.
 
-- domain models
-- Entity Framework Core mapping
-- Graphgine source generation
-- Hot Chocolate
-- PostgreSQL / Npgsql
-- Apache AGE-oriented graph support
+It currently proves:
 
-The domain includes customers, contact points, contracts, accounts, transactions, products and
-customer-to-customer relationships.
+```text
+Domain
+  ↓
+Hand-written Metadata
+  ↓
+Dynamic QueryPlanner
+  ↓
+Foundgine.Builders.QueryPlan
+  ↓
+Foundgine.Providers.SqlPlanCompiler
+  ↓
+ProviderPlan
+  ↓
+SqlExecutionProvider
+  ↓
+real SQLite database
+  ↓
+ExecutionRow
+```
 
-## Important status note
+Run:
 
-The Banking sample still contains historical wiring from the Coffee Beanery implementation and
-must be repaired and validated before it is advertised as a guaranteed clone-and-run example.
+```bash
+dotnet run --project samples/Foundgine.Samples.Banking
+```
 
-In particular, sample references to old service-registration and processing abstractions should be
-treated as migration work rather than current platform API guarantees.
+## Why Banking?
 
-## Source of truth
+The domain is small enough to understand but relational enough to prove:
 
-Use the current project files under `samples/Graphgine.Samples.Banking` and the `src/` projects
-rather than historical paths in `legacy/`.
+- entity metadata
+- identity
+- relationships
+- dynamic join discovery
+- logical planning
+- provider planning
+- SQL execution
+- real result materialization
 
-## Related
+## Next sample milestones
 
-- [Getting Started](../01-Getting-Started/README.md)
-- [GraphQL](../05-GraphQL/README.md)
-- [Persistence](../08-Persistence/README.md)
-- [Source Generators](../06-Source-Generators/README.md)
+The same sample should grow vertically rather than spawning many disconnected demos:
+
+### Read
+
+```text
+"Find Ada's last five transactions."
+```
+
+### Mutation
+
+```text
+"Refund Ada's last transaction."
+```
+
+The mutation should demonstrate:
+
+```text
+resolve
+→ authorize
+→ plan
+→ preview
+→ approve
+→ execute
+→ verify
+→ evidence
+```
+
+## Historical sample
+
+`archive/samples/Graphgine.Samples.Banking` contains the previous GraphQL/Hot Chocolate direction.
+
+It is useful as historical material, but it is not the canonical proof for the current Foundgine direction.

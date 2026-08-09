@@ -2,510 +2,95 @@
 
 # Layers
 
-> **Note on today's physical layout.** The layout below is real, not aspirational,
-> for the platform side: `Foundgine.Abstractions`, `Foundgine.Foundation`,
-> `Foundgine.Metadata`, `Foundgine.Builders`, `Foundgine.Planning`,
-> `Foundgine.Execution.Contracts`, `Foundgine.Providers`, `Foundgine.Diagnostics`,
-> `Foundgine.Reflection`, and `Foundgine.Serialization` are already separate
-> projects, not folders inside one monolith. What's still aspirational is the
-> *product* side below Foundation-and-below: `Graphgine` (the GraphQL product)
-> exists today; `Foundgine.Grpc`/`Foundgine.WebApi` and a generic
-> `Foundgine.Sql`/`Foundgine.GraphQL` split do not — see
-> [Dependency Graph](Dependency-Graph.md) for the actual current project graph,
-> which this page's diagrams and per-project sections describe a *future*
-> version of. The dependency *rules* below already hold; the project *split*
-> for the non-Graphgine transports is what's still incremental. See
-> [Vision → Roadmap by phase](Vision.md#roadmap-by-phase).
+The active repository should be understood as a small execution platform, not as a collection of transport-specific products.
 
-## Contents
+## Active project responsibilities
 
-- [Design Goals](#design-goals)
-- [Solution Layout](#solution-layout)
-- [Foundation](#foundation)
-- [Runtime](#runtime)
-- [SQL](#sql)
-- [Mapping Generator](#mapping-generator)
-- [Emitters](#emitters)
-- [Generated Output](#generated-output)
-- [GraphQL](#graphql)
-- [gRPC (future phase — not implemented today)](#grpc-future-phase--not-implemented-today)
-- [Web API (future phase — not implemented today)](#web-api-future-phase--not-implemented-today)
-- [Test Projects](#test-projects)
+| Project | Responsibility |
+|---|---|
+| `Foundgine.Abstractions` | stable platform contracts |
+| `Foundgine.Foundation` | generic primitives and CQRS foundations |
+| `Foundgine.Metadata` | entity, column, relationship and join metadata |
+| `Foundgine.Diagnostics` | diagnostics infrastructure |
+| `Foundgine.Builders` | logical query-plan structures |
+| `Foundgine.Planning` | dynamic query and mutation planning |
+| `Foundgine.Execution.Contracts` | execution context, rows, provider plans and provider contracts |
+| `Foundgine.Providers` | provider compilation/execution |
+| `Foundgine.Samples.Banking` | canonical end-to-end proof |
 
----
+## Target semantic layers
 
-> This document defines the recommended repository layout for the Foundgine framework. The structure is designed to enforce architectural boundaries, support independent evolution of components, and simplify long-term maintenance.
+The product layer will add concepts without forcing them all into separate projects immediately:
 
----
-
-## Design Goals
-
-The repository is organized around the following principles:
-
-- Clear dependency direction
-- Single responsibility per project
-- Transport independence
-- Compile-time generation
-- Native AOT compatibility
-- Minimal project coupling
-
-Every project should have one primary purpose.
-
----
-
-## Solution Layout
-
-```
-Foundgine.sln
-
-src/
-
-    Foundgine.Foundation/
-
-    Foundgine.Runtime/
-
-    Foundgine.Sql/
-
-    Foundgine.Mapping.Generators/
-
-    Foundgine.GraphQL/
-
-    Foundgine.Grpc/
-
-    Foundgine.WebApi/
-
-tests/
-
-    Foundgine.Foundation.Tests/
-
-    Foundgine.Runtime.Tests/
-
-    Foundgine.Sql.Tests/
-
-    Foundgine.Mapping.Generators.Tests/
-
-    Foundgine.GraphQL.Tests/
-
-    Foundgine.Grpc.Tests/
-
-    Foundgine.WebApi.Tests/
+```text
+Semantic Domain
+    ↓
+Resolution
+    ↓
+Policy
+    ↓
+Planning
+    ↓
+Execution
+    ↓
+Verification
+    ↓
+Evidence
 ```
 
-Each project should be independently buildable and testable.
+The implementation should follow responsibility boundaries, not create projects prematurely.
 
----
+## External adapters
 
-## Foundation
+These should remain outside the core:
 
-```
-Foundgine.Foundation
-
-Metadata/
-
-Planning/
-
-Interfaces/
-
-Ids/
-
-Primitives/
-
-Exceptions/
-
-Extensions/
+```text
+MCP
+GraphQL
+REST
+gRPC
+Semantic Kernel
+LLM providers
+EF Core
+Dapper
+Temporal
+Kafka
+OpenTelemetry
 ```
 
-Contains:
+They translate into or consume Foundgine contracts.
 
-- Contracts
-- Metadata
-- Planning models
-- Identifiers
-- Primitive value objects
+## Compile-time compiler
 
-Never contains:
+A future Roslyn compiler can generate semantic descriptors.
 
-- Roslyn
-- SQL
-- Runtime
-- GraphQL
-- Generated code
+It should not become the runtime planner.
 
-Foundation is the most stable project in the solution.
-
----
-
-## Runtime
-
-```
-Foundgine.Runtime
-
-Planner/
-
-Execution/
-
-Mutation/
-
-Query/
-
-Materialization/
-
-Services/
-
-Interceptors/
-
-DependencyInjection/
-```
-
-Contains:
-
-- Query execution
-- Mutation execution
-- Runtime services
-- Execution context
-- Materialization coordination
-
-Depends only on:
-
-```
-Foundation
-```
-
----
-
-## SQL
-
-```
-Foundgine.Sql
-
-PostgreSql/
-
-Builders/
-
-Visitors/
-
-Dialects/
-
-Readers/
-
-Writers/
-```
-
-Contains:
-
-- SQL writers
-- SQL readers
-- SQL dialects
-- SQL builders
-- SQL visitors
-
-Depends on:
-
-```
-Foundation
-
-Runtime
-```
-
----
-
-## Mapping Generator
-
-```
-Foundgine.Mapping.Generators
-
-Parser/
-
-Validation/
-
-Model/
-
-Passes/
-
-Emit/
-
-Utilities/
-```
-
-Contains:
-
-- Incremental generator
-- Mapping parser
-- Validation
-- Identifier allocation
-- Code emitters
-
-Depends on:
-
-```
-Foundation
-
+```text
 Roslyn
+ ↓
+Semantic descriptors
+ ↓
+Runtime planner
 ```
 
-Never depends on Runtime.
+The runtime still needs dynamic planning because user intent is not known at compile time.
 
----
+## Architectural rules
 
-## Emitters
+1. Inner layers do not reference outer transports.
+2. AI providers do not become domain dependencies.
+3. Database-specific concerns stay behind execution-provider boundaries.
+4. Domain actions are explicit.
+5. Arbitrary method invocation is never an agent capability.
+6. Policy is part of execution planning.
+7. Mutations are previewable.
+8. Important mutations are verifiable.
+9. Evidence is produced by the execution system.
+10. New integrations should prefer adapters over new core abstractions.
 
-Recommended emitter organization:
+## Historical documentation
 
-```
-Emit/
+The former GraphQL/source-generator architecture remains documented under the older section names for historical context. It should not be treated as the current product boundary.
 
-IdEmitter.cs
-
-MetadataEmitter.cs
-
-PlannerEmitter.cs
-
-MaterializerEmitter.cs
-
-DematerializerEmitter.cs
-
-InterceptorEmitter.cs
-
-DependencyInjectionEmitter.cs
-
-RuntimeRegistryEmitter.cs
-```
-
-Each emitter generates one category of source code.
-
----
-
-## Generated Output
-
-Generated files should resemble:
-
-```
-Generated/
-
-GeneratedEntityIds.cs
-
-GeneratedMetadataProvider.cs
-
-GeneratedPlannerRegistry.cs
-
-GeneratedMaterializers.cs
-
-GeneratedDematerializers.cs
-
-GeneratedInterceptors.cs
-
-GeneratedServiceCollectionExtensions.cs
-```
-
-Generated code should contain registrations and precomputed data, not business logic.
-
----
-
-## GraphQL
-
-```
-Foundgine.GraphQL
-
-Schema/
-
-Types/
-
-Resolvers/
-
-Middleware/
-
-DependencyInjection/
-```
-
-Contains only GraphQL-specific concerns.
-
-Depends on:
-
-```
-Foundation
-
-Runtime
-```
-
----
-
-## gRPC *(future phase — not implemented today)*
-
-```
-Foundgine.Grpc
-
-Services/
-
-Protobuf/
-
-Mapping/
-
-DependencyInjection/
-```
-
-Contains only gRPC-specific integration.
-
-Depends on:
-
-```
-Foundation
-
-Runtime
-```
-
----
-
-## Web API *(future phase — not implemented today)*
-
-```
-Foundgine.WebApi
-
-Controllers/
-
-MinimalApis/
-
-Filters/
-
-DependencyInjection/
-```
-
-Contains ASP.NET Core transport logic only.
-
-Depends on:
-
-```
-Foundation
-
-Runtime
-```
-
----
-
-## Test Projects
-
-Every production project should have a corresponding test project.
-
-Recommended layout:
-
-```
-tests/
-
-Foundgine.Foundation.Tests
-
-Foundgine.Runtime.Tests
-
-Foundgine.Sql.Tests
-
-Foundgine.Mapping.Generators.Tests
-
-Foundgine.GraphQL.Tests
-
-Foundgine.Grpc.Tests
-
-Foundgine.WebApi.Tests
-```
-
-Tests should mirror the production structure where practical.
-
----
-
-## Dependency Graph
-
-The intended dependency graph is:
-
-```
-                 Foundation
-                      ▲
-                      │
-      ┌───────────────┼───────────────┐
-      │               │               │
-   Runtime           SQL      Mapping.Generators
-      ▲               ▲               │
-      │               │               │
-      └───────────────┼───────────────┘
-                      │
-          Generated Runtime Components
-                      ▲
-                      │
-      ┌───────────────┼───────────────┐
-      │               │               │
-   GraphQL          gRPC          WebApi
-```
-
-Dependencies should always point toward more stable layers.
-
-Circular project references should never be introduced.
-
----
-
-## Dependency Rules
-
-The following rules should always hold:
-
-| Project | Allowed Dependencies |
-|---------|-----------------------|
-| Foundation | None |
-| Runtime | Foundation |
-| SQL | Foundation, Runtime |
-| Mapping.Generators | Foundation, Roslyn |
-| GraphQL | Foundation, Runtime |
-| gRPC | Foundation, Runtime |
-| WebApi | Foundation, Runtime |
-
-Generated code depends only on Foundation contracts and is consumed through Dependency Injection.
-
----
-
-## Long-Term Evolution
-
-This layout enables future additions without disturbing existing layers.
-
-Potential new projects include:
-
-```
-Foundgine.Mongo
-
-Foundgine.Cosmos
-
-Foundgine.Redis
-
-Foundgine.Elasticsearch
-
-Foundgine.Blazor
-
-Foundgine.OpenApi
-
-Foundgine.Cli
-```
-
-Each new project integrates through Foundation contracts rather than modifying Runtime.
-
----
-
-## Summary
-
-The repository structure reinforces Foundgine's architectural principles:
-
-- Stable Foundation contracts
-- Transport-agnostic Runtime
-- Database-specific SQL layer
-- Compile-time source generation
-- Thin transport adapters
-- Dependency inversion
-- Clear project boundaries
-- Long-term maintainability
-
-By organizing the solution around responsibilities rather than technologies, Foundgine remains modular, extensible, and adaptable as the framework grows.
-
----
-
-## Related Documentation
-
-- [Vision](Vision.md)
-- [Dependency Graph](Dependency-Graph.md)
-- [Foundation](../03-Foundation/README.md)
-- [Persistence](../08-Persistence/README.md)
-
----
-
-← Previous: [Principles](Principles.md)  |  Next: [Request Pipeline](Request-Pipeline.md) →
+See `archive/` for historical Graphgine implementation.

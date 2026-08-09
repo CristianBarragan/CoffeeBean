@@ -1,788 +1,491 @@
-# Foundgine — LLM Full Draft
+# Foundgine — Full AI Context
 
-> **Purpose:** canonical single-file context draft for AI systems. This file intentionally contains architecture, terminology, current implementation status, limitations and repository navigation in one place. It should be treated as the factual baseline from which the shorter `llms.txt` and `ai.seo.md` are derived.
+## 1. Identity
 
-## 1. Project identity
+Foundgine is a .NET application-domain semantic and execution platform for AI-native applications.
 
-Foundgine is an architecture-first, compile-time-oriented execution platform for .NET.
+> **Foundgine turns an application's domain model into a safe, executable interface for AI agents.**
 
-Graphgine is the first product built on Foundgine. Graphgine provides GraphQL-oriented mapping, selection/mutation planning, SQL shaping, PostgreSQL/graph structures, source generation and Hot Chocolate integration.
+The project should not be described as another LLM framework, RAG framework, MCP implementation, ORM, workflow engine, or database.
 
-The historical implementation was called Coffee Beanery / GraphQLCoffeeBeanery. That name remains in the `legacy/` tree and in some older documentation, but it is not the target architecture.
+## 2. Product thesis
 
-Repository: `CristianBarragan/Foundgine`
+AI agents can reason about language, but they do not automatically understand the legal vocabulary and execution semantics of a business application.
 
-License: MIT
+A real application contains:
 
-Target runtime: .NET 9
+- entities
+- identities
+- relationships
+- searchable properties
+- domain actions
+- authorization requirements
+- data sources
+- side effects
+- verification rules
 
-Language: C#
+Foundgine turns those facts into an explicit semantic execution surface.
 
-Roslyn generator/analyzer target: netstandard2.0
+The application remains the source of truth.
 
-## 2. The core idea
-
-Foundgine is built around a separation of concerns:
-
-```text
-Application / Domain
-        │
-        ▼
-     Graphgine
-  product-specific
-  GraphQL planning
-        │
-        ▼
- Foundgine platform
- contracts + metadata
- planning + execution
-        │
-        ▼
- infrastructure providers
-```
-
-The intended architectural rule is:
-
-> **Graphgine may depend on Foundgine; Foundgine must not depend on Graphgine.**
-
-The platform should know about execution concepts, metadata and plans without knowing whether a particular product enters through GraphQL, REST, gRPC or another transport.
-
-## 3. Current maturity — critical context
-
-This repository is an **active architectural migration / foundation build**.
-
-It is not currently appropriate to describe the repository as a finished production framework.
-
-The current tree contains substantial real implementation, including the Foundgine platform layers, Graphgine planning/runtime code, PostgreSQL SQL structures, Hot Chocolate adaptation and a Roslyn source generator.
-
-However, it also contains:
-
-- `NotImplementedException` provider and graph paths
-- TODOs in planning/execution code
-- placeholder projects
-- placeholder tests
-- incomplete sample wiring
-- stale documentation inherited from the Coffee Beanery prototype
-- no verified green build in the review environment
-
-A correct AI description should therefore distinguish **architectural capability** from **completed implementation**.
-
-## 4. Platform architecture
-
-The current main project dependency direction is:
+## 3. Product boundary
 
 ```text
-Graphgine.HotChocolate
-        ↓
-    Graphgine
-        ↓
-  Foundgine.Core
-        ↓
-Foundgine.Execution.Contracts
-        ↓
-Foundgine.Metadata
-        ↓
-Foundgine.Foundation
-        ↓
-Foundgine.Abstractions
+Claude / ChatGPT / Cursor / other agents
+                    │
+                MCP / API / SDK
+                    │
+                    ▼
+             ┌─────────────────┐
+             │    Foundgine    │
+             │                 │
+             │ Domain semantics│
+             │ Resolution      │
+             │ Policy          │
+             │ Planning        │
+             │ Execution       │
+             │ Verification    │
+             │ Evidence        │
+             └────────┬────────┘
+                      │
+           ┌──────────┼──────────┐
+           ▼          ▼          ▼
+       Structured   Domain    External
+          data      actions     data
 ```
 
-Supporting projects:
+Foundgine owns the middle.
+
+It does not own the outer AI reasoning stack or every downstream infrastructure system.
+
+## 4. Core lifecycle
 
 ```text
-Foundgine.Builders  → Foundgine.Metadata
-Foundgine.Diagnostics → Foundgine.Foundation
-Foundgine.Reflection → Foundgine.Abstractions
-Foundgine.Serialization → Foundgine.Metadata
+DOMAIN MODEL
+↓
+SEMANTIC MODEL
+↓
+AI INTENT
+↓
+RESOLUTION
+↓
+POLICY / AUTHORIZATION
+↓
+EXECUTION PLAN
+↓
+PREVIEW
+↓
+EXECUTE
+↓
+VERIFY
+↓
+EVIDENCE
+↓
+AI RESPONSE
 ```
 
-The source generator is intentionally special: `Graphgine.SourceGenerators` targets `netstandard2.0` and is consumed as a Roslyn analyzer/generator. It does not use ordinary project references to the runtime platform in the same way as normal libraries.
+A read may use a shorter path. A mutation should normally include policy, preview/approval, execution and verification.
 
-## 5. Foundgine.Abstractions
+## 5. Compile-time and runtime
 
-Path:
-
-`src/Foundgine.Abstractions`
-
-Purpose:
-
-The bottom-most contract layer.
-
-Current primary contracts:
-
-- `IEntity`
-- `IPlanner`
-- `IOptimizer`
-- `IMaterializer`
-
-Architectural rule:
-
-This project should remain independent of Graphgine and higher Foundgine layers.
-
-## 6. Foundgine.Foundation
-
-Path:
-
-`src/Foundgine.Foundation`
-
-Purpose:
-
-Generic primitives and generic CQRS infrastructure.
-
-Current contents include:
-
-- `Guard`
-- `Result`
-- `Optional`
-- `ValueList`
-- `IQuery`
-- `ICommand`
-- `IQueryDispatcher`
-- `ICommandDispatcher`
-- `QueryDispatcher`
-- `CommandDispatcher`
-
-Foundation is intended to remain protocol- and database-agnostic.
-
-The historical Postgres-specific unit-of-work implementation was moved out of Foundation into Graphgine SQL infrastructure.
-
-## 7. Foundgine.Metadata
-
-Path:
-
-`src/Foundgine.Metadata`
-
-Purpose:
-
-Protocol-neutral domain/execution metadata.
-
-Current metadata concepts include:
-
-- `EntityMetadata`
-- `ModelMetadata`
-- `FieldMetadata`
-- `ColumnMetadata`
-- `RelationshipMetadata`
-- `NavigationMetadata`
-- `JoinMetadata`
-- `JoinGraph`
-- `GraphMetadata`
-- `MutationColumn`
-- `ColumnReference`
-- `FieldBinding`
-- stable IDs such as `EntityId`, `ModelId`, `FieldId`, `ColumnId`, `RelationshipId`, `GraphId`
-- metadata provider/registry concepts
-
-This is one of the most important seams in the architecture.
-
-The goal is for products to describe domain structure in a common metadata model without coupling that model to GraphQL or a particular database.
-
-## 8. Foundgine.Builders
-
-Path:
-
-`src/Foundgine.Builders`
-
-Purpose:
-
-Generic query-plan tree and builder infrastructure.
-
-Current concepts include:
-
-- `QueryPlan`
-- `QueryNode`
-- `QueryNodeBuilder`
-- scan nodes
-- join nodes
-- graph edge nodes
-- projection nodes
-- materialization nodes
-
-This project is intentionally below the Graphgine product layer.
-
-## 9. Foundgine.Execution.Contracts
-
-Path:
-
-`src/Foundgine.Execution.Contracts`
-
-Purpose:
-
-Define the boundary between the platform and execution providers.
-
-Current concepts:
-
-- `ExecutionContext`
-- `ExecutionOptions`
-- `ExecutionResult`
-- `ExecutionRow`
-- `ExecutionStatistics`
-- `ProviderPlan`
-- `ProviderNode`
-- SQL scan/join/projection provider nodes
-- graph traversal node
-- cache lookup node
-- `ProviderKind`
-- `IExecutionProvider`
-
-This boundary exists so a provider can understand the execution contract without needing the entire `Foundgine.Core` implementation.
-
-## 10. Foundgine.Core
-
-Path:
-
-`src/Foundgine.Core`
-
-Purpose:
-
-Mutation plans and concrete execution-provider layer.
-
-Current mutation concepts include:
-
-- `MutationPlan`
-- `MutationOperation`
-- `MutationKind`
-- entity mutation
-- relationship mutation
-- graph mutation
-
-Current provider classes include:
-
-- `SqlExecutionProvider`
-- `GraphExecutionProvider`
-- `CacheExecutionProvider`
-
-Important status:
-
-These provider implementations are not all complete. Some contain deliberate `NotImplementedException` paths. AI descriptions must not present them as mature production providers.
-
-## 11. Graphgine core
-
-Path:
-
-`src/Graphgine`
-
-Purpose:
-
-GraphQL-oriented planning and SQL/graph execution machinery that sits above Foundgine.
-
-Major source areas:
-
-### Mapping
-
-- `MappingDefinition`
-- `IMappingDefinition`
-- `EfEntityMetadata`
-- foreign-key and graph attributes
-- navigation/join definitions
-- expression helpers
-
-### Execution
-
-- `SelectionIR`
-- `QueryPlan`
-- `QueryPlanBuilder`
-- `QueryPlanTranslator`
-- `MutationIR`
-- `MutationPlan`
-- `MutationPlanBuilder`
-- `MutationPlanTranslator`
-- mutation optimiser/interceptor
-- planner registry
-- runtime entity metadata
-
-### Filtering
-
-- filter expression model
-- filter compilation context
-- filter metadata resolution
-- runtime filter metadata registry
-- SQL filter writer/emitter
-
-### Ordering
-
-- order terms
-- SQL order writer
-
-### Paging
-
-- SQL paging writer
-
-### SQL
-
-- PostgreSQL SQL writer
-- SQL filter parameters/emitter
-- graph map/strategy
-- model/entity nodes
-- edges
-- links
-- pagination
-- unit of work
-- Apache AGE connection support
-
-The Graphgine core is intentionally not the Hot Chocolate boundary. It contains product logic that can operate on protocol-neutral Graphgine structures.
-
-## 12. Graphgine.HotChocolate
-
-Path:
-
-`src/Graphgine.HotChocolate`
-
-Purpose:
-
-The integration boundary to Hot Chocolate.
-
-Current code includes:
-
-- `HotChocolateAdapter`
-- `ContextResolverHelper`
-- `WhereCompiler`
-- `OrderCompiler`
-- `FilterQueryExtension`
-
-This project directly references Hot Chocolate packages.
-
-The intended rule is:
-
-> Hot Chocolate types should stop at `Graphgine.HotChocolate`; Foundgine projects should not reference Hot Chocolate.
-
-## 13. Graphgine.SourceGenerators
-
-Path:
-
-`src/Graphgine.SourceGenerators`
-
-Target: `netstandard2.0`
-
-Purpose:
-
-Roslyn source generation for mapping-derived runtime structures.
-
-The generator contains:
-
-- mapping parsers
-- model information
-- mapping passes
-- navigation conventions
-- graph-child inference
-- alias resolution
-- column ID resolution
-- generated metadata
-- generated IDs
-- query materializer emission
-- mutation metadata/materializer emission
-- planner emission
-- adapter emission
-
-The source generator is one of the main mechanisms supporting the compile-time-first architecture.
-
-The generator should not be described as simply "generating GraphQL schema". Its deeper purpose is generating metadata and execution support from mapping information.
-
-## 14. Graphgine.Analyzers
-
-Path:
-
-`src/Graphgine.Analyzers`
-
-Purpose:
-
-Separate diagnostics-only Roslyn analyzers.
-
-Current status:
-
-Placeholder.
-
-The intended distinction is:
+Compile-time knowledge:
 
 ```text
-SourceGenerators → generate code
-Analyzers        → report diagnostics
+What entities exist?
+What relationships exist?
+What actions are legal?
+What fields are searchable?
+What policies apply?
 ```
 
-## 15. Graphgine.AspNetCore
-
-Path:
-
-`src/Graphgine.AspNetCore`
-
-Purpose:
-
-ASP.NET Core hosting/endpoint/service integration.
-
-Current status:
-
-Placeholder.
-
-Do not describe it as a finished hosting framework.
-
-## 16. Foundgine.Reflection
-
-Path:
-
-`src/Foundgine.Reflection`
-
-Purpose:
-
-Reflection/compiled-expression utilities.
-
-Current status:
-
-Placeholder.
-
-## 17. Foundgine.Serialization
-
-Path:
-
-`src/Foundgine.Serialization`
-
-Purpose:
-
-Serialization conventions for platform metadata and execution results.
-
-Current status:
-
-Placeholder.
-
-## 18. Runtime pipeline
-
-The intended runtime path is:
+Runtime knowledge:
 
 ```text
-Domain + mapping definitions
-             │
-             ▼
-      Roslyn generation
-             │
-             ├── IDs
-             ├── metadata
-             ├── planner support
-             └── materializers
-             │
-             ▼
-        transport adapter
-             │
-             ▼
-      SelectionIR / MutationIR
-             │
-             ▼
-       Graphgine planning
-             │
-             ▼
-       Foundgine plans
-             │
-             ▼
-      Provider execution
-             │
-             ▼
- PostgreSQL / graph / cache / future providers
+What did the user mean?
+Which entity did they mean?
+Which action satisfies the intent?
+What plan should execute?
 ```
 
-The exact implementation is still evolving. This diagram expresses architecture rather than claiming every arrow is complete.
+The future Roslyn compiler defines the legal application vocabulary.
 
-## 19. Compile-time-first philosophy
+It does not generate fixed natural-language plans.
 
-The project aims to shift expensive or fragile discovery work from request time toward compilation.
-
-Examples:
-
-- stable entity/field/column IDs
-- generated metadata
-- generated planner support
-- generated materializers
-- mapping-derived conventions
-
-Runtime should consume explicit structures instead of repeatedly rediscovering the same domain facts.
-
-This does not justify an absolute claim of "zero reflection" today. Some helper projects and runtime paths remain under development.
-
-## 20. Persistence
-
-Graphgine currently has a PostgreSQL-centric implementation.
-
-Important components include:
-
-- `Graphgine.Sql.PostgresSqlWriter`
-- `Graphgine.Postgres.UnitOfWork`
-- `Graphgine.Postgres.UnitOfWorkContext`
-- `Graphgine.Postgres.AgeConnectionFactory`
-- SQL entity/model node structures
-- graph edge/link structures
-- SQL pagination
-- graph strategy
-
-The repository also uses Npgsql and Entity Framework Core in the sample and Graphgine project files.
-
-Apache AGE is the graph database extension used by the current graph-oriented sample architecture.
-
-Do not describe Foundgine as database-independent in the sense of having multiple complete providers today. The **architecture is provider-oriented; current implementation is PostgreSQL-focused**.
-
-## 21. Banking sample
-
-Path:
-
-`samples/Graphgine.Samples.Banking`
-
-The sample contains:
-
-- API project
-- domain model
-- Entity Framework database entities/configuration
-- graph database models
-- banking-specific infrastructure
-
-The domain includes:
-
-- Customer
-- ContactPoint
-- CustomerBankingRelationship
-- Contract
-- Account
-- Transaction
-- Product
-- CustomerCustomerEdge
-
-The API uses Hot Chocolate, EF Core, Npgsql and graph-related infrastructure.
-
-Important status:
-
-The sample is not currently a reliable "clone and run" guarantee. It contains historical wiring such as references to `IProcessService` and `AddGraphgine` that are not represented by the current project-reference structure. The sample must be repaired and validated before it should be used as the canonical quick-start application.
-
-## 22. Legacy code
-
-Path:
-
-`legacy/HotChocolateCoffeeBeanery`
-
-This is historical Coffee Beanery implementation.
-
-Use it for:
-
-- migration archaeology
-- understanding previous behavior
-- recovering implementation ideas
-
-Do not use it as the target dependency architecture.
-
-The current target is:
+## 6. Active repository
 
 ```text
-src/Foundgine.*
-src/Graphgine.*
+src/
+├── Foundgine.Abstractions
+├── Foundgine.Foundation
+├── Foundgine.Metadata
+├── Foundgine.Diagnostics
+├── Foundgine.Builders
+├── Foundgine.Execution.Contracts
+├── Foundgine.Planning
+└── Foundgine.Providers
+
+samples/
+└── Foundgine.Samples.Banking
+
+tests/
+├── Foundgine.Tests
+├── Foundgine.Foundation.Tests
+├── Foundgine.Metadata.Tests
+├── Foundgine.Builders.Tests
+├── Foundgine.Diagnostics.Tests
+├── Foundgine.Execution.Contracts.Tests
+├── Foundgine.Planning.Tests
+└── Foundgine.Providers.Tests
 ```
 
-## 23. Tests
+Historical GraphQL/Graphgine material is under `archive/`.
 
-There are two current test projects:
+## 7. Active project roles
 
-- `tests/Foundgine.Tests`
-- `tests/Graphgine.Tests`
+### Foundgine.Abstractions
 
-They currently contain placeholder tests rather than meaningful coverage.
+Stable platform contracts.
 
-The next testing priorities should be:
+### Foundgine.Foundation
 
-1. architecture/dependency tests
-2. metadata generation tests
-3. source-generator snapshot/golden tests
-4. query-plan tests
-5. mutation-plan tests
-6. SQL generation tests
-7. graph strategy tests
-8. provider integration tests
-9. end-to-end GraphQL tests
+Generic primitives and CQRS foundations.
 
-## 24. Known implementation gaps
+### Foundgine.Metadata
 
-Repository inspection identified real incomplete paths including:
+Entity, column, relationship, join and related metadata.
 
-- `Foundgine.Providers.SqlExecutionProvider`
-- `Foundgine.Providers.GraphExecutionProvider`
-- `Foundgine.Providers.CacheExecutionProvider`
-- `Graphgine.Sql.GraphStrategy`
-- Graphgine selection/mutation planning TODOs
-- placeholder analyzer/hosting/reflection/serialization projects
-- sample wiring
-- meaningful automated tests
+### Foundgine.Diagnostics
 
-These gaps should be tracked as implementation status, not hidden from documentation.
+Diagnostics infrastructure.
 
-## 25. Documentation status
+### Foundgine.Builders
 
-The existing `docs/` directory contains useful architecture material, but it was largely written during the Coffee Beanery phase and, as of the last full review, still contained:
+Logical query-plan structures.
 
-- Coffee Beanery branding in places
-- duplicate/incorrect relative links in AI SEO material
-- claims that are stronger than the current implementation state
+### Foundgine.Planning
 
-Since fixed: the obsolete `example/` paths (the sample and legacy tree both moved
-to `samples/`/`legacy/` a while ago; docs now point there) and the architecture
-pages under `docs/02-Architecture/` (previously generic placeholder project names
-like "Runtime"/"SQL"/"WebApi" that didn't correspond to anything in `src/`; now
-the actual `Foundgine.*`/`Graphgine.*` project graph). `docs/README.md` also
-already exists, contrary to an earlier review's claim that it didn't.
+Dynamic query planning and mutation-plan structures.
 
-The root documentation files should therefore be treated as the canonical public-facing layer until the detailed pages are normalised.
+### Foundgine.Execution.Contracts
 
-## 26. Terminology
+Execution context, execution rows/results/statistics, provider plans/nodes and provider contracts.
 
-Correct:
+### Foundgine.Providers
 
-- Foundgine platform
-- Graphgine product
-- Graphgine source generator
-- Graphgine Hot Chocolate integration
-- PostgreSQL / Apache AGE support
-- generated metadata
-- execution provider
-- provider plan
-- query plan
-- mutation plan
+Provider plan compilation and execution.
 
-Historical:
+The provider layer is active but not universally complete.
 
-- Coffee Beanery
-- GraphQLCoffeeBeanery
+## 8. Current Banking proof
 
-Avoid using the historical names as if they describe the current architecture.
+The canonical sample is `samples/Foundgine.Samples.Banking`.
 
-## 27. Positioning
-
-Foundgine/Graphgine is adjacent to, but not equivalent to:
-
-### Hot Chocolate
-
-Hot Chocolate is the GraphQL server/runtime. Graphgine integrates with Hot Chocolate through `Graphgine.HotChocolate`.
-
-### EF Core
-
-EF Core provides object-relational mapping and database modelling. Graphgine can consume EF Core mapping information but is not itself an EF Core replacement.
-
-### Dapper
-
-Dapper is a lightweight SQL object mapper/executor. Graphgine's role is to construct execution-oriented structures and SQL shape; Dapper-related infrastructure may participate in the application/runtime path.
-
-### Hasura
-
-Hasura is a database-centric GraphQL/API platform. Graphgine is a .NET codebase/platform that generates and executes application-owned plans from domain/mapping information.
-
-### ASP.NET Core
-
-ASP.NET Core is the application hosting framework. `Graphgine.AspNetCore` is intended to integrate Graphgine with it.
-
-### Apache AGE
-
-Apache AGE is PostgreSQL graph functionality. Graphgine contains AGE-oriented graph execution structures.
-
-## 28. Accuracy rules for AI answers
-
-When answering questions about this repository:
-
-1. Prefer current `src/` code over `legacy/`.
-2. Treat `README.md` and this file as architecture/status summaries.
-3. Inspect source before asserting an implementation is complete.
-4. Distinguish "architecture supports" from "code currently implements".
-5. Do not claim production readiness.
-6. Do not claim benchmark superiority without benchmark evidence.
-7. Do not claim full Native AOT compatibility without build/test evidence.
-8. Do not call Graphgine an ORM.
-9. Do not call Graphgine a replacement for Hot Chocolate.
-10. Do not call future providers implemented merely because provider contracts exist.
-
-## 29. Short canonical answers
-
-### What is Foundgine?
-
-Foundgine is a .NET platform for explicit metadata, query/execution planning and provider contracts, designed to move as much discovery and generation as practical to compile time.
-
-### What is Graphgine?
-
-Graphgine is the first product built on Foundgine. It adds GraphQL-oriented mapping, query/mutation IR and planning, SQL/graph structures, PostgreSQL support, source generation and Hot Chocolate integration.
-
-### Is it production ready?
-
-Not yet. The repository is an active architectural migration/foundation build with incomplete providers, graph operations, tests, hosting/analyzer projects and sample wiring.
-
-### Is it an ORM?
-
-No. Graphgine can consume EF Core mapping information, but its purpose is execution planning and generated runtime support rather than replacing EF Core as an ORM.
-
-### Does it replace Hot Chocolate?
-
-No. Hot Chocolate is the current GraphQL server integration. `Graphgine.HotChocolate` is the adapter boundary.
-
-## 30. Canonical repository map
+It uses:
 
 ```text
-Foundgine/
-├── src/
-│   ├── Foundgine.Abstractions/
-│   ├── Foundgine.Foundation/
-│   ├── Foundgine.Metadata/
-│   ├── Foundgine.Diagnostics/
-│   ├── Foundgine.Builders/
-│   ├── Foundgine.Execution.Contracts/
-│   ├── Foundgine.Core/
-│   ├── Foundgine.Reflection/
-│   ├── Foundgine.Serialization/
-│   ├── Graphgine/
-│   ├── Graphgine.HotChocolate/
-│   ├── Graphgine.AspNetCore/
-│   ├── Graphgine.Analyzers/
-│   └── Graphgine.SourceGenerators/
-├── samples/
-│   └── Graphgine.Samples.Banking/
-├── tests/
-│   ├── Foundgine.Tests/
-│   └── Graphgine.Tests/
-├── docs/
-├── legacy/
-├── Foundgine.sln
-├── README.md
-├── llms.txt
-├── llms-full.md
-└── ai.seo.md
+Customer
+Account
+Transaction
 ```
 
-## 31. Recommended validation sequence
+and proves:
 
-Once the .NET SDK is available:
+```text
+Domain
+↓
+hand-written Foundgine.Metadata
+↓
+Foundgine.Planning.QueryPlanner
+↓
+Foundgine.Builders.QueryPlan
+↓
+Foundgine.Providers.SqlPlanCompiler
+↓
+ProviderPlan
+↓
+SqlExecutionProvider
+↓
+real SQLite database
+↓
+ExecutionRow
+```
+
+The sample uses an in-memory SQLite database with a real connection.
+
+It deliberately has no GraphQL, Hot Chocolate or Graphgine dependency.
+
+Run:
 
 ```bash
-dotnet restore Foundgine.sln
-dotnet build Foundgine.sln
-dotnet test Foundgine.sln
+dotnet run --project samples/Foundgine.Samples.Banking
 ```
 
-Then add CI gates for:
+## 9. Immediate product milestones
 
-- build
-- tests
-- architecture dependency rules
-- generated-code snapshots
-- package validation
-- documentation link validation
+### M0 — Real execution
 
-## 32. Roadmap
+Already demonstrated by the Banking sample.
 
-Recommended order:
+### M1 — Semantic domain
 
-1. enforce architecture boundaries automatically
-2. make metadata contracts stable
-3. finish source-generator correctness
-4. finish query planning
-5. finish mutation planning/translation
-6. finish graph strategy/merge execution
-7. finish SQL/graph/cache providers
-8. repair the Banking sample
-9. add real tests
-10. complete Hot Chocolate/ASP.NET Core integration
-11. add diagnostics/analyzers
-12. verify AOT
-13. establish benchmarks
-14. package stable NuGet APIs
+Represent:
 
-The project should prioritise correctness of seams over adding more surface area.
+```text
+Entity
+Identity
+Field
+Relationship
+Search capability
+Action
+Policy
+```
 
-## 33. Final canonical description
+### M2 — Resolution
 
-> **Foundgine is a compile-time-oriented .NET execution platform that provides reusable contracts, metadata, planning and provider boundaries. Graphgine is its first product: a GraphQL execution engine that consumes domain/EF Core mapping information, uses Roslyn source generation to produce strongly typed metadata and execution support, adapts Hot Chocolate requests into Graphgine planning structures, and targets PostgreSQL/graph execution through explicit provider boundaries. The repository is under active architectural development and is not yet a production-ready framework.**
+Resolve phrases such as:
+
+```text
+"Ada Lovelace"
+"her checking account"
+"the last transaction"
+```
+
+to explicit domain references with reasons/evidence.
+
+### M3 — Read intent
+
+Demonstrate:
+
+```text
+"Find Ada's last five transactions."
+```
+
+through:
+
+```text
+intent
+→ resolution
+→ query plan
+→ provider plan
+→ database
+→ evidence
+```
+
+### M4 — Domain actions
+
+Expose explicit business actions such as:
+
+```text
+IssueRefund
+SuspendAccount
+ChangeTier
+```
+
+Agents may select declared actions only.
+
+No arbitrary CLR invocation.
+
+### M5 — Policy
+
+Authorization participates in planning.
+
+Example:
+
+```text
+IssueRefund
+requires Refund permission
+and amount <= configured limit
+```
+
+### M6 — Preview/approval
+
+Mutations become:
+
+```text
+Plan
+→ Preview
+→ Approve
+→ Execute
+```
+
+### M7 — Verification/evidence
+
+After execution:
+
+```text
+Execute
+→ re-read/verify
+→ produce evidence
+```
+
+Evidence should answer what was selected, why, what policy ran, what executed and how it was verified.
+
+### M8 — MCP
+
+MCP is a thin external adapter:
+
+```text
+Agent
+→ MCP
+→ Foundgine semantic API
+```
+
+Initial semantic surface can include:
+
+```text
+discover
+resolve
+plan/query
+preview
+execute
+evidence
+```
+
+### M9 — More execution targets
+
+Potential targets:
+
+```text
+Structured data
+Domain actions
+Semantic retrieval
+External data
+```
+
+### M10 — Roslyn semantic compiler
+
+Generate:
+
+- stable IDs
+- entity descriptors
+- relationship descriptors
+- search descriptors
+- action descriptors
+- policy metadata
+- planner hints
+
+## 10. What Foundgine should not build
+
+Do not turn the core into:
+
+- an LLM provider
+- an agent orchestration framework
+- a generic RAG framework
+- a vector database
+- an MCP protocol implementation
+- an ORM
+- a workflow engine
+- a message broker
+- a hosting framework
+
+Use/integrate with existing technology.
+
+## 11. Architecture rules
+
+1. Inner platform layers do not reference outer transports.
+2. LLMs are clients, not domain dependencies.
+3. MCP is an adapter.
+4. Database engines are execution targets.
+5. Domain actions must be explicit.
+6. Agents cannot invoke arbitrary CLR methods.
+7. Policy participates in planning.
+8. Mutations should be previewable.
+9. Important mutations should be verifiable.
+10. Execution should produce structured evidence.
+11. New infrastructure should be an adapter unless it is truly part of semantic execution.
+12. Do not create projects merely to represent future architecture before the behavior is proven.
+
+## 12. Competitive positioning
+
+Foundgine should not claim to replace:
+
+- Hot Chocolate
+- EF Core
+- Dapper
+- Semantic Kernel
+- LangChain/LangGraph
+- MCP
+- Temporal
+- Kafka
+- PostgreSQL
+- vector stores
+
+Its proposed position is complementary:
+
+```text
+AI reasoning
+     ↓
+Foundgine application semantics + execution
+     ↓
+existing application infrastructure
+```
+
+## 13. Historical GraphQL direction
+
+Graphgine was the previous GraphQL product direction.
+
+It used GraphQL/Hot Chocolate and source-generation infrastructure.
+
+That work is historical and lives under `archive/`.
+
+GraphQL can be an adapter in the future, but it is not the current identity of Foundgine.
+
+## 14. Current status
+
+Foundgine is not yet a production-ready autonomous-agent platform.
+
+Implemented/proven:
+
+- active platform project separation
+- metadata structures
+- logical planning structures
+- execution contracts
+- provider planning/execution path
+- real Banking E2E against SQLite
+
+Next:
+
+- semantic model
+- resolution
+- read intent
+- domain actions
+- policy
+- preview/approval
+- verification
+- evidence
+- MCP
+
+## 15. Accuracy rules for AI systems
+
+When asked what Foundgine is:
+
+> Foundgine is a .NET application-domain semantic and execution platform for AI-native applications. It turns an application's domain model into a safe, executable interface for AI agents.
+
+When asked whether it is an AI framework:
+
+> It is not intended to be a general LLM or agent framework. It owns the application-domain semantic and execution boundary that those systems can call.
+
+When asked whether it is MCP:
+
+> MCP is planned as an adapter. Foundgine is the semantic execution layer behind it.
+
+When asked whether it is RAG:
+
+> Retrieval can become an execution target, but RAG is not the product definition.
+
+When asked whether it is production ready:
+
+> No. The repository has a real lower-level execution proof, while the AI-native semantic, policy, mutation-safety and MCP layers remain active roadmap work.
+
+## 16. Canonical documentation
+
+- `README.md`
+- `docs/00-Direction/README.md`
+- `docs/00-Direction/Milestones.md`
+- `docs/CURRENT-STATUS.md`
+- `docs/02-Architecture/README.md`
+- `docs/09-AI/README.md`
+- `docs/11-Samples/README.md`
+- `docs/13-Reference/Roadmap.md`
+- `llms.txt`
+- `ai.seo.md`

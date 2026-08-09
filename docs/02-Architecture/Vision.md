@@ -2,135 +2,95 @@
 
 # Vision
 
-## Contents
+## The statement
 
-- [The bold statement](#the-bold-statement)
-- [Philosophy](#philosophy)
-- [What Foundgine is](#what-coffee-beanery-is)
-- [What Foundgine doesn't want to own](#what-coffee-beanery-doesnt-want-to-own)
-- [Mission](#mission)
-- [Vision statement](#vision-statement)
-- [Roadmap by phase](#roadmap-by-phase)
+> **Foundgine turns a .NET application's domain model into a safe, executable interface for AI agents.**
 
----
+The objective is not to make another AI framework.
 
-## The bold statement
+The objective is to make the application's existing domain understandable and executable by AI without exposing arbitrary infrastructure.
 
-> Foundgine is a compile-time execution engine that transforms business models into
-> deterministic execution plans, independent of transport, database, or infrastructure.
-> **Everything else is an adapter.**
+## The problem
 
-If you only remember one sentence from this document, remember that one. Every other page
-in this documentation set is a consequence of it.
+An agent can understand:
 
-A shorter version of the same idea, if you need an elevator pitch:
+> "Refund John's last payment."
 
-> Foundgine is the compile-time execution engine for .NET applications. It transforms
-> business models into deterministic execution plans while allowing developers to choose the
-> best transport, persistence, and infrastructure technologies without changing the business
-> model.
+But it does not inherently know:
 
-And the front-page version:
+- which object is John
+- which payment is "last"
+- whether a refund is legal
+- which business action performs the refund
+- what side effects occur
+- how to verify the result
 
-> Foundgine separates business intent from execution. Model your domain once. Generate
-> deterministic execution plans. Integrate with the best tools — not replace them.
+Foundgine owns that application-specific boundary.
 
-## Philosophy
+## Architecture
 
-> Software should describe what the business does, not how infrastructure works.
-
-Applications should not be written *around* SQL, GraphQL, REST, Kafka, gRPC, databases, or
-ORMs. Instead, they should describe the business. Foundgine transforms those business
-models into optimized execution plans that different providers can execute.
-
-**The application owns the business. Foundgine owns the execution.**
-
-```
-                 Transport
-        GraphQL   REST   gRPC
-                │
-                ▼
-      Foundgine Planner
-                │
-                ▼
-         Execution Providers
-      PostgreSQL  SQL Server
-         Kafka     Temporal
-         Redis      HTTP
-                │
-                ▼
-          Infrastructure
+```text
+C# Domain
+   ↓
+Semantic Domain Model
+   ↓
+AI Intent
+   ↓
+Resolution
+   ↓
+Policy
+   ↓
+Execution Plan
+   ↓
+Preview
+   ↓
+Execute
+   ↓
+Verify
+   ↓
+Evidence
 ```
 
-## What Foundgine is
+## What makes this different
 
-Foundgine is **not** an ORM. It is **not** a GraphQL framework. It is **not** a workflow
-engine. It is **not** a database abstraction layer. It is a **compile-time execution engine**.
-Its one responsibility is to transform business intent into deterministic execution plans.
-Everything else is delegated to a provider.
+The domain is the source of truth.
 
-## What Foundgine doesn't want to own
+The AI does not become the source of truth.
 
-This is equally important, and it's a deliberate scope boundary, not an oversight. Coffee
-Beanery intentionally does not compete with the best-in-class tools it sits between:
+The AI proposes intent. Foundgine constrains and executes that intent according to the application domain.
 
-- **Hot Chocolate** remains the GraphQL framework.
-- **Dapper** remains the lightweight SQL executor.
-- **EF Core** remains the mapping model that supplies metadata.
-- **Kafka** remains a messaging platform (future provider — not built yet).
-- **Temporal** remains a workflow engine (future provider — not built yet).
+## Non-goals
 
-Foundgine sits *between* the transport and the infrastructure, generating the execution
-plan that connects them.
+Foundgine should not become:
 
-## Mission
+- an LLM provider
+- a general agent framework
+- a RAG framework
+- an MCP implementation
+- an ORM
+- a workflow engine
+- a message broker
 
-**Transform business models into deterministic execution plans.** That mission does not
-change as new phases are added — it's the fixed point every future provider, transport, and
-adapter is judged against.
+Those systems can integrate with Foundgine.
 
-The longer form: *empower developers to model their business once and execute it everywhere
-through deterministic, compile-time generated execution plans.*
+## Long-term direction
 
-## Vision statement
+The most important interface is:
 
-> To become the execution engine of modern .NET applications by separating business intent
-> from infrastructure concerns through compile-time planning and provider-based execution.
+```text
+Application domain
+       ↕
+Foundgine semantic API
+       ↕
+AI agent
+```
 
-## Roadmap by phase
+GraphQL, REST, gRPC and MCP are possible outer adapters.
 
-Framing the roadmap as phases of the *same* execution engine — rather than a list of
-unrelated features — is deliberate. It keeps the vision ambitious while keeping the
-implementation focused, and it tells contributors that every future feature is an extension
-of this idea, not a change in direction.
+## Current reality
 
-**Phase 1 (current)**
+The lower execution substrate is proven in the Banking sample.
 
-- EF Core mapping as the metadata source.
-- Hot Chocolate as the transport.
-- PostgreSQL as the execution provider.
-- Dapper as the SQL executor.
+The semantic/AI lifecycle is the active roadmap.
 
-**Future phases**
-
-- Additional execution providers (SQL Server, MySQL, etc.).
-- Additional transports (REST, gRPC).
-- Additional infrastructure providers (Kafka, Temporal, Redis, etc.).
-- Optional higher-level modeling APIs, if they solve real user problems.
-
-See [Reference → Roadmap](../13-Reference/Roadmap.md) for the detailed, phase-by-phase
-breakdown, and [Layers](Layers.md) for how today's single-solution codebase maps onto this
-target architecture.
-
----
-
-## Related Documentation
-
-- [Principles](Principles.md)
-- [Layers](Layers.md)
-- [Reference → Roadmap](../13-Reference/Roadmap.md)
-- [Reference → FAQ](../13-Reference/FAQ.md)
-
----
-
-← Previous: [Architecture](README.md)  |  Next: [Principles](Principles.md) →
+See [Proof Milestones](../00-Direction/Milestones.md).

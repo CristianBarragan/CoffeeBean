@@ -2,49 +2,34 @@
 
 # Foundation
 
-Foundation is the dependency-free contract layer everything else in Foundgine builds
-on. It defines *what* the system talks about — metadata shapes, planning primitives,
-interfaces, identifiers — without knowing *how* any of it gets executed.
+Foundation contains stable, protocol-neutral primitives used by the active Foundgine platform.
 
----
+It should remain independent of:
 
-## Contents
+- LLM providers
+- MCP
+- GraphQL
+- Hot Chocolate
+- database-specific APIs
 
-- [Metadata](Metadata.md) — the compile-time knowledge Foundation defines
-- [Contracts](Contracts.md) — interfaces, planning primitives, identifiers
-- [Components](Components.md) — project structure and responsibilities
-- [Extensibility](Extensibility.md) — the extension points Foundation exposes to providers and transports
+See the individual project boundaries in [Architecture → Layers](../02-Architecture/Layers.md).
 
----
+## Current role
 
+Foundation supports the platform rather than defining the entire AI product.
 
-## Philosophy
+The product semantics will build on top of:
 
-## Philosophy
+```text
+Foundation
+ ↓
+Metadata
+ ↓
+Planning
+ ↓
+Execution
+```
 
-Foundation answers one question:
+## Rule
 
-> **What exists?**
-
-It deliberately does **not** answer:
-
-- How queries execute
-- How SQL is generated
-- How GraphQL works
-- How metadata is discovered
-
-Those responsibilities belong to higher layers.
-
----
-
----
-
-## Related Documentation
-
-- [Architecture → Layers](../02-Architecture/Layers.md)
-- [Runtime](../04-Runtime/README.md)
-- [Dependency Injection](../07-Dependency-Injection/README.md)
-
----
-
-← Previous: [Architecture](../02-Architecture/README.md)  |  Next: [Runtime](../04-Runtime/README.md) →
+Do not place AI orchestration, transport models, SQL syntax, or provider-specific behavior in Foundation.

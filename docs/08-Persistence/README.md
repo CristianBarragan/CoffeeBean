@@ -2,50 +2,37 @@
 
 # Persistence
 
-Persistence is where a generated execution plan meets an actual database. Phase 1 ships one
-execution provider — PostgreSQL, with Apache AGE for graph-shaped reads — but the SQL layer
-is deliberately structured as a **provider**, not baked into the runtime, so
-[future phases](../02-Architecture/Vision.md#roadmap-by-phase) can add SQL Server, MySQL, or
-others without the planner changing. See [Architecture → Vision](../02-Architecture/Vision.md).
+Persistence is an execution target for Foundgine plans.
 
----
+The current proof uses SQLite in the Banking sample because it is self-contained and requires no external database service.
 
-## Contents
+The architecture is provider-oriented, but that does **not** mean every database provider is currently implemented.
 
-- [PostgreSQL & AGE](PostgreSQL-AGE.md) — the Phase 1 execution provider and the graph read path
-- [Dapper & EF Core](Dapper-EFCore.md) — how the two coexist (metadata vs. execution)
-- [Caching](Caching.md) — the warmup pipeline and in-process caching
+## Current proof
 
----
+```text
+QueryPlan
+ ↓
+SqlPlanCompiler
+ ↓
+ProviderPlan
+ ↓
+SqlExecutionProvider
+ ↓
+SQLite
+```
 
-## Philosophy
+## Future
 
-## Philosophy
+Other execution targets can be added without making them part of the core semantic model.
 
-The SQL layer has one responsibility:
+Potential integrations include:
 
-> Convert execution plans into SQL.
+- PostgreSQL
+- SQL Server
+- EF Core
+- Dapper
+- pgvector
+- graph databases
 
-It should never:
-
-- Discover metadata
-- Analyze CLR models
-- Parse GraphQL
-- Resolve relationships
-- Perform planning
-
-Planning belongs to the Runtime and Generator.
-
----
-
----
-
-## Related Documentation
-
-- [Runtime → Execution](../04-Runtime/Execution.md)
-- [Performance → Benchmarks](../10-Performance/Benchmarks.md)
-- [Architecture → Vision](../02-Architecture/Vision.md)
-
----
-
-← Previous: [Dependency Injection](../07-Dependency-Injection/README.md)  |  Next: [AI & LLM Readiness](../09-AI/README.md) →
+These should remain implementation/integration choices rather than product identity.

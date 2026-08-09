@@ -1,167 +1,39 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Dependency Injection](README.md) → **Registration**
-
 # Registration
 
-## Contents
+The current canonical Banking proof does not require a framework-wide registration package.
 
-- [Composition Root](#composition-root)
-- [Foundation Contracts](#foundation-contracts)
-- [Generated Registration](#generated-registration)
-- [Runtime Registration](#runtime-registration)
-- [SQL Registration](#sql-registration)
-- [GraphQL Registration](#graphql-registration)
+The first priority is proving the contracts.
 
----
+## Target registration shape
 
-## Composition Root
+A future application may compose:
 
-Each transport owns its own composition root.
-
-Examples:
-
-```
-Foundgine.GraphQL
-
-Foundgine.WebApi
-
-Foundgine.Grpc
+```text
+Semantic model
+Resolver
+Planner
+Policy
+Execution provider
+Verifier
+Evidence sink
 ```
 
-Each project registers Runtime plus generated services.
+through the application's DI container.
 
----
-
-## Foundation Contracts
-
-The Runtime depends on interfaces defined by Foundation.
-
-Typical contracts include:
-
-```csharp
-IMetadataProvider
-
-IPlannerRegistry
-
-IEntityMaterializer
-
-IEntityDematerializer
-
-ISqlDialect
-
-IGraphStrategy
-```
-
-Generated implementations satisfy these interfaces.
-
----
-
-## Generated Registration
-
-The Generator should emit a registration extension.
-
-Example:
-
-```csharp
-public static class GeneratedServiceCollectionExtensions
-{
-    public static IServiceCollection
-        AddGeneratedCoffeeBeanery(
-            this IServiceCollection services)
-    {
-        services.AddSingleton<IMetadataProvider,
-            GeneratedMetadataProvider>();
-
-        services.AddSingleton<IPlannerRegistry,
-            GeneratedPlannerRegistry>();
-
-        return services;
-    }
-}
-```
-
-Generated code contains registrations—not application logic.
-
----
-
-## Runtime Registration
-
-Runtime exposes its own registration extension.
-
-Example:
-
-```csharp
-public static class RuntimeServiceCollectionExtensions
-{
-    public static IServiceCollection
-        AddCoffeeBeaneryRuntime(
-            this IServiceCollection services)
-    {
-        services.AddSingleton<IQueryExecutor,
-            QueryExecutor>();
-
-        services.AddSingleton<IMutationExecutor,
-            MutationExecutor>();
-
-        return services;
-    }
-}
-```
-
-Runtime never registers generated components.
-
----
-
-## SQL Registration
-
-SQL providers expose separate registration methods.
-
-Example:
-
-```csharp
-services.AddPostgreSql();
-```
-
-Internally this registers:
-
-- ISqlWriter
-- ISqlReader
-- ISqlDialect
-- IGraphStrategy
-
-Database providers remain modular.
-
----
-
-## GraphQL Registration
-
-GraphQL composes the complete framework.
-
-Typical setup:
+Example shape:
 
 ```csharp
 services
-
-    .AddCoffeeBeaneryRuntime()
-
-    .AddGeneratedCoffeeBeanery()
-
-    .AddPostgreSql()
-
-    .AddCoffeeBeaneryGraphQL();
+    .AddFoundgine(...)
+    .AddExecutionProvider(...)
+    .AddPolicy(...)
+    .AddEvidence(...);
 ```
 
-GraphQL becomes a thin adapter over Runtime.
+This is illustrative only; the final API should not be designed until the underlying contracts have been proven.
 
----
+## Integration principle
 
----
+Transport adapters such as MCP or GraphQL should compose Foundgine services from outside the core.
 
-## Related Documentation
-
-- [Lifetimes](Lifetimes.md)
-- [Getting Started → Configuration](../01-Getting-Started/Configuration.md)
-- [Architecture → Dependency Graph](../02-Architecture/Dependency-Graph.md)
-
----
-
-← Previous: [Dependency Injection](README.md)  |  Next: [Lifetimes](Lifetimes.md) →
+They should not force their own service abstractions into `Foundgine.Foundation`.

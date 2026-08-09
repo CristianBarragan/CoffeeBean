@@ -1,43 +1,52 @@
+[Home](../../README.md) → [Documentation](../README.md) → **Source Generators**
+
 # Source Generators
 
-`Graphgine.SourceGenerators` is the Roslyn source-generator project behind the compile-time-oriented
-architecture.
+> **Historical implementation + future direction.**
 
-## Purpose
+The repository previously contained a Graphgine source generator for mapping-derived metadata and execution artifacts. That implementation now lives under `archive/`.
 
-The generator reads mapping information during compilation and emits strongly typed runtime
-artifacts such as:
+The current active tree does not contain a source-generator project.
 
-- stable identifiers
-- metadata
-- planner support
-- materializers
-- mutation-related generated structures
-- mapping-derived adapter support
+## Future role
 
-The goal is to avoid repeatedly rediscovering application structure at request time.
+Roslyn generation remains valuable, but its purpose has changed.
 
-## Generator versus analyzer
-
-These are intentionally separate:
+The future compiler should derive the application's semantic vocabulary:
 
 ```text
-Graphgine.SourceGenerators → generates code
-Graphgine.Analyzers         → reports diagnostics
+C# Domain
+ ↓
+Roslyn
+ ↓
+Semantic Domain Model
+ ↓
+Generated descriptors
 ```
 
-`Graphgine.Analyzers` is currently a placeholder project.
+Potential generated artifacts:
 
-## Important accuracy note
+- stable entity IDs
+- relationship descriptors
+- search descriptors
+- action descriptors
+- policy metadata
+- planner hints
 
-Do not describe the current framework as absolutely reflection-free or fully Native AOT verified.
-The compile-time-first design strongly reduces runtime discovery, but the repository still contains
-runtime and integration work that must be validated before making absolute claims.
+## What the compiler should not do
 
-## Pipeline
+It should not generate a fixed planner for natural-language requests.
 
-See:
+The request is dynamic:
 
-- [Mapping Generator](Mapping-Generator.md)
-- [Pipeline Stages](Pipeline-Stages.md)
-- [Diagnostics](Diagnostics.md)
+```text
+User intent
+ ↓
+runtime resolution
+ ↓
+runtime planning
+```
+
+The compiler defines what the application permits; runtime decides which permitted operations satisfy the current intent.
+
+See [Proof Milestones](../00-Direction/Milestones.md#milestone-10--compile-time-semantic-compiler).

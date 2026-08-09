@@ -1,44 +1,27 @@
-# GraphQL / Graphgine
+[Home](../../README.md) → [Documentation](../README.md) → **Historical GraphQL**
 
-Graphgine is the first product built on Foundgine. It provides GraphQL-oriented planning and
-execution structures while keeping the reusable Foundgine layers independent of GraphQL.
+# GraphQL
 
-## Boundary
+> **Historical / compatibility documentation.**
+
+The earlier Foundgine direction included Graphgine, a GraphQL-oriented product using Hot Chocolate and generated mapping/planning infrastructure.
+
+That work has been moved to `archive/`.
+
+GraphQL is no longer the identity of the active Foundgine platform.
+
+## Current position
+
+If GraphQL is integrated in the future, it should be an outer adapter:
 
 ```text
 Hot Chocolate
      ↓
-Graphgine.HotChocolate
+Foundgine semantic API
      ↓
-Graphgine
-     ↓
-Foundgine
+Foundgine planning/execution
 ```
 
-Hot Chocolate dependencies belong in `Graphgine.HotChocolate`, not in Foundgine platform projects.
+The core platform must not depend on GraphQL.
 
-## Current areas
-
-Graphgine contains:
-
-- selection IR
-- query planning
-- mutation planning
-- filtering
-- ordering
-- pagination
-- PostgreSQL SQL generation
-- graph/AGE structures
-- mapping metadata integration
-
-## Status
-
-These are real implementation areas, but the product is still under active development. Some graph,
-provider and end-to-end execution paths remain incomplete.
-
-## Related
-
-- [Schema](Schema.md)
-- [Resolvers](Resolvers.md)
-- [Paging, Filtering & Sorting](Pagination-Filtering-Sorting.md)
-- [Architecture](../02-Architecture/README.md)
+See [Direction](../00-Direction/README.md) for the current product thesis.

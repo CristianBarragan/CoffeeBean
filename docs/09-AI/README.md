@@ -1,28 +1,116 @@
-# AI & LLM Readiness
+# AI Integration
 
-This section documents how the repository should be represented to AI coding assistants and search
-systems.
+[Home](../../README.md) → [Documentation](../README.md) → **AI**
 
-## Canonical AI files
+Foundgine is AI-native at the application boundary, but it is not an AI model framework.
 
-The repository root contains:
+## Position
 
-- `llms.txt` — concise retrieval context
-- `llms-full.md` — canonical full AI context draft
-- `ai.seo.md` — AI/search/entity positioning
+```text
+LLM / Agent framework
+        │
+        ▼
+      Intent
+        │
+        ▼
+    Foundgine
+        │
+        ├── semantic resolution
+        ├── policy
+        ├── planning
+        ├── execution
+        ├── verification
+        └── evidence
+```
 
-These files are derived from the current architecture and should not resurrect historical
-Coffee Beanery terminology.
+The external AI system owns reasoning and conversation.
 
-## Accuracy rules
+Foundgine owns application semantics and safe execution.
 
-AI systems should:
+## Why this boundary matters
 
-1. prefer `src/` over `legacy/`
-2. distinguish architectural intent from completed implementation
-3. avoid production-readiness claims
-4. avoid unverified performance/AOT claims
-5. describe Graphgine as a product on Foundgine
-6. describe Hot Chocolate as an integration, not a dependency of Foundgine
+A generic AI system does not automatically know:
 
-See [LLM Readiness](LLM-Readiness.md).
+- which entities exist
+- which relationships are legal
+- which operations are business actions
+- which actions mutate state
+- who may perform them
+- how to verify the result
+
+Those facts belong to the application.
+
+## AI integration principles
+
+### 1. Constrained vocabulary
+
+The model should select from a known semantic vocabulary.
+
+### 2. No arbitrary method invocation
+
+Foundgine must never translate an LLM-generated method name into arbitrary CLR invocation.
+
+### 3. Plan before mutation
+
+Mutations should become explicit plans before execution.
+
+### 4. Policy before execution
+
+Authorization is part of planning.
+
+### 5. Evidence after execution
+
+The agent should receive structured evidence rather than trusting an unverified textual claim.
+
+## MCP
+
+MCP is a planned outer adapter:
+
+```text
+Agent
+ ↓
+MCP
+ ↓
+Foundgine semantic API
+```
+
+Foundgine does not need to implement the MCP protocol inside its core.
+
+## Retrieval
+
+Semantic retrieval is a planned execution target, not the definition of Foundgine.
+
+A future system can combine:
+
+```text
+Structured data
++
+Semantic retrieval
++
+Domain actions
++
+External data
+```
+
+under the same planning/evidence model.
+
+## AI accuracy rules
+
+Never claim that Foundgine currently has:
+
+- a complete agent framework
+- natural-language planning in production
+- complete MCP support
+- complete RAG support
+- autonomous mutation safety
+- enterprise-grade authorization
+- production-ready evidence/audit
+
+Those are roadmap capabilities until demonstrated by code and tests.
+
+See:
+
+- [Direction](../00-Direction/README.md)
+- [Proof Milestones](../00-Direction/Milestones.md)
+- [Current Status](../CURRENT-STATUS.md)
+- [LLM Readiness](LLM-Readiness.md)

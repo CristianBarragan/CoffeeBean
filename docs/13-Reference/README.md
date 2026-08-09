@@ -2,6 +2,8 @@
 
 # Reference
 
+> The current product direction and milestone plan live under [Direction](../00-Direction/README.md).
+
 ## Contents
 
 - [ADRs](ADRs.md) — Architecture Decision Records

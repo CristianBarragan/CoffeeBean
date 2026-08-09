@@ -1,32 +1,38 @@
 # Getting Started
 
-Foundgine is currently an architecture-first framework under active development. Graphgine is the
-first product built on it.
+[Home](../../README.md) → [Documentation](../README.md) → **Getting Started**
 
-This section explains the repository and the current Banking sample. The sample is a migration
-fixture and should not yet be described as a guaranteed one-command production quick start.
+Foundgine is an active architecture/proof project. The fastest way to understand it is to run the canonical Banking E2E.
 
-## Contents
+## Prerequisites
 
-- [Installation](Installation.md)
-- [First Service](First-Service.md)
-- [Configuration](Configuration.md)
-- [FAQ](FAQ.md)
+- .NET 9 SDK
+- Git
 
-## Repository layout
+No external database is required for the canonical sample.
 
-```text
-src/Foundgine.*       reusable platform
-src/Graphgine*        GraphQL product
-samples/*             current examples
-tests/*               test projects
-legacy/*              historical implementation
-docs/*                architecture documentation
+## Run the proof
+
+```bash
+dotnet run --project samples/Foundgine.Samples.Banking
 ```
 
-## First validation
+The sample uses a real in-memory SQLite connection and proves:
 
-With the .NET 9 SDK installed:
+```text
+Domain
+→ Metadata
+→ Dynamic Planner
+→ QueryPlan
+→ ProviderPlan
+→ SQL
+→ database
+→ Result
+```
+
+## Build and test
+
+Use:
 
 ```bash
 dotnet restore Foundgine.sln
@@ -34,10 +40,16 @@ dotnet build Foundgine.sln
 dotnet test Foundgine.sln
 ```
 
-The repository should make those commands mandatory CI gates before the project is presented as
-production-ready.
+The repository is under active development, so build/test status should be treated as the current source of truth.
 
-## Next
+## What to read next
 
-Start with [Architecture](../02-Architecture/README.md) if you want to understand the dependency
-boundaries before running code.
+- [Direction](../00-Direction/README.md)
+- [Proof Milestones](../00-Direction/Milestones.md)
+- [Architecture](../02-Architecture/README.md)
+- [Banking Sample](../11-Samples/README.md)
+- [Current Status](../CURRENT-STATUS.md)
+
+## Historical material
+
+The old GraphQL/Hot Chocolate sample and source-generator implementation are under `archive/`. They are useful for understanding project history but are not the current getting-started path.
