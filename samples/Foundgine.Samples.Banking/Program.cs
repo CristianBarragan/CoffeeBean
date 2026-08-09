@@ -1,92 +1,105 @@
-using Foundgine.Builders;
 using Foundgine.Execution.Contracts;
+using Foundgine.Planning;
 using Foundgine.Providers;
 using Foundgine.Samples.Banking.Metadata;
+using Microsoft.Data.Sqlite;
 using ExecutionContext = Foundgine.Execution.Contracts.ExecutionContext;
 
 // ---------------------------------------------------------------------
-// This is the demo the architecture review asked for: proof that
-// Foundgine is a platform Graphgine happens to be built on, not just
-// Graphgine wearing a different name. Nothing below references GraphQL,
-// HotChocolate, or any Graphgine.* project — check
-// Foundgine.Samples.Banking.csproj if you don't believe it.
+// The first Banking E2E: Customer -> Account -> Transaction, driven
+// end-to-end through the real pipeline, against a real database.
 //
-//     Domain -> Metadata -> QueryPlan -> ProviderPlan -> Execution
+//   Domain -> Metadata -> Dynamic Planner -> QueryPlan
+//          -> ProviderPlan -> SQL -> real database -> Result
 //
+// Nothing below references GraphQL, HotChocolate, or any Graphgine.*
+// project — check Foundgine.Samples.Banking.csproj if you don't believe it.
 // ---------------------------------------------------------------------
 
-Console.WriteLine("Foundgine Banking sample (no GraphQL, no Graphgine)");
-Console.WriteLine("====================================================");
+Console.WriteLine("Foundgine Banking sample: Customer -> Account -> Transaction");
+Console.WriteLine("==============================================================");
 Console.WriteLine();
 
 // 1) Domain -> Metadata
-//    BankingMetadata.cs hand-describes Customer/Account as
-//    Foundgine.Metadata records. See that file for why this is written
-//    by hand rather than generated.
-Console.WriteLine($"Entities: {BankingMetadata.Customer.Name}, {BankingMetadata.Account.Name}");
-Console.WriteLine($"Join:     {BankingMetadata.Account.Name}.CustomerId -> {BankingMetadata.Customer.Name}.Id ({BankingMetadata.AccountToCustomer.Kind})");
+//    BankingMetadata.cs hand-describes Customer/Account/Transaction as
+//    Foundgine.Metadata records, plus the joins between them.
+var registry = BankingMetadata.Registry;
+var joins = BankingMetadata.Joins;
+
+Console.WriteLine($"Entities: {BankingMetadata.Customer.Name}, {BankingMetadata.Account.Name}, {BankingMetadata.Transaction.Name}");
+Console.WriteLine($"Joins:    {BankingMetadata.Account.Name}.CustomerId -> {BankingMetadata.Customer.Name}.Id");
+Console.WriteLine($"          {BankingMetadata.Transaction.Name}.AccountId -> {BankingMetadata.Account.Name}.Id");
 Console.WriteLine();
 
-// 2) Metadata -> logical, provider-agnostic QueryPlan (Foundgine.Builders)
-//    "Every account, joined to its customer" — describes WHAT is needed,
-//    not which database or storage engine answers it.
-var logicalPlan = new QueryPlan(
-    new JoinNode(
-        Left: new ScanNode(BankingMetadata.Customer),
-        Right: new ScanNode(BankingMetadata.Account),
-        Join: BankingMetadata.AccountToCustomer));
+// 2) Metadata + Intent -> logical QueryPlan (Foundgine.Planning.QueryPlanner)
+//    "Customer, joined to Account, joined to Transaction" — the planner
+//    discovers both joins from the JoinGraph. It contains no
+//    Banking-specific code at all.
+var intent = QueryIntent.Linear(
+    root: BankingMetadata.Customer.EntityId,
+    path: new[] { BankingMetadata.Account.EntityId, BankingMetadata.Transaction.EntityId });
+
+var planner = new QueryPlanner(registry, joins);
+var logicalPlan = planner.Plan(intent);
 
 Console.WriteLine($"Logical plan (Foundgine.Builders.QueryPlan): {Describe(logicalPlan.Root)}");
 Console.WriteLine();
 
-// 3) Logical plan -> physical ProviderPlan (Foundgine.Execution.Contracts)
-//    There's no optimizer/provider-planner yet to derive this
-//    automatically from the QueryPlan above — see item 5 of the
-//    architecture review, on Execution.Contracts' relationship to
-//    Metadata — so this sample mirrors the logical tree by hand,
-//    node-for-node, choosing the SQL provider's node types.
-var providerPlan = new ProviderPlan(
-    new SqlJoinNode(
-        Left: new SqlScanNode(BankingMetadata.Customer),
-        Right: new SqlScanNode(BankingMetadata.Account),
-        Join: BankingMetadata.AccountToCustomer));
-
+// 3) Logical plan -> physical ProviderPlan (Foundgine.Providers.SqlPlanCompiler)
+var providerPlan = SqlPlanCompiler.Compile(logicalPlan);
 Console.WriteLine($"Physical plan (Foundgine.Execution.Contracts.ProviderPlan): {DescribeProvider(providerPlan.Root)}");
 Console.WriteLine();
 
-// 4) Physical plan -> execution
+// 4) Set up a real (in-memory, shared-cache) SQLite database and seed it.
+//    This is the "Real Database" step of the pipeline — no mocks.
+var connectionString = $"Data Source=file:{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+await using var keeper = new SqliteConnection(connectionString);
+await keeper.OpenAsync();
+
+var setup = keeper.CreateCommand();
+setup.CommandText =
+    """
+    CREATE TABLE Customer (Id INTEGER PRIMARY KEY, Name TEXT NOT NULL);
+    CREATE TABLE Account (Id INTEGER PRIMARY KEY, CustomerId INTEGER NOT NULL, Balance REAL NOT NULL);
+    CREATE TABLE "Transaction" (Id INTEGER PRIMARY KEY, AccountId INTEGER NOT NULL, Amount REAL NOT NULL);
+
+    INSERT INTO Customer (Id, Name) VALUES (1, 'Ada Lovelace');
+    INSERT INTO Account (Id, CustomerId, Balance) VALUES (10, 1, 500.0);
+    INSERT INTO "Transaction" (Id, AccountId, Amount) VALUES (100, 10, -25.50);
+    INSERT INTO "Transaction" (Id, AccountId, Amount) VALUES (101, 10, 60.00);
+    """;
+await setup.ExecuteNonQueryAsync();
+
+// 5) Physical plan -> execution, against that real database.
 IExecutionProvider provider = new SqlExecutionProvider();
-var context = new ExecutionContext(Guid.NewGuid(), new Dictionary<string, object?>());
+var context = new ExecutionContext(
+    Guid.NewGuid(),
+    new Dictionary<string, object?> { ["ConnectionString"] = connectionString });
 
 Console.WriteLine($"Executing via {provider.GetType().Name} (Foundgine.Providers)...");
-try
+Console.WriteLine();
+
+await foreach (var row in provider.ExecuteAsync(providerPlan, context))
 {
-    await foreach (var row in provider.ExecuteAsync(providerPlan, context))
-    {
-        Console.WriteLine($"  row: {row}");
-    }
-}
-catch (NotSupportedException ex)
-{
-    Console.WriteLine();
-    Console.WriteLine("Execution stops here, and that's expected:");
-    Console.WriteLine($"  {ex.Message}");
-    Console.WriteLine();
-    Console.WriteLine("Everything above this point is real, working Foundgine: domain,");
-    Console.WriteLine("hand-written metadata, a logical query plan, and a physical");
-    Console.WriteLine("provider plan. Only the last mile — a provider that actually runs");
-    Console.WriteLine("a ProviderPlan against a database — isn't implemented yet. That's");
-    Console.WriteLine("the SQL provider milestone tracked in the root README, and it's the");
-    Console.WriteLine("only thing standing between this sample and a real result set.");
+    var customerRow = row.Entities[BankingMetadata.Customer.EntityId.Value];
+    var accountRow = row.Entities[BankingMetadata.Account.EntityId.Value];
+    var transactionRow = row.Entities[BankingMetadata.Transaction.EntityId.Value];
+
+    Console.WriteLine(
+        $"  {customerRow[1]} | account #{accountRow[0]} (balance {accountRow[2]:C}) " +
+        $"| transaction #{transactionRow[0]}: {transactionRow[2]:C}");
 }
 
-static string Describe(QueryNode node) => node switch
+Console.WriteLine();
+Console.WriteLine("Done: Domain -> Metadata -> Dynamic Planner -> QueryPlan -> ProviderPlan -> SQL -> real database -> Result.");
+
+static string Describe(Foundgine.Builders.QueryNode node) => node switch
 {
-    ScanNode s => $"Scan({s.Entity.Name})",
-    JoinNode j => $"Join({Describe(j.Left)}, {Describe(j.Right)}, {j.Join.Kind})",
-    GraphEdgeNode g => $"GraphEdge({g.Graph.GraphName})",
-    ProjectionNode p => $"Project({Describe(p.Source)})",
-    MaterializeNode m => $"Materialize({Describe(m.Source)} -> {m.Model.Name})",
+    Foundgine.Builders.ScanNode s => $"Scan({s.Entity.Name})",
+    Foundgine.Builders.JoinNode j => $"Join({Describe(j.Left)}, {Describe(j.Right)}, {j.Join.Kind})",
+    Foundgine.Builders.GraphEdgeNode g => $"GraphEdge({g.Graph.GraphName})",
+    Foundgine.Builders.ProjectionNode p => $"Project({Describe(p.Source)})",
+    Foundgine.Builders.MaterializeNode m => $"Materialize({Describe(m.Source)} -> {m.Model.Name})",
     _ => node.GetType().Name,
 };
 
