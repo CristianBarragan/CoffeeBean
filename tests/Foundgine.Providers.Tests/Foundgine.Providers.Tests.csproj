@@ -15,8 +15,13 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Foundgine.Providers\Foundgine.Providers.csproj" />
+        <ProjectReference Include="..\..\src\Foundgine.Builders\Foundgine.Builders.csproj" />
         <ProjectReference Include="..\..\src\Foundgine.Execution.Contracts\Foundgine.Execution.Contracts.csproj" />
         <ProjectReference Include="..\..\src\Foundgine.Metadata\Foundgine.Metadata.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
     </ItemGroup>
 
 </Project>

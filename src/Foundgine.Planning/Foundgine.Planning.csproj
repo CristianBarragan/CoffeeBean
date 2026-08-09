@@ -5,11 +5,12 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
-        <Description>Mutation planning: MutationOperation (EntityMutation/GraphMutation/RelationshipMutation) and MutationPlan, the mutation-side counterpart to Foundgine.Builders' QueryPlan. A mutation isn't a query, so it gets its own plan model rather than being forced into QueryPlan. Depends only on Foundgine.Metadata; has no knowledge of how a plan gets executed (see Foundgine.Providers/Foundgine.Execution.Contracts for that).</Description>
+        <Description>Mutation planning (MutationOperation/MutationPlan) plus the dynamic query planner: QueryIntent + QueryPlanner, which walks Foundgine.Metadata's JoinGraph to produce a Foundgine.Builders.QueryPlan without any domain-specific "if Customer then join Account" logic. Depends on Foundgine.Metadata and Foundgine.Builders; has no knowledge of how a plan gets executed (see Foundgine.Providers/Foundgine.Execution.Contracts for that).</Description>
     </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Foundgine.Metadata\Foundgine.Metadata.csproj" />
+        <ProjectReference Include="..\Foundgine.Builders\Foundgine.Builders.csproj" />
     </ItemGroup>
 
 </Project>

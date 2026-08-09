@@ -376,7 +376,7 @@ The generator contains:
 
 The source generator is one of the main mechanisms supporting the compile-time-first architecture.
 
-The generator should not be described as simply “generating GraphQL schema”. Its deeper purpose is generating metadata and execution support from mapping information.
+The generator should not be described as simply "generating GraphQL schema". Its deeper purpose is generating metadata and execution support from mapping information.
 
 ## 14. Graphgine.Analyzers
 
@@ -493,7 +493,7 @@ Examples:
 
 Runtime should consume explicit structures instead of repeatedly rediscovering the same domain facts.
 
-This does not justify an absolute claim of “zero reflection” today. Some helper projects and runtime paths remain under development.
+This does not justify an absolute claim of "zero reflection" today. Some helper projects and runtime paths remain under development.
 
 ## 20. Persistence
 
@@ -502,9 +502,9 @@ Graphgine currently has a PostgreSQL-centric implementation.
 Important components include:
 
 - `Graphgine.Sql.PostgresSqlWriter`
-- `Graphgine.Sql.UnitOfWork`
-- `Graphgine.Sql.UnitOfWorkContext`
-- `Graphgine.Sql.AgeConnectionFactory`
+- `Graphgine.Postgres.UnitOfWork`
+- `Graphgine.Postgres.UnitOfWorkContext`
+- `Graphgine.Postgres.AgeConnectionFactory`
 - SQL entity/model node structures
 - graph edge/link structures
 - SQL pagination
@@ -545,7 +545,7 @@ The API uses Hot Chocolate, EF Core, Npgsql and graph-related infrastructure.
 
 Important status:
 
-The sample is not currently a reliable “clone and run” guarantee. It contains historical wiring such as references to `IProcessService` and `AddGraphgine` that are not represented by the current project-reference structure. The sample must be repaired and validated before it should be used as the canonical quick-start application.
+The sample is not currently a reliable "clone and run" guarantee. It contains historical wiring such as references to `IProcessService` and `AddGraphgine` that are not represented by the current project-reference structure. The sample must be repaired and validated before it should be used as the canonical quick-start application.
 
 ## 22. Legacy code
 
@@ -595,9 +595,9 @@ The next testing priorities should be:
 
 Repository inspection identified real incomplete paths including:
 
-- `Foundgine.Core` SQL provider
-- `Foundgine.Core` graph provider
-- `Foundgine.Core` cache provider
+- `Foundgine.Providers.SqlExecutionProvider`
+- `Foundgine.Providers.GraphExecutionProvider`
+- `Foundgine.Providers.CacheExecutionProvider`
 - `Graphgine.Sql.GraphStrategy`
 - Graphgine selection/mutation planning TODOs
 - placeholder analyzer/hosting/reflection/serialization projects
@@ -608,13 +608,18 @@ These gaps should be tracked as implementation status, not hidden from documenta
 
 ## 25. Documentation status
 
-The existing `docs/` directory contains useful architecture material, but it was largely written during the Coffee Beanery phase and still contains:
+The existing `docs/` directory contains useful architecture material, but it was largely written during the Coffee Beanery phase and, as of the last full review, still contained:
 
-- Coffee Beanery branding
-- obsolete `example/` paths
-- links to a non-existent `docs/README.md`
+- Coffee Beanery branding in places
 - duplicate/incorrect relative links in AI SEO material
 - claims that are stronger than the current implementation state
+
+Since fixed: the obsolete `example/` paths (the sample and legacy tree both moved
+to `samples/`/`legacy/` a while ago; docs now point there) and the architecture
+pages under `docs/02-Architecture/` (previously generic placeholder project names
+like "Runtime"/"SQL"/"WebApi" that didn't correspond to anything in `src/`; now
+the actual `Foundgine.*`/`Graphgine.*` project graph). `docs/README.md` also
+already exists, contrary to an earlier review's claim that it didn't.
 
 The root documentation files should therefore be treated as the canonical public-facing layer until the detailed pages are normalised.
 
@@ -675,7 +680,7 @@ When answering questions about this repository:
 1. Prefer current `src/` code over `legacy/`.
 2. Treat `README.md` and this file as architecture/status summaries.
 3. Inspect source before asserting an implementation is complete.
-4. Distinguish “architecture supports” from “code currently implements”.
+4. Distinguish "architecture supports" from "code currently implements".
 5. Do not claim production readiness.
 6. Do not claim benchmark superiority without benchmark evidence.
 7. Do not claim full Native AOT compatibility without build/test evidence.

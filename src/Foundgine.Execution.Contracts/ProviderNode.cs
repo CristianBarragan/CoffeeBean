@@ -26,9 +26,10 @@ public sealed record SqlProjectionNode(
 
 /// <summary>Apache AGE (or other graph backend) traversal of a graph edge.</summary>
 public sealed record GraphTraversalNode(
+    ProviderNode Source,
     GraphMetadata Graph,
-    ProviderNode From,
-    ProviderNode To
+    ProviderNode? From,
+    ProviderNode? To
 ) : ProviderNode;
 
 /// <summary>Cache-backed lookup by key, used when a provider planner decides a subtree is servable from cache.</summary>

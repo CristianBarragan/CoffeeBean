@@ -2,7 +2,7 @@
 
 Source → destination, and why.
 
-## Platform (from `example/.../Domain/CoffeeBeanery.Foundation/`)
+## Platform (from `legacy/HotChocolateCoffeeBeanery/.../Domain/CoffeeBeanery.Foundation/`)
 
 | Old namespace | New namespace / project |
 |---|---|
@@ -21,7 +21,7 @@ Source → destination, and why.
 concerns — it matches "Builder infrastructure" in the target architecture more
 than "Pipeline abstractions."
 
-## Product (from `example/.../Domain/CoffeeBeanery.Runtime/`)
+## Product (from `legacy/HotChocolateCoffeeBeanery/.../Domain/CoffeeBeanery.Runtime/`)
 
 | Old namespace | New namespace / project |
 |---|---|
@@ -31,7 +31,7 @@ than "Pipeline abstractions."
 | `...GraphQL.Core.Sql` | `Graphgine.Sql` |
 | `...GraphQL.Core.Runtime` (+ `.Filtering`, `.Paging`) | `Graphgine.Execution` (+ `.Filtering`, `.Paging`) |
 
-## HotChocolate adapter (from `example/.../Domain/CoffeeBeanery.GraphQL/`)
+## HotChocolate adapter (from `legacy/HotChocolateCoffeeBeanery/.../Domain/CoffeeBeanery.GraphQL/`)
 
 | Old file | New location |
 |---|---|
@@ -40,7 +40,7 @@ than "Pipeline abstractions."
 | `Adapter/FilterQueryExtension.cs`, `Adapter/WhereCompiler.cs` | `src/Graphgine.HotChocolate/`, namespace `Graphgine.Execution.Filtering` |
 | `Mutation/*.cs`, `Query/WrapperQueryResolver.cs` | **`samples/Graphgine.Samples.Banking/Api/Api.Banking/`** — these declared `namespace Api.Banking.Mutation` / `Api.Banking.Query`, i.e. they're sample-app resolvers, not library code, even though they physically sat inside the library project before |
 
-## Source generator (from `example/.../Domain/CoffeeBeanery.Mapping.Generators/`)
+## Source generator (from `legacy/HotChocolateCoffeeBeanery/.../Domain/CoffeeBeanery.Mapping.Generators/`)
 
 Moved wholesale to `src/Graphgine.SourceGenerators/`, namespace
 `CoffeeBeanery.GraphQL.Core.Mapping.Generators` → `Graphgine.SourceGenerators`.
@@ -52,7 +52,7 @@ by name instead (see `Emit/IdEmitter.cs`).
 
 ## Everything else
 
-`example/HotChocolateCoffeeBeanery/{Api,Domain/Domain.Model,Infrastructure,Test}`
+`legacy/HotChocolateCoffeeBeanery/{Api,Domain/Domain.Model,Infrastructure,Test}`
 moved to `samples/Graphgine.Samples.Banking/` with the same internal layout,
 `ProjectReference` paths repointed at `src/`, and the same namespace rewrite
 applied. `Program.cs`'s `services.AddCoffeeBeanery<T>(...)` call was renamed to
@@ -86,8 +86,9 @@ left over from the rename, deleted. `Foundgine.Core`, `Foundgine.Abstractions`, 
 `Foundgine.Foundation`'s `.csproj` descriptions were updated to match. The
 `CoffeeBeanery.Runtime.Postgres` reference this doc previously flagged as stale
 is now moot — Postgres-specific code (the old `GraphStrategy`, `PostgresSqlWriter`,
-`SqlFilterEmitter`/`SqlFilterParameterBag`, and now `UnitOfWork`) all lives in
-`Graphgine.Sql`.
+`SqlFilterEmitter`/`SqlFilterParameterBag`) lives in `Graphgine.Sql`; `UnitOfWork`
+moved through here on its way to `Graphgine.Postgres` — see "Graphgine.Postgres
+split" below, its final destination.
 
 ## Foundgine.Core split
 
@@ -109,3 +110,21 @@ on `Foundgine.Planning` only — it never needed the provider implementations.
 `Foundgine.Execution.Contracts` that `Foundgine.Core` had. See
 `tests/Foundgine.Tests/ArchitectureTests.cs` for the test that now enforces
 this shape going forward.
+
+## Graphgine.Postgres split
+
+`Graphgine.csproj` referenced `Microsoft.EntityFrameworkCore` and
+`Npgsql.EntityFrameworkCore.PostgreSQL` directly, and `Microsoft.CodeAnalysis.Common`
+besides — none of which anything *live* in the project actually needed once
+checked:
+
+| File | Disposition |
+|---|---|
+| `Mapping/EfEntityMetadata.cs` | **Deleted.** Zero references anywhere in the repo, and it mixed runtime EF reflection (`DbContext`) with Roslyn symbols (`INamedTypeSymbol`) inside a runtime project — abandoned generator-era scaffolding, not something worth preserving. Its removal is also why `Microsoft.CodeAnalysis.Common` could come off `Graphgine.csproj`. |
+| `Sql/AgeConnectionFactory.cs`, `Sql/UnitOfWork.cs`, `Sql/UnitOfWorkContext.cs` | **Moved** to a new `Graphgine.Postgres` project (namespace `Graphgine.Postgres`). Also unused anywhere today, but unlike `EfEntityMetadata` these are exactly the transaction/connection primitives a real `Foundgine.Providers.SqlExecutionProvider` implementation will need, so they were relocated rather than deleted. Fixed three real bugs while moving `UnitOfWork`/`UnitOfWorkContext`: `RollbackTranscation` wasn't decrementing the nested-transaction counter (only `CommitTransaction` was), `DisposeConnection`'s guard condition could never be true after a normal commit/rollback so cleanup never ran, and `UnitOfWorkContext.CreateUnitOfWork`/`GetConnection` could return/dereference null. |
+
+`Graphgine.csproj` also dropped `morelinq` — a separate, unrelated dead package
+reference found in the same `<ItemGroup>` while removing the others. Nothing
+in the solution references `Graphgine.Postgres` yet (see its own `.csproj`
+description); it exists so the transaction-management work has a real home
+once `SqlExecutionProvider` stops being a stub.
