@@ -21,6 +21,7 @@
         <ProjectReference Include="..\Foundgine.Foundation\Foundgine.Foundation.csproj" />
         <ProjectReference Include="..\Foundgine.Metadata\Foundgine.Metadata.csproj" />
         <ProjectReference Include="..\Foundgine.Diagnostics\Foundgine.Diagnostics.csproj" />
+        <ProjectReference Include="..\Foundgine.Execution.Contracts\Foundgine.Execution.Contracts.csproj" />
     </ItemGroup>
 
 </Project>

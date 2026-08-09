@@ -91,8 +91,11 @@ to begin with). These have been fixed:
   `UnitOfWorkContext` were Postgres-specific (`NpgsqlConnection`,
   `NpgsqlTransaction`) but lived in the platform's foundation layer, which is
   supposed to be usable by a Postgres, SQL Server, Mongo, or non-database
-  product alike. Both moved to `Graphgine.Sql`, next to the repo's other
-  Postgres-specific code (`AgeConnectionFactory`, `PostgresSqlWriter`).
+  product alike. Both moved to `Graphgine.Postgres`, a dedicated project so the
+  core `Graphgine` engine keeps zero Npgsql/EF package dependencies (the repo's
+  other Postgres-specific *code* that doesn't touch a live connection, like
+  `PostgresSqlWriter`, stayed in `Graphgine.Sql` inside the main `Graphgine`
+  project — see the "Graphgine.Postgres split" entry in `docs/MIGRATION.md`).
   `Foundgine.Foundation/CQRS` now holds only the generic, database-agnostic
   contracts and dispatchers: `ICommand`, `IQuery`, `CommandDispatcher`,
   `QueryDispatcher`.
@@ -152,7 +155,7 @@ Foundgine/
 ## How this was assembled — read this before you build
 
 This restructuring is based on a prototype that was already partially built inside
-this repo, under `example/HotChocolateCoffeeBeanery/Domain/` (`CoffeeBeanery.Foundation`,
+this repo, under `legacy/HotChocolateCoffeeBeanery/Domain/` (`CoffeeBeanery.Foundation`,
 `CoffeeBeanery.Runtime`, `CoffeeBeanery.GraphQL`, `CoffeeBeanery.Mapping.Generators`).
 That prototype already implemented almost exactly the platform/product split
 described above, so it — not the older monolithic `src/CoffeeBeanery/` library —

@@ -4,7 +4,6 @@ using Api.Banking.Mutation;
 using Api.Banking.Query;
 using Graphgine.Sql;
 using Database.Entity.Banking;
-using Api.Banking.Extension;
 using HotChocolate.AspNetCore;
 using HotChocolate.Types.Pagination;
 using Microsoft.EntityFrameworkCore;
@@ -93,10 +92,31 @@ public class Program
             options.UseNpgsql(connectionString);
         });
 
-        services.AddGraphgine<
-            BankingEntityContext>(
-            connectionString);
-        
+        // NOTE: there is deliberately no services.AddGraphgine(...) call here.
+        // src/Graphgine.AspNetCore (which is where that extension method would
+        // live) is an intentional placeholder -- see its README.md: the
+        // maintainers chose not to invent an AddGraphgine()/MapGraphgine() API
+        // surface without a second real consumer to validate the shape against.
+        // Today, per that same README, wiring stays inline here instead.
+        //
+        // The pieces Graphgine actually needs at runtime -- IMetadataProvider,
+        // IPlannerRegistry, IMutationMetadataProvider, IEnumConversionProvider --
+        // are boundaries over source-generated code (Graphgine.SourceGenerators
+        // emits GeneratedMetadataProvider / GeneratedPlannerRegistry /
+        // GeneratedMutationMetadataProvider / GeneratedEnumConversionProvider
+        // once mapping classes implementing Graphgine.Mapping.IMappingDefinition
+        // exist in this project -- see Mapping/AccountMapping.cs for a first
+        // one). Registering those bindings is intentionally left to whoever
+        // finishes wiring the remaining mapping classes and can confirm the
+        // generated types actually compile; see PORT-STATUS.md at the sample
+        // root for the exact next steps and why they can't be done blind.
+        //
+        // services.AddSingleton<Foundgine.IMetadataProvider>(Foundgine.GeneratedMetadataProvider.Instance);
+        // services.AddSingleton<Graphgine.Execution.IPlannerRegistry, Graphgine.Execution.GeneratedPlannerRegistry>();
+        // services.AddSingleton<Graphgine.Execution.IMutationMetadataProvider, Graphgine.Execution.GeneratedMutationMetadataProvider>();
+        // services.AddSingleton<Graphgine.Execution.IEnumConversionProvider, Graphgine.Execution.GeneratedEnumConversionProvider>();
+        // services.AddScoped<Api.Banking.Service.IProcessService<Wrapper>, Api.Banking.Service.ProcessService<Wrapper>>();
+
         builder.Services.AddSingleton<
             DynamicSortModule>();
         builder.Services.AddGraphQLServer()
@@ -104,7 +124,7 @@ public class Program
             {
                 d.Field("wrapper")
                     .ResolveWith<WrapperQueryResolver>(r => r.GetWrapper(default, default,
-                        default));
+                        default, default));
             })
             .AddMutationType(d =>
             {
@@ -114,7 +134,7 @@ public class Program
                     .Argument("wrapper", d => d.Type<WrapperInputType>())
                     .Argument("order", a =>
                         a.Type<AnyType>())
-                    .ResolveWith<WrapperMutationResolver>(r => r.UpsertWrapper(default, default, default));
+                    .ResolveWith<WrapperMutationResolver>(r => r.UpsertWrapper(default, default, default, default));
             })
             .SetPagingOptions(new PagingOptions() { DefaultPageSize = 10, IncludeTotalCount = true })
             .AddFiltering()

@@ -1136,6 +1136,18 @@ private static string? FindSchemaByEntityName(
 
         foreach (var m in models)
         {
+            // Root wrapper-style models (e.g. Wrapper) deliberately have no
+            // backing entity at all -- see WrapperMapping's remarks. There's
+            // no entity to derive columns from, so emit an empty column
+            // array for them instead of throwing, matching how
+            // EmitTableArray/EmitSchemaArray already skip entity-less
+            // entries via their `.Where(e => e.EntityType != null)` filters.
+            if (m.Definition.Entities.Count == 0)
+            {
+                sb.AppendLine("            new string[0],");
+                continue;
+            }
+
             INamedTypeSymbol typeForColumns;
 
             if (IsComposite(m))

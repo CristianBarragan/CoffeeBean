@@ -72,8 +72,8 @@ namespace Database.Entity.Banking.Migrations
                     b.Property<int?>("CustomerId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("CustomerKey")
-                        .HasColumnType("integer");
+                    b.Property<Guid?>("CustomerKey")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("ProcessedDateTime")
                         .ValueGeneratedOnAdd()
@@ -216,8 +216,14 @@ namespace Database.Entity.Banking.Migrations
                     b.Property<int?>("InnerCustomerId")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("InnerCustomerKey")
+                        .HasColumnType("uuid");
+
                     b.Property<int?>("OuterCustomerId")
                         .HasColumnType("integer");
+
+                    b.Property<Guid?>("OuterCustomerKey")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("ProcessedDateTime")
                         .ValueGeneratedOnAdd()
