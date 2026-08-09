@@ -57,3 +57,26 @@ public sealed record CacheLookupNode(
     EntityMetadata Entity,
     IReadOnlyList<ColumnReference> KeyColumns
 ) : ProviderNode;
+
+/// <summary>
+/// Physical counterpart of <see cref="Foundgine.Builders.FilterNode"/>:
+/// carries the same provider-agnostic <see cref="FilterExpression"/>
+/// through to <see cref="Foundgine.Providers.SqlTextTranslator"/>, which is
+/// the only thing that turns it into a WHERE clause plus parameters.
+/// </summary>
+public sealed record SqlFilterNode(
+    ProviderNode Source,
+    FilterExpression Filter
+) : ProviderNode;
+
+/// <summary>Physical counterpart of <see cref="Foundgine.Builders.SortNode"/>.</summary>
+public sealed record SqlSortNode(
+    ProviderNode Source,
+    IReadOnlyList<SortTerm> Terms
+) : ProviderNode;
+
+/// <summary>Physical counterpart of <see cref="Foundgine.Builders.PageNode"/>.</summary>
+public sealed record SqlPageNode(
+    ProviderNode Source,
+    PageSpec Page
+) : ProviderNode;

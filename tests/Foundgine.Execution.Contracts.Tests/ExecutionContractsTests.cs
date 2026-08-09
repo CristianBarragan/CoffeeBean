@@ -155,6 +155,12 @@ public class IExecutionProviderTests
             yield return new ExecutionRow(
                 Array.Empty<EntityOccurrence>());
         }
+
+        public Task<IReadOnlyList<MutationResult>> ExecuteMutationAsync(ProviderMutationPlan plan, ExecutionContext context,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     [Fact]

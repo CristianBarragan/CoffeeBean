@@ -43,6 +43,20 @@ public sealed class QueryPlanner
 
         QueryNode node = PlanComposite(intent.Root, intent.Branches);
 
+        // Order matters here only in that it mirrors SQL clause order
+        // (WHERE, then ORDER BY, then LIMIT/OFFSET, then column selection)
+        // for readability — SqlTextTranslator unwraps these regardless of
+        // nesting order, so a different order here would compile to the
+        // same SQL.
+        if (intent.Filter is { } filter)
+            node = new FilterNode(node, filter);
+
+        if (intent.Sort is { Count: > 0 } sort)
+            node = new SortNode(node, sort);
+
+        if (intent.Page is { } page)
+            node = new PageNode(node, page);
+
         if (intent.Fields is { Count: > 0 } fields)
             node = new ProjectionNode(node, fields);
 

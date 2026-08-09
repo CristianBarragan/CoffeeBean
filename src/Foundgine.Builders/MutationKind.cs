@@ -1,4 +1,4 @@
-namespace Foundgine.Planning;
+namespace Foundgine.Builders;
 
 public enum MutationKind : byte
 {
