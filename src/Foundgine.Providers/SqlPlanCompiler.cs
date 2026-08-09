@@ -1,5 +1,6 @@
 using Foundgine.Builders;
 using Foundgine.Execution.Contracts;
+using Foundgine.Metadata;
 
 namespace Foundgine.Providers;
 
@@ -23,6 +24,63 @@ public static class SqlPlanCompiler
         return new ProviderPlan(Compile(plan.Root));
     }
 
+    /// <summary>
+    /// Turns a logical, provider-agnostic <see cref="MutationPlan"/> into a
+    /// physical, SQL-specific <see cref="ProviderMutationPlan"/> — the
+    /// mutation counterpart of <see cref="Compile(QueryPlan)"/>. Same 1:1
+    /// structural translation, not an optimizer.
+    /// </summary>
+    public static ProviderMutationPlan CompileMutation(MutationPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+
+        var operations = plan.Operations
+            .Select(CompileMutationOperation)
+            .ToArray();
+
+        return new ProviderMutationPlan(operations);
+    }
+
+    private static ProviderMutationNode CompileMutationOperation(MutationOperation operation) => operation switch
+    {
+        EntityMutation { Kind: MutationKind.Create } create =>
+            new SqlInsertNode(create.Entity, create.Columns),
+
+        EntityMutation { Kind: MutationKind.Update, Filter: null } update =>
+            throw UnfilteredMutation(update.Kind, update.Entity),
+
+        EntityMutation { Kind: MutationKind.Update } update =>
+            new SqlUpdateNode(update.Entity, update.Columns, update.Filter!),
+
+        EntityMutation { Kind: MutationKind.Delete, Filter: null } delete =>
+            throw UnfilteredMutation(delete.Kind, delete.Entity),
+
+        EntityMutation { Kind: MutationKind.Delete } delete =>
+            new SqlDeleteNode(delete.Entity, delete.Filter!),
+
+        EntityMutation { Kind: MutationKind.Upsert } upsert => throw new NotSupportedException(
+            $"{nameof(SqlPlanCompiler)} does not yet support {nameof(MutationKind.Upsert)} " +
+            $"(entity '{upsert.Entity.Name}'). INSERT ... ON CONFLICT semantics vary enough by " +
+            "SQL dialect that Upsert needs its own compilation path, not implemented yet."),
+
+        GraphMutation graph => throw new NotSupportedException(
+            $"{nameof(SqlPlanCompiler)} cannot compile a {nameof(GraphMutation)} (graph " +
+            $"'{graph.Graph.GraphName}'): graph-edge mutation isn't representable as a single " +
+            "SQL statement. Route this part of the plan through a graph-capable provider instead."),
+
+        RelationshipMutation relationship => throw new NotSupportedException(
+            $"{nameof(SqlPlanCompiler)} does not yet support {nameof(RelationshipMutation)} " +
+            $"('{relationship.Parent.Name}' -> '{relationship.Child.Name}')."),
+
+        _ => throw new NotSupportedException(
+            $"{nameof(SqlPlanCompiler)} does not know how to compile a {operation.GetType().Name}."),
+    };
+
+    private static InvalidOperationException UnfilteredMutation(MutationKind kind, EntityMetadata entity) =>
+        new(
+            $"Cannot compile an unfiltered {kind} on '{entity.Name}': a Filter must identify " +
+            "which row(s) to target. Foundgine never mutates every row by accident.");
+
     private static ProviderNode Compile(QueryNode node) => node switch
     {
         ScanNode scan => new SqlScanNode(scan.Entity),
@@ -37,6 +95,18 @@ public static class SqlPlanCompiler
         ProjectionNode projection => new SqlProjectionNode(
             Compile(projection.Source),
             projection.Fields),
+
+        FilterNode filter => new SqlFilterNode(
+            Compile(filter.Source),
+            filter.Filter),
+
+        SortNode sort => new SqlSortNode(
+            Compile(sort.Source),
+            sort.Terms),
+
+        PageNode page => new SqlPageNode(
+            Compile(page.Source),
+            page.Page),
 
         GraphEdgeNode => throw new NotSupportedException(
             $"{nameof(SqlPlanCompiler)} cannot compile a {nameof(GraphEdgeNode)}: graph-edge " +

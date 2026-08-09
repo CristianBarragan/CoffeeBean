@@ -9,16 +9,23 @@ no Graphgine anywhere in its dependency graph:
 - `Foundgine.Metadata` — domain-facing `EntityMetadata`/`ColumnMetadata`/`JoinGraph`,
   independent of any query language or provider.
 - `Foundgine.Builders` — `QueryPlan`/`QueryNode` (`CompositeNode`, `ProjectionNode`, ...),
-  the provider-agnostic logical plan shape.
+  the provider-agnostic logical plan shape; also `MutationPlan`/`MutationOperation`
+  (`EntityMutation`/`GraphMutation`/`RelationshipMutation`), the mutation counterpart,
+  living here rather than in `Foundgine.Planning` for the same reason `QueryPlan` does —
+  see `ArchitectureTests`.
 - `Foundgine.Planning` — `QueryPlanner`, the dynamic planner that turns a `QueryIntent`
   tree into a `QueryPlan` purely by consulting `MetadataRegistry`/`JoinGraph` (no
-  domain-specific `if`s); also `MutationPlan`/`MutationOperation`.
+  domain-specific `if`s); also `MutationPlanner`, which turns a `MutationIntent` into a
+  `MutationPlan` the same way, requiring a `Filter` for Update/Delete so Foundgine never
+  mutates every row by accident.
 - `Foundgine.Execution.Contracts` — provider-agnostic `ProviderPlan`/`ExecutionRow`/
-  `IExecutionProvider`.
-- `Foundgine.Providers` — `SqlPlanCompiler` (`QueryPlan` → `ProviderPlan`),
-  `SqlTextTranslator` (`ProviderPlan` → SQL text, with `SqlScanNode`-occurrence-aware
-  alias resolution so repeated/self-joined entities don't collide), and
-  `SqlExecutionProvider` (executes against SQLite via `Microsoft.Data.Sqlite`).
+  `IExecutionProvider`; also `ProviderMutationPlan`/`MutationResult`.
+- `Foundgine.Providers` — `SqlPlanCompiler` (`QueryPlan` → `ProviderPlan`, and
+  `MutationPlan` → `ProviderMutationPlan`), `SqlTextTranslator` (`ProviderPlan` → SQL
+  text, with `SqlScanNode`-occurrence-aware alias resolution so repeated/self-joined
+  entities don't collide; and `ProviderMutationPlan` → INSERT/UPDATE/DELETE text), and
+  `SqlExecutionProvider` (executes reads against SQLite via `Microsoft.Data.Sqlite`, and
+  executes a mutation plan's operations as a single SQLite transaction).
 
 This is proven end-to-end, against a real SQLite database, not mocked, by:
 
@@ -35,6 +42,11 @@ This is proven end-to-end, against a real SQLite database, not mocked, by:
   proving the planner/compiler/provider pipeline holds up on a chain deeper than the
   original three-table demo, plus a negative test for the same "no shortcuts" guarantee
   (**FOUND-003**).
+- `MutationEndToEndTests` — Create/Update/Delete against a real SQLite database via
+  `MutationIntent` → `MutationPlanner` → `MutationPlan` → `SqlPlanCompiler.CompileMutation`
+  → `ProviderMutationPlan` → `SqlExecutionProvider.ExecuteMutationAsync`; also proves two
+  entities' mutations submitted as one `ProviderMutationPlan` commit atomically, and that
+  the planner rejects an unfiltered Update.
 - `ArchitectureTests` — machine-checks the dependency-direction rules above (parses each
   `src/*.csproj`'s `<ProjectReference>`s directly) so an accidental layering violation
   fails a test instead of only being visible in a diagram.
@@ -73,6 +85,13 @@ Known incomplete areas include:
   entity). Nothing has been measured yet.
 - Query filtering/ordering/paging in `SqlTextTranslator` (explicitly deferred — see its
   doc comment).
+- Mutation `Upsert`, `GraphMutation`, and `RelationshipMutation` are not compiled by
+  `SqlPlanCompiler` yet (each throws `NotSupportedException` — Upsert because
+  INSERT ... ON CONFLICT semantics vary too much by SQL dialect to share one path with
+  Create/Update/Delete). `MutationValueKind.Generated` (e.g. an AUTOINCREMENT key) and
+  `.Expression` (a computed SQL expression) are likewise not yet translated by
+  `SqlTextTranslator` — only `.Input`/`.Constant` carry a literal `MutationColumn.Value`
+  today.
 - `ModelMetadata`/`ModelEntityBinding` (a logical model backed by more than one storage
   entity) exists in `Foundgine.Metadata` but nothing in `Foundgine.Planning` or
   `Foundgine.Providers` consumes it yet — composite results today (e.g.
