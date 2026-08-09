@@ -1,66 +1,97 @@
 # Foundgine Documentation
 
-**Foundgine** is the reusable execution platform. **Graphgine** is the first product built on it.
+Foundgine is a .NET application-domain semantic and execution platform for AI-native applications.
 
-This documentation describes the target architecture, current implementation and roadmap. Where
-the architecture is ahead of the implementation, the page says so explicitly.
-
-> **Status:** active architectural development. Some providers, hosting/analyzer projects, graph
-> operations, tests and the Banking sample are incomplete. Do not treat every documented target
-> as production-ready behavior.
+> **Foundgine turns an application's domain model into a safe, executable interface for AI agents.**
 
 ## Start here
 
-- [Repository README](../README.md)
-- [Getting Started](01-Getting-Started/README.md)
-- [Architecture](02-Architecture/README.md)
-- [Foundation](03-Foundation/README.md)
-- [Runtime](04-Runtime/README.md)
-- [GraphQL / Graphgine](05-GraphQL/README.md)
-- [Source Generators](06-Source-Generators/README.md)
-- [Dependency Injection](07-Dependency-Injection/README.md)
-- [Persistence](08-Persistence/README.md)
-- [AI & LLM Readiness](09-AI/README.md)
-- [Performance](10-Performance/README.md)
-- [Samples](11-Samples/README.md)
-- [Contributing](12-Contributing/README.md)
-- [Reference](13-Reference/README.md)
+1. [Direction](00-Direction/README.md)
+2. [Proof Milestones](00-Direction/Milestones.md)
+3. [Current Status](CURRENT-STATUS.md)
+4. [Architecture](02-Architecture/README.md)
+5. [Banking E2E Sample](11-Samples/README.md)
 
-## Architecture at a glance
+## Core documentation
+
+### [Direction](00-Direction/README.md)
+
+The product boundary and why Foundgine should not become another AI/RAG/MCP framework.
+
+### [Architecture](02-Architecture/README.md)
+
+How domain semantics, planning and execution fit together.
+
+### [Foundation](03-Foundation/README.md)
+
+Stable platform primitives and dependency rules.
+
+### [Runtime](04-Runtime/README.md)
+
+Execution contracts and the current runtime model.
+
+### [Persistence](08-Persistence/README.md)
+
+Database/provider execution boundaries.
+
+### [AI Integration](09-AI/README.md)
+
+How Foundgine fits beneath an LLM or agent framework.
+
+### [Samples](11-Samples/README.md)
+
+The Banking sample is the canonical proof.
+
+### [Reference](13-Reference/README.md)
+
+ADRs, glossary, changelog and roadmap.
+
+## Historical material
+
+The repository contains historical GraphQL/Graphgine material under `archive/`.
+
+The following documentation sections are retained for migration/history:
+
+- [GraphQL](05-GraphQL/README.md)
+- [Source Generators](06-Source-Generators/README.md)
+
+They should not be used as the current product definition.
+
+## Current milestone chain
 
 ```text
-Application / Domain
-        ↓
-     Graphgine
-        ↓
-Foundgine.Planning / Foundgine.Builders
-        ↓
-Foundgine.Execution.Contracts / Foundgine.Providers
-        ↓
-Foundgine.Metadata
-        ↓
-Foundgine.Foundation
-        ↓
-Foundgine.Abstractions
+M0  Real execution                         ← current proof
+ ↓
+M1  Semantic domain
+ ↓
+M2  Resolution
+ ↓
+M3  Read intent
+ ↓
+M4  Domain actions
+ ↓
+M5  Policy / authorization
+ ↓
+M6  Preview / approval
+ ↓
+M7  Verification / evidence
+ ↓
+M8  MCP adapter
+ ↓
+M9  More execution targets
+ ↓
+M10 Compile-time semantic compiler
 ```
 
-`Graphgine.HotChocolate` is the GraphQL server integration boundary. Foundgine itself must not
-depend upward on Graphgine or Hot Chocolate.
+See [Proof Milestones](00-Direction/Milestones.md).
 
-## Repository identity
+## Documentation accuracy
 
-| Name | Meaning |
-|---|---|
-| **Foundgine** | Reusable execution platform |
-| **Graphgine** | First GraphQL-oriented product |
-| **Foundgine** | Historical predecessor / legacy implementation |
+Documentation must distinguish:
 
-The `legacy/` tree is retained for migration/reference purposes and is not the target architecture.
+- **Implemented** — executable and proven.
+- **In progress** — partially implemented.
+- **Planned** — architectural direction only.
+- **Historical** — retained for context but not current.
 
-## Current implementation reality
-
-Substantial implementation exists in the platform, Graphgine core, source generator and Hot
-Chocolate adapter. Current gaps include incomplete provider paths, graph strategy work, placeholder
-projects, placeholder tests and sample wiring.
-
-For the authoritative AI-oriented description, see the repository root `llms-full.md`.
+Do not turn architectural intent into feature claims.

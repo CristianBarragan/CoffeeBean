@@ -1,72 +1,47 @@
-[Home](../../README.md) → [Documentation](../README.md) → **Dependency Injection**
-
 # Dependency Injection
 
-## Contents
+Dependency injection is the composition mechanism, not the semantic model.
 
-- [Registration](Registration.md) — the composition root and per-layer registration
-- [Lifetimes](Lifetimes.md) — lifetime guidelines and testing
+## Rule
 
----
+DI should answer:
 
-## Philosophy
+> Which implementation satisfies this contract?
 
-## Philosophy
+It should not decide:
 
-Dependency Injection answers one question:
+- what an entity means
+- how an intent is resolved
+- whether an action is authorized
+- how a query is planned
+- how evidence is produced
 
-> **How are framework components composed?**
+## Current composition
 
-It should never determine:
+The active sample constructs the necessary components directly so the E2E remains obvious.
 
-- Query behavior
-- SQL generation
-- Planning logic
-- Metadata construction
+As the runtime grows, DI can become the composition root for:
 
-Those responsibilities belong elsewhere.
-
----
-
-## Architectural Role
-
-## Architectural Role
-
-Dependency Injection sits at the composition root.
-
+```text
+Metadata provider
+Planner
+Resolver
+Policy evaluator
+Execution provider
+Verifier
+Evidence sink
 ```
+
+## Target composition
+
+```text
 Application
-
-↓
-
-Dependency Injection
-
-↓
-
-Runtime
-
-↓
-
-Foundation Contracts
-
-↓
-
-Generated Implementations
+    ↓
+DI composition root
+    ↓
+Foundgine semantic/execution services
+    ↓
+provider adapters
 ```
 
-Runtime depends only upon abstractions.
-
-Applications decide which implementations to register.
-
----
-
----
-
-## Related Documentation
-
-- [Architecture → Dependency Graph](../02-Architecture/Dependency-Graph.md)
-- [Getting Started → Configuration](../01-Getting-Started/Configuration.md)
-
----
-
-← Previous: [Source Generators](../06-Source-Generators/README.md)  |  Next: [Persistence](../08-Persistence/README.md) →
+Do not introduce registration APIs until the underlying contracts are proven.

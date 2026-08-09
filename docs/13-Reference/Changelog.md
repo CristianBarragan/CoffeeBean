@@ -1,44 +1,48 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Reference](README.md) → **Changelog**
-
 # Changelog
 
-## Contents
+## Unreleased — AI-native direction
 
-- [Unreleased](#unreleased)
-- [Format](#format)
+Documentation has been realigned around the current Foundgine product thesis:
 
----
+> **Foundgine turns a .NET application's domain model into a safe, executable interface for AI agents.**
 
-## Unreleased
+### Documentation changes
 
-Foundgine has not yet cut a tagged, versioned release — Phase 1 (EF Core mapping +
-Hot Chocolate + PostgreSQL + Dapper, see [Vision](../02-Architecture/Vision.md)) is under
-active development against the `main` branch. This page is a placeholder for the moment
-there's a first tagged version, rather than a fabricated version history.
+- Added `docs/00-Direction/` with the product boundary and proof milestones.
+- Reworked the root README around semantic execution rather than GraphQL.
+- Updated architecture documentation to match the active `src/` project graph.
+- Updated the Banking sample documentation as the canonical E2E proof.
+- Reworked AI/LLM documentation and `llms.txt`.
+- Replaced stale AI/search positioning in `ai.seo.md`.
+- Marked GraphQL and the former source-generator architecture as historical.
+- Added an explicit M0–M10 milestone chain.
+- Added accuracy rules separating implemented, in-progress, planned and historical capabilities.
 
-Notable recent documentation work:
+### Product status
 
-- Restructured `docs/` from a flat, duplicated set of files into the 13-section framework
-  described at [Documentation Home](../README.md).
-- Regenerated `README.md`, `llms.txt`, `llms-full.md`, and `AI.SEO.md` to match.
-- Archived the previous, duplicated documentation set under
-  [`docs/archive`](README.md) for history.
+The active Banking sample proves:
 
-## Format
+```text
+Domain
+→ Metadata
+→ Dynamic Planner
+→ QueryPlan
+→ ProviderPlan
+→ SQL
+→ real SQLite database
+→ Result
+```
 
-Once a first version is tagged, this page will follow
-[Keep a Changelog](https://keepachangelog.com/) conventions (`Added` / `Changed` /
-`Deprecated` / `Removed` / `Fixed` / `Security`, newest first), and releases will be tagged
-following [Semantic Versioning](https://semver.org/).
+The next product work is:
 
----
-
-## Related Documentation
-
-- [Roadmap](Roadmap.md)
-- [Migration Guides](Migration-Guides.md)
-- [ADRs](ADRs.md)
-
----
-
-← Previous: [Roadmap](Roadmap.md)  |  Next: [Migration Guides](Migration-Guides.md) →
+```text
+Semantic domain
+→ Resolution
+→ Read intent
+→ Domain actions
+→ Policy
+→ Preview
+→ Verification
+→ Evidence
+→ MCP
+```

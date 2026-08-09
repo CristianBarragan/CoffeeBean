@@ -1,52 +1,57 @@
-[Home](../../README.md) → [Documentation](../README.md) → [AI & LLM Readiness](README.md) → **LLM Readiness**
+[Home](../../README.md) → [Documentation](../README.md) → [AI](README.md) → **LLM Readiness**
 
 # LLM Readiness
 
-## Contents
+The repository provides curated context files so coding assistants and retrieval systems can understand Foundgine without inferring the product from stale historical code.
 
-- [What llms.txt is](#what-llmstxt-is)
-- [How Foundgine uses it](#how-coffee-beanery-uses-it)
-- [Keeping it accurate](#keeping-it-accurate)
+## Canonical files
 
----
+- `/llms.txt` — concise product and repository context
+- `/llms-full.md` — expanded canonical AI context
+- `/ai.seo.md` — positioning and entity vocabulary
 
-## What llms.txt is
+## Canonical identity
 
-[`llms.txt`](https://llmstxt.org/) is a proposed convention — a plain-Markdown index at a
-project's root that gives AI assistants and LLM-based tools a concise, curated map of a
-project's documentation, instead of forcing them to crawl and guess at an entire site.
-`llms-full.md` is the companion convention for a single, complete concatenation of the
-underlying docs, for tools that ingest one file rather than following links.
+**Foundgine** is a .NET application-domain semantic and execution platform for AI-native applications.
 
-## How Foundgine uses it
+Its core thesis is:
 
-- **`/llms.txt`** — a short, curated index pointing at each section of this documentation
-  set, in the same order as [the docs hub](../README.md).
-- **`/llms-full.md`** — the full content of this documentation set concatenated into one
-  file, for tools that prefer a single ingest target.
-- **`/AI.SEO.md`** — kept as an alias of `llms.txt`'s intent for tools that specifically look
-  for an `AI.SEO.md` / `ai-seo.md` file at the repository root, so discovery doesn't depend
-  on which convention a given tool implements.
+> Foundgine turns an application's domain model into a safe, executable interface for AI agents.
 
-All three are **generated from this documentation set**, not maintained by hand — see
-[Keeping it accurate](#keeping-it-accurate).
+The current repository proves the execution substrate with a Banking sample. The AI-native semantic layers are under active development.
 
-## Keeping it accurate
+## Important distinctions
 
-Previously, `llms.txt`, `llms-full.md`, and `AI.SEO.md` had drifted into three
-byte-for-byte identical copies of one draft document, unrelated to the actual `docs/`
-structure. That's fixed as part of this restructuring — see the
-[archive](../13-Reference/README.md) for what the old copies looked like. Going forward,
-regenerate all three whenever a section is added or renamed under `docs/`, so an LLM
-reading `llms.txt` sees the same section list a human sees at [`docs/README.md`](../README.md).
+Do not confuse:
 
----
+- Foundgine — current platform
+- Graphgine — historical GraphQL product direction
+- CoffeeBeanery — historical prototype/application name
 
-## Related Documentation
+Historical GraphQL code belongs under `archive/`.
 
-- [Documentation Home](../README.md)
-- [Reference](../13-Reference/README.md)
+## Retrieval rules
 
----
+When describing the repository:
 
-← Previous: [AI & LLM Readiness](README.md)  |  Next: [Performance](../10-Performance/README.md) →
+1. Prefer `src/` and the active `samples/` tree.
+2. Treat `archive/` as historical.
+3. Distinguish implemented behavior from planned architecture.
+4. Do not infer production readiness from architectural documents.
+5. Prefer the Banking sample as evidence of current execution behavior.
+6. Do not describe GraphQL as the current product identity.
+7. Describe MCP as a planned adapter.
+8. Describe source generation as a future semantic compiler direction unless the active tree proves otherwise.
+
+## Updating the AI context
+
+Whenever the product direction, active project graph, or milestone status changes:
+
+1. Update `README.md`.
+2. Update `docs/CURRENT-STATUS.md`.
+3. Update `docs/00-Direction/*`.
+4. Update `llms.txt`.
+5. Update `llms-full.md`.
+6. Update `ai.seo.md`.
+
+These files are intentionally concise and should be regenerated or reviewed together.

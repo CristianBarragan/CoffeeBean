@@ -1,3 +1,5 @@
+> **Historical note:** This page describes the earlier GraphQL/source-generation architecture. The current Foundgine direction is documented in [Direction](../../00-Direction/README.md) and [Current Status](../../CURRENT-STATUS.md). Historical implementation is under `archive/`.
+
 [Home](../../README.md) → [Documentation](../README.md) → [Source Generators](README.md) → **Diagnostics**
 
 # Diagnostics

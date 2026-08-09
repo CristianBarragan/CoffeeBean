@@ -1,386 +1,221 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Reference](README.md) → **Roadmap**
-
 # Roadmap
 
-> This roadmap predates the Phase 1 / future-phases framing introduced in
-> [Architecture → Vision](../02-Architecture/Vision.md); the two describe the same trajectory
-> at different levels of detail. Vision gives the four-item Phase 1 scope and four-item
-> future-phases summary; this page gives the longer, phase-by-phase engineering breakdown.
-> Where they'd conflict, Vision's Phase 1 boundary (EF Core mapping, Hot Chocolate,
-> PostgreSQL, Dapper) is authoritative for "what's built today."
+[Home](../../README.md) → [Reference](README.md) → **Roadmap**
 
-## Contents
+The roadmap is intentionally vertical-slice driven. Foundgine should prove the core thesis before expanding into multiple transports, databases, retrieval systems, or AI integrations.
 
-- [Vision](#vision)
-- [Phase 1 — Foundation](#phase-1--foundation)
-- [Goals](#goals)
-- [Phase 2 — Runtime](#phase-2--runtime)
-- [Goals](#goals)
-- [Phase 3 — SQL](#phase-3--sql)
-- [Goals](#goals)
-- [Phase 4 — Incremental Generator](#phase-4--incremental-generator)
-- [Goals](#goals)
-- [Phase 5 — Dependency Inversion](#phase-5--dependency-inversion)
-- [Goals](#goals)
-- [Phase 6 — GraphQL](#phase-6--graphql)
-- [Goals](#goals)
-- [Phase 7 — gRPC](#phase-7--grpc)
-- [Goals](#goals)
-- [Phase 8 — Web API](#phase-8--web-api)
-- [Goals](#goals)
-- [Phase 9 — Additional SQL Providers](#phase-9--additional-sql-providers)
-- [Phase 10 — Graph Improvements](#phase-10--graph-improvements)
-- [Phase 11 — Performance](#phase-11--performance)
-- [Phase 12 — Native AOT](#phase-12--native-aot)
-- [Phase 13 — Tooling](#phase-13--tooling)
-- [Phase 14 — Ecosystem](#phase-14--ecosystem)
-- [Success Criteria](#success-criteria)
-- [Guiding Principles](#guiding-principles)
-- [Summary](#summary)
+## Phase 0 — Execution substrate
 
----
+**Status: proven in the canonical sample**
 
-> This document describes the long-term technical roadmap for the Foundgine framework. It outlines the expected evolution of the architecture while preserving the project's core design principles.
-
-The roadmap is intentionally organized around architectural capabilities rather than release dates.
-
----
-
-## Vision
-
-Foundgine aims to become a compile-time-first data access framework capable of supporting multiple transports, multiple SQL dialects, and graph-based querying through a shared execution engine.
-
-The long-term architecture is:
-
-```
-             Foundation
-                  ▲
-                  │
-    ┌─────────────┼─────────────┐
-    │             │             │
- Runtime         SQL      Source Generator
-    ▲             ▲             │
-    │             │             │
-    └─────────────┼─────────────┘
-                  │
-       Generated Runtime Components
-                  ▲
-                  │
-      ┌───────────┼───────────┐
-      │           │           │
-   GraphQL      gRPC       Web API
+```text
+Domain
+→ Metadata
+→ Dynamic Planner
+→ QueryPlan
+→ ProviderPlan
+→ SQL
+→ SQLite
+→ Result
 ```
 
----
+The Banking sample is the acceptance test.
 
-## Phase 1 — Foundation
+## Phase 1 — Semantic domain
 
-## Goals
+**Status: next**
 
-- Stable contracts
-- Immutable metadata
-- Planning primitives
-- Runtime primitives
-- Identifier system
-- Dependency inversion
+Create a protocol-neutral semantic model representing:
 
-### Deliverables
+- entities
+- identities
+- fields
+- relationships
+- searchable properties
+- actions
+- policies
 
-- EntityMetadata
-- ModelMetadata
-- ColumnMetadata
-- JoinMetadata
-- GraphMetadata
-- ColumnReference
-- QueryPlan
-- MutationPlan
-- IMetadataProvider
-- IPlannerRegistry
+Start hand-authored if necessary.
 
-This phase establishes the architectural foundation.
+The goal is to prove the model before building a compiler.
 
----
+## Phase 2 — Resolution
 
-## Phase 2 — Runtime
+**Status: planned immediately after Phase 1**
 
-## Goals
+Resolve human/agent references into domain identities.
 
-- Query execution
-- Mutation execution
-- Materialization pipeline
-- Transaction coordination
-- Dependency graph execution
+Required behavior:
 
-### Deliverables
+- exact matches
+- useful search fields
+- relationship traversal
+- ambiguity reporting
+- evidence for why an entity was selected
 
-- QueryExecutor
-- MutationExecutor
-- ExecutionContext
-- Runtime services
-- Execution pipeline
+No silent guessing.
 
-Runtime should depend only on Foundation.
+## Phase 3 — Read planning
 
----
+**Status: planned**
 
-## Phase 3 — SQL
+Convert an intent into a Foundgine query plan.
 
-## Goals
-
-- PostgreSQL support
-- SQL writers
-- SQL readers
-- SQL dialect abstraction
-- Apache AGE integration
-
-### Deliverables
-
-- PostgresSqlWriter
-- PostgresSqlReader
-- PostgreSqlDialect
-- SQL builders
-- SQL visitors
-
-SQL serializes execution plans without performing planning.
-
----
-
-## Phase 4 — Incremental Generator
-
-## Goals
-
-- Complete compile-time analysis
-- Metadata generation
-- Materializer generation
-- Planner generation
-- Runtime registrations
-
-### Deliverables
-
-- MetadataEmitter
-- PlannerEmitter
-- MaterializerEmitter
-- DematerializerEmitter
-- DependencyInjectionEmitter
-
-Generated code should contain only precomputed information.
-
----
-
-## Phase 5 — Dependency Inversion
-
-## Goals
-
-Replace static generated classes with generated implementations of Foundation contracts.
-
-Instead of:
-
-```
-GeneratedMetadata.GetEntity(...)
+```text
+Intent
+→ Resolve
+→ Semantic query
+→ QueryPlan
+→ ProviderPlan
+→ Execute
+→ Evidence
 ```
 
-Runtime should consume:
+The first test is the Banking "last five transactions" scenario.
 
-```csharp
-IMetadataProvider
+## Phase 4 — Domain actions
+
+**Status: planned**
+
+Introduce explicit, constrained action descriptors.
+
+```text
+IssueRefund
+SuspendAccount
+ChangeTier
 ```
 
-implemented by:
+Agents may select declared actions; they cannot invoke arbitrary CLR methods.
 
-```csharp
-GeneratedMetadataProvider
+## Phase 5 — Policy and authorization
+
+**Status: planned**
+
+Make authorization a planning input rather than a late controller concern.
+
+```text
+Intent
+→ Resolve
+→ Policy
+→ Plan
 ```
 
-This decouples Runtime from generated code.
+The result should explain allow/deny decisions.
 
----
+## Phase 6 — Preview and approval
 
-## Phase 6 — GraphQL
+**Status: planned**
 
-## Goals
+Mutations become:
 
-- Schema generation
-- Resolver generation
-- Middleware
-- Dependency Injection
-- Transport adapter
-
-GraphQL becomes a thin layer over Runtime.
-
----
-
-## Phase 7 — gRPC
-
-## Goals
-
-- Protobuf integration
-- Service generation
-- Runtime adapter
-
-The same Runtime should execute GraphQL and gRPC requests.
-
----
-
-## Phase 8 — Web API
-
-## Goals
-
-- Controllers
-- Minimal APIs
-- OpenAPI integration
-- Runtime adapter
-
-Execution remains identical to GraphQL and gRPC.
-
----
-
-## Phase 9 — Additional SQL Providers
-
-Potential providers include:
-
-- SQL Server
-- MySQL
-- SQLite
-- CockroachDB
-- YugabyteDB
-
-The planner remains unchanged.
-
-Only SQL serialization changes.
-
----
-
-## Phase 10 — Graph Improvements
-
-Future graph capabilities include:
-
-- Recursive traversals
-- Variable-length paths
-- Path projections
-- Graph aggregation
-- Graph mutation optimization
-- Graph query caching
-
-These features extend planning while preserving Runtime behavior.
-
----
-
-## Phase 11 — Performance
-
-Areas of ongoing optimization:
-
-- Reduced allocations
-- Faster metadata lookup
-- Improved SQL generation
-- Streaming materialization
-- Better cache locality
-- Batch execution
-- Object pooling where appropriate
-
-Performance improvements should remain architecture-driven.
-
----
-
-## Phase 12 — Native AOT
-
-Continue validating:
-
-- Metadata provider
-- Materializers
-- Planner registry
-- SQL generation
-- Runtime execution
-
-No feature should compromise Native AOT compatibility.
-
----
-
-## Phase 13 — Tooling
-
-Developer tooling may include:
-
-- Visual Studio integration
-- Roslyn analyzers
-- Diagnostic visualizers
-- SQL preview
-- Query plan visualizer
-- Graph explorer
-
-These tools should consume generated metadata where possible.
-
----
-
-## Phase 14 — Ecosystem
-
-Potential ecosystem projects:
-
-```
-Foundgine.Mongo
-
-Foundgine.Redis
-
-Foundgine.Cosmos
-
-Foundgine.Elasticsearch
-
-Foundgine.Blazor
-
-Foundgine.OpenApi
-
-Foundgine.Cli
+```text
+Plan
+→ Preview
+→ Approve
+→ Execute
 ```
 
-Each project integrates through Foundation contracts.
+Preview is part of the execution contract.
 
----
+## Phase 7 — Verification and evidence
 
-## Success Criteria
+**Status: planned**
 
-Foundgine will be considered architecturally complete when:
+Every important mutation should verify expected state after execution and produce an evidence chain.
 
-- Runtime contains no reflection.
-- Generated code implements all required contracts.
-- GraphQL, gRPC, and Web API share the same Runtime.
-- SQL dialects are interchangeable.
-- Native AOT is fully supported.
-- Metadata is immutable.
-- Execution plans are immutable.
-- Generated artifacts are deterministic.
+## Phase 8 — MCP
 
----
+**Status: planned**
 
-## Guiding Principles
+MCP becomes a thin adapter over the semantic API.
 
-Future development should preserve the following principles:
+Initial surface:
 
-- Compile-time over runtime
-- Immutable metadata
-- Immutable execution plans
-- Dependency inversion
-- Transport independence
-- Database abstraction
-- Deterministic generation
-- Clear project boundaries
-- Single responsibility
+```text
+discover
+resolve
+plan/query
+preview
+execute
+evidence
+```
 
-Architectural consistency is more valuable than short-term convenience.
+Do not create an entity-specific tool for every domain operation unless a concrete integration proves it necessary.
 
----
+## Phase 9 — More execution targets
 
-## Summary
+**Status: later**
 
-The Foundgine roadmap is focused on evolving the framework through compile-time generation, transport independence, and dependency inversion.
+Add execution targets behind the existing plan:
 
-Rather than adding isolated features, each phase strengthens the overall architecture, ensuring the framework remains performant, maintainable, extensible, and capable of supporting new transports and storage providers without compromising its core design.
+```text
+Structured data
+Domain actions
+Semantic retrieval
+External data
+```
 
----
+Do not build all targets in parallel.
 
-## Related Documentation
+## Phase 10 — Compile-time semantic compiler
 
-- [Architecture → Vision](../02-Architecture/Vision.md)
-- [Changelog](Changelog.md)
-- [ADRs](ADRs.md)
+**Status: later**
 
----
+Use Roslyn to derive and generate:
 
-← Previous: [Glossary](Glossary.md)  |  Next: [Changelog](Changelog.md) →
+- stable IDs
+- entity metadata
+- relationship metadata
+- search descriptors
+- action descriptors
+- policy metadata
+- planner hints
+
+The compiler describes the legal application vocabulary.
+
+It does not attempt to generate future natural-language plans.
+
+## Phase 11 — Ecosystem integrations
+
+Potential integrations:
+
+- ASP.NET Core
+- MCP
+- Semantic Kernel
+- OpenTelemetry
+- EF Core
+- Dapper
+- Temporal
+- Kafka
+- PostgreSQL/pgvector
+- other databases and retrieval systems
+
+These remain adapters/integrations rather than the Foundgine core.
+
+## Explicit non-goals
+
+The roadmap does not include building:
+
+- a proprietary LLM
+- a general agent framework
+- a proprietary vector database
+- a replacement for MCP
+- a replacement for EF Core
+- a replacement for Temporal
+- a replacement for Kafka
+
+## The release gate
+
+Do not call the first AI-native milestone complete until a real test demonstrates:
+
+```text
+natural-language request
+→ domain resolution
+→ policy
+→ plan
+→ real execution
+→ verification
+→ evidence
+```
+
+for both a read and a mutation.

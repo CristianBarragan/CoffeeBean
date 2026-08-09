@@ -1,3 +1,5 @@
+> **Historical note:** This page describes the earlier GraphQL/source-generation architecture. The current Foundgine direction is documented in [Direction](../../00-Direction/README.md) and [Current Status](../../CURRENT-STATUS.md). Historical implementation is under `archive/`.
+
 # Schema
 
 Graphgine is designed to derive GraphQL-facing behavior from domain and mapping metadata rather than

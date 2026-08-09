@@ -2,46 +2,43 @@
 
 # Runtime
 
-Runtime is where generated execution plans actually run. It never discovers metadata, parses
-attributes, or generates SQL — that all happened at compile time, in
-[Source Generators](../06-Source-Generators/README.md). Runtime's job is narrower and more
-predictable: execute the plan it was handed.
+Foundgine runtime is the execution half of the platform.
 
----
+Its principle is:
 
-## Contents
+> **Runtime consumes explicit plans; it does not rediscover the application.**
 
-- [Execution](Execution.md) — the runtime pipeline, execution context, transactions, error handling
-- [Queries](Queries.md) — how the query planner works
-- [Mutations](Mutations.md) — how the mutation planner works
-- [Events](Events.md) — extension points for observing execution
+Current active execution contracts include:
 
----
+- `ExecutionContext`
+- `ExecutionOptions`
+- `ExecutionResult`
+- `ExecutionRow`
+- `ExecutionStatistics`
+- `ProviderPlan`
+- `ProviderNode`
+- `IExecutionProvider`
 
-## Philosophy
+The current Banking sample proves a real query path through these concepts.
 
-## Philosophy
+## Target runtime lifecycle
 
-The Runtime has one responsibility:
+```text
+Intent
+ ↓
+Resolution
+ ↓
+Policy
+ ↓
+Plan
+ ↓
+Provider
+ ↓
+Execute
+ ↓
+Verify
+ ↓
+Evidence
+```
 
-> Execute immutable plans.
-
-It should never discover information.
-
-It should never infer behavior.
-
-It should simply execute.
-
----
-
----
-
-## Related Documentation
-
-- [Foundation](../03-Foundation/README.md)
-- [GraphQL](../05-GraphQL/README.md)
-- [Architecture → Request Pipeline](../02-Architecture/Request-Pipeline.md)
-
----
-
-← Previous: [Foundation](../03-Foundation/README.md)  |  Next: [GraphQL](../05-GraphQL/README.md) →
+Resolution, policy, verification and evidence are the next product layers; they should not be described as complete today.
