@@ -334,37 +334,37 @@ public static class SqlTextTranslator
         switch (expression)
         {
             case ComparisonFilter comparison:
-            {
-                if (!Equals(comparison.Column.Entity, entity))
                 {
-                    throw new InvalidOperationException(
-                        $"Cannot translate a mutation Filter on '{comparison.Column.Entity.Name}' " +
-                        $"while mutating '{entity.Name}': a mutation's Filter may only reference " +
-                        "columns on the entity being mutated, since it targets a single table.");
+                    if (!Equals(comparison.Column.Entity, entity))
+                    {
+                        throw new InvalidOperationException(
+                            $"Cannot translate a mutation Filter on '{comparison.Column.Entity.Name}' " +
+                            $"while mutating '{entity.Name}': a mutation's Filter may only reference " +
+                            "columns on the entity being mutated, since it targets a single table.");
+                    }
+
+                    var columnName = ColumnName(entity, comparison.Column.ColumnId);
+                    var parameterName = $"@p{parameters.Count}";
+                    parameters.Add(new SqlParameter(parameterName, comparison.Value));
+
+                    return $"{Quote(columnName)} {ComparisonOperatorSql(comparison.Operator)} {parameterName}";
                 }
-
-                var columnName = ColumnName(entity, comparison.Column.ColumnId);
-                var parameterName = $"@p{parameters.Count}";
-                parameters.Add(new SqlParameter(parameterName, comparison.Value));
-
-                return $"{Quote(columnName)} {ComparisonOperatorSql(comparison.Operator)} {parameterName}";
-            }
 
             case CompositeFilter composite:
-            {
-                if (composite.Operands.Count == 0)
                 {
-                    throw new InvalidOperationException(
-                        $"A {nameof(CompositeFilter)} must have at least one operand.");
+                    if (composite.Operands.Count == 0)
+                    {
+                        throw new InvalidOperationException(
+                            $"A {nameof(CompositeFilter)} must have at least one operand.");
+                    }
+
+                    var keyword = composite.Combinator == FilterCombinator.And ? "AND" : "OR";
+
+                    var parts = composite.Operands.Select(operand =>
+                        BuildMutationFilterExpression(operand, entity, parameters));
+
+                    return "(" + string.Join($" {keyword} ", parts) + ")";
                 }
-
-                var keyword = composite.Combinator == FilterCombinator.And ? "AND" : "OR";
-
-                var parts = composite.Operands.Select(operand =>
-                    BuildMutationFilterExpression(operand, entity, parameters));
-
-                return "(" + string.Join($" {keyword} ", parts) + ")";
-            }
 
             default:
                 throw new NotSupportedException(
@@ -388,43 +388,43 @@ public static class SqlTextTranslator
         switch (expression)
         {
             case ComparisonFilter comparison:
-            {
-                var occurrenceIndex = ResolveProjectionOccurrenceIndex(
-                    comparison.Column.Entity,
-                    orderedOccurrences);
-
-                var alias = ResolveProjectionAlias(
-                    comparison.Column.Entity,
-                    occurrenceIndex,
-                    orderedOccurrences,
-                    aliasByEntity);
-
-                var columnName = ColumnName(
-                    comparison.Column.Entity,
-                    comparison.Column.ColumnId);
-
-                var parameterName = $"@p{parameters.Count}";
-                parameters.Add(new SqlParameter(parameterName, comparison.Value));
-
-                return $"{alias}.{Quote(columnName)} " +
-                    $"{ComparisonOperatorSql(comparison.Operator)} {parameterName}";
-            }
-
-            case CompositeFilter composite:
-            {
-                if (composite.Operands.Count == 0)
                 {
-                    throw new InvalidOperationException(
-                        $"A {nameof(CompositeFilter)} must have at least one operand.");
+                    var occurrenceIndex = ResolveProjectionOccurrenceIndex(
+                        comparison.Column.Entity,
+                        orderedOccurrences);
+
+                    var alias = ResolveProjectionAlias(
+                        comparison.Column.Entity,
+                        occurrenceIndex,
+                        orderedOccurrences,
+                        aliasByEntity);
+
+                    var columnName = ColumnName(
+                        comparison.Column.Entity,
+                        comparison.Column.ColumnId);
+
+                    var parameterName = $"@p{parameters.Count}";
+                    parameters.Add(new SqlParameter(parameterName, comparison.Value));
+
+                    return $"{alias}.{Quote(columnName)} " +
+                        $"{ComparisonOperatorSql(comparison.Operator)} {parameterName}";
                 }
 
-                var keyword = composite.Combinator == FilterCombinator.And ? "AND" : "OR";
+            case CompositeFilter composite:
+                {
+                    if (composite.Operands.Count == 0)
+                    {
+                        throw new InvalidOperationException(
+                            $"A {nameof(CompositeFilter)} must have at least one operand.");
+                    }
 
-                var parts = composite.Operands.Select(operand =>
-                    BuildFilterExpression(operand, orderedOccurrences, aliasByEntity, parameters));
+                    var keyword = composite.Combinator == FilterCombinator.And ? "AND" : "OR";
 
-                return "(" + string.Join($" {keyword} ", parts) + ")";
-            }
+                    var parts = composite.Operands.Select(operand =>
+                        BuildFilterExpression(operand, orderedOccurrences, aliasByEntity, parameters));
+
+                    return "(" + string.Join($" {keyword} ", parts) + ")";
+                }
 
             default:
                 throw new NotSupportedException(
@@ -505,80 +505,80 @@ public static class SqlTextTranslator
         switch (node)
         {
             case SqlScanNode scan:
-            {
-                var alias = $"t{counter++}";
-                var occurrenceIndex = occurrenceCounter++;
+                {
+                    var alias = $"t{counter++}";
+                    var occurrenceIndex = occurrenceCounter++;
 
-                orderedOccurrences.Add(
-                    (scan, alias, occurrenceIndex));
+                    orderedOccurrences.Add(
+                        (scan, alias, occurrenceIndex));
 
-                // IMPORTANT:
-                // SqlScanNode is a record, therefore default record equality
-                // is not suitable here. Two separate Employee occurrences
-                // can otherwise compare equal.
-                aliasByOccurrence[scan] = alias;
-                occurrenceIndexByScan[scan] = occurrenceIndex;
+                    // IMPORTANT:
+                    // SqlScanNode is a record, therefore default record equality
+                    // is not suitable here. Two separate Employee occurrences
+                    // can otherwise compare equal.
+                    aliasByOccurrence[scan] = alias;
+                    occurrenceIndexByScan[scan] = occurrenceIndex;
 
-                // Entity-keyed lookup remains only as a fallback for
-                // non-occurrence-aware hand-built plans.
-                aliasByEntity[scan.Entity] = alias;
+                    // Entity-keyed lookup remains only as a fallback for
+                    // non-occurrence-aware hand-built plans.
+                    aliasByEntity[scan.Entity] = alias;
 
-                return
-                    $"{Quote(scan.Entity.EffectiveStorageName)} AS {alias}";
-            }
+                    return
+                        $"{Quote(scan.Entity.EffectiveStorageName)} AS {alias}";
+                }
 
             case SqlJoinNode join:
-            {
-                // Register both sides before resolving the ON condition.
-                var left = BuildFrom(
-                    join.Left,
-                    orderedOccurrences,
-                    aliasByOccurrence,
-                    occurrenceIndexByScan,
-                    aliasByEntity,
-                    ref counter,
-                    ref occurrenceCounter);
+                {
+                    // Register both sides before resolving the ON condition.
+                    var left = BuildFrom(
+                        join.Left,
+                        orderedOccurrences,
+                        aliasByOccurrence,
+                        occurrenceIndexByScan,
+                        aliasByEntity,
+                        ref counter,
+                        ref occurrenceCounter);
 
-                var right = BuildFrom(
-                    join.Right,
-                    orderedOccurrences,
-                    aliasByOccurrence,
-                    occurrenceIndexByScan,
-                    aliasByEntity,
-                    ref counter,
-                    ref occurrenceCounter);
+                    var right = BuildFrom(
+                        join.Right,
+                        orderedOccurrences,
+                        aliasByOccurrence,
+                        occurrenceIndexByScan,
+                        aliasByEntity,
+                        ref counter,
+                        ref occurrenceCounter);
 
-                var keyword = JoinKeyword(join.Join.Kind);
+                    var keyword = JoinKeyword(join.Join.Kind);
 
-                var leftAlias = ResolveConditionAlias(
-                    join.Join.Condition.Left,
-                    join,
-                    isConditionLeft: true,
-                    aliasByOccurrence,
-                    aliasByEntity);
+                    var leftAlias = ResolveConditionAlias(
+                        join.Join.Condition.Left,
+                        join,
+                        isConditionLeft: true,
+                        aliasByOccurrence,
+                        aliasByEntity);
 
-                var rightAlias = ResolveConditionAlias(
-                    join.Join.Condition.Right,
-                    join,
-                    isConditionLeft: false,
-                    aliasByOccurrence,
-                    aliasByEntity);
+                    var rightAlias = ResolveConditionAlias(
+                        join.Join.Condition.Right,
+                        join,
+                        isConditionLeft: false,
+                        aliasByOccurrence,
+                        aliasByEntity);
 
-                var leftColumn =
-                    ColumnName(
-                        join.Join.Condition.Left.Entity,
-                        join.Join.Condition.Left.ColumnId);
+                    var leftColumn =
+                        ColumnName(
+                            join.Join.Condition.Left.Entity,
+                            join.Join.Condition.Left.ColumnId);
 
-                var rightColumn =
-                    ColumnName(
-                        join.Join.Condition.Right.Entity,
-                        join.Join.Condition.Right.ColumnId);
+                    var rightColumn =
+                        ColumnName(
+                            join.Join.Condition.Right.Entity,
+                            join.Join.Condition.Right.ColumnId);
 
-                return
-                    $"{left} {keyword} {right} ON " +
-                    $"{leftAlias}.{Quote(leftColumn)} = " +
-                    $"{rightAlias}.{Quote(rightColumn)}";
-            }
+                    return
+                        $"{left} {keyword} {right} ON " +
+                        $"{leftAlias}.{Quote(leftColumn)} = " +
+                        $"{rightAlias}.{Quote(rightColumn)}";
+                }
 
             default:
                 throw new NotSupportedException(
