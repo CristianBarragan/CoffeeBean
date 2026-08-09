@@ -32,6 +32,8 @@ public static class SqlPlanCompiler
             Compile(join.Right),
             join.Join),
 
+        CompositeNode composite => CompileComposite(composite),
+
         ProjectionNode projection => new SqlProjectionNode(
             Compile(projection.Source),
             projection.Fields),
@@ -49,4 +51,44 @@ public static class SqlPlanCompiler
         _ => throw new NotSupportedException(
             $"{nameof(SqlPlanCompiler)} does not know how to compile a {node.GetType().Name}."),
     };
+
+    /// <summary>
+    /// Flattens a <see cref="CompositeNode"/> tree into a left-associated
+    /// <see cref="SqlJoinNode"/> chain — the relational execution shape SQL
+    /// actually needs. This is a deliberate, SQL-specific choice made here,
+    /// not something <see cref="Foundgine.Planning.QueryPlanner"/> bakes in
+    /// for every provider (that used to be TECH-DEBT-001).
+    ///
+    /// Each edge's <see cref="CompositeEdge.Child"/> is compiled with its
+    /// own <see cref="SqlScanNode"/> instance, and every
+    /// <see cref="SqlJoinNode"/> this produces carries explicit
+    /// <see cref="SqlJoinNode.LeftOccurrence"/>/<see cref="SqlJoinNode.RightOccurrence"/>
+    /// references to the exact two occurrences it joins — not just their
+    /// entity type. That's what makes this correct even when the same
+    /// entity appears more than once in the tree (e.g. <c>Employee ->
+    /// Manager -> Manager</c>): <see cref="SqlTextTranslator"/> resolves
+    /// each join's aliases from these occurrence references, so two
+    /// <c>Employee</c> scans never collide the way a lookup keyed by
+    /// entity alone would.
+    /// </summary>
+    private static ProviderNode CompileComposite(CompositeNode composite)
+    {
+        var scan = new SqlScanNode(composite.Entity);
+        return AppendChildren(scan, scan, composite.Children);
+    }
+
+    private static ProviderNode AppendChildren(
+        ProviderNode accumulated,
+        SqlScanNode parentOccurrence,
+        IReadOnlyList<CompositeEdge> children)
+    {
+        foreach (var edge in children)
+        {
+            var childOccurrence = new SqlScanNode(edge.Child.Entity);
+            accumulated = new SqlJoinNode(accumulated, childOccurrence, edge.Join, parentOccurrence, childOccurrence);
+            accumulated = AppendChildren(accumulated, childOccurrence, edge.Child.Children);
+        }
+
+        return accumulated;
+    }
 }

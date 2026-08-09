@@ -10,16 +10,14 @@ namespace Foundgine.Providers.Tests;
 /// These tests run SqlExecutionProvider against a real SQLite database (an
 /// in-process, shared-cache, in-memory one — no file on disk, no external
 /// server) rather than mocking ADO.NET. Proving "SQL provider consumes
-/// QueryPlan / real DB executes query" from the 🔴 NOW checklist means
-/// actually touching a database, not asserting against a fake reader.
+/// ProviderPlan / real DB executes query" means actually touching a database,
+/// not asserting against a fake reader.
 /// </summary>
 public sealed class SqlExecutionProviderTests : IAsyncLifetime
 {
     // A named, shared-cache in-memory database: every connection opened with
     // this exact connection string during the test sees the same database,
     // as long as at least one connection (the "keeper" below) stays open.
-    // Plain "Data Source=:memory:" would give each new connection (i.e.
-    // every call SqlExecutionProvider makes) its own private, empty database.
     private readonly string _connectionString =
         $"Data Source=file:{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
 
@@ -42,17 +40,45 @@ public sealed class SqlExecutionProviderTests : IAsyncLifetime
             INSERT INTO "Transaction" (Id, AccountId, Amount) VALUES (100, 10, -25.5);
             INSERT INTO "Transaction" (Id, AccountId, Amount) VALUES (101, 10, 60.0);
             """;
+
         await schema.ExecuteNonQueryAsync();
     }
 
-    public async Task DisposeAsync() => await _keeper.DisposeAsync();
+    public async Task DisposeAsync() =>
+        await _keeper.DisposeAsync();
 
-    private static EntityMetadata Entity(ushort id, string name, params string[] columns) =>
-        new(new EntityId(id), name,
-            columns.Select((c, i) => new ColumnMetadata(new ColumnId((ushort)(i + 1)), c)).ToArray());
+    private static EntityMetadata Entity(
+        ushort id,
+        string name,
+        params string[] columns) =>
+        new(
+            new EntityId(id),
+            name,
+            columns
+                .Select((c, i) =>
+                    new ColumnMetadata(
+                        new ColumnId((ushort)(i + 1)),
+                        c))
+                .ToArray());
 
     private ExecutionContext Context() =>
-        new(Guid.NewGuid(), new Dictionary<string, object?> { ["ConnectionString"] = _connectionString });
+        new(
+            Guid.NewGuid(),
+            new Dictionary<string, object?>
+            {
+                ["ConnectionString"] = _connectionString
+            });
+
+    private static EntityOccurrence Occurrence(
+        ExecutionRow row,
+        EntityId entityId,
+        int occurrenceIndex = 0)
+    {
+        return Assert.Single(
+            row.Occurrences.Where(x =>
+                x.EntityId == entityId &&
+                x.OccurrenceIndex == occurrenceIndex));
+    }
 
     [Fact]
     public async Task ExecuteAsync_SingleScan_ReturnsAllRows()
@@ -62,11 +88,14 @@ public sealed class SqlExecutionProviderTests : IAsyncLifetime
         var provider = new SqlExecutionProvider();
 
         var rows = new List<ExecutionRow>();
+
         await foreach (var row in provider.ExecuteAsync(plan, Context()))
             rows.Add(row);
 
         var row0 = Assert.Single(rows);
-        var values = row0.Entities[customer.EntityId.Value];
+        var occurrence = Occurrence(row0, customer.EntityId);
+        var values = occurrence.Values;
+
         Assert.Equal(1L, values[0]);
         Assert.Equal("Ada Lovelace", values[1]);
     }
@@ -77,7 +106,11 @@ public sealed class SqlExecutionProviderTests : IAsyncLifetime
         var customer = Entity(1, "Customer", "Id", "Name");
         var plan = new ProviderPlan(new SqlScanNode(customer));
         var provider = new SqlExecutionProvider();
-        var emptyContext = new ExecutionContext(Guid.NewGuid(), new Dictionary<string, object?>());
+
+        var emptyContext =
+            new ExecutionContext(
+                Guid.NewGuid(),
+                new Dictionary<string, object?>());
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
@@ -90,38 +123,63 @@ public sealed class SqlExecutionProviderTests : IAsyncLifetime
     [Fact]
     public async Task ExecuteAsync_CustomerAccountTransactionJoin_ReturnsJoinedRows_WithEachEntitysOwnColumns()
     {
-        // The exact "🔴 NOW" scenario: Customer -> Account -> Transaction,
-        // through a real ProviderPlan against a real database.
+        // Customer -> Account -> Transaction through a real ProviderPlan
+        // against a real SQLite database.
         var customer = Entity(1, "Customer", "Id", "Name");
         var account = Entity(2, "Account", "Id", "CustomerId", "Balance");
         var transaction = Entity(3, "Transaction", "Id", "AccountId", "Amount");
 
-        var customerToAccount = new JoinMetadata(
-            new JoinCondition(new ColumnReference(account, 2), new ColumnReference(customer, 1)), JoinKind.Inner);
-        var accountToTransaction = new JoinMetadata(
-            new JoinCondition(new ColumnReference(transaction, 2), new ColumnReference(account, 1)), JoinKind.Inner);
+        var customerToAccount =
+            new JoinMetadata(
+                new JoinCondition(
+                    new ColumnReference(account, 2),
+                    new ColumnReference(customer, 1)),
+                JoinKind.Inner);
 
-        var plan = new ProviderPlan(
-            new SqlJoinNode(
-                new SqlJoinNode(new SqlScanNode(customer), new SqlScanNode(account), customerToAccount),
-                new SqlScanNode(transaction),
-                accountToTransaction));
+        var accountToTransaction =
+            new JoinMetadata(
+                new JoinCondition(
+                    new ColumnReference(transaction, 2),
+                    new ColumnReference(account, 1)),
+                JoinKind.Inner);
+
+        var plan =
+            new ProviderPlan(
+                new SqlJoinNode(
+                    new SqlJoinNode(
+                        new SqlScanNode(customer),
+                        new SqlScanNode(account),
+                        customerToAccount),
+                    new SqlScanNode(transaction),
+                    accountToTransaction));
 
         var provider = new SqlExecutionProvider();
         var rows = new List<ExecutionRow>();
+
         await foreach (var row in provider.ExecuteAsync(plan, Context()))
             rows.Add(row);
 
-        Assert.Equal(2, rows.Count); // two transactions on the one account
+        Assert.Equal(2, rows.Count);
 
         foreach (var row in rows)
         {
-            Assert.Equal("Ada Lovelace", row.Entities[customer.EntityId.Value][1]);
-            Assert.Equal(500.0, row.Entities[account.EntityId.Value][2]);
-            Assert.True(row.Entities.ContainsKey(transaction.EntityId.Value));
+            var customerOccurrence = Occurrence(row, customer.EntityId);
+            var accountOccurrence = Occurrence(row, account.EntityId);
+            var transactionOccurrence = Occurrence(row, transaction.EntityId);
+
+            Assert.Equal("Ada Lovelace", customerOccurrence.Values[1]);
+            Assert.Equal(500.0, accountOccurrence.Values[2]);
+            Assert.NotNull(transactionOccurrence);
         }
 
-        var amounts = rows.Select(r => (double)r.Entities[transaction.EntityId.Value][2]!).OrderBy(a => a).ToArray();
+        var amounts = rows
+            .Select(row =>
+                (double)Occurrence(
+                    row,
+                    transaction.EntityId).Values[2]!)
+            .OrderBy(a => a)
+            .ToArray();
+
         Assert.Equal(new[] { -25.5, 60.0 }, amounts);
     }
 
@@ -129,17 +187,38 @@ public sealed class SqlExecutionProviderTests : IAsyncLifetime
     public async Task ExecuteAsync_WithProjection_ReturnsOnlyTheProjectedColumns()
     {
         var customer = Entity(1, "Customer", "Id", "Name");
-        var fields = new[] { new FieldBinding(new ColumnReference(customer, 2), 1) };
-        var plan = new ProviderPlan(new SqlProjectionNode(new SqlScanNode(customer), fields));
+
+        var fields =
+            new[]
+            {
+                new FieldBinding(
+                    new ColumnReference(customer, 2),
+                    1)
+            };
+
+        var plan =
+            new ProviderPlan(
+                new SqlProjectionNode(
+                    new SqlScanNode(customer),
+                    fields));
+
         var provider = new SqlExecutionProvider();
 
         var rows = new List<ExecutionRow>();
+
         await foreach (var row in provider.ExecuteAsync(plan, Context()))
             rows.Add(row);
 
-        var values = Assert.Single(rows).Entities[customer.EntityId.Value];
-        Assert.Equal(2, values.Length); // sized to the entity's full column list...
-        Assert.Null(values[0]);         // ...but only the projected column (index 1) is populated
+        var values =
+            Assert.Single(rows)
+                .Occurrences
+                .Single(x =>
+                    x.EntityId == customer.EntityId &&
+                    x.OccurrenceIndex == 0)
+                .Values;
+
+        Assert.Equal(2, values.Length);
+        Assert.Null(values[0]);
         Assert.Equal("Ada Lovelace", values[1]);
     }
 }

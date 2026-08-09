@@ -136,6 +136,30 @@ public class JoinGraphTests
         Assert.True(graph.TryGetJoin(account, customer, out var reversed));
         Assert.Equal(right, reversed.Condition.Left);
         Assert.Equal(left, reversed.Condition.Right);
+        // "Customer LEFT JOIN Account", read from Account's side, is
+        // "Account RIGHT JOIN Customer" — not "Account LEFT JOIN Customer".
+        Assert.Equal(JoinKind.Right, reversed.Kind);
+    }
+
+    [Theory]
+    [InlineData(JoinKind.Inner, JoinKind.Inner)]
+    [InlineData(JoinKind.Left, JoinKind.Right)]
+    [InlineData(JoinKind.Right, JoinKind.Left)]
+    [InlineData(JoinKind.Full, JoinKind.Full)]
+    public void AddEdge_ReversesJoinKind_ToPreserveMeaning_ForEveryKind(JoinKind forward, JoinKind expectedReversed)
+    {
+        var graph = new JoinGraph();
+        var a = new EntityId(1);
+        var b = new EntityId(2);
+        var entity = new EntityMetadata(a, "A", Array.Empty<ColumnMetadata>());
+        var join = new JoinMetadata(
+            new JoinCondition(new ColumnReference(entity, 1), new ColumnReference(entity, 2)),
+            forward);
+
+        graph.AddEdge(a, b, join);
+
+        Assert.True(graph.TryGetJoin(b, a, out var reversed));
+        Assert.Equal(expectedReversed, reversed.Kind);
     }
 
     [Fact]

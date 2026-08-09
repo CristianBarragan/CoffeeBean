@@ -97,6 +97,9 @@ static string Describe(Foundgine.Builders.QueryNode node) => node switch
 {
     Foundgine.Builders.ScanNode s => $"Scan({s.Entity.Name})",
     Foundgine.Builders.JoinNode j => $"Join({Describe(j.Left)}, {Describe(j.Right)}, {j.Join.Kind})",
+    Foundgine.Builders.CompositeNode c => c.Children.Count == 0
+        ? $"Scan({c.Entity.Name})"
+        : $"Composite({c.Entity.Name} -> [{string.Join(", ", c.Children.Select(e => $"{e.Join.Kind}:{Describe(e.Child)}"))}])",
     Foundgine.Builders.GraphEdgeNode g => $"GraphEdge({g.Graph.GraphName})",
     Foundgine.Builders.ProjectionNode p => $"Project({Describe(p.Source)})",
     Foundgine.Builders.MaterializeNode m => $"Materialize({Describe(m.Source)} -> {m.Model.Name})",

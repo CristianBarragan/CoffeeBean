@@ -82,10 +82,19 @@ public sealed class SqlExecutionProvider : IExecutionProvider
             }
 
             values[entityLayout.ColumnIndex[map.ColumnId]] =
-                reader.IsDBNull(ordinal) ? null : reader.GetValue(ordinal);
+                reader.IsDBNull(ordinal)
+                    ? null
+                    : reader.GetValue(ordinal);
         }
 
-        return new ExecutionRow(entities);
+        var occurrences = entities
+            .Select(pair => new EntityOccurrence(
+                new EntityId(pair.Key),
+                OccurrenceIndex: 0,
+                pair.Value))
+            .ToArray();
+
+        return new ExecutionRow(occurrences);
     }
 
     private readonly record struct EntityLayout(int Size, IReadOnlyDictionary<ushort, int> ColumnIndex);

@@ -16,18 +16,15 @@ namespace Foundgine.Planning;
 /// X look like?". Point it at a different domain's metadata and it plans
 /// that domain's queries exactly the same way, with no code changes.
 ///
-/// <see cref="QueryIntent.Branches"/> is a tree, so this walks it
-/// depth-first, threading a single accumulating <see cref="QueryNode"/>
-/// through every branch it visits (siblings included). That works because
-/// a <see cref="JoinNode"/>'s condition names its two entities explicitly
-/// (see <see cref="Foundgine.Metadata.JoinCondition"/>) rather than
-/// depending on where in the tree it sits — so which existing alias a new
-/// join attaches to is resolved later, by entity identity, not by tree
-/// shape. The planner therefore doesn't need a richer "fan-out" QueryNode
-/// to represent branching; a left-associated chain of JoinNodes already
-/// compiles to the correct SQL FROM/JOIN clause for a branching intent, as
-/// long as every entity a join condition references was scanned somewhere
-/// earlier in that chain — which a depth-first walk guarantees.
+/// <see cref="QueryIntent.Branches"/> is a tree, and the output
+/// <see cref="CompositeNode"/> keeps that exact shape — this planner does
+/// NOT flatten it into a relational join chain. That used to happen here;
+/// it was TECH-DEBT-001, because a plan that's already been flattened into
+/// <c>(((Customer JOIN Account) JOIN Transaction) JOIN ContactPoint)</c>
+/// has thrown away information a non-SQL provider (graph traversal, a
+/// cache, a smarter join-reordering compiler) would need. Flattening is
+/// now <see cref="Foundgine.Providers.SqlPlanCompiler"/>'s job, made at SQL
+/// compile time from the still-intact tree.
 /// </summary>
 public sealed class QueryPlanner
 {
@@ -44,10 +41,7 @@ public sealed class QueryPlanner
     {
         ArgumentNullException.ThrowIfNull(intent);
 
-        var rootEntity = GetEntityOrThrow(intent.Root);
-        QueryNode node = new ScanNode(rootEntity);
-
-        node = PlanBranches(node, intent.Root, intent.Branches);
+        QueryNode node = PlanComposite(intent.Root, intent.Branches);
 
         if (intent.Fields is { Count: > 0 } fields)
             node = new ProjectionNode(node, fields);
@@ -55,16 +49,16 @@ public sealed class QueryPlanner
         return new QueryPlan(node);
     }
 
-    private QueryNode PlanBranches(
-        QueryNode node,
-        EntityId parent,
-        IReadOnlyList<QueryIntentBranch> branches)
+    private CompositeNode PlanComposite(EntityId entityId, IReadOnlyList<QueryIntentBranch> branches)
     {
+        var entity = GetEntityOrThrow(entityId);
+        var edges = new List<CompositeEdge>(branches.Count);
+
         foreach (var branch in branches)
         {
-            if (!_joinGraph.TryGetJoin(parent, branch.Entity, out var join))
+            if (!_joinGraph.TryGetJoin(entityId, branch.Entity, out var join))
             {
-                var parentName = GetEntityOrThrow(parent).Name;
+                var parentName = entity.Name;
                 var childName = GetEntityOrThrow(branch.Entity).Name;
 
                 throw new InvalidOperationException(
@@ -74,14 +68,11 @@ public sealed class QueryPlanner
                     "guesses one. Register a JoinGraph edge between these entities first.");
             }
 
-            var childEntity = GetEntityOrThrow(branch.Entity);
-            node = new JoinNode(node, new ScanNode(childEntity), join);
-
-            if (branch.Children is { Count: > 0 } children)
-                node = PlanBranches(node, branch.Entity, children);
+            var childComposite = PlanComposite(branch.Entity, branch.Children ?? Array.Empty<QueryIntentBranch>());
+            edges.Add(new CompositeEdge(join, childComposite));
         }
 
-        return node;
+        return new CompositeNode(entity, edges);
     }
 
     private EntityMetadata GetEntityOrThrow(EntityId id)
