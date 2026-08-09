@@ -31,7 +31,10 @@ namespace Foundgine.Planning;
 public sealed record QueryIntent(
     EntityId Root,
     IReadOnlyList<QueryIntentBranch> Branches,
-    IReadOnlyList<FieldBinding>? Fields = null
+    IReadOnlyList<FieldBinding>? Fields = null,
+    FilterExpression? Filter = null,
+    IReadOnlyList<SortTerm>? Sort = null,
+    PageSpec? Page = null
 )
 {
     /// <summary>
@@ -43,7 +46,10 @@ public sealed record QueryIntent(
     public static QueryIntent Linear(
         EntityId root,
         IReadOnlyList<EntityId> path,
-        IReadOnlyList<FieldBinding>? fields = null)
+        IReadOnlyList<FieldBinding>? fields = null,
+        FilterExpression? filter = null,
+        IReadOnlyList<SortTerm>? sort = null,
+        PageSpec? page = null)
     {
         ArgumentNullException.ThrowIfNull(path);
 
@@ -58,6 +64,6 @@ public sealed record QueryIntent(
             ? Array.Empty<QueryIntentBranch>()
             : new[] { tail };
 
-        return new QueryIntent(root, branches, fields);
+        return new QueryIntent(root, branches, fields, filter, sort, page);
     }
 }

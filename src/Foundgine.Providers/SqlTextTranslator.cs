@@ -24,18 +24,32 @@ public sealed record SqlColumnMap(
     int OccurrenceIndex);
 
 /// <summary>
-/// A compiled SQL statement plus the column map needed to read its results.
+/// One bound SQL parameter — a name (e.g. <c>@p0</c>) plus its value.
+/// <see cref="Foundgine.Providers.SqlExecutionProvider"/> binds these onto
+/// the ADO.NET command instead of the translator ever interpolating a
+/// filter value directly into <see cref="SqlTranslation.CommandText"/>.
+/// </summary>
+public sealed record SqlParameter(string Name, object? Value);
+
+/// <summary>
+/// A compiled SQL statement plus the column map needed to read its results
+/// and the parameters (from WHERE-clause filter values) it references.
 /// </summary>
 public sealed record SqlTranslation(
     string CommandText,
-    IReadOnlyList<SqlColumnMap> Columns);
+    IReadOnlyList<SqlColumnMap> Columns,
+    IReadOnlyList<SqlParameter> Parameters);
 
 /// <summary>
 /// Turns a physical SQL provider plan into a single SELECT ... FROM ...
-/// JOIN ... statement.
+/// JOIN ... [WHERE ...] [ORDER BY ...] [LIMIT ... OFFSET ...] statement.
 ///
-/// The translator is deliberately minimal. WHERE, ORDER BY, paging,
-/// parameters, aggregation and other SQL features can be added later.
+/// Aggregation and other SQL features can still be added later. WHERE,
+/// ORDER BY, and LIMIT/OFFSET are handled by unwrapping SqlFilterNode /
+/// SqlSortNode / SqlPageNode off the plan (in whatever order they were
+/// nested — see <see cref="Unwrap"/>) before building the FROM clause,
+/// then resolving each filter/sort column's alias the same way projected
+/// columns already are.
 ///
 /// The important responsibility here is preserving occurrence identity:
 /// two SqlScanNode instances containing the same EntityMetadata are still
@@ -47,7 +61,7 @@ public static class SqlTextTranslator
     {
         ArgumentNullException.ThrowIfNull(plan);
 
-        var (root, projectedFields) = UnwrapProjection(plan.Root);
+        var (root, projectedFields, filter, sortTerms, page) = Unwrap(plan.Root);
 
         var orderedOccurrences =
             new List<(SqlScanNode Occurrence, string Alias, int OccurrenceIndex)>();
@@ -129,10 +143,156 @@ public static class SqlTextTranslator
                 "column list and no projection was supplied.");
         }
 
+        var parameters = new List<SqlParameter>();
+
+        var whereClause = filter is null
+            ? null
+            : BuildFilterExpression(
+                filter,
+                orderedOccurrences,
+                aliasByEntity,
+                parameters);
+
+        var orderByClause = BuildOrderBy(
+            sortTerms,
+            orderedOccurrences,
+            aliasByEntity);
+
+        var limitOffsetClause = BuildLimitOffset(page);
+
         var sql =
             $"SELECT {string.Join(", ", selectItems)} FROM {fromClause}";
 
-        return new SqlTranslation(sql, columns);
+        if (whereClause is not null)
+            sql += $" WHERE {whereClause}";
+
+        if (orderByClause is not null)
+            sql += $" ORDER BY {orderByClause}";
+
+        if (limitOffsetClause is not null)
+            sql += $" {limitOffsetClause}";
+
+        return new SqlTranslation(sql, columns, parameters);
+    }
+
+    /// <summary>
+    /// Builds a WHERE-clause fragment (no leading "WHERE") from a
+    /// provider-agnostic <see cref="FilterExpression"/>, recording every
+    /// literal value it encounters as a <see cref="SqlParameter"/> instead
+    /// of interpolating it into the SQL text.
+    /// </summary>
+    private static string BuildFilterExpression(
+        FilterExpression expression,
+        List<(SqlScanNode Occurrence, string Alias, int OccurrenceIndex)> orderedOccurrences,
+        Dictionary<EntityMetadata, string> aliasByEntity,
+        List<SqlParameter> parameters)
+    {
+        switch (expression)
+        {
+            case ComparisonFilter comparison:
+            {
+                var occurrenceIndex = ResolveProjectionOccurrenceIndex(
+                    comparison.Column.Entity,
+                    orderedOccurrences);
+
+                var alias = ResolveProjectionAlias(
+                    comparison.Column.Entity,
+                    occurrenceIndex,
+                    orderedOccurrences,
+                    aliasByEntity);
+
+                var columnName = ColumnName(
+                    comparison.Column.Entity,
+                    comparison.Column.ColumnId);
+
+                var parameterName = $"@p{parameters.Count}";
+                parameters.Add(new SqlParameter(parameterName, comparison.Value));
+
+                return $"{alias}.{Quote(columnName)} " +
+                    $"{ComparisonOperatorSql(comparison.Operator)} {parameterName}";
+            }
+
+            case CompositeFilter composite:
+            {
+                if (composite.Operands.Count == 0)
+                {
+                    throw new InvalidOperationException(
+                        $"A {nameof(CompositeFilter)} must have at least one operand.");
+                }
+
+                var keyword = composite.Combinator == FilterCombinator.And ? "AND" : "OR";
+
+                var parts = composite.Operands.Select(operand =>
+                    BuildFilterExpression(operand, orderedOccurrences, aliasByEntity, parameters));
+
+                return "(" + string.Join($" {keyword} ", parts) + ")";
+            }
+
+            default:
+                throw new NotSupportedException(
+                    $"{nameof(SqlTextTranslator)} does not know how to compile a " +
+                    $"{expression.GetType().Name}.");
+        }
+    }
+
+    private static string ComparisonOperatorSql(ComparisonOperator op) => op switch
+    {
+        ComparisonOperator.Equal => "=",
+        ComparisonOperator.NotEqual => "<>",
+        ComparisonOperator.GreaterThan => ">",
+        ComparisonOperator.GreaterThanOrEqual => ">=",
+        ComparisonOperator.LessThan => "<",
+        ComparisonOperator.LessThanOrEqual => "<=",
+        _ => throw new NotSupportedException(
+            $"Unknown {nameof(ComparisonOperator)} '{op}'."),
+    };
+
+    private static string? BuildOrderBy(
+        IReadOnlyList<SortTerm>? terms,
+        List<(SqlScanNode Occurrence, string Alias, int OccurrenceIndex)> orderedOccurrences,
+        Dictionary<EntityMetadata, string> aliasByEntity)
+    {
+        if (terms is not { Count: > 0 })
+            return null;
+
+        var parts = terms.Select(term =>
+        {
+            var occurrenceIndex = ResolveProjectionOccurrenceIndex(
+                term.Column.Entity,
+                orderedOccurrences);
+
+            var alias = ResolveProjectionAlias(
+                term.Column.Entity,
+                occurrenceIndex,
+                orderedOccurrences,
+                aliasByEntity);
+
+            var columnName = ColumnName(term.Column.Entity, term.Column.ColumnId);
+
+            var direction = term.Direction == SortDirection.Descending ? "DESC" : "ASC";
+
+            return $"{alias}.{Quote(columnName)} {direction}";
+        });
+
+        return string.Join(", ", parts);
+    }
+
+    /// <summary>
+    /// SQLite (and most SQL dialects) requires LIMIT to precede OFFSET and
+    /// doesn't allow OFFSET on its own — <c>-1</c> is SQLite's documented
+    /// "no limit" sentinel, used here so <c>Page(Offset: 20)</c> alone
+    /// still compiles.
+    /// </summary>
+    private static string? BuildLimitOffset(PageSpec? page)
+    {
+        if (page is not { } p || (p.Limit is null && p.Offset is null))
+            return null;
+
+        var limit = p.Limit ?? -1;
+
+        return p.Offset is { } offset
+            ? $"LIMIT {limit} OFFSET {offset}"
+            : $"LIMIT {limit}";
     }
 
     private static string BuildFrom(
@@ -417,11 +577,58 @@ public static class SqlTextTranslator
                 occurrenceIndex));
     }
 
-    private static (ProviderNode Root, IReadOnlyList<FieldBinding>? Fields)
-        UnwrapProjection(ProviderNode node) =>
-        node is SqlProjectionNode projection
-            ? (projection.Source, projection.Fields)
-            : (node, null);
+    /// <summary>
+    /// Peels SqlProjectionNode / SqlPageNode / SqlSortNode / SqlFilterNode
+    /// off the top of the plan, in whatever order they were nested — the
+    /// planner nests them Composite -> Filter -> Sort -> Page -> Projection
+    /// to mirror SQL clause order, but nothing here depends on that exact
+    /// order — leaving the join-chain root (SqlScanNode/SqlJoinNode) that
+    /// <see cref="BuildFrom"/> knows how to read.
+    /// </summary>
+    private static (
+        ProviderNode Root,
+        IReadOnlyList<FieldBinding>? Fields,
+        FilterExpression? Filter,
+        IReadOnlyList<SortTerm>? Sort,
+        PageSpec? Page) Unwrap(ProviderNode node)
+    {
+        IReadOnlyList<FieldBinding>? fields = null;
+        FilterExpression? filter = null;
+        IReadOnlyList<SortTerm>? sort = null;
+        PageSpec? page = null;
+
+        var current = node;
+
+        while (true)
+        {
+            switch (current)
+            {
+                case SqlProjectionNode projection:
+                    fields = projection.Fields;
+                    current = projection.Source;
+                    continue;
+
+                case SqlPageNode pageNode:
+                    page = pageNode.Page;
+                    current = pageNode.Source;
+                    continue;
+
+                case SqlSortNode sortNode:
+                    sort = sortNode.Terms;
+                    current = sortNode.Source;
+                    continue;
+
+                case SqlFilterNode filterNode:
+                    filter = filterNode.Filter;
+                    current = filterNode.Source;
+                    continue;
+            }
+
+            break;
+        }
+
+        return (current, fields, filter, sort, page);
+    }
 
     private static string ColumnName(
         EntityMetadata entity,

@@ -61,6 +61,13 @@ public sealed class SqlExecutionProvider : IExecutionProvider
         command.CommandText =
             translation.CommandText;
 
+        foreach (var parameter in translation.Parameters)
+        {
+            command.Parameters.AddWithValue(
+                parameter.Name,
+                parameter.Value ?? DBNull.Value);
+        }
+
         await using var reader =
             await command
                 .ExecuteReaderAsync(cancellationToken)

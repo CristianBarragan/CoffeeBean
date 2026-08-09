@@ -38,6 +38,18 @@ public static class SqlPlanCompiler
             Compile(projection.Source),
             projection.Fields),
 
+        FilterNode filter => new SqlFilterNode(
+            Compile(filter.Source),
+            filter.Filter),
+
+        SortNode sort => new SqlSortNode(
+            Compile(sort.Source),
+            sort.Terms),
+
+        PageNode page => new SqlPageNode(
+            Compile(page.Source),
+            page.Page),
+
         GraphEdgeNode => throw new NotSupportedException(
             $"{nameof(SqlPlanCompiler)} cannot compile a {nameof(GraphEdgeNode)}: graph-edge " +
             "traversal isn't representable as a single SQL statement. Route this part of the " +

@@ -72,6 +72,33 @@ public sealed record ProjectionNode(
     IReadOnlyList<FieldBinding> Fields
 ) : QueryNode;
 
+/// <summary>
+/// Restricts <see cref="Source"/> to rows matching <see cref="Filter"/> —
+/// the logical-layer counterpart of a SQL WHERE clause, but expressed only
+/// in terms of <see cref="Foundgine.Metadata"/> identities. Milestone 6.
+/// </summary>
+public sealed record FilterNode(
+    QueryNode Source,
+    FilterExpression Filter
+) : QueryNode;
+
+/// <summary>
+/// Orders <see cref="Source"/> by <see cref="Terms"/>, first term primary.
+/// Milestone 7.
+/// </summary>
+public sealed record SortNode(
+    QueryNode Source,
+    IReadOnlyList<SortTerm> Terms
+) : QueryNode;
+
+/// <summary>
+/// Applies LIMIT/OFFSET-style paging to <see cref="Source"/>. Milestone 7.
+/// </summary>
+public sealed record PageNode(
+    QueryNode Source,
+    PageSpec Page
+) : QueryNode;
+
 public sealed record MaterializeNode(
     QueryNode Source,
     ModelMetadata Model
