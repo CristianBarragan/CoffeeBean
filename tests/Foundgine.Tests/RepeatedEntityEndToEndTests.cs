@@ -121,95 +121,152 @@ public sealed class RepeatedEntityEndToEndTests : IAsyncLifetime
                 x.OccurrenceIndex == occurrenceIndex));
     }
 
-    [Fact]
-    public async Task Employee_ManagerOfManager_SelfJoin_ProducesTheOneCorrectChain()
+[Fact]
+public async Task Employee_ManagerOfManager_SelfJoin_ProducesTheOneCorrectChain()
+{
+    // 1) Domain -> Metadata
+    var registry = new MetadataRegistry();
+    registry.Register(Employee);
+
+    var joinGraph = new JoinGraph();
+
+    joinGraph.AddEdge(
+        Employee.EntityId,
+        Employee.EntityId,
+        EmployeeToManager);
+
+    // 2) Metadata + intent -> logical plan
+    var planner = new QueryPlanner(registry, joinGraph);
+
+    var intent = QueryIntent.Linear(
+        root: Employee.EntityId,
+        path: new[]
+        {
+            Employee.EntityId,
+            Employee.EntityId
+        });
+
+    var queryPlan = planner.Plan(intent);
+
+    Assert.IsType<CompositeNode>(queryPlan.Root);
+
+    // 3) Logical -> SQL provider plan
+    var providerPlan = SqlPlanCompiler.Compile(queryPlan);
+
+    Assert.IsType<SqlJoinNode>(providerPlan.Root);
+
+    // 4) Translate BEFORE executing.
+    //
+    // This is important: if the result is empty, the problem is SQL
+    // generation/planning, not ExecutionRow.
+    var translation = SqlTextTranslator.Translate(providerPlan);
+
+    Assert.False(
+        string.IsNullOrWhiteSpace(translation.CommandText),
+        "The SQL translator produced an empty SQL statement.");
+
+    // The self-join MUST have three independent Employee occurrences.
+    Assert.Contains(
+        "\"Employee\" AS t0",
+        translation.CommandText);
+
+    Assert.Contains(
+        "\"Employee\" AS t1",
+        translation.CommandText);
+
+    Assert.Contains(
+        "\"Employee\" AS t2",
+        translation.CommandText);
+
+    // The relationship is:
+    //
+    // Employee.ManagerId -> Employee.Id
+    //
+    // Therefore the generated SQL MUST be:
+    //
+    // t0.ManagerId = t1.Id
+    // t1.ManagerId = t2.Id
+    Assert.Contains(
+        "t0.\"ManagerId\" = t1.\"Id\"",
+        translation.CommandText);
+
+    Assert.Contains(
+        "t1.\"ManagerId\" = t2.\"Id\"",
+        translation.CommandText);
+
+    // Three Employee occurrences x three columns.
+    Assert.Equal(
+        9,
+        translation.Columns.Count);
+
+    // 5) Execute against the real database.
+    var provider = new SqlExecutionProvider();
+
+    var context = new ExecutionContext(
+        Guid.NewGuid(),
+        new Dictionary<string, object?>
+        {
+            ["ConnectionString"] = _connectionString
+        });
+
+    var rows = new List<ExecutionRow>();
+
+    await foreach (
+        var row in provider.ExecuteAsync(
+            providerPlan,
+            context))
     {
-        // 1) Domain -> Metadata: one entity, one self-loop join edge.
-        var registry = new MetadataRegistry();
-        registry.Register(Employee);
-
-        var joinGraph = new JoinGraph();
-        joinGraph.AddEdge(
-            Employee.EntityId,
-            Employee.EntityId,
-            EmployeeToManager);
-
-        // 2) Metadata + Intent -> QueryPlan. QueryIntent.Linear with the
-        //    same EntityId twice is exactly "the same table, joined to
-        //    itself, twice" — Employee -> Manager -> Manager's manager.
-        var planner = new QueryPlanner(registry, joinGraph);
-
-        var intent = QueryIntent.Linear(
-            root: Employee.EntityId,
-            path: new[]
-            {
-                Employee.EntityId,
-                Employee.EntityId
-            });
-
-        var queryPlan = planner.Plan(intent);
-
-        Assert.IsType<CompositeNode>(queryPlan.Root);
-
-        // 3) QueryPlan -> ProviderPlan. SqlPlanCompiler gives each of the
-        //    three occurrences its own SqlScanNode instance even though
-        //    all three wrap the same EntityMetadata.
-        var providerPlan = SqlPlanCompiler.Compile(queryPlan);
-
-        Assert.IsType<SqlJoinNode>(providerPlan.Root);
-
-        // 4) ProviderPlan -> SQL -> real database.
-        var provider = new SqlExecutionProvider();
-
-        var context = new ExecutionContext(
-            Guid.NewGuid(),
-            new Dictionary<string, object?>
-            {
-                ["ConnectionString"] = _connectionString
-            });
-
-        var rows = new List<ExecutionRow>();
-
-        await foreach (var row in provider.ExecuteAsync(providerPlan, context))
-            rows.Add(row);
-
-        // Of the three employees, only Alice has both a manager (Bob)
-        // and a manager's manager (Carol).
-        //
-        // An INNER JOIN self-join with correctly resolved aliases must
-        // therefore produce exactly one row.
-        var rowAssert = Assert.Single(rows);
-
-        // The same EntityId occurs three times in this result:
-        //
-        //   occurrence 0 = Alice
-        //   occurrence 1 = Bob
-        //   occurrence 2 = Carol
-        //
-        // ExecutionRow must preserve all three independently.
-
-        var alice = Occurrence(
-            rowAssert,
-            Employee.EntityId,
-            occurrenceIndex: 0);
-
-        var bob = Occurrence(
-            rowAssert,
-            Employee.EntityId,
-            occurrenceIndex: 1);
-
-        var carol = Occurrence(
-            rowAssert,
-            Employee.EntityId,
-            occurrenceIndex: 2);
-
-        Assert.Equal("Alice", alice.Values[1]);
-        Assert.Equal(2L, alice.Values[2]);
-
-        Assert.Equal("Bob", bob.Values[1]);
-        Assert.Equal(3L, bob.Values[2]);
-
-        Assert.Equal("Carol", carol.Values[1]);
-        Assert.Null(carol.Values[2]);
+        rows.Add(row);
     }
+
+    // Exactly one chain exists:
+    //
+    // Alice -> Bob -> Carol
+    //
+    // Alice.ManagerId = 2
+    // Bob.Id          = 2
+    //
+    // Bob.ManagerId   = 3
+    // Carol.Id        = 3
+    var rowAssert = Assert.Single(
+        rows);
+
+    var alice = Occurrence(
+        rowAssert,
+        Employee.EntityId,
+        occurrenceIndex: 0);
+
+    var bob = Occurrence(
+        rowAssert,
+        Employee.EntityId,
+        occurrenceIndex: 1);
+
+    var carol = Occurrence(
+        rowAssert,
+        Employee.EntityId,
+        occurrenceIndex: 2);
+
+    Assert.Equal(
+        "Alice",
+        alice.Values[1]);
+
+    Assert.Equal(
+        2L,
+        alice.Values[2]);
+
+    Assert.Equal(
+        "Bob",
+        bob.Values[1]);
+
+    Assert.Equal(
+        3L,
+        bob.Values[2]);
+
+    Assert.Equal(
+        "Carol",
+        carol.Values[1]);
+
+    Assert.Null(
+        carol.Values[2]);
+}
 }

@@ -83,7 +83,7 @@ public class ExecutionRowTests
             new EntityOccurrence(
                 new EntityId(1),
                 0,
-                new object?[] { "Bob", 42 })
+                ["Bob", 42])
         ]);
 
         var entity = Assert.Single(row.Occurrences);

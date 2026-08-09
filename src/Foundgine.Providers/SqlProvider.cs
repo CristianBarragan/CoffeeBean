@@ -2,22 +2,32 @@ using System.Runtime.CompilerServices;
 using Foundgine.Execution.Contracts;
 using Foundgine.Metadata;
 using Microsoft.Data.Sqlite;
-using ExecutionContext = Foundgine.Execution.Contracts.ExecutionContext;
+
+using ExecutionContext =
+    Foundgine.Execution.Contracts.ExecutionContext;
 
 namespace Foundgine.Providers;
 
 /// <summary>
-/// SQL execution provider. Compiles a <see cref="ProviderPlan"/> to a SQL
-/// statement via <see cref="SqlTextTranslator"/>, runs it against a SQLite
-/// database, and streams the results back as <see cref="ExecutionRow"/>.
+/// SQL execution provider.
 ///
-/// SQLite is the first backend on purpose (item 7 of the architecture
-/// review: "keep the provider abstraction, implement only one provider
-/// initially") — it needs no external server, so the first Banking E2E can
-/// run against a real database with zero setup. Swapping in Npgsql or
-/// SqlClient later only touches this file and <see cref="SqlTextTranslator"/>'s
-/// identifier-quoting assumption, not Foundgine.Builders, Foundgine.Planning,
-/// or Foundgine.Execution.Contracts.
+/// Compiles a ProviderPlan into SQL through SqlTextTranslator, executes
+/// that SQL against SQLite, and streams the result rows back as
+/// ExecutionRow instances.
+///
+/// SQLite is intentionally the first backend so the initial end-to-end
+/// execution path can use a real relational database without requiring an
+/// external database server.
+///
+/// The important result-mapping rule is that EntityId alone is NOT enough
+/// to identify a result occurrence. A self-join can contain:
+///
+///     Employee #0
+///     Employee #1
+///     Employee #2
+///
+/// Therefore every result occurrence is keyed by both EntityId and
+/// OccurrenceIndex.
 /// </summary>
 public sealed class SqlExecutionProvider : IExecutionProvider
 {
@@ -26,95 +36,163 @@ public sealed class SqlExecutionProvider : IExecutionProvider
     public async IAsyncEnumerable<ExecutionRow> ExecuteAsync(
         ProviderPlan plan,
         ExecutionContext context,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [EnumeratorCancellation]
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(context);
 
-        var connectionString = ResolveConnectionString(context);
-        var translation = SqlTextTranslator.Translate(plan);
-        var layout = BuildEntityLayout(translation.Columns);
+        var connectionString =
+            ResolveConnectionString(context);
 
-        await using var connection = new SqliteConnection(connectionString);
-        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+        var translation =
+            SqlTextTranslator.Translate(plan);
 
-        await using var command = connection.CreateCommand();
-        command.CommandText = translation.CommandText;
+        await using var connection =
+            new SqliteConnection(connectionString);
 
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        await connection
+            .OpenAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        await using var command =
+            connection.CreateCommand();
+
+        command.CommandText =
+            translation.CommandText;
+
+        await using var reader =
+            await command
+                .ExecuteReaderAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+        while (await reader
+                   .ReadAsync(cancellationToken)
+                   .ConfigureAwait(false))
         {
-            yield return ReadRow(reader, translation.Columns, layout);
+            yield return ReadRow(
+                reader,
+                translation.Columns);
         }
     }
 
-    private static string ResolveConnectionString(ExecutionContext context)
+    private static string ResolveConnectionString(
+        ExecutionContext context)
     {
-        if (!context.Variables.TryGetValue("ConnectionString", out var value) ||
+        if (!context.Variables.TryGetValue(
+                "ConnectionString",
+                out var value) ||
             value is not string connectionString ||
             string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
-                $"{nameof(SqlExecutionProvider)} requires a non-empty \"ConnectionString\" entry " +
-                $"in {nameof(ExecutionContext)}.{nameof(ExecutionContext.Variables)}.");
+                $"{nameof(SqlExecutionProvider)} requires a non-empty " +
+                $"\"ConnectionString\" entry in " +
+                $"{nameof(ExecutionContext)}." +
+                $"{nameof(ExecutionContext.Variables)}.");
         }
 
         return connectionString;
     }
 
+    /// <summary>
+    /// Converts the current ADO.NET row into Foundgine execution
+    /// occurrences.
+    ///
+    /// The SQL translator has already assigned every selected column to
+    /// an occurrence:
+    ///
+    ///     t0 -> occurrence 0
+    ///     t1 -> occurrence 1
+    ///     t2 -> occurrence 2
+    ///
+    /// This method preserves that identity instead of collapsing repeated
+    /// entities into a Dictionary keyed only by EntityId.
+    /// </summary>
     private static ExecutionRow ReadRow(
         SqliteDataReader reader,
-        IReadOnlyList<SqlColumnMap> columns,
-        IReadOnlyDictionary<EntityId, EntityLayout> layout)
+        IReadOnlyList<SqlColumnMap> columns)
     {
-        var entities = new Dictionary<ushort, object?[]>();
+        var valuesByOccurrence =
+            new Dictionary<
+                (EntityId EntityId, int OccurrenceIndex),
+                object?[]>();
 
-        for (var ordinal = 0; ordinal < columns.Count; ordinal++)
+        var sizeByOccurrence =
+            new Dictionary<
+                (EntityId EntityId, int OccurrenceIndex),
+                int>();
+
+        foreach (var map in columns)
         {
-            var map = columns[ordinal];
-            var entityId = map.Entity.EntityId;
-            var entityLayout = layout[entityId];
+            var key =
+                (map.Entity.EntityId, map.OccurrenceIndex);
 
-            if (!entities.TryGetValue(entityId.Value, out var values))
+            if (!valuesByOccurrence.TryGetValue(
+                    key,
+                    out var values))
             {
-                values = new object?[entityLayout.Size];
-                entities[entityId.Value] = values;
-            }
+                values =
+                    new object?[map.Entity.Columns.Count];
 
-            values[entityLayout.ColumnIndex[map.ColumnId]] =
+                valuesByOccurrence[key] =
+                    values;
+
+                sizeByOccurrence[key] =
+                    map.Entity.Columns.Count;
+            }
+        }
+
+        for (var ordinal = 0;
+             ordinal < columns.Count;
+             ordinal++)
+        {
+            var map =
+                columns[ordinal];
+
+            var key =
+                (map.Entity.EntityId, map.OccurrenceIndex);
+
+            var values =
+                valuesByOccurrence[key];
+
+            var columnIndex =
+                FindColumnIndex(
+                    map.Entity,
+                    map.ColumnId);
+
+            values[columnIndex] =
                 reader.IsDBNull(ordinal)
                     ? null
                     : reader.GetValue(ordinal);
         }
 
-        var occurrences = entities
-            .Select(pair => new EntityOccurrence(
-                new EntityId(pair.Key),
-                OccurrenceIndex: 0,
-                pair.Value))
-            .ToArray();
+        var occurrences =
+            valuesByOccurrence
+                .OrderBy(x => x.Key.OccurrenceIndex)
+                .Select(
+                    x => new EntityOccurrence(
+                        x.Key.EntityId,
+                        x.Key.OccurrenceIndex,
+                        x.Value))
+                .ToArray();
 
         return new ExecutionRow(occurrences);
     }
 
-    private readonly record struct EntityLayout(int Size, IReadOnlyDictionary<ushort, int> ColumnIndex);
-
-    private static Dictionary<EntityId, EntityLayout> BuildEntityLayout(IReadOnlyList<SqlColumnMap> columns)
+    private static int FindColumnIndex(
+        EntityMetadata entity,
+        ushort columnId)
     {
-        var layout = new Dictionary<EntityId, EntityLayout>();
-
-        foreach (var map in columns)
+        for (var index = 0;
+             index < entity.Columns.Count;
+             index++)
         {
-            if (layout.ContainsKey(map.Entity.EntityId))
-                continue;
-
-            var index = new Dictionary<ushort, int>();
-            for (var i = 0; i < map.Entity.Columns.Count; i++)
-                index[map.Entity.Columns[i].Id.Value] = i;
-
-            layout[map.Entity.EntityId] = new EntityLayout(map.Entity.Columns.Count, index);
+            if (entity.Columns[index].Id.Value == columnId)
+                return index;
         }
 
-        return layout;
+        throw new InvalidOperationException(
+            $"Entity '{entity.Name}' has no column with id {columnId}.");
     }
 }

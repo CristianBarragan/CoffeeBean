@@ -6,21 +6,40 @@ using Foundgine.Metadata;
 namespace Foundgine.Providers;
 
 /// <summary>
-/// One selected column in a <see cref="SqlTranslation"/>'s result set, in
-/// the same left-to-right order the generated SELECT list uses. Lets
-/// <see cref="SqlExecutionProvider"/> map each ADO.NET reader ordinal back
-/// to "which entity, which column" without re-parsing SQL.
+/// One selected column in a SQL result set, in the same left-to-right order
+/// the generated SELECT list uses.
+///
+/// OccurrenceIndex is critical when the same EntityMetadata appears more
+/// than once in a provider plan. For example:
+///
+///     Employee #0 -> Employee #1 -> Employee #2
+///
+/// All three occurrences have the same EntityId, but they must remain
+/// independently addressable in the result.
 /// </summary>
-public sealed record SqlColumnMap(EntityMetadata Entity, ushort ColumnId, string ResultAlias);
-
-/// <summary>A compiled SQL statement plus the column map needed to read its results.</summary>
-public sealed record SqlTranslation(string CommandText, IReadOnlyList<SqlColumnMap> Columns);
+public sealed record SqlColumnMap(
+    EntityMetadata Entity,
+    ushort ColumnId,
+    string ResultAlias,
+    int OccurrenceIndex);
 
 /// <summary>
-/// Turns a physical <see cref="ProviderPlan"/> (SQL provider nodes only)
-/// into a single parameterless <c>SELECT ... FROM ... JOIN ...</c>
-/// statement. Deliberately minimal — no WHERE/ORDER BY/paging yet, since
-/// those are explicitly "🟡 NEXT" items, not required for the first E2E.
+/// A compiled SQL statement plus the column map needed to read its results.
+/// </summary>
+public sealed record SqlTranslation(
+    string CommandText,
+    IReadOnlyList<SqlColumnMap> Columns);
+
+/// <summary>
+/// Turns a physical SQL provider plan into a single SELECT ... FROM ...
+/// JOIN ... statement.
+///
+/// The translator is deliberately minimal. WHERE, ORDER BY, paging,
+/// parameters, aggregation and other SQL features can be added later.
+///
+/// The important responsibility here is preserving occurrence identity:
+/// two SqlScanNode instances containing the same EntityMetadata are still
+/// two different result occurrences.
 /// </summary>
 public static class SqlTextTranslator
 {
@@ -30,16 +49,33 @@ public static class SqlTextTranslator
 
         var (root, projectedFields) = UnwrapProjection(plan.Root);
 
-        var orderedOccurrences = new List<(SqlScanNode Occurrence, string Alias)>();
-        var aliasByOccurrence = new Dictionary<SqlScanNode, string>(ScanNodeReferenceComparer.Instance);
-        // Entity-keyed fallback, kept only for plans that don't carry
-        // occurrence references (hand-built JoinNode trees that never scan
-        // the same entity twice) and for field projections, which name a
-        // column by EntityMetadata alone. See AliasOf's remarks.
-        var aliasByEntity = new Dictionary<EntityMetadata, string>();
-        var counter = 0;
+        var orderedOccurrences =
+            new List<(SqlScanNode Occurrence, string Alias, int OccurrenceIndex)>();
 
-        var fromClause = BuildFrom(root, orderedOccurrences, aliasByOccurrence, aliasByEntity, ref counter);
+        var aliasByOccurrence =
+            new Dictionary<SqlScanNode, string>(
+                ScanNodeReferenceComparer.Instance);
+
+        var occurrenceIndexByScan =
+            new Dictionary<SqlScanNode, int>(
+                ScanNodeReferenceComparer.Instance);
+
+        // Entity-keyed fallback is intentionally retained only for plans
+        // which do not provide occurrence references.
+        var aliasByEntity =
+            new Dictionary<EntityMetadata, string>();
+
+        var counter = 0;
+        var occurrenceCounter = 0;
+
+        var fromClause = BuildFrom(
+            root,
+            orderedOccurrences,
+            aliasByOccurrence,
+            occurrenceIndexByScan,
+            aliasByEntity,
+            ref counter,
+            ref occurrenceCounter);
 
         var selectItems = new List<string>();
         var columns = new List<SqlColumnMap>();
@@ -47,13 +83,43 @@ public static class SqlTextTranslator
         if (projectedFields is not null)
         {
             foreach (var field in projectedFields)
-                AddColumn(field.Source.Entity, field.Source.ColumnId, AliasOf(field.Source.Entity, aliasByEntity), selectItems, columns);
+            {
+                var occurrenceIndex =
+                    ResolveProjectionOccurrenceIndex(
+                        field.Source.Entity,
+                        orderedOccurrences);
+
+                var alias =
+                    ResolveProjectionAlias(
+                        field.Source.Entity,
+                        occurrenceIndex,
+                        orderedOccurrences,
+                        aliasByEntity);
+
+                AddColumn(
+                    field.Source.Entity,
+                    field.Source.ColumnId,
+                    alias,
+                    occurrenceIndex,
+                    selectItems,
+                    columns);
+            }
         }
         else
         {
-            foreach (var (occurrence, alias) in orderedOccurrences)
+            foreach (var (occurrence, alias, occurrenceIndex) in orderedOccurrences)
+            {
                 foreach (var column in occurrence.Entity.Columns)
-                    AddColumn(occurrence.Entity, column.Id.Value, alias, selectItems, columns);
+                {
+                    AddColumn(
+                        occurrence.Entity,
+                        column.Id.Value,
+                        alias,
+                        occurrenceIndex,
+                        selectItems,
+                        columns);
+                }
+            }
         }
 
         if (selectItems.Count == 0)
@@ -63,106 +129,136 @@ public static class SqlTextTranslator
                 "column list and no projection was supplied.");
         }
 
-        var sql = $"SELECT {string.Join(", ", selectItems)} FROM {fromClause}";
+        var sql =
+            $"SELECT {string.Join(", ", selectItems)} FROM {fromClause}";
+
         return new SqlTranslation(sql, columns);
-    }
-
-    private static (ProviderNode Root, IReadOnlyList<FieldBinding>? Fields) UnwrapProjection(ProviderNode node) =>
-        node is SqlProjectionNode projection
-            ? (projection.Source, projection.Fields)
-            : (node, null);
-
-    private static void AddColumn(
-        EntityMetadata entity,
-        ushort columnId,
-        string alias,
-        List<string> selectItems,
-        List<SqlColumnMap> columns)
-    {
-        var domainColumnName = DomainColumnName(entity, columnId);
-        var physicalColumnName = ColumnName(entity, columnId);
-        var resultAlias = $"{alias}_{domainColumnName}";
-
-        selectItems.Add($"{alias}.{Quote(physicalColumnName)} AS {Quote(resultAlias)}");
-        columns.Add(new SqlColumnMap(entity, columnId, resultAlias));
     }
 
     private static string BuildFrom(
         ProviderNode node,
-        List<(SqlScanNode Occurrence, string Alias)> orderedOccurrences,
+        List<(SqlScanNode Occurrence, string Alias, int OccurrenceIndex)> orderedOccurrences,
         Dictionary<SqlScanNode, string> aliasByOccurrence,
+        Dictionary<SqlScanNode, int> occurrenceIndexByScan,
         Dictionary<EntityMetadata, string> aliasByEntity,
-        ref int counter)
+        ref int counter,
+        ref int occurrenceCounter)
     {
         switch (node)
         {
             case SqlScanNode scan:
             {
                 var alias = $"t{counter++}";
-                orderedOccurrences.Add((scan, alias));
+                var occurrenceIndex = occurrenceCounter++;
+
+                orderedOccurrences.Add(
+                    (scan, alias, occurrenceIndex));
+
+                // IMPORTANT:
+                // SqlScanNode is a record, therefore default record equality
+                // is not suitable here. Two separate Employee occurrences
+                // can otherwise compare equal.
                 aliasByOccurrence[scan] = alias;
+                occurrenceIndexByScan[scan] = occurrenceIndex;
+
+                // Entity-keyed lookup remains only as a fallback for
+                // non-occurrence-aware hand-built plans.
                 aliasByEntity[scan.Entity] = alias;
-                return $"{Quote(scan.Entity.EffectiveStorageName)} AS {alias}";
+
+                return
+                    $"{Quote(scan.Entity.EffectiveStorageName)} AS {alias}";
             }
 
             case SqlJoinNode join:
             {
-                // Both sides must be resolved (and their aliases registered)
-                // before the ON clause is built, since the join condition's
-                // Left/Right columns describe foreign-key direction, not
-                // which side of *this* node they were scanned on.
-                var left = BuildFrom(join.Left, orderedOccurrences, aliasByOccurrence, aliasByEntity, ref counter);
-                var right = BuildFrom(join.Right, orderedOccurrences, aliasByOccurrence, aliasByEntity, ref counter);
+                // Register both sides before resolving the ON condition.
+                var left = BuildFrom(
+                    join.Left,
+                    orderedOccurrences,
+                    aliasByOccurrence,
+                    occurrenceIndexByScan,
+                    aliasByEntity,
+                    ref counter,
+                    ref occurrenceCounter);
+
+                var right = BuildFrom(
+                    join.Right,
+                    orderedOccurrences,
+                    aliasByOccurrence,
+                    occurrenceIndexByScan,
+                    aliasByEntity,
+                    ref counter,
+                    ref occurrenceCounter);
 
                 var keyword = JoinKeyword(join.Join.Kind);
-                var leftAlias = ResolveConditionAlias(
-                    join.Join.Condition.Left, join, isConditionLeft: true, aliasByOccurrence, aliasByEntity);
-                var rightAlias = ResolveConditionAlias(
-                    join.Join.Condition.Right, join, isConditionLeft: false, aliasByOccurrence, aliasByEntity);
-                var leftColumn = ColumnName(join.Join.Condition.Left.Entity, join.Join.Condition.Left.ColumnId);
-                var rightColumn = ColumnName(join.Join.Condition.Right.Entity, join.Join.Condition.Right.ColumnId);
 
-                return $"{left} {keyword} {right} ON " +
-                       $"{leftAlias}.{Quote(leftColumn)} = {rightAlias}.{Quote(rightColumn)}";
+                var leftAlias = ResolveConditionAlias(
+                    join.Join.Condition.Left,
+                    join,
+                    isConditionLeft: true,
+                    aliasByOccurrence,
+                    aliasByEntity);
+
+                var rightAlias = ResolveConditionAlias(
+                    join.Join.Condition.Right,
+                    join,
+                    isConditionLeft: false,
+                    aliasByOccurrence,
+                    aliasByEntity);
+
+                var leftColumn =
+                    ColumnName(
+                        join.Join.Condition.Left.Entity,
+                        join.Join.Condition.Left.ColumnId);
+
+                var rightColumn =
+                    ColumnName(
+                        join.Join.Condition.Right.Entity,
+                        join.Join.Condition.Right.ColumnId);
+
+                return
+                    $"{left} {keyword} {right} ON " +
+                    $"{leftAlias}.{Quote(leftColumn)} = " +
+                    $"{rightAlias}.{Quote(rightColumn)}";
             }
 
             default:
                 throw new NotSupportedException(
                     $"{nameof(SqlTextTranslator)} cannot build a FROM clause for a " +
-                    $"{node.GetType().Name}. Only {nameof(SqlScanNode)} and {nameof(SqlJoinNode)} " +
-                    "describe SQL table sources.");
+                    $"{node.GetType().Name}. Only {nameof(SqlScanNode)} and " +
+                    $"{nameof(SqlJoinNode)} describe SQL table sources.");
         }
     }
 
     /// <summary>
-    /// Resolves which alias a join condition's column reference (<see
-    /// cref="JoinCondition.Left"/> or <see cref="JoinCondition.Right"/>)
-    /// binds to for a specific <see cref="SqlJoinNode"/>.
+    /// Resolves the alias belonging to a join condition side.
     ///
-    /// When <see cref="SqlJoinNode.LeftOccurrence"/>/<see cref="SqlJoinNode.RightOccurrence"/>
-    /// are populated (every join <see cref="SqlPlanCompiler"/> compiles
-    /// from a <see cref="Foundgine.Builders.CompositeNode"/> sets these),
-    /// resolution prefers occurrence identity over entity type:
+    /// When occurrence references are present, they are authoritative.
     ///
-    ///  - If exactly one of the two occurrences has the condition side's
-    ///    entity, that's an unambiguous match (the common case — different
-    ///    entities on each side of the join).
-    ///  - If BOTH occurrences share the condition side's entity (a
-    ///    self-join, e.g. <c>Employee -> Manager</c>), entity identity
-    ///    alone can't disambiguate them, since <see cref="ColumnReference.Entity"/>
-    ///    is the same <see cref="EntityMetadata"/> instance either way. In
-    ///    that case resolution falls back to positional correspondence:
-    ///    <see cref="JoinCondition.Left"/> binds to <see cref="SqlJoinNode.LeftOccurrence"/>
-    ///    and <see cref="JoinCondition.Right"/> binds to <see cref="SqlJoinNode.RightOccurrence"/>
-    ///    — which is exactly how <see cref="SqlPlanCompiler"/> and any
-    ///    other occurrence-aware caller is expected to construct a
-    ///    self-referencing join's condition and occurrences together.
+    /// For a normal join:
     ///
-    /// When occurrence references are absent (a hand-built
-    /// <see cref="SqlJoinNode"/> that predates this fix, or one that
-    /// deliberately bypasses <see cref="SqlPlanCompiler"/>), this falls all
-    /// the way back to <see cref="AliasOf"/>'s entity-type lookup — correct
-    /// as long as that plan doesn't itself scan the same entity twice.
+    ///     Customer -> Account
+    ///
+    /// the condition's Customer reference resolves to the Customer
+    /// occurrence and Account resolves to the Account occurrence.
+    ///
+    /// For a self-join:
+    ///
+    ///     Employee #0 -> Employee #1
+    ///
+    /// both sides have the same EntityMetadata. In that case the position
+    /// of the condition side determines the occurrence:
+    ///
+    ///     condition.Left  -> LeftOccurrence
+    ///     condition.Right -> RightOccurrence
+    ///
+    /// This produces:
+    ///
+    ///     t0."ManagerId" = t1."Id"
+    ///
+    /// and, for the next join:
+    ///
+    ///     t1."ManagerId" = t2."Id"
     /// </summary>
     private static string ResolveConditionAlias(
         ColumnReference conditionSide,
@@ -171,46 +267,165 @@ public static class SqlTextTranslator
         Dictionary<SqlScanNode, string> aliasByOccurrence,
         Dictionary<EntityMetadata, string> aliasByEntity)
     {
-        if (join.LeftOccurrence is { } leftOccurrence && join.RightOccurrence is { } rightOccurrence)
+        if (join.LeftOccurrence is { } leftOccurrence &&
+            join.RightOccurrence is { } rightOccurrence)
         {
-            var leftMatches = Equals(leftOccurrence.Entity, conditionSide.Entity);
-            var rightMatches = Equals(rightOccurrence.Entity, conditionSide.Entity);
+            var leftMatches =
+                Equals(leftOccurrence.Entity, conditionSide.Entity);
+
+            var rightMatches =
+                Equals(rightOccurrence.Entity, conditionSide.Entity);
 
             if (leftMatches && !rightMatches)
-                return aliasByOccurrence[leftOccurrence];
+            {
+                return AliasForOccurrence(
+                    leftOccurrence,
+                    aliasByOccurrence);
+            }
 
             if (rightMatches && !leftMatches)
-                return aliasByOccurrence[rightOccurrence];
+            {
+                return AliasForOccurrence(
+                    rightOccurrence,
+                    aliasByOccurrence);
+            }
 
             if (leftMatches && rightMatches)
-                return aliasByOccurrence[isConditionLeft ? leftOccurrence : rightOccurrence];
+            {
+                var occurrence =
+                    isConditionLeft
+                        ? leftOccurrence
+                        : rightOccurrence;
+
+                return AliasForOccurrence(
+                    occurrence,
+                    aliasByOccurrence);
+            }
         }
 
-        return AliasOf(conditionSide.Entity, aliasByEntity);
+        // Backward-compatible fallback for hand-built plans that do not
+        // provide occurrence references.
+        return AliasOf(
+            conditionSide.Entity,
+            aliasByEntity);
     }
 
-    /// <summary>
-    /// Entity-type-keyed alias lookup — the pre-occurrence-tracking
-    /// resolution strategy, kept as the fallback <see cref="ResolveConditionAlias"/>
-    /// uses when a join has no occurrence references, and as the only
-    /// resolution strategy for explicit field projections (<see cref="FieldBinding"/>
-    /// names a column by <see cref="EntityMetadata"/> alone, with no
-    /// occurrence to disambiguate). Correct exactly when the plan being
-    /// translated never scans the same entity more than once.
-    /// </summary>
-    private static string AliasOf(EntityMetadata entity, Dictionary<EntityMetadata, string> aliasByEntity)
+    private static string AliasForOccurrence(
+        SqlScanNode occurrence,
+        Dictionary<SqlScanNode, string> aliasByOccurrence)
     {
-        if (!aliasByEntity.TryGetValue(entity, out var alias))
+        if (!aliasByOccurrence.TryGetValue(
+                occurrence,
+                out var alias))
         {
             throw new InvalidOperationException(
-                $"Join condition references entity '{entity.Name}', but it was never scanned " +
-                "in this plan.");
+                $"The SQL join references an occurrence of entity " +
+                $"'{occurrence.Entity.Name}' that was not registered while " +
+                "building the FROM clause. This indicates that the provider " +
+                "plan contains an occurrence reference which is not part of " +
+                "the compiled SQL tree.");
         }
 
         return alias;
     }
 
-    private static string ColumnName(EntityMetadata entity, ushort columnId)
+    private static string AliasOf(
+        EntityMetadata entity,
+        Dictionary<EntityMetadata, string> aliasByEntity)
+    {
+        if (!aliasByEntity.TryGetValue(
+                entity,
+                out var alias))
+        {
+            throw new InvalidOperationException(
+                $"Join condition references entity '{entity.Name}', but it was " +
+                "never scanned in this plan.");
+        }
+
+        return alias;
+    }
+
+    private static int ResolveProjectionOccurrenceIndex(
+        EntityMetadata entity,
+        List<(SqlScanNode Occurrence, string Alias, int OccurrenceIndex)> occurrences)
+    {
+        var matches =
+            occurrences
+                .Where(x => Equals(x.Occurrence.Entity, entity))
+                .ToArray();
+
+        if (matches.Length == 0)
+        {
+            throw new InvalidOperationException(
+                $"Projection references entity '{entity.Name}', but that entity " +
+                "was not scanned in the SQL plan.");
+        }
+
+        // FieldBinding currently identifies EntityMetadata + ColumnId, not
+        // a specific occurrence. Therefore a projection over a repeated
+        // entity is inherently ambiguous until FieldBinding itself carries
+        // occurrence identity.
+        //
+        // Preserve the existing behavior for now by selecting the first
+        // occurrence.
+        return matches[0].OccurrenceIndex;
+    }
+
+    private static string ResolveProjectionAlias(
+        EntityMetadata entity,
+        int occurrenceIndex,
+        List<(SqlScanNode Occurrence, string Alias, int OccurrenceIndex)> occurrences,
+        Dictionary<EntityMetadata, string> aliasByEntity)
+    {
+        foreach (var occurrence in occurrences)
+        {
+            if (occurrence.OccurrenceIndex == occurrenceIndex &&
+                Equals(occurrence.Occurrence.Entity, entity))
+            {
+                return occurrence.Alias;
+            }
+        }
+
+        return AliasOf(entity, aliasByEntity);
+    }
+
+    private static void AddColumn(
+        EntityMetadata entity,
+        ushort columnId,
+        string alias,
+        int occurrenceIndex,
+        List<string> selectItems,
+        List<SqlColumnMap> columns)
+    {
+        var domainColumnName =
+            DomainColumnName(entity, columnId);
+
+        var physicalColumnName =
+            ColumnName(entity, columnId);
+
+        var resultAlias =
+            $"{alias}_{domainColumnName}";
+
+        selectItems.Add(
+            $"{alias}.{Quote(physicalColumnName)} AS {Quote(resultAlias)}");
+
+        columns.Add(
+            new SqlColumnMap(
+                entity,
+                columnId,
+                resultAlias,
+                occurrenceIndex));
+    }
+
+    private static (ProviderNode Root, IReadOnlyList<FieldBinding>? Fields)
+        UnwrapProjection(ProviderNode node) =>
+        node is SqlProjectionNode projection
+            ? (projection.Source, projection.Fields)
+            : (node, null);
+
+    private static string ColumnName(
+        EntityMetadata entity,
+        ushort columnId)
     {
         foreach (var column in entity.Columns)
         {
@@ -222,7 +437,9 @@ public static class SqlTextTranslator
             $"Entity '{entity.Name}' has no column with id {columnId}.");
     }
 
-    private static string DomainColumnName(EntityMetadata entity, ushort columnId)
+    private static string DomainColumnName(
+        EntityMetadata entity,
+        ushort columnId)
     {
         foreach (var column in entity.Columns)
         {
@@ -234,19 +451,23 @@ public static class SqlTextTranslator
             $"Entity '{entity.Name}' has no column with id {columnId}.");
     }
 
-    private static string JoinKeyword(JoinKind kind) => kind switch
-    {
-        JoinKind.Inner => "INNER JOIN",
-        JoinKind.Left => "LEFT JOIN",
-        JoinKind.Right => "RIGHT JOIN",
-        JoinKind.Full => "FULL JOIN",
-        _ => throw new NotSupportedException($"Unknown join kind '{kind}'."),
-    };
+    private static string JoinKeyword(JoinKind kind) =>
+        kind switch
+        {
+            JoinKind.Inner => "INNER JOIN",
+            JoinKind.Left => "LEFT JOIN",
+            JoinKind.Right => "RIGHT JOIN",
+            JoinKind.Full => "FULL JOIN",
+            _ => throw new NotSupportedException(
+                $"Unknown join kind '{kind}'."),
+        };
 
     /// <summary>
-    /// Double-quoted ("ANSI") identifier quoting — supported by SQLite (the
-    /// first real backend this targets) as well as Postgres and SQL Server,
-    /// so this doesn't need to become provider-specific yet.
+    /// Double-quoted identifier quoting.
+    ///
+    /// Supported by SQLite and PostgreSQL and accepted by SQL Server for
+    /// identifiers, keeping the first provider implementation independent
+    /// of a backend-specific quoting abstraction.
     /// </summary>
     private static string Quote(string identifier) =>
         new StringBuilder(identifier.Length + 2)
@@ -256,18 +477,28 @@ public static class SqlTextTranslator
             .ToString();
 
     /// <summary>
-    /// Reference-identity comparer for <see cref="SqlScanNode"/>. Deliberately
-    /// NOT the default record equality: two distinct occurrences of the same
-    /// entity (e.g. two <c>Employee</c> scans in a self-join) are structurally
-    /// equal records — same <see cref="EntityMetadata"/> — but must still be
-    /// tracked as separate dictionary entries with separate aliases.
+    /// Reference-identity comparer for SqlScanNode.
+    ///
+    /// SqlScanNode is a record, so its default equality is structural.
+    /// Repeated occurrences of the same entity therefore need reference
+    /// identity here:
+    ///
+    ///     Employee #0 -> t0
+    ///     Employee #1 -> t1
+    ///     Employee #2 -> t2
     /// </summary>
-    private sealed class ScanNodeReferenceComparer : IEqualityComparer<SqlScanNode>
+    private sealed class ScanNodeReferenceComparer
+        : IEqualityComparer<SqlScanNode>
     {
         public static readonly ScanNodeReferenceComparer Instance = new();
 
-        public bool Equals(SqlScanNode? x, SqlScanNode? y) => ReferenceEquals(x, y);
+        public bool Equals(
+            SqlScanNode? x,
+            SqlScanNode? y) =>
+            ReferenceEquals(x, y);
 
-        public int GetHashCode(SqlScanNode obj) => RuntimeHelpers.GetHashCode(obj);
+        public int GetHashCode(
+            SqlScanNode obj) =>
+            RuntimeHelpers.GetHashCode(obj);
     }
 }

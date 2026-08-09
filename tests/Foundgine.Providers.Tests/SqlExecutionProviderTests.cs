@@ -71,13 +71,33 @@ public sealed class SqlExecutionProviderTests : IAsyncLifetime
 
     private static EntityOccurrence Occurrence(
         ExecutionRow row,
-        EntityId entityId,
-        int occurrenceIndex = 0)
+        EntityId entityId)
     {
+        ArgumentNullException.ThrowIfNull(row);
+
+        var matches = row.Occurrences
+            .Where(o => o.EntityId == entityId)
+            .ToArray();
+
         return Assert.Single(
-            row.Occurrences.Where(x =>
-                x.EntityId == entityId &&
-                x.OccurrenceIndex == occurrenceIndex));
+            matches);
+    }
+
+    private static EntityOccurrence Occurrence(
+        ExecutionRow row,
+        EntityId entityId,
+        int occurrenceIndex)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+
+        var matches = row.Occurrences
+            .Where(o =>
+                o.EntityId == entityId &&
+                o.OccurrenceIndex == occurrenceIndex)
+            .ToArray();
+
+        return Assert.Single(
+            matches);
     }
 
     [Fact]

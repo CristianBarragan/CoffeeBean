@@ -119,9 +119,24 @@ public sealed class BankingEndToEndTests : IAsyncLifetime
 
     private static EntityOccurrence Occurrence(
         ExecutionRow row,
-        EntityId entityId,
-        int occurrenceIndex = 0)
+        EntityId entityId)
     {
+        ArgumentNullException.ThrowIfNull(row);
+
+        var matches = row.Occurrences
+            .Where(x => x.EntityId == entityId)
+            .ToArray();
+
+        return Assert.Single(matches);
+    }
+
+    private static EntityOccurrence Occurrence(
+        ExecutionRow row,
+        EntityId entityId,
+        int occurrenceIndex)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+
         return Assert.Single(row.Occurrences, x =>
                 x.EntityId == entityId &&
                 x.OccurrenceIndex == occurrenceIndex);
