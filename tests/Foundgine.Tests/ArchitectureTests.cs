@@ -39,11 +39,11 @@ public class ArchitectureTests
     /// The only edges the architecture allows, expressed as
     /// (project -> projects it may take a ProjectReference on). This is the
     /// machine-checked version of the dependency diagram in README.md — keep
-    /// the two in sync. Graphgine and everything downstream of it moved to
-    /// archive/ as part of the minimal-active-tree restructure and is no
-    /// longer part of the active src/ tree this test scans, so it no longer
-    /// needs an entry here. Foundgine.Reflection and Foundgine.Serialization
-    /// moved to archive/ for the same reason.
+    /// the two in sync. The legacy Graphgine engine and everything downstream
+    /// of it, plus Foundgine.Reflection, Foundgine.Serialization, and the
+    /// unreferenced Graphgine.Postgres placeholder, were removed entirely
+    /// during the minimal-active-tree cleanup rather than archived, so none
+    /// of them need an entry here.
     /// </summary>
     private static readonly Dictionary<string, string[]> AllowedReferences = new()
     {
@@ -51,6 +51,7 @@ public class ArchitectureTests
         ["Foundgine.Foundation"] = ["Foundgine.Abstractions"],
         ["Foundgine.Metadata"] = ["Foundgine.Foundation"],
         ["Foundgine.Diagnostics"] = ["Foundgine.Foundation"],
+        ["Foundgine.Semantic"] = ["Foundgine.Metadata"],
         ["Foundgine.Builders"] = ["Foundgine.Metadata"],
         ["Foundgine.Execution.Contracts"] = ["Foundgine.Metadata"],
         ["Foundgine.Planning"] = ["Foundgine.Metadata", "Foundgine.Builders"],
@@ -97,12 +98,12 @@ public class ArchitectureTests
     }
 
     // The Graphgine-specific "never references generated metadata symbols"
-    // check that used to live here was removed along with src/Graphgine when
-    // Graphgine moved to archive/ during the minimal-active-tree restructure
-    // -- it asserted Directory.Exists(src/Graphgine), which no longer holds.
-    // Restore an equivalent check (against archive/src/Graphgine, or against
-    // whatever GraphQL-facing project comes back out of the archive) if that
-    // layer becomes active again.
+    // check that used to live here was removed along with src/Graphgine
+    // during the minimal-active-tree cleanup -- it asserted
+    // Directory.Exists(src/Graphgine), which no longer holds. There is no
+    // archive/ copy to restore it from; if a GraphQL-facing product layer
+    // comes back, write an equivalent check fresh against whatever that
+    // project turns out to be.
 
     [Fact]
     public void No_project_transitively_depends_on_itself()

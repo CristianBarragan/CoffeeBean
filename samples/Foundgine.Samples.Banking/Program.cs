@@ -3,6 +3,10 @@ using Foundgine.Metadata;
 using Foundgine.Planning;
 using Foundgine.Providers;
 using Foundgine.Samples.Banking.Metadata;
+using Foundgine.Samples.Banking.Resolution;
+using Foundgine.Samples.Banking.Semantic;
+using Foundgine.Semantic;
+using Foundgine.Semantic.Resolution;
 using Microsoft.Data.Sqlite;
 using ExecutionContext = Foundgine.Execution.Contracts.ExecutionContext;
 
@@ -10,7 +14,7 @@ using ExecutionContext = Foundgine.Execution.Contracts.ExecutionContext;
 // The first Banking E2E: Customer -> Account -> Transaction, driven
 // end-to-end through the real pipeline, against a real database.
 //
-//   Domain -> Metadata -> Dynamic Planner -> QueryPlan
+//   Domain -> Metadata -> Semantic model -> Dynamic Planner -> QueryPlan
 //          -> ProviderPlan -> SQL -> real database -> Result
 //
 // Nothing below references GraphQL, HotChocolate, or any Graphgine
@@ -46,6 +50,29 @@ Console.WriteLine(
     $"{BankingMetadata.Account.Name}.Id");
 
 Console.WriteLine();
+
+// 1.5) Metadata -> Semantic model (Milestone 1)
+//
+// BankingSemanticModel.cs hand-describes the same Customer/Account/
+// Transaction domain as a protocol-neutral Foundgine.Semantic.SemanticModel
+// -- identity, fields, relationships, search capability, and (today,
+// empty) actions/policies. Nothing downstream of this step reads it yet;
+// it exists so Milestone 2 (resolution) has something real to resolve
+// against instead of raw Foundgine.Metadata.
+var semanticModel = BankingSemanticModel.Build();
+
+Console.WriteLine("Semantic model (Foundgine.Semantic):");
+Console.WriteLine();
+
+foreach (var entity in semanticModel.Entities)
+{
+    foreach (var line in SemanticModelPrinter.Describe(entity).Split(Environment.NewLine))
+    {
+        Console.WriteLine($"  {line}");
+    }
+
+    Console.WriteLine();
+}
 
 // 2) Metadata + Intent -> logical QueryPlan
 //
@@ -178,9 +205,68 @@ await foreach (var row in provider.ExecuteAsync(providerPlan, context))
 
 Console.WriteLine();
 
+// 6) Semantic resolution (Milestone 2)
+//
+// EntityResolver + SqlCandidateSource resolve the milestone's own
+// examples against the *same* SQLite database step 5 just executed
+// against -- no fakes, no separate in-memory copy of the data.
+Console.WriteLine("Resolution (Foundgine.Semantic.Resolution), against the same database:");
+Console.WriteLine();
+
+var candidates = new SqlCandidateSource(connectionString, semanticModel, registry, joins);
+var resolver = new EntityResolver(semanticModel, candidates);
+
+// "Ada Lovelace" -> Customer, by free text against Customer's declared
+// SearchCapability.
+var adaByName = resolver.ResolveBySearch(BankingMetadata.Customer.EntityId, "Ada Lovelace");
+DescribeResolution("\"Ada Lovelace\"", adaByName);
+
+// "account 10" -> Account, by explicit identity literal.
+var accountTen = resolver.ResolveByIdentity(BankingMetadata.Account.EntityId, "10");
+DescribeResolution("\"account 10\"", accountTen);
+
+// "her checking account" -> Account, via the Customer.Accounts
+// relationship from the customer just resolved above ("her" = Ada).
+// The "checking" qualifier has no matching field on Account in this
+// domain, so it's left unused rather than invented -- see
+// EntityResolver.ResolveByRelationship.
+if (adaByName.Resolved is { } ada)
+{
+    var herAccount = resolver.ResolveByRelationship(ada, "Accounts");
+    DescribeResolution("\"her checking account\"", herAccount);
+}
+
 Console.WriteLine(
-    "Done: Domain -> Metadata -> Dynamic Planner -> QueryPlan -> " +
-    "ProviderPlan -> SQL -> real database -> Result.");
+    "Done: Domain -> Metadata -> Semantic model -> Dynamic Planner -> " +
+    "QueryPlan -> ProviderPlan -> SQL -> real database -> Result -> " +
+    "Resolution.");
+
+// ---------------------------------------------------------------------
+// Resolution description
+// ---------------------------------------------------------------------
+static void DescribeResolution(string phrase, ResolutionResult result)
+{
+    Console.WriteLine($"  {phrase} -> {result.Outcome}");
+
+    if (result.Resolved is { } reference)
+    {
+        Console.WriteLine(
+            $"    identity={reference.IdentityValue} " +
+            $"confidence={reference.Confidence:0.00} " +
+            $"reason=\"{reference.Reason}\"");
+    }
+    else
+    {
+        Console.WriteLine($"    reason=\"{result.UnresolvedReason}\"");
+    }
+
+    foreach (var evidence in result.Evidence)
+    {
+        Console.WriteLine($"    evidence: {evidence.Description}");
+    }
+
+    Console.WriteLine();
+}
 
 // ---------------------------------------------------------------------
 // Result lookup

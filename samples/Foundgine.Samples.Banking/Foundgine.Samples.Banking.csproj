@@ -8,14 +8,12 @@
         <Nullable>enable</Nullable>
         <RootNamespace>Foundgine.Samples.Banking</RootNamespace>
         <Description>
-            The canonical Foundgine proof: Domain -&gt; Metadata -&gt; Dynamic
-            Planner -&gt; QueryPlan -&gt; ProviderPlan -&gt; SQL -&gt; real database -&gt;
-            Result for Customer -&gt; Account -&gt; Transaction, with no GraphQL,
-            no HotChocolate, and no Graphgine.* project anywhere in this
-            project's dependency graph. Compare to
-            archive/samples/Graphgine.Samples.Banking, the same domain idea
-            fronted by GraphQL, moved out of the active tree so this sample is
-            the single canonical proof domain.
+            The canonical Foundgine proof: Domain -&gt; Metadata -&gt; Semantic
+            model -&gt; Dynamic Planner -&gt; QueryPlan -&gt; ProviderPlan -&gt; SQL -&gt;
+            real database -&gt; Result for Customer -&gt; Account -&gt; Transaction,
+            with no GraphQL, no HotChocolate, and no Graphgine.* project
+            anywhere in this project's dependency graph -- this is the single
+            canonical proof domain.
         </Description>
     </PropertyGroup>
 
@@ -27,6 +25,7 @@
     -->
     <ItemGroup>
         <ProjectReference Include="..\..\src\Foundgine.Metadata\Foundgine.Metadata.csproj" />
+        <ProjectReference Include="..\..\src\Foundgine.Semantic\Foundgine.Semantic.csproj" />
         <ProjectReference Include="..\..\src\Foundgine.Builders\Foundgine.Builders.csproj" />
         <ProjectReference Include="..\..\src\Foundgine.Planning\Foundgine.Planning.csproj" />
         <ProjectReference Include="..\..\src\Foundgine.Execution.Contracts\Foundgine.Execution.Contracts.csproj" />

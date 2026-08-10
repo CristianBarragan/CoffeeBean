@@ -39,6 +39,7 @@ Current active platform projects include:
 | `Foundgine.Abstractions` | stable contracts | active |
 | `Foundgine.Foundation` | primitives and generic CQRS contracts | active |
 | `Foundgine.Metadata` | entity/column/join metadata | active |
+| `Foundgine.Semantic` | Entity/Identity/Field/Relationship/Search/Action/Policy descriptors (Milestone 1) | active |
 | `Foundgine.Diagnostics` | diagnostic infrastructure | active |
 | `Foundgine.Builders` | logical query-plan structures | active |
 | `Foundgine.Execution.Contracts` | execution/provider contracts | active |
@@ -50,8 +51,8 @@ Current active platform projects include:
 
 The following are target capabilities, not completed features:
 
-- natural-language intent integration
 - semantic entity resolution
+- natural-language intent integration
 - action discovery
 - domain-action execution
 - policy-aware planning
@@ -99,8 +100,8 @@ Avoid "production ready", "fully AOT compatible", "zero reflection", "database i
 ## Immediate priorities
 
 1. Keep the Banking E2E green.
-2. Introduce a protocol-neutral semantic model.
-3. Add deterministic entity resolution.
+2. ~~Introduce a protocol-neutral semantic model.~~ Done -- `Foundgine.Semantic` (Milestone 1), exercised live in the Banking sample.
+3. Add deterministic entity resolution (Milestone 2).
 4. Add a read-intent-to-plan path.
 5. Add explicit domain actions.
 6. Add policy evaluation.
