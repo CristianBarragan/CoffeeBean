@@ -12,7 +12,7 @@ namespace Foundgine.Semantic.Intent;
 /// <item><description>Resolve <see cref="ActionIntent.AnchorPhrase"/> against <see cref="ActionIntent.AnchorEntity"/> by free text (<see cref="EntityResolver.ResolveBySearch"/>).</description></item>
 /// <item><description>Walk each name in <see cref="ActionIntent.ThroughRelationships"/> in order (<see cref="EntityResolver.ResolveByRelationship"/>), each one narrowing to a single instance.</description></item>
 /// <item><description>If <see cref="ActionIntent.TargetRelationship"/> is set, take the single most recent instance reached from there (<see cref="EntityResolver.ResolveLatestByRelationship"/>) as the action's target; otherwise the target is wherever the chain above ended.</description></item>
-/// <item><description>Look up <see cref="ActionIntent.ActionName"/> on the target entity's declared <see cref="Foundgine.Semantic.ActionDescriptor"/> list -- never anything else. This is Milestone 4's "No arbitrary method invocation" rule made concrete.</description></item>
+/// <item><description>Look up <see cref="ActionIntent.ActionName"/> on the declared <see cref="Foundgine.Semantic.ActionDescriptor"/> list of the entity the chain resolved to <em>before</em> any <see cref="ActionIntent.TargetRelationship"/> traversal -- never anything else, and never on the narrowed target itself. <see cref="ActionIntent.TargetRelationship"/> only picks which instance the action acts on (e.g. "her last transaction"); it does not relocate which entity's action list governs "IssueRefund", which stays declared on Account. This is Milestone 4's "No arbitrary method invocation" rule made concrete.</description></item>
 /// <item><description>Validate every supplied <see cref="ActionArgument"/> against the action's declared <see cref="Foundgine.Semantic.ActionParameter"/> list: no undeclared parameter is accepted, every required parameter must be present, and a supplied value's runtime type must match.</description></item>
 /// </list>
 ///
@@ -76,6 +76,15 @@ public sealed class ActionPlanner
             chain.Add(current);
         }
 
+        // The action is declared on the entity the chain resolved to *before* any
+        // TargetRelationship traversal (e.g. IssueRefund lives on Account, not on
+        // Transaction). TargetRelationship only narrows which specific instance the
+        // action acts on (e.g. "her last transaction") -- it does not change which
+        // entity's action list is consulted. Conflating the two meant "refund her
+        // last transaction" incorrectly looked for IssueRefund on Transaction, where
+        // it was never declared, and failed to resolve even though the action is
+        // perfectly valid on the resolved Account.
+        var actionEntity = _model.Get(current.EntityType);
         var target = current;
 
         if (intent.TargetRelationship is not null)
@@ -108,23 +117,21 @@ public sealed class ActionPlanner
             chain.Add(target);
         }
 
-        var targetEntity = _model.Get(target.EntityType);
-
-        var action = targetEntity.Actions.FirstOrDefault(
+        var action = actionEntity.Actions.FirstOrDefault(
             a => string.Equals(a.Name, intent.ActionName, StringComparison.OrdinalIgnoreCase));
 
         if (action is null)
         {
             return ActionPlanResult.Unresolved(
-                $"{targetEntity.Name} declares no action named '{intent.ActionName}'. An agent may " +
+                $"{actionEntity.Name} declares no action named '{intent.ActionName}'. An agent may " +
                 "only invoke an action the semantic model explicitly exposes, never an arbitrary " +
                 "method.",
                 evidence);
         }
 
-        evidence.Add(new ResolutionEvidence($"Selected action {targetEntity.Name}.{action.Name}."));
+        evidence.Add(new ResolutionEvidence($"Selected action {actionEntity.Name}.{action.Name}."));
 
-        var (error, arguments, argumentEvidence) = ValidateArguments(action, intent.Arguments, targetEntity.Name);
+        var (error, arguments, argumentEvidence) = ValidateArguments(action, intent.Arguments, actionEntity.Name);
         evidence.AddRange(argumentEvidence);
 
         if (error is not null)

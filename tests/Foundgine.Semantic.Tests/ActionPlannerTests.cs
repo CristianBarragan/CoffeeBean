@@ -144,7 +144,7 @@ public class ActionPlannerTests
         Assert.NotEmpty(result.Action.Evidence);
     }
 
-    [Fact(Skip = "Needs fix")]
+    [Fact]
     public void IssueRefund_OnHerLastTransaction_ResolvesToMostRecentTransaction()
     {
         var intent = new ActionIntent(
