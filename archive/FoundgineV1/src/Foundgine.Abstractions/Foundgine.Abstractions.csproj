@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <Description>The true bottom of the platform: entity, planner, optimizer, and materializer contracts. No dependency on any other Foundgine or Graphgine project — not even Foundgine.Metadata. (IExecutionProvider previously lived here but needed ProviderPlan/ExecutionContext, which pulled in Metadata; it now lives in Foundgine.Execution.Contracts instead, one layer up.)</Description>
+    </PropertyGroup>
+
+</Project>

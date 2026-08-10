@@ -1,0 +1,5 @@
+<Project>
+  <Target Name="ArchitectureBoundaryNotice" BeforeTargets="CoreCompile">
+    <Message Importance="High" Text="Foundgine architecture: Metadata -> Semantics -> Planning -> Execution; AOT -> Metadata." />
+  </Target>
+</Project>

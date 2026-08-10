@@ -1,15 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <LangVersion>latest</LangVersion>
-        <Nullable>enable</Nullable>
-        <Description>The protocol-agnostic metadata model: entities, fields, columns, relationships, and join graphs that any product built on Foundgine (not just Graphgine) can describe its domain with.</Description>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Foundgine.Foundation\Foundgine.Foundation.csproj" />
-    </ItemGroup>
-
+  <PropertyGroup>
+    <RootNamespace>Foundgine.Metadata</RootNamespace>
+    <AssemblyName>Foundgine.Metadata</AssemblyName>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
+  </ItemGroup>
 </Project>
