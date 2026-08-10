@@ -1,43 +1,26 @@
-> **Historical note:** This page describes the earlier GraphQL/source-generation architecture. The current Foundgine direction is documented in [Direction](../../00-Direction/README.md) and [Current Status](../../CURRENT-STATUS.md). Historical implementation is under `archive/`.
-
 # Schema
 
-Graphgine is designed to derive GraphQL-facing behavior from domain and mapping metadata rather than
-maintaining an unrelated second description of the domain.
+> **Historical / future adapter documentation.**
 
-## Where metadata comes from
+The active Foundgine core does not expose a GraphQL schema or resolver layer.
 
-The current architecture is:
+The corresponding historical implementation is under `archive/`.
+
+If GraphQL is reintroduced, it should be an adapter that converts GraphQL selections/arguments into Foundgine structured intent. It must not move GraphQL concepts into:
+
+- `Foundgine.Metadata`;
+- `Foundgine.Semantic`;
+- `Foundgine.Planning`;
+- `Foundgine.Execution.Contracts`.
+
+The desired boundary is:
 
 ```text
-Domain / EF Core mappings
-        ↓
-Graphgine.SourceGenerators
-        ↓
-generated metadata
-        ↓
-Graphgine planning/runtime
-        ↓
-Graphgine.HotChocolate
+GraphQL request
+      ↓
+GraphQL adapter
+      ↓
+Foundgine structured intent
+      ↓
+Foundgine planner
 ```
-
-The exact schema-generation surface is still evolving. Do not assume that every generated artifact
-described in historical Coffee Beanery documentation exists in the current runtime.
-
-## Graph-shaped metadata
-
-Graphgine models entities, relationships, joins, graph nodes and edges as explicit structures. Those
-structures are also used by SQL and graph planning.
-
-See:
-
-- [Foundation → Metadata](../03-Foundation/Metadata.md)
-- [Source Generators](../06-Source-Generators/README.md)
-- [Persistence → PostgreSQL & AGE](../08-Persistence/PostgreSQL-AGE.md)
-
-## Resolver boundary
-
-Hot Chocolate-facing resolvers belong in the adapter/product layer. Foundgine platform contracts
-must remain independent of Hot Chocolate.
-
-See [Resolvers](Resolvers.md).

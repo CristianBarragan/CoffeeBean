@@ -1,131 +1,25 @@
-[Home](../../README.md) → [Documentation](../README.md) → **Contributing**
-
 # Contributing
 
-## Contents
+Foundgine is currently an architecture/proof project.
 
-- [Code Style](Code-Style.md)
+## Priorities
+
+1. preserve dependency boundaries;
+2. add real vertical proofs;
+3. keep semantic configuration minimal;
+4. avoid speculative abstractions;
+5. test against real dependencies where the claim concerns execution.
+
+## Before adding a subsystem
+
+Ask:
+
+> What concrete end-to-end scenario requires this?
+
+If there is no answer, defer the subsystem.
+
+## Read
+
+- [Code style](Code-Style.md)
 - [Testing](Testing.md)
-- [ADR Process](ADR-Process.md)
-
----
-
-## Philosophy
-
-## Philosophy
-
-Foundgine is built around a few simple principles.
-
-- Compile-time first
-- Immutable by default
-- Native AOT friendly
-- Transport agnostic
-- Dependency inversion
-- Single responsibility
-- Explicit architecture
-
-Every contribution should reinforce these principles.
-
----
-
-## Before Contributing
-
-## Before Contributing
-
-Before opening a Pull Request, contributors should read:
-
-- Architecture.md
-- Foundation.md
-- Runtime.md
-- SQL.md
-- Generator.md
-- Planning.md
-- ADR.md
-
-Understanding the architecture is far more important than understanding individual implementations.
-
----
-
-## Development Workflow
-
-## Development Workflow
-
-Recommended workflow:
-
-```
-Fork Repository
-
-↓
-
-Create Branch
-
-↓
-
-Implement Feature
-
-↓
-
-Run Tests
-
-↓
-
-Run Generator Tests
-
-↓
-
-Open Pull Request
-
-↓
-
-Review
-
-↓
-
-Merge
-```
-
-Every Pull Request should focus on one logical change.
-
----
-
-## Pull Requests
-
-## Pull Requests
-
-A good Pull Request should:
-
-- Solve one problem
-- Include tests
-- Preserve architecture
-- Keep commits focused
-- Explain architectural impact
-
-Large unrelated changes should be split into multiple PRs.
-
----
-
-## Review Checklist
-
-Before approving a Pull Request, reviewers should verify:
-
-- Correct dependency direction
-- No runtime reflection
-- No architectural boundary violations
-- Tests updated
-- Documentation updated
-- Generated output remains deterministic
-- Native AOT compatibility preserved
-
----
-
----
-
-## Related Documentation
-
-- [Code Style](Code-Style.md)
-- [Testing](Testing.md)
-- [Reference → ADRs](../13-Reference/ADRs.md)
-
----
-
-← Previous: [Samples](../11-Samples/README.md)  |  Next: [Reference](../13-Reference/README.md) →
+- [ADR process](ADR-Process.md)

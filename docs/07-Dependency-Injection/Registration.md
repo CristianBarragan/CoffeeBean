@@ -1,39 +1,15 @@
 # Registration
 
-The current canonical Banking proof does not require a framework-wide registration package.
+There is no required `AddFoundgine()` hosting package in the current proof.
 
-The first priority is proving the contracts.
+An application can compose the core services directly.
 
-## Target registration shape
-
-A future application may compose:
-
-```text
-Semantic model
-Resolver
-Planner
-Policy
-Execution provider
-Verifier
-Evidence sink
-```
-
-through the application's DI container.
-
-Example shape:
+A future integration might provide:
 
 ```csharp
-services
-    .AddFoundgine(...)
-    .AddExecutionProvider(...)
-    .AddPolicy(...)
-    .AddEvidence(...);
+services.AddFoundgine(...);
 ```
 
-This is illustrative only; the final API should not be designed until the underlying contracts have been proven.
+but that should remain an optional adapter.
 
-## Integration principle
-
-Transport adapters such as MCP or GraphQL should compose Foundgine services from outside the core.
-
-They should not force their own service abstractions into `Foundgine.Foundation`.
+The core contracts must remain usable without ASP.NET Core or a specific DI container.

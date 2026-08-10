@@ -1,10 +1,8 @@
-[Home](../../README.md) → [Documentation](../README.md) → **Samples**
-
 # Samples
 
 ## Foundgine.Samples.Banking
 
-The canonical Foundgine proof domain is:
+The canonical proof domain is intentionally small:
 
 ```text
 Customer
@@ -14,80 +12,71 @@ Account
 Transaction
 ```
 
-The active sample is deliberately a console application with no GraphQL layer.
+The sample intentionally has no GraphQL or Hot Chocolate dependency.
 
-It currently proves:
+## Current proof path
 
 ```text
-Domain
-  ↓
-Hand-written Metadata
-  ↓
-Dynamic QueryPlanner
-  ↓
-Foundgine.Builders.QueryPlan
-  ↓
-Foundgine.Providers.SqlPlanCompiler
-  ↓
-ProviderPlan
-  ↓
-SqlExecutionProvider
-  ↓
-real SQLite database
-  ↓
-ExecutionRow
+Banking domain
+   ↓
+Foundgine.Metadata
+   ↓
+Foundgine.Semantic
+   ↓
+Structured ReadIntent
+   ↓
+Resolution
+   ↓
+QueryIntent
+   ↓
+Foundgine.Planning
+   ↓
+Foundgine.Providers
+   ↓
+SQLite
 ```
 
-Run:
+It demonstrates:
+
+- metadata;
+- semantic model and inference support;
+- deterministic entity resolution;
+- structured read intent;
+- dynamic planning;
+- filtering, sorting and paging;
+- SQL provider execution;
+- evidence-oriented output;
+- the five-entity composite proof in the test suite.
+
+## Canonical scenario
+
+> **Find Ada Lovelace's last five transactions.**
+
+The sentence itself is not parsed by Foundgine. The sample constructs `ReadIntent` as the structured boundary that an LLM, UI or other caller would produce.
+
+## Important limitation
+
+The current sample proves the semantic-to-query connection, but the final translation from `ResolvedReadPlan` to `QueryIntent` is still explicitly assembled in the sample/test path. Productizing that translation is the next core task.
+
+The next hard proof should also give Ada multiple accounts and require the query to traverse **all** of them before ordering and limiting transactions. That tests collection cardinality rather than accidentally passing because the sample has one account.
+
+## Run
 
 ```bash
 dotnet run --project samples/Foundgine.Samples.Banking
 ```
 
-## Why Banking?
+## Why SQLite?
 
-The domain is small enough to understand but relational enough to prove:
+The goal is to prove Foundgine, not database deployment.
 
-- entity metadata
-- identity
-- relationships
-- dynamic join discovery
-- logical planning
-- provider planning
-- SQL execution
-- real result materialization
+SQLite makes the sample:
 
-## Next sample milestones
+- self-contained;
+- deterministic;
+- easy to run;
+- independent of Docker/PostgreSQL.
 
-The same sample should grow vertically rather than spawning many disconnected demos:
+## Tests
 
-### Read
-
-```text
-"Find Ada's last five transactions."
-```
-
-### Mutation
-
-```text
-"Refund Ada's last transaction."
-```
-
-The mutation should demonstrate:
-
-```text
-resolve
-→ authorize
-→ plan
-→ preview
-→ approve
-→ execute
-→ verify
-→ evidence
-```
-
-## Historical sample
-
-`archive/samples/Graphgine.Samples.Banking` contains the previous GraphQL/Hot Chocolate direction.
-
-It is useful as historical material, but it is not the canonical proof for the current Foundgine direction.
+The broader `tests/Foundgine.Tests` suite contains the stronger E2E acceptance scenarios, including the five-entity composite and semantic/read integration proofs.

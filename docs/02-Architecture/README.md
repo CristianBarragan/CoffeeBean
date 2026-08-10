@@ -1,149 +1,100 @@
-[Home](../../README.md) → [Documentation](../README.md) → **Architecture**
-
 # Architecture
 
-Foundgine is an application-domain semantic and execution layer for AI-native .NET applications.
+[Home](../../README.md) → [Documentation](../README.md) → **Architecture**
 
-The architecture has two complementary halves:
-
-1. **Compile-time knowledge** — describe the application's legal domain vocabulary.
-2. **Runtime execution** — resolve dynamic intent into safe, executable plans.
-
-## Core architecture
+Foundgine is built around a strict separation between:
 
 ```text
-             APPLICATION DOMAIN
-                     │
-                     ▼
-            Semantic Domain Model
-                     │
-          ┌──────────┼──────────┐
-          │          │          │
-      Entities   Relationships Actions
-          │          │          │
-          └──────────┼──────────┘
-                     ▼
-               Foundgine API
-                     │
-                     ▼
-                  Intent
-                     │
-                     ▼
-                Resolution
-                     │
-                     ▼
-             Policy / Authorization
-                     │
-                     ▼
-              Execution Plan
-                     │
-          ┌──────────┼──────────┐
-          ▼          ▼          ▼
-      Structured   Domain    External
-         data      actions     data
-          │          │
-          └──────────┼──────────┘
-                     ▼
-                  Execute
-                     │
-                     ▼
-                 Verify
-                     │
-                     ▼
-                 Evidence
+meaning
+planning
+execution
+transport
 ```
 
-## Dependency architecture
-
-The active platform is currently split into:
+## Current architecture
 
 ```text
-Foundgine.Abstractions
-        ↓
-Foundgine.Foundation
-        ↓
-Foundgine.Metadata
-        ↓
-Foundgine.Builders
-        ↓
-Foundgine.Planning
-        ↓
-Foundgine.Execution.Contracts
-        ↓
-Foundgine.Providers
+                Application / AI
+                       │
+                       ▼
+               Foundgine.Semantic
+                       │
+                       ▼
+             Structured Intent / Resolve
+                       │
+                       ▼
+               Foundgine.Planning
+                       │
+                       ▼
+               Foundgine.Builders
+                       │
+                       ▼
+          Foundgine.Execution.Contracts
+                       │
+                       ▼
+              Foundgine.Providers
+                       │
+                       ▼
+                  Database
 ```
 
-These boundaries are implementation boundaries, not a requirement that every future feature must become a new project.
+The semantic and planning projects are deliberately separate. The semantic layer translates structured meaning into the existing planning vocabulary; it does not replace the planner.
 
-## Key rule
+## Active projects
 
-The core platform must not depend on:
+| Project | Responsibility |
+|---|---|
+| `Foundgine.Abstractions` | Lowest-level reusable contracts |
+| `Foundgine.Foundation` | Domain-neutral primitives |
+| `Foundgine.Metadata` | Entity/storage/relationship metadata |
+| `Foundgine.Diagnostics` | Diagnostics support |
+| `Foundgine.Builders` | Provider-neutral logical plan structures |
+| `Foundgine.Semantic` | Application-domain meaning, inference and resolution |
+| `Foundgine.Planning` | Dynamic logical planning |
+| `Foundgine.Execution.Contracts` | Provider-neutral execution contracts |
+| `Foundgine.Providers` | SQL provider compilation/execution |
 
-- a particular LLM
-- MCP
-- GraphQL
-- Hot Chocolate
-- a particular database
-- a particular workflow engine
+## Critical rules
 
-Those technologies integrate from the outside.
-
-## Runtime principle
-
-Runtime should consume explicit semantic and execution structures.
-
-It should not repeatedly rediscover:
-
-- CLR metadata
-- domain relationships
-- action legality
-- provider capabilities
-
-## Dynamic versus compiled knowledge
-
-Compiled:
+No lower layer should know about a higher-level concern.
 
 ```text
-What entities exist?
-What relationships exist?
-What actions are legal?
-What policies apply?
+Metadata  ✗ SQL
+Metadata  ✗ AI
+Planning  ✗ LLM
+Planning  ✗ GraphQL
+Execution.Contracts ✗ provider implementation
+Semantic ✗ SQL
 ```
 
-Dynamic:
+Adapters may connect the layers.
+
+## Semantic versus planning
+
+`Foundgine.Semantic` answers:
+
+> **What does the caller mean?**
+
+`Foundgine.Planning` answers:
+
+> **How can that structured request be executed?**
+
+Resolution is identity-oriented:
 
 ```text
-What did the user mean?
-Which customer did they mean?
-Which transaction is "the last one"?
-What execution plan satisfies the intent?
+"Ada Lovelace" → Customer #1
 ```
 
-This distinction is central.
-
-## Current proof
-
-The Banking sample currently proves only the lower execution half:
+Traversal is set-oriented:
 
 ```text
-Domain
-→ Metadata
-→ Dynamic Planner
-→ QueryPlan
-→ ProviderPlan
-→ SQL
-→ SQLite
-→ Result
+Customer #1 → Accounts* → Transactions*
 ```
 
-The semantic/AI layers are the next milestone.
+This distinction prevents collection-valued relationships from being incorrectly collapsed into a single identity.
 
-## Architecture documents
+## Why Semantic is separate
 
-- [Direction](../00-Direction/README.md)
-- [Milestones](../00-Direction/Milestones.md)
-- [Layers](Layers.md)
-- [Dependency Graph](Dependency-Graph.md)
-- [Request Pipeline](Request-Pipeline.md)
-- [Principles](Principles.md)
-- [Current Status](../CURRENT-STATUS.md)
+The semantic layer must remain provider-neutral. It can describe a rich logical/domain model without knowing whether the eventual execution is SQL, retrieval, an external system or another provider.
+
+The current work is to make the semantic → `QueryIntent` bridge explicit and reusable without creating a second planner.

@@ -1,74 +1,110 @@
 # Foundgine — AI / Search Reference
 
-Foundgine is a **.NET application-domain semantic and execution platform for AI-native applications**.
+## Canonical identity
 
-> Foundgine turns an application's domain model into a safe, executable interface for AI agents.
+**Foundgine** is a **.NET application-domain semantic and execution platform for AI-native applications**.
 
-Foundgine is not intended to be an LLM framework, RAG framework, MCP implementation, ORM, workflow engine, or database.
+> **Foundgine turns an application's domain model into a safe, executable interface for AI agents.**
 
-## Core concepts
+## What Foundgine is
 
+Foundgine provides a deterministic boundary between:
+
+```text
+Application domain
+      ↓
+Semantic model
+      ↓
+Structured intent
+      ↓
+Identity resolution
+      ↓
+Collection-aware traversal
+      ↓
+Planning
+      ↓
+Execution
+      ↓
+Evidence
+```
+
+Its distinctive capability is the bridge between a rich logical/domain model and a dynamic physical execution plan.
+
+## What Foundgine is not
+
+Do not describe Foundgine as:
+
+- an LLM framework;
+- a generic agent framework;
+- a RAG framework;
+- an MCP implementation;
+- an ORM;
+- a database;
+- a workflow engine.
+
+## Important concepts
+
+- .NET AI application domain
 - semantic domain model
-- entity resolution
-- policy-aware planning
+- structured intent
+- deterministic entity resolution
+- collection-aware relationship traversal
+- provider-neutral query planning
+- composite logical models
+- dynamic execution plans
 - domain actions
-- execution plans
+- policy-aware execution
 - preview and approval
 - verification
 - evidence
 - MCP adapter
-- compile-time semantic model
-
-## Lifecycle
-
-```text
-DOMAIN MODEL
-↓
-SEMANTIC MODEL
-↓
-AI INTENT
-↓
-RESOLUTION
-↓
-POLICY
-↓
-EXECUTION PLAN
-↓
-PREVIEW
-↓
-EXECUTE
-↓
-VERIFY
-↓
-EVIDENCE
-```
+- Roslyn semantic compiler
 
 ## Current proof
 
-The Banking sample proves:
+The active repository proves:
 
 ```text
-Domain
-→ Metadata
-→ Dynamic Planner
-→ QueryPlan
-→ ProviderPlan
-→ SQL
-→ SQLite
-→ Result
+Metadata
+ → dynamic planning
+ → QueryPlan
+ → ProviderPlan
+ → SQL
+ → real SQLite
+ → result
 ```
 
-The AI-native semantic and safety layers are the next milestones.
+It also proves:
 
-## Canonical documentation
+```text
+Structured ReadIntent
+ → identity resolution
+ → semantic read planning
+ → QueryIntent
+ → dynamic planning
+ → real SQLite
+```
 
-See:
+The five-entity composite proof demonstrates a logical model spanning multiple physical entities, and repeated/self-joined entity behavior is exercised without a special-case planner.
 
-- `docs/00-Direction/README.md`
-- `docs/00-Direction/Milestones.md`
-- `docs/CURRENT-STATUS.md`
-- `docs/02-Architecture/README.md`
-- `docs/09-AI/README.md`
-- `docs/11-Samples/README.md`
-- `llms.txt`
-- `llms-full.md`
+## Current next step
+
+The remaining core productization work is:
+
+```text
+ResolvedReadPlan
+ → reusable QueryIntent bridge
+ → collection-aware traversal
+ → benchmark
+```
+
+## Historical names
+
+- Graphgine — previous GraphQL product direction.
+- CoffeeBeanery — historical prototype.
+
+Do not use either as the current product identity.
+
+## Accuracy
+
+Do not claim production autonomous-agent support, complete MCP, universal provider support, or benchmark superiority unless later code and tests establish those claims.

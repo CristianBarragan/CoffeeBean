@@ -1,213 +1,44 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Contributing](README.md) → **Code Style**
-
 # Code Style
 
-## Contents
+## Architecture first
 
-- [General Principles](#general-principles)
-- [Architecture First](#architecture-first)
-- [File Organization](#file-organization)
-- [Naming](#naming)
-- [Method Size](#method-size)
-- [Immutability](#immutability)
-- [Exceptions & Pattern Matching](#exceptions--pattern-matching)
-- [Comments](#comments)
+Readable code is not enough.
 
----
+A change must preserve the dependency direction.
 
-## General Principles
+## Prefer
 
-Code should be:
+- small immutable records;
+- explicit contracts;
+- deterministic transformations;
+- descriptive names;
+- focused methods;
+- tests for invariants.
 
-- Readable
-- Predictable
-- Deterministic
-- Testable
-- Allocation-conscious
-- Native AOT friendly
+## Avoid
 
-When faced with two implementations of equal performance, always choose the simpler one.
-
----
-
-## Architecture First
-
-Every implementation should respect project boundaries.
-
-```
-Foundation
-
-↑
-
-Runtime
-
-↑
-
-GraphQL
-```
-
-Never introduce shortcuts that violate dependency direction.
-
-Architectural consistency is more important than reducing a few lines of code.
-
----
-
-## File Organization
-
-One public type per file.
-
-Example:
-
-```
-EntityMetadata.cs
-
-QueryPlanner.cs
-
-GeneratedMetadataProvider.cs
-```
-
-Avoid grouping unrelated public types in the same file.
-
----
-
-## Naming
-
-Names should describe intent.
-
-Prefer:
-
-```csharp
-ResolveJoinMetadata()
-
-BuildMutationPlan()
-
-WriteConflictClause()
-```
-
-Instead of:
-
-```csharp
-Resolve()
-
-Build()
-
-Write()
-```
-
-Variables should also be descriptive.
-
-Good:
-
-```csharp
-entityMetadata
-
-columnReference
-
-joinMetadata
-```
-
-Avoid:
-
-```csharp
-x
-
-tmp
-
-obj
-
-data
-```
-
----
-
-## Method Size
-
-Methods should generally perform one logical task.
-
-Large methods should be decomposed into private helpers.
-
-Instead of:
-
-```
-BuildEverything()
-```
-
-Prefer:
-
-```
-ResolveMetadata()
-
-BuildProjection()
-
-BuildOrdering()
-
-BuildFilters()
-```
-
-Small methods are easier to understand and test.
-
----
-
-## Immutability
-
-Prefer immutable types.
-
-Example:
-
-```csharp
-public sealed class EntityMetadata
-{
-    public ushort Id { get; }
-
-    public string Name { get; }
-
-    public ImmutableArray<ColumnMetadata> Columns { get; }
-}
-```
-
-Mutable state should be limited to execution-specific objects.
-
----
-
-## Exceptions
-
-Throw exceptions only for exceptional situations.
-
-Validation errors should occur during planning or generation whenever possible.
-
-Runtime should rarely encounter invalid metadata.
-
----
+- service locators;
+- hidden global state;
+- provider-specific logic in planners;
+- reflection when metadata can be explicit;
+- speculative abstractions;
+- domain-specific `if` statements inside generic planners.
 
 ## Comments
 
-Comments should explain **why**, not **what**.
+Comments should explain architectural intent or non-obvious invariants.
 
-Good:
+Do not restate obvious code.
 
-```csharp
-// Preserve deterministic alias ordering for snapshot stability.
-```
+## Naming
 
-Avoid:
+Use domain-neutral names in reusable projects.
 
-```csharp
-// Increment i.
-i++;
-```
+Do not name core abstractions after:
 
-Code should be self-explanatory whenever possible.
+- GraphQL;
+- SQLite;
+- PostgreSQL;
+- a specific AI provider.
 
----
-
----
-
-## Related Documentation
-
-- [Contributing](README.md)
-- [Architecture → Principles](../02-Architecture/Principles.md)
-- [Testing](Testing.md)
-
----
-
-← Previous: [Contributing](README.md)  |  Next: [Testing](Testing.md) →
+unless the project itself is that adapter.

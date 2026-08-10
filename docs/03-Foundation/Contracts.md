@@ -1,114 +1,29 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Foundation](README.md) → **Contracts**
-
 # Contracts
 
-## Contents
+The active platform separates logical contracts from provider implementation.
 
-- [Interfaces](#interfaces)
-- [Planning](#planning)
-- [Identifiers](#identifiers)
-- [Primitives](#primitives)
+Important contracts include:
 
----
-
-## Interfaces
-
-Foundation defines the contracts implemented by generated code and consumed by Runtime.
-
-Examples include:
-
-```csharp
+```text
 IMetadataProvider
-
-IPlannerRegistry
-
-IEntityMaterializer
-
-IEntityDematerializer
+IExecutionProvider
+ExecutionContext
+ExecutionResult
+ExecutionRow
+ProviderPlan
+ProviderNode
 ```
 
-Runtime depends only upon these abstractions.
+Mutation execution has corresponding provider contracts.
 
----
+## Contract rule
 
-## Planning
+A contract should describe behavior without leaking an implementation.
 
-Planning primitives describe work that Runtime will execute.
+For example, `IExecutionProvider` should not require callers to know that the implementation uses SQLite.
 
-Examples include:
+## Stability
 
-```
-QueryPlan
+The contracts are still evolving.
 
-MutationPlan
-
-Projection
-
-Selection
-
-JoinPlan
-
-GraphPlan
-```
-
-Planning primitives are immutable.
-
----
-
-## Identifiers
-
-Foundation defines strongly typed identifiers for generated artifacts.
-
-Typical identifiers include:
-
-```
-EntityId
-
-StorageEntityId
-
-ModelId
-
-FieldId
-
-ColumnId
-
-GraphId
-```
-
-Identifiers should be deterministic and generated at compile time.
-
----
-
-## Primitives
-
-Primitives represent reusable framework concepts.
-
-Examples:
-
-```
-SortDirection
-
-FilterOperation
-
-JoinType
-
-RelationshipKind
-
-MutationOperation
-```
-
-Primitives should remain stable over time.
-
----
-
----
-
-## Related Documentation
-
-- [Metadata](Metadata.md)
-- [Components](Components.md)
-- [Architecture → Dependency Graph](../02-Architecture/Dependency-Graph.md)
-
----
-
-← Previous: [Metadata](Metadata.md)  |  Next: [Components](Components.md) →
+Do not treat them as a stable public NuGet API until a versioned release exists.

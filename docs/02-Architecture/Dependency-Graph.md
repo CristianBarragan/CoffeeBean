@@ -1,69 +1,56 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Architecture](README.md) → **Dependency Graph**
-
 # Dependency Graph
 
-The active solution deliberately keeps the platform small.
+[Home](../../README.md) → [Architecture](README.md) → **Dependency Graph**
 
-## Active graph
+The active project references are intentionally small.
 
 ```text
 Foundgine.Abstractions
-        ↓
+        ↑
 Foundgine.Foundation
-        ↓
+        ↑
 Foundgine.Metadata
-        ↓
-Foundgine.Builders
-        ↓
+        ├──────────────┐
+        │              │
+        ▼              ▼
+Foundgine.Builders   Foundgine.Semantic
+        │
+        ▼
 Foundgine.Planning
-        ↓
+        │
+        ▼
 Foundgine.Execution.Contracts
-        ↓
+        ▲
+        │
 Foundgine.Providers
 ```
 
-The exact `.csproj` references are the authoritative dependency graph.
+More precisely:
 
-## Responsibilities
-
-| Project | Role |
-|---|---|
-| `Foundgine.Abstractions` | stable contracts |
-| `Foundgine.Foundation` | generic primitives |
-| `Foundgine.Metadata` | domain metadata |
-| `Foundgine.Diagnostics` | diagnostics |
-| `Foundgine.Builders` | logical plans |
-| `Foundgine.Planning` | dynamic planning |
-| `Foundgine.Execution.Contracts` | provider execution contracts |
-| `Foundgine.Providers` | provider implementations |
-
-## Rules
-
-- No dependency cycles.
-- Inner platform layers do not reference transports.
-- Core projects do not reference LLM SDKs.
-- Core projects do not reference MCP.
-- Core projects do not reference GraphQL/Hot Chocolate.
-- Database-specific code belongs behind provider boundaries.
-- New integrations should be adapters.
-
-## Historical projects
-
-The former Graphgine/GraphQL projects are no longer in the active solution.
-
-Historical source remains under `archive/`.
+```text
+Foundation → Abstractions
+Metadata → Foundation
+Diagnostics → Foundation
+Builders → Metadata
+Execution.Contracts → Metadata
+Semantic → Metadata
+Planning → Metadata + Builders
+Providers → Builders + Execution.Contracts
+```
 
 ## Why this matters
 
-The architecture is intended to allow:
+The dependency graph prevents accidental architectural erosion.
 
-```text
-MCP
-GraphQL
-REST
-gRPC
-CLI
-background jobs
-```
+For example:
 
-to become clients of the same semantic/execution core without forcing their protocols into Foundgine's lowest layers.
+- semantic code cannot acquire SQL dependencies accidentally;
+- planning cannot depend on GraphQL;
+- execution contracts cannot depend on SQLite;
+- providers remain replaceable.
+
+## Tests
+
+`Foundgine.Tests/ArchitectureTests.cs` machine-checks project-reference rules.
+
+A dependency-direction change should therefore be treated as an architectural change, not a convenience refactor.

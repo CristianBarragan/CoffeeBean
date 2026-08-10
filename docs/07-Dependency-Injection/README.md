@@ -1,47 +1,21 @@
 # Dependency Injection
 
-Dependency injection is the composition mechanism, not the semantic model.
+DI is a composition mechanism, not the semantic model.
 
-## Rule
+The current Banking sample deliberately composes services explicitly so the E2E proof is easy to follow.
 
-DI should answer:
-
-> Which implementation satisfies this contract?
-
-It should not decide:
-
-- what an entity means
-- how an intent is resolved
-- whether an action is authorized
-- how a query is planned
-- how evidence is produced
-
-## Current composition
-
-The active sample constructs the necessary components directly so the E2E remains obvious.
-
-As the runtime grows, DI can become the composition root for:
+## Potential application composition
 
 ```text
-Metadata provider
-Planner
+SemanticModel
+CandidateSource
 Resolver
-Policy evaluator
+Planning services
 Execution provider
-Verifier
-Evidence sink
+Policy
+Evidence
 ```
 
-## Target composition
+These can be registered with the application's existing DI container.
 
-```text
-Application
-    ↓
-DI composition root
-    ↓
-Foundgine semantic/execution services
-    ↓
-provider adapters
-```
-
-Do not introduce registration APIs until the underlying contracts are proven.
+Foundgine should not introduce a container of its own.

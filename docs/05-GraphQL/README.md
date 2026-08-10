@@ -1,27 +1,27 @@
-[Home](../../README.md) → [Documentation](../README.md) → **Historical GraphQL**
-
 # GraphQL
 
-> **Historical / compatibility documentation.**
+> **Historical / adapter context — not the current Foundgine product identity.**
 
-The earlier Foundgine direction included Graphgine, a GraphQL-oriented product using Hot Chocolate and generated mapping/planning infrastructure.
+Foundgine previously evolved from a GraphQL-oriented implementation called Graphgine.
 
-That work has been moved to `archive/`.
-
-GraphQL is no longer the identity of the active Foundgine platform.
-
-## Current position
-
-If GraphQL is integrated in the future, it should be an outer adapter:
+That implementation is preserved under:
 
 ```text
-Hot Chocolate
-     ↓
-Foundgine semantic API
-     ↓
-Foundgine planning/execution
+archive/
 ```
 
-The core platform must not depend on GraphQL.
+The active Foundgine core does not require GraphQL or Hot Chocolate.
 
-See [Direction](../00-Direction/README.md) for the current product thesis.
+GraphQL may be used as a future outer adapter:
+
+```text
+GraphQL
+   ↓
+structured intent
+   ↓
+Foundgine
+```
+
+but GraphQL is not a core dependency.
+
+See [Migration](../MIGRATION.md) for historical mapping information.

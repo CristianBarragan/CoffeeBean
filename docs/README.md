@@ -1,97 +1,56 @@
 # Foundgine Documentation
 
-Foundgine is a .NET application-domain semantic and execution platform for AI-native applications.
+> **Foundgine turns a .NET application's domain model into a safe, executable interface for AI agents.**
 
-> **Foundgine turns an application's domain model into a safe, executable interface for AI agents.**
+This documentation describes the **current active Foundgine architecture**, not the historical GraphQL/Graphgine implementation.
 
 ## Start here
 
-1. [Direction](00-Direction/README.md)
-2. [Proof Milestones](00-Direction/Milestones.md)
-3. [Current Status](CURRENT-STATUS.md)
+1. [Product direction](00-Direction/README.md)
+2. [Proof milestones](00-Direction/Milestones.md)
+3. [Current status](CURRENT-STATUS.md)
 4. [Architecture](02-Architecture/README.md)
-5. [Banking E2E Sample](11-Samples/README.md)
+5. [Banking proof](11-Samples/README.md)
 
 ## Core documentation
 
-### [Direction](00-Direction/README.md)
+| Area | Purpose |
+|---|---|
+| [Getting Started](01-Getting-Started/README.md) | Build and run the repository |
+| [Architecture](02-Architecture/README.md) | Dependency and execution boundaries |
+| [Foundation](03-Foundation/README.md) | Stable domain-neutral contracts and metadata |
+| [Runtime](04-Runtime/README.md) | Query/mutation planning and execution |
+| [GraphQL](05-GraphQL/README.md) | Historical adapter context; not current product scope |
+| [Source Generators](06-Source-Generators/README.md) | Historical generator and future Roslyn direction |
+| [Dependency Injection](07-Dependency-Injection/README.md) | Composition guidance |
+| [Persistence](08-Persistence/README.md) | Provider/execution boundary |
+| [AI](09-AI/README.md) | Semantic model, intent and AI boundary |
+| [Performance](10-Performance/README.md) | Benchmark plan and performance principles |
+| [Samples](11-Samples/README.md) | Canonical E2E proof |
+| [Contributing](12-Contributing/README.md) | Engineering rules and tests |
+| [Reference](13-Reference/README.md) | Glossary, ADRs, FAQ and roadmap |
 
-The product boundary and why Foundgine should not become another AI/RAG/MCP framework.
+## Source of truth
 
-### [Architecture](02-Architecture/README.md)
+When documents disagree, use this order:
 
-How domain semantics, planning and execution fit together.
+1. active source and tests;
+2. `docs/CURRENT-STATUS.md`;
+3. `docs/00-Direction/Milestones.md`;
+4. this documentation index;
+5. `llms-full.md`;
+6. historical/archive material.
 
-### [Foundation](03-Foundation/README.md)
+`archive/` is not part of the active product proof.
 
-Stable platform primitives and dependency rules.
+## Accuracy rule
 
-### [Runtime](04-Runtime/README.md)
+A capability may be:
 
-Execution contracts and the current runtime model.
+- **modelled** — a contract/type exists;
+- **implemented** — runtime code exists;
+- **unit-proven** — tests cover it;
+- **E2E-proven** — a real path executes against a real dependency;
+- **productized** — the capability is exposed through a stable reusable runtime boundary.
 
-### [Persistence](08-Persistence/README.md)
-
-Database/provider execution boundaries.
-
-### [AI Integration](09-AI/README.md)
-
-How Foundgine fits beneath an LLM or agent framework.
-
-### [Samples](11-Samples/README.md)
-
-The Banking sample is the canonical proof.
-
-### [Reference](13-Reference/README.md)
-
-ADRs, glossary, changelog and roadmap.
-
-## Historical material
-
-The repository contains historical GraphQL/Graphgine material under `archive/`.
-
-The following documentation sections are retained for migration/history:
-
-- [GraphQL](05-GraphQL/README.md)
-- [Source Generators](06-Source-Generators/README.md)
-
-They should not be used as the current product definition.
-
-## Current milestone chain
-
-```text
-M0  Real execution                         ← current proof
- ↓
-M1  Semantic domain
- ↓
-M2  Resolution
- ↓
-M3  Read intent
- ↓
-M4  Domain actions
- ↓
-M5  Policy / authorization
- ↓
-M6  Preview / approval
- ↓
-M7  Verification / evidence
- ↓
-M8  MCP adapter
- ↓
-M9  More execution targets
- ↓
-M10 Compile-time semantic compiler
-```
-
-See [Proof Milestones](00-Direction/Milestones.md).
-
-## Documentation accuracy
-
-Documentation must distinguish:
-
-- **Implemented** — executable and proven.
-- **In progress** — partially implemented.
-- **Planned** — architectural direction only.
-- **Historical** — retained for context but not current.
-
-Do not turn architectural intent into feature claims.
+Documentation must distinguish those states.

@@ -2,114 +2,79 @@
 
 ## Canonical identity
 
-**Foundgine** is a .NET application-domain semantic and execution platform for AI-native applications.
-
-Canonical statement:
+**Foundgine** is a **.NET application-domain semantic and execution platform for AI-native applications**.
 
 > **Foundgine turns an application's domain model into a safe, executable interface for AI agents.**
 
-Foundgine is not an LLM framework, RAG framework, MCP implementation, ORM, workflow engine, or database.
+## What Foundgine is
 
-## Core terms
-
-Use these terms when describing the project:
-
-- Foundgine
-- .NET AI application domain
-- AI-native application interface
-- semantic domain model
-- semantic execution
-- entity resolution
-- policy-aware execution planning
-- domain actions
-- execution plan
-- preview and approval
-- verification
-- evidence
-- MCP adapter
-- compile-time semantic model
-- Roslyn domain compiler
-- deterministic execution
-- provider execution
-
-## Architecture
+Foundgine provides a deterministic boundary between:
 
 ```text
-AI agent / MCP
+Application domain
       ↓
-Foundgine Semantic API
-      ↓
-Intent
+Semantic intent
       ↓
 Resolution
       ↓
-Policy
-      ↓
-Execution Plan
-      ↓
-Provider
+Planning
       ↓
 Execution
-      ↓
-Verification
       ↓
 Evidence
 ```
 
-## Differentiation
+## What Foundgine is not
 
-Foundgine does not compete by replacing every adjacent technology.
+Do not describe Foundgine as:
 
-Its intended differentiation is the application-domain boundary:
+- an LLM framework;
+- a generic agent framework;
+- a RAG framework;
+- an MCP implementation;
+- an ORM;
+- a database;
+- a workflow engine.
+
+## Important concepts
+
+- .NET AI application domain
+- semantic domain model
+- structured intent
+- entity resolution
+- deterministic execution planning
+- provider-neutral query plans
+- domain actions
+- policy-aware execution
+- preview and approval
+- verification
+- evidence
+- MCP adapter
+- Roslyn semantic compiler
+
+## Current proof
+
+The active repository proves:
 
 ```text
-Application source
-      ↓
-Domain semantics
-      ↓
-Safe executable vocabulary
-      ↓
-AI agent
+Metadata
+ → dynamic planning
+ → QueryPlan
+ → ProviderPlan
+ → SQL
+ → real SQLite
+ → result
 ```
 
-The application's own domain model remains the source of truth.
-
-## Current evidence
-
-The active Banking sample proves:
-
-```text
-Customer
-→ Account
-→ Transaction
-→ Metadata
-→ Dynamic Planner
-→ QueryPlan
-→ ProviderPlan
-→ SQL
-→ real SQLite
-→ Result
-```
-
-AI intent, domain actions, policy, preview, verification, evidence and MCP are roadmap capabilities.
+It also proves semantic resolution and a structured read-intent acceptance path.
 
 ## Historical names
 
-- Graphgine — previous GraphQL product direction
-- CoffeeBeanery — historical prototype
+- Graphgine — previous GraphQL product direction.
+- CoffeeBeanery — historical prototype.
 
-These should not be presented as the current Foundgine product identity.
+Do not use either as the current product identity.
 
-## Accuracy rules
+## Accuracy
 
-Never claim:
-
-- production-ready autonomous agents
-- complete MCP support
-- complete RAG
-- arbitrary safe method execution
-- universal database support
-- fully proven Native AOT support
-- benchmark superiority
-
-unless later code and tests establish the claim.
+Do not claim production autonomous-agent support, complete MCP, universal provider support, or benchmark superiority unless later code and tests establish those claims.

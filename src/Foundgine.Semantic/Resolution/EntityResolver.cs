@@ -188,4 +188,60 @@ public sealed class EntityResolver
             Reason: $"Uniquely resolved via {sourceEntity.Name}.{relationship.Name}.",
             evidence));
     }
+
+    /// <summary>
+    /// "her last transaction": walk a named relationship from an
+    /// already-resolved reference, ordered by one field on the target
+    /// entity, and take the single top result -- the Milestone 4 (Actions)
+    /// counterpart of <see cref="ResolveByRelationship"/>, which requires
+    /// the candidate set to already be a singleton. Unlike
+    /// <see cref="ResolveByRelationship"/>, more than one candidate is
+    /// expected and is not <see cref="ResolutionOutcome.Ambiguous"/> here --
+    /// the ordering is what disambiguates, not uniqueness of the match.
+    /// </summary>
+    public ResolutionResult ResolveLatestByRelationship(
+        ResolvedReference source, string relationshipName, FieldId orderBy, bool descending = true)
+    {
+        var sourceEntity = _model.Get(source.EntityType);
+        var relationship = sourceEntity.Relationships.FirstOrDefault(
+            r => string.Equals(r.Name, relationshipName, StringComparison.OrdinalIgnoreCase));
+
+        if (relationship is null)
+        {
+            return ResolutionResult.NotFound(
+                $"{sourceEntity.Name} has no relationship named '{relationshipName}'.",
+                [new ResolutionEvidence(
+                    $"No relationship '{relationshipName}' declared on {sourceEntity.Name}.")]);
+        }
+
+        var targetEntity = _model.Get(relationship.Target);
+
+        var candidates = _candidates.FindByRelationshipOrdered(
+            relationship.Id, source.IdentityValue, orderBy, descending, limit: 1);
+
+        var evidence = new List<ResolutionEvidence>
+        {
+            new($"Traversed {sourceEntity.Name}.{relationship.Name} from {sourceEntity.Name} " +
+                $"'{source.IdentityValue}', ordered by field {orderBy} " +
+                $"{(descending ? "descending" : "ascending")}, limit 1: " +
+                $"{candidates.Count} candidate(s).")
+        };
+
+        if (candidates.Count == 0)
+        {
+            return ResolutionResult.NotFound(
+                $"No {targetEntity.Name} found via {sourceEntity.Name}.{relationship.Name}.",
+                evidence);
+        }
+
+        var only = candidates[0];
+
+        return ResolutionResult.Success(new ResolvedReference(
+            relationship.Target,
+            only.IdentityValue,
+            Confidence: 0.9,
+            Reason: $"Most recent {targetEntity.Name} via {sourceEntity.Name}.{relationship.Name}, " +
+                    $"ordered by field {orderBy}.",
+            evidence));
+    }
 }

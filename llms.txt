@@ -1,129 +1,164 @@
-# Foundgine
+# Foundgine — AI Context
 
-> Foundgine is a .NET application-domain semantic and execution platform for AI-native applications. It turns an application's domain model into a safe, executable interface for AI agents.
+Foundgine is a **.NET application-domain semantic and execution platform for AI-native applications**.
+
+> Foundgine turns an application's domain model into a safe, executable interface for AI agents.
 
 ## Product boundary
 
 Foundgine owns:
 
-- semantic domain metadata
-- entity and relationship resolution
-- policy-aware planning
-- constrained domain actions
-- execution plans
-- provider execution contracts
-- verification
-- evidence
+- semantic domain descriptors;
+- metadata-backed semantic inference;
+- structured intent;
+- deterministic identity resolution;
+- provider-neutral planning;
+- execution contracts;
+- explicit domain actions as a future layer;
+- policy-aware execution as a future layer;
+- verification/evidence primitives.
 
 Foundgine does not own:
 
-- LLM inference
-- generic agent orchestration
-- generic RAG
-- vector databases
-- MCP protocol implementation
-- authentication infrastructure
-- workflow engines
-- message brokers
-- ORM/database management
+- LLM inference;
+- general agent orchestration;
+- RAG/vector databases;
+- MCP protocol implementation;
+- ORM/database management;
+- workflow engines;
+- message brokers.
 
-Those are integrations around Foundgine.
-
-## Core lifecycle
+## Current architecture
 
 ```text
-DOMAIN MODEL
-↓
-SEMANTIC MODEL
-↓
-AI INTENT
-↓
-RESOLUTION
-↓
-POLICY / AUTHORIZATION
-↓
-EXECUTION PLAN
-↓
-PREVIEW
-↓
-EXECUTE
-↓
-VERIFY
-↓
-EVIDENCE
-↓
-AI RESPONSE
+Application / AI
+      ↓
+Semantic Intent
+      ↓
+Identity Resolution
+      ↓
+Collection-aware Traversal
+      ↓
+QueryIntent
+      ↓
+QueryPlanner
+      ↓
+Provider
+      ↓
+Execution
 ```
 
 ## Current repository
 
-Active platform projects:
+Active projects:
 
-- `src/Foundgine.Abstractions`
-- `src/Foundgine.Foundation`
-- `src/Foundgine.Metadata`
-- `src/Foundgine.Diagnostics`
-- `src/Foundgine.Builders`
-- `src/Foundgine.Execution.Contracts`
-- `src/Foundgine.Planning`
-- `src/Foundgine.Providers`
+```text
+src/Foundgine.Abstractions
+src/Foundgine.Foundation
+src/Foundgine.Metadata
+src/Foundgine.Diagnostics
+src/Foundgine.Builders
+src/Foundgine.Semantic
+src/Foundgine.Planning
+src/Foundgine.Execution.Contracts
+src/Foundgine.Providers
+```
 
-Canonical proof:
+Canonical sample:
 
-- `samples/Foundgine.Samples.Banking`
+```text
+samples/Foundgine.Samples.Banking
+```
 
-Historical GraphQL/Graphgine implementation:
+Historical work:
 
-- `archive/`
+```text
+archive/
+```
 
 ## Current proof
 
-The Banking sample proves:
+The lower execution substrate is E2E-proven:
 
 ```text
-Domain
-→ Metadata
-→ Dynamic Planner
+Metadata
+→ QueryIntent
+→ QueryPlanner
 → QueryPlan
 → ProviderPlan
 → SQL
-→ real SQLite database
+→ real SQLite
 → ExecutionRow
 ```
 
-It deliberately has no GraphQL, Hot Chocolate, or Graphgine dependency.
+The semantic/read path is also proven end to end for:
 
-Run:
-
-```bash
-dotnet run --project samples/Foundgine.Samples.Banking
+```text
+ReadIntent
+→ EntityResolver / ReadPlanner
+→ ResolvedReadPlan
+→ QueryIntent
+→ QueryPlanner
+→ SQL
+→ real SQLite
 ```
 
-## Product milestones
+The five-entity composite proof demonstrates that the logical Product shape can span:
 
-1. Semantic domain model
-2. Entity resolution
-3. Read intent
-4. Explicit domain actions
-5. Policy/authorization
-6. Preview/approval
-7. Verification/evidence
-8. MCP adapter
-9. Additional execution targets
-10. Roslyn semantic compiler
+```text
+Customer
+→ CustomerBankingRelationship
+→ Contract
+→ Account
+→ Transaction
+```
 
-## Important accuracy
+without a Product storage table. A repeated/self-joined Customer occurrence is also exercised.
 
-Foundgine is an active architecture/proof project, not yet a production-ready autonomous-agent platform.
+The remaining productization gap is the reusable `ResolvedReadPlan → QueryIntent` bridge plus collection-aware traversal for one-to-many relationships.
 
-Do not claim complete AI planning, MCP, RAG, authorization, verification, evidence, or production readiness unless the active source and tests prove it.
+## Design rules
+
+1. The application is the source of truth.
+2. Semantic configuration should add only what cannot safely be inferred.
+3. LLMs produce structured intent; Foundgine executes it.
+4. Identity ambiguity is never silently guessed.
+5. Identity resolution and collection traversal are distinct operations.
+6. Providers are adapters.
+7. Transport is outside the core.
+8. Mutations require explicit constraints.
+9. New abstractions must earn their place through real scenarios.
+10. There is one logical planner.
+
+## Roadmap
+
+1. Productize semantic → query bridge.
+2. Make collection traversal explicit and prove multiple child records.
+3. Benchmark.
+4. Simplify semantic mapping.
+5. Domain actions.
+6. Policy/authorization.
+7. Preview/approval.
+8. Verification/evidence.
+9. MCP adapter.
+10. Additional execution targets.
+11. Roslyn semantic compiler.
+
+## Accuracy
+
+Foundgine is not yet a production-ready autonomous-agent platform.
+
+GraphQL/Graphgine is historical.
+
+MCP, full AI intent extraction, semantic retrieval, production policy, generalized verification and the Roslyn compiler are future capabilities unless active code proves otherwise.
 
 ## Documentation
 
-- `docs/00-Direction/README.md`
-- `docs/00-Direction/Milestones.md`
+- `README.md`
 - `docs/CURRENT-STATUS.md`
+- `docs/00-Direction/Milestones.md`
 - `docs/02-Architecture/README.md`
+- `docs/02-Architecture/Semantic-Resolution-and-Traversal.md`
 - `docs/09-AI/README.md`
 - `docs/11-Samples/README.md`
 - `docs/13-Reference/Roadmap.md`

@@ -1,103 +1,49 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Foundation](README.md) → **Metadata**
-
 # Metadata
 
-## Contents
+`Foundgine.Metadata` is the bridge between application concepts and physical storage.
 
-- [Metadata](#metadata-1)
-- [Dependency Direction](#dependency-direction)
-- [Immutability](#immutability)
+## Core concepts
 
----
-
-## Metadata
-
-Metadata represents immutable facts about the application's structure.
-
-Typical metadata objects include:
-
-```
+```text
 EntityMetadata
-
-ModelMetadata
-
 ColumnMetadata
-
+RelationshipMetadata
 JoinMetadata
-
-GraphMetadata
-
-FieldMetadata
-
-MutationColumn
-
-ColumnReference
+JoinGraph
+ModelMetadata
 ```
 
-Metadata is generated during compilation and consumed during execution.
+An entity can have:
 
----
+- a logical identity;
+- fields/columns;
+- a physical storage name;
+- relationships;
+- mutation metadata.
 
-## Dependency Direction
+## Why metadata matters
 
-Foundation sits at the bottom of the dependency graph.
-
-```
-Foundation
-      ▲
-      │
-Runtime
-      ▲
-      │
-SQL
-      ▲
-      │
-Generated Code
-      ▲
-      │
-GraphQL
-gRPC
-WebApi
-```
-
-Foundation references no other Foundgine project.
-
----
-
-## Immutability
-
-Every metadata object should be immutable.
-
-Example:
+The planner should not contain:
 
 ```csharp
-public sealed class EntityMetadata
-{
-    public ushort Id { get; }
-
-    public string Name { get; }
-
-    public ImmutableArray<ColumnMetadata> Columns { get; }
-}
+if (entity == Customer)
+    join Account;
 ```
 
-Immutable objects:
+Instead it asks the metadata/join graph how entities connect.
 
-- are thread-safe
-- simplify caching
-- improve predictability
-- eliminate synchronization
+## Physical schema independence
 
----
+The E2E suite proves that logical names and physical storage names can differ.
 
----
+For example:
 
-## Related Documentation
+```text
+Customer
+Account
+Transaction
+```
 
-- [Runtime → Execution](../04-Runtime/Execution.md)
-- [Source Generators → Pipeline Stages](../06-Source-Generators/Pipeline-Stages.md)
-- [Reference → Glossary](../13-Reference/Glossary.md)
+can map to an unrelated physical schema through metadata.
 
----
-
-← Previous: [Foundation](README.md)  |  Next: [Contracts](Contracts.md) →
+That separation is central to the architecture.

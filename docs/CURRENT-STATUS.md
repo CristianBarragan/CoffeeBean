@@ -2,289 +2,448 @@
 
 [Home](../README.md) → **Current Status**
 
-## Executive status
+## Executive summary
 
-Foundgine has a real lower-level execution proof, but the AI-native product surface is not yet implemented end to end.
+Foundgine has now proven the two halves that matter most:
 
-The repository should therefore be treated as:
+1. a real provider-neutral planning/execution substrate;
+2. a semantic layer that can resolve structured intent and feed that intent into the existing planning/execution path in an end-to-end Banking proof.
 
-> **A working execution substrate plus an active proof of the AI-native semantic layer.**
+The project is **not** at the point where it needs another architectural layer. The next work is to make the semantic-to-query handoff reusable and then measure the system.
 
-## What is real today
+> **Freeze the architecture. Prove the bridge. Benchmark it.**
 
-The canonical Banking sample proves:
+---
+
+## Proven execution substrate
+
+The canonical lower pipeline is:
 
 ```text
-Metadata
-  ↓
-Dynamic Planner
-  ↓
-Logical QueryPlan
-  ↓
+Domain
+   ↓
+MetadataRegistry + JoinGraph
+   ↓
+QueryIntent
+   ↓
+QueryPlanner
+   ↓
+QueryPlan
+   ↓
+SqlPlanCompiler
+   ↓
 ProviderPlan
-  ↓
-SQL
-  ↓
-real SQLite database
-  ↓
-ExecutionRow result
+   ↓
+SqlExecutionProvider
+   ↓
+real SQLite
+   ↓
+ExecutionRow
 ```
 
-The sample deliberately has no GraphQL dependency.
+### Proven scenarios
 
-Current active platform projects include:
-
-| Project | Role | Status |
+| Capability | Status | Proof |
 |---|---|---|
-| `Foundgine.Abstractions` | stable contracts | active |
-| `Foundgine.Foundation` | primitives and generic CQRS contracts | active |
-| `Foundgine.Metadata` | entity/column/join metadata | active |
-| `Foundgine.Semantic` | Entity/Identity/Field/Relationship/Search/Action/Policy descriptors (Milestone 1) | active |
-| `Foundgine.Diagnostics` | diagnostic infrastructure | active |
-| `Foundgine.Builders` | logical query-plan structures | active |
-| `Foundgine.Execution.Contracts` | execution/provider contracts | active |
-| `Foundgine.Planning` | dynamic planning and mutation plan structures | active |
-| `Foundgine.Providers` | provider compilation/execution | active, incomplete |
-| `Foundgine.Samples.Banking` | canonical E2E proof | active |
+| Linear Customer → Account → Transaction | DONE | `BankingEndToEndTests` |
+| Branching query tree | DONE | `BankingEndToEndTests` |
+| No invented relationship | DONE | negative E2E |
+| Ugly physical schema | DONE | `UglySchemaEndToEndTests` |
+| Five-entity composite | DONE | `ProductCompositeEndToEndTests` |
+| Repeated/self-joined entity occurrences | DONE | `RepeatedEntityEndToEndTests` |
+| Filter + sort + paging | DONE | `FilterSortPageEndToEndTests` |
+| Create/update/delete | DONE | `MutationEndToEndTests` |
+| Atomic multi-entity mutation plan | DONE | `MutationEndToEndTests` |
+| Unfiltered update rejection | DONE | `MutationEndToEndTests` |
 
-## What is not yet proven
-
-The following are target capabilities, not completed features:
-
-- semantic entity resolution
-- natural-language intent integration
-- action discovery
-- domain-action execution
-- policy-aware planning
-- preview/approval
-- post-execution verification
-- evidence model
-- MCP adapter
-- compile-time semantic domain compiler
-- semantic retrieval target
-- external-data execution target
-
-## What is intentionally not being built
-
-Foundgine is not becoming:
-
-- an LLM provider
-- a general-purpose agent framework
-- a RAG framework
-- a vector database
-- an MCP implementation
-- an ORM
-- a workflow engine
-- a message broker
-
-Those are integration points.
-
-## Evidence standard
-
-Documentation must distinguish three states:
-
-### Implemented
-
-There is executable code and an automated or real integration proof.
-
-### In progress
-
-The architecture and partial code exist, but the full behavior is not proven.
-
-### Planned
-
-The capability is part of the roadmap but should not be described as existing.
-
-Avoid "production ready", "fully AOT compatible", "zero reflection", "database independent", or performance claims until CI and benchmarks establish them.
-
-## Immediate priorities
-
-1. Keep the Banking E2E green.
-2. ~~Introduce a protocol-neutral semantic model.~~ Done -- `Foundgine.Semantic` (Milestone 1), exercised live in the Banking sample.
-3. ~~Add deterministic entity resolution (Milestone 2).~~ Done -- `Foundgine.Semantic.Resolution` (`EntityResolver`/`ICandidateSource`/`ResolutionResult`), proven by `ResolutionTests` (fake candidate source) and, against a real database, by `Foundgine.Samples.Banking.Resolution.SqlCandidateSource`.
-4. ~~Add a read-intent-to-plan path.~~ Done -- `Foundgine.Semantic.Intent` (`ReadIntent`/`ReadPlanner`/`ResolvedReadPlan`), proven at the semantic layer by `ReadPlannerTests` and, end to end against a real SQLite database, by `Foundgine.Tests.ReadIntentEndToEndTests`: a structured `ReadIntent` for "Find Ada's last five transactions" resolves through `EntityResolver`, is translated into a `QueryIntent` with a `Filter`/`Sort`/`Page` built from the resolved literal, and executes through the existing `QueryPlanner` -> `SqlPlanCompiler` -> `SqlExecutionProvider` pipeline with no step faked. This is the "Semantic -> Planning bridge" an external architecture review identified as the biggest gap after Milestone 2 landed. The same test file also builds a minimal `ReadEvidence` record (resolution trail + generated SQL + provider + result) per the review's "just one end-to-end record, not a framework" recommendation.
-5. Add explicit domain actions.
-6. Add policy evaluation.
-7. Add preview/approval for mutations.
-8. Add verification and evidence.
-9. Expose the semantic surface through MCP.
-10. Only then invest heavily in compile-time generation.
-
-## Success criterion
-
-The first meaningful product milestone is not "many features".
-
-It is one complete read and one complete mutation:
+The five-entity proof is particularly important because the logical `Product` shape spans:
 
 ```text
-READ
-"Find Ada's last five transactions."
+Customer
+  ↓
+CustomerBankingRelationship
+  ↓
+Contract
+  ↓
+Account
+  ↓
+Transaction
+```
+
+There is no `Product` table. The planner discovers the physical chain from registered metadata and joins. The proof therefore demonstrates the core composite-model thesis rather than a special Product implementation.
+
+---
+
+## Semantic layer
+
+The active semantic project is:
+
+```text
+src/Foundgine.Semantic
+```
+
+It currently contains the semantic model, inference support, resolution and structured read/action intent primitives.
+
+The important active concepts are:
+
+```text
+SemanticModel
+SemanticEntity
+SemanticField
+SemanticIdentity
+SemanticRelationship
+SearchCapability
+EntityResolver
+ReadIntent
+ReadPlanner
+ResolvedReadPlan
+```
+
+Action and policy descriptors exist, but their complete execution lifecycle is deliberately **not** the current focus.
+
+### Semantic model
+
+The semantic model describes application meaning without knowing about SQL, GraphQL or transport.
+
+It supports:
+
+- entities;
+- identities;
+- fields;
+- relationships;
+- relationship cardinality;
+- search capabilities;
+- inference from existing metadata.
+
+Semantic configuration should add meaning that cannot safely be inferred rather than duplicate the entire metadata model.
+
+---
+
+## Entity resolution
+
+`EntityResolver` supports:
+
+```text
+explicit identity
+free-text search
+relationship lookup
+```
+
+Resolution returns:
+
+```text
+Resolved
+NotFound
+Ambiguous
+```
+
+and preserves evidence.
+
+The core invariant is:
+
+> **Never silently invent an identity.**
+
+### Important architectural distinction
+
+Resolution and traversal are not the same operation.
+
+Resolution identifies a concrete entity:
+
+```text
+"Ada Lovelace"
+      ↓
+Customer #1
+```
+
+Traversal describes a set of related entities:
+
+```text
+Customer #1
+   ↓ 1:N
+Accounts
+   ↓ 1:N
+Transactions
+```
+
+The resolver must not turn a collection-valued relationship into a single identity merely because the current sample happens to contain one row.
+
+This is the next semantic hardening point for the reusable bridge.
+
+---
+
+## Structured read intent
+
+`ReadIntent` is deliberately structured. It is **not** a natural-language parser.
+
+Conceptually:
+
+```text
+Anchor:
+    Customer / "Ada Lovelace"
+
+Traversal:
+    Accounts → Transactions
+
+Order:
+    Transaction.Id DESC
+
+Limit:
+    5
+```
+
+The producer may be:
+
+- an LLM;
+- another parser;
+- a UI;
+- an application;
+- a test.
+
+Foundgine owns the constrained representation and safe execution path, not language understanding.
+
+---
+
+## Semantic → execution proof
+
+The current acceptance path proves the complete architecture against a real SQLite database:
+
+```text
+Structured ReadIntent
+        ↓
+EntityResolver / ReadPlanner
+        ↓
+ResolvedReadPlan
+        ↓
+QueryIntent
+        ↓
+QueryPlanner
+        ↓
+QueryPlan
+        ↓
+SqlPlanCompiler
+        ↓
+ProviderPlan
+        ↓
+SqlExecutionProvider
+        ↓
+SQLite
+        ↓
+Result
+```
+
+The Banking sample and `ReadIntentEndToEndTests` prove the concrete scenario:
+
+> **Find Ada Lovelace's last five transactions.**
+
+The five-entity `ProductSemanticIntentEndToEndTests` also proves the semantic/planning path on the deeper composite domain and exercises a repeated `Customer` occurrence.
+
+### What is still missing
+
+The final semantic-to-query translation is still expressed in the acceptance path rather than exposed as a dedicated reusable public runtime component.
+
+So the current state is:
+
+```text
+Architecture:        PROVEN
+End-to-end scenario: PROVEN
+Reusable bridge API: NOT YET FROZEN
+```
+
+That distinction matters. The next task is productization, not another architectural rewrite.
+
+---
+
+## Current architecture
+
+The active dependency graph is:
+
+```text
+Foundation → Abstractions
+Metadata → Foundation
+Diagnostics → Foundation
+Builders → Metadata
+Execution.Contracts → Metadata
+Semantic → Metadata
+Planning → Metadata + Builders
+Providers → Builders + Execution.Contracts
+```
+
+`Foundgine.Semantic` does not depend on SQL, providers or GraphQL.
+
+`Foundgine.Planning` remains the one logical planner. The semantic layer should translate into its `QueryIntent` rather than introduce a second planner hierarchy.
+
+---
+
+## What is intentionally not complete
+
+The following are not production claims:
+
+- full LLM intent extraction;
+- general-purpose agent orchestration;
+- production policy engine;
+- preview/approval runtime;
+- generalized post-execution verification framework;
+- generalized evidence pipeline;
+- MCP adapter;
+- semantic retrieval provider;
+- external-data execution;
+- Roslyn semantic compiler;
+- universal provider support;
+- formal Native AOT verification;
+- benchmark superiority claims.
+
+Low-level mutation planning and SQLite execution are proven, but the AI-facing semantic action/policy lifecycle remains future work.
+
+---
+
+## Current priority
+
+### P0 — productize the semantic read bridge
+
+Create the smallest reusable production boundary for:
+
+```text
+ResolvedReadPlan
+        ↓
+QueryIntent
+```
+
+It must preserve:
+
+- resolved identity;
+- relationship traversal;
+- filters;
+- ordering;
+- limits;
+- ambiguity/failure state.
+
+It must **not** create a second planner.
+
+### P1 — prove collection traversal
+
+The bridge must distinguish:
+
+```text
+resolve one identity
+```
+
+from:
+
+```text
+traverse a one-to-many relationship
+```
+
+The next hard Banking case is:
+
+```text
+Ada
+ ├── Checking account
+ │    └── Transactions
+ └── Savings account
+      └── Transactions
 ```
 
 and:
 
+> **Find Ada's five most recent transactions across all her accounts.**
+
+This is a more important proof than adding another semantic feature.
+
+### P2 — benchmark
+
+Measure separately:
+
+- metadata construction;
+- semantic resolution;
+- read planning;
+- query planning;
+- provider compilation;
+- SQL translation;
+- database execution;
+- total end-to-end time.
+
+Use linear, branching, composite and repeated-entity shapes.
+
+### P3 — simplify semantic mapping
+
+Use existing metadata for what it already knows:
+
+- identity;
+- fields;
+- relationships;
+- types.
+
+Use semantic configuration for what cannot safely be inferred:
+
+- fuzzy search;
+- aliases;
+- human-facing descriptions;
+- explicit domain meaning.
+
+### P4 — action/policy lifecycle
+
+Only after the read path is clean:
+
 ```text
-MUTATION
-"Refund Ada's last transaction."
+Action intent
+ → resolve
+ → policy
+ → plan
+ → preview
+ → execute
+ → verify
+ → evidence
 ```
 
-Both must operate against a real application domain and produce inspectable evidence.
-## What is real
+Action/policy code already present should remain experimental and should not drive the core architecture yet.
 
-The **active tree** (`src/`, `tests/`, `samples/Foundgine.Samples.Banking` — everything
-`Foundgine.sln` builds) is a minimal, self-contained five-project spine with no GraphQL and
-no Graphgine anywhere in its dependency graph:
+### P5 — MCP
 
-- `Foundgine.Metadata` — domain-facing `EntityMetadata`/`ColumnMetadata`/`JoinGraph`,
-  independent of any query language or provider.
-- `Foundgine.Builders` — `QueryPlan`/`QueryNode` (`CompositeNode`, `ProjectionNode`, ...),
-  the provider-agnostic logical plan shape; also `MutationPlan`/`MutationOperation`
-  (`EntityMutation`/`GraphMutation`/`RelationshipMutation`), the mutation counterpart,
-  living here rather than in `Foundgine.Planning` for the same reason `QueryPlan` does —
-  see `ArchitectureTests`.
-- `Foundgine.Planning` — `QueryPlanner`, the dynamic planner that turns a `QueryIntent`
-  tree into a `QueryPlan` purely by consulting `MetadataRegistry`/`JoinGraph` (no
-  domain-specific `if`s); also `MutationPlanner`, which turns a `MutationIntent` into a
-  `MutationPlan` the same way, requiring a `Filter` for Update/Delete so Foundgine never
-  mutates every row by accident.
-- `Foundgine.Execution.Contracts` — provider-agnostic `ProviderPlan`/`ExecutionRow`/
-  `IExecutionProvider`; also `ProviderMutationPlan`/`MutationResult`.
-- `Foundgine.Providers` — `SqlPlanCompiler` (`QueryPlan` → `ProviderPlan`, and
-  `MutationPlan` → `ProviderMutationPlan`), `SqlTextTranslator` (`ProviderPlan` → SQL
-  text, with `SqlScanNode`-occurrence-aware alias resolution so repeated/self-joined
-  entities don't collide; and `ProviderMutationPlan` → INSERT/UPDATE/DELETE text), and
-  `SqlExecutionProvider` (executes reads against SQLite via `Microsoft.Data.Sqlite`, and
-  executes a mutation plan's operations as a single SQLite transaction).
+MCP should be a thin adapter over the proven semantic API, not a new core layer.
 
-This is proven end-to-end, against a real SQLite database, not mocked, by:
+---
 
-- `BankingEndToEndTests` — linear `Customer -> Account -> Transaction` (**FOUND-001**)
-  and a branching `Customer -> {Accounts -> Transactions, ContactPoints}` intent
-  (**FOUND-002**), plus a negative test proving the planner refuses to invent a
-  relationship metadata never described.
-- `UglySchemaEndToEndTests` — the same branching intent against a physical schema whose
-  table/column names share nothing with the domain names, proving `EntityMetadata.StorageName`/
-  `ColumnMetadata.StorageName` are the only place a physical detail leaks in
-  (**UGLY-SCHEMA**).
-- `ProductCompositeEndToEndTests` — a five-entity linear composite,
-  `Customer -> CustomerBankingRelationship -> Contract -> Account -> Transaction`,
-  proving the planner/compiler/provider pipeline holds up on a chain deeper than the
-  original three-table demo, plus a negative test for the same "no shortcuts" guarantee
-  (**FOUND-003**).
-- `MutationEndToEndTests` — Create/Update/Delete against a real SQLite database via
-  `MutationIntent` → `MutationPlanner` → `MutationPlan` → `SqlPlanCompiler.CompileMutation`
-  → `ProviderMutationPlan` → `SqlExecutionProvider.ExecuteMutationAsync`; also proves two
-  entities' mutations submitted as one `ProviderMutationPlan` commit atomically, and that
-  the planner rejects an unfiltered Update.
-- `ArchitectureTests` — machine-checks the dependency-direction rules above (parses each
-  `src/*.csproj`'s `<ProjectReference>`s directly) so an accidental layering violation
-  fails a test instead of only being visible in a diagram.
+## What should not happen next
 
-Supporting unit-level coverage exists per project: `Foundgine.Foundation.Tests`,
-`Foundgine.Metadata.Tests`, `Foundgine.Builders.Tests`, `Foundgine.Diagnostics.Tests`,
-`Foundgine.Execution.Contracts.Tests`, `Foundgine.Planning.Tests`, `Foundgine.Providers.Tests`
-(including `SqlPlanCompilerTests` and `SqlTextTranslatorTests`).
+Do not start another architecture pass.
 
-`archive/` holds the prior Graphgine/HotChocolate/GraphQL-fronted implementation
-(`Graphgine`, `Graphgine.SourceGenerators`, `Graphgine.HotChocolate`, `Graphgine.Postgres`
-usage, the CoffeeBeanery/Api.Banking samples, etc.). None of it is referenced by anything
-under `src/`, `tests/`, or `samples/Foundgine.Samples.Banking` — it's historical context,
-not part of the current proof.
+Do not add:
 
-## What is incomplete
+```text
+LLM orchestration
+MCP implementation
+AOT compiler
+new provider families
+Graphgine/GraphQL integration
+fuzzy ranking framework
+agent framework
+second planner hierarchy
+```
 
-Known incomplete areas include:
+These remain future/archived directions until the current proof is benchmarked.
 
-- ~~`ExecutionRow` cannot represent more than one occurrence of the same entity in a
-  row.~~ Fixed -- `ExecutionRow.Entities` (a `Dictionary<ushort, object?[]>` keyed by
-  `EntityId` alone) was replaced with `ExecutionRow.Occurrences`
-  (`IReadOnlyList<EntityOccurrence>`, each keyed by `(EntityId, OccurrenceIndex)`), and
-  `SqlExecutionProvider.ReadRow` now writes each occurrence's columns into its own slot
-  instead of one shared slot per `EntityId`. `ExecutionRow.Single(EntityId)` covers the
-  common non-repeated case (throws if the entity was scanned zero or more-than-one
-  times, rather than silently picking one); `ExecutionRow.All(EntityId)` returns every
-  occurrence in scan order for the repeated case.
-  `RepeatedEntityEndToEndTests` (`Employee -> Manager -> Manager`, a real self-join) now
-  asserts Alice/Bob/Carol as three distinct occurrences by index, not just that the SQL
-  compiles correctly. (This line was stale relative to the code when found -- left
-  struck through rather than deleted so the history is visible.)
-- **Benchmark evidence** for Foundgine's own pipeline costs (metadata registration,
-  `JoinGraph` construction, intent construction, planning, compilation, translation,
-  execution) across entity counts and shapes (linear, branching, composite, repeated
-  entity). Nothing has been measured yet.
-- ~~Query filtering/ordering/paging in `SqlTextTranslator` (explicitly deferred).~~ Done --
-  `FilterExpression`/`SortTerm`/`PageSpec` (Milestones 6/7), compiled to real
-  WHERE/ORDER BY/LIMIT OFFSET SQL with bound parameters, proven by
-  `FilterSortPageEndToEndTests`. (This line was stale relative to the code when found —
-  left struck through rather than deleted so the history is visible.)
-- Mutation `Upsert`, `GraphMutation`, and `RelationshipMutation` are not compiled by
-  `SqlPlanCompiler` yet (each throws `NotSupportedException` — Upsert because
-  INSERT ... ON CONFLICT semantics vary too much by SQL dialect to share one path with
-  Create/Update/Delete). `MutationValueKind.Generated` (e.g. an AUTOINCREMENT key) and
-  `.Expression` (a computed SQL expression) are likewise not yet translated by
-  `SqlTextTranslator` — only `.Input`/`.Constant` carry a literal `MutationColumn.Value`
-  today.
-- `ModelMetadata`/`ModelEntityBinding` (a logical model backed by more than one storage
-  entity) exists in `Foundgine.Metadata` but nothing in `Foundgine.Planning` or
-  `Foundgine.Providers` consumes it yet — composite results today (e.g.
-  `ProductCompositeEndToEndTests`) come from a `QueryIntent` over storage entities
-  directly, not from planning against a registered `ModelMetadata`.
-- Graph execution provider paths, cache provider paths, ASP.NET Core integration,
-  analyzer project, reflection/serialization projects, formal AOT verification — all
-  still archived/placeholder, not part of the active tree.
-- Whether a *clean* `dotnet build`/`dotnet test` of the whole solution is currently green
-  has not been reverified since the tests above were added; see "Next milestone".
+---
 
-## Documentation rule
+## Definition of the next success checkpoint
 
-When documentation says that Foundgine or Graphgine **supports** a capability, check whether it means:
+Foundgine reaches the next meaningful checkpoint when this is reusable rather than test-specific:
 
-1. the architecture has a contract/model for it,
-2. there is partial implementation,
-3. there is a complete implementation, or
-4. there is a validated end-to-end path.
+```text
+ReadIntent
+   ↓
+Resolution
+   ↓
+Collection-aware traversal
+   ↓
+QueryIntent
+   ↓
+QueryPlan
+   ↓
+ProviderPlan
+   ↓
+real execution
+   ↓
+Evidence
+```
 
-Only the latter two should be used for production-readiness claims.
-
-## Milestones
-
-| Milestone     | Status | Proof |
-|---------------|--------|-------|
-| FOUND-001     | DONE   | `BankingEndToEndTests` (linear Customer → Account → Transaction) |
-| FOUND-002     | DONE   | `BankingEndToEndTests` (branching intent) |
-| UGLY-SCHEMA   | DONE   | `UglySchemaEndToEndTests` |
-| FOUND-003     | DONE   | `ProductCompositeEndToEndTests` (five-entity composite) |
-| Repeated-entity / self-join E2E | DONE — found a real bug, then fixed | `RepeatedEntityEndToEndTests` |
-| Fix `ExecutionRow` occurrence collision | DONE | `ExecutionRow.Occurrences`/`EntityOccurrence`; see "What is incomplete" |
-| Milestone 2 — semantic resolution | DONE | `ResolutionTests`; real DB via `SqlCandidateSource` in the Banking sample |
-| Milestone 3 — read intent -> plan (Semantic -> Planning bridge) | DONE | `ReadPlannerTests`; end-to-end against real SQLite via `ReadIntentEndToEndTests` |
-| FOUND-004 — Validation & Benchmarking | NOT STARTED | — |
-
-## Next milestone
-
-1. Get a clean `dotnet build` + `dotnet test` across the *whole* solution with the
-   project's own `dotnet test` / `Foundgine.sln`. Partially done: no outbound NuGet
-   access was available in the environment this was verified in (`api.nuget.org` is
-   blocked), so `Foundgine.Providers`, `Foundgine.Foundation`'s unused DI package
-   reference, and every test project's `Microsoft.Data.Sqlite`/`xunit` dependencies
-   could not be restored via `dotnet build` itself. Instead, `Foundgine.Abstractions`,
-   `Foundgine.Foundation`, `Foundgine.Metadata`, `Foundgine.Semantic`,
-   `Foundgine.Builders`, `Foundgine.Execution.Contracts`, `Foundgine.Diagnostics`, and
-   `Foundgine.Planning` were each compiled directly with `csc` against the .NET 10 SDK's
-   reference assemblies (no NuGet involved) and all eight built clean with zero errors --
-   including `Foundgine.Semantic`, the project the Milestone 3 bridge lives in. All 28
-   tests in `Foundgine.Semantic.Tests` (Milestones 1-3: `SemanticModelTests`,
-   `SearchCapabilityTests`, `ActionAndPolicyDescriptorTests`, `BankingAcceptanceTests`,
-   `ResolutionTests`, `ReadPlannerTests`) were then compiled against the real compiled
-   `Foundgine.Semantic.dll` (using a minimal hand-written `Assert`/`[Fact]` stand-in for
-   `xunit`'s public surface, since `xunit` itself couldn't be restored) and *actually
-   run* via a small reflection-based runner -- all 28 pass, including
-   `ReadPlannerTests`' own "Find Ada's last five transactions" acceptance scenario.
-   `Foundgine.Providers` and `Foundgine.Tests.ReadIntentEndToEndTests` (the real-SQLite
-   half of the proof) still need `Microsoft.Data.Sqlite`, which could not be verified by
-   execution here -- that half was checked only by the manual symbol-by-symbol
-   cross-reference against the actual source described above, not by compiling or
-   running it. A clean `dotnet build`/`dotnet test` of the *whole* solution, with real
-   NuGet access, is still the thing to confirm next.
-2. FOUND-004: benchmark Foundgine's own pipeline costs (not a comparison against
-   EF/Dapper) across 1/2/3/5-entity, branching, composite, and repeated-entity shapes.
+The project should not add another major subsystem before this path is clean and measured.

@@ -1,5 +1,5 @@
 site_name: Foundgine
-site_description: "Foundgine is a .NET execution platform. Graphgine is its first GraphQL-oriented product."
+site_description: "Foundgine turns a .NET application domain model into a safe, executable interface for AI agents."
 repo_url: https://github.com/CristianBarragan/Foundgine
 repo_name: CristianBarragan/Foundgine
 docs_dir: docs
@@ -52,6 +52,9 @@ plugins:
 nav:
   - Home: README.md
   - Current Status: CURRENT-STATUS.md
+  - Direction:
+      - Overview: 00-Direction/README.md
+      - Proof Milestones: 00-Direction/Milestones.md
   - Getting Started:
       - Overview: 01-Getting-Started/README.md
       - Installation: 01-Getting-Started/Installation.md

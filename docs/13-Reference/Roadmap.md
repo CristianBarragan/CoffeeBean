@@ -1,221 +1,96 @@
 # Roadmap
 
-[Home](../../README.md) → [Reference](README.md) → **Roadmap**
+## Now
 
-The roadmap is intentionally vertical-slice driven. Foundgine should prove the core thesis before expanding into multiple transports, databases, retrieval systems, or AI integrations.
+### 1. Productize the semantic → query bridge
 
-## Phase 0 — Execution substrate
-
-**Status: proven in the canonical sample**
+Move the proven acceptance-path translation:
 
 ```text
-Domain
-→ Metadata
-→ Dynamic Planner
-→ QueryPlan
-→ ProviderPlan
-→ SQL
-→ SQLite
-→ Result
+ResolvedReadPlan → QueryIntent
 ```
 
-The Banking sample is the acceptance test.
+into the smallest reusable runtime capability possible.
 
-## Phase 1 — Semantic domain
+### 2. Make traversal collection-aware
 
-**Status: next**
+Ensure one-to-many relationships are represented as query traversal rather than forced into single-identity resolution.
 
-Create a protocol-neutral semantic model representing:
-
-- entities
-- identities
-- fields
-- relationships
-- searchable properties
-- actions
-- policies
-
-Start hand-authored if necessary.
-
-The goal is to prove the model before building a compiler.
-
-## Phase 2 — Resolution
-
-**Status: planned immediately after Phase 1**
-
-Resolve human/agent references into domain identities.
-
-Required behavior:
-
-- exact matches
-- useful search fields
-- relationship traversal
-- ambiguity reporting
-- evidence for why an entity was selected
-
-No silent guessing.
-
-## Phase 3 — Read planning
-
-**Status: planned**
-
-Convert an intent into a Foundgine query plan.
+Target:
 
 ```text
-Intent
-→ Resolve
-→ Semantic query
-→ QueryPlan
-→ ProviderPlan
-→ Execute
-→ Evidence
+Ada
+ ├── Account A → Transactions
+ └── Account B → Transactions
 ```
 
-The first test is the Banking "last five transactions" scenario.
+### 3. Benchmark
 
-## Phase 4 — Domain actions
-
-**Status: planned**
-
-Introduce explicit, constrained action descriptors.
+Measure the active pipeline before optimizing it:
 
 ```text
-IssueRefund
-SuspendAccount
-ChangeTier
+resolution
+read planning
+query planning
+provider compilation
+SQL translation
+execution
+end-to-end
 ```
 
-Agents may select declared actions; they cannot invoke arbitrary CLR methods.
+### 4. Simplify semantic mapping
 
-## Phase 5 — Policy and authorization
+Let existing metadata supply identity, fields, relationships and types where possible. Use semantic configuration for meaning that cannot safely be inferred.
 
-**Status: planned**
+---
 
-Make authorization a planning input rather than a late controller concern.
+## Next
 
-```text
-Intent
-→ Resolve
-→ Policy
-→ Plan
-```
+### 5. Domain actions
 
-The result should explain allow/deny decisions.
+Expose explicit business operations.
 
-## Phase 6 — Preview and approval
+### 6. Policy / authorization
 
-**Status: planned**
+Make authorization part of planning.
 
-Mutations become:
+### 7. Preview / approval
 
-```text
-Plan
-→ Preview
-→ Approve
-→ Execute
-```
+Make important mutations inspectable before execution.
 
-Preview is part of the execution contract.
+### 8. Verification / evidence
 
-## Phase 7 — Verification and evidence
+Verify and explain important executions.
 
-**Status: planned**
+---
 
-Every important mutation should verify expected state after execution and produce an evidence chain.
+## Later
 
-## Phase 8 — MCP
+### 9. MCP
 
-**Status: planned**
+Thin adapter over the semantic API.
 
-MCP becomes a thin adapter over the semantic API.
+### 10. Additional execution targets
 
-Initial surface:
+Structured data, retrieval, external systems and domain actions as adapters.
 
-```text
-discover
-resolve
-plan/query
-preview
-execute
-evidence
-```
+### 11. Roslyn semantic compiler
 
-Do not create an entity-specific tool for every domain operation unless a concrete integration proves it necessary.
+Generate semantic vocabulary from application code/metadata where compile-time analysis genuinely removes duplication.
 
-## Phase 9 — More execution targets
-
-**Status: later**
-
-Add execution targets behind the existing plan:
-
-```text
-Structured data
-Domain actions
-Semantic retrieval
-External data
-```
-
-Do not build all targets in parallel.
-
-## Phase 10 — Compile-time semantic compiler
-
-**Status: later**
-
-Use Roslyn to derive and generate:
-
-- stable IDs
-- entity metadata
-- relationship metadata
-- search descriptors
-- action descriptors
-- policy metadata
-- planner hints
-
-The compiler describes the legal application vocabulary.
-
-It does not attempt to generate future natural-language plans.
-
-## Phase 11 — Ecosystem integrations
-
-Potential integrations:
-
-- ASP.NET Core
-- MCP
-- Semantic Kernel
-- OpenTelemetry
-- EF Core
-- Dapper
-- Temporal
-- Kafka
-- PostgreSQL/pgvector
-- other databases and retrieval systems
-
-These remain adapters/integrations rather than the Foundgine core.
+---
 
 ## Explicit non-goals
 
-The roadmap does not include building:
+Do not turn the core into:
 
-- a proprietary LLM
-- a general agent framework
-- a proprietary vector database
-- a replacement for MCP
-- a replacement for EF Core
-- a replacement for Temporal
-- a replacement for Kafka
+- an LLM;
+- a general agent framework;
+- a RAG framework;
+- an ORM;
+- an MCP implementation;
+- a workflow engine;
+- a message broker;
+- a database.
 
-## The release gate
-
-Do not call the first AI-native milestone complete until a real test demonstrates:
-
-```text
-natural-language request
-→ domain resolution
-→ policy
-→ plan
-→ real execution
-→ verification
-→ evidence
-```
-
-for both a read and a mutation.
+Those are integration points or neighboring products.

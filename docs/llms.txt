@@ -1,84 +1,165 @@
-# Coffee Beanery
+# Foundgine — AI Context
 
-> Coffee Beanery is a compile-time execution engine that transforms business models into deterministic execution plans, independent of transport, database, or infrastructure. Everything else is an adapter. Phase 1: EF Core mapping as the metadata source, Hot Chocolate as the transport, PostgreSQL as the execution provider, Dapper as the SQL executor.
+Foundgine is a **.NET application-domain semantic and execution platform for AI-native applications**.
 
-Full documentation lives at docs/README.md; a single-file concatenation for tools that prefer one ingest target is at llms-full.md. See docs/09-AI/LLM-Readiness.md for details on this file.
+> Foundgine turns an application's domain model into a safe, executable interface for AI agents.
+
+## Product boundary
+
+Foundgine owns:
+
+- semantic domain descriptors;
+- metadata-backed semantic inference;
+- structured intent;
+- deterministic identity resolution;
+- provider-neutral planning;
+- execution contracts;
+- explicit domain actions as a future layer;
+- policy-aware execution as a future layer;
+- verification/evidence primitives.
+
+Foundgine does not own:
+
+- LLM inference;
+- general agent orchestration;
+- RAG/vector databases;
+- MCP protocol implementation;
+- ORM/database management;
+- workflow engines;
+- message brokers.
+
+## Current architecture
+
+```text
+Application / AI
+      ↓
+Semantic Intent
+      ↓
+Identity Resolution
+      ↓
+Collection-aware Traversal
+      ↓
+QueryIntent
+      ↓
+QueryPlanner
+      ↓
+Provider
+      ↓
+Execution
+```
+
+## Current repository
+
+Active projects:
+
+```text
+src/Foundgine.Abstractions
+src/Foundgine.Foundation
+src/Foundgine.Metadata
+src/Foundgine.Diagnostics
+src/Foundgine.Builders
+src/Foundgine.Semantic
+src/Foundgine.Planning
+src/Foundgine.Execution.Contracts
+src/Foundgine.Providers
+```
+
+Canonical sample:
+
+```text
+samples/Foundgine.Samples.Banking
+```
+
+Historical work:
+
+```text
+archive/
+```
+
+## Current proof
+
+The lower execution substrate is E2E-proven:
+
+```text
+Metadata
+→ QueryIntent
+→ QueryPlanner
+→ QueryPlan
+→ ProviderPlan
+→ SQL
+→ real SQLite
+→ ExecutionRow
+```
+
+The semantic/read path is also proven end to end for:
+
+```text
+ReadIntent
+→ EntityResolver / ReadPlanner
+→ ResolvedReadPlan
+→ QueryIntent
+→ QueryPlanner
+→ SQL
+→ real SQLite
+```
+
+The five-entity composite proof demonstrates that the logical Product shape can span:
+
+```text
+Customer
+→ CustomerBankingRelationship
+→ Contract
+→ Account
+→ Transaction
+```
+
+without a Product storage table. A repeated/self-joined Customer occurrence is also exercised.
+
+The remaining productization gap is the reusable `ResolvedReadPlan → QueryIntent` bridge plus collection-aware traversal for one-to-many relationships.
+
+## Design rules
+
+1. The application is the source of truth.
+2. Semantic configuration should add only what cannot safely be inferred.
+3. LLMs produce structured intent; Foundgine executes it.
+4. Identity ambiguity is never silently guessed.
+5. Identity resolution and collection traversal are distinct operations.
+6. Providers are adapters.
+7. Transport is outside the core.
+8. Mutations require explicit constraints.
+9. New abstractions must earn their place through real scenarios.
+10. There is one logical planner.
+
+## Roadmap
+
+1. Productize semantic → query bridge.
+2. Make collection traversal explicit and prove multiple child records.
+3. Benchmark.
+4. Simplify semantic mapping.
+5. Domain actions.
+6. Policy/authorization.
+7. Preview/approval.
+8. Verification/evidence.
+9. MCP adapter.
+10. Additional execution targets.
+11. Roslyn semantic compiler.
+
+## Accuracy
+
+Foundgine is not yet a production-ready autonomous-agent platform.
+
+GraphQL/Graphgine is historical.
+
+MCP, full AI intent extraction, semantic retrieval, production policy, generalized verification and the Roslyn compiler are future capabilities unless active code proves otherwise.
 
 ## Documentation
 
-- [Overview](docs/00-Overview/README.md): The three pages here answer "what is this, why does it exist, and where is it going" before
-  - [Goals](docs/00-Overview/Goals.md): - [Product goals](#product-goals)
-  - [Roadmap](docs/00-Overview/Roadmap.md): - [Vision](#vision)
-  - [Vision](docs/00-Overview/Vision.md): - [The bold statement](#the-bold-statement)
-- [Overview](docs/00-Overview/README.md): The three pages here answer "what is this, why does it exist, and where is it going" before
-  - [Goals](docs/00-Overview/Goals.md): - [Product goals](#product-goals)
-  - [Roadmap](docs/00-Overview/Roadmap.md): - [Vision](#vision)
-  - [Vision](docs/00-Overview/Vision.md): - [The bold statement](#the-bold-statement)
-- [Getting Started](docs/01-Getting-Started/README.md): This section gets a Coffee Beanery-backed service running locally and explains the moving
-  - [Configuration](docs/01-Getting-Started/Configuration.md): - [Connection strings](#connection-strings)
-  - [Getting Started FAQ](docs/01-Getting-Started/FAQ.md): - [Do I need to learn a new modeling API?](#do-i-need-to-learn-a-new-modeling-api)
-  - [Your First Service](docs/01-Getting-Started/First-Service.md): - [What you're running](#what-youre-running)
-  - [Installation](docs/01-Getting-Started/Installation.md): - [Prerequisites](#prerequisites)
-- [Architecture](docs/02-Architecture/README.md): Coffee Beanery is a compile-time execution engine. This section explains the vision, the
-  - [Concepts](docs/02-Architecture/Concepts.md): - [Model](#model)
-  - [Dependency Graph](docs/02-Architecture/Dependency-Graph.md): - [Dependency Graph](#dependency-graph-1)
-  - [Layers](docs/02-Architecture/Layers.md): - [Design Goals](#design-goals)
-  - [Principles](docs/02-Architecture/Principles.md): - [The Five Core Principles](#the-five-core-principles)
-  - [Project Structure](docs/02-Architecture/Project-Structure.md): - [Top-level layout](#top-level-layout)
-  - [Request Pipeline](docs/02-Architecture/Request-Pipeline.md): - [Overview](#overview)
-  - [Why Coffee Beanery](docs/02-Architecture/Why-CoffeeBeanery.md): - [Why not just Hot Chocolate?](#why-not-just-hot-chocolate)
-- [Foundation](docs/03-Foundation/README.md): Foundation is the dependency-free contract layer everything else in Coffee Beanery builds
-  - [Components](docs/03-Foundation/Components.md): - [Responsibilities](#responsibilities)
-  - [Contracts](docs/03-Foundation/Contracts.md): - [Interfaces](#interfaces)
-  - [Extensibility](docs/03-Foundation/Extensibility.md): - [Philosophy](#philosophy)
-  - [Metadata](docs/03-Foundation/Metadata.md): - [Metadata](#metadata-1)
-- [Runtime](docs/04-Runtime/README.md): Runtime is where generated execution plans actually run. It never discovers metadata, parses
-  - [Events](docs/04-Runtime/Events.md): - [Current State](#current-state)
-  - [Execution](docs/04-Runtime/Execution.md): - [Runtime Pipeline](#runtime-pipeline)
-  - [Mutations](docs/04-Runtime/Mutations.md): - [Overview](#overview)
-  - [Queries](docs/04-Runtime/Queries.md): - [Philosophy](#philosophy)
-- [GraphQL](docs/05-GraphQL/README.md): - [Schema](Schema.md) — how the schema is composed from generated node metadata
-  - [Pagination, Filtering & Sorting](docs/05-GraphQL/Pagination-Filtering-Sorting.md): - [Where it's implemented](#where-its-implemented)
-  - [Resolvers](docs/05-GraphQL/Resolvers.md): - [The wrapper pattern](#the-wrapper-pattern)
-  - [Schema](docs/05-GraphQL/Schema.md): - [Where the schema comes from](#where-the-schema-comes-from)
-- [Source Generators](docs/06-Source-Generators/README.md): The Roslyn incremental source generator is what makes Coffee Beanery's "compile-time first"
-  - [Diagnostics](docs/06-Source-Generators/Diagnostics.md): - [Diagnostic Codes](#diagnostic-codes)
-  - [Mapping Generator](docs/06-Source-Generators/Mapping-Generator.md): `CoffeeBeanery.GraphQL.Core.Mapping.Generators` is the concrete generator shipped in Phase 1.
-  - [Pipeline Stages](docs/06-Source-Generators/Pipeline-Stages.md): - [Overview](#overview)
-- [Dependency Injection](docs/07-Dependency-Injection/README.md): - [Registration](Registration.md) — the composition root and per-layer registration
-  - [Lifetimes](docs/07-Dependency-Injection/Lifetimes.md): - [Lifetime Guidelines](#lifetime-guidelines)
-  - [Registration](docs/07-Dependency-Injection/Registration.md): - [Composition Root](#composition-root)
-- [Persistence](docs/08-Persistence/README.md): Persistence is where a generated execution plan meets an actual database. Phase 1 ships one
-  - [Caching](docs/08-Persistence/Caching.md): - [Startup warmup](#startup-warmup)
-  - [Dapper & EF Core](docs/08-Persistence/Dapper-EFCore.md): - [Two different jobs](#two-different-jobs)
-  - [PostgreSQL & AGE](docs/08-Persistence/PostgreSQL-AGE.md): - [Why PostgreSQL is Phase 1](#why-postgresql-is-phase-1)
-- [AI & LLM Readiness](docs/09-AI/README.md): - [Scope note](#scope-note)
-  - [AI-SEO](docs/09-AI/AI-SEO.md): - [What this means here](#what-this-means-here)
-  - [LLM Readiness](docs/09-AI/LLM-Readiness.md): - [What llms.txt is](#what-llmstxt-is)
-  - [Metadata Usage for Agents](docs/09-AI/Metadata-Usage-For-Agents.md): - [What an agent gets from the metadata](#what-an-agent-gets-from-the-metadata)
-- [Performance](docs/10-Performance/README.md): - [Native AOT](Native-AOT.md) — the design that makes AOT compatibility possible
-  - [Benchmark Methodology](docs/10-Performance/Benchmark-Methodology.md): - [What's measured](#whats-measured)
-  - [Benchmarks](docs/10-Performance/Benchmarks.md): - [Overview](#overview)
-  - [Memory](docs/10-Performance/Memory.md): - [Design choices that affect memory](#design-choices-that-affect-memory)
-  - [Native AOT](docs/10-Performance/Native-AOT.md): - [Why Native AOT?](#why-native-aot)
-  - [Startup Time](docs/10-Performance/Startup-Time.md): - [The tradeoff](#the-tradeoff)
-- [Samples](docs/11-Samples/README.md): - [The Banking sample](#the-banking-sample)
-- [Contributing](docs/12-Contributing/README.md): - [Code Style](Code-Style.md)
-  - [ADR Process](docs/12-Contributing/ADR-Process.md): - [When to write an ADR](#when-to-write-an-adr)
-  - [Code Style](docs/12-Contributing/Code-Style.md): - [General Principles](#general-principles)
-  - [Testing](docs/12-Contributing/Testing.md): - [Philosophy](#philosophy)
-- [Reference](docs/13-Reference/README.md): - [ADRs](ADRs.md) — Architecture Decision Records
-  - [Architecture Decision Records](docs/13-Reference/ADRs.md): Twelve foundational ADRs, recorded when the compile-time-first architecture was adopted.
-  - [Changelog](docs/13-Reference/Changelog.md): - [Unreleased](#unreleased)
-  - [FAQ](docs/13-Reference/FAQ.md): Extended architecture FAQ. For first-hour setup questions, see
-  - [Glossary](docs/13-Reference/Glossary.md): - [Entity](#entity)
-  - [Migration Guides](docs/13-Reference/Migration-Guides.md): - [No versioned releases yet](#no-versioned-releases-yet)
-
-## Project
-
-- [Project README](README.md): Quick start, feature highlights, architecture diagram
-- [CONTRIBUTING](CONTRIBUTING.md)
-- [CHANGELOG](CHANGELOG.md)
-- [SECURITY](SECURITY.md)
-- [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md)
-- [License (MIT)](LICENSE)
+- `README.md`
+- `docs/CURRENT-STATUS.md`
+- `docs/00-Direction/Milestones.md`
+- `docs/02-Architecture/README.md`
+- `docs/02-Architecture/Semantic-Resolution-and-Traversal.md`
+- `docs/09-AI/README.md`
+- `docs/11-Samples/README.md`
+- `docs/13-Reference/Roadmap.md`
+- `llms-full.md`

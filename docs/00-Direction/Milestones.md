@@ -1,377 +1,325 @@
-# Foundgine Proof Milestones
+# Proof Milestones
 
 [Home](../../README.md) → [Direction](README.md) → **Milestones**
 
-This is the execution roadmap for proving the Foundgine thesis. It intentionally prioritizes one complete vertical slice over broad feature coverage.
+These milestones are intentionally vertical-slice driven. They are not a commitment to implement every future capability; they are checkpoints for deciding whether the architecture has earned further investment.
 
-## Milestone 0 — Real execution
+## M0 — Execution substrate
 
-**Goal:** prove the existing lower half works.
+**Status: DONE**
 
 ```text
-Domain
-→ Metadata
-→ Dynamic Planner
-→ QueryPlan
-→ ProviderPlan
-→ SQL
-→ real database
-→ Result
+Metadata
+ → QueryIntent
+ → QueryPlanner
+ → QueryPlan
+ → ProviderPlan
+ → SQL
+ → SQLite
+ → ExecutionRow
 ```
 
-### Acceptance criteria
-
-- Banking domain contains Customer, Account and Transaction.
-- Metadata describes the entities and joins.
-- Planner discovers the path from metadata rather than hardcoding banking joins.
-- Provider compiler produces a SQL-shaped provider plan.
-- SQL executes against a real database.
-- Results are returned through `ExecutionRow`.
-- No GraphQL or AI dependency exists in the sample.
-
-**Status:** active proof exists in `samples/Foundgine.Samples.Banking`.
+Proven by the Banking and broader E2E suite.
 
 ---
 
-## Milestone 1 — Semantic domain
+## M1 — Semantic domain model
 
-**Goal:** turn metadata into a semantic application model.
+**Status: DONE**
 
-Add descriptors for:
+Implemented in `Foundgine.Semantic`.
+
+The active model covers:
 
 ```text
 Entity
 Identity
 Field
 Relationship
-Search capability
-Action
-Policy
+RelationshipCardinality
+SearchCapability
 ```
 
-The semantic model must be protocol-neutral.
+Inference support can derive structural semantics from existing metadata. Explicit semantic configuration remains available where business meaning cannot safely be inferred.
 
-### Acceptance test
+Action/policy descriptors exist as future-facing primitives but are not part of the current proof target.
 
-Given the Banking domain, Foundgine can enumerate:
+---
+
+## M2 — Entity resolution
+
+**Status: DONE**
+
+Implemented:
+
+```text
+ResolveByIdentity
+ResolveBySearch
+ResolveByRelationship
+```
+
+with:
+
+```text
+Resolved
+NotFound
+Ambiguous
+```
+
+and evidence.
+
+A real SQLite candidate source is exercised by the Banking proof.
+
+### Important invariant
+
+Resolution identifies **one concrete identity**. It must not silently collapse a collection-valued relationship into one arbitrary child.
+
+---
+
+## M3 — Structured read intent
+
+**Status: PROVEN**
+
+Implemented:
+
+```text
+ReadIntent
+ReadPlanner
+ResolvedReadPlan
+```
+
+The acceptance path proves the structured scenario:
+
+> Find Ada Lovelace's last five transactions.
+
+The intent is constructed as a structured object. Foundgine does not parse the English sentence.
+
+---
+
+## M4 — Semantic read bridge
+
+**Status: NEXT**
+
+Create a supported reusable translation from:
+
+```text
+ResolvedReadPlan
+        ↓
+QueryIntent
+```
+
+The current E2E tests prove that this translation works conceptually, but the translation is still assembled inside the acceptance path rather than exposed as a stable reusable runtime capability.
+
+The bridge must preserve:
+
+- resolved identity;
+- traversal;
+- filters;
+- ordering;
+- limits;
+- ambiguity/failure state.
+
+Do not create a second planner. `Foundgine.Planning.QueryPlanner` remains the logical planner.
+
+---
+
+## M5 — Collection-aware traversal and hard composite proof
+
+**Status: NEXT**
+
+The next semantic proof must handle one-to-many traversal without requiring every intermediate relationship to resolve to a single identity.
+
+Target scenario:
 
 ```text
 Customer
- ├── identity: Id
- ├── fields: Name
- ├── relationship: Accounts
- └── actions: <none initially>
-
-Account
- ├── identity: Id
- ├── fields: Balance
- └── relationship: Transactions
-
-Transaction
- ├── identity: Id
- └── fields: Amount
+ ├── Account
+ │    └── Transaction
+ └── Account
+      └── Transaction
 ```
 
-**Important:** start with hand-authored metadata if necessary. Do not block the product proof on a source generator.
+Request:
+
+> Find Ada's five most recent transactions across all her accounts.
+
+Then repeat the proof on the deeper five-entity composite:
+
+```text
+Customer
+ → CustomerBankingRelationship
+ → Contract
+ → Account
+ → Transaction
+```
+
+and retain the repeated/self-joined entity proof.
 
 ---
 
-## Milestone 2 — Semantic resolution
+## M6 — Benchmark and harden
 
-**Goal:** map ambiguous human language to domain identities.
+**Status: NOT STARTED**
 
-Examples:
+Measure:
 
 ```text
-"Ada Lovelace"
-"account 10"
-"her checking account"
-"the last transaction"
+resolution
+read planning
+query planning
+provider compilation
+SQL translation
+execution
+total
 ```
 
-into explicit domain references.
+across:
 
-### Acceptance criteria
+```text
+single entity
+linear
+branching
+five-entity composite
+repeated entity
+```
 
-The resolver returns:
-
-- entity type
-- identity
-- confidence/reason
-- evidence used
-- unresolved ambiguity when confidence is insufficient
-
-The resolver must never silently invent an identity.
+No performance conclusion should be published until the benchmark harness and environment are documented.
 
 ---
 
-## Milestone 3 — Read intent
+## M7 — Semantic mapping simplification
 
-**Goal:** prove natural-language-to-read-plan without building a generic AI framework.
+**Status: PLANNED**
 
-```text
-Natural language
-      ↓
-Intent
-      ↓
-Resolve
-      ↓
-Semantic query
-      ↓
-Foundgine QueryPlan
-      ↓
-ProviderPlan
-      ↓
-Database
-      ↓
-Evidence
-```
-
-The LLM is an optional reasoning client. Foundgine owns the constrained semantic representation and execution.
-
-### Acceptance example
-
-> Find Ada's last five transactions.
-
-Expected plan:
+Reduce duplicate configuration by deriving as much as possible from existing metadata:
 
 ```text
-Resolve Customer
-→ Resolve Account through Customer relationship
-→ Query Transaction ordered by transaction identity/time
-→ Limit 5
+identity
+fields
+relationships
+types
 ```
+
+Semantic configuration should mainly express meaning that metadata cannot safely provide.
 
 ---
 
-## Milestone 4 — Domain actions
+## M8 — Semantic actions
 
-**Goal:** expose explicit business operations rather than arbitrary method invocation.
+**Status: PLANNED**
 
-Example:
-
-```text
-IssueRefund(amount)
-SuspendAccount(reason)
-ChangeTier(tier)
-```
-
-Each action gets a descriptor:
+Expose only explicit business operations:
 
 ```text
-Name
-Target entity
-Inputs
-Mutating?
-Authorization requirements
-Side effects
-Verification requirements
+IssueRefund
+SuspendAccount
+ChangeTier
 ```
 
-### Safety rule
-
-An agent can select only actions exposed by the semantic model.
-
-It cannot invent arbitrary C# method calls.
+No arbitrary CLR method invocation.
 
 ---
 
-## Milestone 5 — Policy / authorization
+## M9 — Policy and authorization
 
-**Goal:** authorization becomes part of planning.
+**Status: PLANNED**
+
+Policy becomes part of the semantic execution path:
 
 ```text
 Intent
  ↓
 Resolve
  ↓
-Policy
+Authorize
  ↓
 Plan
 ```
 
-Example:
-
-```text
-IssueRefund
-requires:
-  Refund permission
-  Customer ownership
-  amount <= configured limit
-```
-
-Denied plans should be explicit and explainable.
-
 ---
 
-## Milestone 6 — Preview and approval
+## M10 — Preview, execute, verify
 
-**Goal:** mutations are inspectable before execution.
+**Status: PLANNED**
 
-```text
-PLAN
- ↓
-PREVIEW
- ↓
-APPROVE
- ↓
-EXECUTE
-```
-
-A preview should identify:
-
-- target
-- action
-- inputs
-- expected changes
-- policy decision
-- likely side effects
-- verification strategy
-
-This is a core safety mechanism, not a UI feature.
-
----
-
-## Milestone 7 — Verification and evidence
-
-**Goal:** every important execution can prove what happened.
+Mutations should eventually follow:
 
 ```text
+Plan
+ ↓
+Preview
+ ↓
+Approve
+ ↓
 Execute
  ↓
-Re-read affected state
+Verify
  ↓
-Verify expected result
- ↓
-Produce evidence
-```
-
-Evidence should capture enough information to explain:
-
-```text
-What was resolved?
-Why was it selected?
-What policy was applied?
-What plan ran?
-What provider executed?
-What changed?
-How was the result verified?
+Evidence
 ```
 
 ---
 
-## Milestone 8 — MCP adapter
+## M11 — MCP
 
-**Goal:** expose the proven semantic API to external agents.
+**Status: PLANNED**
 
-MCP is an adapter, not Foundgine's core.
+Expose the semantic API through a thin MCP adapter.
 
-```text
-Claude / ChatGPT / Cursor
-           ↓
-          MCP
-           ↓
-Foundgine Semantic API
-           ↓
-Foundgine Runtime
-```
-
-Start with a minimal tool surface:
-
-```text
-discover
-resolve
-query / plan
-preview
-execute
-verify / evidence
-```
-
-Do not create dozens of entity-specific MCP tools.
+MCP is not part of the core planning model.
 
 ---
 
-## Milestone 9 — Additional execution targets
+## M12 — Additional execution targets
 
-Only after the first vertical slice works:
+**Status: LATER**
+
+Potential targets:
 
 ```text
 Structured data
-Domain actions
 Semantic retrieval
-External data
+Domain actions
+External systems
 ```
 
-These are execution targets behind a common planning model.
-
-Do not build all four at once.
+Each should remain an execution adapter.
 
 ---
 
-## Milestone 10 — Compile-time domain compiler
+## M13 — Roslyn semantic compiler
 
-Only after the semantic model and runtime are proven should Roslyn generation become a major focus.
+**Status: LATER**
 
-The compiler should generate:
+Generate application semantic descriptors where compile-time analysis can remove manual duplication.
 
-- stable identifiers
-- entity descriptors
-- relationship descriptors
-- search descriptors
-- action descriptors
-- policy metadata
-- planner hints
+Potential outputs:
 
-It should **not** generate a fixed planner for future natural-language requests.
+- stable IDs;
+- entity descriptors;
+- relationship descriptors;
+- search descriptors;
+- action descriptors;
+- policy metadata;
+- planner hints.
 
-Dynamic intent remains a runtime concern.
+Do not generate fixed plans for future natural-language requests.
 
 ---
 
-# Definition of done for the first real proof
+# Release gate
 
-The first convincing Foundgine demo is one test that can execute:
-
-```text
-"Find Ada's checking account."
-        ↓
-resolve Customer
-        ↓
-resolve Account
-        ↓
-policy check
-        ↓
-plan
-        ↓
-execute
-        ↓
-evidence
-```
-
-and:
+Do not call the AI-facing runtime proven until a real application demonstrates:
 
 ```text
-"Refund Ada's last transaction."
-        ↓
-resolve Customer
-        ↓
-resolve Transaction
-        ↓
-authorize IssueRefund
-        ↓
-build mutation plan
-        ↓
-preview
-        ↓
-approve
-        ↓
-execute
-        ↓
-verify
-        ↓
-evidence
+structured intent
+ → resolution
+ → collection-aware traversal
+ → plan
+ → real execution
+ → verification/evidence
 ```
 
-If these work against a real database and real domain action, the thesis has been proven.
+for a meaningful read and, later, a meaningful mutation scenario.
 
-Everything else is expansion.
+The first release gate is deliberately read-heavy. It should not be blocked by MCP, AOT, GraphQL or an LLM provider.

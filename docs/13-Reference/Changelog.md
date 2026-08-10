@@ -1,48 +1,46 @@
 # Changelog
 
-## Unreleased — AI-native direction
+## Current documentation realignment — August 2026
 
-Documentation has been realigned around the current Foundgine product thesis:
+The documentation is aligned with the current active Foundgine repository and its proof-driven scope.
 
-> **Foundgine turns a .NET application's domain model into a safe, executable interface for AI agents.**
+### Product
 
-### Documentation changes
+- Foundgine is consistently described as a .NET application-domain semantic and execution platform.
+- GraphQL/Graphgine is historical and remains outside the active core.
+- AI and MCP are positioned as outer integrations.
 
-- Added `docs/00-Direction/` with the product boundary and proof milestones.
-- Reworked the root README around semantic execution rather than GraphQL.
-- Updated architecture documentation to match the active `src/` project graph.
-- Updated the Banking sample documentation as the canonical E2E proof.
-- Reworked AI/LLM documentation and `llms.txt`.
-- Replaced stale AI/search positioning in `ai.seo.md`.
-- Marked GraphQL and the former source-generator architecture as historical.
-- Added an explicit M0–M10 milestone chain.
-- Added accuracy rules separating implemented, in-progress, planned and historical capabilities.
+### Architecture
 
-### Product status
+- `Foundgine.Semantic` is the active semantic layer and depends only on `Foundgine.Metadata`.
+- `Foundgine.Planning` remains the single logical planner.
+- The semantic layer is expected to translate into `QueryIntent`, not introduce a second planner hierarchy.
+- Resolution and relationship traversal are explicitly distinguished: resolution identifies an entity; traversal can represent a collection.
 
-The active Banking sample proves:
+### Proof status
 
-```text
-Domain
-→ Metadata
-→ Dynamic Planner
-→ QueryPlan
-→ ProviderPlan
-→ SQL
-→ real SQLite database
-→ Result
-```
+The active proof includes:
 
-The next product work is:
+- linear traversal;
+- branching traversal;
+- ugly physical schema;
+- five-entity composite;
+- repeated/self-joined entities;
+- filtering, sorting and paging;
+- create/update/delete mutation planning/execution;
+- semantic resolution;
+- structured read intent;
+- semantic/read intent through real SQLite;
+- composite semantic/read proof.
 
-```text
-Semantic domain
-→ Resolution
-→ Read intent
-→ Domain actions
-→ Policy
-→ Preview
-→ Verification
-→ Evidence
-→ MCP
-```
+### Current next step
+
+The remaining core gap is not another architecture layer. It is the reusable semantic → `QueryIntent` bridge, followed by collection-aware traversal and benchmark evidence.
+
+### Scope discipline
+
+Action/policy descriptors remain experimental/future-facing. MCP, full LLM intent extraction, Roslyn compilation, AOT and additional providers remain future directions unless active code and tests prove them.
+
+### Accuracy
+
+Future capabilities are explicitly labelled as planned rather than implemented.

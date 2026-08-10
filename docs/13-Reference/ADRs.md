@@ -1,403 +1,53 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Reference](README.md) → **ADRs**
-
 # Architecture Decision Records
 
-Twelve foundational ADRs, recorded when the compile-time-first architecture was adopted.
-New ADRs are appended here — see [Contributing → ADR Process](../12-Contributing/ADR-Process.md)
-before proposing one.
+This page records the active architectural decisions.
 
-## Contents
+## ADR-001 — Domain semantics are protocol-neutral
 
-- [ADR-001 — Compile-Time First Architecture](#adr-001-compile-time-first-architecture)
-- [ADR-002 — Foundation Owns Contracts](#adr-002-foundation-owns-contracts)
-- [ADR-003 — Runtime Depends on Interfaces](#adr-003-runtime-depends-on-interfaces)
-- [ADR-004 — Immutable Metadata](#adr-004-immutable-metadata)
-- [ADR-005 — Immutable Execution Plans](#adr-005-immutable-execution-plans)
-- [ADR-006 — Generated Materializers](#adr-006-generated-materializers)
-- [ADR-007 — SQL Is a Serialization Layer](#adr-007-sql-is-a-serialization-layer)
-- [ADR-008 — GraphQL Is a Transport](#adr-008-graphql-is-a-transport)
-- [ADR-009 — Dependency Inversion for Generated Code](#adr-009-dependency-inversion-for-generated-code)
-- [ADR-010 — Stable Identifier Allocation](#adr-010-stable-identifier-allocation)
-- [ADR-011 — Transport Independence](#adr-011-transport-independence)
-- [ADR-012 — Native AOT Compatibility](#adr-012-native-aot-compatibility)
-- [Summary](#summary)
+**Decision:** semantic descriptors live in `Foundgine.Semantic` and do not reference GraphQL, SQL or an LLM.
 
----
+**Reason:** the same domain semantics must be usable by multiple clients.
 
-> This document records the major architectural decisions that shape the Foundgine framework. It is intended to provide context for contributors and future maintainers, explaining not only **what** the architecture is, but **why** specific design choices were made.
+## ADR-002 — Structured intent is the Foundgine AI boundary
 
----
+**Decision:** LLMs produce structured intent; Foundgine resolves and executes it.
 
-## ADR-001 — Compile-Time First Architecture
+**Reason:** keeps language reasoning separate from deterministic execution.
 
-### Status
+## ADR-003 — Metadata remains the execution source of truth
 
-Accepted
+**Decision:** planners derive joins and physical details from metadata.
 
-### Context
+**Reason:** prevents domain-specific storage assumptions from leaking into generic planning.
 
-Traditional GraphQL frameworks perform extensive runtime analysis using reflection, expression trees, and dynamic code generation. This increases startup time, memory usage, and complexity while limiting compatibility with Native AOT.
+## ADR-004 — Providers are adapters
 
-### Decision
+**Decision:** SQL and future providers consume provider-neutral plans.
 
-Foundgine moves as much work as possible from runtime to compile time using Roslyn Incremental Source Generators.
+**Reason:** planning should not become a database dialect.
 
-Compilation is responsible for:
+## ADR-005 — Ambiguity is a first-class result
 
-- Metadata discovery
-- Relationship analysis
-- Identifier allocation
-- Materializer generation
-- Dematerializer generation
-- Planner registry generation
-- Runtime registrations
+**Decision:** resolution returns `Ambiguous` instead of guessing.
 
-Runtime executes precomputed artifacts.
+**Reason:** AI-facing infrastructure must fail safely.
 
-### Consequences
+## ADR-006 — Semantic configuration should be minimal
 
-### Advantages
+**Decision:** infer identity, fields and relationships where metadata already knows them.
 
-- Faster startup
-- Native AOT compatibility
-- Reduced allocations
-- Deterministic execution
-- Simpler runtime
+**Reason:** avoid maintaining two domain descriptions.
 
-### Trade-offs
+## ADR-007 — Vertical proof before platform expansion
 
-- More complex generator
-- Larger generated code
-- Increased compile-time work
+**Decision:** complete real E2E slices before adding transports/providers/frameworks.
 
----
+**Reason:** prevents architectural overgrowth without product evidence.
 
-## ADR-002 — Foundation Owns Contracts
+## ADR-008 — Historical GraphQL code remains archived
 
-### Status
+**Decision:** Graphgine/GraphQL implementation stays under `archive/`.
 
-Accepted
+**Reason:** it is useful history but is not the current product boundary.
 
-### Context
-
-Runtime, SQL, GraphQL, and generated code require a common vocabulary.
-
-Without a dedicated foundation layer, dependencies become cyclic and implementations leak across project boundaries.
-
-### Decision
-
-Foundation defines:
-
-- Metadata
-- Planning primitives
-- Interfaces
-- Runtime primitives
-- Identifiers
-
-Foundation references no other Foundgine project.
-
-### Consequences
-
-Every project shares the same contracts while remaining loosely coupled.
-
----
-
-## ADR-003 — Runtime Depends on Interfaces
-
-### Status
-
-Accepted
-
-### Context
-
-The original Runtime directly referenced generated static classes such as:
-
-```csharp
-GeneratedMetadata.GetEntity(...)
-```
-
-This tightly coupled Runtime to generated code.
-
-### Decision
-
-Runtime depends on abstractions instead.
-
-Example:
-
-```csharp
-IMetadataProvider
-```
-
-implemented by:
-
-```csharp
-GeneratedMetadataProvider
-```
-
-### Consequences
-
-Generated code becomes a plug-in rather than a dependency.
-
-Runtime becomes reusable across transports.
-
----
-
-## ADR-004 — Immutable Metadata
-
-### Status
-
-Accepted
-
-### Context
-
-Runtime repeatedly consumes metadata.
-
-Mutable metadata increases complexity and thread-safety concerns.
-
-### Decision
-
-Every metadata object is immutable.
-
-Examples include:
-
-- EntityMetadata
-- ModelMetadata
-- ColumnMetadata
-- JoinMetadata
-- GraphMetadata
-
-Metadata is created once and shared for the application's lifetime.
-
-### Consequences
-
-- Thread-safe
-- Singleton lifetime
-- Predictable behavior
-- Easier testing
-
----
-
-## ADR-005 — Immutable Execution Plans
-
-### Status
-
-Accepted
-
-### Context
-
-Execution should not modify planning decisions.
-
-### Decision
-
-QueryPlan and MutationPlan are immutable.
-
-Planning performs analysis.
-
-Runtime performs execution.
-
-### Consequences
-
-Runtime becomes deterministic and easier to reason about.
-
----
-
-## ADR-006 — Generated Materializers
-
-### Status
-
-Accepted
-
-### Context
-
-Reflection-based materialization is slower and incompatible with Native AOT.
-
-### Decision
-
-The Generator emits dedicated materializers for every model.
-
-Runtime invokes generated materializers directly.
-
-### Consequences
-
-- No reflection
-- Better performance
-- Easier debugging
-- Native AOT compatibility
-
----
-
-## ADR-007 — SQL Is a Serialization Layer
-
-### Status
-
-Accepted
-
-### Context
-
-Planning determines execution semantics.
-
-SQL should not duplicate planning logic.
-
-### Decision
-
-SQL converts immutable plans into dialect-specific SQL.
-
-It performs no metadata discovery or semantic analysis.
-
-### Consequences
-
-Clear separation between planning and serialization.
-
----
-
-## ADR-008 — GraphQL Is a Transport
-
-### Status
-
-Accepted
-
-### Context
-
-GraphQL frameworks often mix transport concerns with execution.
-
-### Decision
-
-GraphQL only:
-
-- Builds schemas
-- Parses requests
-- Invokes planners
-- Calls Runtime
-
-Execution occurs entirely within Runtime.
-
-### Consequences
-
-The same Runtime can support GraphQL, gRPC, Web API, and future transports.
-
----
-
-## ADR-009 — Dependency Inversion for Generated Code
-
-### Status
-
-Accepted
-
-### Context
-
-Generated code should not dictate Runtime architecture.
-
-### Decision
-
-Generated implementations satisfy Foundation interfaces.
-
-Examples include:
-
-- IMetadataProvider
-- IPlannerRegistry
-- IEntityMaterializer
-- IEntityDematerializer
-
-### Consequences
-
-Generated code becomes replaceable and testable.
-
----
-
-## ADR-010 — Stable Identifier Allocation
-
-### Status
-
-Accepted
-
-### Context
-
-Changing identifier values unnecessarily creates noisy diffs and instability.
-
-### Decision
-
-Identifiers are allocated deterministically after validation.
-
-Allocation order should remain stable between builds unless the model changes.
-
-### Consequences
-
-Cleaner generated code and more predictable version control history.
-
----
-
-## ADR-011 — Transport Independence
-
-### Status
-
-Accepted
-
-### Context
-
-Foundgine is intended to support multiple client technologies.
-
-### Decision
-
-Runtime and SQL remain transport agnostic.
-
-GraphQL, gRPC, and Web API become thin adapters over the same execution engine.
-
-### Consequences
-
-New transports can be introduced without modifying Runtime.
-
----
-
-## ADR-012 — Native AOT Compatibility
-
-### Status
-
-Accepted
-
-### Context
-
-Native AOT imposes restrictions on reflection and runtime code generation.
-
-### Decision
-
-Foundgine avoids:
-
-- Reflection
-- Expression compilation
-- Runtime metadata discovery
-- Dynamic proxy generation
-
-Generated code replaces these mechanisms.
-
-### Consequences
-
-Applications remain compatible with Native AOT while retaining high performance.
-
----
-
-## Summary
-
-These architectural decisions establish the core principles of Foundgine:
-
-- Compile-time first
-- Immutable metadata
-- Immutable execution plans
-- Dependency inversion
-- Transport independence
-- Generated implementations
-- Native AOT compatibility
-- Clear project boundaries
-
-Future architectural changes should be evaluated against these principles to preserve the framework's long-term consistency and maintainability.
-
----
-
-## Related Documentation
-
-- [Architecture](../02-Architecture/README.md)
-- [Contributing → ADR Process](../12-Contributing/ADR-Process.md)
-- [Roadmap](Roadmap.md)
-
----
-
-← Previous: [Reference](README.md)  |  Next: [FAQ](FAQ.md) →
+New decisions should be added using [ADR Process](../12-Contributing/ADR-Process.md).

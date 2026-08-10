@@ -1,59 +1,26 @@
-> **Historical note:** This page describes the earlier GraphQL/source-generation architecture. The current Foundgine direction is documented in [Direction](../../00-Direction/README.md) and [Current Status](../../CURRENT-STATUS.md). Historical implementation is under `archive/`.
-
-[Home](../../README.md) → [Documentation](../README.md) → [GraphQL](README.md) → **Resolvers**
-
 # Resolvers
 
-## Contents
+> **Historical / future adapter documentation.**
 
-- [The wrapper pattern](#the-wrapper-pattern)
-- [Query handling](#query-handling)
-- [Service layer](#service-layer)
+The active Foundgine core does not expose a GraphQL schema or resolver layer.
 
----
+The corresponding historical implementation is under `archive/`.
 
-## The wrapper pattern
+If GraphQL is reintroduced, it should be an adapter that converts GraphQL selections/arguments into Foundgine structured intent. It must not move GraphQL concepts into:
 
-Rather than one Hot Chocolate resolver method per field, Foundgine routes GraphQL
-requests through a small number of wrapper resolvers (`WrapperQueryResolver`,
-`WrapperMutationResolver`) that parse the incoming field selection and hand it to the
-runtime's [query planner](../04-Runtime/Queries.md) or
-[mutation planner](../04-Runtime/Mutations.md) as a whole. This is what makes a single
-GraphQL query resolve through one batched SQL statement instead of one query per field/edge.
+- `Foundgine.Metadata`;
+- `Foundgine.Semantic`;
+- `Foundgine.Planning`;
+- `Foundgine.Execution.Contracts`.
 
-## Query handling
+The desired boundary is:
 
-The runtime's `Service` layer — `ProcessService`, `ProcessQuery`, `QueryHandler`,
-`QueryResult` — sits between the GraphQL wrapper resolver and the SQL/Dapper execution
-layer. It receives the parsed request, invokes the generated planner, and returns a
-`QueryResult` the resolver serializes back to the client.
-
-## Service layer
-
+```text
+GraphQL request
+      ↓
+GraphQL adapter
+      ↓
+Foundgine structured intent
+      ↓
+Foundgine planner
 ```
-GraphQL Resolver (WrapperQueryResolver / WrapperMutationResolver)
-        │
-        ▼
-ProcessService → ProcessQuery / QueryHandler
-        │
-        ▼
-Runtime Query/Mutation Planner  (see Runtime → Execution)
-        │
-        ▼
-SQL generation + Dapper execution  (see Persistence)
-```
-
-See [Runtime → Execution](../04-Runtime/Execution.md) for what happens once the planner has
-control.
-
----
-
-## Related Documentation
-
-- [Schema](Schema.md)
-- [Runtime → Execution](../04-Runtime/Execution.md)
-- [Persistence](../08-Persistence/README.md)
-
----
-
-← Previous: [Schema](Schema.md)  |  Next: [Pagination, Filtering & Sorting](Pagination-Filtering-Sorting.md) →

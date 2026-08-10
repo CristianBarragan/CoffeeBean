@@ -1,190 +1,43 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Runtime](README.md) → **Queries**
-
 # Queries
 
-## Contents
+## QueryIntent
 
-- [Philosophy](#philosophy)
-- [High-Level Pipeline](#high-level-pipeline)
-- [Why Planning Exists](#why-planning-exists)
-- [Planner Responsibilities](#planner-responsibilities)
-- [Runtime Responsibilities](#runtime-responsibilities)
-- [QueryPlan](#queryplan)
+`Foundgine.Planning.QueryIntent` is a structured logical request.
 
----
+It can express:
 
-## Philosophy
+- root entity;
+- traversal;
+- filters;
+- sorting;
+- paging.
 
-The planner exists for one purpose:
+## QueryPlanner
 
-> **Convert intent into instructions.**
+`QueryPlanner` resolves a query intent against:
 
-A request expresses *what* the client wants.
-
-A QueryPlan describes *how* Runtime will obtain it.
-
----
-
-## High-Level Pipeline
-
-```
-Transport Request
-
-↓
-
-Planner
-
-↓
-
-Metadata Resolution
-
-↓
-
-Relationship Resolution
-
-↓
-
-Projection Analysis
-
-↓
-
-Graph Planning
-
-↓
-
-QueryPlan
+```text
+MetadataRegistry
+JoinGraph
 ```
 
-Planning completes before Runtime begins.
-
----
-
-## Why Planning Exists
-
-Without planning:
-
-```
-Request
-
-↓
-
-Runtime
-
-↓
-
-Analyze Metadata
-
-↓
-
-Build SQL
-
-↓
-
-Execute
-```
-
-With planning:
-
-```
-Request
-
-↓
-
-Planner
-
-↓
-
-QueryPlan
-
-↓
-
-Runtime
-
-↓
-
-Execute
-```
-
-Runtime becomes significantly simpler.
-
----
-
-## Planner Responsibilities
-
-The planner is responsible for:
-
-- Entity resolution
-- Relationship resolution
-- Projection analysis
-- Join planning
-- Graph planning
-- Filter normalization
-- Ordering
-- Pagination
-- Aggregation planning
-- Alias generation
-
-The planner never executes SQL.
-
----
-
-## Runtime Responsibilities
-
-Runtime receives a completed plan.
-
-Runtime performs:
-
-```
-QueryPlan
-
-↓
-
-SQL Generation
-
-↓
-
-Execution
-
-↓
-
-Materialization
-```
-
-Runtime never revisits planning decisions.
-
----
+and produces a provider-neutral `QueryPlan`.
 
 ## QueryPlan
 
-The QueryPlan is an immutable contract.
-
-Example:
+The logical plan can contain nodes such as:
 
 ```text
-QueryPlan
-
-├── Root Entity
-├── Projection
-├── Filters
-├── Ordering
-├── Pagination
-├── Graph
-├── Joins
-└── Result Shape
+Scan
+Join
+Composite
+Projection
+Materialize
+GraphEdge
 ```
 
-Everything Runtime needs already exists.
+## Provider compilation
 
----
+The SQL provider translates the logical plan into provider nodes and SQL.
 
----
-
-## Related Documentation
-
-- [Execution](Execution.md)
-- [Mutations](Mutations.md)
-- [GraphQL → Pagination, Filtering & Sorting](../05-GraphQL/Pagination-Filtering-Sorting.md)
-
----
-
-← Previous: [Execution](Execution.md)  |  Next: [Mutations](Mutations.md) →
+This keeps SQL syntax out of the planner.

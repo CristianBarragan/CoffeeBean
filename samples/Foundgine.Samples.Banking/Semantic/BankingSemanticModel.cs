@@ -38,6 +38,10 @@ public static class BankingSemanticModel
                     RelationshipCardinality.Many))
             .Entity(BankingMetadata.Transaction.EntityId, "Transaction", transaction => transaction
                 .Identity(new FieldId(1), "Id")
-                .Field(new FieldId(3), "Amount", typeof(decimal)))
+                .Field(new FieldId(3), "Amount", typeof(decimal))
+                // FieldId(4) deliberately matches BankingMetadata.Transaction's
+                // ColumnId(4) for TransactionDate -- see SqlCandidateSource's
+                // remarks on the FieldId/ColumnId alignment this sample relies on.
+                .Field(new FieldId(4), "TransactionDate", typeof(DateTime)))
             .Build();
 }
