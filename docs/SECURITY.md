@@ -1,22 +1,30 @@
 # Security Policy
 
-## Supported Versions
+Foundgine is an active proof project and does not currently claim production security certification or a complete authorization framework.
 
-Coffee Beanery has not yet cut a tagged, versioned release — see the
-[Changelog](docs/13-Reference/Changelog.md) and [Roadmap](docs/00-Overview/Roadmap.md).
-Until a first release ships, only the `main` branch is supported.
+## Current safety properties
 
-## Reporting a Vulnerability
+The active code already demonstrates some useful constraints:
 
-Please do not open a public GitHub issue for a suspected security vulnerability. Instead,
-use GitHub's [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability)
-feature on this repository, or contact the maintainers directly through the contact method
-listed on the repository's GitHub page.
+- ambiguous entity resolution is not silently accepted;
+- the mutation planner rejects unfiltered update operations;
+- logical planning is separated from provider execution;
+- execution is explicit through provider contracts.
 
-Please include:
+## Future security work
 
-- A description of the vulnerability and its potential impact.
-- Steps to reproduce it, including the affected version or commit.
-- Any suggested mitigation, if you have one.
+The AI-facing security path still needs:
 
-We'll acknowledge reports as promptly as we can and follow up once the issue is triaged.
+```text
+identity resolution
+ → authorization
+ → action constraints
+ → preview
+ → execution
+ → verification
+ → evidence
+```
+
+## Reporting
+
+For a suspected vulnerability, use the repository's private security reporting mechanism where available. Do not publish sensitive exploit details in a public issue.

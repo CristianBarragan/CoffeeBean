@@ -1,44 +1,45 @@
-[Home](../../README.md) → [Documentation](../README.md) → **Runtime**
-
 # Runtime
 
-Foundgine runtime is the execution half of the platform.
-
-Its principle is:
-
-> **Runtime consumes explicit plans; it does not rediscover the application.**
-
-Current active execution contracts include:
-
-- `ExecutionContext`
-- `ExecutionOptions`
-- `ExecutionResult`
-- `ExecutionRow`
-- `ExecutionStatistics`
-- `ProviderPlan`
-- `ProviderNode`
-- `IExecutionProvider`
-
-The current Banking sample proves a real query path through these concepts.
-
-## Target runtime lifecycle
+The runtime turns structured intent into executable provider plans.
 
 ```text
-Intent
- ↓
-Resolution
- ↓
-Policy
- ↓
-Plan
- ↓
-Provider
- ↓
-Execute
- ↓
-Verify
- ↓
-Evidence
+QueryIntent
+   ↓
+QueryPlanner
+   ↓
+QueryPlan
+   ↓
+SqlPlanCompiler
+   ↓
+ProviderPlan
+   ↓
+SqlExecutionProvider
 ```
 
-Resolution, policy, verification and evidence are the next product layers; they should not be described as complete today.
+The runtime also contains the lower-level mutation planning path.
+
+## Semantic bridge
+
+The semantic layer is intentionally separate from the runtime planner.
+
+The required bridge is:
+
+```text
+ResolvedReadPlan
+       ↓
+QueryIntent
+       ↓
+QueryPlanner
+```
+
+The current acceptance tests prove this connection end to end, but the translation is not yet a dedicated reusable public runtime component.
+
+The bridge must remain small. It should not become a second planner or an AI orchestration layer.
+
+## Current focus
+
+The next runtime work is:
+
+1. productize the semantic → query translation;
+2. make collection-valued traversal explicit;
+3. benchmark the complete pipeline.

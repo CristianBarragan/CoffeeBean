@@ -1,137 +1,108 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Architecture](README.md) → **Request Pipeline**
-
 # Request Pipeline
 
-The target Foundgine pipeline separates compiled application knowledge from dynamic runtime intent.
-
-## 1. Domain compilation
+## Current proven read pipeline
 
 ```text
-C# domain
-   ↓
-semantic descriptors
+Structured ReadIntent
+        ↓
+EntityResolver / ReadPlanner
+        ↓
+ResolvedReadPlan
+        ↓
+QueryIntent
+        ↓
+QueryPlanner
+        ↓
+QueryPlan
+        ↓
+SqlPlanCompiler
+        ↓
+ProviderPlan
+        ↓
+SqlExecutionProvider
+        ↓
+SQLite
+        ↓
+ExecutionRow
 ```
 
-The descriptors identify what the application can expose.
+The current acceptance path proves the complete chain against a real database. The `ResolvedReadPlan → QueryIntent` translation is still assembled in the acceptance path and is therefore the next reusable runtime component to extract.
 
-## 2. Agent intent
+## Resolution is not traversal
 
-An external agent or application produces an intent such as:
+This distinction is central to the architecture.
 
-```text
-Find Ada's last five transactions.
-```
+Resolution answers:
 
-Foundgine does not need to own the LLM that produced the intent.
+> **Which concrete entity does this reference identify?**
 
-## 3. Resolution
+Example:
 
 ```text
-Ada
- ↓
+"Ada Lovelace"
+      ↓
 Customer #1
- ↓
-Account #10
- ↓
+```
+
+Traversal answers:
+
+> **Which related set should the query walk?**
+
+Example:
+
+```text
+Customer #1
+   ↓ 1:N
+Accounts
+   ↓ 1:N
 Transactions
 ```
 
-Resolution should record why each identity was selected.
+Therefore a collection-valued relationship should normally become part of `QueryIntent`, not be forced through single-identity resolution.
 
-## 4. Policy
+## Structured intent comes first
 
-Before an action or protected query proceeds:
+Foundgine should not depend on how intent was produced.
+
+The input may come from:
 
 ```text
-Intent
- ↓
-Resolved targets
- ↓
-Policy evaluation
+LLM
+UI
+REST
+MCP
+application code
+test
 ```
 
-A denial is a valid execution result.
+All should eventually converge on the same structured semantic contract.
 
-## 5. Planning
+## Query planning
 
-The planner converts the resolved intent into explicit execution structures:
+The semantic layer should translate into the existing `QueryIntent` model.
+
+There should be one logical planner:
 
 ```text
+Semantic intent
+      ↓
 QueryIntent
-    ↓
+      ↓
+QueryPlanner
+```
+
+Do not introduce a parallel `SemanticPlanner → QueryPlanner → ExecutionPlanner` hierarchy.
+
+## Provider execution
+
+The provider decides how to realize the plan.
+
+For SQL:
+
+```text
 QueryPlan
-    ↓
-ProviderPlan
+ → ProviderPlan
+ → SQL
 ```
 
-For mutations:
-
-```text
-ActionIntent
-    ↓
-MutationPlan
-```
-
-## 6. Preview
-
-Mutating plans should be renderable before execution:
-
-```text
-Target
-Action
-Inputs
-Policy result
-Expected effects
-Verification strategy
-```
-
-## 7. Execute
-
-Providers execute the approved plan.
-
-The provider boundary is represented by `Foundgine.Execution.Contracts`.
-
-## 8. Verify
-
-After a mutation, Foundgine should re-read or otherwise validate the affected state.
-
-Verification is part of the product contract, not merely a test concern.
-
-## 9. Evidence
-
-The result should contain an evidence chain sufficient to answer:
-
-```text
-Who/what was selected?
-Why?
-What policy was applied?
-What plan ran?
-What actually happened?
-How was it verified?
-```
-
-## 10. AI response
-
-The external AI system can turn the evidence into a natural-language response.
-
-Foundgine does not need to generate the prose itself.
-
-## Current implementation
-
-The Banking sample currently proves:
-
-```text
-Metadata
-→ Dynamic Planner
-→ QueryPlan
-→ ProviderPlan
-→ SQL
-→ real SQLite
-→ Result
-```
-
-Steps involving natural-language intent, policy, actions, preview, verification and evidence are roadmap work.
-
-## Design principle
-
-**The AI decides what it wants; Foundgine decides what the application permits and how that intent can execute.**
+The logical planner does not emit SQL.

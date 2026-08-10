@@ -1,35 +1,26 @@
-[Home](../../README.md) → [Documentation](../README.md) → **Foundation**
-
 # Foundation
 
-Foundation contains stable, protocol-neutral primitives used by the active Foundgine platform.
+The foundation is the stable, protocol-neutral substrate.
 
-It should remain independent of:
+It should not contain:
 
-- LLM providers
-- MCP
-- GraphQL
-- Hot Chocolate
-- database-specific APIs
+- GraphQL;
+- SQL-specific logic;
+- LLM dependencies;
+- application-specific semantics.
 
-See the individual project boundaries in [Architecture → Layers](../02-Architecture/Layers.md).
-
-## Current role
-
-Foundation supports the platform rather than defining the entire AI product.
-
-The product semantics will build on top of:
+## Main areas
 
 ```text
-Foundation
- ↓
-Metadata
- ↓
-Planning
- ↓
-Execution
+Foundgine.Abstractions
+Foundgine.Foundation
+Foundgine.Metadata
+Foundgine.Builders
+Foundgine.Execution.Contracts
 ```
 
-## Rule
+## Design goal
 
-Do not place AI orchestration, transport models, SQL syntax, or provider-specific behavior in Foundation.
+The foundation should remain boring.
+
+It provides the contracts and structures higher layers need without owning policy or transport decisions.

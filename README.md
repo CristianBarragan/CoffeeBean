@@ -1,159 +1,178 @@
 # Foundgine
 
-**Foundgine turns a .NET application's domain model into a safe, executable interface for AI agents.**
+> **Foundgine turns a .NET application's domain model into a safe, executable interface for AI agents.**
 
-It is a domain-semantic and execution layer for AI-native applications.
+Foundgine is a **.NET application-domain semantic and execution platform** for AI-native applications.
 
-Foundgine is deliberately **not** another LLM framework, RAG framework, MCP server implementation, ORM, workflow engine, or database.
-
-```text
-        Claude / ChatGPT / Cursor / other agents
-                         │
-                     MCP / API
-                         │
-                         ▼
-                ┌─────────────────┐
-                │    Foundgine    │
-                │                 │
-                │ Domain semantics│
-                │ Resolution      │
-                │ Policy          │
-                │ Planning        │
-                │ Execution       │
-                │ Verification    │
-                │ Evidence        │
-                └────────┬────────┘
-                         │
-              ┌──────────┼──────────┐
-              ▼          ▼          ▼
-          Structured   Domain     External
-             data      actions     systems
-              │          │
-              ▼          ▼
-          Database   Application services
-```
-
-## The problem
-
-AI agents are good at reasoning about language, but an application is not language.
-
-A real application has:
-
-- entities
-- identities
-- relationships
-- business operations
-- authorization rules
-- data sources
-- side effects
-- verification requirements
-
-Today, developers commonly bridge that gap by writing a growing collection of custom tools.
-
-Foundgine's thesis is:
-
-> **The application already contains the domain knowledge. Compile and expose that knowledge as a constrained semantic execution surface instead of teaching every agent the application independently.**
-
-## The core lifecycle
+It is not trying to be another LLM framework, RAG framework, ORM, workflow engine, database, or MCP implementation. The core problem Foundgine owns is the boundary between an application's **domain meaning** and **safe execution**.
 
 ```text
-DOMAIN MODEL
-     ↓
-SEMANTIC MODEL
-     ↓
-AI INTENT
-     ↓
-RESOLUTION
-     ↓
-POLICY / AUTHORIZATION
-     ↓
-EXECUTION PLAN
-     ↓
-PREVIEW
-     ↓
-EXECUTE
-     ↓
-VERIFY
-     ↓
-EVIDENCE
-     ↓
-AI RESPONSE
+                AI / Application
+                       │
+                       ▼
+                Semantic Intent
+                       │
+                       ▼
+                ┌─────────────┐
+                │  Foundgine  │
+                │             │
+                │ Resolution  │
+                │ Policy      │
+                │ Planning    │
+                │ Execution   │
+                │ Evidence    │
+                └──────┬──────┘
+                       │
+          ┌────────────┼────────────┐
+          ▼            ▼            ▼
+      Structured    Domain      External
+         data       actions       data
 ```
 
-Not every request requires every stage. Reads can be simpler; mutations should normally pass through policy, preview/approval, execution and verification.
+## The idea
 
-## What Foundgine owns
+A business application already knows:
 
-Foundgine owns the application-domain boundary:
+- what entities exist;
+- how they are identified;
+- how entities relate;
+- which fields are searchable;
+- which operations are legal;
+- what data may be accessed;
+- how changes should be executed.
 
-- semantic entity and relationship metadata
-- identity and entity resolution
-- constrained query planning
-- domain-action descriptors
-- policy-aware planning
-- execution plans
-- execution-provider contracts
-- verification
-- evidence
+An AI model knows language and can propose intent, but it should not become the source of truth for those application rules.
 
-## What Foundgine deliberately does not own
-
-Use existing technologies for:
-
-- LLM inference
-- model hosting
-- generic agent orchestration
-- generic RAG
-- vector databases
-- MCP protocol implementation
-- authentication infrastructure
-- workflow engines
-- message brokers
-- ORM/database management
-- hosting
-
-Foundgine integrates with those technologies rather than recreating them.
-
-## Current repository
-
-The active solution currently contains:
+Foundgine therefore aims to provide this boundary:
 
 ```text
-src/
-├── Foundgine.Abstractions/
-├── Foundgine.Foundation/
-├── Foundgine.Metadata/
-├── Foundgine.Semantic/
-├── Foundgine.Diagnostics/
-├── Foundgine.Builders/
-├── Foundgine.Execution.Contracts/
-├── Foundgine.Planning/
-└── Foundgine.Providers/
-
-samples/
-└── Foundgine.Samples.Banking/
-
-tests/
-├── Foundgine.Tests/
-├── Foundgine.Foundation.Tests/
-├── Foundgine.Metadata.Tests/
-├── Foundgine.Semantic.Tests/
-├── Foundgine.Builders.Tests/
-├── Foundgine.Diagnostics.Tests/
-├── Foundgine.Execution.Contracts.Tests/
-├── Foundgine.Planning.Tests/
-└── Foundgine.Providers.Tests/
+Application domain
+        ↓
+Semantic model
+        ↓
+Structured intent
+        ↓
+Resolution
+        ↓
+Policy
+        ↓
+Execution plan
+        ↓
+Provider execution
+        ↓
+Verification / evidence
 ```
 
-The active tree intentionally contains no GraphQL product project. The historical GraphQL/Graphgine engine, its source generators, and the pre-Foundgine CoffeeBeanery prototypes were removed from the tree entirely (they are still recoverable from git history) rather than kept around as an `archive/` folder, so the tree only contains what the current milestones actually need.
+The AI is a **client of that boundary**, not the owner of it.
 
-## Current E2E proof
+---
 
-The canonical sample is:
+## Current status
 
-`samples/Foundgine.Samples.Banking`
+Foundgine is an active architecture and proof-of-concept project.
 
-It currently proves:
+The lower execution path is already proven against a real SQLite database:
+
+```text
+Metadata
+   ↓
+Dynamic QueryPlanner
+   ↓
+QueryPlan
+   ↓
+ProviderPlan
+   ↓
+SQL
+   ↓
+SQLite
+   ↓
+ExecutionRow
+```
+
+The semantic layer is also implemented far enough to prove:
+
+```text
+SemanticModel
+   ↓
+EntityResolver
+   ↓
+ResolvedReference
+   ↓
+ReadIntent
+   ↓
+ReadPlanner
+   ↓
+ResolvedReadPlan
+```
+
+A real end-to-end acceptance test also connects that resolved read to the existing query planner/provider pipeline for:
+
+> **Find Ada Lovelace's last five transactions.**
+
+A deeper semantic proof also exercises the five-entity composite domain and a repeated `Customer` occurrence. The remaining work is to turn the proven semantic-to-query handoff into a clean reusable runtime bridge and make collection-valued traversal explicit.
+
+**This is not yet a production-ready autonomous-agent platform.**
+
+---
+
+# Documentation
+
+### Direction
+
+- [Product direction](docs/00-Direction/README.md)
+- [Proof milestones](docs/00-Direction/Milestones.md)
+- [Current status](docs/CURRENT-STATUS.md)
+
+### Getting started
+
+- [Installation](docs/01-Getting-Started/Installation.md)
+- [First service](docs/01-Getting-Started/First-Service.md)
+- [Configuration](docs/01-Getting-Started/Configuration.md)
+- [FAQ](docs/01-Getting-Started/FAQ.md)
+
+### Architecture
+
+- [Architecture overview](docs/02-Architecture/README.md)
+- [Layers](docs/02-Architecture/Layers.md)
+- [Dependency graph](docs/02-Architecture/Dependency-Graph.md)
+- [Principles](docs/02-Architecture/Principles.md)
+- [Request pipeline](docs/02-Architecture/Request-Pipeline.md)
+- [Vision](docs/02-Architecture/Vision.md)
+
+### Core implementation
+
+- [Foundation](docs/03-Foundation/README.md)
+- [Metadata](docs/03-Foundation/Metadata.md)
+- [Planning](docs/04-Runtime/README.md)
+- [Execution](docs/04-Runtime/Execution.md)
+- [Mutations](docs/04-Runtime/Mutations.md)
+- [Semantic model](docs/09-AI/README.md)
+
+### Proof
+
+- [Banking sample](docs/11-Samples/README.md)
+- [Testing](docs/12-Contributing/Testing.md)
+- [Current benchmark plan](docs/10-Performance/Benchmarks.md)
+
+### Reference
+
+- [Glossary](docs/13-Reference/Glossary.md)
+- [FAQ](docs/13-Reference/FAQ.md)
+- [Roadmap](docs/13-Reference/Roadmap.md)
+- [Changelog](docs/13-Reference/Changelog.md)
+- [ADRs](docs/13-Reference/ADRs.md)
+
+### AI context
+
+- [`llms.txt`](llms.txt)
+- [`llms-full.md`](llms-full.md)
+- [`ai.seo.md`](ai.seo.md)
+
+---
+
+# Canonical proof
+
+The Banking sample is intentionally small:
 
 ```text
 Customer
@@ -163,161 +182,119 @@ Account
 Transaction
 ```
 
-through:
+It uses real metadata, a dynamic planner, provider compilation and a real SQLite connection.
 
-```text
-Domain
-  ↓
-Metadata
-  ↓
-Dynamic Planner
-  ↓
-QueryPlan
-  ↓
-ProviderPlan
-  ↓
-SQL
-  ↓
-real SQLite database
-  ↓
-Result
-```
-
-The sample uses real SQLite and does not depend on GraphQL, Hot Chocolate, or Graphgine.
-
-Run it with:
+Run:
 
 ```bash
 dotnet run --project samples/Foundgine.Samples.Banking
 ```
 
-This is the first proof, not the final product.
+The repository also contains E2E tests covering:
 
-## The next proof
+- linear traversal;
+- branching traversal;
+- ugly physical schemas;
+- five-entity composites;
+- repeated/self-joined entities;
+- filtering, sorting and paging;
+- create/update/delete mutations;
+- semantic resolution;
+- structured read intent;
+- resolution → planning → real SQLite execution.
 
-The immediate goal is to extend the Banking sample upward:
+---
 
-```text
-"Find Ada's checking account."
-        ↓
-semantic resolution
-        ↓
-policy
-        ↓
-execution plan
-        ↓
-real database
-        ↓
-evidence
-```
+# What Foundgine is not
 
-Then:
+Foundgine does **not** attempt to replace:
 
-```text
-"Refund Ada's last transaction."
-        ↓
-resolve
-        ↓
-authorize
-        ↓
-preview
-        ↓
-approve
-        ↓
-execute
-        ↓
-verify
-        ↓
-evidence
-```
+- LLM providers;
+- agent orchestration frameworks;
+- MCP;
+- EF Core;
+- Dapper;
+- databases;
+- vector databases;
+- workflow engines;
+- message brokers.
 
-See [Proof Milestones](docs/00-Direction/Milestones.md).
+Those technologies can sit around Foundgine.
 
-## Architecture
-
-Foundgine separates stable domain contracts from planning and execution:
+For example:
 
 ```text
-Foundgine.Abstractions
-        ↓
-Foundgine.Foundation
-        ↓
-Foundgine.Metadata
-        ↓
-Foundgine.Builders
-        ↓
-Foundgine.Planning
-        ↓
-Foundgine.Execution.Contracts
-        ↓
-Foundgine.Providers
+Claude / ChatGPT / Cursor
+          ↓
+         MCP
+          ↓
+Foundgine Semantic API
+          ↓
+Foundgine Runtime
+          ↓
+Application infrastructure
 ```
 
-These are architectural boundaries, not a claim that every provider capability is complete.
+MCP is therefore an adapter, not the product.
 
-See:
+---
 
-- [Architecture](docs/02-Architecture/README.md)
-- [Direction](docs/00-Direction/README.md)
-- [Current Status](docs/CURRENT-STATUS.md)
+# Product principle
 
-## Important status
+The most important rule is:
 
-Foundgine is an active architecture and proof-of-concept project.
+> **The application is the source of truth.**
 
-The lower execution path has a real Banking E2E proof. The AI-native layers are the next development phase:
+Foundgine should infer everything it can from the application's existing model and require explicit configuration only where semantics cannot be inferred.
 
-- semantic domain model
-- resolution
-- actions
-- policy
-- preview/approval
-- verification
-- evidence
-- MCP adapter
+For example, a future semantic mapping should ideally look closer to:
 
-Do not interpret the repository as a production-ready AI agent platform yet.
+```csharp
+new SemanticModelBuilder()
+    .Entity<Customer>(customer =>
+        customer.Search(x => x.Name, SearchStrategy.Fuzzy))
+    .Build();
+```
 
-## Why not another AI framework?
+rather than requiring developers to describe every identity, field and relationship a second time.
 
-Because the goal is deliberately narrower.
+That keeps semantic configuration focused on the things the application cannot safely infer:
+
+- fuzzy/exact search;
+- human-facing names;
+- aliases;
+- semantic descriptions;
+- exposed actions;
+- policy overrides.
+
+---
+
+# Development philosophy
+
+Foundgine is intentionally being developed through **vertical proof milestones**.
+
+The rule is:
+
+> **Do not build an abstraction until a real scenario gives it a reason to exist.**
+
+The next major proof is not another provider or another transport.
+
+It is:
 
 ```text
-AI frameworks
-    own reasoning/orchestration
-
-Databases / ORMs
-    own persistence
-
-MCP
-    owns agent-tool protocol
-
-Workflow engines
-    own durable workflows
-
-Foundgine
-    owns application-domain semantics
-    and safe execution
+Structured read intent
+        ↓
+Identity resolution
+        ↓
+Collection-aware traversal
+        ↓
+Reusable semantic → query bridge
+        ↓
+QueryPlan
+        ↓
+Real database
+        ↓
+Evidence
 ```
 
-That boundary is the product.
-
-## Documentation
-
-- [Direction](docs/00-Direction/README.md)
-- [Proof Milestones](docs/00-Direction/Milestones.md)
-- [Documentation Hub](docs/README.md)
-- [Architecture](docs/02-Architecture/README.md)
-- [Foundation](docs/03-Foundation/README.md)
-- [Runtime](docs/04-Runtime/README.md)
-- [AI Integration](docs/09-AI/README.md)
-- [Banking Sample](docs/11-Samples/README.md)
-- [Roadmap](docs/13-Reference/Roadmap.md)
-- [Current Status](docs/CURRENT-STATUS.md)
-- [Security](docs/SECURITY.md)
-- [AI/LLM context](llms.txt)
-- [Full AI context](llms-full.md)
-
-## License
-
-MIT
+Only after that is solid should AI/MCP become a primary integration concern.

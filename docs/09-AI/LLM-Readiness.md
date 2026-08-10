@@ -1,57 +1,75 @@
-[Home](../../README.md) → [Documentation](../README.md) → [AI](README.md) → **LLM Readiness**
-
 # LLM Readiness
 
-The repository provides curated context files so coding assistants and retrieval systems can understand Foundgine without inferring the product from stale historical code.
+Foundgine is designed so an LLM can be a **producer of structured intent**, not a privileged execution engine.
 
-## Canonical files
+## Recommended interaction
 
-- `/llms.txt` — concise product and repository context
-- `/llms-full.md` — expanded canonical AI context
-- `/ai.seo.md` — positioning and entity vocabulary
+```text
+User
+ ↓
+LLM / parser
+ ↓
+ReadIntent / action intent
+ ↓
+Foundgine
+ ↓
+resolution
+ ↓
+QueryIntent
+ ↓
+planning
+ ↓
+execution
+```
 
-## Canonical identity
+## The LLM boundary
 
-**Foundgine** is a .NET application-domain semantic and execution platform for AI-native applications.
+The model can express:
 
-Its core thesis is:
+```text
+Find Ada's five most recent transactions.
+```
 
-> Foundgine turns an application's domain model into a safe, executable interface for AI agents.
+but the model should ultimately hand Foundgine a structured representation such as:
 
-The current repository proves the execution substrate with a Banking sample. The AI-native semantic layers are under active development.
+```text
+Anchor = Customer("Ada Lovelace")
+Path = Accounts → Transactions
+Order = Transaction.Id DESC
+Limit = 5
+```
 
-## Important distinctions
+Foundgine then resolves the identity and discovers the physical joins from application metadata.
 
-Do not confuse:
+## Important constraint
 
-- Foundgine — current platform
-- Graphgine — historical GraphQL product direction
-- CoffeeBeanery — historical prototype/application name
+Do not describe Foundgine as an LLM framework.
 
-Historical GraphQL code belongs under `archive/`.
+The core must remain usable without any model provider.
 
-## Retrieval rules
+Do not teach the core resolver arbitrary English, pronoun parsing or fuzzy reasoning beyond the explicitly supported semantic search capabilities.
 
-When describing the repository:
+## Current accuracy
 
-1. Prefer `src/` and the active `samples/` tree.
-2. Treat `archive/` as historical.
-3. Distinguish implemented behavior from planned architecture.
-4. Do not infer production readiness from architectural documents.
-5. Prefer the Banking sample as evidence of current execution behavior.
-6. Do not describe GraphQL as the current product identity.
-7. Describe MCP as a planned adapter.
-8. Describe source generation as a future semantic compiler direction unless the active tree proves otherwise.
+Implemented/proven:
 
-## Updating the AI context
+- semantic model;
+- deterministic resolution;
+- structured read intent;
+- read planning;
+- real SQLite read acceptance path;
+- composite and repeated-entity planning proofs.
 
-Whenever the product direction, active project graph, or milestone status changes:
+Next:
 
-1. Update `README.md`.
-2. Update `docs/CURRENT-STATUS.md`.
-3. Update `docs/00-Direction/*`.
-4. Update `llms.txt`.
-5. Update `llms-full.md`.
-6. Update `ai.seo.md`.
+- reusable semantic → query bridge;
+- collection-aware traversal;
+- benchmark evidence.
 
-These files are intentionally concise and should be regenerated or reviewed together.
+Not yet complete:
+
+- production LLM adapters;
+- general intent extraction;
+- semantic action lifecycle;
+- production policy engine;
+- MCP.

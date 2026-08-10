@@ -46,6 +46,7 @@ public static class BankingMetadata
             new(new ColumnId(1), "Id"),
             new(new ColumnId(2), "AccountId"),
             new(new ColumnId(3), "Amount"),
+            new(new ColumnId(4), "TransactionDate"),
         });
 
     /// <summary>Account.CustomerId = Customer.Id</summary>

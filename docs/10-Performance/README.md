@@ -1,39 +1,51 @@
-[Home](../../README.md) → [Documentation](../README.md) → **Performance**
-
 # Performance
 
-## Contents
+Performance work starts after correctness.
 
-- [Native AOT](Native-AOT.md) — the design that makes AOT compatibility possible
-- [Benchmarks](Benchmarks.md) — measured results against the sample Banking domain
+## Current position
 
----
+The repository has not yet established benchmark evidence sufficient for claims such as:
 
-## Core Principles
+- faster than ORM X;
+- lower latency than framework Y;
+- fewer allocations than Z.
 
-## Core Principles
+## What should be measured
 
-Foundgine follows six performance principles:
+```text
+Metadata construction
+JoinGraph construction
+Semantic resolution
+Read planning
+Query planning
+Provider compilation
+SQL translation
+Database execution
+Total
+```
 
-- Compile-time over runtime
-- Immutable metadata
-- Deterministic execution
-- Zero reflection
-- Allocation awareness
-- Cache-friendly data structures
+Test:
 
-Every optimization should support one or more of these principles.
+```text
+1 entity
+3 entities
+5 entities
+10 entities
 
----
+linear
+branching
+repeated/self-join
+composite
+```
 
----
+## Design priorities
 
-## Related Documentation
+The architecture favors:
 
-- [Runtime → Execution](../04-Runtime/Execution.md)
-- [Persistence → Caching](../08-Persistence/Caching.md)
-- [Source Generators](../06-Source-Generators/README.md)
+- deterministic plans;
+- reusable metadata;
+- explicit provider plans;
+- avoiding runtime reflection where it is unnecessary;
+- predictable execution.
 
----
-
-← Previous: [AI & LLM Readiness](../09-AI/README.md)  |  Next: [Samples](../11-Samples/README.md) →
+Measure before optimizing.

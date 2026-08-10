@@ -1,179 +1,43 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Runtime](README.md) → **Execution**
-
 # Execution
 
-## Contents
+Execution is provider-independent at the contract boundary.
 
-- [Runtime Pipeline](#runtime-pipeline)
-- [Execution Context](#execution-context)
-- [Dependency Graph Execution](#dependency-graph-execution)
-- [Materialization](#materialization)
-- [Transactions](#transactions)
-- [Error Handling](#error-handling)
-- [Thread Safety](#thread-safety)
-
----
-
-## Runtime Pipeline
-
-Every request follows the same execution pipeline.
-
-```
-Immutable Plan
-
-↓
-
-Execution Context
-
-↓
-
-SQL Generation
-
-↓
-
-Database Execution
-
-↓
-
-Materialization
-
-↓
-
-Return Result
+```text
+ProviderPlan
+   ↓
+IExecutionProvider
+   ↓
+ExecutionResult / ExecutionRow
 ```
 
-The Runtime coordinates each stage but delegates specialized work to other layers.
+## ExecutionRow
 
----
+Rows are occurrence-aware.
 
-## Execution Context
+This matters when a plan contains repeated entities:
 
-The execution context carries request-scoped state.
-
-Typical contents include:
-
-- Database connection
-- Transaction
-- SQL parameters
-- Cancellation token
-- Execution options
-
-Execution contexts should remain lightweight.
-
----
-
-## Dependency Graph Execution
-
-Mutations frequently depend on previously generated values.
-
-Example:
-
-```
-Customer
-
-↓
-
-CustomerAddress
-
-↓
-
-CustomerOrder
+```text
+Employee
+   ↓
+Manager
+   ↓
+Manager
 ```
 
-The planner computes dependency ordering.
+An `EntityId` alone is not sufficient to identify both Manager occurrences.
 
-Runtime executes operations in dependency order.
+The current contract therefore preserves:
 
-No dependency analysis occurs during execution.
-
----
-
-## Materialization
-
-Runtime coordinates generated materializers.
-
-```
-DbDataReader
-
-↓
-
-Generated Materializer
-
-↓
-
-CLR Object
+```text
+EntityId
+OccurrenceIndex
+Values
 ```
 
-Runtime does not inspect CLR properties.
+`Single(EntityId)` is appropriate only when the entity occurs once.
 
-Generated code performs object construction.
+`All(EntityId)` returns all occurrences.
 
----
+## Statistics
 
-## Transactions
-
-Runtime coordinates transaction boundaries.
-
-Typical workflow:
-
-```
-Begin Transaction
-
-↓
-
-Execute Plan
-
-↓
-
-Commit
-
-↓
-
-Return Result
-```
-
-Failures result in rollback.
-
-Transaction policy remains transport-independent.
-
----
-
-## Error Handling
-
-Runtime reports execution failures through well-defined exception types.
-
-Typical categories include:
-
-- Validation
-- Planning
-- SQL
-- Materialization
-- Transaction
-- Graph execution
-
-Transport layers translate these exceptions into protocol-specific responses.
-
----
-
-## Thread Safety
-
-Runtime services should generally be stateless.
-
-Immutable metadata and immutable execution plans naturally support concurrent execution.
-
-Mutable state should remain confined to execution contexts.
-
----
-
----
-
-## Related Documentation
-
-- [Queries](Queries.md)
-- [Mutations](Mutations.md)
-- [Architecture → Request Pipeline](../02-Architecture/Request-Pipeline.md)
-- [Performance → Benchmarks](../10-Performance/Benchmarks.md)
-
----
-
-← Previous: [Runtime](README.md)  |  Next: [Queries](Queries.md) →
+Execution statistics should remain provider-neutral and should not expose SQL-specific internals unless the provider adds them explicitly.

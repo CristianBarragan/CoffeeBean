@@ -1,52 +1,41 @@
-[Home](../../README.md) → [Documentation](../README.md) → **Source Generators**
-
 # Source Generators
 
-> **Historical implementation + future direction.**
+> **Historical implementation / future direction.**
 
-The repository previously contained a Graphgine source generator for mapping-derived metadata and execution artifacts. That implementation now lives under `archive/`.
+The previous Graphgine repository contained a substantial Roslyn source-generator implementation.
 
-The current active tree does not contain a source-generator project.
+That implementation is archived.
+
+The active Foundgine tree does not currently contain a source-generator project.
 
 ## Future role
 
-Roslyn generation remains valuable, but its purpose has changed.
+Roslyn remains useful as a future **domain compiler**.
 
-The future compiler should derive the application's semantic vocabulary:
-
-```text
-C# Domain
- ↓
-Roslyn
- ↓
-Semantic Domain Model
- ↓
-Generated descriptors
-```
-
-Potential generated artifacts:
-
-- stable entity IDs
-- relationship descriptors
-- search descriptors
-- action descriptors
-- policy metadata
-- planner hints
-
-## What the compiler should not do
-
-It should not generate a fixed planner for natural-language requests.
-
-The request is dynamic:
+The compiler could generate:
 
 ```text
-User intent
- ↓
-runtime resolution
- ↓
-runtime planning
+Entity descriptors
+Relationship descriptors
+Search descriptors
+Action descriptors
+Policy metadata
+Stable identifiers
+Planner hints
 ```
 
-The compiler defines what the application permits; runtime decides which permitted operations satisfy the current intent.
+The compiler should not generate a fixed planner for unknown future natural-language requests.
 
-See [Proof Milestones](../00-Direction/Milestones.md#milestone-10--compile-time-semantic-compiler).
+The runtime still needs to perform:
+
+```text
+intent
+ → resolution
+ → planning
+```
+
+dynamically.
+
+## Rule
+
+Do not revive the old generator merely to recreate configuration that the current metadata model can already infer.

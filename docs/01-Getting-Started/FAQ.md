@@ -1,53 +1,45 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Getting Started](README.md) → **FAQ**
-
 # Getting Started FAQ
 
-## Contents
+## Does Foundgine require an LLM?
 
-- [Do I need to learn a new modeling API?](#do-i-need-to-learn-a-new-modeling-api)
-- [Does this replace Hot Chocolate or Dapper?](#does-this-replace-hot-chocolate-or-dapper)
-- [Is this production-ready?](#is-this-production-ready)
-- [Where's the full FAQ?](#wheres-the-full-faq)
+No.
 
----
+The current core accepts structured intent.
 
-## Do I need to learn a new modeling API?
+An LLM is one possible producer of that intent.
 
-No. Phase 1 uses **EF Core mapping classes** as the metadata source — see
-[First Service → Write a mapping class](First-Service.md#write-a-mapping-class). Coffee
-Beanery reads that mapping at compile time; it doesn't ask you to learn a parallel schema
-language.
+## Does it require GraphQL?
 
-## Does this replace Hot Chocolate or Dapper?
+No.
 
-No — it deliberately doesn't. Hot Chocolate remains the GraphQL framework, Dapper remains
-the SQL executor. Foundgine sits between your domain model and those tools, generating
-the execution plan that connects them. See
-[Architecture → Vision](../02-Architecture/Vision.md#what-coffee-beanery-is) for the full
-positioning.
+The active Banking sample has no GraphQL dependency.
 
-## Is this production-ready?
+## Does it require PostgreSQL?
 
-Treat it as early-stage. The mapping source generator is explicitly marked
-**"not yet build-verified"** against arbitrary mapping shapes beyond the sample — see
-[Source Generators → Diagnostics](../06-Source-Generators/Diagnostics.md#known-risk-areas).
-Review the [Roadmap](../13-Reference/Roadmap.md) and [ADRs](../13-Reference/ADRs.md) before
-depending on it for anything load-bearing.
+No.
 
-## Where's the full FAQ?
+The canonical proof uses in-memory SQLite.
 
-The extended architecture FAQ — covering source generators vs. reflection, transport and
-provider independence, and Native AOT — lives in
-**[Reference → FAQ](../13-Reference/FAQ.md)**.
+## Is it an ORM?
 
----
+No.
 
-## Related Documentation
+Foundgine plans execution; it does not provide object tracking or attempt to replace EF Core.
 
-- [Reference → FAQ](../13-Reference/FAQ.md)
-- [Reference → Roadmap](../13-Reference/Roadmap.md)
-- [Reference → ADRs](../13-Reference/ADRs.md)
+## Is it production-ready?
 
----
+No.
 
-← Previous: [Configuration](Configuration.md)  |  Next: [Architecture](../02-Architecture/README.md) →
+The execution substrate is real and tested, but the AI-native semantic/action/policy lifecycle is still being developed.
+
+## Why is the semantic model hand-authored?
+
+Because the semantic model is currently being proven before investing in a compiler.
+
+The long-term direction is to infer as much as possible from existing application metadata.
+
+## Why not parse natural language inside Foundgine?
+
+Because language understanding is better owned by an LLM/parser.
+
+Foundgine should receive structured intent and enforce domain semantics deterministically.

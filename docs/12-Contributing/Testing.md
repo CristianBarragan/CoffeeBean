@@ -1,170 +1,66 @@
-[Home](../../README.md) → [Documentation](../README.md) → [Contributing](README.md) → **Testing**
-
 # Testing
 
-## Contents
+Testing mirrors the architecture.
 
-- [Philosophy](#philosophy)
-- [Testing Pyramid](#testing-pyramid)
-- [Generator Tests](#generator-tests)
-- [Runtime Tests](#runtime-tests)
-- [Native AOT Tests](#native-aot-tests)
-- [Continuous Integration](#continuous-integration)
+## Unit tests
 
----
+Each active project has focused tests.
 
-## Philosophy
+## Architecture tests
 
-Testing should mirror the architecture.
+`ArchitectureTests` checks project-reference direction.
 
-```
-Foundation
+## E2E tests
 
-↓
+The important execution claims are proven against real SQLite.
 
-Generator
+Current E2E coverage includes:
 
-↓
-
-Runtime
-
-↓
-
-SQL
-
-↓
-
-Transport
+```text
+BankingEndToEndTests
+UglySchemaEndToEndTests
+ProductCompositeEndToEndTests
+RepeatedEntityEndToEndTests
+FilterSortPageEndToEndTests
+MutationEndToEndTests
+ReadIntentEndToEndTests
+ProductSemanticIntentEndToEndTests
 ```
 
-Every layer has its own responsibilities and should be tested independently.
+The semantic/read proofs intentionally build structured intent rather than parsing natural language. That keeps the test focused on Foundgine's boundary rather than pretending it is an LLM.
 
-Avoid relying solely on end-to-end integration tests.
+## Semantic tests
 
----
+`Foundgine.Semantic.Tests` covers the semantic model, inference, resolution, read planning and experimental action/policy descriptors.
 
-## Testing Pyramid
+## Important acceptance invariant
 
-```
-               End-to-End
-            Integration Tests
-             Snapshot Tests
-               Unit Tests
-```
+Resolution must never silently invent an identity.
 
-The majority of tests should be unit tests.
+A second invariant is equally important for the next milestone:
 
-Integration tests validate interactions between components.
-
-Snapshot tests validate generated code.
-
----
-
-## Generator Tests
-
-The Generator requires the largest test surface.
-
-Recommended categories:
-
-```
-Parser Tests
-
-↓
-
-Validation Tests
-
-↓
-
-Relationship Tests
-
-↓
-
-Identifier Allocation Tests
-
-↓
-
-Metadata Generation Tests
-
-↓
-
-Snapshot Tests
+```text
+identity resolution ≠ collection traversal
 ```
 
-Each stage should be tested independently.
+A one-to-many relationship must be allowed to produce a query branch/set rather than forcing the test to choose one arbitrary child.
 
----
+## Testing rule
 
-## Parser Tests
+If the claim is:
 
-Parser tests verify discovery of application models.
+> "This provider executes correctly."
 
-Example scenarios:
+use a real provider/database.
 
-- Entity detection
-- Property discovery
-- Graph discovery
-- Join discovery
-- Lookup discovery
+If the claim is:
 
-Parser tests should isolate Roslyn analysis from code generation.
+> "This planner rejects invalid metadata."
 
----
+a focused unit test is appropriate.
 
-## Runtime Tests
+## Future
 
-Runtime tests verify execution behavior independently of SQL.
+Add benchmark tests separately from correctness tests.
 
-Examples:
-
-- Query execution
-- Mutation execution
-- Dependency ordering
-- Generated value propagation
-- Materialization coordination
-- Transaction handling
-
-Runtime tests should replace external dependencies with test doubles where practical.
-
----
-
-## Native AOT Tests
-
-Because Native AOT is a core design goal, compatibility should be validated regularly.
-
-Recommended checks:
-
-- Successful AOT compilation
-- Runtime execution
-- Generated materializers
-- Metadata provider
-- Planner registry
-
-No runtime reflection should be introduced.
-
----
-
-## Continuous Integration
-
-Every pull request should execute:
-
-- Unit tests
-- Generator tests
-- Snapshot tests
-- Integration tests
-- Native AOT validation (where supported)
-
-Builds should fail if generated snapshots change unexpectedly.
-
----
-
----
-
-## Related Documentation
-
-- [Code Style](Code-Style.md)
-- [Source Generators → Diagnostics](../06-Source-Generators/Diagnostics.md)
-- [Performance → Native AOT](../10-Performance/Native-AOT.md)
-
----
-
-← Previous: [Code Style](Code-Style.md)  |  Next: [ADR Process](ADR-Process.md) →
+Do not use benchmarks as correctness assertions.
