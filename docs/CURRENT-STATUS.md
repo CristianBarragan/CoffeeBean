@@ -101,8 +101,8 @@ Avoid "production ready", "fully AOT compatible", "zero reflection", "database i
 
 1. Keep the Banking E2E green.
 2. ~~Introduce a protocol-neutral semantic model.~~ Done -- `Foundgine.Semantic` (Milestone 1), exercised live in the Banking sample.
-3. Add deterministic entity resolution (Milestone 2).
-4. Add a read-intent-to-plan path.
+3. ~~Add deterministic entity resolution (Milestone 2).~~ Done -- `Foundgine.Semantic.Resolution` (`EntityResolver`/`ICandidateSource`/`ResolutionResult`), proven by `ResolutionTests` (fake candidate source) and, against a real database, by `Foundgine.Samples.Banking.Resolution.SqlCandidateSource`.
+4. ~~Add a read-intent-to-plan path.~~ Done -- `Foundgine.Semantic.Intent` (`ReadIntent`/`ReadPlanner`/`ResolvedReadPlan`), proven at the semantic layer by `ReadPlannerTests` and, end to end against a real SQLite database, by `Foundgine.Tests.ReadIntentEndToEndTests`: a structured `ReadIntent` for "Find Ada's last five transactions" resolves through `EntityResolver`, is translated into a `QueryIntent` with a `Filter`/`Sort`/`Page` built from the resolved literal, and executes through the existing `QueryPlanner` -> `SqlPlanCompiler` -> `SqlExecutionProvider` pipeline with no step faked. This is the "Semantic -> Planning bridge" an external architecture review identified as the biggest gap after Milestone 2 landed. The same test file also builds a minimal `ReadEvidence` record (resolution trail + generated SQL + provider + result) per the review's "just one end-to-end record, not a framework" recommendation.
 5. Add explicit domain actions.
 6. Add policy evaluation.
 7. Add preview/approval for mutations.
@@ -195,25 +195,28 @@ not part of the current proof.
 
 Known incomplete areas include:
 
-- **`ExecutionRow` cannot represent more than one occurrence of the same entity in a
-  row.** `RepeatedEntityEndToEndTests` (`Employee -> Manager -> Manager`, a real
-  self-join) confirms `SqlPlanCompiler`/`SqlTextTranslator`'s occurrence-aware alias
-  resolution generates the one correct SQL self-join. But `ExecutionRow.Entities` is
-  `IReadOnlyDictionary<ushort, object?[]>`, keyed by `EntityId` alone with no occurrence
-  dimension, and `SqlExecutionProvider.ReadRow` writes every occurrence's columns into
-  that one shared slot in select-list order — so the last occurrence scanned silently
-  overwrites the earlier ones. In the test, only the outermost manager's ("Carol's")
-  values survive; the root employee's and the middle manager's own column values are
-  lost by the time a caller sees the row. SQL generation's occurrence tracking is
-  validated; row materialization's is not, and needs an occurrence dimension added to
-  `ExecutionRow.Entities`' key before repeated-entity/self-join queries are actually
-  usable, not just plannable.
+- ~~`ExecutionRow` cannot represent more than one occurrence of the same entity in a
+  row.~~ Fixed -- `ExecutionRow.Entities` (a `Dictionary<ushort, object?[]>` keyed by
+  `EntityId` alone) was replaced with `ExecutionRow.Occurrences`
+  (`IReadOnlyList<EntityOccurrence>`, each keyed by `(EntityId, OccurrenceIndex)`), and
+  `SqlExecutionProvider.ReadRow` now writes each occurrence's columns into its own slot
+  instead of one shared slot per `EntityId`. `ExecutionRow.Single(EntityId)` covers the
+  common non-repeated case (throws if the entity was scanned zero or more-than-one
+  times, rather than silently picking one); `ExecutionRow.All(EntityId)` returns every
+  occurrence in scan order for the repeated case.
+  `RepeatedEntityEndToEndTests` (`Employee -> Manager -> Manager`, a real self-join) now
+  asserts Alice/Bob/Carol as three distinct occurrences by index, not just that the SQL
+  compiles correctly. (This line was stale relative to the code when found -- left
+  struck through rather than deleted so the history is visible.)
 - **Benchmark evidence** for Foundgine's own pipeline costs (metadata registration,
   `JoinGraph` construction, intent construction, planning, compilation, translation,
   execution) across entity counts and shapes (linear, branching, composite, repeated
   entity). Nothing has been measured yet.
-- Query filtering/ordering/paging in `SqlTextTranslator` (explicitly deferred — see its
-  doc comment).
+- ~~Query filtering/ordering/paging in `SqlTextTranslator` (explicitly deferred).~~ Done --
+  `FilterExpression`/`SortTerm`/`PageSpec` (Milestones 6/7), compiled to real
+  WHERE/ORDER BY/LIMIT OFFSET SQL with bound parameters, proven by
+  `FilterSortPageEndToEndTests`. (This line was stale relative to the code when found —
+  left struck through rather than deleted so the history is visible.)
 - Mutation `Upsert`, `GraphMutation`, and `RelationshipMutation` are not compiled by
   `SqlPlanCompiler` yet (each throws `NotSupportedException` — Upsert because
   INSERT ... ON CONFLICT semantics vary too much by SQL dialect to share one path with
@@ -251,16 +254,37 @@ Only the latter two should be used for production-readiness claims.
 | FOUND-002     | DONE   | `BankingEndToEndTests` (branching intent) |
 | UGLY-SCHEMA   | DONE   | `UglySchemaEndToEndTests` |
 | FOUND-003     | DONE   | `ProductCompositeEndToEndTests` (five-entity composite) |
-| Repeated-entity / self-join E2E | DONE — found a real bug | `RepeatedEntityEndToEndTests`; see "What is incomplete" |
-| Fix `ExecutionRow` occurrence collision | NOT STARTED | blocks repeated-entity queries from being actually usable |
+| Repeated-entity / self-join E2E | DONE — found a real bug, then fixed | `RepeatedEntityEndToEndTests` |
+| Fix `ExecutionRow` occurrence collision | DONE | `ExecutionRow.Occurrences`/`EntityOccurrence`; see "What is incomplete" |
+| Milestone 2 — semantic resolution | DONE | `ResolutionTests`; real DB via `SqlCandidateSource` in the Banking sample |
+| Milestone 3 — read intent -> plan (Semantic -> Planning bridge) | DONE | `ReadPlannerTests`; end-to-end against real SQLite via `ReadIntentEndToEndTests` |
 | FOUND-004 — Validation & Benchmarking | NOT STARTED | — |
 
 ## Next milestone
 
-1. Get a clean `dotnet build` + `dotnet test` across the whole solution and confirm it's
-   actually green (not reverified since FOUND-003/the repeated-entity test landed).
-2. Decide whether to fix the `ExecutionRow` occurrence-collision problem above before
-   FOUND-004, or explicitly scope FOUND-004's benchmarks to shapes that don't hit it
-   (no repeated entities) and track the fix separately.
-3. FOUND-004: benchmark Foundgine's own pipeline costs (not a comparison against
+1. Get a clean `dotnet build` + `dotnet test` across the *whole* solution with the
+   project's own `dotnet test` / `Foundgine.sln`. Partially done: no outbound NuGet
+   access was available in the environment this was verified in (`api.nuget.org` is
+   blocked), so `Foundgine.Providers`, `Foundgine.Foundation`'s unused DI package
+   reference, and every test project's `Microsoft.Data.Sqlite`/`xunit` dependencies
+   could not be restored via `dotnet build` itself. Instead, `Foundgine.Abstractions`,
+   `Foundgine.Foundation`, `Foundgine.Metadata`, `Foundgine.Semantic`,
+   `Foundgine.Builders`, `Foundgine.Execution.Contracts`, `Foundgine.Diagnostics`, and
+   `Foundgine.Planning` were each compiled directly with `csc` against the .NET 10 SDK's
+   reference assemblies (no NuGet involved) and all eight built clean with zero errors --
+   including `Foundgine.Semantic`, the project the Milestone 3 bridge lives in. All 28
+   tests in `Foundgine.Semantic.Tests` (Milestones 1-3: `SemanticModelTests`,
+   `SearchCapabilityTests`, `ActionAndPolicyDescriptorTests`, `BankingAcceptanceTests`,
+   `ResolutionTests`, `ReadPlannerTests`) were then compiled against the real compiled
+   `Foundgine.Semantic.dll` (using a minimal hand-written `Assert`/`[Fact]` stand-in for
+   `xunit`'s public surface, since `xunit` itself couldn't be restored) and *actually
+   run* via a small reflection-based runner -- all 28 pass, including
+   `ReadPlannerTests`' own "Find Ada's last five transactions" acceptance scenario.
+   `Foundgine.Providers` and `Foundgine.Tests.ReadIntentEndToEndTests` (the real-SQLite
+   half of the proof) still need `Microsoft.Data.Sqlite`, which could not be verified by
+   execution here -- that half was checked only by the manual symbol-by-symbol
+   cross-reference against the actual source described above, not by compiling or
+   running it. A clean `dotnet build`/`dotnet test` of the *whole* solution, with real
+   NuGet access, is still the thing to confirm next.
+2. FOUND-004: benchmark Foundgine's own pipeline costs (not a comparison against
    EF/Dapper) across 1/2/3/5-entity, branching, composite, and repeated-entity shapes.

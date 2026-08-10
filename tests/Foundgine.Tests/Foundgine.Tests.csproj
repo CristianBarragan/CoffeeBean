@@ -17,6 +17,7 @@
         <ProjectReference Include="..\..\src\Foundgine.Abstractions\Foundgine.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Foundgine.Foundation\Foundgine.Foundation.csproj" />
         <ProjectReference Include="..\..\src\Foundgine.Metadata\Foundgine.Metadata.csproj" />
+        <ProjectReference Include="..\..\src\Foundgine.Semantic\Foundgine.Semantic.csproj" />
         <ProjectReference Include="..\..\src\Foundgine.Diagnostics\Foundgine.Diagnostics.csproj" />
         <ProjectReference Include="..\..\src\Foundgine.Builders\Foundgine.Builders.csproj" />
         <ProjectReference Include="..\..\src\Foundgine.Execution.Contracts\Foundgine.Execution.Contracts.csproj" />
