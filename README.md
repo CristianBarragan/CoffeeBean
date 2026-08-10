@@ -123,6 +123,7 @@ src/
 ├── Foundgine.Abstractions/
 ├── Foundgine.Foundation/
 ├── Foundgine.Metadata/
+├── Foundgine.Semantic/
 ├── Foundgine.Diagnostics/
 ├── Foundgine.Builders/
 ├── Foundgine.Execution.Contracts/
@@ -136,6 +137,7 @@ tests/
 ├── Foundgine.Tests/
 ├── Foundgine.Foundation.Tests/
 ├── Foundgine.Metadata.Tests/
+├── Foundgine.Semantic.Tests/
 ├── Foundgine.Builders.Tests/
 ├── Foundgine.Diagnostics.Tests/
 ├── Foundgine.Execution.Contracts.Tests/
@@ -143,7 +145,7 @@ tests/
 └── Foundgine.Providers.Tests/
 ```
 
-The active tree intentionally contains no GraphQL product project. Historical GraphQL/Graphgine work remains under `archive/`.
+The active tree intentionally contains no GraphQL product project. The historical GraphQL/Graphgine engine, its source generators, and the pre-Foundgine CoffeeBeanery prototypes were removed from the tree entirely (they are still recoverable from git history) rather than kept around as an `archive/` folder, so the tree only contains what the current milestones actually need.
 
 ## Current E2E proof
 

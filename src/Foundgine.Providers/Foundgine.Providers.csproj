@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
-        <Description>SQL execution provider: SqlPlanCompiler (Foundgine.Builders.QueryPlan -> Foundgine.Execution.Contracts.ProviderPlan), SqlTextTranslator (ProviderPlan -> SQL text + column map), and SqlExecutionProvider (runs that SQL against SQLite and streams ExecutionRow results back). This is the only provider in the active tree — see archive/src/Foundgine.Providers.Extra for the Graph and Cache provider skeletons, which are future work until the SQL path is proven end-to-end.</Description>
+        <Description>SQL execution provider: SqlPlanCompiler (Foundgine.Builders.QueryPlan -> Foundgine.Execution.Contracts.ProviderPlan), SqlTextTranslator (ProviderPlan -> SQL text + column map), and SqlExecutionProvider (runs that SQL against SQLite and streams ExecutionRow results back). This is the only provider in the active tree; Graph and Cache provider implementations are future work (Milestone 9, "additional execution targets") until the SQL path is proven end-to-end.</Description>
     </PropertyGroup>
 
     <ItemGroup>

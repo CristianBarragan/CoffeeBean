@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Planning", "src\F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Providers", "src\Foundgine.Providers\Foundgine.Providers.csproj", "{0E73B70C-B7AE-46A5-8024-686F32841EF1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Semantic", "src\Foundgine.Semantic\Foundgine.Semantic.csproj", "{3A6D9B2E-6C2B-4E5A-8E7D-1F4C6B9A2D10}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Tests", "tests\Foundgine.Tests\Foundgine.Tests.csproj", "{0F42E950-B049-4A36-A7AD-10723DFD9682}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Samples.Banking", "samples\Foundgine.Samples.Banking\Foundgine.Samples.Banking.csproj", "{9BAFAA80-BE07-44B7-A3D8-3EFD58A131B0}"
@@ -43,6 +45,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Planning.Tests", "tests\Foundgine.Planning.Tests\Foundgine.Planning.Tests.csproj", "{402FB438-31F8-4E65-AAF2-B98F75B6FF6C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Providers.Tests", "tests\Foundgine.Providers.Tests\Foundgine.Providers.Tests.csproj", "{EFD49EBF-F903-4107-9E9A-DAFAD213C2EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Semantic.Tests", "tests\Foundgine.Semantic.Tests\Foundgine.Semantic.Tests.csproj", "{7C8E2A4F-9D3C-4A6B-B1E8-2A5D7F0C9E42}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -118,6 +122,14 @@ Global
 		{EFD49EBF-F903-4107-9E9A-DAFAD213C2EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EFD49EBF-F903-4107-9E9A-DAFAD213C2EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFD49EBF-F903-4107-9E9A-DAFAD213C2EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A6D9B2E-6C2B-4E5A-8E7D-1F4C6B9A2D10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A6D9B2E-6C2B-4E5A-8E7D-1F4C6B9A2D10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A6D9B2E-6C2B-4E5A-8E7D-1F4C6B9A2D10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A6D9B2E-6C2B-4E5A-8E7D-1F4C6B9A2D10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C8E2A4F-9D3C-4A6B-B1E8-2A5D7F0C9E42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C8E2A4F-9D3C-4A6B-B1E8-2A5D7F0C9E42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C8E2A4F-9D3C-4A6B-B1E8-2A5D7F0C9E42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C8E2A4F-9D3C-4A6B-B1E8-2A5D7F0C9E42}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{7BFF6014-FD57-44F2-8A43-1A956A525FD3} = {1AAC3926-0856-47DF-83B7-4EDA7C71DC86}
@@ -137,5 +149,7 @@ Global
 		{08B79905-4067-49F8-9AFB-DA919FED5DCF} = {5D351070-0F84-4E24-9341-85CCA1CA25E3}
 		{402FB438-31F8-4E65-AAF2-B98F75B6FF6C} = {5D351070-0F84-4E24-9341-85CCA1CA25E3}
 		{EFD49EBF-F903-4107-9E9A-DAFAD213C2EC} = {5D351070-0F84-4E24-9341-85CCA1CA25E3}
+		{3A6D9B2E-6C2B-4E5A-8E7D-1F4C6B9A2D10} = {1AAC3926-0856-47DF-83B7-4EDA7C71DC86}
+		{7C8E2A4F-9D3C-4A6B-B1E8-2A5D7F0C9E42} = {5D351070-0F84-4E24-9341-85CCA1CA25E3}
 	EndGlobalSection
 EndGlobal
