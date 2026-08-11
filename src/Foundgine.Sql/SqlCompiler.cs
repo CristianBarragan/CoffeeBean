@@ -27,6 +27,10 @@ public sealed class SqlCompiler
         var aliases = occurrences.ToDictionary(x => x.Node.Id, x => $"t{x.Node.Id}");
         var select = new List<string>();
         var bindings = new List<SqlColumnBinding>();
+        var authorization = occurrences
+            .Where(x => x.Node.Authorization is not null)
+            .Select(x => new SqlAuthorizationPredicate(x.Node.Id, x.Node.Authorization!))
+            .ToArray();
 
         foreach (var occurrence in occurrences)
         {
@@ -216,7 +220,7 @@ public sealed class SqlCompiler
                 sql.Append(" OFFSET ").Append(actualOffset);
         }
 
-        return new SqlPlan(sql.ToString(), bindings, parameters, pagination);
+        return new SqlPlan(sql.ToString(), bindings, parameters, pagination, authorization);
     }
 
     private void AddFieldSelection(

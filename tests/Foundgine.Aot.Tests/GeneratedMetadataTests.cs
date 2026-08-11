@@ -206,6 +206,15 @@ public sealed class GeneratedMetadataTests
         Assert.Equal(typeof(Contract), authorization.ResourceType);
         Assert.Equal(nameof(ProductAuthorization.CanVisitContract), authorization.SourceMember);
         Assert.Contains("user.TenantId == contract.TenantId", authorization.Expression);
+        Assert.NotNull(authorization.Predicate);
+        Assert.Equal(AuthorizationPredicateKind.Equal, authorization.Predicate!.Kind);
+        Assert.Equal(AuthorizationPredicateKind.MemberAccess, authorization.Predicate.Left!.Kind);
+        Assert.Equal("TenantId", authorization.Predicate.Left.Name);
+        Assert.Equal(AuthorizationPredicateKind.Parameter, authorization.Predicate.Left.Left!.Kind);
+        Assert.Equal("user", authorization.Predicate.Left.Left.Name);
+        Assert.Equal(AuthorizationPredicateKind.MemberAccess, authorization.Predicate.Right!.Kind);
+        Assert.Equal("TenantId", authorization.Predicate.Right.Name);
+        Assert.Equal("contract", authorization.Predicate.Right.Left!.Name);
     }
 
     [Fact]

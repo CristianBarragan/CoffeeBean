@@ -208,7 +208,10 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
             var id = GetNamedUShort(attribute, "Id") ?? connectionId.Value;
             var name = GetNamedString(attribute, "Name") ?? authorization.Name;
-            sb.AppendLine($"        registry.Register(new AuthorizationMetadata(new AuthorizationId({id}), new ConnectionId({connectionId.Value}), \"{Escape(name)}\", \"{Escape(authorization.Name)}\", typeof({contextType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), typeof({resourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), \"{Escape(expression)}\"));");
+            var predicate = BuildAuthorizationPredicate(authorization);
+            if (predicate is null)
+                continue;
+            sb.AppendLine($"        registry.Register(new AuthorizationMetadata(new AuthorizationId({id}), new ConnectionId({connectionId.Value}), \"{Escape(name)}\", \"{Escape(authorization.Name)}\", typeof({contextType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), typeof({resourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), \"{Escape(expression)}\", {predicate}));");
         }
 
         foreach (var model in models.OrderBy(x => x.ToDisplayString(), StringComparer.Ordinal))
@@ -465,6 +468,90 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             return null;
 
         return named.TypeArguments[0] as INamedTypeSymbol;
+    }
+
+    private static string? BuildAuthorizationPredicate(IPropertySymbol property)
+    {
+        var syntax = property.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as PropertyDeclarationSyntax;
+        if (syntax?.ExpressionBody?.Expression is not LambdaExpressionSyntax lambda)
+            return null;
+
+        var parameters = lambda switch
+        {
+            SimpleLambdaExpressionSyntax simple => new[] { simple.Parameter.Identifier.Text },
+            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Parameters.Select(p => p.Identifier.Text).ToArray(),
+            _ => Array.Empty<string>()
+        };
+
+        if (parameters.Length == 0)
+            return null;
+
+        var body = lambda switch
+        {
+            SimpleLambdaExpressionSyntax simple => simple.Body,
+            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.Body,
+            _ => null
+        };
+
+        return body is ExpressionSyntax expression
+            ? BuildPredicateNode(expression, parameters)
+            : null;
+    }
+
+    private static string? BuildPredicateNode(ExpressionSyntax expression, IReadOnlyList<string> parameters)
+    {
+        switch (expression)
+        {
+            case ParenthesizedExpressionSyntax parenthesized:
+                return BuildPredicateNode(parenthesized.Expression, parameters);
+
+            case IdentifierNameSyntax identifier when parameters.Contains(identifier.Identifier.Text, StringComparer.Ordinal):
+                return $"Foundgine.Abstractions.AuthorizationPredicate.Parameter(\"{Escape(identifier.Identifier.Text)}\")";
+
+            case MemberAccessExpressionSyntax member:
+            {
+                var target = BuildPredicateNode(member.Expression, parameters);
+                return target is null
+                    ? null
+                    : $"Foundgine.Abstractions.AuthorizationPredicate.Member({target}, \"{Escape(member.Name.Identifier.Text)}\")";
+            }
+
+            case LiteralExpressionSyntax literal:
+                return $"Foundgine.Abstractions.AuthorizationPredicate.Constant(\"{Escape(literal.ToString())}\")";
+
+            case BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.EqualsExpression):
+                return BuildBinaryPredicate(binary, "Equal", parameters);
+
+            case BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.NotEqualsExpression):
+                return BuildBinaryPredicate(binary, "NotEqual", parameters);
+
+            case BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.LogicalAndExpression):
+                return BuildBinaryPredicate(binary, "And", parameters);
+
+            case BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.LogicalOrExpression):
+                return BuildBinaryPredicate(binary, "Or", parameters);
+
+            case PrefixUnaryExpressionSyntax unary when unary.IsKind(SyntaxKind.LogicalNotExpression):
+            {
+                var operand = BuildPredicateNode(unary.Operand, parameters);
+                return operand is null ? null : $"Foundgine.Abstractions.AuthorizationPredicate.Not({operand})";
+            }
+
+            default:
+                return null;
+        }
+    }
+
+    private static string? BuildBinaryPredicate(
+        BinaryExpressionSyntax binary,
+        string operation,
+        IReadOnlyList<string> parameters)
+    {
+        var left = BuildPredicateNode(binary.Left, parameters);
+        var right = BuildPredicateNode(binary.Right, parameters);
+        return left is null || right is null
+            ? null
+            : $"Foundgine.Abstractions.AuthorizationPredicate.{operation}({left}, {right})";
     }
 
     private static string? GetAuthorizationExpression(IPropertySymbol property)

@@ -30,22 +30,24 @@ public sealed class SemanticGraph
         EntityId entityId,
         ConnectionId connectionId,
         SemanticGraphNode parent,
-        IEnumerable<FieldId>? fields = null) =>
-        Add(entityId, null, connectionId, parent, fields);
+        IEnumerable<FieldId>? fields = null,
+        AuthorizationPredicate? authorization = null) =>
+        Add(entityId, null, connectionId, parent, fields, authorization);
 
     public SemanticGraphNode Add(
         EntityId entityId,
         RelationshipId? relationshipId,
         SemanticGraphNode? parent,
         IEnumerable<FieldId>? fields = null) =>
-        Add(entityId, relationshipId, null, parent, fields);
+        Add(entityId, relationshipId, null, parent, fields, null);
 
     private SemanticGraphNode Add(
         EntityId entityId,
         RelationshipId? relationshipId,
         ConnectionId? connectionId,
         SemanticGraphNode? parent,
-        IEnumerable<FieldId>? fields = null)
+        IEnumerable<FieldId>? fields = null,
+        AuthorizationPredicate? authorization = null)
     {
         if (relationshipId is not null && connectionId is not null)
             throw new ArgumentException("A semantic node cannot be reached through both a relationship and a connection.");
@@ -58,7 +60,8 @@ public sealed class SemanticGraph
             entityId,
             relationshipId,
             connectionId,
-            parent?.Id)
+            parent?.Id,
+            authorization)
         {
             Fields = fields?.Distinct().ToArray() ?? []
         };
@@ -73,7 +76,8 @@ public sealed record SemanticGraphNode(
     EntityId EntityId,
     RelationshipId? ViaRelationship,
     ConnectionId? ViaConnection,
-    int? ParentId)
+    int? ParentId,
+    AuthorizationPredicate? Authorization = null)
 {
     /// <summary>
     /// Fields selected for this entity in the request. These are semantic

@@ -56,6 +56,25 @@ public sealed class ConnectionPlanningTests
         Assert.Equal(new ConnectionId(30), node.ViaConnection);
     }
 
+    [Fact]
+    public void Authorization_predicate_is_preserved_in_the_execution_plan()
+    {
+        var predicate = AuthorizationPredicate.Equal(
+            AuthorizationPredicate.Member(AuthorizationPredicate.Parameter("user"), "TenantId"),
+            AuthorizationPredicate.Member(AuthorizationPredicate.Parameter("contract"), "TenantId"));
+
+        var graph = new SemanticGraph();
+        var root = graph.AddRoot(new EntityId(10));
+        graph.AddConnection(new EntityId(20), new ConnectionId(30), root, authorization: predicate);
+
+        var plan = new Planner().Plan(graph);
+        var child = childPlan(plan);
+
+        Assert.Equal(AuthorizationPredicateKind.Equal, child.Authorization!.Kind);
+        Assert.Equal("TenantId", child.Authorization.Left!.Name);
+        Assert.Equal("TenantId", child.Authorization.Right!.Name);
+    }
+
     private static ExecutionPlanNode childPlan(ExecutionPlan plan) =>
         Assert.Single(plan.Root.Children);
 }

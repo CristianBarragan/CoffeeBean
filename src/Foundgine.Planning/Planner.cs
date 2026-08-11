@@ -106,6 +106,7 @@ public sealed class Planner : IPlanner
             semanticNode.ViaRelationship,
             semanticNode.ViaConnection,
             children,
-            isRoot ? queryOptions : null);
+            isRoot ? queryOptions : null,
+            semanticNode.Authorization);
     }
 }

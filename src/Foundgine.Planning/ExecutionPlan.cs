@@ -21,7 +21,8 @@ public sealed record ExecutionPlanNode(
     RelationshipId? ViaRelationship,
     ConnectionId? ViaConnection,
     IReadOnlyList<ExecutionPlanNode> Children,
-    Foundgine.Semantics.Query.SemanticQueryOptions? QueryOptions = null)
+    Foundgine.Semantics.Query.SemanticQueryOptions? QueryOptions = null,
+    AuthorizationPredicate? Authorization = null)
 {
     // Backwards-compatible constructor for existing plan consumers that
     // predate semantic connections. A relationship-only node simply has no

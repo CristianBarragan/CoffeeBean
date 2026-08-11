@@ -14,4 +14,5 @@ public sealed record AuthorizationMetadata(
     string SourceMember,
     Type ContextType,
     Type ResourceType,
-    string Expression);
+    string Expression,
+    AuthorizationPredicate? Predicate = null);

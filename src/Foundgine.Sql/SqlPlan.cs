@@ -13,7 +13,8 @@ public sealed record SqlPlan(
     string CommandText,
     IReadOnlyList<SqlColumnBinding> Columns,
     IReadOnlyList<Foundgine.Sql.Query.SqlParameterBinding>? Parameters = null,
-    SqlPaginationPlan? Pagination = null) : ProviderPlan("sql")
+    SqlPaginationPlan? Pagination = null,
+    IReadOnlyList<SqlAuthorizationPredicate>? Authorization = null) : ProviderPlan("sql")
 {
     public IReadOnlyList<Foundgine.Sql.Query.SqlParameterBinding> EffectiveParameters => Parameters ?? [];
 }
@@ -41,3 +42,13 @@ public sealed record SqlCursorBinding(
     FieldId FieldId,
     Type ClrType,
     SemanticSortDirection Direction);
+
+
+/// <summary>
+/// Authorization predicates carried into the SQL provider plan. The predicate
+/// remains provider-independent here; SQL lowering can bind its members and
+/// context values without retaining an expression tree or delegate.
+/// </summary>
+public sealed record SqlAuthorizationPredicate(
+    int NodeId,
+    AuthorizationPredicate Predicate);
