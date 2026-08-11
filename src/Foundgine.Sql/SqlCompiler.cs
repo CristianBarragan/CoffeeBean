@@ -36,9 +36,17 @@ public sealed class SqlCompiler : IProviderPlanCompiler
         foreach (var occurrence in occurrences)
         {
             var entity = _metadata.GetEntity(occurrence.Node.EntityId);
-            var fields = occurrence.Node.Fields.Count == 0
-                ? entity.EffectiveFields.Select(x => x.Id).ToArray()
-                : occurrence.Node.Fields;
+            if (occurrence.Node.Fields.Count == 0)
+            {
+                // Empty fields are intentionally fail-closed. An authorization
+                // policy may remove every requested field; treating an empty
+                // post-authorization selection as "select all" would turn a
+                // denied request into a data disclosure.
+                throw new InvalidOperationException(
+                    $"Execution node {occurrence.Node.Id} selects no fields after semantic authorization.");
+            }
+
+            var fields = occurrence.Node.Fields;
 
             foreach (var fieldId in fields)
                 AddFieldSelection(occurrence.Node, entity, fieldId, aliases, select, bindings);

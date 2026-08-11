@@ -29,6 +29,17 @@ Provider compilation
 Execution
 ```
 
+It also exposes semantic capability discovery:
+
+```csharp
+var capabilities = foundgine.DescribeCapabilities();
+```
+
+This gives callers a provider-independent description of readable/writable
+entities, fields, and relationships. It is useful for API tooling and AI
+agents that need to construct valid intent, but it is never treated as an
+authorization cache. Execution evaluates the policy again.
+
 Applications and adapters should not need to manually orchestrate those steps.
 
 ## Boundary

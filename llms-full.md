@@ -26,7 +26,7 @@ Provider
 
 `Foundgine.Metadata` describes entities, fields, relationships, and storage mappings.
 
-`Foundgine.Semantics` owns semantic meaning, request resolution, and authorization.
+`Foundgine.Semantics` owns semantic meaning, request resolution, granular authorization, and capability discovery.
 
 `Foundgine.Planning` creates provider-independent logical plans.
 
@@ -43,7 +43,10 @@ Provider
 The repository proves:
 
 - semantic entities, fields, relationships, and identities;
-- resolution and authorization;
+- resolution and granular authorization;
+- entity/field/relationship read/write capabilities;
+- conditional authorization predicates preserved into execution plans;
+- mutation write authorization;
 - query and mutation planning;
 - nested/dependency-aware mutations;
 - SQL compilation and SQLite execution;
@@ -62,8 +65,10 @@ The tests are the authoritative evidence for these claims.
 3. Keep physical storage details in providers.
 4. Keep GraphQL/JSON concerns in adapters.
 5. Treat external intent as untrusted.
-6. Prefer small contracts over compatibility layers.
-7. Do not port archive code unless the current architecture needs the capability.
+6. Capability discovery is advisory context, never an authorization cache.
+7. Preserve authorization predicates into provider execution semantics.
+8. Prefer small contracts over compatibility layers.
+9. Do not port archive code unless the current architecture needs the capability.
 
 ## Non-goals
 

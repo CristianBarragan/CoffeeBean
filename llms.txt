@@ -13,7 +13,7 @@ Input adapter → Semantic Request → Resolution → Authorization → Planning
 
 - Foundgine.Abstractions — stable contracts and IDs
 - Foundgine.Metadata — domain/storage metadata
-- Foundgine.Semantics — semantic model and resolution
+- Foundgine.Semantics — semantic model, resolution, granular authorization, and capability discovery
 - Foundgine.Planning — provider-independent planning
 - Foundgine.Execution — execution and result materialization
 - Foundgine.Sql — SQL provider
@@ -23,7 +23,7 @@ Input adapter → Semantic Request → Resolution → Authorization → Planning
 
 ## Current proof
 
-Semantic resolution, authorization, query/mutation planning, SQL/SQLite execution, AOT metadata, JSON intent, and Hot Chocolate GraphQL are covered by tests.
+Semantic resolution, granular authorization, capability discovery, query/mutation planning, SQL/SQLite execution, AOT metadata, JSON intent, and Hot Chocolate GraphQL are covered by tests.
 
 ## Boundaries
 

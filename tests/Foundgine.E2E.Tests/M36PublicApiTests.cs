@@ -6,6 +6,7 @@ using Foundgine.Semantics;
 using Foundgine.Semantics.Authorization;
 using Foundgine.Semantics.Resolution;
 using Xunit;
+using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 

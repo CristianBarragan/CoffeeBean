@@ -27,16 +27,6 @@ public sealed class SemanticAuthorizer
 
         foreach (var sourceNode in graph.Nodes)
         {
-            if (!_policy.CanAccessEntity(sourceNode.EntityId))
-            {
-                if (sourceNode.ParentId is null)
-                    throw new SemanticAuthorizationException(
-                        $"Access denied for entity '{sourceNode.EntityId}'.");
-
-                // A denied entity removes its entire subtree.
-                continue;
-            }
-
             SemanticGraphNode? authorizedParent = null;
             if (sourceNode.ParentId is not null &&
                 !sourceToAuthorized.TryGetValue(sourceNode.ParentId.Value, out authorizedParent))
@@ -45,10 +35,37 @@ public sealed class SemanticAuthorizer
                 continue;
             }
 
-            var fields = sourceNode.Fields
-                .Where(fieldId => _policy.CanAccessField(sourceNode.EntityId, fieldId))
+            var fieldDecisions = sourceNode.Fields
                 .Distinct()
+                .Select(fieldId => (
+                    FieldId: fieldId,
+                    Decision: _policy.GetFieldAccess(
+                        sourceNode.EntityId, fieldId, AuthorizationOperation.Read)))
                 .ToArray();
+
+            var fields = fieldDecisions
+                .Where(x => x.Decision.IsAllowed)
+                .Select(x => x.FieldId)
+                .ToArray();
+
+            var fieldAuthorization = AuthorizationDecision.Allowed;
+            foreach (var decision in fieldDecisions.Where(x => x.Decision.IsAllowed))
+                fieldAuthorization = AuthorizationDecision.Combine(fieldAuthorization, decision.Decision);
+
+            var authorization = AuthorizationDecision.Combine(
+                _policy.GetEntityAccess(sourceNode.EntityId, AuthorizationOperation.Read),
+                AuthorizationDecisionFromPredicate(_policy.GetPredicate(
+                    sourceNode.EntityId, AuthorizationOperation.Read)));
+            authorization = AuthorizationDecision.Combine(authorization, fieldAuthorization);
+
+            if (!authorization.IsAllowed)
+            {
+                if (sourceNode.ParentId is null)
+                    throw new SemanticAuthorizationException(
+                        $"Access denied for entity '{sourceNode.EntityId}'.");
+
+                continue;
+            }
 
             if (sourceNode.ViaRelationship is { } relationshipId)
             {
@@ -60,26 +77,40 @@ public sealed class SemanticAuthorizer
                 }
 
                 var parentEntityId = graph.Nodes.Single(node => node.Id == parentId).EntityId;
-                if (!_policy.CanAccessRelationship(parentEntityId, relationshipId))
+                var relationshipDecision = _policy.GetRelationshipAccess(
+                    parentEntityId, relationshipId, AuthorizationOperation.Read);
+                if (!relationshipDecision.IsAllowed)
                 {
                     // A denied relationship removes this node and its descendants.
                     continue;
                 }
+
+                authorization = AuthorizationDecision.Combine(authorization, relationshipDecision);
             }
 
+            authorization = AuthorizationDecision.Combine(
+                authorization,
+                AuthorizationDecisionFromPredicate(sourceNode.Authorization));
+
+            var predicate = authorization.Predicate;
             var node = sourceNode.ParentId is null
-                ? authorized.AddRoot(sourceNode.EntityId, fields, sourceNode.Authorization)
+                ? authorized.AddRoot(sourceNode.EntityId, fields, predicate)
                 : authorized.Add(
                     sourceNode.EntityId,
                     sourceNode.ViaRelationship,
                     authorizedParent,
                     fields,
-                    sourceNode.Authorization);
+                    predicate);
 
             sourceToAuthorized[sourceNode.Id] = node;
         }
 
         return authorized;
     }
+
+    private static AuthorizationDecision AuthorizationDecisionFromPredicate(AuthorizationPredicate? predicate) =>
+        predicate is null
+            ? AuthorizationDecision.Allowed
+            : AuthorizationDecision.Conditional(predicate);
 }
 
