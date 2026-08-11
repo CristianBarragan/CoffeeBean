@@ -1,5 +1,6 @@
 using Foundgine.Abstractions;
 using Foundgine.Execution;
+using FoundgineExecutionContext = Foundgine.Execution.ExecutionContext;
 using Foundgine.Planning;
 using Foundgine.Semantics;
 using Foundgine.Semantics.Authorization;
@@ -7,7 +8,6 @@ using Foundgine.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
 using Foundgine.E2E.Tests.Banking;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -49,7 +49,7 @@ public sealed class M33NestedAuthorizationExecutionTests
 
         var result = await new SqlExecutionProvider(connection).ExecuteAsync(
             sql,
-            new ExecutionContext(new Dictionary<string, object?>
+            new FoundgineExecutionContext(new Dictionary<string, object?>
             {
                 ["user.Id"] = 10
             }));
@@ -83,7 +83,7 @@ public sealed class M33NestedAuthorizationExecutionTests
         await SeedAsync(connection);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            new SqlExecutionProvider(connection).ExecuteAsync(sql, new ExecutionContext()));
+            new SqlExecutionProvider(connection).ExecuteAsync(sql, new FoundgineExecutionContext()));
 
         Assert.Contains("user.Id", exception.Message, StringComparison.Ordinal);
     }

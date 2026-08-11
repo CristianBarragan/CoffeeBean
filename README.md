@@ -51,6 +51,10 @@ The repository currently proves the pipeline with:
 - authorization;
 - provider-independent query and mutation planning;
 - SQL execution against SQLite;
+- collection-aware nested traversal;
+- AOT authorization predicates enforced at the execution boundary;
+- execution evidence and deterministic plan fingerprints;
+- a canonical end-to-end core proof covering traversal, authorization, planning, SQL execution, and evidence;
 - AOT metadata generation;
 - JSON intent input;
 - a Hot Chocolate GraphQL adapter, including queries and mutations.
@@ -83,6 +87,7 @@ The Banking tests provide the main end-to-end proof.
 - [AOT](docs/AOT.md)
 - [Testing](docs/TESTING.md)
 - [Security](docs/SECURITY.md)
+- [Core contracts](docs/CORE-CONTRACTS.md)
 - [Roadmap](docs/ROADMAP.md)
 - [History](docs/history/README.md)
 
@@ -95,3 +100,8 @@ dotnet test
 ```
 
 The test suite is the source of truth for what is currently proven.
+
+
+## Public API
+
+See `docs/PUBLIC-API.md`. Application code should prefer `FoundgineEngine` over manually orchestrating resolution, authorization, planning, and provider execution.

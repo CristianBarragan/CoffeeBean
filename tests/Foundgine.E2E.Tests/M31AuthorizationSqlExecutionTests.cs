@@ -1,12 +1,12 @@
 using Foundgine.Abstractions;
 using Foundgine.Execution;
+using FoundgineExecutionContext = Foundgine.Execution.ExecutionContext;
 using Foundgine.Generated;
 using Foundgine.Planning;
 using Foundgine.Semantics;
 using Foundgine.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -38,7 +38,7 @@ public sealed class M31AuthorizationSqlExecutionTests
 
         var result = await new SqlExecutionProvider(connection).ExecuteAsync(
             sql,
-            new ExecutionContext(new Dictionary<string, object?>
+            new FoundgineExecutionContext(new Dictionary<string, object?>
             {
                 ["user.TenantId"] = 7
             }));
@@ -66,7 +66,7 @@ public sealed class M31AuthorizationSqlExecutionTests
         var plan = new SqlCompiler(GeneratedMetadata.Registry).Compile(new Planner().Plan(graph));
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            new SqlExecutionProvider(connection).ExecuteAsync(plan, new ExecutionContext()));
+            new SqlExecutionProvider(connection).ExecuteAsync(plan, new FoundgineExecutionContext()));
 
         Assert.Contains("user.TenantId", exception.Message, StringComparison.Ordinal);
     }

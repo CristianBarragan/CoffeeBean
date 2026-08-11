@@ -17,12 +17,14 @@ public static class BankingRelationalMetadata
             "Customer",
             [
                 new ColumnMetadata(new ColumnId(1), "Id"),
-                new ColumnMetadata(new ColumnId(2), "Name")
+                new ColumnMetadata(new ColumnId(2), "Name"),
+                new ColumnMetadata(new ColumnId(5), "TenantId")
             ],
             Fields:
             [
                 new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(BankingSemanticModel.Customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(BankingSemanticModel.Customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(BankingSemanticModel.Customer, new ColumnId(2))),
+                new FieldMetadata(new FieldId(5), "TenantId", typeof(int), new ColumnReference(BankingSemanticModel.Customer, new ColumnId(5)))
             ],
             PrimaryKey: new ColumnReference(BankingSemanticModel.Customer, new ColumnId(1)));
 

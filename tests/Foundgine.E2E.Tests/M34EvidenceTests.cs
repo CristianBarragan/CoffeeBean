@@ -1,12 +1,12 @@
 using Foundgine.Abstractions;
 using Foundgine.Execution;
+using FoundgineExecutionContext = Foundgine.Execution.ExecutionContext;
 using Foundgine.Generated;
 using Foundgine.Planning;
 using Foundgine.Semantics;
 using Foundgine.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -38,13 +38,13 @@ public sealed class M34EvidenceTests
 
         var result = await new SqlExecutionProvider(connection).ExecuteAsync(
             sqlPlan,
-            new ExecutionContext(new Dictionary<string, object?>
+            new FoundgineExecutionContext(new Dictionary<string, object?>
             {
                 ["user.TenantId"] = 7
             }));
 
         Assert.NotNull(result.Evidence);
-        var evidence = result.Evidence;
+        var evidence = result.Evidence!;
         Assert.Equal("sql", evidence.Provider);
         Assert.False(string.IsNullOrWhiteSpace(evidence.PlanFingerprint));
         Assert.Contains(logicalPlan.Root.Id, evidence.AuthorizedNodeIds);
@@ -77,7 +77,7 @@ public sealed class M34EvidenceTests
         }
 
         var provider = new SqlExecutionProvider(connection);
-        var context = new ExecutionContext(new Dictionary<string, object?> { ["user.TenantId"] = 7 });
+        var context = new FoundgineExecutionContext(new Dictionary<string, object?> { ["user.TenantId"] = 7 });
         var first = await provider.ExecuteAsync(sql1, context);
         var second = await provider.ExecuteAsync(sql2, context);
 

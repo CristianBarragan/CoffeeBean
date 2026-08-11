@@ -16,6 +16,51 @@ public sealed class SemanticGraph
 
     public Foundgine.Semantics.Query.SemanticQueryOptions? Options { get; internal set; }
 
+    /// <summary>
+    /// Returns a semantic graph with an authorization predicate attached to an
+    /// existing node. The graph topology and query options are preserved.
+    /// This is the boundary used when policy is supplied after intent
+    /// resolution but before planning.
+    /// </summary>
+    public SemanticGraph WithAuthorization(int nodeId, AuthorizationPredicate authorization)
+    {
+        ArgumentNullException.ThrowIfNull(authorization);
+
+        if (_nodes.All(node => node.Id != nodeId))
+            throw new ArgumentOutOfRangeException(nameof(nodeId));
+
+        var copy = new SemanticGraph { Options = Options };
+        var map = new Dictionary<int, SemanticGraphNode>();
+
+        foreach (var source in _nodes)
+        {
+            SemanticGraphNode? parent = null;
+            if (source.ParentId is { } parentId)
+                parent = map[parentId];
+
+            var predicate = source.Id == nodeId ? authorization : source.Authorization;
+            SemanticGraphNode target;
+
+            if (source.ParentId is null)
+            {
+                target = copy.AddRoot(source.EntityId, source.Fields, predicate);
+            }
+            else
+            {
+                target = copy.Add(
+                    source.EntityId,
+                    source.ViaRelationship,
+                    parent,
+                    source.Fields,
+                    predicate);
+            }
+
+            map[source.Id] = target;
+        }
+
+        return copy;
+    }
+
     public SemanticGraphNode AddRoot(
         EntityId entityId,
         IEnumerable<FieldId>? fields = null,

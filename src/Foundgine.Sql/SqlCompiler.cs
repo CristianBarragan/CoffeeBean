@@ -1,5 +1,6 @@
 using System.Text;
 using Foundgine.Metadata;
+using Foundgine.Execution;
 using Foundgine.Abstractions;
 using Foundgine.Planning;
 using Foundgine.Semantics.Query;
@@ -11,7 +12,7 @@ namespace Foundgine.Sql;
 /// Compiles the provider-independent execution plan into SQL, including
 /// filtering, ordering, aggregation, and cursor pagination.
 /// </summary>
-public sealed class SqlCompiler
+public sealed class SqlCompiler : IProviderPlanCompiler
 {
     private readonly IMetadataProvider _metadata;
 
@@ -239,6 +240,8 @@ public sealed class SqlCompiler
 
         return new SqlPlan(sql.ToString(), bindings, parameters, pagination, authorization);
     }
+
+    ProviderPlan IProviderPlanCompiler.Compile(ExecutionPlan plan) => Compile(plan);
 
     private void AddFieldSelection(
         ExecutionPlanNode node,
