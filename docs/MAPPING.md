@@ -128,3 +128,18 @@ That distinction is intentional:
 
 The provider can therefore decide how to execute the traversal without the
 semantic layer learning SQL, joins, or ORM mechanics.
+
+## Authorization expressions
+
+Authorization for a semantic connection can be declared as an ordinary LINQ expression:
+
+```csharp
+[FoundgineAuthorization(10, Name = "CanVisitContract")]
+public static Expression<Func<UserContext, Contract, bool>> CanVisitContract =>
+    (user, contract) => user.TenantId == contract.TenantId;
+```
+
+The expression is a compile-time declaration. Foundgine records its source and
+strongly typed context/resource identities in `AuthorizationMetadata`; it does
+not instantiate or populate either object. Provider-specific lowering of the
+predicate belongs to the planning/provider layer.

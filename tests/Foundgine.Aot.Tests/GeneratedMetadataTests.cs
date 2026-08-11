@@ -74,6 +74,18 @@ public sealed class Product
         };
 }
 
+public sealed class UserContext
+{
+    public int TenantId { get; init; }
+}
+
+public static class ProductAuthorization
+{
+    [FoundgineAuthorization(10, Id = 10, Name = "CanVisitContract")]
+    public static Expression<Func<UserContext, Contract, bool>> CanVisitContract =>
+        (user, contract) => user.TenantId == contract.TenantId;
+}
+
 [FoundgineEntity(Id = 3, StorageName = "contracts")]
 public sealed class Contract
 {
@@ -82,6 +94,9 @@ public sealed class Contract
 
     [FoundgineField(Id = 2, StorageName = "contract_type")]
     public ContractType ContractType { get; init; }
+
+    [FoundgineField(Id = 3, StorageName = "tenant_id")]
+    public int TenantId { get; init; }
 }
 
 public sealed class GeneratedMetadataTests
@@ -179,6 +194,18 @@ public sealed class GeneratedMetadataTests
             x.SourceMember == nameof(Product.ProductType) &&
             x.TargetMember == nameof(Contract.ContractType) &&
             x.Converter is not null);
+    }
+
+    [Fact]
+    public void Authorization_expression_is_emitted_as_aot_metadata()
+    {
+        var authorization = GeneratedMetadata.Registry.GetAuthorization(new AuthorizationId(10));
+
+        Assert.Equal(new ConnectionId(10), authorization.ConnectionId);
+        Assert.Equal(typeof(UserContext), authorization.ContextType);
+        Assert.Equal(typeof(Contract), authorization.ResourceType);
+        Assert.Equal(nameof(ProductAuthorization.CanVisitContract), authorization.SourceMember);
+        Assert.Contains("user.TenantId == contract.TenantId", authorization.Expression);
     }
 
     [Fact]

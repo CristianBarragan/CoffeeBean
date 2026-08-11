@@ -13,4 +13,5 @@ public interface IMetadataProvider
     ModelMetadata GetModel(ModelId modelId);
     ConnectionMetadata GetConnection(ConnectionId connectionId);
     ConversionMetadata? FindConversion(Type sourceType, Type targetType);
+    AuthorizationMetadata GetAuthorization(AuthorizationId authorizationId);
 }

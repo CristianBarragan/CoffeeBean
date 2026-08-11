@@ -14,4 +14,5 @@ public interface IMetadataSource
     IReadOnlyCollection<ModelMetadata> Models { get; }
     IReadOnlyCollection<ConnectionMetadata> Connections { get; }
     IReadOnlyCollection<ConversionMetadata> Conversions { get; }
+    IReadOnlyCollection<AuthorizationMetadata> Authorizations { get; }
 }

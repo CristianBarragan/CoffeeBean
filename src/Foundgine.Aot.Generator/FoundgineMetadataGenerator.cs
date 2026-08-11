@@ -15,6 +15,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     private const string RelationshipAttribute = "Foundgine.Aot.FoundgineRelationshipAttribute";
     private const string ConnectionAttribute = "Foundgine.Aot.FoundgineConnectionAttribute";
     private const string ConversionAttribute = "Foundgine.Aot.FoundgineConversionAttribute";
+    private const string AuthorizationAttribute = "Foundgine.Aot.FoundgineAuthorizationAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -39,14 +40,25 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 static (ctx, _) => (IMethodSymbol)ctx.TargetSymbol)
             .Collect();
 
-        var input = entities.Combine(models).Combine(conversions);
+        var authorizations = context.SyntaxProvider
+            .ForAttributeWithMetadataName(
+                AuthorizationAttribute,
+                static (node, _) => node is PropertyDeclarationSyntax,
+                static (ctx, _) => (IPropertySymbol)ctx.TargetSymbol)
+            .Collect();
+
+        var input = entities.Combine(models).Combine(conversions).Combine(authorizations);
         context.RegisterSourceOutput(input, static (spc, pair) =>
         {
-            spc.AddSource("Foundgine.GeneratedMetadata.g.cs", Emit(pair.Left.Left, pair.Left.Right, pair.Right));
+            spc.AddSource("Foundgine.GeneratedMetadata.g.cs", Emit(
+                pair.Left.Left.Left,
+                pair.Left.Left.Right,
+                pair.Left.Right,
+                pair.Right));
         });
     }
 
-    private static string Emit(ImmutableArray<INamedTypeSymbol> symbols, ImmutableArray<INamedTypeSymbol> models, ImmutableArray<IMethodSymbol> conversions)
+    private static string Emit(ImmutableArray<INamedTypeSymbol> symbols, ImmutableArray<INamedTypeSymbol> models, ImmutableArray<IMethodSymbol> conversions, ImmutableArray<IPropertySymbol> authorizations)
     {
         var ordered = symbols
             .OrderBy(x => x.ToDisplayString(), StringComparer.Ordinal)
@@ -173,6 +185,32 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             sb.AppendLine($"        registry.Register(new ConversionMetadata(typeof({sourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), typeof({targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), \"{Escape(method)}\"));");
         }
 
+        foreach (var authorization in authorizations.OrderBy(x => x.ToDisplayString(), StringComparer.Ordinal))
+        {
+            var attribute = GetAttribute(authorization, AuthorizationAttribute);
+            var connectionId = GetConstructorUShort(attribute, 0);
+            if (connectionId is null)
+                continue;
+
+            var expression = GetAuthorizationExpression(authorization);
+            if (expression is null)
+                continue;
+
+            var delegateType = GetExpressionDelegateType(authorization.Type);
+            if (delegateType is null || delegateType.TypeArguments.Length != 3)
+                continue;
+
+            var contextType = delegateType.TypeArguments[0];
+            var resourceType = delegateType.TypeArguments[1];
+            var returnType = delegateType.TypeArguments[2];
+            if (returnType.SpecialType != SpecialType.System_Boolean)
+                continue;
+
+            var id = GetNamedUShort(attribute, "Id") ?? connectionId.Value;
+            var name = GetNamedString(attribute, "Name") ?? authorization.Name;
+            sb.AppendLine($"        registry.Register(new AuthorizationMetadata(new AuthorizationId({id}), new ConnectionId({connectionId.Value}), \"{Escape(name)}\", \"{Escape(authorization.Name)}\", typeof({contextType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), typeof({resourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), \"{Escape(expression)}\"));");
+        }
+
         foreach (var model in models.OrderBy(x => x.ToDisplayString(), StringComparer.Ordinal))
         {
             var modelId = modelIds[model.ToDisplayString()];
@@ -206,11 +244,13 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         sb.AppendLine("    public IReadOnlyCollection<ModelMetadata> Models => GeneratedMetadata.Registry.Models.ToArray();");
         sb.AppendLine("    public IReadOnlyCollection<ConnectionMetadata> Connections => GeneratedMetadata.Registry.Connections.ToArray();");
         sb.AppendLine("    public IReadOnlyCollection<ConversionMetadata> Conversions => GeneratedMetadata.Registry.Conversions.ToArray();");
+        sb.AppendLine("    public IReadOnlyCollection<AuthorizationMetadata> Authorizations => GeneratedMetadata.Registry.Authorizations.ToArray();");
         sb.AppendLine("    public EntityMetadata GetEntity(EntityId entityId) => GeneratedMetadata.Registry.GetEntity(entityId);");
         sb.AppendLine("    public RelationshipMetadata GetRelationship(RelationshipId relationshipId) => GeneratedMetadata.Registry.GetRelationship(relationshipId);");
         sb.AppendLine("    public ModelMetadata GetModel(ModelId modelId) => GeneratedMetadata.Registry.GetModel(modelId);");
         sb.AppendLine("    public ConnectionMetadata GetConnection(ConnectionId connectionId) => GeneratedMetadata.Registry.GetConnection(connectionId);");
         sb.AppendLine("    public ConversionMetadata? FindConversion(Type sourceType, Type targetType) => GeneratedMetadata.Registry.FindConversion(sourceType, targetType);");
+        sb.AppendLine("    public AuthorizationMetadata GetAuthorization(AuthorizationId authorizationId) => GeneratedMetadata.Registry.GetAuthorization(authorizationId);");
         sb.AppendLine("}");
         return sb.ToString();
     }
@@ -417,6 +457,37 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         }
 
         return result;
+    }
+
+    private static INamedTypeSymbol? GetExpressionDelegateType(ITypeSymbol type)
+    {
+        if (type is not INamedTypeSymbol named || named.Name != "Expression" || named.TypeArguments.Length != 1)
+            return null;
+
+        return named.TypeArguments[0] as INamedTypeSymbol;
+    }
+
+    private static string? GetAuthorizationExpression(IPropertySymbol property)
+    {
+        var syntax = property.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as PropertyDeclarationSyntax;
+        return syntax?.ExpressionBody?.Expression is LambdaExpressionSyntax lambda
+            ? lambda.ToString()
+            : null;
+    }
+
+    private static ushort? GetConstructorUShort(AttributeData? attribute, int index)
+    {
+        if (attribute is null || index < 0 || index >= attribute.ConstructorArguments.Length)
+            return null;
+
+        var value = attribute.ConstructorArguments[index].Value;
+        return value switch
+        {
+            ushort ushortValue => ushortValue,
+            short shortValue when shortValue >= 0 => (ushort)shortValue,
+            int intValue when intValue >= 0 && intValue <= ushort.MaxValue => (ushort)intValue,
+            _ => null
+        };
     }
 
     private static string ToNullableString(string? value) =>

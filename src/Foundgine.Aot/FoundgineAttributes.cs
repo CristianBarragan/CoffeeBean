@@ -62,3 +62,17 @@ public sealed class FoundgineConnectionAttribute : Attribute
     public ushort Id { get; init; }
     public string? Name { get; init; }
 }
+
+
+/// <summary>Declares an AOT authorization predicate for a semantic connection.
+/// The property should expose a plain LINQ expression such as
+/// <c>Expression&lt;Func&lt;UserContext, Account, bool&gt;&gt;</c>. Foundgine analyzes
+/// the expression at build time; it does not invoke it to populate objects.</summary>
+[AttributeUsage(AttributeTargets.Property, Inherited = false)]
+public sealed class FoundgineAuthorizationAttribute : Attribute
+{
+    public FoundgineAuthorizationAttribute(ushort connectionId) => ConnectionId = connectionId;
+    public ushort ConnectionId { get; }
+    public ushort Id { get; init; }
+    public string? Name { get; init; }
+}

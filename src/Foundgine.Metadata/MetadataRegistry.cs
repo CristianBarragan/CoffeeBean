@@ -12,12 +12,14 @@ public sealed class MetadataRegistry : IMetadataProvider, IMutationSchema
     private readonly Dictionary<ModelId, ModelMetadata> _models = new();
     private readonly Dictionary<ConnectionId, ConnectionMetadata> _connections = new();
     private readonly List<ConversionMetadata> _conversions = new();
+    private readonly Dictionary<AuthorizationId, AuthorizationMetadata> _authorizations = new();
 
     public IEnumerable<EntityMetadata> Entities => _entities.Values;
     public IEnumerable<RelationshipMetadata> Relationships => _relationships.Values;
     public IEnumerable<ModelMetadata> Models => _models.Values;
     public IEnumerable<ConnectionMetadata> Connections => _connections.Values;
     public IEnumerable<ConversionMetadata> Conversions => _conversions;
+    public IEnumerable<AuthorizationMetadata> Authorizations => _authorizations.Values;
 
     public void Register(EntityMetadata metadata) =>
         _entities[metadata.EntityId] = metadata;
@@ -30,6 +32,14 @@ public sealed class MetadataRegistry : IMetadataProvider, IMutationSchema
 
     public void Register(ConnectionMetadata connection) =>
         _connections[connection.Id] = connection;
+
+    public void Register(AuthorizationMetadata authorization) =>
+        _authorizations[authorization.Id] = authorization;
+
+    public AuthorizationMetadata GetAuthorization(AuthorizationId id) =>
+        _authorizations.TryGetValue(id, out var authorization)
+            ? authorization
+            : throw new KeyNotFoundException($"Authorization {id} was not registered.");
 
     public void Register(ConversionMetadata conversion)
     {
