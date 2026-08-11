@@ -1,4 +1,5 @@
 using Foundgine.Abstractions;
+
 namespace Foundgine.Metadata;
 
 /// <summary>
@@ -9,4 +10,8 @@ public interface IMetadataProvider
 {
     EntityMetadata GetEntity(EntityId entityId);
     RelationshipMetadata GetRelationship(RelationshipId relationshipId);
+    ModelMetadata GetModel(ModelId modelId);
+    ConnectionMetadata GetConnection(ConnectionId connectionId);
+    ConversionMetadata? FindConversion(Type sourceType, Type targetType);
+    AuthorizationMetadata GetAuthorization(AuthorizationId authorizationId);
 }

@@ -11,4 +11,8 @@ public interface IMetadataSource
 {
     IReadOnlyCollection<EntityMetadata> Entities { get; }
     IReadOnlyCollection<RelationshipMetadata> Relationships { get; }
+    IReadOnlyCollection<ModelMetadata> Models { get; }
+    IReadOnlyCollection<ConnectionMetadata> Connections { get; }
+    IReadOnlyCollection<ConversionMetadata> Conversions { get; }
+    IReadOnlyCollection<AuthorizationMetadata> Authorizations { get; }
 }

@@ -19,8 +19,33 @@ public sealed record ExecutionPlanNode(
     EntityId EntityId,
     IReadOnlyList<FieldId> Fields,
     RelationshipId? ViaRelationship,
+    ConnectionId? ViaConnection,
     IReadOnlyList<ExecutionPlanNode> Children,
-    Foundgine.Semantics.Query.SemanticQueryOptions? QueryOptions = null);
+    Foundgine.Semantics.Query.SemanticQueryOptions? QueryOptions = null,
+    AuthorizationPredicate? Authorization = null)
+{
+    // Backwards-compatible constructor for existing plan consumers that
+    // predate semantic connections. A relationship-only node simply has no
+    // connection or query options.
+    public ExecutionPlanNode(
+        int id,
+        ExecutionOperation operation,
+        EntityId entityId,
+        IReadOnlyList<FieldId> fields,
+        RelationshipId? viaRelationship,
+        IReadOnlyList<ExecutionPlanNode> children)
+        : this(
+            id,
+            operation,
+            entityId,
+            fields,
+            viaRelationship,
+            null,
+            children,
+            null)
+    {
+    }
+}
 
 /// <summary>
 /// Minimal logical operations understood by the provider-independent planner.
@@ -29,5 +54,6 @@ public sealed record ExecutionPlanNode(
 public enum ExecutionOperation : byte
 {
     Scan,
-    Traverse
+    Traverse,
+    TraverseConnection
 }

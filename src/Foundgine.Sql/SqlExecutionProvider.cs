@@ -1,5 +1,6 @@
 using Foundgine.Abstractions;
 using System.Data.Common;
+using System.Diagnostics;
 using Foundgine.Execution;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
@@ -27,6 +28,8 @@ public sealed class SqlExecutionProvider : IExecutionProvider
         if (plan is not SqlPlan sqlPlan)
             throw new ArgumentException("The SQL provider requires a SqlPlan.", nameof(plan));
 
+        var stopwatch = Stopwatch.StartNew();
+
         if (_connection.State != System.Data.ConnectionState.Open)
             await _connection.OpenAsync(cancellationToken);
 
@@ -36,7 +39,14 @@ public sealed class SqlExecutionProvider : IExecutionProvider
         {
             var parameter = command.CreateParameter();
             parameter.ParameterName = "@" + binding.Name;
-            parameter.Value = binding.Value ?? DBNull.Value;
+            object? value = binding.Value;
+            if (binding.ContextPath is { } contextPath)
+            {
+                if (!context.TryGetValue(contextPath, out value))
+                    throw new InvalidOperationException($"Execution context does not contain authorization value '{contextPath}'.");
+            }
+
+            parameter.Value = value ?? DBNull.Value;
             command.Parameters.Add(parameter);
         }
 
@@ -94,6 +104,24 @@ public sealed class SqlExecutionProvider : IExecutionProvider
             pageInfo = new ExecutionPageInfo(start, end, hasNext, paging.After is not null);
         }
 
-        return new ExecutionResult(rows, pageInfo);
+        stopwatch.Stop();
+        var evidence = ExecutionEvidenceFactory.Create(
+            "sql",
+            ExecutionEvidenceFactory.Hash(BuildPlanFingerprint(sqlPlan)),
+            sqlPlan.Authorization?.Select(x => x.NodeId) ?? [],
+            rows.Count,
+            stopwatch.ElapsedMilliseconds,
+            sqlPlan.CommandText);
+
+        return new ExecutionResult(rows, pageInfo, evidence);
+    }
+
+    private static string BuildPlanFingerprint(SqlPlan plan)
+    {
+        var columns = string.Join(";", plan.Columns.Select(x =>
+            $"{x.ResultName}|{x.EntityId.Value}|{x.FieldId.Value}|{x.ColumnName}|{x.NodeId}|{x.IsCursor}"));
+        var authorization = string.Join(";", plan.Authorization?.Select(x =>
+            $"{x.NodeId}|{x.Predicate}") ?? []);
+        return $"{plan.CommandText}|{columns}|{authorization}";
     }
 }

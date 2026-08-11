@@ -25,6 +25,7 @@ public static class BankingSemanticModel
             .Entity(Customer, "Customer", customer => customer
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(2), "Name", typeof(string))
+                .Field(new FieldId(5), "TenantId", typeof(int))
                 .Relationship(
                     CustomerAccounts,
                     "Accounts",

@@ -2,7 +2,7 @@
 
 Foundgine is a small, provider-independent semantic execution engine for .NET.
 
-It sits between an application's domain model and its data providers:
+It is designed to help developers bridge the gap between their existing codebases and AI agents. It allows you to take your existing domain model (the classes and logic that define your application's data and rules) and turn them into a safe, semantic interface. This makes it easier for AI agents to understand, plan, execute, and verify operations within your .NET application.
 
 ```text
 API / Intent
@@ -21,6 +21,16 @@ Data
 The core does not know about GraphQL, SQL, EF Core, or a database. Those concerns live at the edges.
 
 ## Why it exists
+
+The motivation behind tools like Foundgine comes from the specific failure modes of LLMs when interacting with complex enterprise codebases:
+
+Safety & Invariants (State Corruption): LLMs don't inherently understand database constraints, multi-step transaction lifecycles, or business rules. If an LLM calls OrderService.Cancel() followed by PaymentService.Refund(), but hallucinates the parameter sequence or skips prerequisite validation, it can leave the system in an inconsistent state. An application runtime wraps operations in strict domain contracts so agents can only execute valid transitions.
+
+Context Window Saturation: Real-world enterprise APIs often have hundreds of endpoints with thousands of parameters. Dumping raw OpenAPI specs or C# types into a prompt wastes tokens, causes hallucinations, and degrades reasoning. A semantic runtime exposes a curated interface tailored for planning.
+
+Execution, Verification & Rollback: When an agent runs a multi-step plan, a runtime can simulate/dry-run the plan, verify post-conditions, and manage rollback or compensation transactions if an intermediate step fails.
+
+Auditability & Determinism: Enterprise systems require strict logging of why an action was taken, which model initiated it, and what safeguards were evaluated.
 
 Foundgine is useful when an application needs:
 
@@ -41,6 +51,10 @@ The repository currently proves the pipeline with:
 - authorization;
 - provider-independent query and mutation planning;
 - SQL execution against SQLite;
+- collection-aware nested traversal;
+- AOT authorization predicates enforced at the execution boundary;
+- execution evidence and deterministic plan fingerprints;
+- a canonical end-to-end core proof covering traversal, authorization, planning, SQL execution, and evidence;
 - AOT metadata generation;
 - JSON intent input;
 - a Hot Chocolate GraphQL adapter, including queries and mutations.
@@ -73,6 +87,7 @@ The Banking tests provide the main end-to-end proof.
 - [AOT](docs/AOT.md)
 - [Testing](docs/TESTING.md)
 - [Security](docs/SECURITY.md)
+- [Core contracts](docs/CORE-CONTRACTS.md)
 - [Roadmap](docs/ROADMAP.md)
 - [History](docs/history/README.md)
 
@@ -85,3 +100,8 @@ dotnet test
 ```
 
 The test suite is the source of truth for what is currently proven.
+
+
+## Public API
+
+See `docs/PUBLIC-API.md`. Application code should prefer `FoundgineEngine` over manually orchestrating resolution, authorization, planning, and provider execution.

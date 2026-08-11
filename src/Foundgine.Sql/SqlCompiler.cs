@@ -1,5 +1,6 @@
 using System.Text;
 using Foundgine.Metadata;
+using Foundgine.Execution;
 using Foundgine.Abstractions;
 using Foundgine.Planning;
 using Foundgine.Semantics.Query;
@@ -11,7 +12,7 @@ namespace Foundgine.Sql;
 /// Compiles the provider-independent execution plan into SQL, including
 /// filtering, ordering, aggregation, and cursor pagination.
 /// </summary>
-public sealed class SqlCompiler
+public sealed class SqlCompiler : IProviderPlanCompiler
 {
     private readonly IMetadataProvider _metadata;
 
@@ -27,6 +28,10 @@ public sealed class SqlCompiler
         var aliases = occurrences.ToDictionary(x => x.Node.Id, x => $"t{x.Node.Id}");
         var select = new List<string>();
         var bindings = new List<SqlColumnBinding>();
+        var authorization = occurrences
+            .Where(x => x.Node.Authorization is not null)
+            .Select(x => new SqlAuthorizationPredicate(x.Node.Id, x.Node.Authorization!))
+            .ToArray();
 
         foreach (var occurrence in occurrences)
         {
@@ -171,6 +176,23 @@ public sealed class SqlCompiler
             parameters,
             _metadata);
 
+        foreach (var occurrence in occurrences)
+        {
+            if (occurrence.Node.Authorization is null)
+                continue;
+
+            var entity = _metadata.GetEntity(occurrence.Node.EntityId);
+            var predicateSql = Query.SqlAuthorizationWriter.Write(
+                occurrence.Node.Authorization,
+                entity,
+                aliases[occurrence.Node.Id],
+                parameters);
+
+            where = string.IsNullOrWhiteSpace(where)
+                ? predicateSql
+                : $"({where}) AND ({predicateSql})";
+        }
+
         if (hasCursor)
         {
             var cursorValues = CursorCodec.Decode(rootOptions!.After!);
@@ -216,8 +238,10 @@ public sealed class SqlCompiler
                 sql.Append(" OFFSET ").Append(actualOffset);
         }
 
-        return new SqlPlan(sql.ToString(), bindings, parameters, pagination);
+        return new SqlPlan(sql.ToString(), bindings, parameters, pagination, authorization);
     }
+
+    ProviderPlan IProviderPlanCompiler.Compile(ExecutionPlan plan) => Compile(plan);
 
     private void AddFieldSelection(
         ExecutionPlanNode node,
