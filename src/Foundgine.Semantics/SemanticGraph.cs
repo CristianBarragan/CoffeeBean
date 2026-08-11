@@ -40,7 +40,19 @@ public sealed class SemanticGraph
         RelationshipId? relationshipId,
         SemanticGraphNode? parent,
         IEnumerable<FieldId>? fields = null) =>
-        Add(entityId, relationshipId, null, parent, fields, null);
+        Add(entityId, relationshipId, parent, fields, null);
+
+    /// <summary>
+    /// Adds a node reached through a semantic relationship while preserving
+    /// the AOT authorization predicate attached to that node.
+    /// </summary>
+    public SemanticGraphNode Add(
+        EntityId entityId,
+        RelationshipId? relationshipId,
+        SemanticGraphNode? parent,
+        IEnumerable<FieldId>? fields,
+        AuthorizationPredicate? authorization) =>
+        Add(entityId, relationshipId, null, parent, fields, authorization);
 
     private SemanticGraphNode Add(
         EntityId entityId,

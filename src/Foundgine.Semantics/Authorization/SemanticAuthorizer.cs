@@ -68,12 +68,13 @@ public sealed class SemanticAuthorizer
             }
 
             var node = sourceNode.ParentId is null
-                ? authorized.AddRoot(sourceNode.EntityId, fields)
+                ? authorized.AddRoot(sourceNode.EntityId, fields, sourceNode.Authorization)
                 : authorized.Add(
                     sourceNode.EntityId,
                     sourceNode.ViaRelationship,
                     authorizedParent,
-                    fields);
+                    fields,
+                    sourceNode.Authorization);
 
             sourceToAuthorized[sourceNode.Id] = node;
         }
