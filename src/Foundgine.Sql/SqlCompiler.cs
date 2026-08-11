@@ -175,6 +175,23 @@ public sealed class SqlCompiler
             parameters,
             _metadata);
 
+        foreach (var occurrence in occurrences)
+        {
+            if (occurrence.Node.Authorization is null)
+                continue;
+
+            var entity = _metadata.GetEntity(occurrence.Node.EntityId);
+            var predicateSql = Query.SqlAuthorizationWriter.Write(
+                occurrence.Node.Authorization,
+                entity,
+                aliases[occurrence.Node.Id],
+                parameters);
+
+            where = string.IsNullOrWhiteSpace(where)
+                ? predicateSql
+                : $"({where}) AND ({predicateSql})";
+        }
+
         if (hasCursor)
         {
             var cursorValues = CursorCodec.Decode(rootOptions!.After!);

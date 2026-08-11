@@ -18,8 +18,9 @@ public sealed class SemanticGraph
 
     public SemanticGraphNode AddRoot(
         EntityId entityId,
-        IEnumerable<FieldId>? fields = null) =>
-        Add(entityId, null, null, fields);
+        IEnumerable<FieldId>? fields = null,
+        AuthorizationPredicate? authorization = null) =>
+        Add(entityId, null, null, null, fields, authorization);
 
     /// <summary>
     /// Adds a node reached through an AOT semantic connection. The connection

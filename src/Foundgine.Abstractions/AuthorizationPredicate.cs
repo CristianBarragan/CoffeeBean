@@ -14,6 +14,12 @@ public sealed record AuthorizationPredicate(
     public static AuthorizationPredicate Parameter(string name) =>
         new(AuthorizationPredicateKind.Parameter, Name: name);
 
+    public static AuthorizationPredicate ContextParameter(string name) =>
+        new(AuthorizationPredicateKind.ContextParameter, Name: name);
+
+    public static AuthorizationPredicate ResourceParameter(string name) =>
+        new(AuthorizationPredicateKind.ResourceParameter, Name: name);
+
     public static AuthorizationPredicate Member(AuthorizationPredicate target, string name) =>
         new(AuthorizationPredicateKind.MemberAccess, Name: name, Left: target);
 
@@ -39,6 +45,8 @@ public sealed record AuthorizationPredicate(
 public enum AuthorizationPredicateKind : byte
 {
     Parameter,
+    ContextParameter,
+    ResourceParameter,
     MemberAccess,
     Constant,
     Equal,

@@ -25,3 +25,8 @@ The initial IR intentionally supports only simple, analyzable operations:
 parameters, member access, constants, equality/inequality, boolean AND/OR,
 and NOT. More operations should be added only when there is a clear semantic
 and provider-independent representation.
+
+
+## Execution boundary
+
+AOT authorization predicates are lowered into provider plans. SQL providers do not execute the original expression tree or delegate. Context values are bound at execution time through `ExecutionContext`, while resource members are resolved to storage columns during SQL compilation. Missing required context values fail execution rather than silently bypassing authorization.

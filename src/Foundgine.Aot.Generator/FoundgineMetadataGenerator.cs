@@ -505,8 +505,11 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             case ParenthesizedExpressionSyntax parenthesized:
                 return BuildPredicateNode(parenthesized.Expression, parameters);
 
-            case IdentifierNameSyntax identifier when parameters.Contains(identifier.Identifier.Text, StringComparer.Ordinal):
-                return $"Foundgine.Abstractions.AuthorizationPredicate.Parameter(\"{Escape(identifier.Identifier.Text)}\")";
+            case IdentifierNameSyntax identifier when parameters.Count > 0 && identifier.Identifier.Text == parameters[0]:
+                return $"Foundgine.Abstractions.AuthorizationPredicate.ContextParameter(\"{Escape(identifier.Identifier.Text)}\")";
+
+            case IdentifierNameSyntax identifier when parameters.Count > 1 && identifier.Identifier.Text == parameters[1]:
+                return $"Foundgine.Abstractions.AuthorizationPredicate.ResourceParameter(\"{Escape(identifier.Identifier.Text)}\")";
 
             case MemberAccessExpressionSyntax member:
             {

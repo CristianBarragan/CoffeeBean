@@ -36,7 +36,14 @@ public sealed class SqlExecutionProvider : IExecutionProvider
         {
             var parameter = command.CreateParameter();
             parameter.ParameterName = "@" + binding.Name;
-            parameter.Value = binding.Value ?? DBNull.Value;
+            object? value = binding.Value;
+            if (binding.ContextPath is { } contextPath)
+            {
+                if (!context.TryGetValue(contextPath, out value))
+                    throw new InvalidOperationException($"Execution context does not contain authorization value '{contextPath}'.");
+            }
+
+            parameter.Value = value ?? DBNull.Value;
             command.Parameters.Add(parameter);
         }
 
