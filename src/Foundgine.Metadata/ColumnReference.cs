@@ -1,11 +1,9 @@
+using Foundgine.Abstractions;
 namespace Foundgine.Metadata;
 
 /// <summary>
-/// A single universal way to point at "a column on an entity". Used by
-/// joins, field bindings, and vertex keys instead of each having its own
-/// entity-id/column-id pair.
+/// A provider-neutral reference to a physical column. Kept in metadata so
+/// later providers can translate storage bindings without putting storage
+/// knowledge into the semantic graph.
 /// </summary>
-public sealed record ColumnReference(
-    EntityMetadata Entity,
-    ushort ColumnId
-);
+public sealed record ColumnReference(EntityId EntityId, ColumnId ColumnId);

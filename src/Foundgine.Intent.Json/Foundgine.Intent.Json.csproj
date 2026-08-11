@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Foundgine.Intent.Json</RootNamespace>
+    <AssemblyName>Foundgine.Intent.Json</AssemblyName>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Foundgine.Semantics/Foundgine.Semantics.csproj" />
+  </ItemGroup>
+</Project>

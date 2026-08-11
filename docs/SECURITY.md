@@ -1,30 +1,15 @@
-# Security Policy
+# Security
 
-Foundgine is an active proof project and does not currently claim production security certification or a complete authorization framework.
+Foundgine treats external intent as untrusted input.
 
-## Current safety properties
-
-The active code already demonstrates some useful constraints:
-
-- ambiguous entity resolution is not silently accepted;
-- the mutation planner rejects unfiltered update operations;
-- logical planning is separated from provider execution;
-- execution is explicit through provider contracts.
-
-## Future security work
-
-The AI-facing security path still needs:
+The important rule is:
 
 ```text
-identity resolution
- → authorization
- → action constraints
- → preview
- → execution
- → verification
- → evidence
+Input → Parse → Resolve → Authorize → Plan → Execute
 ```
 
-## Reporting
+Do not allow an adapter to bypass resolution or authorization.
 
-For a suspected vulnerability, use the repository's private security reporting mechanism where available. Do not publish sensitive exploit details in a public issue.
+SQL values are parameterized by the SQL provider. External GraphQL or JSON names do not become SQL identifiers or executable provider operations without going through the semantic and planning layers.
+
+For AI-generated intent, apply normal application authentication, authorization, rate limits, validation, and approval controls around the Foundgine boundary.

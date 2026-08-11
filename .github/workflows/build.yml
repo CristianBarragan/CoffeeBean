@@ -1,14 +1,5 @@
 name: Build & Test
 
-# The first CI gate this repo needs, per the architecture review: restore,
-# build, and run the (currently thin) test suite on every push/PR, so a
-# broken build is caught in CI rather than discovered by the next person to
-# clone the repo. This intentionally does not gate on coverage or a minimum
-# test count — see tests/Foundgine.Tests and tests/Graphgine.Tests for where
-# that's still thin — it only gates on "does it build and do the tests that
-# exist pass," which today includes ArchitectureTests.cs enforcing the
-# dependency-direction rules described in README.md.
-
 on:
   push:
     branches: [ "main" ]
@@ -19,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup .NET

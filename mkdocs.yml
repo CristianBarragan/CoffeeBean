@@ -1,5 +1,5 @@
 site_name: Foundgine
-site_description: "Foundgine turns a .NET application domain model into a safe, executable interface for AI agents."
+site_description: "A small, provider-independent semantic execution engine for .NET."
 repo_url: https://github.com/CristianBarragan/Foundgine
 repo_name: CristianBarragan/Foundgine
 docs_dir: docs
@@ -7,40 +7,17 @@ site_dir: site
 
 theme:
   name: material
-  palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: brown
-      accent: amber
-      toggle:
-        icon: material/weather-night
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: brown
-      accent: amber
-      toggle:
-        icon: material/weather-sunny
-        name: Switch to light mode
   features:
-    - navigation.instant
-    - navigation.tracking
-    - navigation.sections
     - navigation.top
     - navigation.footer
     - search.suggest
     - search.highlight
     - content.code.copy
-    - content.action.edit
 
 markdown_extensions:
   - admonition
   - pymdownx.details
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.superfences
   - pymdownx.highlight
   - tables
   - toc:
@@ -51,72 +28,14 @@ plugins:
 
 nav:
   - Home: README.md
+  - Getting Started: GETTING-STARTED.md
+  - Architecture: ARCHITECTURE.md
   - Current Status: CURRENT-STATUS.md
-  - Direction:
-      - Overview: 00-Direction/README.md
-      - Proof Milestones: 00-Direction/Milestones.md
-  - Getting Started:
-      - Overview: 01-Getting-Started/README.md
-      - Installation: 01-Getting-Started/Installation.md
-      - First Service: 01-Getting-Started/First-Service.md
-      - Configuration: 01-Getting-Started/Configuration.md
-      - FAQ: 01-Getting-Started/FAQ.md
-  - Architecture:
-      - Overview: 02-Architecture/README.md
-      - Vision: 02-Architecture/Vision.md
-      - Principles: 02-Architecture/Principles.md
-      - Layers: 02-Architecture/Layers.md
-      - Request Pipeline: 02-Architecture/Request-Pipeline.md
-      - Dependency Graph: 02-Architecture/Dependency-Graph.md
-  - Foundation:
-      - Overview: 03-Foundation/README.md
-      - Metadata: 03-Foundation/Metadata.md
-      - Contracts: 03-Foundation/Contracts.md
-      - Components: 03-Foundation/Components.md
-      - Extensibility: 03-Foundation/Extensibility.md
-  - Runtime:
-      - Overview: 04-Runtime/README.md
-      - Execution: 04-Runtime/Execution.md
-      - Queries: 04-Runtime/Queries.md
-      - Mutations: 04-Runtime/Mutations.md
-      - Events: 04-Runtime/Events.md
-  - GraphQL:
-      - Overview: 05-GraphQL/README.md
-      - Schema: 05-GraphQL/Schema.md
-      - Resolvers: 05-GraphQL/Resolvers.md
-      - Paging, Filtering & Sorting: 05-GraphQL/Pagination-Filtering-Sorting.md
-  - Source Generators:
-      - Overview: 06-Source-Generators/README.md
-      - Mapping Generator: 06-Source-Generators/Mapping-Generator.md
-      - Diagnostics: 06-Source-Generators/Diagnostics.md
-      - Pipeline Stages: 06-Source-Generators/Pipeline-Stages.md
-  - Dependency Injection:
-      - Overview: 07-Dependency-Injection/README.md
-      - Registration: 07-Dependency-Injection/Registration.md
-      - Lifetimes: 07-Dependency-Injection/Lifetimes.md
-  - Persistence:
-      - Overview: 08-Persistence/README.md
-      - PostgreSQL & AGE: 08-Persistence/PostgreSQL-AGE.md
-      - Dapper & EF Core: 08-Persistence/Dapper-EFCore.md
-      - Caching: 08-Persistence/Caching.md
-  - AI & LLM Readiness:
-      - Overview: 09-AI/README.md
-      - LLM Readiness: 09-AI/LLM-Readiness.md
-  - Performance:
-      - Overview: 10-Performance/README.md
-      - Native AOT: 10-Performance/Native-AOT.md
-      - Benchmarks: 10-Performance/Benchmarks.md
-  - Samples: 11-Samples/README.md
-  - Contributing:
-      - Overview: 12-Contributing/README.md
-      - Code Style: 12-Contributing/Code-Style.md
-      - Testing: 12-Contributing/Testing.md
-      - ADR Process: 12-Contributing/ADR-Process.md
-  - Reference:
-      - Overview: 13-Reference/README.md
-      - ADRs: 13-Reference/ADRs.md
-      - FAQ: 13-Reference/FAQ.md
-      - Glossary: 13-Reference/Glossary.md
-      - Roadmap: 13-Reference/Roadmap.md
-      - Changelog: 13-Reference/Changelog.md
-      - Migration Guides: 13-Reference/Migration-Guides.md
+  - Runtime: RUNTIME.md
+  - GraphQL: GRAPHQL.md
+  - AOT: AOT.md
+  - Testing: TESTING.md
+  - Security: SECURITY.md
+  - Migration: MIGRATION.md
+  - Roadmap: ROADMAP.md
+  - History: history/README.md

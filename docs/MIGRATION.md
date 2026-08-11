@@ -1,69 +1,13 @@
-# Migration Mapping
+# Migration
 
-This document is historical context, not a recommendation to preserve the old architecture.
+Foundgine is a ground-up rebuild. The archived V1 and Graphgine projects are references, not compatibility targets.
 
-## Historical direction
+When moving code from an archive:
 
-The repository previously contained:
+1. identify the capability you actually need;
+2. map it to the current semantic contracts;
+3. reimplement it in the current layer;
+4. add a focused test;
+5. delete the old compatibility code.
 
-```text
-CoffeeBeanery
-Graphgine
-GraphQL
-Hot Chocolate
-Source Generators
-PostgreSQL/graph providers
-```
-
-Those projects are archived.
-
-## Current direction
-
-The active platform is:
-
-```text
-Foundgine.Abstractions
-Foundgine.Foundation
-Foundgine.Metadata
-Foundgine.Semantic
-Foundgine.Builders
-Foundgine.Planning
-Foundgine.Execution.Contracts
-Foundgine.Providers
-```
-
-## Conceptual migration
-
-```text
-Old GraphQL request
-       ↓
-GraphQL/Graphgine planning
-```
-
-becomes:
-
-```text
-Structured semantic intent
-       ↓
-Foundgine resolution
-       ↓
-Foundgine planning
-```
-
-GraphQL, REST, gRPC or MCP can later become adapters that produce the same structured intent.
-
-## Source generation
-
-The old generator should not be reintroduced wholesale.
-
-The future compiler direction is narrower:
-
-```text
-Application source
-       ↓
-Roslyn
-       ↓
-semantic vocabulary
-```
-
-Runtime planning remains dynamic.
+Do not copy the old project structure into the new repository.

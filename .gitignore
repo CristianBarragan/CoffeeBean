@@ -1,44 +1,6 @@
-# CPR / AI checkpoints
-cpr-checkpoints/
-**/cpr-checkpoints/
-
-# AI / Copilot
-.github/copilot/
-.copilot/
-
-# Build output
-[Bb]in/
-[Oo]bj/
-
-# Rider
-.idea/
-*.DotSettings.user
-
-# Visual Studio
+**/bin/
+**/obj/
 .vs/
 *.user
 *.suo
-*.userosscache
-*.sln.docstates
-
-# Logs
-*.log
-*.binlog
-
-# Test
 TestResults/
-coverage/
-
-# Temp
-*.tmp
-*.cache
-
-# Build output
-[Bb]in/
-[Oo]bj/
-
-# Rider
-*.DotSettings.user
-
-# Build logs
-*.binlog
