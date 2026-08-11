@@ -58,16 +58,28 @@ public sealed class Planner : IPlanner
                 $"Semantic graph contains a cycle at node {semanticNode.Id}.");
         }
 
-        if (!isRoot && semanticNode.ViaRelationship is null)
+        if (!isRoot && semanticNode.ViaRelationship is null && semanticNode.ViaConnection is null)
         {
             throw new InvalidOperationException(
-                $"Non-root semantic node {semanticNode.Id} must specify the relationship used to reach it.");
+                $"Non-root semantic node {semanticNode.Id} must specify the relationship or connection used to reach it.");
+        }
+
+        if (semanticNode.ViaRelationship is not null && semanticNode.ViaConnection is not null)
+        {
+            throw new InvalidOperationException(
+                $"Semantic node {semanticNode.Id} cannot specify both a relationship and a connection.");
         }
 
         if (isRoot && semanticNode.ViaRelationship is not null)
         {
             throw new InvalidOperationException(
                 $"Root semantic node {semanticNode.Id} cannot specify a parent relationship.");
+        }
+
+        if (isRoot && semanticNode.ViaConnection is not null)
+        {
+            throw new InvalidOperationException(
+                $"Root semantic node {semanticNode.Id} cannot specify a parent connection.");
         }
 
         if (semanticNode.ParentId is { } parentId && !nodeIds.Contains(parentId))
@@ -78,7 +90,9 @@ public sealed class Planner : IPlanner
 
         var operation = isRoot
             ? ExecutionOperation.Scan
-            : ExecutionOperation.Traverse;
+            : semanticNode.ViaConnection is not null
+                ? ExecutionOperation.TraverseConnection
+                : ExecutionOperation.Traverse;
 
         var children = byParent[semanticNode.Id]
             .Select(child => BuildNode(child, byParent, nodeIds, visited, queryOptions, isRoot: false))
@@ -90,6 +104,7 @@ public sealed class Planner : IPlanner
             semanticNode.EntityId,
             semanticNode.Fields,
             semanticNode.ViaRelationship,
+            semanticNode.ViaConnection,
             children,
             isRoot ? queryOptions : null);
     }

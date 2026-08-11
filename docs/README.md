@@ -14,3 +14,5 @@ Keep this documentation practical. If the code and docs disagree, the code and t
 8. [Roadmap](ROADMAP.md)
 
 Historical design notes and milestone documents live under [history](history/README.md).
+
+- [Mapping and Connections](MAPPING.md)
