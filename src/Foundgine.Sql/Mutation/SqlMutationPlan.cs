@@ -9,7 +9,8 @@ namespace Foundgine.Sql.Mutation;
 public sealed record SqlMutationPlan(
     string CommandText,
     IReadOnlyList<SqlParameterBinding> Parameters,
-    IReadOnlyList<MutationReturnBinding> ReturnedFields) : ProviderMutationPlan;
+    IReadOnlyList<MutationReturnBinding> ReturnedFields,
+    string? FallbackCommandText = null) : ProviderMutationPlan;
 
 public sealed record MutationReturnBinding(
     FieldId FieldId,

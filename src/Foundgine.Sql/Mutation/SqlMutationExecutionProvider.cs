@@ -61,6 +61,33 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
             affectedRows = command.ExecuteNonQuery();
         }
 
+        if (affectedRows == 0 &&
+            returned.Count == 0 &&
+            sqlPlan.FallbackCommandText is not null)
+        {
+            using var fallback = _connection.CreateCommand();
+            fallback.CommandText = sqlPlan.FallbackCommandText;
+            foreach (var binding in sqlPlan.Parameters)
+            {
+                var parameter = fallback.CreateParameter();
+                parameter.ParameterName = "@" + binding.Name;
+                parameter.Value = ResolveValue(binding, Array.Empty<MutationResult>()) ?? DBNull.Value;
+                fallback.Parameters.Add(parameter);
+            }
+
+            using var reader = fallback.ExecuteReader();
+            if (reader.Read())
+            {
+                affectedRows = 1;
+                for (var i = 0; i < sqlPlan.ReturnedFields.Count; i++)
+                {
+                    var binding = sqlPlan.ReturnedFields[i];
+                    returned[binding.FieldId] =
+                        reader.IsDBNull(i) ? null : reader.GetValue(i);
+                }
+            }
+        }
+
         return new MutationResult(
             affectedRows,
             returned.Count == 0 ? null : returned);
@@ -124,18 +151,46 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
             return new MutationResult(command.ExecuteNonQuery());
 
         using var reader = command.ExecuteReader();
-        if (!reader.Read())
+        if (reader.Read())
+        {
+            var returned = new Dictionary<FieldId, object?>();
+            for (var i = 0; i < sqlPlan.ReturnedFields.Count; i++)
+            {
+                var binding = sqlPlan.ReturnedFields[i];
+                returned[binding.FieldId] =
+                    reader.IsDBNull(i) ? null : reader.GetValue(i);
+            }
+
+            return new MutationResult(1, returned);
+        }
+
+        if (sqlPlan.FallbackCommandText is null)
             return new MutationResult(0);
 
-        var returned = new Dictionary<FieldId, object?>();
+        using var fallback = command.Connection!.CreateCommand();
+        fallback.Transaction = command.Transaction;
+        fallback.CommandText = sqlPlan.FallbackCommandText;
+        foreach (DbParameter parameter in command.Parameters)
+        {
+            var fallbackParameter = fallback.CreateParameter();
+            fallbackParameter.ParameterName = parameter.ParameterName;
+            fallbackParameter.Value = parameter.Value;
+            fallback.Parameters.Add(fallbackParameter);
+        }
+
+        using var fallbackReader = fallback.ExecuteReader();
+        if (!fallbackReader.Read())
+            return new MutationResult(0);
+
+        var fallbackReturned = new Dictionary<FieldId, object?>();
         for (var i = 0; i < sqlPlan.ReturnedFields.Count; i++)
         {
             var binding = sqlPlan.ReturnedFields[i];
-            returned[binding.FieldId] =
-                reader.IsDBNull(i) ? null : reader.GetValue(i);
+            fallbackReturned[binding.FieldId] =
+                fallbackReader.IsDBNull(i) ? null : fallbackReader.GetValue(i);
         }
 
-        return new MutationResult(1, returned);
+        return new MutationResult(1, fallbackReturned);
     }
 
     private static object? ResolveValue(

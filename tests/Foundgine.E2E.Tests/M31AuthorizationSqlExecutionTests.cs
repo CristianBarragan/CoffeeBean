@@ -71,4 +71,18 @@ public sealed class M31AuthorizationSqlExecutionTests
         Assert.Contains("user.TenantId", exception.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Empty_post_authorization_field_selection_fails_closed()
+    {
+        var graph = new SemanticGraph();
+        graph.AddRoot(new EntityId(3), Array.Empty<FieldId>());
+
+        var plan = new Planner().Plan(graph);
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => new SqlCompiler(GeneratedMetadata.Registry).Compile(plan));
+
+        Assert.Contains("selects no fields", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
 }

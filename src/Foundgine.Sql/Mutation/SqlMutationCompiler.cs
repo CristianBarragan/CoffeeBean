@@ -60,7 +60,7 @@ public sealed class SqlMutationCompiler
         var columnNames = fields.Select(f => ResolveColumn(entity, f.Column)).ToArray();
         var sb = new StringBuilder();
         sb.Append("INSERT INTO ")
-          .Append(Q(entity.EffectiveStorageName))
+          .Append(Table(entity.EffectiveStorageName))
           .Append(" (").Append(string.Join(", ", columnNames.Select(Q))).Append(") VALUES (");
 
         var parameters = new List<SqlParameterBinding>();
@@ -79,6 +79,8 @@ public sealed class SqlMutationCompiler
             .Where(f => !conflicts.Contains(f.Column))
             .ToArray();
 
+        string? fallbackCommandText = null;
+
         if (updates.Length == 0)
         {
             sb.Append("DO NOTHING");
@@ -93,10 +95,73 @@ public sealed class SqlMutationCompiler
                 var parameterIndex = Array.IndexOf(fields, updates[i]);
                 sb.Append(Q(column)).Append(" = @p").Append(parameterIndex);
             }
+
+            // Avoid issuing a physical UPDATE when the incoming values are
+            // identical to the stored values. PostgreSQL's IS DISTINCT FROM
+            // is null-safe and works for nullable/non-nullable scalar columns.
+            //
+            // Important: PostgreSQL returns no row from RETURNING when the
+            // ON CONFLICT DO UPDATE ... WHERE predicate is false. Foundgine
+            // relies on RETURNING for mutation identity/dependency materialization,
+            // so generate a fallback SELECT for the no-change case.
+            var conflictParameters = conflicts
+                .Select(c => (Column: c, FieldIndex: Array.FindIndex(fields, f => f.Column == c)))
+                .ToArray();
+
+            var canFallback = op.ReturnFields is { Count: > 0 } &&
+                              conflictParameters.All(x => x.FieldIndex >= 0);
+
+            sb.Append(" WHERE ");
+            for (var i = 0; i < updates.Length; i++)
+            {
+                if (i > 0) sb.Append(" OR ");
+                var column = ResolveColumn(entity, updates[i].Column);
+                sb.Append(Table(entity.EffectiveStorageName))
+                  .Append('.')
+                  .Append(Q(column))
+                  .Append(" IS DISTINCT FROM EXCLUDED.")
+                  .Append(Q(column));
+            }
+
+            if (canFallback)
+            {
+                var fallback = new StringBuilder();
+                fallback.Append("SELECT ");
+                for (var i = 0; i < op.ReturnFields!.Count; i++)
+                {
+                    if (i > 0) fallback.Append(", ");
+                    var field = entity.EffectiveFields.FirstOrDefault(f => f.Id == op.ReturnFields[i])
+                        ?? throw new InvalidOperationException(
+                            $"Unknown return field '{op.ReturnFields[i]}'.");
+                    var column = ResolveColumn(entity, field.Column!.ColumnId);
+                    var resultName = "r_" + field.Id.Value;
+                    fallback.Append(Table(entity.EffectiveStorageName))
+                        .Append('.')
+                        .Append(Q(column))
+                        .Append(" AS ")
+                        .Append(Q(resultName));
+                }
+
+                fallback.Append(" FROM ")
+                    .Append(Table(entity.EffectiveStorageName))
+                    .Append(" WHERE ");
+
+                for (var i = 0; i < conflictParameters.Length; i++)
+                {
+                    if (i > 0) fallback.Append(" AND ");
+                    var column = ResolveColumn(entity, conflictParameters[i].Column);
+                    fallback.Append(Q(column))
+                        .Append(" IS NOT DISTINCT FROM @p")
+                        .Append(conflictParameters[i].FieldIndex);
+                }
+
+                fallback.Append(" LIMIT 1");
+                fallbackCommandText = fallback.ToString();
+            }
         }
 
         AppendReturning(sb, entity, op.ReturnFields, out var returns);
-        return new SqlMutationPlan(sb.ToString(), parameters, returns);
+        return new SqlMutationPlan(sb.ToString(), parameters, returns, fallbackCommandText);
     }
 
     private SqlMutationPlan CompileCreate(MutationOperation op)
@@ -104,7 +169,7 @@ public sealed class SqlMutationCompiler
         var entity = _metadata.GetEntity(op.Entity.Id);
         var fields = op.Fields.ToArray();
         var sb = new StringBuilder("INSERT INTO ");
-        sb.Append(Q(entity.EffectiveStorageName)).Append(" (")
+        sb.Append(Table(entity.EffectiveStorageName)).Append(" (")
           .Append(string.Join(", ", fields.Select(f => Q(ResolveColumn(entity, f.Column)))))
           .Append(") VALUES (");
         var parameters = new List<SqlParameterBinding>();
@@ -125,7 +190,7 @@ public sealed class SqlMutationCompiler
         if (op.Filter is null) throw new InvalidOperationException("Update requires a filter.");
         var entity = _metadata.GetEntity(op.Entity.Id);
         var sb = new StringBuilder("UPDATE ");
-        sb.Append(Q(entity.EffectiveStorageName)).Append(" SET ");
+        sb.Append(Table(entity.EffectiveStorageName)).Append(" SET ");
         var parameters = new List<SqlParameterBinding>();
         for (var i = 0; i < op.Fields.Count; i++)
         {
@@ -139,7 +204,7 @@ public sealed class SqlMutationCompiler
         var where = SemanticQuerySqlWriter.WriteWhere(op.Filter, entity, alias, parameters, _metadata)
             ?? throw new InvalidOperationException("Update filter produced no SQL.");
         // SQLite accepts the table without an alias here; compile the filter against the table name.
-        where = where.Replace("\"t0\".", Q(entity.EffectiveStorageName) + ".", StringComparison.Ordinal);
+        where = where.Replace("\"t0\".", Table(entity.EffectiveStorageName) + ".", StringComparison.Ordinal);
         sb.Append(where);
         AppendReturning(sb, entity, op.ReturnFields, out var returns);
         return new SqlMutationPlan(sb.ToString(), parameters, returns);
@@ -152,8 +217,8 @@ public sealed class SqlMutationCompiler
         var parameters = new List<SqlParameterBinding>();
         var where = SemanticQuerySqlWriter.WriteWhere(op.Filter, entity, "t0", parameters, _metadata)
             ?? throw new InvalidOperationException("Delete filter produced no SQL.");
-        where = where.Replace("\"t0\".", Q(entity.EffectiveStorageName) + ".", StringComparison.Ordinal);
-        var sql = $"DELETE FROM {Q(entity.EffectiveStorageName)} WHERE {where}";
+        where = where.Replace("\"t0\".", Table(entity.EffectiveStorageName) + ".", StringComparison.Ordinal);
+        var sql = $"DELETE FROM {Table(entity.EffectiveStorageName)} WHERE {where}";
         return new SqlMutationPlan(sql, parameters, []);
     }
 
@@ -192,4 +257,7 @@ public sealed class SqlMutationCompiler
 
     private static string Q(string identifier) =>
         "\"" + identifier.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
+
+    private static string Table(string storageName) =>
+        string.Join(".", storageName.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(Q));
 }

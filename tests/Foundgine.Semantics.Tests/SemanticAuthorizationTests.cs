@@ -25,6 +25,16 @@ public sealed class SemanticAuthorizationTests
     }
 
     [Fact]
+    public void Denying_every_requested_field_does_not_reintroduce_fields()
+    {
+        var (model, request, _, _, _) = CreateBankingRequest();
+        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var authorized = new SemanticAuthorizer(new DenyAllCustomerFieldsPolicy()).Authorize(resolved);
+
+        Assert.Empty(authorized.Nodes[0].Fields);
+    }
+
+    [Fact]
     public void Denied_relationship_removes_relationship_subtree()
     {
         var (model, request, customer, _, transaction) = CreateBankingRequest();
@@ -112,6 +122,12 @@ public sealed class SemanticAuthorizationTests
             entityId != new EntityId(2) || fieldId != new FieldId(3);
     }
 
+    private sealed class DenyAllCustomerFieldsPolicy : AllowAllSemanticAuthorizationPolicy
+    {
+        public override bool CanAccessField(EntityId entityId, FieldId fieldId) =>
+            entityId != new EntityId(1);
+    }
+
     private sealed class DenyTransactionsPolicy : AllowAllSemanticAuthorizationPolicy
     {
         public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId) =>
@@ -126,5 +142,99 @@ public sealed class SemanticAuthorizationTests
     private sealed class DenyCustomerPolicy : AllowAllSemanticAuthorizationPolicy
     {
         public override bool CanAccessEntity(EntityId entityId) => entityId != new EntityId(1);
+    }
+}
+
+// M39: capability discovery and conditional authorization are semantic
+// concerns. They are intentionally tested without SQL or GraphQL.
+public sealed class SemanticAuthorizationCapabilityTests
+{
+    [Fact]
+    public void Capability_discovery_reports_read_write_field_boundaries()
+    {
+        var model = new SemanticModelBuilder()
+            .Entity(new EntityId(1), "Employee", e => e
+                .Identity(new FieldId(1), "Id")
+                .Field(new FieldId(2), "Name", typeof(string))
+                .Field(new FieldId(3), "Salary", typeof(decimal)))
+            .Build();
+
+        var capabilities = SemanticAuthorizationCapabilityDiscovery.Describe(
+            model,
+            new EmployeePolicy());
+
+        var employee = Assert.Single(capabilities.Entities);
+        Assert.Equal(AuthorizationAccess.Allowed, employee.Read.Access);
+        Assert.Equal(AuthorizationAccess.Denied, employee.Write.Access);
+
+        var name = Assert.Single(employee.Fields, x => x.Name == "Name");
+        Assert.Equal(AuthorizationAccess.Allowed, name.Read.Access);
+        Assert.Equal(AuthorizationAccess.Denied, name.Write.Access);
+
+        var salary = Assert.Single(employee.Fields, x => x.Name == "Salary");
+        Assert.Equal(AuthorizationAccess.Denied, salary.Read.Access);
+    }
+
+    [Fact]
+    public void Capability_discovery_reports_conditional_without_exposing_predicate()
+    {
+        var model = new SemanticModelBuilder()
+            .Entity(new EntityId(1), "Employee", e => e
+                .Identity(new FieldId(1), "Id")
+                .Field(new FieldId(2), "TenantId", typeof(int)))
+            .Build();
+
+        var capabilities = SemanticAuthorizationCapabilityDiscovery.Describe(model, new TenantPolicy());
+        var employee = Assert.Single(capabilities.Entities);
+
+        Assert.Equal(AuthorizationAccess.Conditional, employee.Read.Access);
+        Assert.Null(employee.Read.Predicate);
+    }
+
+    [Fact]
+    public void Conditional_policy_predicate_is_preserved_in_authorized_graph()
+    {
+        var model = new SemanticModelBuilder()
+            .Entity(new EntityId(1), "Employee", e => e
+                .Identity(new FieldId(1), "Id")
+                .Field(new FieldId(2), "TenantId", typeof(int)))
+            .Build();
+
+        var request = new SemanticRequest(
+            new EntityId(1),
+            [new SemanticSelection(new FieldId(2), null, [])]);
+
+        var graph = new SemanticRequestResolver(model).Resolve(request);
+        var authorized = new SemanticAuthorizer(new TenantPolicy()).Authorize(graph);
+
+        var predicate = Assert.Single(authorized.Nodes).Authorization;
+        Assert.NotNull(predicate);
+        Assert.Equal(AuthorizationPredicateKind.Equal, predicate.Kind);
+        Assert.Equal(AuthorizationPredicateKind.MemberAccess, predicate.Left?.Kind);
+        Assert.Equal(AuthorizationPredicateKind.ContextParameter, predicate.Right?.Left?.Kind);
+    }
+
+    private sealed class EmployeePolicy : AllowAllSemanticAuthorizationPolicy
+    {
+        public override bool CanWriteEntity(EntityId entityId) => false;
+
+        public override bool CanWriteField(EntityId entityId, FieldId fieldId) => false;
+
+        public override bool CanAccessField(EntityId entityId, FieldId fieldId) =>
+            entityId != new EntityId(1) || fieldId != new FieldId(3);
+    }
+
+    private sealed class TenantPolicy : AllowAllSemanticAuthorizationPolicy
+    {
+        public override AuthorizationPredicate? GetPredicate(
+            EntityId entityId,
+            AuthorizationOperation operation) =>
+            operation == AuthorizationOperation.Read && entityId == new EntityId(1)
+                ? AuthorizationPredicate.Equal(
+                    AuthorizationPredicate.Member(
+                        AuthorizationPredicate.ResourceParameter("resource"), "TenantId"),
+                    AuthorizationPredicate.Member(
+                        AuthorizationPredicate.ContextParameter("context"), "TenantId"))
+                : null;
     }
 }

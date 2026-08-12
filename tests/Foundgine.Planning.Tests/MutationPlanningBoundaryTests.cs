@@ -97,3 +97,60 @@ public sealed class MutationPlanningBoundaryTests
         public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId) => _relationships[relationshipId];
     }
 }
+
+public sealed class MutationAuthorizationTests
+{
+    [Fact]
+    public void Mutation_authorizer_rejects_non_writable_field()
+    {
+        var entity = new MutationEntitySchema(
+            new EntityId(1),
+            "Employee",
+            new HashSet<ColumnId> { new(1), new(2) },
+            new Dictionary<FieldId, ColumnId?>
+            {
+                [new FieldId(1)] = new ColumnId(1),
+                [new FieldId(2)] = new ColumnId(2)
+            },
+            new ColumnId(1));
+
+        var schema = new TestMutationSchema(entity);
+        var intent = new MutationIntent(
+            entity.Id,
+            MutationKind.Update,
+            [new MutationFieldValue(new ColumnId(2), "secret")],
+            Filter: new Foundgine.Semantics.Query.SemanticFieldFilter(
+                new FieldId(1),
+                Foundgine.Semantics.Query.SemanticFilterOperator.Eq,
+                1),
+            ReturnFields: [new FieldId(1)]);
+        var plan = new MutationPlanner(schema).Plan(intent);
+
+        var ex = Assert.Throws<Foundgine.Semantics.Authorization.SemanticAuthorizationException>(
+            () => new MutationAuthorizer(schema, new DenyFieldWritePolicy()).Authorize(plan));
+
+        Assert.Contains("write field", ex.Message);
+    }
+    
+    private sealed class TestMutationSchema : IMutationSchema
+    {
+        private readonly Dictionary<EntityId, MutationEntitySchema> _entities;
+        private readonly Dictionary<RelationshipId, MutationRelationshipSchema> _relationships;
+
+        public TestMutationSchema(params object[] items)
+        {
+            _entities = items.OfType<MutationEntitySchema>().ToDictionary(x => x.Id);
+            _relationships = items.OfType<MutationRelationshipSchema>().ToDictionary(x => x.Id);
+        }
+
+        public MutationEntitySchema GetEntity(EntityId entityId) => _entities[entityId];
+
+        public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId) => _relationships[relationshipId];
+    }
+
+    private sealed class DenyFieldWritePolicy : Foundgine.Semantics.Authorization.AllowAllSemanticAuthorizationPolicy
+    {
+        public override bool CanWriteField(EntityId entityId, FieldId fieldId) =>
+            fieldId != new FieldId(2);
+    }
+}

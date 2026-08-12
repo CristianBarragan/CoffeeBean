@@ -1,0 +1,81 @@
+{
+  "GeneratedAt": "2026-08-12T14:03:55.2045576+00:00",
+  "WarmupSeconds": 3,
+  "DurationSeconds": 10,
+  "RequestTimeoutSeconds": 5,
+  "ReadinessTimeoutSeconds": 120,
+  "DrainTimeoutSeconds": 30,
+  "Concurrency": [
+    1,
+    8,
+    32
+  ],
+  "Results": [
+    {
+      "Operation": 0,
+      "Target": "Foundgine - no cache",
+      "Concurrency": 1,
+      "RequestsPerSecond": 461.7,
+      "P50Ms": 1.9702,
+      "P95Ms": 3.0677,
+      "P99Ms": 3.8901,
+      "Errors": 0,
+      "Successful": true
+    },
+    {
+      "Operation": 0,
+      "Target": "Foundgine - no cache",
+      "Concurrency": 8,
+      "RequestsPerSecond": 2133.7,
+      "P50Ms": 3.5487,
+      "P95Ms": 5.6955,
+      "P99Ms": 7.1767,
+      "Errors": 0,
+      "Successful": true
+    },
+    {
+      "Operation": 0,
+      "Target": "Foundgine - no cache",
+      "Concurrency": 32,
+      "RequestsPerSecond": 2949.6,
+      "P50Ms": 10.2324,
+      "P95Ms": 18.8499,
+      "P99Ms": 23.8141,
+      "Errors": 0,
+      "Successful": true
+    },
+    {
+      "Operation": 1,
+      "Target": "Foundgine - no cache",
+      "Concurrency": 1,
+      "RequestsPerSecond": 209.8,
+      "P50Ms": 3.8708,
+      "P95Ms": 4.8894,
+      "P99Ms": 8.1183,
+      "Errors": 0,
+      "Successful": true
+    },
+    {
+      "Operation": 1,
+      "Target": "Foundgine - no cache",
+      "Concurrency": 8,
+      "RequestsPerSecond": 740.8,
+      "P50Ms": 5.3873,
+      "P95Ms": 91.5026,
+      "P99Ms": 100.7844,
+      "Errors": 0,
+      "Successful": true
+    },
+    {
+      "Operation": 1,
+      "Target": "Foundgine - no cache",
+      "Concurrency": 32,
+      "RequestsPerSecond": 1559.6,
+      "P50Ms": 15.2141,
+      "P95Ms": 93.5648,
+      "P99Ms": 104.0059,
+      "Errors": 0,
+      "Successful": true
+    }
+  ]
+}

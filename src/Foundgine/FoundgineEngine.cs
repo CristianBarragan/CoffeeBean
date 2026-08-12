@@ -3,6 +3,7 @@ using Foundgine.Planning;
 using Foundgine.Semantics;
 using Foundgine.Semantics.Authorization;
 using Foundgine.Semantics.Resolution;
+using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine;
 
@@ -17,6 +18,8 @@ public sealed class FoundgineEngine : IFoundgine
     private readonly IPlanner _planner;
     private readonly IProviderPlanCompiler _compiler;
     private readonly IExecutionProvider _provider;
+    private readonly IProviderPlanCache _planCache;
+    private readonly string _cacheNamespace = Guid.NewGuid().ToString("N");
 
     public FoundgineEngine(
         FoundgineOptions options,
@@ -31,6 +34,7 @@ public sealed class FoundgineEngine : IFoundgine
         _planner = new Planner();
         _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+        _planCache = options.PlanCache ?? new MemoryProviderPlanCache();
     }
 
     /// <summary>
@@ -42,14 +46,19 @@ public sealed class FoundgineEngine : IFoundgine
         ISemanticAuthorizationPolicy authorizationPolicy,
         IPlanner planner,
         IProviderPlanCompiler compiler,
-        IExecutionProvider provider)
+        IExecutionProvider provider,
+        IProviderPlanCache? planCache = null)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _authorizationPolicy = authorizationPolicy ?? throw new ArgumentNullException(nameof(authorizationPolicy));
         _planner = planner ?? throw new ArgumentNullException(nameof(planner));
         _compiler = compiler ?? throw new ArgumentNullException(nameof(compiler));
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+        _planCache = planCache ?? new MemoryProviderPlanCache();
     }
+
+    public SemanticAuthorizationCapabilities DescribeCapabilities() =>
+        SemanticAuthorizationCapabilityDiscovery.Describe(_model, _authorizationPolicy);
 
     public Task<ExecutionResult> ExecuteAsync(
         SemanticRequest request,
@@ -61,11 +70,32 @@ public sealed class FoundgineEngine : IFoundgine
         var graph = new SemanticRequestResolver(_model).Resolve(request);
         var authorized = new SemanticAuthorizer(_authorizationPolicy).Authorize(graph);
         var plan = _planner.Plan(authorized);
-        var providerPlan = _compiler.Compile(plan);
+        var cacheKey = _cacheNamespace + ":" + ExecutionPlanFingerprint.CreateShapeKey(plan);
+        var providerPlan = _planCache.GetOrAdd(
+            cacheKey,
+            () => _compiler.Compile(plan));
+
+        var executionContext = AttachPaginationContext(plan, context ?? new ExecutionContext());
 
         return _provider.ExecuteAsync(
             providerPlan,
-            context ?? new ExecutionContext(),
+            executionContext,
             cancellationToken);
     }
+    private static ExecutionContext AttachPaginationContext(ExecutionPlan plan, ExecutionContext context)
+    {
+        var options = plan.Root.QueryOptions;
+        if (options?.Limit is null && options?.Offset is null)
+            return context;
+
+        var values = new Dictionary<string, object?>(context.EffectiveValues, StringComparer.Ordinal);
+        if (options.Limit is { } limit)
+            values[ExecutionContextKeys.PaginationLimit] = limit + (options.After is not null ? 1 : 0);
+        if (options.Offset is { } offset)
+            values[ExecutionContextKeys.PaginationOffset] = offset;
+        values[ExecutionContextKeys.PaginationHasCursor] = options.After is not null;
+
+        return new ExecutionContext(values);
+    }
+
 }
