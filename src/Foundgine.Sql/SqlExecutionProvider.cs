@@ -44,6 +44,15 @@ public sealed class SqlExecutionProvider : IExecutionProvider
             {
                 if (!context.TryGetValue(contextPath, out value))
                     throw new InvalidOperationException($"Execution context does not contain authorization value '{contextPath}'.");
+
+                // Forward pagination fetches one extra row so the provider can
+                // determine HasNextPage without changing the requested page size.
+                if (string.Equals(contextPath, ExecutionContextKeys.PaginationLimit, StringComparison.Ordinal) &&
+                    sqlPlan.Pagination is not null &&
+                    value is not null)
+                {
+                    value = Convert.ToInt32(value, System.Globalization.CultureInfo.InvariantCulture) + 1;
+                }
             }
 
             parameter.Value = value ?? DBNull.Value;
@@ -88,9 +97,6 @@ public sealed class SqlExecutionProvider : IExecutionProvider
                 runtimeLimit is not null)
             {
                 first = Convert.ToInt32(runtimeLimit, System.Globalization.CultureInfo.InvariantCulture);
-                if (context.TryGetValue(ExecutionContextKeys.PaginationHasCursor, out var runtimeHasCursor) &&
-                    runtimeHasCursor is true)
-                    first--;
             }
 
             if (context.TryGetValue(ExecutionContextKeys.PaginationHasCursor, out var cursorValue) &&

@@ -90,7 +90,7 @@ public sealed class FoundgineEngine : IFoundgine
 
         var values = new Dictionary<string, object?>(context.EffectiveValues, StringComparer.Ordinal);
         if (options.Limit is { } limit)
-            values[ExecutionContextKeys.PaginationLimit] = limit + (options.After is not null ? 1 : 0);
+            values[ExecutionContextKeys.PaginationLimit] = limit;
         if (options.Offset is { } offset)
             values[ExecutionContextKeys.PaginationOffset] = offset;
         values[ExecutionContextKeys.PaginationHasCursor] = options.After is not null;

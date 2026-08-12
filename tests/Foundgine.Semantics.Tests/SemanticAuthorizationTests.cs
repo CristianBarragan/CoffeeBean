@@ -145,7 +145,7 @@ public sealed class SemanticAuthorizationTests
     }
 }
 
-// M39: capability discovery and conditional authorization are semantic
+// : capability discovery and conditional authorization are semantic
 // concerns. They are intentionally tested without SQL or GraphQL.
 public sealed class SemanticAuthorizationCapabilityTests
 {

@@ -8,7 +8,7 @@ The default matrix is:
 
 - `1`
 - `8`
-- `32`
+- `16`
 
 Override with `BENCHMARK_CONCURRENCY` when deliberately testing another matrix.
 
@@ -16,7 +16,7 @@ Override with `BENCHMARK_CONCURRENCY` when deliberately testing another matrix.
 
 For every target + workload + concurrency combination:
 
-1. Restore the deterministic benchmark fixture.
+1. Restore the deterministic 10,000-row-per-graph-table fixture.
 2. Wait for the configured case cooldown.
 3. Run warm-up.
 4. Require every concurrency worker to complete at least one successful workload request and require zero warm-up errors/timeouts.
@@ -38,7 +38,7 @@ The benchmark graph is:
 
 `Customer -> CustomerBankingRelationship -> Contract -> Transaction`
 
-with 1,000 customers, 4,000 relationships, 12,000 contracts and 48,000 transactions. The account table is also restored because contracts and transactions reference it.
+with 10,000 rows in each graph table by default. The account table is also restored because contracts and transactions reference it.
 
 ## Warm-up is a gate, not a measurement
 

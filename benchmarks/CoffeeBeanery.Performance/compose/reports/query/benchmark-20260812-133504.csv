@@ -1,0 +1,19 @@
+operation,target,concurrency,requests_per_second,p50_ms,p95_ms,p99_ms,errors,successful
+"Query top 50 graph","Hot Chocolate + EF Core",1,26.40,32.42,58.21,66.99,0,True
+"Query top 50 graph","Hot Chocolate + EF Core",8,62.30,123.31,196.93,249.80,0,True
+"Query top 50 graph","Hot Chocolate + EF Core",32,94.40,298.36,569.26,916.47,0,True
+"Query top 50 graph","Foundgine - no cache",1,370.20,2.47,4.10,5.56,0,True
+"Query top 50 graph","Foundgine - no cache",8,1713.50,4.27,7.86,10.90,0,True
+"Query top 50 graph","Foundgine - no cache",32,2321.00,12.64,25.60,34.83,0,True
+"Query top 50 graph","Foundgine - provider-plan cache",1,466.40,1.89,3.28,4.35,0,True
+"Query top 50 graph","Foundgine - provider-plan cache",8,2253.30,3.29,5.85,7.76,0,True
+"Query top 50 graph","Foundgine - provider-plan cache",32,3052.90,9.79,18.58,24.86,0,True
+"Mutation whole graph","Hot Chocolate + EF Core",1,179.90,5.36,6.76,8.39,0,True
+"Mutation whole graph","Hot Chocolate + EF Core",8,1030.50,7.30,10.91,14.96,0,True
+"Mutation whole graph","Hot Chocolate + EF Core",32,913.00,17.87,104.18,256.72,0,True
+"Mutation whole graph","Foundgine - no cache",1,173.90,4.27,5.46,94.41,0,True
+"Mutation whole graph","Foundgine - no cache",8,958.30,6.03,10.49,94.89,0,True
+"Mutation whole graph","Foundgine - no cache",32,1136.40,15.76,105.05,114.84,5,False
+"Mutation whole graph","Foundgine - provider-plan cache",1,191.40,4.19,5.32,8.92,0,True
+"Mutation whole graph","Foundgine - provider-plan cache",8,928.30,5.35,9.14,82.71,0,True
+"Mutation whole graph","Foundgine - provider-plan cache",32,1487.10,12.44,88.77,93.70,2,False
