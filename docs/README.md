@@ -16,8 +16,3 @@ Keep this documentation practical. If the code and docs disagree, the code and t
 Historical design notes and milestone documents live under [history](history/README.md).
 
 - [Mapping and Connections](MAPPING.md)
-
-
-## Performance benchmarks
-
-See [`../benchmarks/CoffeeBeanery.Performance/README.md`](../benchmarks/CoffeeBeanery.Performance/README.md) for the current benchmark overview and detailed results.

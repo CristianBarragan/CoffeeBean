@@ -20,20 +20,13 @@ The loader measures completed requests/second and p50/p95/p99 latency at each co
 
 ## Workloads
 
-### Query — top 50 graph
+### Query — top 50
 
 The loader selects the first 50 customers and traverses:
 
 `Customer -> CustomerBankingRelationship -> Contract -> Transaction`
 
-The deterministic fixture contains:
-
-- 1,000 customers
-- 4,000 relationships
-- 12,000 contracts
-- 48,000 transactions
-
-That is 4 relationships per customer, 3 contracts per relationship, and 4 transactions per contract.
+The fixture contains 1,000 customers, 4 relationships per customer, 3 contracts per relationship, and 4 transactions per contract by default.
 
 ### Mutation — whole graph create
 
@@ -47,12 +40,3 @@ Mutation keys are generated dynamically for every request, so the benchmark does
 ## Cache comparison
 
 The Foundgine warm configuration caches only the provider execution plan for the read workload. Mutation plans remain request-specific because the values are intentionally dynamic.
-
-
-## Published results
-
-The current three-run results are documented in:
-
-`../reports/query/BENCHMARK-RESULTS-2026-08-12.md`
-
-That report contains the individual runs, averages, throughput ratios, p95 latency, cache comparison, mutation results, reliability results, and benchmark limitations.

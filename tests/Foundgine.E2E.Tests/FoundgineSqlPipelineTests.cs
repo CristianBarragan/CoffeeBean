@@ -95,15 +95,15 @@ public sealed class FoundgineSqlPipelineTests
 
         Assert.Contains(" WHERE ", sqlPlan.CommandText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(" ORDER BY ", sqlPlan.CommandText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains(" LIMIT 2", sqlPlan.CommandText, StringComparison.OrdinalIgnoreCase);
-        Assert.Single(sqlPlan.EffectiveParameters);
+        Assert.Contains(" LIMIT @__fg_limit", sqlPlan.CommandText, StringComparison.OrdinalIgnoreCase);
+        Assert.Single(sqlPlan.EffectiveParameters, x => x.ContextPath is null);
 
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
         await SeedAsync(connection);
 
         var result = await new SqlExecutionProvider(connection)
-            .ExecuteAsync(sqlPlan, new ExecutionContext());
+            .ExecuteAsync(sqlPlan, PaginationExecutionContext.Create(1));
 
         var row = Assert.Single(result.Rows);
         Assert.Equal("Alice", row.Values["n0_Name"]);

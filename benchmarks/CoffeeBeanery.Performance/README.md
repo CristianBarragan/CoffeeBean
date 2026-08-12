@@ -1,40 +1,22 @@
-# CoffeeBeanery Performance Benchmarks
+# CoffeeBeanery Performance — Sequential Query Benchmark
 
-This benchmark compares a relationship-heavy PostgreSQL graph workload using:
+The query benchmark intentionally runs **one workload target at a time**.
 
-- Hot Chocolate + EF Core
-- Foundgine without provider-plan caching
-- Foundgine with provider-plan caching
+1. PostgreSQL starts and becomes healthy.
+2. The database initializer runs once, applies EF migrations, validates/seeds the deterministic fixture, and exits.
+3. Hot Chocolate starts, is benchmarked, and is stopped.
+4. Foundgine cold starts, is benchmarked, and is stopped.
+5. Foundgine warm starts, is benchmarked, and is stopped.
+6. PostgreSQL is stopped.
 
-The benchmark runs **one API at a time** against the same database fixture. This keeps the comparison simple and prevents competing API containers from affecting each other.
-
-## Current result
-
-The strongest result is query performance. Across three successful runs, Foundgine delivered roughly **20× the throughput** of the Hot Chocolate + EF Core baseline at concurrency 32, with substantially lower p95 latency.
-
-The provider-plan cache contributes only a small additional improvement, so the main performance difference comes from the underlying Foundgine execution path rather than the cache alone.
-
-Mutation performance is more variable and is treated separately.
-
-## Detailed results
-
-See:
-
-- [Detailed benchmark results](reports/query/BENCHMARK-RESULTS-2026-08-12.md)
-- [Benchmark methodology](docs/BENCHMARKS.md)
-- [Benchmark isolation](docs/BENCHMARK-ISOLATION.md)
+The benchmark driver (`CoffeeBeanery.LoadTest`) runs on the host. It is not a Docker Compose service.
 
 ## Run
 
-From:
+From `C:\Foundgine\benchmarks\CoffeeBeanery.Performance`:
 
 ```powershell
-C:\Foundgine\benchmarks\CoffeeBeanery.Performance
-```
-
-Run:
-
-```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\run-query.ps1
 ```
 
@@ -44,10 +26,22 @@ Or:
 .\pipelines\query.ps1
 ```
 
-The query pipeline starts PostgreSQL, initializes the fixture, then sequentially starts and benchmarks Hot Chocolate, Foundgine cold, and Foundgine warm.
-
-Reports are written under:
+The pipeline expects the repository layout:
 
 ```text
-reports/query/
+C:\Foundgine
+  src\...
+  benchmarks\CoffeeBeanery.Performance\...
 ```
+
+Reports are written to:
+
+```text
+reports\query\hotchocolate
+reports\query\foundgine-cold
+reports\query\foundgine-warm
+```
+
+## Important
+
+Only PostgreSQL is defined in `compose/postgres.yml`. API containers are deliberately started and removed by `pipelines/query.ps1`, so a failure in one API cannot cause Compose to start or stop the other APIs.
