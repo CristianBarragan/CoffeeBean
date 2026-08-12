@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace Foundgine.Execution;
 
@@ -9,7 +10,7 @@ namespace Foundgine.Execution;
 /// </summary>
 public sealed class MemoryProviderPlanCache : IProviderPlanCache
 {
-    private readonly ConcurrentDictionary<string, ProviderPlan> _plans = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, Lazy<ProviderPlan>> _plans = new(StringComparer.Ordinal);
     private readonly int _capacity;
 
     public MemoryProviderPlanCache(int capacity = 256)
@@ -20,21 +21,57 @@ public sealed class MemoryProviderPlanCache : IProviderPlanCache
         _capacity = capacity;
     }
 
-    public bool TryGet(string key, out ProviderPlan plan) =>
-        _plans.TryGetValue(key, out plan!);
+    public bool TryGet(string key, out ProviderPlan plan)
+    {
+        if (_plans.TryGetValue(key, out var lazy))
+        {
+            plan = lazy.Value;
+            return true;
+        }
+
+        plan = null!;
+        return false;
+    }
+
+    public ProviderPlan GetOrAdd(string key, Func<ProviderPlan> factory)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(factory);
+
+        var lazy = _plans.GetOrAdd(
+            key,
+            _ => new Lazy<ProviderPlan>(factory, LazyThreadSafetyMode.ExecutionAndPublication));
+
+        try
+        {
+            var plan = lazy.Value;
+            TrimIfNeeded();
+            return plan;
+        }
+        catch
+        {
+            _plans.TryRemove(key, out _);
+            throw;
+        }
+    }
 
     public void Set(string key, ProviderPlan plan)
     {
         ArgumentNullException.ThrowIfNull(key);
         ArgumentNullException.ThrowIfNull(plan);
 
-        _plans[key] = plan;
+        _plans[key] = new Lazy<ProviderPlan>(
+            () => plan,
+            LazyThreadSafetyMode.ExecutionAndPublication);
 
+        TrimIfNeeded();
+    }
+
+    private void TrimIfNeeded()
+    {
         if (_plans.Count <= _capacity)
             return;
 
-        // This cache is deliberately simple. Eviction is best-effort rather than
-        // LRU; correctness does not depend on eviction order.
         foreach (var candidate in _plans.Keys)
         {
             if (_plans.Count <= _capacity)

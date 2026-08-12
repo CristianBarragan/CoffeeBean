@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using Foundgine.Abstractions;
 using Foundgine.Metadata;
 using Foundgine.Planning.Mutation;
@@ -253,13 +254,13 @@ public sealed class HotChocolateMutationAdapter
                         $"Field '{pair.Key}' is not mapped in metadata for '{entity.Name}'.");
 
                 var value = pair.Value;
-                ValidateMutationValue(metadataField, value, $"{entity.Name}.{pair.Key}");
-
                 var column = metadataField.Column
                     ?? throw new InvalidOperationException(
                         $"Field '{pair.Key}' on '{entity.Name}' has no storage column mapping.");
 
-                fields.Add(new MutationFieldValue(column.ColumnId, value));
+                fields.Add(new MutationFieldValue(
+                    column.ColumnId,
+                    CoerceMutationValue(metadataField, value, $"{entity.Name}.{pair.Key}")));
                 continue;
             }
 
@@ -643,45 +644,82 @@ public sealed class HotChocolateMutationAdapter
         return null;
     }
 
-    private static void ValidateMutationValue(
+    private static object? CoerceMutationValue(
         FieldMetadata field,
         object? value,
         string path)
     {
+        var declaredType = field.ClrType;
+        var nullableType = Nullable.GetUnderlyingType(declaredType);
+        var type = nullableType ?? declaredType;
+
         if (value is null)
         {
+            if (!declaredType.IsValueType || nullableType is not null)
+                return null;
+
             throw new InvalidOperationException(
                 $"GraphQL value at '{path}' cannot be null.");
         }
 
-        var type = Nullable.GetUnderlyingType(field.ClrType) ?? field.ClrType;
-        var valid = type switch
-        {
-            _ when type == typeof(string) => value is string,
-            _ when type == typeof(bool) => value is bool,
-            _ when type == typeof(byte) || type == typeof(short) ||
-                   type == typeof(int) || type == typeof(long) ||
-                   type == typeof(ushort) || type == typeof(uint) ||
-                   type == typeof(ulong) => IsIntegral(value),
-            _ when type == typeof(float) || type == typeof(double) ||
-                   type == typeof(decimal) => IsNumeric(value),
-            _ when type == typeof(Guid) => value is Guid or string,
-            _ when type.IsEnum => value is string,
-            _ => true
-        };
+        if (type.IsInstanceOfType(value))
+            return value;
 
-        if (!valid)
+        try
+        {
+            if (type == typeof(string))
+                throw TypeError(path, type, value);
+
+            if (type == typeof(Guid))
+            {
+                if (value is string text && Guid.TryParse(text, out var guid))
+                    return guid;
+
+                throw TypeError(path, type, value);
+            }
+
+            if (type.IsEnum)
+            {
+                if (value is string enumName && Enum.TryParse(type, enumName, true, out var enumValue))
+                    return enumValue;
+
+                throw TypeError(path, type, value);
+            }
+
+            if (type == typeof(DateTime) && value is string dateTimeText)
+                return DateTime.Parse(dateTimeText, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+
+            if (type == typeof(DateTimeOffset) && value is string dateTimeOffsetText)
+                return DateTimeOffset.Parse(dateTimeOffsetText, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+
+            if (type == typeof(DateOnly) && value is string dateOnlyText)
+                return DateOnly.Parse(dateOnlyText, CultureInfo.InvariantCulture);
+
+            if (type == typeof(TimeOnly) && value is string timeOnlyText)
+                return TimeOnly.Parse(timeOnlyText, CultureInfo.InvariantCulture);
+
+            if (type == typeof(bool) ||
+                type == typeof(byte) || type == typeof(sbyte) ||
+                type == typeof(short) || type == typeof(ushort) ||
+                type == typeof(int) || type == typeof(uint) ||
+                type == typeof(long) || type == typeof(ulong) ||
+                type == typeof(float) || type == typeof(double) ||
+                type == typeof(decimal))
+            {
+                return Convert.ChangeType(value, type, CultureInfo.InvariantCulture);
+            }
+        }
+        catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentException)
         {
             throw new InvalidOperationException(
-                $"GraphQL value for '{path}' expects '{type.Name}', but received '{value.GetType().Name}'.");
+                $"GraphQL value for '{path}' could not be converted to '{type.Name}'.", exception);
         }
+
+        throw TypeError(path, type, value);
     }
 
-    private static bool IsIntegral(object value) =>
-        value is sbyte or byte or short or ushort or int or uint or long or ulong;
-
-    private static bool IsNumeric(object value) =>
-        IsIntegral(value) || value is float or double or decimal;
+    private static InvalidOperationException TypeError(string path, Type expectedType, object value) =>
+        new($"GraphQL value for '{path}' expects '{expectedType.Name}', but received '{value.GetType().Name}'.");
 
     private static object? ResolveValue(
         IValueNode value,

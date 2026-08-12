@@ -70,16 +70,32 @@ public sealed class FoundgineEngine : IFoundgine
         var graph = new SemanticRequestResolver(_model).Resolve(request);
         var authorized = new SemanticAuthorizer(_authorizationPolicy).Authorize(graph);
         var plan = _planner.Plan(authorized);
-        var cacheKey = _cacheNamespace + ":" + ExecutionPlanFingerprint.Create(plan);
-        if (!_planCache.TryGet(cacheKey, out var providerPlan))
-        {
-            providerPlan = _compiler.Compile(plan);
-            _planCache.Set(cacheKey, providerPlan);
-        }
+        var cacheKey = _cacheNamespace + ":" + ExecutionPlanFingerprint.CreateShapeKey(plan);
+        var providerPlan = _planCache.GetOrAdd(
+            cacheKey,
+            () => _compiler.Compile(plan));
+
+        var executionContext = AttachPaginationContext(plan, context ?? new ExecutionContext());
 
         return _provider.ExecuteAsync(
             providerPlan,
-            context ?? new ExecutionContext(),
+            executionContext,
             cancellationToken);
     }
+    private static ExecutionContext AttachPaginationContext(ExecutionPlan plan, ExecutionContext context)
+    {
+        var options = plan.Root.QueryOptions;
+        if (options?.Limit is null && options?.Offset is null)
+            return context;
+
+        var values = new Dictionary<string, object?>(context.EffectiveValues, StringComparer.Ordinal);
+        if (options.Limit is { } limit)
+            values[ExecutionContextKeys.PaginationLimit] = limit + (options.After is not null ? 1 : 0);
+        if (options.Offset is { } offset)
+            values[ExecutionContextKeys.PaginationOffset] = offset;
+        values[ExecutionContextKeys.PaginationHasCursor] = options.After is not null;
+
+        return new ExecutionContext(values);
+    }
+
 }

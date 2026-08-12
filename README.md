@@ -61,6 +61,14 @@ The repository currently proves the pipeline with:
 
 The Banking tests provide the main end-to-end proof.
 
+## Performance
+
+Foundgine includes a reproducible CoffeeBeanery benchmark for relationship-heavy PostgreSQL graph workloads.
+
+In the current three-run comparison against Hot Chocolate + EF Core, Foundgine showed a substantial query-throughput advantage at higher concurrency, while maintaining much lower tail latency. The benchmark also shows that this advantage is not dependent on provider-plan caching.
+
+The benchmark is a controlled workload rather than a universal framework comparison. Detailed methodology and results are available in [`benchmarks/CoffeeBeanery.Performance`](benchmarks/CoffeeBeanery.Performance/README.md).
+
 ## Projects
 
 | Project | Purpose |

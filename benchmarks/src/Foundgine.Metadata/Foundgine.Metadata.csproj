@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Foundgine.Metadata</RootNamespace>
+    <AssemblyName>Foundgine.Metadata</AssemblyName>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

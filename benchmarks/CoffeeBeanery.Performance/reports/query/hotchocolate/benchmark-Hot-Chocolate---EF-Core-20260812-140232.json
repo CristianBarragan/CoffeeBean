@@ -1,0 +1,81 @@
+{
+  "GeneratedAt": "2026-08-12T14:02:32.1049807+00:00",
+  "WarmupSeconds": 3,
+  "DurationSeconds": 10,
+  "RequestTimeoutSeconds": 5,
+  "ReadinessTimeoutSeconds": 120,
+  "DrainTimeoutSeconds": 30,
+  "Concurrency": [
+    1,
+    8,
+    32
+  ],
+  "Results": [
+    {
+      "Operation": 0,
+      "Target": "Hot Chocolate \u002B EF Core",
+      "Concurrency": 1,
+      "RequestsPerSecond": 33.3,
+      "P50Ms": 27.0025,
+      "P95Ms": 51.5185,
+      "P99Ms": 58.1426,
+      "Errors": 0,
+      "Successful": true
+    },
+    {
+      "Operation": 0,
+      "Target": "Hot Chocolate \u002B EF Core",
+      "Concurrency": 8,
+      "RequestsPerSecond": 141,
+      "P50Ms": 53.6563,
+      "P95Ms": 77.4835,
+      "P99Ms": 89.9939,
+      "Errors": 0,
+      "Successful": true
+    },
+    {
+      "Operation": 0,
+      "Target": "Hot Chocolate \u002B EF Core",
+      "Concurrency": 32,
+      "RequestsPerSecond": 137.6,
+      "P50Ms": 232.1793,
+      "P95Ms": 349.8274,
+      "P99Ms": 393.2845,
+      "Errors": 0,
+      "Successful": true
+    },
+    {
+      "Operation": 1,
+      "Target": "Hot Chocolate \u002B EF Core",
+      "Concurrency": 1,
+      "RequestsPerSecond": 156.4,
+      "P50Ms": 5.2148,
+      "P95Ms": 6.9,
+      "P99Ms": 86.9181,
+      "Errors": 0,
+      "Successful": true
+    },
+    {
+      "Operation": 1,
+      "Target": "Hot Chocolate \u002B EF Core",
+      "Concurrency": 8,
+      "RequestsPerSecond": 1039.4,
+      "P50Ms": 7.059,
+      "P95Ms": 9.6117,
+      "P99Ms": 12.6738,
+      "Errors": 0,
+      "Successful": true
+    },
+    {
+      "Operation": 1,
+      "Target": "Hot Chocolate \u002B EF Core",
+      "Concurrency": 32,
+      "RequestsPerSecond": 992.3,
+      "P50Ms": 16.1612,
+      "P95Ms": 100.9438,
+      "P99Ms": 274.6623,
+      "Errors": 0,
+      "Successful": true
+    }
+  ]
+}

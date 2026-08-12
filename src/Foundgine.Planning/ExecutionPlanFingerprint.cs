@@ -18,11 +18,26 @@ public static class ExecutionPlanFingerprint
         ArgumentNullException.ThrowIfNull(plan);
 
         var builder = new StringBuilder(512);
-        AppendNode(builder, plan.Root);
+        AppendNode(builder, plan.Root, includePaginationValues: true);
         return builder.ToString();
     }
 
-    private static void AppendNode(StringBuilder builder, ExecutionPlanNode node)
+    /// <summary>
+    /// Creates a cache key for the static query shape. Pagination values are
+    /// deliberately excluded because the SQL provider binds LIMIT/OFFSET at
+    /// execution time. Filters, ordering and authorization remain part of the
+    /// key so unrelated query shapes do not share a provider plan.
+    /// </summary>
+    public static string CreateShapeKey(ExecutionPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+
+        var builder = new StringBuilder(512);
+        AppendNode(builder, plan.Root, includePaginationValues: false);
+        return builder.ToString();
+    }
+
+    private static void AppendNode(StringBuilder builder, ExecutionPlanNode node, bool includePaginationValues)
     {
         builder.Append("node(")
             .Append(node.Id).Append('|')
@@ -36,16 +51,16 @@ public static class ExecutionPlanFingerprint
             builder.Append(field.Value).Append(',');
         builder.Append(']');
 
-        AppendQueryOptions(builder, node.QueryOptions);
+        AppendQueryOptions(builder, node.QueryOptions, includePaginationValues);
         AppendPredicate(builder, node.Authorization);
 
         builder.Append("children[");
         foreach (var child in node.Children)
-            AppendNode(builder, child);
+            AppendNode(builder, child, includePaginationValues);
         builder.Append(']');
     }
 
-    private static void AppendQueryOptions(StringBuilder builder, SemanticQueryOptions? options)
+    private static void AppendQueryOptions(StringBuilder builder, SemanticQueryOptions? options, bool includePaginationValues)
     {
         if (options is null)
         {
@@ -53,10 +68,17 @@ public static class ExecutionPlanFingerprint
             return;
         }
 
-        builder.Append("query[")
-            .Append(options.Limit?.ToString(CultureInfo.InvariantCulture) ?? "-").Append('|')
-            .Append(options.Offset?.ToString(CultureInfo.InvariantCulture) ?? "-").Append('|');
-        AppendValue(builder, options.After);
+        builder.Append("query[");
+        if (includePaginationValues)
+        {
+            builder.Append(options.Limit?.ToString(CultureInfo.InvariantCulture) ?? "-").Append('|')
+                .Append(options.Offset?.ToString(CultureInfo.InvariantCulture) ?? "-").Append('|');
+            AppendValue(builder, options.After);
+        }
+        else
+        {
+            builder.Append("pagination-parameterized|");
+        }
         builder.Append('|');
 
         builder.Append("order[");

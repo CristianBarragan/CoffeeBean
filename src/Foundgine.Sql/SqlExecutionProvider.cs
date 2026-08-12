@@ -82,7 +82,22 @@ public sealed class SqlExecutionProvider : IExecutionProvider
         ExecutionPageInfo? pageInfo = null;
         if (sqlPlan.Pagination is { } paging)
         {
-            var hasNext = rows.Count > paging.First;
+            var first = paging.First;
+            var hasCursor = paging.After is not null;
+            if (context.TryGetValue(ExecutionContextKeys.PaginationLimit, out var runtimeLimit) &&
+                runtimeLimit is not null)
+            {
+                first = Convert.ToInt32(runtimeLimit, System.Globalization.CultureInfo.InvariantCulture);
+                if (context.TryGetValue(ExecutionContextKeys.PaginationHasCursor, out var runtimeHasCursor) &&
+                    runtimeHasCursor is true)
+                    first--;
+            }
+
+            if (context.TryGetValue(ExecutionContextKeys.PaginationHasCursor, out var cursorValue) &&
+                cursorValue is bool runtimeCursor)
+                hasCursor = runtimeCursor;
+
+            var hasNext = rows.Count > first;
             if (hasNext) rows.RemoveAt(rows.Count - 1);
             string? start = null;
             string? end = null;
@@ -101,7 +116,7 @@ public sealed class SqlExecutionProvider : IExecutionProvider
             start = Query.CursorCodec.Encode(firstValues);
             end = Query.CursorCodec.Encode(lastValues);
             }
-            pageInfo = new ExecutionPageInfo(start, end, hasNext, paging.After is not null);
+            pageInfo = new ExecutionPageInfo(start, end, hasNext, hasCursor);
         }
 
         stopwatch.Stop();

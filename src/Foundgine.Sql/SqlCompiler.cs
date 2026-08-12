@@ -158,7 +158,7 @@ public sealed class SqlCompiler : IProviderPlanCompiler
 
         var sql = new StringBuilder();
         sql.Append("SELECT ").Append(string.Join(", ", select));
-        sql.Append(" FROM ").Append(QuoteIdentifier(rootEntity.EffectiveStorageName));
+        sql.Append(" FROM ").Append(QuoteStorageName(rootEntity.EffectiveStorageName));
         sql.Append(" ").Append(QuoteIdentifier(aliases[root.Node.Id]));
 
         foreach (var occurrence in occurrences.Skip(1))
@@ -172,7 +172,7 @@ public sealed class SqlCompiler : IProviderPlanCompiler
             var right = RenderJoinColumn(relationship.TargetKey, parentNode, occurrence.Node, aliases);
 
             sql.Append(" INNER JOIN ")
-                .Append(QuoteIdentifier(_metadata.GetEntity(occurrence.Node.EntityId).EffectiveStorageName))
+                .Append(QuoteStorageName(_metadata.GetEntity(occurrence.Node.EntityId).EffectiveStorageName))
                 .Append(" ").Append(QuoteIdentifier(aliases[occurrence.Node.Id]))
                 .Append(" ON ").Append(left).Append(" = ").Append(right);
         }
@@ -228,7 +228,11 @@ public sealed class SqlCompiler : IProviderPlanCompiler
             var order = WriteResolvedOrder(resolvedOrder);
 
             sql.Append(" ").Append(order);
-            sql.Append(" LIMIT ").Append(rootOptions!.Limit!.Value + 1);
+            parameters.Add(new SqlParameterBinding(
+                "__fg_limit",
+                null,
+                ContextPath: ExecutionContextKeys.PaginationLimit));
+            sql.Append(" LIMIT @__fg_limit");
         }
         else
         {
@@ -239,11 +243,23 @@ public sealed class SqlCompiler : IProviderPlanCompiler
 
             if (rootOptions?.Offset is { } offset && rootOptions.Limit is null)
                 sql.Append(" LIMIT -1");
-            else if (rootOptions?.Limit is { } limit)
-                sql.Append(" LIMIT ").Append(limit);
+            else if (rootOptions?.Limit is not null)
+            {
+                parameters.Add(new SqlParameterBinding(
+                    "__fg_limit",
+                    null,
+                    ContextPath: ExecutionContextKeys.PaginationLimit));
+                sql.Append(" LIMIT @__fg_limit");
+            }
 
-            if (rootOptions?.Offset is { } actualOffset)
-                sql.Append(" OFFSET ").Append(actualOffset);
+            if (rootOptions?.Offset is not null)
+            {
+                parameters.Add(new SqlParameterBinding(
+                    "__fg_offset",
+                    null,
+                    ContextPath: ExecutionContextKeys.PaginationOffset));
+                sql.Append(" OFFSET @__fg_offset");
+            }
         }
 
         return new SqlPlan(sql.ToString(), bindings, parameters, pagination, authorization);
@@ -489,7 +505,7 @@ public sealed class SqlCompiler : IProviderPlanCompiler
             aggregate = $"{(term.Aggregate == SemanticOrderAggregate.Min ? "MIN" : "MAX")}({QuoteIdentifier(targetAlias)}.{QuoteIdentifier(valueColumn.EffectiveStorageName)})";
         }
 
-        return $"(SELECT {aggregate} FROM {QuoteIdentifier(targetEntity.EffectiveStorageName)} {QuoteIdentifier(targetAlias)} WHERE {correlation})";
+        return $"(SELECT {aggregate} FROM {QuoteStorageName(targetEntity.EffectiveStorageName)} {QuoteIdentifier(targetAlias)} WHERE {correlation})";
     }
 
     private static string AddCursorParameter(
@@ -601,6 +617,14 @@ public sealed class SqlCompiler : IProviderPlanCompiler
 
     internal static string QuoteIdentifier(string value) =>
         $"\"{value.Replace("\"", "\"\"")}\"";
+
+    internal static string QuoteStorageName(string value)
+    {
+        var parts = value.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 0)
+            throw new ArgumentException("Storage name cannot be empty.", nameof(value));
+        return string.Join(".", parts.Select(QuoteIdentifier));
+    }
 
     private sealed record NodeOccurrence(ExecutionPlanNode Node, int? ParentId);
 }
