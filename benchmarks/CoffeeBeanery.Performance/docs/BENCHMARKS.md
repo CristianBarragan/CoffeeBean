@@ -39,4 +39,10 @@ Mutation keys are generated dynamically for every request, so the benchmark does
 
 ## Cache comparison
 
-The Foundgine warm configuration caches only the provider execution plan for the read workload. Mutation plans remain request-specific because the values are intentionally dynamic.
+The Foundgine warm configuration caches only the provider execution plan for the read workload. The corrected upsert workload uses dynamic request values but a stable plan shape; result caching is not currently implemented in the benchmark. A future result-cache experiment should report hit/miss rate and database-resource effects. FASTER is another future cache-provider experiment.
+
+### Upsert + select — write then refetch
+
+The corrected loader performs a real upsert against existing deterministic customer rows using `CustomerKey` as the conflict identity, then immediately executes the exact same `QueryTop50` full graph. Batch sizes represent multiple existing-row upserts in one GraphQL request. One latency sample covers the complete upsert + refetch operation.
+
+The read half is intentionally identical to the standalone query workload, so the combined result can be compared directly with the query baseline.

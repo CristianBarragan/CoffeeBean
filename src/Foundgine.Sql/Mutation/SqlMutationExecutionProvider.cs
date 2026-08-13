@@ -16,9 +16,13 @@ namespace Foundgine.Sql.Mutation;
 public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, IMutationBatchExecutionProvider
 {
     private readonly DbConnection _connection;
+    private readonly DbTransaction? _transaction;
 
-    public SqlMutationExecutionProvider(DbConnection connection) =>
+    public SqlMutationExecutionProvider(DbConnection connection, DbTransaction? transaction = null)
+    {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
+        _transaction = transaction;
+    }
 
     public MutationResult Execute(ProviderMutationPlan plan, ExecutionContext context)
     {
@@ -30,6 +34,7 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
             _connection.Open();
 
         using var command = _connection.CreateCommand();
+        command.Transaction = _transaction;
         command.CommandText = sqlPlan.CommandText;
         foreach (var binding in sqlPlan.Parameters)
         {
@@ -66,6 +71,7 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
             sqlPlan.FallbackCommandText is not null)
         {
             using var fallback = _connection.CreateCommand();
+            fallback.Transaction = _transaction;
             fallback.CommandText = sqlPlan.FallbackCommandText;
             foreach (var binding in sqlPlan.Parameters)
             {
@@ -108,7 +114,14 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
         if (_connection.State != ConnectionState.Open)
             _connection.Open();
 
-        using var transaction = _connection.BeginTransaction();
+        var transaction = _transaction;
+        var ownsTransaction = false;
+        if (transaction is null)
+        {
+            transaction = _connection.BeginTransaction();
+            ownsTransaction = true;
+        }
+
         var results = new List<MutationResult>(sqlBatch.Operations.Count);
 
         try
@@ -133,13 +146,20 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
                 results.Add(result);
             }
 
-            transaction.Commit();
+            if (ownsTransaction)
+                transaction.Commit();
             return new MutationBatchResult(results);
         }
         catch
         {
-            transaction.Rollback();
+            if (ownsTransaction)
+                transaction.Rollback();
             throw;
+        }
+        finally
+        {
+            if (ownsTransaction)
+                transaction.Dispose();
         }
     }
 

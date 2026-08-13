@@ -144,7 +144,14 @@ public sealed class GraphQLSchemaAdapter
         yield return new GraphQLFieldDescriptor($"create{entity.Name}", entity.Name, IsNonNull: true, Arguments: input);
         yield return new GraphQLFieldDescriptor($"update{entity.Name}", entity.Name, IsNonNull: true, Arguments: [input[0], where[0]]);
         yield return new GraphQLFieldDescriptor($"delete{entity.Name}", entity.Name, IsNonNull: true, Arguments: where);
-        yield return new GraphQLFieldDescriptor($"upsert{entity.Name}", entity.Name, IsNonNull: true, Arguments: input);
+        yield return new GraphQLFieldDescriptor(
+            $"upsert{entity.Name}",
+            entity.Name,
+            IsNonNull: true,
+            Arguments: [
+                input[0],
+                new GraphQLArgumentDescriptor("onConflict", "String", IsList: true)
+            ]);
     }
 
     private static IEnumerable<GraphQLFieldDescriptor> BuildQueryFields(IEnumerable<GraphQLObjectTypeDescriptor> objects)

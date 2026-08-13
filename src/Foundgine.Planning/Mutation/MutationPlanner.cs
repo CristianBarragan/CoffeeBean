@@ -123,6 +123,44 @@ public sealed class MutationPlanner
         ]);
     }
 
+    /// <summary>
+    /// Combines N independent mutation trees (e.g. one per aliased root field in a batched
+    /// GraphQL mutation document) into ONE flat, dependency-aware MutationBatchPlan, so the
+    /// whole batch can go through a single-round-trip execution path (PostgresBatchedMutationCompiler
+    /// / PipelinedMutationBatchExecutor) instead of planning and executing each item separately.
+    ///
+    /// Each item is flattened independently via the existing Plan(NestedMutationIntent)
+    /// (so nested children within one batch item still work exactly as before), then the
+    /// per-item operation lists are concatenated and each item's internal dependency indices
+    /// are shifted by the running operation-count offset. Items never depend on each other -
+    /// only nesting *within* one item produces a MutationDependency - so no cross-item edges
+    /// need to be computed here.
+    /// </summary>
+    public MutationBatchPlan Plan(IReadOnlyList<NestedMutationIntent> batch)
+    {
+        ArgumentNullException.ThrowIfNull(batch);
+        if (batch.Count == 0)
+            throw new InvalidOperationException("A mutation batch must contain at least one item.");
+
+        var operations = new List<MutationOperation>();
+        var dependencies = new List<MutationDependency>();
+
+        foreach (var item in batch)
+        {
+            var itemPlan = Plan(item);
+            var offset = operations.Count;
+
+            operations.AddRange(itemPlan.Operations);
+            dependencies.AddRange(itemPlan.Dependencies.Select(d => d with
+            {
+                SourceOperationIndex = d.SourceOperationIndex + offset,
+                TargetOperationIndex = d.TargetOperationIndex + offset
+            }));
+        }
+
+        return new MutationBatchPlan(operations, dependencies);
+    }
+
     public MutationBatchPlan Plan(MutationBatchIntent intent)
     {
         ArgumentNullException.ThrowIfNull(intent);

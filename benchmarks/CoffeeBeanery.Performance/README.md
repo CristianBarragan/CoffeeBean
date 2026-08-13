@@ -1,20 +1,81 @@
 # CoffeeBeanery Performance Benchmark
 
-The benchmark measures Foundgine and Hot Chocolate + EF Core against the same deterministic PostgreSQL workload.
+This benchmark is the reproducible performance harness for the CoffeeBeanery graph workload. It compares Foundgine with Hot Chocolate + EF Core against the same PostgreSQL fixture and the same GraphQL-shaped workloads.
 
-## Current benchmark matrix
+## Current findings
+
+The supplied 2026-08-13 baseline shows three important results:
+
+1. **Foundgine's query path is currently very strong on the tested graph.** At concurrency 32, Foundgine reaches 2,781.6 RPS without the provider-plan cache and 3,012.6 RPS with it, versus 156.7 RPS for Hot Chocolate + EF Core. Foundgine also uses substantially less measured API-container memory and CPU in this workload.
+2. **Mutation is competitive, not universally faster.** At concurrency 32/batch 50, Hot Chocolate + EF Core reaches 86,955 logical mutations/s, Foundgine no-cache reaches 69,675, and Foundgine with the provider-plan cache reaches 81,910. Foundgine uses materially less measured API-container CPU and memory.
+3. **Upsert + select is the main next target.** The benchmark now performs a real `upsertCustomer` against deterministic existing rows and then executes the exact same top-50/full-graph query used by the standalone query workload. This corrected workload must be rerun before new upsert conclusions are published.
+
+These are workload-specific observations, not universal performance claims. See the full [2026-08-13 performance analysis](../../docs/benchmarks/2026-08-13-performance-analysis.md).
+
+## Benchmark matrix
 
 - PostgreSQL fixture: 1,000 customers, 4,000 relationships, 12,000 contracts, 48,000 transactions.
-- Concurrency: 1, 8, 32.
-- Query: top-50 relationship graph.
-- Whole-graph mutation: batch sizes 1, 10, 50.
-- Docker metrics: API-container CPU and memory sampled during measurement.
-- Latency: p50, p95, p99.
-- Throughput: HTTP requests/s and logical operations/s for batched mutations.
+- Query: top 50 customers with the full `Customer -> Relationship -> Contract -> Transaction` graph.
+- Whole-graph mutation: nested graph create.
+- Upsert + select: real upsert of existing deterministic customer rows followed by the exact same top-50/full-graph query.
+- Concurrency: configurable; the curated baseline uses 1, 8 and 32.
+- Mutation/upsert batch sizes: 1, 10 and 50.
 - Warm-up: 3 seconds.
 - Measurement: 10 seconds.
+- Request timeout: 5 seconds.
+- Latency: p50, p95, p99.
+- Throughput: HTTP RPS and logical/s where batching applies.
+- Docker metrics: API-container CPU and memory.
 
-Batch size is only applied to the mutation workload. Query results remain batch size 1 so the query comparison stays semantically identical.
+## Important workload semantics
+
+### Query
+
+The standalone query is the canonical read workload. The same full graph is used by the corrected upsert + select workload.
+
+### Mutation
+
+A batch of 50 means one HTTP request represents 50 independent logical mutations. Therefore request RPS and logical/s answer different questions and both are reported.
+
+### Upsert + select
+
+The combined workload is one measured client operation:
+
+```text
+real upsert
+    ↓
+exact same top-50/full-graph select
+```
+
+The stopwatch spans both HTTP calls. The upsert targets existing deterministic customers using `CustomerKey` as the conflict identity. This prevents the workload from degenerating into repeated inserts and ensures the following select reads the same graph shape as the standalone query benchmark.
+
+Older benchmark rows labelled "Upsert + select" that actually used `createCustomer` are historical diagnostics and must not be mixed with the corrected baseline.
+
+## Cache model
+
+The current warm Foundgine configuration caches the **provider execution plan**. It does not cache database results.
+
+That distinction matters:
+
+```text
+request
+  ↓
+semantic resolution
+  ↓
+authorization
+  ↓
+provider-plan cache
+  ↓
+PostgreSQL
+  ↓
+result shaping
+  ↓
+transport
+```
+
+The next cache experiments should add a **result cache** and measure hit rate, hit/miss latency, CPU, memory and PostgreSQL load. A result-cache hit can potentially avoid database execution and much of the downstream materialization cost, which is a fundamentally different optimization from caching the provider plan.
+
+The benchmark should also add a **FASTER-backed cache provider** as a concrete alternative. FASTER is a future experiment, not a performance claim.
 
 ## Run
 
@@ -22,43 +83,36 @@ From `benchmarks/CoffeeBeanery.Performance`:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\run-query.ps1
+.\run-benchmarks.ps1
 ```
 
-The runner sets:
+The query, mutation and update pipelines can also be run independently.
+
+The load test accepts:
 
 ```text
-BENCHMARK_CONCURRENCY=1,8,32
+BENCHMARK_CONCURRENCY=1,8,16,32,64
 BENCHMARK_BATCH_SIZES=1,10,50
-BENCHMARK_DOCKER_CONTAINER=<API container>
+BENCHMARK_WARMUP_SECONDS=3
+BENCHMARK_DURATION_SECONDS=10
 ```
 
-Docker metrics are collected with `docker stats --no-stream` while the measurement is running. CPU is reported as a percentage of one logical CPU, so values above 100% mean multiple CPUs are being used by the container.
+## Interpreting the numbers
 
-## Interpreting batch results
+- **RPS** = completed HTTP requests per second.
+- **logical/s** = RPS × logical batch size.
+- Latency is per HTTP request. A batch-50 request therefore has one latency sample representing all 50 logical operations in that request.
+- Docker CPU is expressed as a percentage across logical CPUs, so values above 100% are normal.
 
-Do not compare only HTTP RPS when batch sizes differ.
+Do not compare batch sizes using HTTP RPS alone.
 
-For example:
+## Where to go next
 
-```text
-batch=1   -> 1 HTTP request contains 1 logical mutation
-batch=50  -> 1 HTTP request contains 50 logical mutations
-```
+The next benchmark cycle should answer four questions:
 
-The benchmark therefore reports:
+1. How does the corrected real upsert + full-graph refetch compare across providers?
+2. At what payload size does result caching become valuable?
+3. What is the effect of plan cache + result cache together?
+4. Does a FASTER-backed cache change throughput, memory or PostgreSQL pressure enough to justify its complexity?
 
-```text
-HTTP RPS
-logical/s = HTTP RPS × batch size
-```
-
-Latency remains the latency of the HTTP request containing the entire batch.
-
-## Known limitation
-
-Hot Chocolate + EF Core currently has a correctness bug in the **GraphQL upsert + select** workload, so that workload is not considered a valid comparative baseline. Foundgine's upsert workload remains useful as an internal measurement and should be compared against Hot Chocolate only after the external implementation is fixed.
-
-## Results
-
-The checked-in 2026-08-13 run is documented in [`docs/benchmarks/2026-08-13-performance-results.md`](../../docs/benchmarks/2026-08-13-performance-results.md), with machine-readable data under `reports/benchmarks/2026-08-13/`.
+For the full findings, limitations and proposed experiments, see [the performance analysis](../../docs/benchmarks/2026-08-13-performance-analysis.md).

@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <RootNamespace>Foundgine.Abstractions</RootNamespace>
-    <AssemblyName>Foundgine.Abstractions</AssemblyName>
-    <IsPackable>true</IsPackable>
-  </PropertyGroup>
-  <ItemGroup>
-  </ItemGroup>
-</Project>

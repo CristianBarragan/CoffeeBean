@@ -37,6 +37,17 @@ public sealed record GraphQLMutationAdaptation(
     public GraphQLMutationResultShape Result => ResultShape;
 }
 
+/// <summary>
+/// One entry of a batched GraphQL mutation document (see
+/// <c>HotChocolateMutationAdapter.AdaptBatchWithResultShape</c>). ResultKey is the field's
+/// GraphQL alias (or, for the single-unaliased-field convenience case, its field name) -
+/// use it both to key the response object per-item and to line up each item's planned
+/// operations with <c>MutationPlanner.Plan(IReadOnlyList&lt;NestedMutationIntent&gt;)</c>.
+/// </summary>
+public sealed record GraphQLMutationBatchItem(
+    string ResultKey,
+    GraphQLMutationAdaptation Adaptation);
+
 public static class GraphQLMutationResultShaper
 {
     public static Dictionary<string, object?> Shape(
