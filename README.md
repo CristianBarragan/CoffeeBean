@@ -140,6 +140,18 @@ Foundgine
 
 Foundgine is **not** an LLM framework, agent runtime, prompt framework, memory system, MCP implementation, or workflow engine.
 
+## Provider independence and relationship-oriented backends
+
+Foundgine is not tied to relational SQL. The semantic model and provider-independent execution plan deliberately separate **what the application means** from **how a backend executes it**. A relationship-oriented backend such as a Cypher/graph-database provider can therefore be added behind the same planning boundary without changing the semantic contract exposed to callers.
+
+In practical terms, a future provider could translate the same authorized execution plan into Cypher rather than SQL. The repository's SQL and InMemory providers are the current proof points; graph/Cypher support is an extension point, not a claim that such a provider is already implemented.
+
+## Complex application models
+
+The API model does not have to be a 1:1 representation of persistence entities. Foundgine's semantic layer can expose models, projections, relationships, and result shapes that differ from the underlying storage entities. This is important for applications where the public/application model is richer or deliberately different from the database model.
+
+The runtime does not need to repeatedly rediscover that mapping for every request. AOT-generated metadata and deterministic planning can move structural work out of the hot path, while provider execution remains responsible for the physical query or mutation. Complex application models should therefore be evaluated primarily on the resulting execution plan and payload, rather than assuming that every additional API shape implies an ORM-style materialization cost.
+
 ## Architectural boundaries
 
 The dependency rules are enforced and documented in [Architecture Boundaries](docs/ARCHITECTURE-BOUNDARIES.md).

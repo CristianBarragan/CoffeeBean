@@ -32,3 +32,4 @@ Historical design notes and milestone documents live under [history](history/REA
 - [Execution Evidence](EVIDENCE.md)
 
 - [Benchmark Baseline](PRIORITY-8-BENCHMARKS.md)
+- [2026-08-13 Performance Results](benchmarks/2026-08-13-performance-results.md)

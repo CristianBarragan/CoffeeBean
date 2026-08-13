@@ -13,90 +13,63 @@ This priority freezes the methodology and baseline. It does not invent performan
 
 ## Current demonstrated benchmark
 
-The existing workload compares:
+The current CoffeeBeanery benchmark now measures:
 
-| Target | Query | Mutation | Cache |
-|---|---|---|---|
-| Hot Chocolate + EF Core | yes | yes | runtime/EF only |
-| Foundgine cold | yes | yes | no provider-plan cache |
-| Foundgine warm | yes | yes | provider-plan cache for reads |
+- Hot Chocolate + EF Core;
+- Foundgine without provider-plan cache;
+- Foundgine with provider-plan cache;
+- query and whole-graph mutation workloads;
+- mutation batch sizes 1, 10, and 50;
+- concurrency 1, 8, and 32;
+- p50/p95/p99 latency;
+- HTTP requests/s and logical operations/s;
+- Docker API-container CPU and memory.
 
-The workload is identical across targets:
+The deterministic fixture remains:
 
-- 1,000 customers
-- Customer → CustomerBankingRelationship → Contract → Transaction traversal
-- top 50 query
-- whole-graph mutation
-- concurrency 1, 8, 32
-- 3 second warm-up
-- 10 second measurement
+- 1,000 customers;
+- 4,000 relationships;
+- 12,000 contracts;
+- 48,000 transactions.
 
-Correctness preflight runs before performance measurement and HTTP errors / GraphQL error responses are treated as failed benchmark rows.
+The 2026-08-13 result is checked in at [`docs/benchmarks/2026-08-13-performance-results.md`](benchmarks/2026-08-13-performance-results.md). The raw parsed rows are in `reports/benchmarks/2026-08-13/`.
 
-## Existing baseline
+### Important limitation
 
-The checked-in reports from 2026-08-12 provide the current baseline.
+Hot Chocolate + EF Core currently has a correctness bug in the GraphQL **upsert + select** workload. That workload is therefore excluded from comparative conclusions until the implementation is fixed. Foundgine's upsert numbers are retained as an internal performance measurement.
 
-### Query — concurrency 32
+## What the current benchmark shows
 
-| Target | RPS | p50 | p95 | p99 | Errors |
-|---|---:|---:|---:|---:|---:|
-| Hot Chocolate + EF Core | 137.60 | 232.18 ms | 349.83 ms | 393.28 ms | 0 |
-| Foundgine cold | 2,949.60 | 10.23 ms | 18.85 ms | 23.81 ms | 0 |
-| Foundgine warm | 2,909.10 | 10.34 ms | 19.43 ms | 24.72 ms | 0 |
+The run shows that batching materially increases logical work represented by each HTTP request, while request RPS remains in a similar range. It also shows that Foundgine uses substantially less measured API-container CPU and memory in the tested query/mutation scenarios, while the exact throughput advantage depends strongly on workload and batch size.
 
-### Query — concurrency 1
+The provider-plan cache has a relatively small end-to-end effect for this database-backed workload. That is not evidence that caching is unimportant; it means the current benchmark is dominated by costs outside provider-plan lookup for these scenarios.
 
-| Target | RPS | p50 | p95 | p99 | Errors |
-|---|---:|---:|---:|---:|---:|
-| Hot Chocolate + EF Core | 33.30 | 27.00 ms | 51.52 ms | 58.14 ms | 0 |
-| Foundgine cold | 461.70 | 1.97 ms | 3.07 ms | 3.89 ms | 0 |
-| Foundgine warm | 467.70 | 1.96 ms | 2.98 ms | 3.63 ms | 0 |
+There is significant room for optimization. Future work should investigate multiple cache levels, including:
 
-These are **existing repository measurements**, not a new controlled run performed for this priority. They should therefore be treated as a baseline for reproducibility, not as a universal performance claim.
+1. semantic/resolution cache;
+2. authorization/policy cache;
+3. execution/provider-plan cache;
+4. database/result cache after the DB response;
+5. serialized response cache;
+6. HTTP/transport cache where appropriate.
 
-## What the current benchmark proves
+## Next benchmark matrix
 
-It demonstrates that the repository has a repeatable end-to-end workload comparing Foundgine cold/warm execution with Hot Chocolate + EF Core on the same PostgreSQL fixture.
+The next controlled benchmark should vary payload size as well as concurrency and batch size:
 
-It also gives an initial indication that provider-plan caching has a relatively small effect on this particular end-to-end workload because database/network execution dominates the request.
-
-It does **not** isolate the cost of:
-
-- semantic resolution;
-- authorization;
-- logical planning;
-- provider compilation;
-- plan-cache lookup;
-- materialization.
-
-## Required microbenchmark matrix
-
-The next benchmark layer should isolate these stages:
-
-```text
-Request
-  ├── Resolve
-  ├── Authorize
-  ├── Plan
-  ├── Compile
-  ├── Cache lookup
-  └── Execute
-```
-
-The minimum matrix is:
-
-| Scenario | Purpose |
+| Dimension | Values |
 |---|---|
-| Direct provider execution | physical baseline |
-| Foundgine uncached | full semantic + compile overhead |
-| Foundgine cached | steady-state semantic overhead |
-| Resolution only | intent → semantic graph |
-| Authorization only | authorization cost |
-| Planning only | semantic graph → execution plan |
-| Compilation only | execution plan → provider plan |
+| Payload | small, medium, large |
+| Mutation batch | 1, 10, 50 |
+| Concurrency | 1, 8, 32 |
+| Plan cache | off, on |
+| Result cache | off, on |
+| Response cache | off, on |
+| Cache state | cold, warm |
 
-AOT is **not included in this baseline** because the current repository does not contain a controlled AOT benchmark proving an equivalent workload. It should be added only when an apples-to-apples AOT scenario exists.
+The large-vs-small payload test is particularly important because response/result caching may become much more valuable once serialization, network transfer, or repeated database work dominates.
+
+FASTER should be added as a future cache/storage comparison once the payload matrix exists.
 
 ## Rules
 

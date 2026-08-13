@@ -1,7 +1,0 @@
-operation,target,concurrency,requests_per_second,p50_ms,p95_ms,p99_ms,errors,successful
-"Query top 50 graph","Foundgine - provider-plan cache",1,468.00,1.98,2.98,3.59,0,True
-"Query top 50 graph","Foundgine - provider-plan cache",8,2452.80,3.07,4.88,6.15,0,True
-"Query top 50 graph","Foundgine - provider-plan cache",32,3363.20,8.93,16.52,21.22,0,True
-"Mutation whole graph","Foundgine - provider-plan cache",1,183.40,4.12,5.24,81.87,0,True
-"Mutation whole graph","Foundgine - provider-plan cache",8,765.90,5.45,81.17,90.27,0,True
-"Mutation whole graph","Foundgine - provider-plan cache",32,1571.40,14.12,95.88,105.08,0,True
