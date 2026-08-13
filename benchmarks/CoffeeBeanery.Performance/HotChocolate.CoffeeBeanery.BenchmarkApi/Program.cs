@@ -78,6 +78,35 @@ public sealed class Mutation
         return CustomerGraph.From(customer);
     }
 
+    public async Task<Customer> UpsertCustomer(CustomerInput input, string[]? onConflict, BankingEntityContext db, CancellationToken cancellationToken)
+    {
+        if (input.CustomerKey is null)
+            throw new HotChocolate.GraphQLException("The benchmark upsert requires CustomerKey.");
+
+        if (onConflict is null || onConflict.Length != 1 ||
+            !string.Equals(onConflict[0], "CustomerKey", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new HotChocolate.GraphQLException("The benchmark upsert requires onConflict: [\"CustomerKey\"].");
+        }
+
+        // The benchmark intentionally performs a real PostgreSQL upsert against
+        // an existing deterministic customer. The subsequent load-test query is
+        // the exact same top-50/full-graph query used by the standalone read
+        // workload, so the combined operation is a write-then-refetch measurement.
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO "Banking"."Customer"
+                ("CustomerKey", "FirstName", "LastName", "FullName")
+            VALUES ({input.CustomerKey.Value}, {input.FirstName}, {input.LastName}, {input.FullName})
+            ON CONFLICT ("CustomerKey") DO UPDATE SET
+                "FirstName" = EXCLUDED."FirstName",
+                "LastName" = EXCLUDED."LastName",
+                "FullName" = EXCLUDED."FullName";
+            """, cancellationToken);
+
+        return await db.Customer.AsNoTracking()
+            .SingleAsync(x => x.CustomerKey == input.CustomerKey.Value, cancellationToken);
+    }
+
     public async Task<Customer> UpdateCustomer(CustomerInput input, CustomerWhereInput where, BankingEntityContext db, CancellationToken cancellationToken)
     {
         var entity = await db.Customer.SingleAsync(x => x.Id == where.Id.Eq, cancellationToken);
@@ -120,7 +149,7 @@ public sealed record CreateCustomerInput(Guid CustomerKey, string? FirstName, st
 public sealed record CreateCustomerBankingRelationshipInput(Guid CustomerBankingRelationshipKey, IReadOnlyList<CreateContractInput>? Contract);
 public sealed record CreateContractInput(Guid ContractKey, ContractType? ContractType, decimal? Amount, IReadOnlyList<CreateTransactionInput>? Transaction);
 public sealed record CreateTransactionInput(Guid TransactionKey, decimal? Amount, decimal? Balance);
-public sealed record CustomerInput(string? FirstName, string? LastName, string? FullName);
+public sealed record CustomerInput(Guid? CustomerKey, string? FirstName, string? LastName, string? FullName);
 public sealed record CustomerBankingRelationshipInput(Guid CustomerBankingRelationshipKey);
 public sealed record ContractInput(decimal Amount);
 public sealed record TransactionInput(decimal Amount, decimal Balance);

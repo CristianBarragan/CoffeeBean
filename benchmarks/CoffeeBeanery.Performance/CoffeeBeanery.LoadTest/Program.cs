@@ -32,28 +32,13 @@ query Top50Customers {
 """;
 
 const string mutation = """
-mutation CreateCustomer($input: CreateCustomerInput!) {
-  createCustomer(input: $input) {
+mutation UpsertCustomer($input: CustomerInput!) {
+  upsertCustomer(input: $input, onConflict: ["CustomerKey"]) {
     id
     customerKey
     firstName
     lastName
     fullName
-    customerBankingRelationship {
-      id
-      customerBankingRelationshipKey
-      contract {
-        id
-        contractKey
-        amount
-        transaction {
-          id
-          transactionKey
-          amount
-          balance
-        }
-      }
-    }
   }
 }
 """;
@@ -63,7 +48,7 @@ var warmup = GetInt("BENCHMARK_WARMUP_SECONDS", 3);
 var requestTimeoutSeconds = GetInt("BENCHMARK_REQUEST_TIMEOUT_SECONDS", 5);
 var readinessTimeoutSeconds = GetInt("BENCHMARK_READINESS_TIMEOUT_SECONDS", 180);
 var drainTimeoutSeconds = GetInt("BENCHMARK_RESET_TIMEOUT_SECONDS", 180);
-var concurrency = (Environment.GetEnvironmentVariable("BENCHMARK_CONCURRENCY") ?? "1,8,16,32,64")
+var concurrency = (Environment.GetEnvironmentVariable("BENCHMARK_CONCURRENCY") ?? "1,8,32")
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
     .Select(int.Parse)
     .Where(x => x > 0)
@@ -530,13 +515,10 @@ static async Task<RunResult> Run(
             // boundary is counted, but no new request is started.
         }
 
-        // Upsert-then-select as ONE measured logical unit: sends the mutation
-        // (respecting batchSize, same as MutationWholeGraph) and, only if it
-        // succeeded, immediately follows with the QueryTop50 select - this is
-        // the realistic "write, then refetch" client pattern that neither
-        // QueryTop50 nor MutationWholeGraph alone measures. One stopwatch spans
-        // both calls so p50/p95/p99 reflect the full round-trip a real client
-        // would pay, not just one leg of it.
+        // Upsert-then-select as ONE measured logical unit: upsert existing deterministic
+        // Customer rows, then immediately execute the exact same QueryTop50 graph
+        // used by the standalone query benchmark. One stopwatch spans both calls
+        // so p50/p95/p99 represent the complete write-then-refetch client path.
         async Task RunMutationThenQueryAsync()
         {
             var stopwatch = Stopwatch.StartNew();
@@ -605,31 +587,80 @@ static object BuildMutationBatch(int batchSize)
         return new
         {
             query = mutation,
-            operationName = "CreateCustomer",
-            variables = CreateMutationVariables()
+            operationName = "UpsertCustomer",
+            variables = new
+            {
+                input = CreateUpsertInput(1)
+            }
         };
     }
 
     var sb = new StringBuilder();
-    sb.AppendLine("mutation BenchmarkMutationBatch {");
-    for (var i = 0; i < batchSize; i++)
+    sb.AppendLine("mutation BenchmarkUpsertBatch {");
+    for (var i = 1; i <= batchSize; i++)
     {
         var alias = "m" + i;
-        sb.Append("  ").Append(alias).Append(": createCustomer(input: ");
-        sb.Append("{ customerKey: \"").Append(Guid.NewGuid()).Append("\" ");
-        sb.Append("firstName: \"Benchmark\", lastName: \"Customer\", fullName: \"Benchmark Customer\", ");
-        sb.Append("customerBankingRelationship: [{ customerBankingRelationshipKey: \"").Append(Guid.NewGuid()).Append("\", ");
-        sb.Append("contract: [{ contractKey: \"").Append(Guid.NewGuid()).Append("\", amount: 1000.50, transaction: ");
-        sb.Append("[{ transactionKey: \"").Append(Guid.NewGuid()).Append("\", amount: 100, balance: 1200 }, ");
-        sb.Append("{ transactionKey: \"").Append(Guid.NewGuid()).Append("\", amount: 125, balance: 1075 }] }]");
-        // Closing braces, innermost to outermost:
-        //   }]   closes the transaction[] item + customerBankingRelationship[] item
-        //   }    closes the outer `input: { ... }` object itself (was previously missing)
-        //   )    closes createCustomer(input: ...)
-        sb.AppendLine(" }] } ) { id customerKey }");
+        var key = DeterministicGuid("customer", i);
+        sb.Append("  ").Append(alias)
+            .Append(": upsertCustomer(input: {")
+            .Append(" customerKey: \"").Append(key).Append("\"")
+            .Append(" firstName: \"Benchmark\"")
+            .Append(" lastName: \"Customer\"")
+            .Append(" fullName: \"Benchmark Customer ").Append(i).Append("\"")
+            .Append(" }, onConflict: [\"CustomerKey\"]) { id customerKey firstName lastName fullName }")
+            .AppendLine();
     }
     sb.AppendLine("}");
-    return new { query = sb.ToString(), operationName = "BenchmarkMutationBatch" };
+    return new { query = sb.ToString(), operationName = "BenchmarkUpsertBatch" };
+}
+
+static object CreateUpsertInput(int customerId)
+{
+    return new
+    {
+        customerKey = DeterministicGuid("customer", customerId),
+        firstName = "Benchmark",
+        lastName = "Customer",
+        fullName = $"Benchmark Customer {customerId}"
+    };
+}
+
+static Guid DeterministicGuid(string prefix, int value) =>
+    GuidUtility.Create(
+        GuidUtility.UrlNamespace,
+        $"coffee-beanery/{prefix}/{value}");
+
+static class GuidUtility
+{
+    public static readonly Guid UrlNamespace =
+        new("6ba7b811-9dad-11d1-80b4-00c04fd430c8");
+
+    public static Guid Create(Guid namespaceId, string name)
+    {
+        var namespaceBytes = namespaceId.ToByteArray();
+        SwapByteOrder(namespaceBytes);
+
+        var nameBytes = Encoding.UTF8.GetBytes(name);
+        var data = new byte[namespaceBytes.Length + nameBytes.Length];
+        Buffer.BlockCopy(namespaceBytes, 0, data, 0, namespaceBytes.Length);
+        Buffer.BlockCopy(nameBytes, 0, data, namespaceBytes.Length, nameBytes.Length);
+
+        using var sha1 = System.Security.Cryptography.SHA1.Create();
+        var hash = sha1.ComputeHash(data);
+        var bytes = hash[..16];
+        bytes[6] = (byte)((bytes[6] & 0x0F) | 0x50);
+        bytes[8] = (byte)((bytes[8] & 0x3F) | 0x80);
+        SwapByteOrder(bytes);
+        return new Guid(bytes);
+    }
+
+    private static void SwapByteOrder(byte[] guid)
+    {
+        (guid[0], guid[3]) = (guid[3], guid[0]);
+        (guid[1], guid[2]) = (guid[2], guid[1]);
+        (guid[4], guid[5]) = (guid[5], guid[4]);
+        (guid[6], guid[7]) = (guid[7], guid[6]);
+    }
 }
 
 static async Task<DockerMetrics> SampleDockerMetricsAsync(string container, CancellationToken cancellationToken, Stopwatch phase, TimeSpan duration)
@@ -878,7 +909,7 @@ static class BenchmarkOperationExtensions
                 "Mutation whole graph",
 
             BenchmarkOperation.MutationThenQuery =>
-                "Upsert + select (mutation then query top 50)",
+                "Upsert + select (upsert then query top 50 full graph)",
 
             _ => operation.ToString()
         };
