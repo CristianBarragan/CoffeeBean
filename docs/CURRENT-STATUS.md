@@ -13,6 +13,7 @@ Foundgine has completed its ground-up foundation and has a working end-to-end pr
 - CRUD/upsert mutation planning;
 - nested/dependency-aware mutation planning;
 - SQL compilation and SQLite execution;
+- a deliberately small in-memory provider consuming the same provider-independent plan;
 - AOT metadata generation;
 - JSON structured intent;
 - GraphQL queries and mutations through Hot Chocolate;
@@ -39,7 +40,7 @@ Those claims require additional implementation and evidence.
 
 ## Source of truth
 
-The current source and passing tests define reality. Historical milestone documents under `docs/history` explain how the repository got here.
+The current source and tests define reality. Historical milestone documents under `docs/history` explain how the repository got here. Performance reports under `benchmarks/` are evidence for specific benchmark runs, not general performance claims.
 
 ## M40 architectural rule
 

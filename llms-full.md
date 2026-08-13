@@ -32,7 +32,7 @@ Provider
 
 `Foundgine.Execution` defines provider execution and result materialization.
 
-`Foundgine.Sql` is the current SQL provider.
+`Foundgine.Sql` is the SQL execution provider. `Foundgine.InMemory` is a deliberately small CLR-backed proof provider used to demonstrate provider independence for the tested plan subset.
 
 `Foundgine.Aot` and `Foundgine.Aot.Generator` provide compile-time metadata.
 

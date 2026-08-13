@@ -138,4 +138,25 @@ public sealed class PlannerTests
         }
     }
 
+    [Fact]
+    public void Execution_plan_uses_only_the_frozen_structural_algebra()
+    {
+        var graph = new SemanticGraph();
+        var root = graph.AddRoot(new EntityId(1), [new FieldId(1)]);
+        graph.Add(new EntityId(2), new RelationshipId(1), root, [new FieldId(2)]);
+
+        var plan = new Planner().Plan(graph);
+
+        Assert.Contains(plan.Root.Operation, new[]
+        {
+            ExecutionOperation.Scan,
+            ExecutionOperation.Traverse,
+            ExecutionOperation.TraverseConnection
+        });
+
+        var child = Assert.Single(plan.Root.Children);
+        Assert.Equal(ExecutionOperation.Traverse, child.Operation);
+    }
+
 }
+

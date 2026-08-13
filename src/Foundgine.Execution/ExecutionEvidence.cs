@@ -14,7 +14,9 @@ public sealed record ExecutionEvidence(
     IReadOnlyList<int> AuthorizedNodeIds,
     int RowsReturned,
     long ElapsedMilliseconds,
-    string? ProviderOperationFingerprint = null);
+    string? ProviderOperationFingerprint = null,
+    string? IntentFingerprint = null,
+    string? AuthorizationFingerprint = null);
 
 public static class ExecutionEvidenceFactory
 {

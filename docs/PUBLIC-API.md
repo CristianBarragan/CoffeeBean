@@ -1,17 +1,21 @@
 # Public API
 
-Foundgine exposes a deliberately small application-facing facade:
+Foundgine exposes a deliberately small application-facing facade. Applications should normally obtain `IFoundgine` through dependency injection:
 
 ```csharp
-var engine = new FoundgineEngine(
-    model,
-    authorizationPolicy,
-    planner,
-    providerCompiler,
-    executionProvider);
+services.AddFoundgine(options =>
+{
+    options.Model = semanticModel;
+    options.AuthorizationPolicy = authorizationPolicy;
+});
 
-var result = await engine.ExecuteAsync(request, context);
+var foundgine = services.BuildServiceProvider()
+    .GetRequiredService<IFoundgine>();
+
+var result = await foundgine.ExecuteAsync(request, context);
 ```
+
+The concrete `FoundgineEngine` constructor is available when infrastructure code needs explicit composition, but application code should prefer the stable `IFoundgine` contract.
 
 The facade owns the pipeline:
 

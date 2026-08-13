@@ -3,6 +3,7 @@ using Foundgine.Planning;
 using Foundgine.Semantics;
 using Foundgine.Semantics.Authorization;
 using Foundgine.Semantics.Resolution;
+using System.Text.Json;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine;
@@ -77,11 +78,39 @@ public sealed class FoundgineEngine : IFoundgine
 
         var executionContext = AttachPaginationContext(plan, context ?? new ExecutionContext());
 
-        return _provider.ExecuteAsync(
+        return ExecuteAndEnrichEvidenceAsync(
+            request,
+            plan,
             providerPlan,
             executionContext,
             cancellationToken);
     }
+    private async Task<ExecutionResult> ExecuteAndEnrichEvidenceAsync(
+        SemanticRequest request,
+        ExecutionPlan plan,
+        ProviderPlan providerPlan,
+        ExecutionContext context,
+        CancellationToken cancellationToken)
+    {
+        var result = await _provider.ExecuteAsync(providerPlan, context, cancellationToken);
+        if (result.Evidence is null)
+            return result;
+
+        var intentFingerprint = ExecutionEvidenceFactory.Hash(
+            JsonSerializer.Serialize(request));
+        var authorizationFingerprint = ExecutionEvidenceFactory.Hash(
+            ExecutionPlanFingerprint.Create(plan));
+
+        return result with
+        {
+            Evidence = result.Evidence with
+            {
+                IntentFingerprint = intentFingerprint,
+                AuthorizationFingerprint = authorizationFingerprint
+            }
+        };
+    }
+
     private static ExecutionContext AttachPaginationContext(ExecutionPlan plan, ExecutionContext context)
     {
         var options = plan.Root.QueryOptions;

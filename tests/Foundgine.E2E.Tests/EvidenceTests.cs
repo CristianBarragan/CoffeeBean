@@ -4,6 +4,7 @@ using FoundgineExecutionContext = Foundgine.Execution.ExecutionContext;
 using Foundgine.Generated;
 using Foundgine.Planning;
 using Foundgine.Semantics;
+using Foundgine.Semantics.Authorization;
 using Foundgine.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
@@ -85,4 +86,54 @@ public sealed class EvidenceTests
         Assert.NotNull(second.Evidence);
         Assert.Equal(first.Evidence!.PlanFingerprint, second.Evidence!.PlanFingerprint);
     }
+
+    [Fact]
+    public async Task Public_engine_enriches_provider_evidence_with_intent_and_authorization_fingerprints()
+    {
+        var compiler = new CapturingEvidenceCompiler();
+        var provider = new CapturingEvidenceProvider();
+        var engine = new Foundgine.FoundgineEngine(
+            new Foundgine.FoundgineOptions
+            {
+                Model = Banking.BankingSemanticModel.Build(),
+                AuthorizationPolicy = new AllowAllSemanticAuthorizationPolicy()
+            },
+            compiler,
+            provider);
+
+        var request = new SemanticRequest(
+            Banking.BankingSemanticModel.Customer,
+            [new SemanticSelection(new FieldId(1), null, [])]);
+
+        var result = await engine.ExecuteAsync(request);
+
+        Assert.NotNull(result.Evidence);
+        Assert.False(string.IsNullOrWhiteSpace(result.Evidence!.IntentFingerprint));
+        Assert.False(string.IsNullOrWhiteSpace(result.Evidence.AuthorizationFingerprint));
+        Assert.NotEqual(result.Evidence.IntentFingerprint, result.Evidence.AuthorizationFingerprint);
+    }
+
+    private sealed class CapturingEvidenceCompiler : IProviderPlanCompiler
+    {
+        public ProviderPlan Compile(ExecutionPlan plan) => new TestProviderPlan();
+    }
+
+    private sealed class CapturingEvidenceProvider : IExecutionProvider
+    {
+        public Task<ExecutionResult> ExecuteAsync(
+            ProviderPlan plan,
+            FoundgineExecutionContext context,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(new ExecutionResult(
+                Array.Empty<ExecutionRow>(),
+                Evidence: ExecutionEvidenceFactory.Create(
+                    "test",
+                    "plan",
+                    Array.Empty<int>(),
+                    0,
+                    0)));
+    }
+
+    private sealed record TestProviderPlan() : ProviderPlan("test");
+
 }

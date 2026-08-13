@@ -4,15 +4,28 @@ Keep this documentation practical. If the code and docs disagree, the code and t
 
 ## Start here
 
-1. [Getting started](GETTING-STARTED.md)
-2. [Architecture](ARCHITECTURE.md)
-3. [Current status](CURRENT-STATUS.md)
-4. [Runtime](RUNTIME.md)
-5. [GraphQL](GRAPHQL.md)
-6. [AOT](AOT.md)
-7. [Testing](TESTING.md)
-8. [Roadmap](ROADMAP.md)
+1. [Why Foundgine](WHY-FOUNDGINE.md)
+2. [Getting started](GETTING-STARTED.md)
+3. [Execution Algebra](EXECUTION-ALGEBRA.md)
+4. [Authorization Golden Path](AUTHORIZATION-GOLDEN-PATH.md)
+5. [Architecture](ARCHITECTURE.md)
+6. [Current status](CURRENT-STATUS.md)
+7. [Documentation truth](DOCUMENTATION-TRUTH.md)
+8. [Runtime](RUNTIME.md)
+9. [GraphQL](GRAPHQL.md)
+10. [AOT](AOT.md)
+11. [Testing](TESTING.md)
+12. [Roadmap](ROADMAP.md)
+
+## Architecture boundaries
+
+- [Mapping and Connections](MAPPING.md)
+- [Provider independence](PROVIDER-INDEPENDENCE.md) — why the second provider exists and what it proves.
 
 Historical design notes and milestone documents live under [history](history/README.md).
 
-- [Mapping and Connections](MAPPING.md)
+- [Agent Semantic Boundary](AGENT-SEMANTIC-BOUNDARY.md) — how LLMs and agents produce semantic intent without becoming execution authorities.
+
+- [Context-safe plan caching](CONTEXT-SAFE-PLAN-CACHING.md)
+
+- [Execution Evidence](EVIDENCE.md)

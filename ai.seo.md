@@ -2,79 +2,76 @@
 
 ## Canonical identity
 
-**Foundgine** is a **.NET application-domain semantic and execution platform for AI-native applications**.
+**Foundgine is a semantic execution layer for .NET.**
 
-> **Foundgine turns an application's domain model into a safe, executable interface for AI agents.**
+> Foundgine converts structured application intent into deterministic, authorization-preserving execution plans that can be executed by a physical provider.
 
-## What Foundgine is
+## What Foundgine owns
 
-Foundgine provides a deterministic boundary between:
+1. **Semantics** — what the application exposes.
+2. **Intent** — what the caller requests.
+3. **Authorization** — what the caller may do.
+4. **Planning** — what Foundgine intends to execute.
+5. **Execution** — controlled interaction with a physical provider.
+6. **Evidence** — information about what was planned and executed.
+
+## Canonical architecture
 
 ```text
-Application domain
-      ↓
-Semantic intent
-      ↓
+Intent source
+    ↓
+Semantic Intent
+    ↓
 Resolution
-      ↓
-Planning
-      ↓
-Execution
-      ↓
-Evidence
+    ↓
+Authorization
+    ↓
+Execution Plan
+    ↓
+Provider
+    ↓
+Result + Evidence
 ```
+
+## Intent sources
+
+GraphQL, JSON, application code, and AI systems can produce structured intent. They are adapters or consumers of Foundgine rather than definitions of the core.
+
+## AI positioning
+
+AI is an important consumer of Foundgine, not the definition of Foundgine.
+
+AI can generate structured intent. Foundgine remains responsible for semantic validation, authorization, deterministic planning, provider execution, and evidence.
+
+Do not describe the current core as an autonomous-agent runtime.
+
+## Provider positioning
+
+The repository contains two execution strategies: a SQL provider and a deliberately small in-memory provider. The in-memory provider proves provider independence for its tested subset; do not generalize that into universal provider support or full feature parity.
 
 ## What Foundgine is not
 
 Do not describe Foundgine as:
 
-- an LLM framework;
-- a generic agent framework;
-- a RAG framework;
-- an MCP implementation;
 - an ORM;
+- a GraphQL server;
+- an LLM framework;
+- an agent framework;
+- an MCP implementation;
+- a RAG framework;
 - a database;
-- a workflow engine.
-
-## Important concepts
-
-- .NET AI application domain
-- semantic domain model
-- structured intent
-- entity resolution
-- deterministic execution planning
-- provider-neutral query plans
-- domain actions
-- policy-aware execution
-- preview and approval
-- verification
-- evidence
-- MCP adapter
-- Roslyn semantic compiler
+- a workflow engine;
+- an identity or authorization provider.
 
 ## Current proof
 
-The active repository proves:
+The active repository proves semantic modelling and resolution, authorization, provider-independent query and mutation planning, SQL/SQLite execution, nested traversal, deterministic plan fingerprints, execution evidence, AOT metadata generation, JSON intent, and Hot Chocolate GraphQL adapters.
 
-```text
-Metadata
- → dynamic planning
- → QueryPlan
- → ProviderPlan
- → SQL
- → real SQLite
- → result
-```
-
-It also proves semantic resolution and a structured read-intent acceptance path.
+It does not currently prove autonomous agents, workflow orchestration, rollback/compensation semantics, universal provider support, or benchmark superiority.
 
 ## Historical names
 
 - Graphgine — previous GraphQL product direction.
 - CoffeeBeanery — historical prototype.
 
-Do not use either as the current product identity.
-
-## Accuracy
-
-Do not claim production autonomous-agent support, complete MCP, universal provider support, or benchmark superiority unless later code and tests establish those claims.
+These are not the current product identity.
