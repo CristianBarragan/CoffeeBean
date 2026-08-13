@@ -6,6 +6,7 @@ $RepoRoot = (Resolve-Path (Join-Path $BenchmarkRoot "..\..")).Path
 
 $ComposeFile = Join-Path $BenchmarkRoot "compose\postgres.yml"
 $Network = "coffeebeanery-query_default"
+$Volume = "coffeebeanery-query_benchmark-postgres-data"
 
 $DbImage = "coffeebeanery-query-database"
 $HcImage = "coffeebeanery-query-hotchocolate"
@@ -86,8 +87,22 @@ function Build-Images {
     )
 }
 
-function Start-Database {
-    Write-Host "`nStarting PostgreSQL..."
+function Reset-Database {
+    Write-Host "`nResetting disposable PostgreSQL database..."
+
+    # Every benchmark target gets a completely fresh PostgreSQL instance and
+    # volume. This prevents data, WAL, PostgreSQL statistics and the database
+    # page cache from one target influencing the next target.
+    #
+    # PowerShell can surface Docker's harmless "network ... Removing" stderr as
+    # a NativeCommandError even when docker compose exits successfully. Suppress Docker native stderr so routine stopping/removal messages cannot be
+    # converted into PowerShell NativeCommandError records.
+    # Compose owns the disposable database lifecycle. `down -v` removes the
+    # project containers, network and named volumes. The explicit volume rm is
+    # intentionally best-effort because `down -v` may already have removed it.
+    & cmd.exe /d /c "docker compose -f `"$ComposeFile`" down -v --remove-orphans >nul 2>&1" | Out-Null
+    & docker volume rm -f $Volume 2>$null | Out-Null
+
     Invoke-Checked docker @("compose", "-f", $ComposeFile, "up", "-d", "--wait")
 
     Write-Host "Running database migration and fixture seeding..."
@@ -109,6 +124,7 @@ function Start-Database {
 
     Write-Host "Database initialization completed successfully."
 }
+
 
 function Start-Api {
     param(
@@ -182,9 +198,10 @@ try {
     Set-Location $RepoRoot
 
     Build-Images
-    Start-Database
 
-    # Exactly one API is alive during each measurement.
+    # Exactly one API and one freshly-created PostgreSQL volume are alive
+    # during each measurement.
+    Reset-Database
     Start-Api "coffeebeanery-query-hotchocolate" $HcImage 4300
     try {
         Run-LoadTest "Hot Chocolate + EF Core" "http://localhost:4300/graphql" "hotchocolate"
@@ -193,6 +210,7 @@ try {
         Stop-Api "coffeebeanery-query-hotchocolate"
     }
 
+    Reset-Database
     Start-Api "coffeebeanery-query-foundgine-cold" $FgImage 4301
     try {
         Run-LoadTest "Foundgine - no cache" "http://localhost:4301/graphql/cold" "foundgine-cold"
@@ -201,6 +219,7 @@ try {
         Stop-Api "coffeebeanery-query-foundgine-cold"
     }
 
+    Reset-Database
     Start-Api "coffeebeanery-query-foundgine-warm" $FgImage 4302
     try {
         Run-LoadTest "Foundgine - provider-plan cache" "http://localhost:4302/graphql/warm" "foundgine-warm"
@@ -213,11 +232,13 @@ try {
     Write-Host "Reports: $ReportRoot"
 }
 finally {
-    docker rm -f `
-        "coffeebeanery-query-hotchocolate" `
-        "coffeebeanery-query-foundgine-cold" `
-        "coffeebeanery-query-foundgine-warm" `
-        "coffeebeanery-query-database" 2>$null | Out-Null
+    Stop-ContainerIfExists "coffeebeanery-query-hotchocolate"
+    Stop-ContainerIfExists "coffeebeanery-query-foundgine-cold"
+    Stop-ContainerIfExists "coffeebeanery-query-foundgine-warm"
+    Stop-ContainerIfExists "coffeebeanery-query-database"
 
-    docker compose -f $ComposeFile down 2>$null | Out-Null
+    # Always destroy the PostgreSQL volume as well. The next target/run must
+    # never inherit database state from a previous benchmark case.
+    & cmd.exe /d /c "docker compose -f `"$ComposeFile`" down -v --remove-orphans >nul 2>&1" | Out-Null
+    & docker volume rm -f $Volume 2>$null | Out-Null
 }

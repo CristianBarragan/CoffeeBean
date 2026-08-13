@@ -20,5 +20,5 @@ try {
 finally {
     Write-Host ""
     Write-Host "Stopping update benchmark environment..."
-    docker compose -p $ProjectName -f $ComposeFile down
+    cmd.exe /d /c "docker compose -p $ProjectName -f `"$ComposeFile`" down -v --remove-orphans >nul 2>&1" | Out-Null
 }

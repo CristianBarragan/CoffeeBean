@@ -1,0 +1,7 @@
+operation,target,concurrency,requests_per_second,p50_ms,p95_ms,p99_ms,errors,successful
+"Query top 50 graph","Hot Chocolate + EF Core",1,31.20,28.14,54.09,57.79,0,True
+"Query top 50 graph","Hot Chocolate + EF Core",8,134.40,57.49,81.47,87.41,0,True
+"Query top 50 graph","Hot Chocolate + EF Core",32,137.40,234.03,332.55,388.38,0,True
+"Mutation whole graph","Hot Chocolate + EF Core",1,148.70,5.46,6.55,88.32,0,True
+"Mutation whole graph","Hot Chocolate + EF Core",8,689.20,6.88,26.38,95.60,0,True
+"Mutation whole graph","Hot Chocolate + EF Core",32,1395.20,15.81,93.68,104.10,0,True
