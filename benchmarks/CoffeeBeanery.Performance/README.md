@@ -1,47 +1,64 @@
-# CoffeeBeanery Performance — Sequential Query Benchmark
+# CoffeeBeanery Performance Benchmark
 
-The query benchmark intentionally runs **one workload target at a time**.
+The benchmark measures Foundgine and Hot Chocolate + EF Core against the same deterministic PostgreSQL workload.
 
-1. PostgreSQL starts and becomes healthy.
-2. The database initializer runs once, applies EF migrations, validates/seeds the deterministic fixture, and exits.
-3. Hot Chocolate starts, is benchmarked, and is stopped.
-4. Foundgine cold starts, is benchmarked, and is stopped.
-5. Foundgine warm starts, is benchmarked, and is stopped.
-6. PostgreSQL is stopped.
+## Current benchmark matrix
 
-The benchmark driver (`CoffeeBeanery.LoadTest`) runs on the host. It is not a Docker Compose service.
+- PostgreSQL fixture: 1,000 customers, 4,000 relationships, 12,000 contracts, 48,000 transactions.
+- Concurrency: 1, 8, 32.
+- Query: top-50 relationship graph.
+- Whole-graph mutation: batch sizes 1, 10, 50.
+- Docker metrics: API-container CPU and memory sampled during measurement.
+- Latency: p50, p95, p99.
+- Throughput: HTTP requests/s and logical operations/s for batched mutations.
+- Warm-up: 3 seconds.
+- Measurement: 10 seconds.
+
+Batch size is only applied to the mutation workload. Query results remain batch size 1 so the query comparison stays semantically identical.
 
 ## Run
 
-From `C:\Foundgine\benchmarks\CoffeeBeanery.Performance`:
+From `benchmarks/CoffeeBeanery.Performance`:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\run-query.ps1
 ```
 
-Or:
-
-```powershell
-.\pipelines\query.ps1
-```
-
-The pipeline expects the repository layout:
+The runner sets:
 
 ```text
-C:\Foundgine
-  src\...
-  benchmarks\CoffeeBeanery.Performance\...
+BENCHMARK_CONCURRENCY=1,8,32
+BENCHMARK_BATCH_SIZES=1,10,50
+BENCHMARK_DOCKER_CONTAINER=<API container>
 ```
 
-Reports are written to:
+Docker metrics are collected with `docker stats --no-stream` while the measurement is running. CPU is reported as a percentage of one logical CPU, so values above 100% mean multiple CPUs are being used by the container.
+
+## Interpreting batch results
+
+Do not compare only HTTP RPS when batch sizes differ.
+
+For example:
 
 ```text
-reports\query\hotchocolate
-reports\query\foundgine-cold
-reports\query\foundgine-warm
+batch=1   -> 1 HTTP request contains 1 logical mutation
+batch=50  -> 1 HTTP request contains 50 logical mutations
 ```
 
-## Important
+The benchmark therefore reports:
 
-Only PostgreSQL is defined in `compose/postgres.yml`. API containers are deliberately started and removed by `pipelines/query.ps1`, so a failure in one API cannot cause Compose to start or stop the other APIs.
+```text
+HTTP RPS
+logical/s = HTTP RPS × batch size
+```
+
+Latency remains the latency of the HTTP request containing the entire batch.
+
+## Known limitation
+
+Hot Chocolate + EF Core currently has a correctness bug in the **GraphQL upsert + select** workload, so that workload is not considered a valid comparative baseline. Foundgine's upsert workload remains useful as an internal measurement and should be compared against Hot Chocolate only after the external implementation is fixed.
+
+## Results
+
+The checked-in 2026-08-13 run is documented in [`docs/benchmarks/2026-08-13-performance-results.md`](../../docs/benchmarks/2026-08-13-performance-results.md), with machine-readable data under `reports/benchmarks/2026-08-13/`.

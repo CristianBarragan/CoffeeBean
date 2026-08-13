@@ -28,9 +28,20 @@ plugins:
 
 nav:
   - Home: README.md
+  - Product Identity: PRODUCT-IDENTITY.md
+  - AI Capability Interface: AI-CAPABILITY-INTERFACE.md
   - Getting Started: GETTING-STARTED.md
   - Architecture: ARCHITECTURE.md
+  - Architecture Boundaries: ARCHITECTURE-BOUNDARIES.md
+  - Authorization Invariants: PRIORITY-3-AUTHORIZATION-INVARIANTS.md
+  - Flagship Proof: FLAGSHIP-PROOF.md
+  - Provider Independence: PROVIDER-INDEPENDENCE.md
+  - Agent Semantic Boundary: AGENT-SEMANTIC-BOUNDARY.md
+  - Authorization Golden Path: AUTHORIZATION-GOLDEN-PATH.md
+  - Context-Safe Plan Caching: CONTEXT-SAFE-PLAN-CACHING.md
+  - Execution Evidence: EVIDENCE.md
   - Current Status: CURRENT-STATUS.md
+  - Documentation Truth: DOCUMENTATION-TRUTH.md
   - Runtime: RUNTIME.md
   - GraphQL: GRAPHQL.md
   - AOT: AOT.md
@@ -39,3 +50,6 @@ nav:
   - Migration: MIGRATION.md
   - Roadmap: ROADMAP.md
   - History: history/README.md
+
+  - Priorities:
+    - Mutation Simplification: PRIORITY-5-MUTATION-SIMPLIFICATION.md

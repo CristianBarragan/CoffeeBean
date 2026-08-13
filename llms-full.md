@@ -1,6 +1,8 @@
 # Foundgine — AI context
 
-Foundgine is a small, provider-independent semantic execution engine for .NET.
+Foundgine is a **semantic execution layer for .NET**.
+
+Canonical description: Foundgine converts structured application intent into deterministic, authorization-preserving execution plans that can be executed by a physical provider.
 
 Its purpose is to separate **what an application means** from **how a provider executes it**.
 
@@ -20,6 +22,14 @@ Execution Plan
 Provider
 ```
 
+## Product identity
+
+Foundgine owns semantics, intent resolution, authorization, provider-independent planning, execution coordination, and execution evidence. It does not own the transport, database engine, ORM persistence model, LLM/agent runtime, workflow engine, or identity system.
+
+AI is an important consumer of the semantic boundary, not the definition of the product.
+
+Capability discovery is a first-class semantic interface: `DescribeCapabilities()` exposes a deterministic, policy-scoped capability graph. AI adapters can use it to construct structured intent, but the capability document is never treated as an authorization decision.
+
 ## Core projects
 
 `Foundgine.Abstractions` contains stable IDs and small contracts.
@@ -32,7 +42,7 @@ Provider
 
 `Foundgine.Execution` defines provider execution and result materialization.
 
-`Foundgine.Sql` is the current SQL provider.
+`Foundgine.Sql` is the SQL execution provider. `Foundgine.InMemory` is a deliberately small CLR-backed proof provider used to demonstrate provider independence for the tested plan subset.
 
 `Foundgine.Aot` and `Foundgine.Aot.Generator` provide compile-time metadata.
 

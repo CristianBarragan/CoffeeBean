@@ -73,6 +73,18 @@ var concurrency = (Environment.GetEnvironmentVariable("BENCHMARK_CONCURRENCY") ?
 if (concurrency.Length == 0)
     throw new InvalidOperationException("BENCHMARK_CONCURRENCY must contain at least one positive integer.");
 
+var batchSizes = (Environment.GetEnvironmentVariable("BENCHMARK_BATCH_SIZES") ?? "1,10,50")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Select(int.Parse)
+    .Where(x => x > 0)
+    .Distinct()
+    .ToArray();
+
+if (batchSizes.Length == 0)
+    throw new InvalidOperationException("BENCHMARK_BATCH_SIZES must contain at least one positive integer.");
+
+var dockerMetricsContainer = Environment.GetEnvironmentVariable("BENCHMARK_DOCKER_CONTAINER");
+
 var reportDirectory =
     Environment.GetEnvironmentVariable("BENCHMARK_REPORT_DIRECTORY") ?? "/reports";
 
@@ -104,6 +116,8 @@ Console.WriteLine($"Request timeout:      {requestTimeoutSeconds}s");
 Console.WriteLine($"Readiness timeout:    {readinessTimeoutSeconds}s");
 Console.WriteLine($"Drain timeout:        {drainTimeoutSeconds}s");
 Console.WriteLine($"Concurrency:          {string.Join(", ", concurrency)}");
+Console.WriteLine($"Batch sizes:           {string.Join(", ", batchSizes)}");
+Console.WriteLine($"Docker metrics:        {dockerMetricsContainer ?? "disabled"}");
 Console.WriteLine();
 
 await WaitForTargetsAsync(targets, client, readinessTimeoutSeconds);
@@ -120,96 +134,107 @@ foreach (var operation in new[]
 
     foreach (var target in targets)
     {
-        foreach (var c in concurrency)
+        var operationBatchSizes = operation == BenchmarkOperation.MutationWholeGraph
+            ? batchSizes
+            : new[] { 1 };
+
+        foreach (var batchSize in operationBatchSizes)
         {
-            Console.WriteLine(
-                $"  {target.Name} C={c}: warm-up...");
+            if (operation == BenchmarkOperation.MutationWholeGraph)
+                Console.WriteLine($"  Batch size={batchSize}");
 
-            var warmupResult =
-                await Run(
-                    target,
-                    operation,
-                    c,
-                    warmup,
-                    requestTimeoutSeconds,
-                    drainTimeoutSeconds,
-                    client);
+            foreach (var c in concurrency)
+            {
+                Console.WriteLine(
+                    $"  {target.Name} C={c} batch={batchSize}: warm-up...");
 
-            Console.WriteLine(
-                $"    warm-up completed={warmupResult.Requests}, " +
-                $"errors={warmupResult.Errors}, " +
-                $"timeouts={warmupResult.Timeouts}, " +
-                $"cancelled={warmupResult.Cancelled}");
+                var warmupResult =
+                    await Run(
+                        target,
+                        operation,
+                        c,
+                        batchSize,
+                        warmup,
+                        requestTimeoutSeconds,
+                        drainTimeoutSeconds,
+                        client,
+                        dockerMetricsContainer);
+
+                Console.WriteLine(
+                    $"    warm-up completed={warmupResult.Requests}, " +
+                    $"errors={warmupResult.Errors}, " +
+                    $"timeouts={warmupResult.Timeouts}, " +
+                    $"cancelled={warmupResult.Cancelled}");
 
             // Warm-up is diagnostic. A slow/erroring warm-up request must
             // not prevent the actual measurement from running as long as
             // at least one request completed successfully.
-            if (warmupResult.Errors != 0 ||
-                warmupResult.Timeouts != 0)
-            {
-                Console.WriteLine(
-                    $"    PREFLIGHT WARNING: {DescribeFirstError(warmupResult)}");
-            }
+                if (warmupResult.Errors != 0 || warmupResult.Timeouts != 0)
+                {
+                    Console.WriteLine(
+                        $"    PREFLIGHT WARNING: {DescribeFirstError(warmupResult)}");
+                }
 
-            if (warmupResult.Requests == 0)
-            {
-                Console.WriteLine(
-                    "    PREFLIGHT FAILED: zero completed requests.");
+                if (warmupResult.Requests == 0)
+                {
+                    Console.WriteLine(
+                        "    PREFLIGHT FAILED: zero completed requests.");
 
-                results.Add(
-                    BenchmarkResult.Failed(
-                        operation,
+                    results.Add(BenchmarkResult.Failed(operation, target, c, batchSize, 1));
+                    continue;
+                }
+
+                Console.WriteLine(
+                    $"  {target.Name} C={c} batch={batchSize}: measuring...");
+
+                var result =
+                    await Run(
                         target,
+                        operation,
                         c,
-                        1));
+                        batchSize,
+                        duration,
+                        requestTimeoutSeconds,
+                        drainTimeoutSeconds,
+                        client,
+                        dockerMetricsContainer);
 
-                continue;
-            }
-
-            Console.WriteLine(
-                $"  {target.Name} C={c}: measuring...");
-
-            var result =
-                await Run(
-                    target,
+                var benchmark = new BenchmarkResult(
                     operation,
+                    target.Name,
                     c,
-                    duration,
-                    requestTimeoutSeconds,
-                    drainTimeoutSeconds,
-                    client);
+                    batchSize,
+                    result.RequestsPerSecond,
+                    result.RequestsPerSecond * batchSize,
+                    Percentile(result.Latencies, .50),
+                    Percentile(result.Latencies, .95),
+                    Percentile(result.Latencies, .99),
+                    result.Errors + result.Timeouts,
+                    result.CpuAveragePercent,
+                    result.CpuMaxPercent,
+                    result.MemoryAverageMb,
+                    result.MemoryMaxMb,
+                    result.MemoryEndMb,
+                    result.Requests > 0 && result.Errors == 0 && result.Timeouts == 0);
 
-            var benchmark = new BenchmarkResult(
-                operation,
-                target.Name,
-                c,
-                result.RequestsPerSecond,
-                Percentile(result.Latencies, .50),
-                Percentile(result.Latencies, .95),
-                Percentile(result.Latencies, .99),
-                result.Errors + result.Timeouts,
-                result.Requests > 0 && result.Errors == 0 && result.Timeouts == 0);
+                results.Add(benchmark);
 
-            results.Add(benchmark);
-
-            Console.WriteLine(
-                $"    RPS={benchmark.RequestsPerSecond:F2} " +
-                $"p50={benchmark.P50Ms:F1}ms " +
-                $"p95={benchmark.P95Ms:F1}ms " +
-                $"p99={benchmark.P99Ms:F1}ms " +
-                $"completed={result.Requests} " +
-                $"errors={result.Errors} " +
-                $"timeouts={result.Timeouts} " +
-                $"cancelled={result.Cancelled}");
-
-            if (result.Errors != 0 || result.Timeouts != 0)
-            {
                 Console.WriteLine(
-                    $"    First error: {DescribeFirstError(result)}");
-            }
-        }
+                    $"    RPS={benchmark.RequestsPerSecond:F2} " +
+                    $"logical/s={benchmark.LogicalRequestsPerSecond:F2} " +
+                    $"p50={benchmark.P50Ms:F1}ms " +
+                    $"p95={benchmark.P95Ms:F1}ms " +
+                    $"p99={benchmark.P99Ms:F1}ms " +
+                    $"CPU avg/max={benchmark.CpuAveragePercent:F1}%/{benchmark.CpuMaxPercent:F1}% " +
+                    $"MEM avg/max/end={benchmark.MemoryAverageMb:F1}/{benchmark.MemoryMaxMb:F1}/{benchmark.MemoryEndMb:F1}MB " +
+                    $"completed={result.Requests} errors={result.Errors} timeouts={result.Timeouts}");
 
-        Console.WriteLine();
+                if (result.Errors != 0 || result.Timeouts != 0)
+                    Console.WriteLine($"    First error: {DescribeFirstError(result)}");
+            }
+
+            Console.WriteLine();
+        }
     }
 }
 
@@ -258,8 +283,8 @@ await File.WriteAllTextAsync(
 var csv = new StringBuilder();
 
 csv.AppendLine(
-    "operation,target,concurrency,requests_per_second," +
-    "p50_ms,p95_ms,p99_ms,errors,successful");
+    "operation,target,concurrency,batch_size,requests_per_second,logical_requests_per_second," +
+    "p50_ms,p95_ms,p99_ms,cpu_avg_percent,cpu_max_percent,memory_avg_mb,memory_max_mb,memory_end_mb,errors,successful");
 
 foreach (var r in results)
 {
@@ -268,10 +293,17 @@ foreach (var r in results)
             Csv(BenchmarkOperationExtensions.DisplayName(r.Operation)),
             Csv(r.Target),
             r.Concurrency,
+            r.BatchSize,
             Number(r.RequestsPerSecond),
+            Number(r.LogicalRequestsPerSecond),
             Number(r.P50Ms),
             Number(r.P95Ms),
             Number(r.P99Ms),
+            Number(r.CpuAveragePercent),
+            Number(r.CpuMaxPercent),
+            Number(r.MemoryAverageMb),
+            Number(r.MemoryMaxMb),
+            Number(r.MemoryEndMb),
             r.Errors,
             r.Successful));
 }
@@ -334,10 +366,12 @@ static async Task<RunResult> Run(
     Target target,
     BenchmarkOperation operation,
     int concurrency,
+    int batchSize,
     int seconds,
     int requestTimeoutSeconds,
     int drainTimeoutSeconds,
-    HttpClient client)
+    HttpClient client,
+    string? dockerContainer)
 {
     var latencies = new ConcurrentBag<double>();
     var errors = 0;
@@ -357,6 +391,10 @@ static async Task<RunResult> Run(
     // STARTING new requests after the deadline, while any request already in
     // flight is allowed to finish (or hit its request timeout).
     var deadline = Stopwatch.StartNew();
+    using var metricsCts = new CancellationTokenSource();
+    var metricsTask = dockerContainer is null
+        ? Task.FromResult(new DockerMetrics())
+        : SampleDockerMetricsAsync(dockerContainer, metricsCts.Token, deadline, TimeSpan.FromSeconds(seconds));
 
     var workers = Enumerable.Range(0, concurrency)
         .Select(_ => WorkerAsync())
@@ -392,6 +430,9 @@ static async Task<RunResult> Run(
         // WorkerAsync captures request-level failures.
     }
 
+    metricsCts.Cancel();
+    var metrics = await metricsTask;
+
     return new RunResult(
         requests,
         errors,
@@ -400,7 +441,12 @@ static async Task<RunResult> Run(
         latencies.ToArray(),
         seconds,
         firstError,
-        0);
+        0,
+        metrics.CpuAveragePercent,
+        metrics.CpuMaxPercent,
+        metrics.MemoryAverageMb,
+        metrics.MemoryMaxMb,
+        metrics.MemoryEndMb);
 
     async Task WorkerAsync()
     {
@@ -408,12 +454,7 @@ static async Task<RunResult> Run(
         {
             var body = operation == BenchmarkOperation.QueryTop50
                 ? JsonSerializer.Serialize(new { query })
-                : JsonSerializer.Serialize(new
-                {
-                    query = mutation,
-                    operationName = "CreateCustomer",
-                    variables = CreateMutationVariables()
-                });
+                : JsonSerializer.Serialize(BuildMutationBatch(batchSize));
 
             using var content = new StringContent(
                 body,
@@ -482,6 +523,74 @@ static async Task<RunResult> Run(
             // boundary is counted, but no new request is started.
         }
     }
+}
+
+static object BuildMutationBatch(int batchSize)
+{
+    if (batchSize == 1)
+    {
+        return new
+        {
+            query = mutation,
+            operationName = "CreateCustomer",
+            variables = CreateMutationVariables()
+        };
+    }
+
+    var sb = new StringBuilder();
+    sb.AppendLine("mutation BenchmarkMutationBatch {");
+    for (var i = 0; i < batchSize; i++)
+    {
+        var alias = "m" + i;
+        sb.Append("  ").Append(alias).Append(": createCustomer(input: ");
+        sb.Append("{ customerKey: \"").Append(Guid.NewGuid()).Append("\" ");
+        sb.Append("firstName: \"Benchmark\", lastName: \"Customer\", fullName: \"Benchmark Customer\", ");
+        sb.Append("customerBankingRelationship: [{ customerBankingRelationshipKey: \"").Append(Guid.NewGuid()).Append("\", ");
+        sb.Append("contract: [{ contractKey: \"").Append(Guid.NewGuid()).Append("\", amount: 1000.50, transaction: ");
+        sb.Append("[{ transactionKey: \"").Append(Guid.NewGuid()).Append("\", amount: 100, balance: 1200 }, ");
+        sb.Append("{ transactionKey: \"").Append(Guid.NewGuid()).Append("\", amount: 125, balance: 1075 }] }]");
+        sb.AppendLine(" }] ) { id customerKey }");
+    }
+    sb.AppendLine("}");
+    return new { query = sb.ToString(), operationName = "BenchmarkMutationBatch" };
+}
+
+static async Task<DockerMetrics> SampleDockerMetricsAsync(string container, CancellationToken cancellationToken, Stopwatch phase, TimeSpan duration)
+{
+    var cpu = new List<double>();
+    var mem = new List<double>();
+    while (!cancellationToken.IsCancellationRequested && phase.Elapsed < duration + TimeSpan.FromSeconds(2))
+    {
+        var sample = await ReadDockerStatsAsync(container);
+        if (sample is not null) { cpu.Add(sample.Value.CpuPercent); mem.Add(sample.Value.MemoryMb); }
+        try { await Task.Delay(500, cancellationToken); } catch (OperationCanceledException) { break; }
+    }
+    return new DockerMetrics(
+        cpu.Count == 0 ? 0 : cpu.Average(),
+        cpu.Count == 0 ? 0 : cpu.Max(),
+        mem.Count == 0 ? 0 : mem.Average(),
+        mem.Count == 0 ? 0 : mem.Max(),
+        mem.Count == 0 ? 0 : mem[^1]);
+}
+
+static async Task<(double CpuPercent, double MemoryMb)?> ReadDockerStatsAsync(string container)
+{
+    var psi = new ProcessStartInfo("docker", $"stats --no-stream --format \"{{.CPUPerc}};{{.MemUsage}}\" {container}")
+    { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
+    using var process = Process.Start(psi);
+    if (process is null) return null;
+    var output = (await process.StandardOutput.ReadToEndAsync()).Trim();
+    await process.WaitForExitAsync();
+    if (string.IsNullOrWhiteSpace(output)) return null;
+    var parts = output.Split(';', 2);
+    if (parts.Length != 2 || !double.TryParse(parts[0].TrimEnd('%'), NumberStyles.Float, CultureInfo.InvariantCulture, out var cpu)) return null;
+    var memText = parts[1].Split('/', 2)[0].Trim();
+    var multiplier = memText.EndsWith("GiB", StringComparison.OrdinalIgnoreCase) ? 1024 : memText.EndsWith("KiB", StringComparison.OrdinalIgnoreCase) ? 1.0/1024 : 1;
+    var numeric = memText.Replace("GiB", "", StringComparison.OrdinalIgnoreCase).Replace("MiB", "", StringComparison.OrdinalIgnoreCase).Replace("KiB", "", StringComparison.OrdinalIgnoreCase).Replace("B", "", StringComparison.OrdinalIgnoreCase).Trim();
+    if (!double.TryParse(numeric, NumberStyles.Float, CultureInfo.InvariantCulture, out var mem)) return null;
+    if (memText.Contains("MiB", StringComparison.OrdinalIgnoreCase)) multiplier = 1;
+    if (memText.Contains("B", StringComparison.OrdinalIgnoreCase) && !memText.Contains("iB", StringComparison.OrdinalIgnoreCase)) multiplier = 1.0 / (1024 * 1024);
+    return (cpu, mem * multiplier);
 }
 
 static string ToHealthUrl(string url)
@@ -618,8 +727,8 @@ static string BuildMarkdownReport(
     sb.AppendLine();
     sb.AppendLine("## Results");
     sb.AppendLine();
-    sb.AppendLine("| Operation | Target | Concurrency | RPS | p50 | p95 | p99 | Errors |");
-    sb.AppendLine("|---|---|---:|---:|---:|---:|---:|---:|");
+    sb.AppendLine("| Operation | Target | Concurrency | Batch | RPS | Logical/s | p50 | p95 | p99 | CPU avg/max | MEM avg/max/end | Errors |");
+    sb.AppendLine("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|");
 
     foreach (var r in report.Results)
     {
@@ -627,10 +736,14 @@ static string BuildMarkdownReport(
             $"| {BenchmarkOperationExtensions.DisplayName(r.Operation)} | " +
             $"{r.Target} | " +
             $"{r.Concurrency} | " +
+            $"{r.BatchSize} | " +
             $"{Number(r.RequestsPerSecond)} | " +
+            $"{Number(r.LogicalRequestsPerSecond)} | " +
             $"{Number(r.P50Ms)} ms | " +
             $"{Number(r.P95Ms)} ms | " +
             $"{Number(r.P99Ms)} ms | " +
+            $"{Number(r.CpuAveragePercent)}/{Number(r.CpuMaxPercent)}% | " +
+            $"{Number(r.MemoryAverageMb)}/{Number(r.MemoryMaxMb)}/{Number(r.MemoryEndMb)} MB | " +
             $"{r.Errors} |");
     }
 
@@ -698,39 +811,43 @@ record RunResult(
     double[] Latencies,
     int DurationSeconds,
     string? FirstError,
-    int Drained)
+    int Drained,
+    double CpuAveragePercent,
+    double CpuMaxPercent,
+    double MemoryAverageMb,
+    double MemoryMaxMb,
+    double MemoryEndMb)
 {
-    public double RequestsPerSecond =>
-        Requests /
-        (double)Math.Max(1, DurationSeconds);
+    public double RequestsPerSecond => Requests / (double)Math.Max(1, DurationSeconds);
 }
+
+record DockerMetrics(
+    double CpuAveragePercent = 0,
+    double CpuMaxPercent = 0,
+    double MemoryAverageMb = 0,
+    double MemoryMaxMb = 0,
+    double MemoryEndMb = 0);
 
 record BenchmarkResult(
     BenchmarkOperation Operation,
     string Target,
     int Concurrency,
+    int BatchSize,
     double RequestsPerSecond,
+    double LogicalRequestsPerSecond,
     double P50Ms,
     double P95Ms,
     double P99Ms,
     int Errors,
+    double CpuAveragePercent,
+    double CpuMaxPercent,
+    double MemoryAverageMb,
+    double MemoryMaxMb,
+    double MemoryEndMb,
     bool Successful)
 {
-    public static BenchmarkResult Failed(
-        BenchmarkOperation operation,
-        Target target,
-        int concurrency,
-        int errors) =>
-        new(
-            operation,
-            target.Name,
-            concurrency,
-            0,
-            0,
-            0,
-            0,
-            errors,
-            false);
+    public static BenchmarkResult Failed(BenchmarkOperation operation, Target target, int concurrency, int batchSize, int errors) =>
+        new(operation, target.Name, concurrency, batchSize, 0, 0, 0, 0, 0, errors, 0, 0, 0, 0, 0, false);
 }
 
 record BenchmarkReport(

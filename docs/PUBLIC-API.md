@@ -1,17 +1,17 @@
 # Public API
 
-Foundgine exposes a deliberately small application-facing facade:
+Foundgine exposes a deliberately small application-facing facade. Applications should normally obtain `IFoundgine` through dependency injection:
 
 ```csharp
-var engine = new FoundgineEngine(
-    model,
-    authorizationPolicy,
-    planner,
-    providerCompiler,
-    executionProvider);
+services.AddFoundgine(semanticModel, authorizationPolicy);
 
-var result = await engine.ExecuteAsync(request, context);
+var foundgine = services.BuildServiceProvider()
+    .GetRequiredService<IFoundgine>();
+
+var result = await foundgine.ExecuteAsync(request, context);
 ```
+
+The concrete `FoundgineEngine` is an internal orchestration implementation. Application code should use the stable `IFoundgine` contract.
 
 The facade owns the pipeline:
 
@@ -78,14 +78,10 @@ Claims/roles and cache options should be added to the execution boundary only af
 The recommended application-facing registration is:
 
 ```csharp
-services.AddFoundgine(options =>
-{
-    options.Model = semanticModel;
-    options.AuthorizationPolicy = authorizationPolicy;
-});
+services.AddFoundgine(semanticModel, authorizationPolicy);
 ```
 
-Provider adapters register the provider-neutral services separately:
+Provider adapters register the provider-neutral services separately. Application configuration normally only needs the semantic model and authorization policy:
 
 ```csharp
 services.AddSingleton<IProviderPlanCompiler>(compiler);

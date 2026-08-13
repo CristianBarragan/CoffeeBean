@@ -24,7 +24,7 @@ public sealed class ResultMaterializer
         foreach (var row in result.Rows)
             AddNode(plan.Root, row, roots, null);
 
-        return new MaterializedResult(roots);
+        return new MaterializedResult(roots, result.PageInfo, result.Evidence);
     }
 
     private void AddNode(
@@ -46,9 +46,7 @@ public sealed class ResultMaterializer
                 $"Root entity '{entity.Name}' has a null identity value.");
         }
 
-        var node = siblings.FirstOrDefault(x =>
-            x.Values.TryGetValue(identityField, out var value) &&
-            Equals(value, identityValue));
+        var node = siblings.FirstOrDefault(x => Equals(x.IdentityValue, identityValue));
 
         if (node is null)
         {
@@ -56,7 +54,7 @@ public sealed class ResultMaterializer
                 field => field,
                 field => GetValue(row, planNode, field));
 
-            node = new MaterializedNode(planNode.Id, planNode.EntityId, values);
+            node = new MaterializedNode(planNode.Id, planNode.EntityId, identityValue, values);
             siblings.Add(node);
         }
 

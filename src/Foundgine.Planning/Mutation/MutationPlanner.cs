@@ -133,56 +133,10 @@ public sealed class MutationPlanner
         for (var i = 0; i < intent.Operations.Count; i++)
         {
             var source = intent.Operations[i];
-            var plan = source switch
-            {
-                MutationIntent mutation => Plan(mutation),
-                UpsertIntent upsert => Plan(upsert),
-                _ => throw new NotSupportedException(
-                    $"Unsupported mutation intent '{source.GetType().Name}'.")
-            };
-
-            if (plan.Operations.Count != 1)
-                throw new InvalidOperationException("Each batch intent must produce exactly one mutation operation.");
-
-            operations.Add(plan.Operations[0]);
+            operations.Add(PlanSingle(source));
         }
 
-        var dependencies = new List<MutationDependency>();
-        for (var targetIndex = 0; targetIndex < operations.Count; targetIndex++)
-        {
-            foreach (var field in operations[targetIndex].Fields)
-            {
-                if (field.Source is null)
-                    continue;
-
-                var sourceIndex = field.Source.SourceOperationIndex;
-                if (sourceIndex < 0 || sourceIndex >= operations.Count)
-                    throw new InvalidOperationException(
-                        $"Mutation operation {targetIndex} references invalid source operation {sourceIndex}.");
-
-                if (sourceIndex >= targetIndex)
-                    throw new InvalidOperationException(
-                        $"Mutation operation {targetIndex} must reference an earlier operation; source {sourceIndex} is not earlier.");
-
-                var sourceOperation = operations[sourceIndex];
-                var sourceReturns = sourceOperation.ReturnFields ?? Array.Empty<FieldId>();
-
-                if (!sourceReturns.Contains(field.Source.SourceField))
-                {
-                    throw new InvalidOperationException(
-                        $"Mutation operation {targetIndex} references field '{field.Source.SourceField.Value}' " +
-                        $"from operation {sourceIndex}, but that field is not returned.");
-                }
-
-                dependencies.Add(new MutationDependency(
-                    sourceIndex,
-                    targetIndex,
-                    field.Source.SourceField,
-                    field.Column));
-            }
-        }
-
-        return new MutationBatchPlan(operations, dependencies);
+        return new MutationBatchPlan(operations, BuildDependencies(operations));
     }
 
     /// <summary>
@@ -229,16 +183,7 @@ public sealed class MutationPlanner
         var operations = new List<MutationOperation>(intents.Count);
         foreach (var source in intents)
         {
-            var plan = source switch
-            {
-                MutationIntent mutation => Plan(mutation),
-                UpsertIntent upsert => Plan(upsert),
-                _ => throw new NotSupportedException(
-                    $"Unsupported mutation intent '{source.GetType().Name}'.")
-            };
-            if (plan.Operations.Count != 1)
-                throw new InvalidOperationException("Each nested mutation node must produce exactly one operation.");
-            operations.Add(plan.Operations[0]);
+            operations.Add(PlanSingle(source));
         }
 
         foreach (var binding in bindings)
@@ -293,7 +238,30 @@ public sealed class MutationPlanner
             operations[binding.ChildIndex] = child with { Fields = fields };
         }
 
+        return new MutationBatchPlan(operations, BuildDependencies(operations));
+    }
+
+    private MutationOperation PlanSingle(IMutationIntent intent)
+    {
+        var plan = intent switch
+        {
+            MutationIntent mutation => Plan(mutation),
+            UpsertIntent upsert => Plan(upsert),
+            _ => throw new NotSupportedException(
+                $"Unsupported mutation intent '{intent.GetType().Name}'.")
+        };
+
+        if (plan.Operations.Count != 1)
+            throw new InvalidOperationException("Each mutation intent must produce exactly one mutation operation.");
+
+        return plan.Operations[0];
+    }
+
+    private static IReadOnlyList<MutationDependency> BuildDependencies(
+        IReadOnlyList<MutationOperation> operations)
+    {
         var dependencies = new List<MutationDependency>();
+
         for (var targetIndex = 0; targetIndex < operations.Count; targetIndex++)
         {
             foreach (var field in operations[targetIndex].Fields)
@@ -304,13 +272,13 @@ public sealed class MutationPlanner
                 var sourceIndex = field.Source.SourceOperationIndex;
                 if (sourceIndex < 0 || sourceIndex >= operations.Count || sourceIndex >= targetIndex)
                     throw new InvalidOperationException(
-                        $"Nested mutation operation {targetIndex} has an invalid dependency on operation {sourceIndex}.");
+                        $"Mutation operation {targetIndex} must reference an earlier operation; source {sourceIndex} is invalid.");
 
                 var sourceOperation = operations[sourceIndex];
                 var sourceReturns = sourceOperation.ReturnFields ?? Array.Empty<FieldId>();
                 if (!sourceReturns.Contains(field.Source.SourceField))
                     throw new InvalidOperationException(
-                        $"Nested mutation operation {targetIndex} references field '{field.Source.SourceField.Value}' " +
+                        $"Mutation operation {targetIndex} references field '{field.Source.SourceField.Value}' " +
                         $"from operation {sourceIndex}, but that field is not returned.");
 
                 dependencies.Add(new MutationDependency(
@@ -321,7 +289,7 @@ public sealed class MutationPlanner
             }
         }
 
-        return new MutationBatchPlan(operations, dependencies);
+        return dependencies;
     }
 
     private static void ValidateFilter(

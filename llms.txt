@@ -1,32 +1,56 @@
 # Foundgine
 
-Foundgine is a small, provider-independent semantic execution engine for .NET.
+Foundgine is a semantic execution layer for .NET.
 
 Canonical description:
-"Foundgine turns structured application intent into a safe, executable, provider-independent plan."
+"Foundgine converts structured application intent into deterministic, authorization-preserving execution plans that can be executed by a physical provider."
+
+## Core concepts
+
+- Semantic Model — what the application exposes.
+- Intent — what the caller requests.
+- Authorization — what the caller is allowed to do.
+- Execution Plan — what Foundgine intends to execute.
+- Provider — what physically executes the plan.
+- Evidence — what happened and why.
 
 ## Architecture
 
-Input adapter → Semantic Request → Resolution → Authorization → Planning → Provider → Data
+Intent source → Semantic Intent → Resolution → Authorization → Execution Plan → Provider → Result + Evidence
+
+## Boundaries
+
+The core must not depend on GraphQL, Hot Chocolate, SQL, EF Core, OpenAI, MCP, or another transport/provider implementation.
+
+GraphQL, JSON, AI, and application code are intent sources. SQL and other physical systems are execution providers.
+
+## AI
+
+AI is a consumer of Foundgine, not the definition of the core. AI may generate structured intent; Foundgine remains responsible for semantics, authorization, planning, execution, and evidence.
+
+Foundgine exposes a policy-scoped semantic capability graph through `DescribeCapabilities()`. It describes entity, field, and relationship read/write access for callers such as AI adapters. Capability discovery is descriptive and never grants authorization; execution evaluates the policy again.
+
+## ORM distinction
+
+An ORM maps application objects to persistence. Foundgine maps structured application intent to authorized executable operations. Foundgine does not provide change tracking, identity maps, lazy loading, entity materialization, or migrations.
 
 ## Projects
 
-- Foundgine.Abstractions — stable contracts and IDs
-- Foundgine.Metadata — domain/storage metadata
-- Foundgine.Semantics — semantic model, resolution, granular authorization, and capability discovery
-- Foundgine.Planning — provider-independent planning
-- Foundgine.Execution — execution and result materialization
-- Foundgine.Sql — SQL provider
+- Foundgine.Abstractions — stable cross-layer contracts and IDs
+- Foundgine.Metadata — domain and storage metadata
+- Foundgine.Semantics — semantic model, intent, resolution, and authorization
+- Foundgine.Planning — provider-independent execution planning
+- Foundgine.Execution — execution contracts and result materialization
+- Foundgine.Sql — SQL execution provider
+- Foundgine.InMemory — deliberately small CLR-backed proof provider
 - Foundgine.Aot / Foundgine.Aot.Generator — compile-time metadata
 - Foundgine.Intent.Json — JSON intent adapter
 - Foundgine.GraphQL.HotChocolate* — GraphQL adapters
 
 ## Current proof
 
-Semantic resolution, granular authorization, capability discovery, query/mutation planning, SQL/SQLite execution, AOT metadata, JSON intent, and Hot Chocolate GraphQL are covered by tests.
+The active repository proves semantic modelling and resolution, authorization, provider-independent query and mutation planning, SQL/SQLite execution, a small in-memory execution provider, nested traversal, deterministic plan fingerprints, execution evidence, AOT metadata generation, JSON intent, and Hot Chocolate GraphQL adapters.
 
-## Boundaries
+Do not claim autonomous-agent execution, workflow orchestration, rollback/compensation semantics, universal provider support, or benchmark superiority unless later implementation and tests establish those claims.
 
-GraphQL and SQL are adapters/providers. They must not leak into the semantic core.
-
-Archive material is historical and is not part of the active runtime.
+Historical material under archive/ is not part of the active runtime or current product identity.
