@@ -16,7 +16,11 @@ A broken API or workload never stops the remaining matrix. Failed rows are marke
 
 ## Measurement
 
-The loader measures completed requests/second and p50/p95/p99 latency at each configured concurrency level. Request timeouts are tracked separately from application errors. A request already in flight when the measurement window expires is allowed to finish; the per-request timeout prevents a broken target from hanging a benchmark run indefinitely.
+The loader measures completed GraphQL requests/second and p50/p95/p99 latency at each configured concurrency level. Request timeouts are tracked separately from application errors. A request already in flight when the measurement window expires is allowed to finish; the per-request timeout prevents a broken target from hanging a benchmark run indefinitely.
+
+For every measurement phase, the loader can also sample the target Docker container with `docker stats --no-stream`. The report records average/max CPU percentage and average/max/end memory in MB. Docker metrics are diagnostic and never make a benchmark fail.
+
+The upsert workload is exercised with logical batch sizes `1`, `10`, and `50`. These are burst sizes in the benchmark driver: each worker issues that many normal GraphQL HTTP operations back-to-back before starting the next batch. They are **not** an HTTP GraphQL batch request and should not be presented as server-side SQL batch sizes.
 
 ## Workloads
 

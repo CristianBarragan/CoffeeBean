@@ -53,6 +53,39 @@ public sealed class Query
 
 public sealed class Mutation
 {
+    public async Task<CustomerGraph> UpsertCustomer(
+        CreateCustomerInput input,
+        string[]? onConflict,
+        BankingEntityContext db,
+        CancellationToken cancellationToken)
+    {
+        var customer = await db.Customer
+            .SingleOrDefaultAsync(x => x.CustomerKey == input.CustomerKey, cancellationToken);
+
+        if (customer is null)
+        {
+            customer = new Customer
+            {
+                CustomerKey = input.CustomerKey,
+                FirstName = input.FirstName,
+                LastName = input.LastName,
+                FullName = input.FullName,
+                CustomerType = input.CustomerType
+            };
+            db.Customer.Add(customer);
+        }
+        else
+        {
+            customer.FirstName = input.FirstName;
+            customer.LastName = input.LastName;
+            customer.FullName = input.FullName;
+            customer.CustomerType = input.CustomerType;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        return CustomerGraph.From(customer);
+    }
+
     public async Task<CustomerGraph> CreateCustomer(CreateCustomerInput input, BankingEntityContext db, CancellationToken cancellationToken)
     {
         var customer = new Customer { CustomerKey = input.CustomerKey, FirstName = input.FirstName,

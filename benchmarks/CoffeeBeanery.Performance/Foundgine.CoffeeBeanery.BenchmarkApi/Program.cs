@@ -9,6 +9,7 @@ using Foundgine.Semantics.Authorization;
 using Foundgine.Semantics.Resolution;
 using Foundgine.Sql;
 using Foundgine.Sql.Mutation;
+using Foundgine.Sql.Mutation.Postgres;
 using Npgsql;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
@@ -30,7 +31,6 @@ var warmQueryCache = new MemoryProviderPlanCache();
 var mutationAdapter = new HotChocolateMutationAdapter(model, metadata);
 var mutationPlanner = new MutationPlanner(metadata);
 var mutationAuthorizer = new MutationAuthorizer(metadata, policy);
-var mutationCompiler = new SqlMutationCompiler(metadata);
 var mutationMaterializer = new MutationResultMaterializer(model);
 
 var app = builder.Build();
@@ -61,10 +61,8 @@ app.MapPost("/graphql/{mode}", async (
 
             var plan = mutationPlanner.Plan(adaptation.Intent);
             mutationAuthorizer.Authorize(plan);
-            var providerPlan = mutationCompiler.Compile(plan);
-
-            var result = new SqlMutationExecutionProvider(connection)
-                .ExecuteBatch(providerPlan, new ExecutionContext());
+            var result = new PostgresBatchedMutationExecutionProvider(connection, metadata)
+                .ExecuteBatch(plan, new ExecutionContext());
 
             var materialized = mutationMaterializer.Materialize(adaptation.Intent, result);
             var root = materialized.Roots.FirstOrDefault();

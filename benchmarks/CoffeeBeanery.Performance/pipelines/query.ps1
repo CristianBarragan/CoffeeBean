@@ -156,7 +156,8 @@ function Run-LoadTest {
     param(
         [string]$Name,
         [string]$Url,
-        [string]$Directory
+        [string]$Directory,
+        [string]$ContainerName
     )
 
     $reportDirectory = Join-Path $ReportRoot $Directory
@@ -172,6 +173,8 @@ function Run-LoadTest {
     $env:BENCHMARK_READINESS_TIMEOUT_SECONDS = "120"
     $env:BENCHMARK_RESET_TIMEOUT_SECONDS = "30"
     $env:BENCHMARK_CONCURRENCY = "1,8,32"
+    $env:BENCHMARK_BATCH_SIZES = "1,10,50"
+    $env:BENCHMARK_DOCKER_CONTAINER = $ContainerName
     $env:BENCHMARK_REPORT_DIRECTORY = $reportDirectory
 
     Invoke-Checked dotnet @(
@@ -185,6 +188,8 @@ function Run-LoadTest {
 
     Remove-Item Env:BENCHMARK_TARGET_NAME -ErrorAction SilentlyContinue
     Remove-Item Env:BENCHMARK_TARGET_URL -ErrorAction SilentlyContinue
+    Remove-Item Env:BENCHMARK_BATCH_SIZES -ErrorAction SilentlyContinue
+    Remove-Item Env:BENCHMARK_DOCKER_CONTAINER -ErrorAction SilentlyContinue
 }
 
 function Stop-Api {
@@ -204,7 +209,7 @@ try {
     Reset-Database
     Start-Api "coffeebeanery-query-hotchocolate" $HcImage 4300
     try {
-        Run-LoadTest "Hot Chocolate + EF Core" "http://localhost:4300/graphql" "hotchocolate"
+        Run-LoadTest "Hot Chocolate + EF Core" "http://localhost:4300/graphql" "hotchocolate" "coffeebeanery-query-hotchocolate"
     }
     finally {
         Stop-Api "coffeebeanery-query-hotchocolate"
@@ -213,7 +218,7 @@ try {
     Reset-Database
     Start-Api "coffeebeanery-query-foundgine-cold" $FgImage 4301
     try {
-        Run-LoadTest "Foundgine - no cache" "http://localhost:4301/graphql/cold" "foundgine-cold"
+        Run-LoadTest "Foundgine - no cache" "http://localhost:4301/graphql/cold" "foundgine-cold" "coffeebeanery-query-foundgine-cold"
     }
     finally {
         Stop-Api "coffeebeanery-query-foundgine-cold"
@@ -222,7 +227,7 @@ try {
     Reset-Database
     Start-Api "coffeebeanery-query-foundgine-warm" $FgImage 4302
     try {
-        Run-LoadTest "Foundgine - provider-plan cache" "http://localhost:4302/graphql/warm" "foundgine-warm"
+        Run-LoadTest "Foundgine - provider-plan cache" "http://localhost:4302/graphql/warm" "foundgine-warm" "coffeebeanery-query-foundgine-warm"
     }
     finally {
         Stop-Api "coffeebeanery-query-foundgine-warm"
