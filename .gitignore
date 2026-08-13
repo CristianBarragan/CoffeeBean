@@ -4,3 +4,6 @@
 *.user
 *.suo
 TestResults/
+
+# Generated benchmark results
+benchmarks/CoffeeBeanery.Performance/reports/

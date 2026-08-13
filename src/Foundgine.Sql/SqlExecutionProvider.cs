@@ -13,10 +13,12 @@ namespace Foundgine.Sql;
 public sealed class SqlExecutionProvider : IExecutionProvider
 {
     private readonly DbConnection _connection;
+    private readonly DbTransaction? _transaction;
 
-    public SqlExecutionProvider(DbConnection connection)
+    public SqlExecutionProvider(DbConnection connection, DbTransaction? transaction = null)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
+        _transaction = transaction;
     }
 
     public async Task<ExecutionResult> ExecuteAsync(
@@ -34,6 +36,7 @@ public sealed class SqlExecutionProvider : IExecutionProvider
             await _connection.OpenAsync(cancellationToken);
 
         await using var command = _connection.CreateCommand();
+        command.Transaction = _transaction;
         command.CommandText = sqlPlan.CommandText;
         foreach (var binding in sqlPlan.EffectiveParameters)
         {

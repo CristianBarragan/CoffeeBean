@@ -63,7 +63,7 @@ var warmup = GetInt("BENCHMARK_WARMUP_SECONDS", 3);
 var requestTimeoutSeconds = GetInt("BENCHMARK_REQUEST_TIMEOUT_SECONDS", 5);
 var readinessTimeoutSeconds = GetInt("BENCHMARK_READINESS_TIMEOUT_SECONDS", 180);
 var drainTimeoutSeconds = GetInt("BENCHMARK_RESET_TIMEOUT_SECONDS", 180);
-var concurrency = (Environment.GetEnvironmentVariable("BENCHMARK_CONCURRENCY") ?? "1,8,32")
+var concurrency = (Environment.GetEnvironmentVariable("BENCHMARK_CONCURRENCY") ?? "1,8,16,32,64")
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
     .Select(int.Parse)
     .Where(x => x > 0)
@@ -127,20 +127,21 @@ var results = new List<BenchmarkResult>();
 foreach (var operation in new[]
          {
              BenchmarkOperation.QueryTop50,
-             BenchmarkOperation.MutationWholeGraph
+             BenchmarkOperation.MutationWholeGraph,
+             BenchmarkOperation.MutationThenQuery
          })
 {
     Console.WriteLine($"== {BenchmarkOperationExtensions.DisplayName(operation)} ==");
 
     foreach (var target in targets)
     {
-        var operationBatchSizes = operation == BenchmarkOperation.MutationWholeGraph
+        var operationBatchSizes = operation is BenchmarkOperation.MutationWholeGraph or BenchmarkOperation.MutationThenQuery
             ? batchSizes
             : new[] { 1 };
 
         foreach (var batchSize in operationBatchSizes)
         {
-            if (operation == BenchmarkOperation.MutationWholeGraph)
+            if (operation is BenchmarkOperation.MutationWholeGraph or BenchmarkOperation.MutationThenQuery)
                 Console.WriteLine($"  Batch size={batchSize}");
 
             foreach (var c in concurrency)
@@ -452,6 +453,12 @@ static async Task<RunResult> Run(
     {
         while (deadline.Elapsed < TimeSpan.FromSeconds(seconds))
         {
+            if (operation == BenchmarkOperation.MutationThenQuery)
+            {
+                await RunMutationThenQueryAsync();
+                continue;
+            }
+
             var body = operation == BenchmarkOperation.QueryTop50
                 ? JsonSerializer.Serialize(new { query })
                 : JsonSerializer.Serialize(BuildMutationBatch(batchSize));
@@ -522,6 +529,72 @@ static async Task<RunResult> Run(
             // Therefore an in-flight request that finishes after the phase
             // boundary is counted, but no new request is started.
         }
+
+        // Upsert-then-select as ONE measured logical unit: sends the mutation
+        // (respecting batchSize, same as MutationWholeGraph) and, only if it
+        // succeeded, immediately follows with the QueryTop50 select - this is
+        // the realistic "write, then refetch" client pattern that neither
+        // QueryTop50 nor MutationWholeGraph alone measures. One stopwatch spans
+        // both calls so p50/p95/p99 reflect the full round-trip a real client
+        // would pay, not just one leg of it.
+        async Task RunMutationThenQueryAsync()
+        {
+            var stopwatch = Stopwatch.StartNew();
+            string? errorBody = null;
+            var timedOut = false;
+
+            async Task<bool> PostAsync(string requestBody)
+            {
+                using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+                using var requestCts = new CancellationTokenSource(TimeSpan.FromSeconds(requestTimeoutSeconds));
+
+                try
+                {
+                    using var response = await client.PostAsync(target.Url, content, requestCts.Token);
+                    var responseBody = await response.Content.ReadAsStringAsync();
+
+                    if (!response.IsSuccessStatusCode ||
+                        responseBody.Contains("\"errors\"", StringComparison.OrdinalIgnoreCase))
+                    {
+                        errorBody ??= responseBody;
+                        return false;
+                    }
+
+                    return true;
+                }
+                catch (OperationCanceledException) when (requestCts.IsCancellationRequested)
+                {
+                    timedOut = true;
+                    errorBody ??= $"request timeout after {requestTimeoutSeconds}s";
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    errorBody ??= ex.ToString();
+                    return false;
+                }
+            }
+
+            var mutationOk = await PostAsync(JsonSerializer.Serialize(BuildMutationBatch(batchSize)));
+
+            // Only refetch if the write succeeded - charging read latency against
+            // a failed write would misrepresent both halves of the measurement.
+            var queryOk = mutationOk && await PostAsync(JsonSerializer.Serialize(new { query }));
+
+            stopwatch.Stop();
+            Interlocked.Increment(ref requests);
+            latencies.Add(stopwatch.Elapsed.TotalMilliseconds);
+
+            if (!mutationOk || !queryOk)
+            {
+                if (timedOut)
+                    Interlocked.Increment(ref timeouts);
+                else
+                    Interlocked.Increment(ref errors);
+
+                Interlocked.CompareExchange(ref firstError, errorBody, null);
+            }
+        }
     }
 }
 
@@ -549,7 +622,11 @@ static object BuildMutationBatch(int batchSize)
         sb.Append("contract: [{ contractKey: \"").Append(Guid.NewGuid()).Append("\", amount: 1000.50, transaction: ");
         sb.Append("[{ transactionKey: \"").Append(Guid.NewGuid()).Append("\", amount: 100, balance: 1200 }, ");
         sb.Append("{ transactionKey: \"").Append(Guid.NewGuid()).Append("\", amount: 125, balance: 1075 }] }]");
-        sb.AppendLine(" }] ) { id customerKey }");
+        // Closing braces, innermost to outermost:
+        //   }]   closes the transaction[] item + customerBankingRelationship[] item
+        //   }    closes the outer `input: { ... }` object itself (was previously missing)
+        //   )    closes createCustomer(input: ...)
+        sb.AppendLine(" }] } ) { id customerKey }");
     }
     sb.AppendLine("}");
     return new { query = sb.ToString(), operationName = "BenchmarkMutationBatch" };
@@ -784,7 +861,8 @@ record Target(
 enum BenchmarkOperation
 {
     QueryTop50,
-    MutationWholeGraph
+    MutationWholeGraph,
+    MutationThenQuery
 }
 
 static class BenchmarkOperationExtensions
@@ -798,6 +876,9 @@ static class BenchmarkOperationExtensions
 
             BenchmarkOperation.MutationWholeGraph =>
                 "Mutation whole graph",
+
+            BenchmarkOperation.MutationThenQuery =>
+                "Upsert + select (mutation then query top 50)",
 
             _ => operation.ToString()
         };

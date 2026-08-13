@@ -28,7 +28,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 The runner sets:
 
 ```text
-BENCHMARK_CONCURRENCY=1,8,32
+BENCHMARK_CONCURRENCY=1,8,16,32,64
 BENCHMARK_BATCH_SIZES=1,10,50
 BENCHMARK_DOCKER_CONTAINER=<API container>
 ```
