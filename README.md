@@ -33,6 +33,10 @@ The important boundary is simple:
 
 > **Foundgine owns semantics, intent, authorization, planning, and execution coordination. It does not own the transport or the physical provider.**
 
+## Product identity
+
+Foundgine is a **semantic execution layer for .NET**. Its job is to provide one semantic boundary between structured application intent and physical execution. See [Product identity](docs/PRODUCT-IDENTITY.md) for the canonical positioning and non-goals.
+
 ## Why Foundgine exists
 
 Modern applications expose data and operations through many different surfaces: application code, APIs, GraphQL, JSON, and increasingly AI-generated requests.
@@ -197,6 +201,7 @@ The repository proves a deliberately small non-SQL in-memory execution provider 
 | `Foundgine.Semantics` | Semantic model, intent, resolution, and authorization |
 | `Foundgine.Planning` | Provider-independent execution planning |
 | `Foundgine.Execution` | Execution contracts and result materialization |
+| `Foundgine.InMemory` | Deliberately small CLR-backed proof provider |
 | `Foundgine.Sql` | SQL execution provider |
 | `Foundgine.Aot` | AOT metadata attributes/contracts |
 | `Foundgine.Aot.Generator` | Roslyn metadata generator |

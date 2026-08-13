@@ -6,6 +6,10 @@
 
 > Foundgine converts structured application intent into deterministic, authorization-preserving execution plans that can be executed by a physical provider.
 
+## Product identity rule
+
+Use **semantic execution layer for .NET** as the primary category. Do not reduce Foundgine to GraphQL, SQL, an ORM, or an AI framework.
+
 ## What Foundgine owns
 
 1. **Semantics** — what the application exposes.

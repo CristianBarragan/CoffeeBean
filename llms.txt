@@ -28,6 +28,8 @@ GraphQL, JSON, AI, and application code are intent sources. SQL and other physic
 
 AI is a consumer of Foundgine, not the definition of the core. AI may generate structured intent; Foundgine remains responsible for semantics, authorization, planning, execution, and evidence.
 
+Foundgine exposes a policy-scoped semantic capability graph through `DescribeCapabilities()`. It describes entity, field, and relationship read/write access for callers such as AI adapters. Capability discovery is descriptive and never grants authorization; execution evaluates the policy again.
+
 ## ORM distinction
 
 An ORM maps application objects to persistence. Foundgine maps structured application intent to authorized executable operations. Foundgine does not provide change tracking, identity maps, lazy loading, entity materialization, or migrations.

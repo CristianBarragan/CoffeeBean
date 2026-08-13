@@ -28,9 +28,12 @@ plugins:
 
 nav:
   - Home: README.md
+  - Product Identity: PRODUCT-IDENTITY.md
+  - AI Capability Interface: AI-CAPABILITY-INTERFACE.md
   - Getting Started: GETTING-STARTED.md
   - Architecture: ARCHITECTURE.md
   - Architecture Boundaries: ARCHITECTURE-BOUNDARIES.md
+  - Authorization Invariants: PRIORITY-3-AUTHORIZATION-INVARIANTS.md
   - Flagship Proof: FLAGSHIP-PROOF.md
   - Provider Independence: PROVIDER-INDEPENDENCE.md
   - Agent Semantic Boundary: AGENT-SEMANTIC-BOUNDARY.md
@@ -47,3 +50,6 @@ nav:
   - Migration: MIGRATION.md
   - Roadmap: ROADMAP.md
   - History: history/README.md
+
+  - Priorities:
+    - Mutation Simplification: PRIORITY-5-MUTATION-SIMPLIFICATION.md

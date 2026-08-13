@@ -45,3 +45,7 @@ reports\query\foundgine-warm
 ## Important
 
 Only PostgreSQL is defined in `compose/postgres.yml`. API containers are deliberately started and removed by `pipelines/query.ps1`, so a failure in one API cannot cause Compose to start or stop the other APIs.
+
+## Methodology
+
+See the repository-level [Benchmark Baseline](../../docs/PRIORITY-8-BENCHMARKS.md) for the benchmark contract, current checked-in baseline, and the planned in-process microbenchmark matrix.

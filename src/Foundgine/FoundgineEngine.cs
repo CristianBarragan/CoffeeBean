@@ -22,7 +22,7 @@ public sealed class FoundgineEngine : IFoundgine
     private readonly IProviderPlanCache _planCache;
     private readonly string _cacheNamespace = Guid.NewGuid().ToString("N");
 
-    public FoundgineEngine(
+    internal FoundgineEngine(
         FoundgineOptions options,
         IProviderPlanCompiler compiler,
         IExecutionProvider provider)

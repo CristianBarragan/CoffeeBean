@@ -1,4 +1,5 @@
 using Foundgine.Execution;
+using Foundgine.Semantics;
 using Foundgine.Semantics.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +11,22 @@ namespace Foundgine;
 /// </summary>
 public static class FoundgineServiceCollectionExtensions
 {
+    public static IServiceCollection AddFoundgine(
+        this IServiceCollection services,
+        SemanticModel model,
+        ISemanticAuthorizationPolicy authorizationPolicy)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(authorizationPolicy);
+
+        return services.AddFoundgine(options =>
+        {
+            options.Model = model;
+            options.AuthorizationPolicy = authorizationPolicy;
+        });
+    }
+
     public static IServiceCollection AddFoundgine(
         this IServiceCollection services,
         Action<FoundgineOptions> configure)
@@ -28,7 +45,10 @@ public static class FoundgineServiceCollectionExtensions
                 "Foundgine requires an ISemanticAuthorizationPolicy.");
 
         services.AddSingleton(options);
-        services.AddSingleton<IFoundgine, FoundgineEngine>();
+        services.AddSingleton<IFoundgine>(serviceProvider => new FoundgineEngine(
+            serviceProvider.GetRequiredService<FoundgineOptions>(),
+            serviceProvider.GetRequiredService<IProviderPlanCompiler>(),
+            serviceProvider.GetRequiredService<IExecutionProvider>()));
 
         return services;
     }

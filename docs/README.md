@@ -4,18 +4,19 @@ Keep this documentation practical. If the code and docs disagree, the code and t
 
 ## Start here
 
-1. [Why Foundgine](WHY-FOUNDGINE.md)
-2. [Getting started](GETTING-STARTED.md)
-3. [Execution Algebra](EXECUTION-ALGEBRA.md)
-4. [Authorization Golden Path](AUTHORIZATION-GOLDEN-PATH.md)
-5. [Architecture](ARCHITECTURE.md)
-6. [Current status](CURRENT-STATUS.md)
-7. [Documentation truth](DOCUMENTATION-TRUTH.md)
-8. [Runtime](RUNTIME.md)
-9. [GraphQL](GRAPHQL.md)
-10. [AOT](AOT.md)
-11. [Testing](TESTING.md)
-12. [Roadmap](ROADMAP.md)
+1. [Product identity](PRODUCT-IDENTITY.md)
+2. [Why Foundgine](WHY-FOUNDGINE.md)
+3. [Getting started](GETTING-STARTED.md)
+4. [Execution Algebra](EXECUTION-ALGEBRA.md)
+5. [Authorization Golden Path](AUTHORIZATION-GOLDEN-PATH.md)
+6. [Architecture](ARCHITECTURE.md)
+7. [Current status](CURRENT-STATUS.md)
+8. [Documentation truth](DOCUMENTATION-TRUTH.md)
+9. [Runtime](RUNTIME.md)
+10. [GraphQL](GRAPHQL.md)
+11. [AOT](AOT.md)
+12. [Testing](TESTING.md)
+13. [Roadmap](ROADMAP.md)
 
 ## Architecture boundaries
 
@@ -29,3 +30,5 @@ Historical design notes and milestone documents live under [history](history/REA
 - [Context-safe plan caching](CONTEXT-SAFE-PLAN-CACHING.md)
 
 - [Execution Evidence](EVIDENCE.md)
+
+- [Benchmark Baseline](PRIORITY-8-BENCHMARKS.md)

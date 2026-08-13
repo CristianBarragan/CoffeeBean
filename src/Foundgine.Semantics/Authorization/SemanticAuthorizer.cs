@@ -88,9 +88,13 @@ public sealed class SemanticAuthorizer
                 authorization = AuthorizationDecision.Combine(authorization, relationshipDecision);
             }
 
-            authorization = AuthorizationDecision.Combine(
-                authorization,
-                AuthorizationDecisionFromPredicate(sourceNode.Authorization));
+            var sourcePredicate = sourceNode.Authorization;
+            if (sourcePredicate is not null && authorization.Predicate != sourcePredicate)
+            {
+                authorization = AuthorizationDecision.Combine(
+                    authorization,
+                    AuthorizationDecisionFromPredicate(sourcePredicate));
+            }
 
             var predicate = authorization.Predicate;
             var node = sourceNode.ParentId is null

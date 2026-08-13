@@ -20,7 +20,7 @@ These operations form a **tree**, preserving request topology and fan-out. They 
 
 ## Query algebra
 
-Query modifiers are currently represented by `SemanticQueryOptions` attached to the root execution node:
+The current read contract carries `SemanticQueryOptions` on the **root execution node**. The current options are:
 
 - `Filter`
 - `Order`
@@ -29,6 +29,8 @@ Query modifiers are currently represented by `SemanticQueryOptions` attached to 
 - `After` (forward cursor pagination)
 
 Their meaning is semantic. A provider is responsible for lowering them while preserving their semantics.
+
+This is an explicit current limitation, not an accidental omission: the execution algebra does **not** yet model independent query clauses on nested result nodes. Nested relationship filtering and aggregation can still be expressed through semantic filter expressions on the root query. Per-child pagination/ordering/filtering is deferred until the result/model semantics are defined.
 
 This is intentional: query modifiers are not SQL operations. For example, a semantic filter may become a SQL `WHERE`, an in-memory predicate, or a remote API constraint.
 
@@ -46,24 +48,19 @@ The minimum mutation vocabulary is:
 
 Complex mutations must be composition of these primitives plus dependencies and returned values. A new mutation concept must justify why it cannot be represented using this vocabulary.
 
-## Target algebra
+## What is frozen in P0.2
 
-The long-term logical vocabulary is expected to converge toward:
+For the current read model, the structural execution algebra is exactly:
 
 ```text
-Read
-Filter
-Project
+Scan
 Traverse
-Aggregate
-Order
-Page
-Mutate
-Bind
-Return
+TraverseConnection
 ```
 
-This is a **directional contract, not a claim that every operation is a first-class `ExecutionPlanNode` today**. Until an operation has a stable semantic contract and provider-independent tests, it must not be added merely to make the enum look complete.
+`Fields`, `SemanticQueryOptions`, and `Authorization` are node data/clauses rather than execution operations. Mutations remain a separate planning algebra.
+
+There is deliberately **no speculative target enum** in the current contract. Concepts such as projection, aggregation, ordering, and pagination will only become new logical constructs if a future semantic requirement proves that the existing node/clauses cannot express them cleanly.
 
 ## What the algebra must never contain
 
@@ -95,9 +92,11 @@ A provider conforms to the algebra when the same logical plan preserves:
 
 A provider is free to use a completely different physical strategy.
 
-## Freeze rule
+## P0.2 freeze rule
 
-Do not add a new logical operation because a provider needs it.
+Do not add a new logical operation because a provider needs it. Do not add one merely because a query feature exists.
+
+A new structural operation is justified only when it represents a fundamentally different kind of logical execution topology and can be specified independently of any provider.
 
 The correct direction is:
 
