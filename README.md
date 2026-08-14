@@ -193,6 +193,48 @@ SQL / EF / REST / other providers
 
 In particular, the semantic core must not take dependencies on GraphQL, Hot Chocolate, SQL, EF Core, OpenAI, or MCP.
 
+## Performance baseline
+
+The repository includes a reproducible PostgreSQL benchmark under `benchmarks/CoffeeBeanery.Performance`. The supplied 2026-08-13 baseline produced several useful engineering findings.
+
+### Query: Foundgine is currently very strong on the tested graph
+
+At concurrency 32, the measured top-50/full-graph workload was:
+
+| Implementation | RPS | p99 | CPU avg | Memory avg |
+|---|---:|---:|---:|---:|
+| Hot Chocolate + EF Core | 156.7 | 417.6 ms | 301.5% | 292.7 MB |
+| Foundgine — no cache | 2,781.6 | 27.4 ms | 176.2% | 97.0 MB |
+| Foundgine — provider-plan cache | 3,012.6 | 24.0 ms | 177.8% | 79.7 MB |
+
+This is a workload-specific result, not a universal performance claim. It is notable because the Foundgine path achieves the higher throughput with substantially lower measured application-container CPU and memory in this workload.
+
+### Mutation: competitive, but not ahead
+
+At concurrency 32 and batch 50, Hot Chocolate + EF Core measured 86,955 logical mutations/s, Foundgine no-cache 69,675, and Foundgine with provider-plan caching 81,910. Foundgine used materially less measured API-container CPU and memory.
+
+The defensible conclusion is therefore not that Foundgine is universally faster: **the current query path is the strongest result, while mutation remains an optimization area where resource efficiency is better but peak throughput is still behind Hot Chocolate + EF Core.**
+
+### Upsert + select: now a proper end-to-end workload
+
+The benchmark harness has been corrected so `Upsert + select` is a real upsert of existing deterministic customer rows followed by the **exact same top-50/full-graph query** used by the standalone query benchmark:
+
+```text
+real upsert
+    ↓
+Customer -> Relationship -> Contract -> Transaction
+```
+
+The complete write-then-refetch path is measured as one logical client operation. Previous rows that were labelled upsert + select but actually used `createCustomer` are historical diagnostics and are not a valid baseline for the corrected workload.
+
+### Cache direction
+
+The current warm path caches the provider execution plan only. It does not cache database results. A future **result cache** could avoid PostgreSQL execution and downstream result materialization for eligible repeated reads. The benchmark should measure cache hit rate, invalidation/authorization correctness, latency, CPU, memory and PostgreSQL load.
+
+A future **FASTER-backed cache provider** is also a planned experiment. It should be evaluated against the same cache workload rather than assumed to be faster.
+
+See [CoffeeBeanery performance analysis](docs/benchmarks/2026-08-13-performance-analysis.md) and the benchmark harness under `benchmarks/CoffeeBeanery.Performance/`.
+
 ## Current proof
 
 The current repository proves the following path:

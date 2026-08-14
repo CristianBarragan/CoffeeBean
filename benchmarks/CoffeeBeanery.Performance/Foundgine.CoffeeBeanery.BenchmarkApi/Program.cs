@@ -8,7 +8,7 @@ using Foundgine.Planning.Mutation;
 using Foundgine.Semantics.Authorization;
 using Foundgine.Semantics.Resolution;
 using Foundgine.Sql;
-using Foundgine.Sql.Mutation;
+using Foundgine.Sql.Mutation.Postgres;
 using Npgsql;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
@@ -30,7 +30,6 @@ var warmQueryCache = new MemoryProviderPlanCache();
 var mutationAdapter = new HotChocolateMutationAdapter(model, metadata);
 var mutationPlanner = new MutationPlanner(metadata);
 var mutationAuthorizer = new MutationAuthorizer(metadata, policy);
-var mutationCompiler = new SqlMutationCompiler(metadata);
 var mutationMaterializer = new MutationResultMaterializer(model);
 
 var app = builder.Build();
@@ -54,33 +53,42 @@ app.MapPost("/graphql/{mode}", async (
 
         if (request.Query.TrimStart().StartsWith("mutation", StringComparison.OrdinalIgnoreCase))
         {
-            var adaptation = mutationAdapter.AdaptResultShape(
+            // Always goes through the batch-capable adapter path now: a document with one
+            // unaliased root field comes back as a single-item list (see
+            // HotChocolateMutationAdapter.AdaptBatchWithResultShape), so this one path
+            // handles both the plain single-mutation request and a real N-item batch
+            // (multiple aliased root fields in one document) without a separate branch.
+            var items = mutationAdapter.AdaptBatchWithResultShape(
                 request.Query,
                 request.Variables,
                 request.OperationName);
 
-            var plan = mutationPlanner.Plan(adaptation.Intent);
+            var plan = mutationPlanner.Plan(items.Select(i => i.Adaptation.Intent).ToArray());
             mutationAuthorizer.Authorize(plan);
-            var providerPlan = mutationCompiler.Compile(plan);
 
-            var result = new SqlMutationExecutionProvider(connection)
-                .ExecuteBatch(providerPlan, new ExecutionContext());
+            // Batches into ONE PostgreSQL statement via unnest() CTEs when the
+            // batch shape allows it, and falls back to the sequential
+            // SqlMutationCompiler/SqlMutationExecutionProvider path
+            // automatically otherwise - the mutation never fails just because
+            // it couldn't be batched.
+            var result = new PostgresBatchedMutationExecutionProvider(connection, metadata)
+                .ExecuteBatch(plan, new ExecutionContext());
 
-            var materialized = mutationMaterializer.Materialize(adaptation.Intent, result);
-            var root = materialized.Roots.FirstOrDefault();
-            var shaped = root is null
-                ? null
-                : GraphQLMutationResultShaper.ShapeRoot(materialized, adaptation.ResultShape);
+            var materializedItems = mutationMaterializer.MaterializeBatch(
+                items.Select(i => (i.ResultKey, i.Adaptation.Intent)).ToArray(),
+                result);
 
-            var operationField = GetMutationFieldName(request.OperationName);
-
-            return Results.Json(new Dictionary<string, object?>
+            var data = new Dictionary<string, object?>();
+            foreach (var (key, materialized) in materializedItems)
             {
-                ["data"] = new Dictionary<string, object?>
-                {
-                    [operationField] = shaped
-                }
-            });
+                var itemAdaptation = items.First(i => i.ResultKey == key).Adaptation;
+                var root = materialized.Roots.FirstOrDefault();
+                data[key] = root is null
+                    ? null
+                    : GraphQLMutationResultShaper.ShapeRoot(materialized, itemAdaptation.ResultShape);
+            }
+
+            return Results.Json(new Dictionary<string, object?> { ["data"] = data });
         }
 
         var queryAdaptation = new HotChocolateSemanticAdapter(model)
@@ -166,14 +174,6 @@ static ExecutionContext BuildExecutionContext(Foundgine.Planning.ExecutionPlan p
     values[Foundgine.Execution.ExecutionContextKeys.PaginationHasCursor] = options.After is not null;
 
     return new ExecutionContext(values);
-}
-
-static string GetMutationFieldName(string? operationName)
-{
-    if (string.IsNullOrWhiteSpace(operationName))
-        throw new InvalidOperationException("Mutation operationName is required by the benchmark API.");
-
-    return char.ToLowerInvariant(operationName[0]) + operationName[1..];
 }
 
 static async Task SetSearchPathAsync(NpgsqlConnection connection, CancellationToken cancellationToken)

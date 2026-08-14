@@ -171,7 +171,7 @@ function Run-LoadTest {
     $env:BENCHMARK_REQUEST_TIMEOUT_SECONDS = "5"
     $env:BENCHMARK_READINESS_TIMEOUT_SECONDS = "120"
     $env:BENCHMARK_RESET_TIMEOUT_SECONDS = "30"
-    $env:BENCHMARK_CONCURRENCY = "1,8,32"
+    $env:BENCHMARK_CONCURRENCY = "1,8,16,32,64"
     $env:BENCHMARK_BATCH_SIZES = "1,10,50"
     $env:BENCHMARK_DOCKER_CONTAINER = switch ($Name) {
         "Hot Chocolate + EF Core" { "coffeebeanery-query-hotchocolate"; break }

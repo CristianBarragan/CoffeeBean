@@ -79,4 +79,49 @@ public sealed class MutationResultMaterializer
 
     private static int Count(NestedMutationIntent intent) =>
         1 + intent.Children.Sum(x => Count(x.Mutation));
+
+    /// <summary>
+    /// Batch form of <see cref="Materialize"/>: takes N independent (key, intent) pairs -
+    /// e.g. one per aliased root field from HotChocolateMutationAdapter.AdaptBatchWithResultShape
+    /// combined into one plan via MutationPlanner.Plan(IReadOnlyList&lt;NestedMutationIntent&gt;)
+    /// - and ONE flat MutationBatchResult produced by executing that combined plan. Slices
+    /// `result.Results` back into per-item chunks (same order the planner concatenated them
+    /// in) and materializes each independently, so nested children within one item still
+    /// resolve correctly.
+    /// </summary>
+    public IReadOnlyList<(string Key, MutationMaterializedResult Result)> MaterializeBatch(
+        IReadOnlyList<(string Key, NestedMutationIntent Intent)> items,
+        MutationBatchResult result)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(result);
+        if (items.Count == 0)
+            throw new InvalidOperationException("A materialized mutation batch must contain at least one item.");
+
+        var output = new List<(string, MutationMaterializedResult)>(items.Count);
+        var offset = 0;
+        foreach (var (key, intent) in items)
+        {
+            var count = Count(intent);
+            if (offset + count > result.Results.Count)
+            {
+                throw new InvalidOperationException(
+                    $"Batched mutation result has {result.Results.Count} operations total, " +
+                    $"but item '{key}' alone needs operations {offset}..{offset + count - 1}.");
+            }
+
+            var slice = new MutationBatchResult(result.Results.Skip(offset).Take(count).ToList());
+            output.Add((key, Materialize(intent, slice)));
+            offset += count;
+        }
+
+        if (offset != result.Results.Count)
+        {
+            throw new InvalidOperationException(
+                $"Batched mutation result contains {result.Results.Count} operations, " +
+                $"but the batch items only account for {offset}.");
+        }
+
+        return output;
+    }
 }

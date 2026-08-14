@@ -73,6 +73,97 @@ public sealed class HotChocolateMutationAdapter
         var root = fields[0];
         if (root.Alias is not null)
             throw new InvalidOperationException("GraphQL mutation root aliases are not supported by the mutation contract.");
+
+        return AdaptRootField(root, document, variableDefinitions, variables);
+    }
+
+    /// <summary>
+    /// Batch form of <see cref="AdaptWithResultShape"/>: accepts a mutation document with
+    /// MORE THAN ONE root field, each of which becomes an independent mutation (createX,
+    /// updateX, deleteX, upsertX; each may still have its own nested children, same as the
+    /// single-field form). Every root field in a batch document MUST be aliased - that alias
+    /// is the key used to correlate each result back to its request in the response and in
+    /// <see cref="GraphQLMutationBatchItem.ResultKey"/>.
+    ///
+    /// This does not change the single-field contract: a document with exactly one,
+    /// unaliased root field should keep going through <see cref="AdaptWithResultShape"/>.
+    /// Combine the returned items' <c>Intent</c> values with
+    /// <c>MutationPlanner.Plan(IReadOnlyList&lt;NestedMutationIntent&gt;)</c> to get one
+    /// dependency-aware <c>MutationBatchPlan</c> for the whole document.
+    /// </summary>
+    public IReadOnlyList<GraphQLMutationBatchItem> AdaptBatchWithResultShape(
+        string graphql,
+        IReadOnlyDictionary<string, object?>? variables = null,
+        string? operationName = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(graphql);
+
+        var document = Utf8GraphQLParser.Parse(graphql);
+        var operation = SelectOperation(document, OperationType.Mutation, operationName);
+        var variableDefinitions = operation.VariableDefinitions
+            .ToDictionary(x => x.Variable.Name.Value, x => x, StringComparer.Ordinal);
+        GraphQLVariableCoercer.ValidateSuppliedVariables(variables, variableDefinitions);
+
+        if (operation.Directives.Count != 0)
+            throw new InvalidOperationException("GraphQL mutation operation directives are not supported by the adapter.");
+
+        var fields = operation.SelectionSet.Selections
+            .OfType<FieldNode>()
+            .Where(x => !x.Name.Value.StartsWith("__", StringComparison.Ordinal))
+            .ToArray();
+
+        if (fields.Length == 0)
+            throw new InvalidOperationException("GraphQL mutation operation contains no root fields.");
+
+        if (fields.Length == 1 && fields[0].Alias is null)
+        {
+            // Not actually a batch - route through the single-field contract so callers
+            // that always call the batch method still get the plain, unkeyed behavior.
+            return [new GraphQLMutationBatchItem(fields[0].Name.Value, AdaptRootField(fields[0], document, variableDefinitions, variables))];
+        }
+
+        var seenKeys = new HashSet<string>(StringComparer.Ordinal);
+        var items = new List<GraphQLMutationBatchItem>(fields.Length);
+        foreach (var field in fields)
+        {
+            if (field.Alias is null)
+                throw new InvalidOperationException(
+                    $"Root mutation field '{field.Name.Value}' must be aliased when a mutation document " +
+                    "contains more than one root field, so each result can be correlated back to its request.");
+
+            var key = field.Alias.Value;
+            if (!seenKeys.Add(key))
+                throw new InvalidOperationException($"Duplicate root mutation alias '{key}' in batch document.");
+
+            items.Add(new GraphQLMutationBatchItem(key, AdaptRootField(field, document, variableDefinitions, variables)));
+        }
+
+        return items;
+    }
+
+    public GraphQLAdapterResult<IReadOnlyList<GraphQLMutationBatchItem>> TryAdaptBatch(
+        string graphql,
+        IReadOnlyDictionary<string, object?>? variables = null,
+        string? operationName = null)
+    {
+        try
+        {
+            return GraphQLAdapterResult<IReadOnlyList<GraphQLMutationBatchItem>>.Success(
+                AdaptBatchWithResultShape(graphql, variables, operationName));
+        }
+        catch (Exception exception)
+        {
+            return GraphQLAdapterResult<IReadOnlyList<GraphQLMutationBatchItem>>.Failure(
+                GraphQLAdapterErrors.FromException(exception));
+        }
+    }
+
+    private GraphQLMutationAdaptation AdaptRootField(
+        FieldNode root,
+        DocumentNode document,
+        IReadOnlyDictionary<string, VariableDefinitionNode> variableDefinitions,
+        IReadOnlyDictionary<string, object?>? variables)
+    {
         if (root.Directives.Count != 0)
             throw new InvalidOperationException("GraphQL mutation directives on the root mutation field are not supported by the adapter.");
 

@@ -44,11 +44,11 @@ Customer
 
 Batch sizes 1, 10, and 50 represent multiple independent logical mutations inside one GraphQL request.
 
-### Upsert + select
+### Upsert + select — historical diagnostic only
 
-Foundgine was also measured for GraphQL upsert + select at batch sizes 1, 10, and 50.
+The historical 2026-08-13 rows labelled `Upsert + select` are retained for traceability, but the implementation used `createCustomer` followed by the top-50 query. It was therefore **not a true upsert workload** and must not be treated as the corrected upsert baseline.
 
-**Hot Chocolate + EF Core is excluded from comparative conclusions for this workload because the current select + upsert implementation has a known correctness bug and therefore does not provide a valid apples-to-apples baseline.** Raw output may contain the attempted section, but it is not treated as a valid comparison.
+The benchmark harness has since been corrected to perform a real `upsertCustomer` using `CustomerKey` as the conflict identity, followed by the exact same top-50/full-graph query used by `QueryTop50`. The corrected workload must be rerun before publishing new comparative upsert numbers. See [the curated performance analysis](2026-08-13-performance-analysis.md).
 
 ## Selected results — concurrency 32
 
