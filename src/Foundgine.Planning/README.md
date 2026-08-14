@@ -177,4 +177,20 @@ If the answer is no, it should probably be a clause, property, or provider conce
 
 This rule is intended to prevent `ExecutionPlanNode` and `ExecutionOperation` from becoming a catch-all abstraction.
 
-See the repository-level [P0.3 Authorization Invariants](../../Documentation/PRIORITY-3-AUTHORIZATION-INVARIANTS.md) for the security contract that the plan must preserve.
+See the repository-level [P0.3 Authorization Invariants](https://github.com/CristianBarragan/Foundgine/Documentation/PRIORITY-3-AUTHORIZATION-INVARIANTS.md) for the security contract that the plan must preserve.
+## Install
+
+```bash
+dotnet add package Foundgine.Planning
+```
+
+## Package scope
+
+The plan is provider-independent. It must not contain SQL, table/column names, GraphQL AST nodes, or provider-specific parameter/runtime objects.
+
+## Repository documentation
+
+- [Current status](https://github.com/CristianBarragan/Foundgine/docs/CURRENT-STATUS.md)
+- [Security](https://github.com/CristianBarragan/Foundgine/docs/SECURITY.md)
+- [NuGet packaging](https://github.com/CristianBarragan/Foundgine/docs/NUGET-PACKAGING.md)
+

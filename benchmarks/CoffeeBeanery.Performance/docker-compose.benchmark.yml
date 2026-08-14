@@ -1,138 +1,232 @@
 services:
+
+  # ============================================================
+  # POSTGRESQL
+  # ============================================================
+
   postgres:
     image: postgres:17-alpine
+
     environment:
       POSTGRES_DB: foundgine_benchmark
       POSTGRES_USER: benchmark
       POSTGRES_PASSWORD: benchmark
+
     command:
       - postgres
       - -c
       - max_connections=200
       - -c
       - shared_buffers=256MB
+
     ports:
       - "55432:5432"
+
     volumes:
       - benchmark-postgres-data:/var/lib/postgresql/data
+
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U benchmark -d foundgine_benchmark"]
+      test:
+        - CMD-SHELL
+        - pg_isready -U benchmark -d foundgine_benchmark
+
       interval: 2s
       timeout: 5s
       retries: 30
       start_period: 5s
 
+
+  # ============================================================
+  # DATABASE FIXTURE / SEEDER
+  # ============================================================
+
   database:
-      build:
-        context: ../..
-        dockerfile: benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/Dockerfile
+    build:
+      context: ../..
+      dockerfile: benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/Dockerfile
 
-      depends_on:
-        postgres:
-          condition: service_healthy
+    depends_on:
+      postgres:
+        condition: service_healthy
 
-      environment:
-        BankingConnectionString: "Host=postgres;Port=5432;Database=foundgine_benchmark;Username=benchmark;Password=benchmark"
-        COFFEEBEANERY_CONNECTION: "Host=postgres;Port=5432;Database=foundgine_benchmark;Username=benchmark;Password=benchmark"
+    environment:
+      ConnectionStrings__BankingConnectionString: "Host=postgres;Port=5432;Database=foundgine_benchmark;Username=benchmark;Password=benchmark"
+      COFFEEBEANERY_CONNECTION: "Host=postgres;Port=5432;Database=foundgine_benchmark;Username=benchmark;Password=benchmark"
 
-        COFFEEBEANERY_CUSTOMERS: "1000"
-        COFFEEBEANERY_RELATIONSHIPS_PER_CUSTOMER: "4"
-        COFFEEBEANERY_CONTRACTS_PER_RELATIONSHIP: "3"
-        COFFEEBEANERY_TRANSACTIONS_PER_CONTRACT: "4"
+      COFFEEBEANERY_CUSTOMERS: "1000"
+      COFFEEBEANERY_RELATIONSHIPS_PER_CUSTOMER: "4"
+      COFFEEBEANERY_CONTRACTS_PER_RELATIONSHIP: "3"
+      COFFEEBEANERY_TRANSACTIONS_PER_CONTRACT: "4"
 
-  restart: "no"
+    restart: "no"
+
+
+  # ============================================================
+  # HOT CHOCOLATE
+  # ============================================================
 
   hotchocolate:
     build:
       context: ../..
       dockerfile: benchmarks/CoffeeBeanery.Performance/HotChocolate.CoffeeBeanery.BenchmarkApi/Dockerfile
+
     depends_on:
       database:
         condition: service_completed_successfully
+
     environment:
-      ConnectionStrings__BankingConnectionString: "Host=postgres;Port=5432;Database=foundgine_benchmark;Username=benchmark;Password=benchmark;ApplicationName=HotChocolate-Benchmark-API"
+      ConnectionStrings__BankingConnectionString: "Host=postgres;Port=5432;Database=foundgine_benchmark;Username=benchmark;Password=benchmark"
+
       ASPNETCORE_URLS: "http://+:4300"
       ASPNETCORE_ENVIRONMENT: Production
+
     ports:
-      - "4300:4300"
+      - "4500:4300"
+
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:4300/health || exit 1"]
+      test:
+        - CMD-SHELL
+        - curl -fsS http://localhost:4300/health || exit 1
+
       interval: 2s
       timeout: 5s
-      retries: 30
-      start_period: 10s
+      retries: 90
+      start_period: 60s
+
+
+  # ============================================================
+  # FOUNDGINE COLD
+  # ============================================================
 
   foundgine-cold:
     build:
       context: ../..
       dockerfile: benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Dockerfile
+
     depends_on:
       database:
         condition: service_completed_successfully
+
     environment:
-      ConnectionStrings__BankingConnectionString: "Host=postgres;Port=5432;Database=foundgine_benchmark;Username=benchmark;Password=benchmark;ApplicationName=Foundgine-Benchmark-API"
+      ConnectionStrings__BankingConnectionString: "Host=postgres;Port=5432;Database=foundgine_benchmark;Username=benchmark;Password=benchmark"
+
       ASPNETCORE_URLS: "http://+:4301"
       ASPNETCORE_ENVIRONMENT: Production
+
     ports:
-      - "4301:4301"
+      - "4501:4301"
+
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:4301/health || exit 1"]
+      test:
+        - CMD-SHELL
+        - curl -fsS http://localhost:4301/health || exit 1
+
       interval: 2s
       timeout: 5s
-      retries: 30
-      start_period: 10s
+      retries: 90
+      start_period: 60s
+
+
+  # ============================================================
+  # FOUNDGINE WARM
+  # ============================================================
 
   foundgine-warm:
     build:
       context: ../..
       dockerfile: benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Dockerfile
+
     depends_on:
       database:
         condition: service_completed_successfully
+
     environment:
-      ConnectionStrings__BankingConnectionString: "Host=postgres;Port=5432;Database=foundgine_benchmark;Username=benchmark;Password=benchmark;ApplicationName=Foundgine-Benchmark-API"
+      ConnectionStrings__BankingConnectionString: "Host=postgres;Port=5432;Database=foundgine_benchmark;Username=benchmark;Password=benchmark"
+
       ASPNETCORE_URLS: "http://+:4302"
       ASPNETCORE_ENVIRONMENT: Production
+
     ports:
-      - "4302:4302"
+      - "4502:4302"
+
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:4302/health || exit 1"]
+      test:
+        - CMD-SHELL
+        - curl -fsS http://localhost:4302/health || exit 1
+
       interval: 2s
       timeout: 5s
-      retries: 30
-      start_period: 10s
+      retries: 90
+      start_period: 60s
+
+
+  # ============================================================
+  # MUTATION PERFORMANCE LOAD TEST
+  # ============================================================
 
   loader:
     build:
       context: ../..
       dockerfile: benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/Dockerfile
+
     depends_on:
       hotchocolate:
         condition: service_healthy
+
       foundgine-cold:
         condition: service_healthy
+
       foundgine-warm:
         condition: service_healthy
+
     environment:
-        BENCHMARK_HC_URL: "http://hotchocolate:4300/graphql"
-        BENCHMARK_FOUNDGINE_COLD_URL: "http://foundgine-cold:4301/graphql/cold"
-        BENCHMARK_FOUNDGINE_WARM_URL: "http://foundgine-warm:4302/graphql/warm"
+      # BENCHMARK_TARGET_NAME and BENCHMARK_TARGET_URL are intentionally
+      # NOT set here. Program.cs (CoffeeBeanery.LoadTest) is a single-target
+      # runner -- it benchmarks exactly one target per process and requires
+      # these two variables. They are supplied per invocation via
+      # `docker compose run -e ...`, once per target, from
+      # run-ci-performance.sh. Do not add BENCHMARK_HC_URL /
+      # BENCHMARK_FOUNDGINE_COLD_URL / BENCHMARK_FOUNDGINE_WARM_URL /
+      # BENCHMARK_OPERATION back here -- Program.cs no longer reads them.
 
-        BENCHMARK_WARMUP_SECONDS: "3"
-        BENCHMARK_DURATION_SECONDS: "10"
-        BENCHMARK_REQUEST_TIMEOUT_SECONDS: "5"
+      BENCHMARK_WARMUP_SECONDS: "3"
 
-        BENCHMARK_CONCURRENCY: "1,8,16,32,64"
+      BENCHMARK_DURATION_SECONDS: "10"
 
-        BENCHMARK_READINESS_TIMEOUT_SECONDS: "180"
-        BENCHMARK_RESET_TIMEOUT_SECONDS: "180"
+      BENCHMARK_REQUEST_TIMEOUT_SECONDS: "5"
 
-        BENCHMARK_REPORT_DIRECTORY: "/reports"
+      BENCHMARK_READINESS_TIMEOUT_SECONDS: "180"
 
-        BENCHMARK_DB_CONNECTION: "Host=postgres;Port=5432;Database=foundgine_benchmark;Username=benchmark;Password=benchmark"
+      BENCHMARK_RESET_TIMEOUT_SECONDS: "180"
+
+      BENCHMARK_CONCURRENCY: "1,8,16,32,64"
+
+      BENCHMARK_REPORT_DIRECTORY: "/reports"
+
     volumes:
-      - ./reports:/reports
+      # IMPORTANT:
+      #
+      # This path is relative to this compose file:
+      #
+      # benchmarks/CoffeeBeanery.Performance/
+      #
+      # Therefore it maps:
+      #
+      # benchmarks/CoffeeBeanery.Performance/reports/mutation
+      #
+      # to:
+      #
+      # /reports
+      #
+      - ./reports/mutation:/reports
+
     restart: "no"
 
+
+# ============================================================
+# VOLUMES
+# ============================================================
+
 volumes:
+
   benchmark-postgres-data:

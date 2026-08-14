@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CoffeeBeanery.Database.Migrations
 {
     [DbContext(typeof(BankingEntityContext))]
-    [Migration("20260801212658_Initial")]
+    [Migration("20260814104535_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace CoffeeBeanery.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.7")
+                .HasAnnotation("ProductVersion", "9.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -129,7 +129,7 @@ namespace CoffeeBeanery.Database.Migrations
                     b.HasIndex("ContractKey")
                         .IsUnique();
 
-                    b.HasIndex("CustomerBankingRelationshipId");
+                    b.HasIndex("CustomerBankingRelationshipId", "Id");
 
                     b.ToTable("Contract", "Lending");
                 });
@@ -197,7 +197,7 @@ namespace CoffeeBeanery.Database.Migrations
                     b.HasIndex("CustomerBankingRelationshipKey")
                         .IsUnique();
 
-                    b.HasIndex("CustomerId");
+                    b.HasIndex("CustomerId", "Id");
 
                     b.ToTable("CustomerBankingRelationship", "Banking");
                 });
@@ -278,10 +278,10 @@ namespace CoffeeBeanery.Database.Migrations
 
                     b.HasIndex("AccountId");
 
-                    b.HasIndex("ContractId");
-
                     b.HasIndex("TransactionKey")
                         .IsUnique();
+
+                    b.HasIndex("ContractId", "Id");
 
                     b.ToTable("Transaction", "Lending");
                 });
