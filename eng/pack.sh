@@ -17,6 +17,8 @@ projects=(
   src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj
   src/Foundgine.Aot/Foundgine.Aot.csproj
 )
+dotnet build "$ROOT/src/Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj" --configuration Release --no-restore
+
 for project in "${projects[@]}"; do
   dotnet pack "$ROOT/$project" --configuration Release --output "$OUT" --no-restore
 done

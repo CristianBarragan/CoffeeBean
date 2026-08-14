@@ -13,6 +13,10 @@
     <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
     <ProjectReference Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
     <ProjectReference Include="../Foundgine.Metadata/Foundgine.Metadata.csproj" />
+    <ProjectReference Include="../Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
   </ItemGroup>
   <Target Name="PackGeneratorAnalyzer" BeforeTargets="GenerateNuspec" DependsOnTargets="Build">
     <ItemGroup>
