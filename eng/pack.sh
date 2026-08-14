@@ -3,6 +3,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="$ROOT/artifacts/packages"
 mkdir -p "$OUT"
+
+dotnet restore "$ROOT/Foundgine.sln"
+dotnet build "$ROOT/Foundgine.sln" --configuration Release --no-restore
+
 projects=(
   src/Foundgine/Foundgine.csproj
   src/Foundgine.Abstractions/Foundgine.Abstractions.csproj
@@ -17,8 +21,6 @@ projects=(
   src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj
   src/Foundgine.Aot/Foundgine.Aot.csproj
 )
-dotnet build "$ROOT/src/Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj" --configuration Release --no-restore
-
 for project in "${projects[@]}"; do
   dotnet pack "$ROOT/$project" --configuration Release --output "$OUT" --no-restore
 done

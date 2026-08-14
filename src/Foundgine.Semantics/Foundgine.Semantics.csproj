@@ -3,7 +3,6 @@
     <PackageId>Foundgine.Semantics</PackageId>
     <Description>Semantic intent, resolution, authorization and request model for Foundgine.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.Semantics</RootNamespace>
     <AssemblyName>Foundgine.Semantics</AssemblyName>
     <IsPackable>true</IsPackable>

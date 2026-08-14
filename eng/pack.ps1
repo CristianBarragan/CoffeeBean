@@ -4,6 +4,11 @@ $root = Split-Path -Parent $PSScriptRoot
 $out = Join-Path $root 'artifacts/packages'
 New-Item -ItemType Directory -Force -Path $out | Out-Null
 
+dotnet restore (Join-Path $root 'Foundgine.sln')
+if ($LASTEXITCODE -ne 0) { throw 'Restore failed' }
+dotnet build (Join-Path $root 'Foundgine.sln') --configuration Release --no-restore
+if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
+
 $projects = @(
   'src/Foundgine/Foundgine.csproj',
   'src/Foundgine.Abstractions/Foundgine.Abstractions.csproj',
@@ -18,9 +23,6 @@ $projects = @(
   'src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj',
   'src/Foundgine.Aot/Foundgine.Aot.csproj'
 )
-
-dotnet build (Join-Path $root 'src/Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj') --configuration Release --no-restore
-if ($LASTEXITCODE -ne 0) { throw 'Building failed: Foundgine.Aot.Generator' }
 
 foreach ($project in $projects) {
   dotnet pack (Join-Path $root $project) --configuration Release --output $out --no-restore

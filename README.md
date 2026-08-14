@@ -308,3 +308,17 @@ See [`docs/PUBLIC-API.md`](docs/PUBLIC-API.md). Application code should prefer t
 
 
 **Agent boundary:** [Agent Semantic Boundary](docs/AGENT-SEMANTIC-BOUNDARY.md)
+
+## Build and test
+
+Use the standard .NET configuration switch syntax:
+
+```powershell
+dotnet restore
+dotnet build -c Release
+dotnet test -c Release --no-build
+```
+
+The AOT test projects reference `Foundgine.Aot`; the generator is supplied transitively by
+that project. They do not reference `Foundgine.Aot.Generator` directly, which prevents the
+source generator from being attached twice and avoids duplicate `GeneratedMetadata` symbols.

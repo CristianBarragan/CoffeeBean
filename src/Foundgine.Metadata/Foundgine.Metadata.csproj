@@ -3,7 +3,6 @@
     <PackageId>Foundgine.Metadata</PackageId>
     <Description>Semantic metadata model and runtime metadata registry for Foundgine.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.Metadata</RootNamespace>
     <AssemblyName>Foundgine.Metadata</AssemblyName>
     <IsPackable>true</IsPackable>

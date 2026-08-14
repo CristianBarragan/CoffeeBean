@@ -3,7 +3,6 @@
     <PackageId>Foundgine.InMemory</PackageId>
     <Description>In-memory execution provider for Foundgine testing and development.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.InMemory</RootNamespace>
     <AssemblyName>Foundgine.InMemory</AssemblyName>
     <IsPackable>true</IsPackable>

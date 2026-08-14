@@ -27,13 +27,6 @@ jobs:
       - name: Test
         run: dotnet test Foundgine.sln --no-build --configuration Release --verbosity normal
 
-      - name: Pack NuGet packages
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf artifacts/packages
-          mkdir -p artifacts/packages
-          dotnet build src/Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj --configuration Release --no-restore
-          while IFS= read -r project; do
-            dotnet pack "$project" --configuration Release --no-restore --output artifacts/packages
-          done < <(find src -mindepth 2 -maxdepth 2 -name '*.csproj' ! -name 'Foundgine.Aot.Generator.csproj' | sort)
+
+      - name: Pack (NuGet validation)
+        run: ./eng/pack.sh
