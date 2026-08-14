@@ -11,7 +11,13 @@ permissions:
   contents: read
 
 jobs:
-  build-test-pack:
+
+  # ============================================================
+  # BUILD
+  # ============================================================
+
+  build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -28,11 +34,121 @@ jobs:
       - name: Restore
         run: dotnet restore Foundgine.sln
 
-      - name: Build
+      - name: Build Release
         run: dotnet build Foundgine.sln --no-restore --configuration Release
 
-      - name: Test
-        run: dotnet test Foundgine.sln --no-build --configuration Release --verbosity normal
+
+  # ============================================================
+  # UNIT TESTS
+  # ============================================================
+
+  unit-tests:
+    name: Unit Tests
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore
+        run: dotnet restore Foundgine.sln
+
+      - name: Build test binaries
+        run: dotnet build Foundgine.sln --no-restore --configuration Release
+
+      - name: Run unit and integration tests
+        run: >
+          dotnet test Foundgine.sln
+          --no-build
+          --configuration Release
+          --verbosity normal
+          --logger "trx;LogFileName=unit-tests.trx"
+          --results-directory artifacts/test-results
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: artifacts/test-results/**
+          if-no-files-found: warn
+
+
+  # ============================================================
+  # PERFORMANCE
+  # ============================================================
+
+  #performance:
+  #  name: Performance
+  #  needs: build
+  #  runs-on: ubuntu-latest
+  #  timeout-minutes: 20
+
+  #  steps:
+  #    - name: Checkout
+  #      uses: actions/checkout@v4
+  #      with:
+  #        fetch-depth: 0
+
+  #    - name: Setup .NET
+  #      uses: actions/setup-dotnet@v4
+  #      with:
+  #        dotnet-version: "9.0.x"
+
+  #    - name: Verify Docker
+  #      run: docker version
+
+  #    - name: Run performance regression gate
+  #      shell: bash
+  #      run: |
+  #        set -euo pipefail
+
+  #        mkdir -p artifacts/performance
+
+  #        bash benchmarks/CoffeeBeanery.Performance/run-ci-performance.sh
+
+  #    - name: Upload performance reports
+  #      if: always()
+  #      uses: actions/upload-artifact@v4
+  #      with:
+  #        name: performance-reports
+  #        path: artifacts/performance/**
+  #        if-no-files-found: warn
+
+
+  # ============================================================
+  # PACKAGE
+  # ============================================================
+
+  package:
+    name: Package
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore
+        run: dotnet restore Foundgine.sln
+
+      - name: Build Release
+        run: dotnet build Foundgine.sln --no-restore --configuration Release
 
       - name: Pack NuGet packages
         shell: bash
@@ -57,39 +173,230 @@ jobs:
               --configuration Release \
               --output artifacts/nuget \
               -p:PackageVersion="$version"
+
           done < <(find src -name '*.csproj' -print | sort)
 
-      - name: Validate NuGet package
+      # ----------------------------------------------------------
+      # Validate package count and exact package IDs
+      # ----------------------------------------------------------
+
+      - name: Validate NuGet packages
         shell: bash
         run: |
           set -euo pipefail
+          shopt -s nullglob
 
-          package=(artifacts/nuget/Foundgine.Aot.*.nupkg)
+          expected_packages=(
+            Foundgine
+            Foundgine.Abstractions
+            Foundgine.Aot
+            Foundgine.Execution
+            Foundgine.GraphQL.HotChocolate
+            Foundgine.GraphQL.HotChocolate.Mutations
+            Foundgine.InMemory
+            Foundgine.Intent.Json
+            Foundgine.Metadata
+            Foundgine.Planning
+            Foundgine.Semantics
+            Foundgine.Sql
+          )
 
-          test "${#package[@]}" -eq 1
+          packages=(artifacts/nuget/*.nupkg)
 
-          package="${package[0]}"
+          echo "=========================================="
+          echo "NuGet package validation"
+          echo "=========================================="
 
-          echo "Package: $package"
-          echo "Package contents:"
-          unzip -l "$package"
+          echo "Found ${#packages[@]} NuGet packages"
 
-          unzip -l "$package" \
-            | grep -F "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"
+          for package in "${packages[@]}"; do
+            echo "  $(basename "$package")"
+          done
 
-          unzip -l "$package" \
-            | grep -F "lib/net9.0/Foundgine.Aot.dll"
+          echo ""
 
-          unzip -l "$package" \
-            | grep -F "lib/net9.0/Foundgine.Metadata.dll"
+          # ------------------------------------------------------
+          # Exact package count
+          # ------------------------------------------------------
 
-          if unzip -l "$package" \
+          if [[ "${#packages[@]}" -ne "${#expected_packages[@]}" ]]; then
+            echo "ERROR: Expected ${#expected_packages[@]} packages."
+            echo "ERROR: Found ${#packages[@]} packages."
+            exit 1
+          fi
+
+          # ------------------------------------------------------
+          # Validate every expected package exists exactly once.
+          #
+          # IMPORTANT:
+          # We require the package ID to be followed immediately
+          # by a version beginning with a digit.
+          #
+          # This prevents:
+          #
+          #   Foundgine
+          #
+          # from incorrectly matching:
+          #
+          #   Foundgine.Aot
+          #   Foundgine.Sql
+          #   Foundgine.Metadata
+          # ------------------------------------------------------
+
+          for package_id in "${expected_packages[@]}"; do
+            echo "Checking package: $package_id"
+
+            matches=(
+              "artifacts/nuget/${package_id}".[0-9]*.nupkg
+            )
+
+            if [[ "${#matches[@]}" -ne 1 ]]; then
+              echo ""
+              echo "ERROR: Expected exactly one package for:"
+              echo "  $package_id"
+              echo ""
+              echo "Matches found: ${#matches[@]}"
+
+              for match in "${matches[@]}"; do
+                echo "  $match"
+              done
+
+              exit 1
+            fi
+
+            echo "  OK: $(basename "${matches[0]}")"
+          done
+
+          echo ""
+
+          # ------------------------------------------------------
+          # Validate README exists in every package
+          # ------------------------------------------------------
+
+          for package in "${packages[@]}"; do
+            echo "Validating README: $(basename "$package")"
+
+            if ! unzip -l "$package" | grep -Fq "README.md"; then
+              echo "ERROR: README.md missing from:"
+              echo "  $package"
+              exit 1
+            fi
+
+            readme="$(unzip -p "$package" 'README.md' | tr -d '\r')"
+
+            if [[ -z "$readme" ]]; then
+              echo "ERROR: README.md is empty:"
+              echo "  $package"
+              exit 1
+            fi
+
+            # Repository-relative documentation links do not work
+            # correctly from NuGet.
+            if grep -E '\]\((docs/|\.\./)' <<<"$readme"; then
+              echo ""
+              echo "ERROR: Package README contains a repository-relative"
+              echo "documentation link:"
+              echo "  $package"
+              exit 1
+            fi
+          done
+
+          # ------------------------------------------------------
+          # Validate AOT package
+          # ------------------------------------------------------
+
+          echo ""
+          echo "=========================================="
+          echo "AOT package validation"
+          echo "=========================================="
+
+          aot_packages=(
+            artifacts/nuget/Foundgine.Aot.[0-9]*.nupkg
+          )
+
+          if [[ "${#aot_packages[@]}" -ne 1 ]]; then
+            echo "ERROR: Expected exactly one Foundgine.Aot package."
+            exit 1
+          fi
+
+          aot_package="${aot_packages[0]}"
+
+          echo "AOT package:"
+          echo "  $aot_package"
+          echo ""
+
+          echo "AOT package contents:"
+          unzip -l "$aot_package"
+
+          echo ""
+
+          # ------------------------------------------------------
+          # Generator must be packaged as an analyzer
+          # ------------------------------------------------------
+
+          echo "Checking source generator location..."
+
+          if ! unzip -l "$aot_package" \
+            | grep -Fq "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"; then
+
+            echo "ERROR: Foundgine.Aot.Generator.dll was not packaged"
+            echo "under analyzers/dotnet/cs/."
+
+            exit 1
+          fi
+
+          # ------------------------------------------------------
+          # Runtime assembly
+          # ------------------------------------------------------
+
+          echo "Checking Foundgine.Aot runtime assembly..."
+
+          if ! unzip -l "$aot_package" \
+            | grep -Fq "lib/net9.0/Foundgine.Aot.dll"; then
+
+            echo "ERROR: Foundgine.Aot.dll missing from lib/net9.0/."
+
+            exit 1
+          fi
+
+          # ------------------------------------------------------
+          # Metadata dependency
+          # ------------------------------------------------------
+
+          echo "Checking Foundgine.Metadata..."
+
+          if ! unzip -l "$aot_package" \
+            | grep -Fq "lib/net9.0/Foundgine.Metadata.dll"; then
+
+            echo "ERROR: Foundgine.Metadata.dll missing from lib/net9.0/."
+
+            exit 1
+          fi
+
+          # ------------------------------------------------------
+          # Generator must NOT appear elsewhere
+          # ------------------------------------------------------
+
+          echo "Checking generator is not duplicated..."
+
+          if unzip -l "$aot_package" \
             | grep -E '(^|/)Foundgine.Aot.Generator.dll$' \
             | grep -v 'analyzers/dotnet/cs/'; then
 
-            echo "Generator was packaged outside the analyzer directory."
+            echo "ERROR: Generator was packaged outside the analyzer directory."
+
             exit 1
           fi
+
+          echo ""
+          echo "=========================================="
+          echo "NuGet validation PASSED"
+          echo "=========================================="
+
+
+      # ----------------------------------------------------------
+      # Upload packages
+      # ----------------------------------------------------------
 
       - name: Upload NuGet artifact
         uses: actions/upload-artifact@v4
@@ -98,9 +405,22 @@ jobs:
           path: artifacts/nuget/*
           if-no-files-found: error
 
+
+  # ============================================================
+  # PUBLISH
+  # ============================================================
+
   publish-nuget:
+    name: Publish NuGet
+
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build-test-pack
+
+    needs:
+      - build
+      - unit-tests
+    #  - performance
+      - package
+
     runs-on: ubuntu-latest
 
     environment: production
@@ -110,6 +430,7 @@ jobs:
       id-token: write
 
     steps:
+
       - name: Download NuGet artifact
         uses: actions/download-artifact@v4
         with:

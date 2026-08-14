@@ -107,6 +107,45 @@ Foundgine deliberately does **not** attempt to provide change tracking, identity
 
 If an application simply needs conventional object persistence, use an ORM such as EF Core. Foundgine is for the execution boundary described above.
 
+## One semantic boundary across multiple models
+
+Foundgine does not require the persistence model, semantic model, transport model, and AI intent to be identical. The point of the semantic boundary is to make those differences explicit rather than forcing every caller to understand storage details.
+
+For example, an application can have: 
+
+```text
+Persistence / EF Core
+
+Customer
+  Id
+  TenantId
+  InternalRiskScore
+  Accounts
+        │
+        │ semantic mapping
+        ▼
+Foundgine semantic model
+
+Customer
+  id
+  name
+  accounts
+    balance
+        │
+        ├───────────────┐
+        ▼               ▼
+GraphQL             JSON / AI intent
+
+customer {          {
+  name                "rootEntity": "Customer",
+  accounts {          "selections": ["name"],
+    balance           "relationships": ["accounts"]
+  }                   }
+}
+```
+
+The important rule is that the external representation does not define the application's capabilities. The semantic model is the authority; resolution and authorization happen before a provider-specific plan is produced. See [Multi-model boundary](docs/MULTI-MODEL-BOUNDARY.md) for the worked example and design rules.
+
 ## Why this matters for AI
 
 AI is one important consumer of this architecture, not the definition of the core.
@@ -139,6 +178,12 @@ Foundgine
 ```
 
 Foundgine is **not** an LLM framework, agent runtime, prompt framework, memory system, MCP implementation, or workflow engine.
+
+## Security assurance boundary
+
+Foundgine treats external intent as untrusted input and tests the current semantic boundary with authorization invariants, adversarial-intent cases, fail-closed behaviour, and end-to-end SQL execution. Conditional authorization predicates remain part of the provider-independent plan so they are not silently discarded by planning or provider compilation.
+
+That is **repository-level security evidence, not a security certification**. Foundgine 0.1.x has not undergone an independent security audit or formal verification. Applications still need authentication, identity/claims handling, rate limits, database permissions, transport security, logging, dependency scanning, and operational controls around the Foundgine boundary. See [Security](docs/SECURITY.md) and [Adversarial intent](docs/ADVERSARIAL-INTENT.md).
 
 ## Provider independence and relationship-oriented backends
 
@@ -208,9 +253,9 @@ At concurrency 32 and batch 50, Hot Chocolate + EF Core measured 86,955 logical 
 
 The defensible conclusion is therefore not that Foundgine is universally faster: **the current query path is the strongest result, while mutation remains an optimization area where resource efficiency is better but peak throughput is still behind Hot Chocolate + EF Core.**
 
-### Upsert + select: now a proper end-to-end workload
+### Upsert + select: corrected methodology, baseline pending
 
-The benchmark harness has been corrected so `Upsert + select` is a real upsert of existing deterministic customer rows followed by the **exact same top-50/full-graph query** used by the standalone query benchmark:
+The benchmark harness has been corrected so `Upsert + select` is now a real upsert of deterministic existing customer rows followed by the **exact same top-50/full-graph query** used by the standalone query benchmark:
 
 ```text
 real upsert
@@ -218,7 +263,7 @@ real upsert
 Customer -> Relationship -> Contract -> Transaction
 ```
 
-The complete write-then-refetch path is measured as one logical client operation. Previous rows that were labelled upsert + select but actually used `createCustomer` are historical diagnostics and are not a valid baseline for the corrected workload.
+The complete write-then-refetch path is measured as one logical client operation. The older rows labelled `Upsert + select` used `createCustomer` and remain only as historical diagnostics; they must not be treated as the corrected comparative baseline. The corrected workload should be rerun before publishing new comparative upsert numbers. See [Benchmark changes](benchmarks/CoffeeBeanery.Performance/BENCHMARK-CHANGES-2026-08-14.md).
 
 ### Cache direction
 
@@ -227,6 +272,15 @@ The current warm path caches the provider execution plan only. It does not cache
 A future **FASTER-backed cache provider** is also a planned experiment. It should be evaluated against the same cache workload rather than assumed to be faster.
 
 See [CoffeeBeanery performance analysis](docs/benchmarks/2026-08-13-performance-analysis.md) and the benchmark harness under `benchmarks/CoffeeBeanery.Performance/`.
+
+To reproduce the benchmark locally, use the committed harness from `benchmarks/CoffeeBeanery.Performance`:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\run-benchmarks.ps1
+```
+
+The harness documents the PostgreSQL fixture, warm-up/measurement windows, concurrency and batch matrices, cache state, and invalid-warm-up handling. Benchmark results are engineering baselines for the stated workload, not a performance certification.
 
 ## Current proof
 
@@ -245,6 +299,19 @@ The current repository proves the following path:
 The Banking tests provide the main end-to-end proof of the current implementation.
 
 The repository proves a deliberately small non-SQL in-memory execution provider as an architectural proof. It does **not** claim autonomous agent execution, workflow orchestration, rollback/compensation semantics, universal provider support, or benchmark superiority.
+
+## Support and compatibility
+
+The current public release targets **.NET 9**. The repository and CI build against the .NET 9 SDK, and .NET 9 is the supported target for the 0.1.x line. Additional target frameworks should be added only when they are tested and documented.
+
+Provider support is intentionally narrower than the semantic architecture:
+
+- **SQLite:** end-to-end SQL execution is covered by the repository proof.
+- **PostgreSQL:** the SQL layer includes PostgreSQL-specific compilation paths and the CoffeeBeanery benchmark uses PostgreSQL.
+- **InMemory:** a deliberately small non-SQL proof/development provider consumes the same provider-independent plan.
+- **Other relational/graph providers:** architectural extension points, not claims of current production support.
+
+See [Provider independence](docs/PROVIDER-INDEPENDENCE.md) and [Current status](docs/CURRENT-STATUS.md) for the exact proven scope.
 
 ## Projects
 
@@ -275,6 +342,7 @@ Foundgine is not defined by SQL. The repository includes a deliberately small in
 - [Flagship Proof](docs/FLAGSHIP-PROOF.md)
 - [Execution Algebra](docs/EXECUTION-ALGEBRA.md)
 - [Current status](docs/CURRENT-STATUS.md)
+- [Multi-model boundary](docs/MULTI-MODEL-BOUNDARY.md)
 - [Runtime](docs/RUNTIME.md)
 - [Authorization](docs/AUTHORIZATION.md)
 - [AOT](docs/AOT.md)
@@ -301,3 +369,15 @@ See [`docs/PUBLIC-API.md`](docs/PUBLIC-API.md). Application code should prefer t
 
 
 **Agent boundary:** [Agent Semantic Boundary](docs/AGENT-SEMANTIC-BOUNDARY.md)
+
+## CI quality gates
+
+Pull requests are checked by GitHub Actions before merge:
+
+- the full solution test suite must pass;
+- all expected NuGet packages must build and pass packaging validation;
+- the PostgreSQL performance gate must complete without request errors/timeouts and must remain inside conservative throughput/latency guardrails for the core query, mutation and upsert+select workloads.
+
+The performance gate is intentionally stricter than a simple "the benchmark process exited successfully" check, but it is **not** the published performance baseline. It is a regression guard designed to catch broken execution paths without treating noisy CI hardware as a benchmark laboratory.
+
+See [Testing](docs/TESTING.md) for the merge-gate configuration and [the benchmark harness](benchmarks/CoffeeBeanery.Performance/README.md) for the full reproducible performance suite.

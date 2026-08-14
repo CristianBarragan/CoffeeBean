@@ -5,16 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b3558bd8-3cb8-4f40-96cc-38c2449b8bf8" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Foundgine/.idea/workspace.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/.idea/.idea.CoffeeBeanery.dir/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/.idea/.idea.CoffeeBeanery.dir/.idea/.name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/.idea/.idea.CoffeeBeanery.dir/.idea/encodings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/.idea/.idea.CoffeeBeanery.dir/.idea/indexLayout.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/.idea/.idea.CoffeeBeanery.dir/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/NUGET-PACKAGING.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/NUGET-PACKAGING.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/eng/pack.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/eng/pack.ps1" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Foundgine.Aot/Foundgine.Aot.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/src/Foundgine.Aot/Foundgine.Aot.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/Foundgine.Aot.Tests/Foundgine.Aot.Tests.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Foundgine.Aot.Tests/Foundgine.Aot.Tests.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/Migrations/20260801212658_Initial.Designer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/Migrations/20260801212658_Initial.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/Migrations/20260812093000_MutationMergeAndGraphIndexes.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/Migrations/BankingEntityContextModelSnapshot.cs" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -26,7 +20,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
-    &quot;git-widget-placeholder&quot;: &quot;packacking-nuget&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;Update-Documentation&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;
   }
 }</component>
