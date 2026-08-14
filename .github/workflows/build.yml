@@ -51,6 +51,7 @@ jobs:
 
           while IFS= read -r project; do
             echo "Packing $project"
+
             dotnet pack "$project" \
               --no-restore \
               --configuration Release \
@@ -73,11 +74,19 @@ jobs:
           echo "Package contents:"
           unzip -l "$package"
 
-          unzip -l "$package" | grep -F "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"
-          unzip -l "$package" | grep -F "lib/net9.0/Foundgine.Aot.dll"
-          unzip -l "$package" | grep -F "lib/net9.0/Foundgine.Metadata.dll"
+          unzip -l "$package" \
+            | grep -F "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"
 
-          if unzip -l "$package" | grep -E '(^|/)Foundgine.Aot.Generator.dll$' | grep -v 'analyzers/dotnet/cs/'; then
+          unzip -l "$package" \
+            | grep -F "lib/net9.0/Foundgine.Aot.dll"
+
+          unzip -l "$package" \
+            | grep -F "lib/net9.0/Foundgine.Metadata.dll"
+
+          if unzip -l "$package" \
+            | grep -E '(^|/)Foundgine.Aot.Generator.dll$' \
+            | grep -v 'analyzers/dotnet/cs/'; then
+
             echo "Generator was packaged outside the analyzer directory."
             exit 1
           fi
@@ -93,6 +102,8 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build-test-pack
     runs-on: ubuntu-latest
+
+    environment: production
 
     permissions:
       contents: read
