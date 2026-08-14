@@ -1,10 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <PackageId>Foundgine.Planning</PackageId>
+    <Description>Provider-independent execution planning for Foundgine.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.Planning</RootNamespace>
     <AssemblyName>Foundgine.Planning</AssemblyName>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
     <ProjectReference Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
     <ProjectReference Include="../Foundgine.Semantics/Foundgine.Semantics.csproj" />
   </ItemGroup>

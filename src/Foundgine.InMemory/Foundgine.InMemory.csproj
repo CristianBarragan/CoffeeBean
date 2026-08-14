@@ -1,10 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <PackageId>Foundgine.InMemory</PackageId>
+    <Description>In-memory execution provider for Foundgine testing and development.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.InMemory</RootNamespace>
     <AssemblyName>Foundgine.InMemory</AssemblyName>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
     <ProjectReference Include="../Foundgine.Execution/Foundgine.Execution.csproj" />
     <ProjectReference Include="../Foundgine.Metadata/Foundgine.Metadata.csproj" />
     <ProjectReference Include="../Foundgine.Planning/Foundgine.Planning.csproj" />
