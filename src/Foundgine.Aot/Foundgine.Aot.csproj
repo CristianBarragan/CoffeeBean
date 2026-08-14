@@ -1,11 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <PackageId>Foundgine.Aot</PackageId>
+    <Description>AOT metadata attributes and runtime support for generated Foundgine metadata.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.Aot</RootNamespace>
     <AssemblyName>Foundgine.Aot</AssemblyName>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
     <ProjectReference Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
     <ProjectReference Include="../Foundgine.Metadata/Foundgine.Metadata.csproj" />
   </ItemGroup>
+  <Target Name="PackGeneratorAnalyzer" BeforeTargets="GenerateNuspec" DependsOnTargets="Build">
+    <ItemGroup>
+      <_FoundgineGenerator Include="$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/bin/$(Configuration)/netstandard2.0/Foundgine.Aot.Generator.dll" />
+      <TfmSpecificPackageFile Include="$(_FoundgineGenerator)" PackagePath="analyzers/dotnet/cs/Foundgine.Aot.Generator.dll" />
+    </ItemGroup>
+  </Target>
 </Project>

@@ -1,15 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
+    <PackageId>Foundgine.GraphQL.HotChocolate</PackageId>
+    <Description>Hot Chocolate adapter that converts GraphQL selections into Foundgine semantic requests.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.GraphQL.HotChocolate</RootNamespace>
     <AssemblyName>Foundgine.GraphQL.HotChocolate</AssemblyName>
     <IsPackable>true</IsPackable>
-    <Description>Thin Hot Chocolate adapter for Foundgine. Converts GraphQL selections into provider-neutral SemanticRequest objects.</Description>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
     <PackageReference Include="HotChocolate.Language" Version="15.1.16" />
   </ItemGroup>
   <ItemGroup>

@@ -1,10 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <PackageId>Foundgine.Metadata</PackageId>
+    <Description>Semantic metadata model and runtime metadata registry for Foundgine.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.Metadata</RootNamespace>
     <AssemblyName>Foundgine.Metadata</AssemblyName>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
     <ProjectReference Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
   </ItemGroup>
 </Project>

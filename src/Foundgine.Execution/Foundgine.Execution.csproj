@@ -1,10 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <PackageId>Foundgine.Execution</PackageId>
+    <Description>Execution contracts, provider boundary and execution coordination for Foundgine.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.Execution</RootNamespace>
     <AssemblyName>Foundgine.Execution</AssemblyName>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
     <ProjectReference Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
     <ProjectReference Include="../Foundgine.Planning/Foundgine.Planning.csproj" />
     <ProjectReference Include="../Foundgine.Semantics/Foundgine.Semantics.csproj" />

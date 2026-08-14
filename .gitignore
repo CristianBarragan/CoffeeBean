@@ -7,3 +7,8 @@ TestResults/
 
 # Generated benchmark results
 benchmarks/CoffeeBeanery.Performance/reports/
+
+# Build artifacts
+artifacts/
+**/bin/
+**/obj/

@@ -1,10 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <PackageId>Foundgine</PackageId>
+    <Description>Semantic execution layer for .NET. Resolves structured intent into authorized, deterministic execution plans.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine</RootNamespace>
     <AssemblyName>Foundgine</AssemblyName>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
     <ProjectReference Include="../Foundgine.Execution/Foundgine.Execution.csproj" />
     <ProjectReference Include="../Foundgine.Planning/Foundgine.Planning.csproj" />
     <ProjectReference Include="../Foundgine.Semantics/Foundgine.Semantics.csproj" />
