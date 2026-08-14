@@ -13,7 +13,6 @@ permissions:
 jobs:
   build-test-pack:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,40 +37,29 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
             version="${GITHUB_REF_NAME#v}"
           else
             version="0.1.0-ci.${GITHUB_RUN_NUMBER}"
           fi
-
           mkdir -p artifacts/nuget
-
           while IFS= read -r project; do
-            dotnet pack "$project" \
-              --no-restore \
-              --configuration Release \
-              --output artifacts/nuget \
-              -p:PackageVersion="$version"
+            dotnet pack "$project" --no-restore --configuration Release --output artifacts/nuget -p:PackageVersion="$version"
           done < <(find src -name '*.csproj' -print | sort)
 
       - name: Validate NuGet package
         shell: bash
         run: |
           set -euo pipefail
-
           package=(artifacts/nuget/Foundgine.Aot.*.nupkg)
           test "${#package[@]}" -eq 1
           package="${package[0]}"
-
           echo "Package contents:"
-          unzip -l $package
-
-          unzip -l $package | grep -F "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"
-          unzip -l $package | grep -F "lib/net9.0/Foundgine.Aot.dll"
-          unzip -l $package | grep -F "lib/net9.0/Foundgine.Metadata.dll"
-
-          if unzip -l $package | grep -E '(^|/)Foundgine.Aot.Generator.dll$' | grep -v 'analyzers/dotnet/cs/'; then
+          unzip -l "$package"
+          unzip -l "$package" | grep -F "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"
+          unzip -l "$package" | grep -F "lib/net9.0/Foundgine.Aot.dll"
+          unzip -l "$package" | grep -F "lib/net9.0/Foundgine.Metadata.dll"
+          if unzip -l "$package" | grep -E '(^|/)Foundgine.Aot.Generator.dll$' | grep -v 'analyzers/dotnet/cs/'; then
             echo "Generator was packaged outside the analyzer directory."
             exit 1
           fi
@@ -89,6 +77,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
 
     steps:
       - name: Download NuGet artifact
@@ -102,15 +91,16 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
+      - name: NuGet login (OIDC)
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Publish to NuGet.org
         shell: bash
         run: |
           set -euo pipefail
           for package in artifacts/nuget/*.nupkg; do
-            dotnet nuget push "$package" \
-              --api-key "${NUGET_API_KEY}" \
-              --source "https://api.nuget.org/v3/index.json" \
-              --skip-duplicate
+            dotnet nuget push "$package"               --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}"               --source "https://api.nuget.org/v3/index.json"               --skip-duplicate
           done
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
