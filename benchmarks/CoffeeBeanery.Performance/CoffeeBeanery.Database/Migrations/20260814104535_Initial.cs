@@ -234,10 +234,10 @@ namespace CoffeeBeanery.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Contract_CustomerBankingRelationshipId",
+                name: "IX_Contract_CustomerBankingRelationshipId_Id",
                 schema: "Lending",
                 table: "Contract",
-                column: "CustomerBankingRelationshipId");
+                columns: new[] { "CustomerBankingRelationshipId", "Id" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Customer_CustomerKey",
@@ -254,10 +254,10 @@ namespace CoffeeBeanery.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_CustomerBankingRelationship_CustomerId",
+                name: "IX_CustomerBankingRelationship_CustomerId_Id",
                 schema: "Banking",
                 table: "CustomerBankingRelationship",
-                column: "CustomerId");
+                columns: new[] { "CustomerId", "Id" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_CustomerCustomerRelationship_CustomerCustomerRelationshipKey",
@@ -286,10 +286,10 @@ namespace CoffeeBeanery.Database.Migrations
                 column: "AccountId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Transaction_ContractId",
+                name: "IX_Transaction_ContractId_Id",
                 schema: "Lending",
                 table: "Transaction",
-                column: "ContractId");
+                columns: new[] { "ContractId", "Id" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Transaction_TransactionKey",
