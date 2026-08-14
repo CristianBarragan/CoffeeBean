@@ -630,39 +630,6 @@ static Guid DeterministicGuid(string prefix, int value) =>
         GuidUtility.UrlNamespace,
         $"coffee-beanery/{prefix}/{value}");
 
-static class GuidUtility
-{
-    public static readonly Guid UrlNamespace =
-        new("6ba7b811-9dad-11d1-80b4-00c04fd430c8");
-
-    public static Guid Create(Guid namespaceId, string name)
-    {
-        var namespaceBytes = namespaceId.ToByteArray();
-        SwapByteOrder(namespaceBytes);
-
-        var nameBytes = Encoding.UTF8.GetBytes(name);
-        var data = new byte[namespaceBytes.Length + nameBytes.Length];
-        Buffer.BlockCopy(namespaceBytes, 0, data, 0, namespaceBytes.Length);
-        Buffer.BlockCopy(nameBytes, 0, data, namespaceBytes.Length, nameBytes.Length);
-
-        using var sha1 = System.Security.Cryptography.SHA1.Create();
-        var hash = sha1.ComputeHash(data);
-        var bytes = hash[..16];
-        bytes[6] = (byte)((bytes[6] & 0x0F) | 0x50);
-        bytes[8] = (byte)((bytes[8] & 0x3F) | 0x80);
-        SwapByteOrder(bytes);
-        return new Guid(bytes);
-    }
-
-    private static void SwapByteOrder(byte[] guid)
-    {
-        (guid[0], guid[3]) = (guid[3], guid[0]);
-        (guid[1], guid[2]) = (guid[2], guid[1]);
-        (guid[4], guid[5]) = (guid[5], guid[4]);
-        (guid[6], guid[7]) = (guid[7], guid[6]);
-    }
-}
-
 static async Task<DockerMetrics> SampleDockerMetricsAsync(string container, CancellationToken cancellationToken, Stopwatch phase, TimeSpan duration)
 {
     var cpu = new List<double>();
@@ -720,54 +687,6 @@ static string GetRequiredEnvironmentVariable(string name) =>
         ? value
         : throw new InvalidOperationException(
             $"Required environment variable '{name}' is not set.");
-
-static object CreateMutationVariables()
-{
-    var customerKey = Guid.NewGuid();
-    var relationshipKey = Guid.NewGuid();
-    var contractKey = Guid.NewGuid();
-
-    return new
-    {
-        input = new
-        {
-            customerKey,
-            firstName = "Benchmark",
-            lastName = "Customer",
-            fullName = "Benchmark Customer",
-            customerBankingRelationship = new[]
-            {
-                new
-                {
-                    customerBankingRelationshipKey = relationshipKey,
-                    contract = new[]
-                    {
-                        new
-                        {
-                            contractKey,
-                            amount = 1000.50m,
-                            transaction = new[]
-                            {
-                                new
-                                {
-                                    transactionKey = Guid.NewGuid(),
-                                    amount = 100m,
-                                    balance = 1200m
-                                },
-                                new
-                                {
-                                    transactionKey = Guid.NewGuid(),
-                                    amount = 125m,
-                                    balance = 1075m
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    };
-}
 
 static double Percentile(
     double[] values,
@@ -971,3 +890,37 @@ record BenchmarkReport(
     int DrainTimeoutSeconds,
     int[] Concurrency,
     IReadOnlyCollection<BenchmarkResult> Results);
+
+
+static class GuidUtility
+{
+    public static readonly Guid UrlNamespace =
+        new("6ba7b811-9dad-11d1-80b4-00c04fd430c8");
+
+    public static Guid Create(Guid namespaceId, string name)
+    {
+        var namespaceBytes = namespaceId.ToByteArray();
+        SwapByteOrder(namespaceBytes);
+
+        var nameBytes = Encoding.UTF8.GetBytes(name);
+        var data = new byte[namespaceBytes.Length + nameBytes.Length];
+        Buffer.BlockCopy(namespaceBytes, 0, data, 0, namespaceBytes.Length);
+        Buffer.BlockCopy(nameBytes, 0, data, namespaceBytes.Length, nameBytes.Length);
+
+        using var sha1 = System.Security.Cryptography.SHA1.Create();
+        var hash = sha1.ComputeHash(data);
+        var bytes = hash[..16];
+        bytes[6] = (byte)((bytes[6] & 0x0F) | 0x50);
+        bytes[8] = (byte)((bytes[8] & 0x3F) | 0x80);
+        SwapByteOrder(bytes);
+        return new Guid(bytes);
+    }
+
+    private static void SwapByteOrder(byte[] guid)
+    {
+        (guid[0], guid[3]) = (guid[3], guid[0]);
+        (guid[1], guid[2]) = (guid[2], guid[1]);
+        (guid[4], guid[5]) = (guid[5], guid[4]);
+        (guid[6], guid[7]) = (guid[7], guid[6]);
+    }
+}

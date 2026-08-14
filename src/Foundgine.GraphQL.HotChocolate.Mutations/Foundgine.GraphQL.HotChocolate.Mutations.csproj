@@ -3,7 +3,6 @@
     <PackageId>Foundgine.GraphQL.HotChocolate.Mutations</PackageId>
     <Description>Hot Chocolate mutation adapter for Foundgine.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.GraphQL.HotChocolate</RootNamespace>
     <AssemblyName>Foundgine.GraphQL.HotChocolate.Mutations</AssemblyName>
     <IsPackable>true</IsPackable>

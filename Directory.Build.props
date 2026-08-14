@@ -11,6 +11,7 @@
     <Authors>Foundgine</Authors>
     <Company>Foundgine</Company>
     <Copyright>Copyright © 2026 Foundgine</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>semantic-execution;authorization;execution-plan;graphql;ai;dotnet</PackageTags>
     <RepositoryType>git</RepositoryType>
@@ -18,6 +19,8 @@
     <PackageProjectUrl>https://github.com/CristianBarragan/Foundgine</PackageProjectUrl>
     <PackageReleaseNotes>Initial public packaging of the Foundgine semantic execution layer.</PackageReleaseNotes>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Public API documentation is generated for NuGet packages; missing XML comments are not a CI error. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

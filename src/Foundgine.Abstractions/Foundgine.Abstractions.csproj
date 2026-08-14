@@ -3,7 +3,6 @@
     <PackageId>Foundgine.Abstractions</PackageId>
     <Description>Provider-independent contracts and identifiers used by Foundgine.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.Abstractions</RootNamespace>
     <AssemblyName>Foundgine.Abstractions</AssemblyName>
     <IsPackable>true</IsPackable>

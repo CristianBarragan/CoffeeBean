@@ -3,7 +3,6 @@
     <PackageId>Foundgine.GraphQL.HotChocolate</PackageId>
     <Description>Hot Chocolate adapter that converts GraphQL selections into Foundgine semantic requests.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.GraphQL.HotChocolate</RootNamespace>
     <AssemblyName>Foundgine.GraphQL.HotChocolate</AssemblyName>
     <IsPackable>true</IsPackable>
