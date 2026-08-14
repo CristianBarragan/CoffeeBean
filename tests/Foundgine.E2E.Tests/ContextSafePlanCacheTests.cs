@@ -136,7 +136,7 @@ public sealed class ContextSafePlanCacheTests
     private sealed class CountingCompiler : IProviderPlanCompiler
     {
         public int Count { get; private set; }
-        public ProviderPlan Compile(ExecutionPlan plan)
+        public ProviderPlan Compile(ExecutionIR ir)
         {
             Count++;
             return new TestPlan();

@@ -64,9 +64,9 @@ public sealed class StructuredReadIntentTests
             .ExecuteAsync(sql, PaginationExecutionContext.Create(5));
 
         Assert.Equal(5, result.Rows.Count);
-        Assert.Equal(106, Convert.ToInt32(result.Rows[0].Values["n0_Id"]));
-        Assert.Equal(102, Convert.ToInt32(result.Rows[^1].Values["n0_Id"]));
-        Assert.All(result.Rows, row => Assert.NotEqual(200, row.Values["n0_Id"]));
+        Assert.Equal(106, Convert.ToInt32(result.Rows[0].Values["__fg_0_Id"]));
+        Assert.Equal(102, Convert.ToInt32(result.Rows[^1].Values["__fg_0_Id"]));
+        Assert.All(result.Rows, row => Assert.NotEqual(200, row.Values["__fg_0_Id"]));
     }
 
     [Fact]

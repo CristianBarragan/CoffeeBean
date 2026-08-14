@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Text;
 using Foundgine.Metadata;
 using Foundgine.Abstractions;
@@ -15,7 +16,18 @@ internal static class SemanticQuerySqlWriter
         IMetadataProvider metadata)
     {
         if (filter is null) return null;
-        var nextParameter = 0;
+
+        // Start numbering after any parameters the caller already added to
+        // this shared collection (e.g. SET-clause bindings in
+        // SqlMutationCompiler.CompileUpdate). Always starting at 0 here
+        // produces "@p0", "@p1", ... names that collide with those
+        // pre-existing bindings: the parameters collection ends up with two
+        // different values bound to the same parameter name, and whichever
+        // one the provider resolves first silently answers for both
+        // placeholders (e.g. a bigint COUNT(*) comparison ends up bound to
+        // an unrelated text SET value, producing PostgreSQL error 42883
+        // "operator does not exist: bigint > text").
+        var nextParameter = parameters.Count;
         var nextAlias = 0;
         return WriteFilter(filter, entity, alias, parameters, metadata, ref nextParameter, ref nextAlias);
     }
@@ -186,8 +198,33 @@ internal static class SemanticQuerySqlWriter
         }
 
         var parameter = "p" + nextParameter++;
-        parameters.Add(new SqlParameterBinding(parameter, filter.Value));
+
+        // PostgreSQL COUNT(*) is bigint. Keep the parameter on the same
+        // numeric type so comparisons such as COUNT(*) > 0 are resolved as
+        // bigint > bigint rather than bigint > text by Npgsql/PostgreSQL.
+        var comparisonValue = filter.Aggregate == SemanticFilterAggregate.Count
+            ? ConvertCountComparisonValue(filter.Value)
+            : filter.Value;
+
+        parameters.Add(new SqlParameterBinding(parameter, comparisonValue));
         return expression + RenderAggregateOperator(filter.Operator) + "@" + parameter;
+    }
+
+    private static long ConvertCountComparisonValue(object? value)
+    {
+        if (value is null)
+            throw new InvalidOperationException("A Count aggregate filter requires a comparison value.");
+
+        try
+        {
+            return Convert.ToInt64(value, System.Globalization.CultureInfo.InvariantCulture);
+        }
+        catch (Exception ex) when (ex is FormatException or InvalidCastException or OverflowException)
+        {
+            throw new InvalidOperationException(
+                $"Count aggregate filter value '{value}' is not an integer.",
+                ex);
+        }
     }
 
     private static string RenderAggregateOperator(SemanticAggregateFilterOperator op) => op switch
@@ -250,7 +287,9 @@ internal static class SemanticQuerySqlWriter
     {
         null => [],
         object?[] array => array,
+        Array array => array.Cast<object?>().ToArray(),
         IReadOnlyList<object?> list => list,
+        IEnumerable enumerable when value is not string => enumerable.Cast<object?>().ToArray(),
         _ => [value]
     };
 

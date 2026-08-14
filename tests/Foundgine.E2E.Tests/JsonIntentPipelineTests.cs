@@ -72,7 +72,7 @@ public sealed class JsonIntentPipelineTests
 
         Assert.Equal(5, result.Rows.Count);
         Assert.Equal(new object[] { 106L, 105L, 104L, 103L, 102L },
-            result.Rows.Select(row => row.Values["n0_Id"]).ToArray());
+            result.Rows.Select(row => row.Values["__fg_0_Id"]).ToArray());
     }
 
     private static async Task SeedAsync(SqliteConnection connection)

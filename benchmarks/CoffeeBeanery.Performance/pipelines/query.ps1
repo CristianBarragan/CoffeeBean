@@ -5,12 +5,22 @@ $BenchmarkRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $RepoRoot = (Resolve-Path (Join-Path $BenchmarkRoot "..\..")).Path
 
 $ComposeFile = Join-Path $BenchmarkRoot "compose\postgres.yml"
-$Network = "coffeebeanery-query_default"
-$Volume = "coffeebeanery-query_benchmark-postgres-data"
+# The query pipeline owns its Docker project. Never reuse the compose project's
+# default name/network/volume because another benchmark process (or a stale
+# process from a previous run) could otherwise share PostgreSQL state.
+$RunId = "{0}-{1}" -f $PID, ([Guid]::NewGuid().ToString("N").Substring(0, 8))
+$ProjectName = "coffeebeanery-query-$RunId"
+$Network = "${ProjectName}_default"
+$Volume = "${ProjectName}_query-postgres-data"
 
-$DbImage = "coffeebeanery-query-database"
-$HcImage = "coffeebeanery-query-hotchocolate"
-$FgImage = "coffeebeanery-query-foundgine"
+$DbImage = "coffeebeanery-query-database:$RunId"
+$HcImage = "coffeebeanery-query-hotchocolate:$RunId"
+$FgImage = "coffeebeanery-query-foundgine:$RunId"
+
+$DbContainer = "${ProjectName}-database"
+$HcContainer = "${ProjectName}-hotchocolate"
+$FgColdContainer = "${ProjectName}-foundgine-cold"
+$FgWarmContainer = "${ProjectName}-foundgine-warm"
 
 $ReportRoot = Join-Path $BenchmarkRoot "reports\query"
 New-Item -ItemType Directory -Force -Path $ReportRoot | Out-Null
@@ -100,17 +110,17 @@ function Reset-Database {
     # Compose owns the disposable database lifecycle. `down -v` removes the
     # project containers, network and named volumes. The explicit volume rm is
     # intentionally best-effort because `down -v` may already have removed it.
-    & cmd.exe /d /c "docker compose -f `"$ComposeFile`" down -v --remove-orphans >nul 2>&1" | Out-Null
+    & cmd.exe /d /c "docker compose -p $ProjectName -f `"$ComposeFile`" down -v --remove-orphans >nul 2>&1" | Out-Null
     & docker volume rm -f $Volume 2>$null | Out-Null
 
-    Invoke-Checked docker @("compose", "-f", $ComposeFile, "up", "-d", "--wait")
+    Invoke-Checked docker @("compose", "-p", $ProjectName, "-f", $ComposeFile, "up", "-d", "--wait", "postgres")
 
     Write-Host "Running database migration and fixture seeding..."
-    Stop-ContainerIfExists "coffeebeanery-query-database"
+    Stop-ContainerIfExists $DbContainer
 
     Invoke-Checked docker @(
         "run", "--rm",
-        "--name", "coffeebeanery-query-database",
+        "--name", $DbContainer,
         "--network", $Network,
         "-e", "BankingConnectionString=$ConnectionString",
         "-e", "COFFEEBEANERY_CONNECTION=$ConnectionString",
@@ -174,9 +184,9 @@ function Run-LoadTest {
     $env:BENCHMARK_CONCURRENCY = "1,8,16,32,64"
     $env:BENCHMARK_BATCH_SIZES = "1,10,50"
     $env:BENCHMARK_DOCKER_CONTAINER = switch ($Name) {
-        "Hot Chocolate + EF Core" { "coffeebeanery-query-hotchocolate"; break }
-        "Foundgine - no cache" { "coffeebeanery-query-foundgine-cold"; break }
-        "Foundgine - provider-plan cache" { "coffeebeanery-query-foundgine-warm"; break }
+        "Hot Chocolate + EF Core" { $HcContainer; break }
+        "Foundgine - no cache" { $FgColdContainer; break }
+        "Foundgine - provider-plan cache" { $FgWarmContainer; break }
         default { $null }
     }
     $env:BENCHMARK_REPORT_DIRECTORY = $reportDirectory
@@ -209,43 +219,43 @@ try {
     # Exactly one API and one freshly-created PostgreSQL volume are alive
     # during each measurement.
     Reset-Database
-    Start-Api "coffeebeanery-query-hotchocolate" $HcImage 4300
+    Start-Api $HcContainer $HcImage 4300
     try {
         Run-LoadTest "Hot Chocolate + EF Core" "http://localhost:4300/graphql" "hotchocolate"
     }
     finally {
-        Stop-Api "coffeebeanery-query-hotchocolate"
+        Stop-Api $HcContainer
     }
 
     Reset-Database
-    Start-Api "coffeebeanery-query-foundgine-cold" $FgImage 4301
+    Start-Api $FgColdContainer $FgImage 4301
     try {
         Run-LoadTest "Foundgine - no cache" "http://localhost:4301/graphql/cold" "foundgine-cold"
     }
     finally {
-        Stop-Api "coffeebeanery-query-foundgine-cold"
+        Stop-Api $FgColdContainer
     }
 
     Reset-Database
-    Start-Api "coffeebeanery-query-foundgine-warm" $FgImage 4302
+    Start-Api $FgWarmContainer $FgImage 4302
     try {
         Run-LoadTest "Foundgine - provider-plan cache" "http://localhost:4302/graphql/warm" "foundgine-warm"
     }
     finally {
-        Stop-Api "coffeebeanery-query-foundgine-warm"
+        Stop-Api $FgWarmContainer
     }
 
     Write-Host "`nQuery benchmark completed."
     Write-Host "Reports: $ReportRoot"
 }
 finally {
-    Stop-ContainerIfExists "coffeebeanery-query-hotchocolate"
-    Stop-ContainerIfExists "coffeebeanery-query-foundgine-cold"
-    Stop-ContainerIfExists "coffeebeanery-query-foundgine-warm"
-    Stop-ContainerIfExists "coffeebeanery-query-database"
+    Stop-ContainerIfExists $HcContainer
+    Stop-ContainerIfExists $FgColdContainer
+    Stop-ContainerIfExists $FgWarmContainer
+    Stop-ContainerIfExists $DbContainer
 
     # Always destroy the PostgreSQL volume as well. The next target/run must
     # never inherit database state from a previous benchmark case.
-    & cmd.exe /d /c "docker compose -f `"$ComposeFile`" down -v --remove-orphans >nul 2>&1" | Out-Null
+    & cmd.exe /d /c "docker compose -p $ProjectName -f `"$ComposeFile`" down -v --remove-orphans >nul 2>&1" | Out-Null
     & docker volume rm -f $Volume 2>$null | Out-Null
 }

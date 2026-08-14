@@ -53,9 +53,9 @@ public sealed class FoundgineGraphQlPipelineTests
             .ExecuteAsync(sqlPlan, new ExecutionContext());
 
         Assert.Equal(2, result.Rows.Count);
-        Assert.Contains("n0_Id", result.Rows[0].Values.Keys);
-        Assert.Contains("n0_Name", result.Rows[0].Values.Keys);
-        Assert.Contains("n2_Amount", result.Rows[0].Values.Keys);
+        Assert.Contains("__fg_0_Id", result.Rows[0].Values.Keys);
+        Assert.Contains("__fg_0_Name", result.Rows[0].Values.Keys);
+        Assert.Contains("__fg_2_Amount", result.Rows[0].Values.Keys);
     }
 
     private static async Task SeedAsync(SqliteConnection connection)

@@ -51,8 +51,8 @@ public sealed class CollectionOrderingTests
         var result = await new SqlExecutionProvider(connection).ExecuteAsync(plan, PaginationExecutionContext.Create(2));
 
         Assert.Equal(2, result.Rows.Count);
-        Assert.Equal(1, Convert.ToInt32(result.Rows[0].Values["n0_Id"]));
-        Assert.Equal(2, Convert.ToInt32(result.Rows[1].Values["n0_Id"]));
+        Assert.Equal(1, Convert.ToInt32(result.Rows[0].Values["__fg_0_Id"]));
+        Assert.Equal(2, Convert.ToInt32(result.Rows[1].Values["__fg_0_Id"]));
         Assert.True(result.PageInfo!.HasNextPage);
 
         var nextRequest = new SemanticRequest(
@@ -73,7 +73,7 @@ public sealed class CollectionOrderingTests
         var nextResult = await new SqlExecutionProvider(connection).ExecuteAsync(nextPlan, PaginationExecutionContext.Create(2, result.PageInfo.EndCursor));
 
         Assert.Single(nextResult.Rows);
-        Assert.Equal(3, Convert.ToInt32(nextResult.Rows[0].Values["n0_Id"]));
+        Assert.Equal(3, Convert.ToInt32(nextResult.Rows[0].Values["__fg_0_Id"]));
         Assert.False(nextResult.PageInfo!.HasNextPage);
     }
 

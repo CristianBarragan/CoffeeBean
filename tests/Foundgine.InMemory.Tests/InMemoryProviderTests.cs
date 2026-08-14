@@ -73,7 +73,7 @@ public sealed class InMemoryProviderTests
 
         var provider = new InMemoryExecutionProvider(metadata, data);
         var result = await provider.ExecuteAsync(
-            new InMemoryCompiler().Compile(plan),
+            new InMemoryCompiler().Compile(ExecutionIRCompiler.Compile(plan)),
             new ExecutionContext(new Dictionary<string, object?> { ["tenant.id"] = 1 }));
 
         var materialized = new ResultMaterializer(model).Materialize(plan, result);
@@ -85,10 +85,10 @@ public sealed class InMemoryProviderTests
     [Fact]
     public void Provider_plan_is_not_a_sql_plan()
     {
-        var plan = new ExecutionPlan(
-            new ExecutionPlanNode(0, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, []));
+        var plan = new SemanticPlan(
+            new SemanticPlanNode(0, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, []));
 
-        var compiled = new InMemoryCompiler().Compile(plan);
+        var compiled = new InMemoryCompiler().Compile(ExecutionIRCompiler.Compile(plan));
 
         Assert.IsType<InMemoryPlan>(compiled);
         Assert.Equal("in-memory", compiled.Provider);

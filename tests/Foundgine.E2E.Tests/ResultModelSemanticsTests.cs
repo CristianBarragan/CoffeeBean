@@ -2,12 +2,41 @@ using Foundgine.Abstractions;
 using Foundgine.Execution;
 using Foundgine.Planning;
 using Foundgine.Semantics;
+using Foundgine.Semantics.Results;
 using Xunit;
 
 namespace Foundgine.E2E.Tests;
 
 public sealed class ResultModelSemanticsTests
 {
+    [Fact]
+    public void Materializer_returns_the_canonical_semantic_result_type()
+    {
+        var customer = new EntityId(1);
+        var id = new FieldId(1);
+        var model = new SemanticModelBuilder()
+            .Entity(customer, "Customer", e => e
+                .Identity(id, "Id")
+                .Field(id, "Id", typeof(long)))
+            .Build();
+
+        var plan = new SemanticPlan(
+            new SemanticPlanNode(1, ExecutionOperation.Scan, customer, [id], null, []));
+
+        var row = new ExecutionRow(
+            new Dictionary<string, object?>(),
+            new Dictionary<ExecutionCellKey, object?>
+            {
+                [new ExecutionCellKey(1, customer, id)] = 42L
+            });
+
+        var result = new ResultMaterializer(model).Materialize(
+            plan, new ExecutionResult([row]));
+
+        Assert.IsType<SemanticResult>(result);
+        Assert.IsType<SemanticResultNode>(result.Roots[0]);
+    }
+
     [Fact]
     public void Identity_is_not_required_in_the_projection_to_reconstruct_unique_nodes()
     {
@@ -22,8 +51,8 @@ public sealed class ResultModelSemanticsTests
                 .Field(name, "Name", typeof(string)))
             .Build();
 
-        var plan = new ExecutionPlan(
-            new ExecutionPlanNode(
+        var plan = new SemanticPlan(
+            new SemanticPlanNode(
                 1,
                 ExecutionOperation.Scan,
                 customer,
@@ -61,8 +90,8 @@ public sealed class ResultModelSemanticsTests
                 .Field(id, "Id", typeof(long)))
             .Build();
 
-        var plan = new ExecutionPlan(
-            new ExecutionPlanNode(1, ExecutionOperation.Scan, customer, [id], null, []));
+        var plan = new SemanticPlan(
+            new SemanticPlanNode(1, ExecutionOperation.Scan, customer, [id], null, []));
 
         var pageInfo = new ExecutionPageInfo("start", "end", true, false);
         var evidence = new ExecutionEvidence("sql", "plan", [1], 1, 3);
@@ -77,7 +106,17 @@ public sealed class ResultModelSemanticsTests
             plan,
             new ExecutionResult([row], pageInfo, evidence));
 
-        Assert.Same(pageInfo, materialized.PageInfo);
-        Assert.Same(evidence, materialized.Evidence);
+        Assert.Equal(
+            new SemanticResultPageInfo("start", "end", true, false),
+            materialized.PageInfo);
+        Assert.NotNull(materialized.Evidence);
+        Assert.Equal("sql", materialized.Evidence!.Provider);
+        Assert.Equal("plan", materialized.Evidence.PlanFingerprint);
+        Assert.Equal([1], materialized.Evidence.AuthorizedNodeIds);
+        Assert.Equal(1, materialized.Evidence.RowsReturned);
+        Assert.Equal(3, materialized.Evidence.ElapsedMilliseconds);
+        Assert.Null(materialized.Evidence.ProviderOperationFingerprint);
+        Assert.Null(materialized.Evidence.IntentFingerprint);
+        Assert.Null(materialized.Evidence.AuthorizationFingerprint);
     }
 }

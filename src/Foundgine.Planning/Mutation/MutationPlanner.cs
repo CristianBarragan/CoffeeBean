@@ -1,4 +1,5 @@
 using Foundgine.Abstractions;
+using Foundgine.Semantics.Mutation;
 using Foundgine.Semantics.Query;
 
 namespace Foundgine.Planning.Mutation;
@@ -13,6 +14,170 @@ public sealed class MutationPlanner
 
     public MutationPlanner(IMutationSchema schema) =>
         _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+
+    /// <summary>
+    /// Canonical mutation planning entry point. Semantic mutation IR is the source of
+    /// truth; this method only lowers semantic identities to the provider-neutral
+    /// planning representation required by the existing mutation execution pipeline.
+    /// </summary>
+    public MutationBatchPlan Plan(SemanticMutationOperationGraph graph)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        if (graph.Operations.Count == 0)
+            throw new InvalidOperationException("A semantic mutation graph must contain at least one operation.");
+
+        var operations = new List<MutationOperation>(graph.Operations.Count);
+        foreach (var operation in graph.Operations)
+            operations.Add(LowerSemanticOperation(operation));
+
+        var dependencies = BuildSemanticDependencies(graph, operations);
+        return new MutationBatchPlan(operations, dependencies);
+    }
+
+    private MutationOperation LowerSemanticOperation(SemanticMutationOperation operation)
+    {
+        var entity = _schema.GetEntity(operation.Entity);
+        var fields = new List<MutationFieldValue>(operation.Fields.Count);
+
+        foreach (var field in operation.Fields)
+        {
+            if (!entity.Fields.TryGetValue(field.Field, out var column) || column is null)
+                throw new InvalidOperationException(
+                    $"Semantic mutation field '{field.Field.Value}' is not writable on '{entity.Name}'.");
+
+            MutationValueReference? source = null;
+            if (field.Source is { } reference)
+                source = new MutationValueReference(reference.SourceOperationIndex, reference.SourceField);
+
+            fields.Add(new MutationFieldValue(column.Value, field.Value, source));
+        }
+
+        IReadOnlyList<ColumnId>? conflicts = null;
+        if (operation.Kind == SemanticMutationKind.Upsert)
+        {
+            if (operation.ConflictFields.Count == 0)
+                throw new InvalidOperationException(
+                    $"Upsert for '{entity.Name}' requires semantic conflict fields.");
+
+            var conflictColumns = new List<ColumnId>(operation.ConflictFields.Count);
+            foreach (var field in operation.ConflictFields)
+            {
+                if (!entity.Fields.TryGetValue(field, out var column) || column is null)
+                    throw new InvalidOperationException(
+                        $"Semantic conflict field '{field.Value}' is not mapped on '{entity.Name}'.");
+                conflictColumns.Add(column.Value);
+            }
+            conflicts = conflictColumns;
+        }
+
+        ValidateSemanticOperation(operation, entity);
+
+        return new MutationOperation(
+            entity,
+            operation.Kind switch
+            {
+                SemanticMutationKind.Create => MutationKind.Create,
+                SemanticMutationKind.Update => MutationKind.Update,
+                SemanticMutationKind.Delete => MutationKind.Delete,
+                SemanticMutationKind.Upsert => MutationKind.Upsert,
+                _ => throw new ArgumentOutOfRangeException()
+            },
+            fields,
+            operation.Filter,
+            conflicts,
+            operation.ReturnFields);
+    }
+
+    private static void ValidateSemanticOperation(
+        SemanticMutationOperation operation,
+        MutationEntitySchema entity)
+    {
+        if (operation.Kind is SemanticMutationKind.Update or SemanticMutationKind.Delete &&
+            operation.Filter is null)
+            throw new InvalidOperationException(
+                $"Unfiltered {operation.Kind} mutations are not permitted for '{entity.Name}'.");
+
+        if (operation.Kind == SemanticMutationKind.Delete && operation.Fields.Count != 0)
+            throw new InvalidOperationException("Delete mutations cannot contain field values.");
+
+        if (operation.Kind != SemanticMutationKind.Delete && operation.Fields.Count == 0)
+            throw new InvalidOperationException(
+                $"{operation.Kind} mutations must contain at least one field value.");
+
+        ValidateFilter(operation.Filter, entity);
+
+        foreach (var field in operation.ReturnFields)
+            if (!entity.Fields.ContainsKey(field))
+                throw new InvalidOperationException(
+                    $"Return field '{field.Value}' is not registered on '{entity.Name}'.");
+    }
+
+    private static IReadOnlyList<MutationDependency> BuildSemanticDependencies(
+        SemanticMutationOperationGraph graph,
+        IReadOnlyList<MutationOperation> operations)
+    {
+        var dependencies = new List<MutationDependency>();
+
+        for (var targetIndex = 0; targetIndex < operations.Count; targetIndex++)
+        {
+            var semantic = graph.Operations[targetIndex];
+            foreach (var field in semantic.Fields)
+            {
+                if (field.Source is not { } source)
+                    continue;
+
+                if (source.SourceOperationIndex < 0 ||
+                    source.SourceOperationIndex >= targetIndex ||
+                    source.SourceOperationIndex >= operations.Count)
+                    throw new InvalidOperationException(
+                        $"Semantic mutation operation {targetIndex} must reference an earlier operation; " +
+                        $"source {source.SourceOperationIndex} is invalid.");
+
+                var sourceReturns = operations[source.SourceOperationIndex].ReturnFields ?? Array.Empty<FieldId>();
+                if (!sourceReturns.Contains(source.SourceField))
+                    throw new InvalidOperationException(
+                        $"Semantic mutation operation {targetIndex} references field '{source.SourceField.Value}' " +
+                        $"from operation {source.SourceOperationIndex}, but that field is not returned.");
+
+                var entity = operations[targetIndex].Entity;
+                var column = operations[targetIndex].Fields.First(x =>
+                    x.Source is not null && x.Source.SourceOperationIndex == source.SourceOperationIndex &&
+                    x.Source.SourceField == source.SourceField).Column;
+
+                dependencies.Add(new MutationDependency(
+                    source.SourceOperationIndex,
+                    targetIndex,
+                    source.SourceField,
+                    column));
+            }
+        }
+
+        foreach (var dependency in graph.Operations.SelectMany((x, i) =>
+                     x.Dependencies.Select(d => (Index: i, Dependency: d))))
+        {
+            var d = dependency.Dependency;
+            if (d.SourceOperationIndex < 0 || d.SourceOperationIndex >= dependency.Index ||
+                d.SourceOperationIndex >= operations.Count)
+                throw new InvalidOperationException(
+                    $"Semantic dependency source {d.SourceOperationIndex} is invalid for target {dependency.Index}.");
+
+            var target = operations[dependency.Index];
+            if (!target.Entity.Fields.TryGetValue(d.TargetField, out var targetColumn) || targetColumn is null)
+                throw new InvalidOperationException(
+                    $"Semantic dependency target field '{d.TargetField.Value}' is not writable on '{target.Entity.Name}'.");
+
+            if (!dependencies.Any(x => x.SourceOperationIndex == d.SourceOperationIndex &&
+                                       x.TargetOperationIndex == dependency.Index &&
+                                       x.SourceField == d.SourceField &&
+                                       x.TargetColumn == targetColumn.Value))
+            {
+                dependencies.Add(new MutationDependency(
+                    d.SourceOperationIndex, dependency.Index, d.SourceField, targetColumn.Value));
+            }
+        }
+
+        return dependencies;
+    }
 
     public MutationPlan Plan(MutationIntent intent)
     {

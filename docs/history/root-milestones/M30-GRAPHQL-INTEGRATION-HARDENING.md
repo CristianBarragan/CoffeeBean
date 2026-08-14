@@ -58,7 +58,7 @@ planning, execution, or SQL layers.
 
 ## What M30 deliberately does not do
 
-M30 does not add another GraphQL feature. It is the checkpoint before further
+M30 does not add another GraphQL feature. It is the stage before further
 GraphQL expansion.
 
 After M30, the next feature should be selected based on actual Graphgine

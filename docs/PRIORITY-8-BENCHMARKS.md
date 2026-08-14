@@ -32,7 +32,7 @@ The deterministic fixture remains:
 - 12,000 contracts;
 - 48,000 transactions.
 
-The 2026-08-13 result is checked in at [`docs/benchmarks/2026-08-13-performance-results.md`](benchmarks/2026-08-13-performance-results.md). Raw benchmark reports are checked in under `benchmarks/CoffeeBeanery.Performance/reports/`.
+The 2026-08-13 result is checked in at [`docs/benchmarks/2026-08-13-performance-results.md`](benchmarks/2026-08-13-performance-results.md). The raw parsed rows are in `reports/benchmarks/2026-08-13/`.
 
 ### Important limitation
 

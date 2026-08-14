@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.Common;
 using Foundgine.Execution;
 using Foundgine.Execution.Mutation;
+using Foundgine.Metadata;
 using Foundgine.Planning.Mutation;
 using Foundgine.Sql.Query;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
@@ -17,11 +18,35 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
 {
     private readonly DbConnection _connection;
     private readonly DbTransaction? _transaction;
+    private readonly SqlMutationCompiler? _compiler;
 
-    public SqlMutationExecutionProvider(DbConnection connection, DbTransaction? transaction = null)
+    public SqlMutationExecutionProvider(
+        DbConnection connection,
+        DbTransaction? transaction = null,
+        IMetadataProvider? metadata = null)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         _transaction = transaction;
+        _compiler = metadata is null ? null : new SqlMutationCompiler(metadata);
+    }
+
+    /// <summary>
+    /// Canonical batch execution entry point. Physical SQL lowering is owned by
+    /// this provider and therefore occurs only after the execution-IR boundary.
+    /// </summary>
+    public MutationBatchResult ExecuteBatch(
+        ExecutionMutationIR ir,
+        ExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(ir);
+        ArgumentNullException.ThrowIfNull(context);
+
+        if (_compiler is null)
+            throw new InvalidOperationException(
+                "Executing mutation IR requires metadata. Construct SqlMutationExecutionProvider " +
+                "with an IMetadataProvider.");
+
+        return ExecuteBatch(_compiler.Compile(ir), context);
     }
 
     public MutationResult Execute(ProviderMutationPlan plan, ExecutionContext context)

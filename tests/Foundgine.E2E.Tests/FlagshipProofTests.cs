@@ -55,7 +55,7 @@ public sealed class FlagshipProofTests
         var plan = new Planner().Plan(authorized);
 
         // The logical plan contains no storage names, SQL, aliases, or provider state.
-        var fingerprint = ExecutionPlanFingerprint.CreateShapeKey(plan);
+        var fingerprint = SemanticPlanFingerprint.CreateShapeKey(plan);
         Assert.False(string.IsNullOrWhiteSpace(fingerprint));
         Assert.Equal(plan.Root.EntityId, BankingSemanticModel.Customer);
         Assert.Equal([new FieldId(1), new FieldId(2)], plan.Root.Fields);
@@ -97,14 +97,14 @@ public sealed class FlagshipProofTests
 
         Assert.Single(sqlResult.Rows);
         Assert.Single(memoryResult.Rows);
-        Assert.Equal("Alice", sqlResult.Rows[0].Values["n0_Name"]);
+        Assert.Equal("Alice", sqlResult.Rows[0].Values["__fg_0_Name"]);
         Assert.Equal("Alice", memoryResult.Rows[0].EffectiveCells.Values.Single(x => Equals(x, "Alice")));
 
         // Both providers consumed the same logical plan and produced the same semantic result.
         Assert.Equal("Alice", memoryResult.Rows[0].EffectiveCells.Values.Single(x => x is string));
         var compiledMemoryPlan = Assert.IsType<InMemoryPlan>(memoryPlan);
-        Assert.Equal(plan.Root.EntityId, compiledMemoryPlan.Plan.Root.EntityId);
-        Assert.Equal(plan.Root.Fields, compiledMemoryPlan.Plan.Root.Fields);
+        Assert.Equal(plan.Root.EntityId, compiledMemoryPlan.IR.Root.EntityId);
+        Assert.Equal(plan.Root.Fields, compiledMemoryPlan.IR.Root.Fields);
     }
 
     private static async Task SeedSqlAsync(SqliteConnection connection)

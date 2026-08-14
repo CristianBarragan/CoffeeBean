@@ -1,5 +1,6 @@
 using Foundgine.Execution;
 using Foundgine.Semantics;
+using Foundgine.Semantics.Results;
 using Xunit;
 
 namespace Foundgine.E2E.Tests;
@@ -27,8 +28,8 @@ public sealed class ExecutionBoundaryTests
                 .Field(new Foundgine.Abstractions.FieldId(2), "Name", typeof(string)))
             .Build();
 
-        var plan = new Foundgine.Planning.ExecutionPlan(
-            new Foundgine.Planning.ExecutionPlanNode(
+        var plan = new Foundgine.Planning.SemanticPlan(
+            new Foundgine.Planning.SemanticPlanNode(
                 1,
                 Foundgine.Planning.ExecutionOperation.Scan,
                 new Foundgine.Abstractions.EntityId(1),

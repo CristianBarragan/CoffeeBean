@@ -2,6 +2,7 @@ using Foundgine.Abstractions;
 using Foundgine.Execution;
 using Foundgine.GraphQL.HotChocolate;
 using Foundgine.Semantics;
+using Foundgine.Semantics.Results;
 using Foundgine.Planning;
 
 namespace Foundgine.CoffeeBeanery.BenchmarkApi;
@@ -12,7 +13,7 @@ internal static class GraphQLResultShaper
         GraphQLQueryAdaptation adaptation,
         SemanticModel model,
         ExecutionResult execution,
-        ExecutionPlan plan)
+        SemanticPlan plan)
     {
         var materialized = new ResultMaterializer(model).Materialize(plan, execution);
         var values = materialized.Roots
@@ -28,7 +29,7 @@ internal static class GraphQLResultShaper
         };
     }
 
-    private static object ShapeNode(MaterializedNode node, GraphQLResultShape shape)
+    private static object ShapeNode(SemanticResultNode node, GraphQLResultShape shape)
     {
         var result = new Dictionary<string, object?>(StringComparer.Ordinal);
 

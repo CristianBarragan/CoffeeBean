@@ -237,3 +237,66 @@ public sealed class MutationDependencyTests
         return registry;
     }
 }
+
+public sealed class MutationDependencyGraphTests
+{
+    [Fact]
+    public void Execution_dependency_graph_computes_levels_without_correlation_types()
+    {
+        var dependencies = new MutationDependency[]
+        {
+            new(0, 2, new FieldId(1), new ColumnId(3)),
+            new(1, 2, new FieldId(1), new ColumnId(4))
+        };
+
+        var graph = new MutationDependencyGraph(dependencies);
+        var levels = MutationDependencyLevels.Compute(3, graph.Dependencies);
+
+        Assert.Equal(2, levels.Count);
+        Assert.Equal([0, 1], levels[0]);
+        Assert.Equal([2], levels[1]);
+    }
+
+    [Fact]
+    public void Execution_dependency_graph_rejects_cycles()
+    {
+        var dependencies = new MutationDependency[]
+        {
+            new(0, 1, new FieldId(1), new ColumnId(2)),
+            new(1, 0, new FieldId(1), new ColumnId(2))
+        };
+
+        Assert.Throws<InvalidOperationException>(() =>
+            MutationDependencyLevels.Compute(2, dependencies));
+    }
+
+    [Fact]
+    public void Execution_ir_is_the_only_input_to_provider_dependency_levels()
+    {
+        var operations = new[]
+        {
+            new MutationOperation(
+                new MutationEntitySchema(
+                    new EntityId(1),
+                    "A",
+                    new HashSet<ColumnId>(),
+                    new Dictionary<FieldId, ColumnId?>(),
+                    null),
+                MutationKind.Create,
+                [],
+                null,
+                null,
+                [])
+        };
+
+        var ir = ExecutionMutationIR.From(
+            new MutationBatchPlan(operations, []));
+
+        var levels = MutationExecutionLevels.From(ir);
+        Assert.Single(levels.Levels);
+        Assert.Equal([0], levels.Levels[0]);
+
+        var boundary = PostgresMutationBatchBoundary.From(ir);
+        Assert.Single(boundary.DependencyLevels.Levels);
+    }
+}

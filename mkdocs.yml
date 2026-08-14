@@ -1,9 +1,7 @@
 site_name: Foundgine
-site_description: "A small, provider-independent semantic execution engine for .NET."
+site_description: "Semantic execution layer for .NET"
 repo_url: https://github.com/CristianBarragan/Foundgine
 repo_name: CristianBarragan/Foundgine
-docs_dir: docs
-site_dir: site
 
 theme:
   name: material
@@ -28,28 +26,19 @@ plugins:
 
 nav:
   - Home: README.md
-  - Product Identity: PRODUCT-IDENTITY.md
-  - AI Capability Interface: AI-CAPABILITY-INTERFACE.md
-  - Getting Started: GETTING-STARTED.md
+  - Getting started: GETTING-STARTED.md
+  - Layer setup: LAYER-SETUP.md
   - Architecture: ARCHITECTURE.md
-  - Architecture Boundaries: ARCHITECTURE-BOUNDARIES.md
-  - Authorization Invariants: PRIORITY-3-AUTHORIZATION-INVARIANTS.md
-  - Flagship Proof: FLAGSHIP-PROOF.md
-  - Provider Independence: PROVIDER-INDEPENDENCE.md
-  - Agent Semantic Boundary: AGENT-SEMANTIC-BOUNDARY.md
-  - Authorization Golden Path: AUTHORIZATION-GOLDEN-PATH.md
-  - Context-Safe Plan Caching: CONTEXT-SAFE-PLAN-CACHING.md
-  - Execution Evidence: EVIDENCE.md
-  - Current Status: CURRENT-STATUS.md
-  - Documentation Truth: DOCUMENTATION-TRUTH.md
-  - Runtime: RUNTIME.md
+  - Product identity: PRODUCT-IDENTITY.md
+  - Provider independence: PROVIDER-INDEPENDENCE.md
+  - Security: SECURITY.md
+  - Testing: TESTING.md
+  - PostgreSQL E2E: POSTGRES-E2E.md
+  - Current status: CURRENT-STATUS.md
+  - AI boundary: AGENT-SEMANTIC-BOUNDARY.md
+  - Authorization: AUTHORIZATION.md
+  - Execution: EXECUTION-IR.md
   - GraphQL: GRAPHQL.md
   - AOT: AOT.md
-  - Testing: TESTING.md
-  - Security: SECURITY.md
-  - Migration: MIGRATION.md
   - Roadmap: ROADMAP.md
   - History: history/README.md
-
-  - Priorities:
-    - Mutation Simplification: PRIORITY-5-MUTATION-SIMPLIFICATION.md

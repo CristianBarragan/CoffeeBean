@@ -3,6 +3,7 @@ using Foundgine.Metadata;
 using Foundgine.Abstractions;
 using Foundgine.Planning;
 using Foundgine.Semantics;
+using Foundgine.Semantics.Results;
 using Foundgine.Semantics.Authorization;
 using Foundgine.Semantics.Resolution;
 using Foundgine.Sql;
@@ -62,8 +63,8 @@ public sealed class FoundgineSqlPipelineTests
 
         Assert.Equal(2, result.Rows.Count);
         Assert.Equal(5, result.Rows[0].Values.Count);
-        Assert.Contains("n0_Id", result.Rows[0].Values.Keys);
-        Assert.Contains("n2_Amount", result.Rows[0].Values.Keys);
+        Assert.Contains("__fg_0_Id", result.Rows[0].Values.Keys);
+        Assert.Contains("__fg_2_Amount", result.Rows[0].Values.Keys);
     }
 
 
@@ -106,7 +107,7 @@ public sealed class FoundgineSqlPipelineTests
             .ExecuteAsync(sqlPlan, PaginationExecutionContext.Create(1));
 
         var row = Assert.Single(result.Rows);
-        Assert.Equal("Alice", row.Values["n0_Name"]);
+        Assert.Equal("Alice", row.Values["__fg_0_Name"]);
     }
 
     [Fact]

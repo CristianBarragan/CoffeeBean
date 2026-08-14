@@ -9,6 +9,38 @@ namespace Foundgine.Semantics.Tests;
 
 public sealed class SemanticAuthorizationTests
 {
+
+    [Fact]
+    public void Authorization_can_be_applied_to_canonical_semantic_ir()
+    {
+        var (model, request, customer, account, _) = CreateBankingRequest();
+        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(resolved);
+
+        var authorized = new SemanticAuthorizer(new DenyAccountPolicy()).Authorize(operation);
+
+        Assert.Equal(customer, authorized.Root.EntityId);
+        Assert.Empty(authorized.Root.Children);
+    }
+
+    [Fact]
+    public void Conditional_authorization_is_preserved_when_authorizing_semantic_ir()
+    {
+        var predicate = AuthorizationPredicate.Equal(
+            AuthorizationPredicate.Member(
+                AuthorizationPredicate.ResourceParameter("resource"), "TenantId"),
+            AuthorizationPredicate.Member(
+                AuthorizationPredicate.ContextParameter("user"), "TenantId"));
+
+        var (model, request, _, _, _) = CreateBankingRequest();
+        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(resolved);
+
+        var authorized = new SemanticAuthorizer(new ConditionalPolicy(predicate)).Authorize(operation);
+
+        Assert.Equal(predicate, authorized.Root.Authorization);
+    }
+
     [Fact]
     public void Denied_field_is_removed_from_authorized_graph()
     {
@@ -137,6 +169,14 @@ public sealed class SemanticAuthorizationTests
     private sealed class DenyAccountPolicy : AllowAllSemanticAuthorizationPolicy
     {
         public override bool CanAccessEntity(EntityId entityId) => entityId != new EntityId(2);
+    }
+
+    private sealed class ConditionalPolicy(AuthorizationPredicate predicate) : AllowAllSemanticAuthorizationPolicy
+    {
+        public override AuthorizationPredicate? GetPredicate(
+            EntityId entityId,
+            AuthorizationOperation operation) =>
+            operation == AuthorizationOperation.Read ? predicate : null;
     }
 
     private sealed class DenyCustomerPolicy : AllowAllSemanticAuthorizationPolicy

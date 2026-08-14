@@ -102,7 +102,7 @@ public sealed class PlannerTests
 
 
     [Fact]
-    public void Execution_plan_contains_only_provider_independent_identity_and_logical_operations()
+    public void Semantic_plan_contains_only_provider_independent_identity_and_logical_operations()
     {
         var graph = new SemanticGraph();
         graph.AddRoot(new EntityId(1), [new FieldId(1)]);
@@ -115,12 +115,12 @@ public sealed class PlannerTests
     }
 
     [Fact]
-    public void Execution_plan_does_not_expose_metadata_types()
+    public void Semantic_plan_does_not_expose_metadata_types()
     {
         var planTypes = new[]
         {
-            typeof(ExecutionPlan),
-            typeof(ExecutionPlanNode)
+            typeof(SemanticPlan),
+            typeof(SemanticPlanNode)
         };
 
         foreach (var type in planTypes)
@@ -139,7 +139,7 @@ public sealed class PlannerTests
     }
 
     [Fact]
-    public void Execution_plan_uses_only_the_frozen_structural_algebra()
+    public void Semantic_plan_uses_only_the_frozen_structural_algebra()
     {
         var graph = new SemanticGraph();
         var root = graph.AddRoot(new EntityId(1), [new FieldId(1)]);
@@ -156,6 +156,37 @@ public sealed class PlannerTests
 
         var child = Assert.Single(plan.Root.Children);
         Assert.Equal(ExecutionOperation.Traverse, child.Operation);
+    }
+
+    [Fact]
+    public void Planner_consumes_canonical_semantic_operation()
+    {
+        var graph = new SemanticGraph();
+        var customer = graph.AddRoot(new EntityId(1), [new FieldId(1)]);
+        graph.Add(new EntityId(2), new RelationshipId(1), customer, [new FieldId(2)]);
+
+        var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(graph);
+        var plan = new Planner().Plan(operation);
+
+        Assert.Equal(new EntityId(1), plan.Root.EntityId);
+        Assert.Equal(ExecutionOperation.Scan, plan.Root.Operation);
+        var child = Assert.Single(plan.Root.Children);
+        Assert.Equal(new EntityId(2), child.EntityId);
+        Assert.Equal(ExecutionOperation.Traverse, child.Operation);
+    }
+
+    [Fact]
+    public void Planner_does_not_depend_on_mutable_semantic_graph_after_compilation()
+    {
+        var graph = new SemanticGraph();
+        graph.AddRoot(new EntityId(1));
+
+        var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(graph);
+        graph.AddRoot(new EntityId(99));
+
+        var plan = new Planner().Plan(operation);
+
+        Assert.Equal(new EntityId(1), plan.Root.EntityId);
     }
 
 }

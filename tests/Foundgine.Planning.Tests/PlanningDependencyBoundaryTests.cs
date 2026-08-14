@@ -24,12 +24,12 @@ public sealed class PlanningDependencyBoundaryTests
     }
 
     [Fact]
-    public void Execution_plan_public_contract_contains_no_metadata_types()
+    public void Semantic_plan_public_contract_contains_no_metadata_types()
     {
         var publicTypes = new[]
         {
-            typeof(ExecutionPlan),
-            typeof(ExecutionPlanNode)
+            typeof(SemanticPlan),
+            typeof(SemanticPlanNode)
         };
 
         foreach (var type in publicTypes)

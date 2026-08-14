@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Foundgine.Abstractions;
+using Foundgine.Execution.Mutation;
 using Foundgine.Metadata;
 using Foundgine.Planning.Mutation;
 using Foundgine.Sql.Query;
@@ -25,6 +29,23 @@ public sealed class PostgresBatchedMutationCompiler
 
     public PostgresBatchedMutationCompiler(IMetadataProvider metadata) =>
         _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+
+    /// <summary>
+    /// Canonical provider entry point. PostgreSQL lowering consumes the
+    /// provider-neutral execution IR. The existing MutationBatchPlan overload
+    /// is retained for compatibility while callers migrate.
+    /// </summary>
+    public SqlBatchedMutationPlan Compile(ExecutionMutationIR ir)
+    {
+        ArgumentNullException.ThrowIfNull(ir);
+
+        // Field correlation references are the authoritative dependency source.
+        // The legacy dependency list is checked only during migration.
+        ir.ValidateDerivedDependencies();
+
+        var derivedDependencies = ir.DeriveDependencies();
+        return Compile(new MutationBatchPlan(ir.Operations, derivedDependencies));
+    }
 
     public SqlBatchedMutationPlan Compile(MutationBatchPlan plan)
     {
@@ -82,6 +103,8 @@ public sealed class PostgresBatchedMutationCompiler
                 }
             }
         }
+
+        ValidateCorrelation(ops, plan.Dependencies, levels, groups, opToGroup);
 
         // A reference can only point to an earlier dependency level. If the plan
         // is malformed, do not silently turn it into a different execution plan.
@@ -141,13 +164,13 @@ public sealed class PostgresBatchedMutationCompiler
             // row_to_json(record) preserving the synthetic CTE column when the
             // record shape is assembled through UNION/CTE projections.
             //
-            // The executor treats __ord as part of the protocol, not as a
+            // The executor treats __fg_corr as part of the protocol, not as a
             // user-returned field. Explicitly construct it and merge the
             // remaining row properties so unchanged ON CONFLICT rows and
             // INSERT/UPDATE rows follow exactly the same correlation contract.
             if (meta.IsOrdinalAddressable)
             {
-                sql.Append("jsonb_build_object('__ord', f.__ord) || (to_jsonb(f) - '__ord')");
+                sql.Append("jsonb_build_object('__fg_corr', f.__fg_corr) || (to_jsonb(f) - '__fg_corr')");
             }
             else
             {
@@ -160,10 +183,8 @@ public sealed class PostgresBatchedMutationCompiler
                    : meta.ResultCteName)
                .Append(" f");
 
-            if (meta.IsSingleResult)
-                sql.Append("\n  LIMIT 1");
         }
-        sql.Append("\n) __all ORDER BY __grp");
+        sql.Append("\n) __all ORDER BY __grp, CASE WHEN __row ? '__fg_corr' THEN ((__row ->> '__fg_corr')::bigint) END");
 
         var rowKeys = new List<BatchedOperationRowKey>(ops.Count);
         for (var opIndex = 0; opIndex < ops.Count; opIndex++)
@@ -187,6 +208,16 @@ public sealed class PostgresBatchedMutationCompiler
             plan.Dependencies);
     }
 
+    /// <summary>
+    /// Canonical execution-IR entry point with the same safe fallback semantics
+    /// as the legacy mutation-batch overload.
+    /// </summary>
+    public SqlBatchedMutationPlan? TryCompile(ExecutionMutationIR ir)
+    {
+        ArgumentNullException.ThrowIfNull(ir);
+        return TryCompile(ir.ToMutationBatchPlan());
+    }
+
     public SqlBatchedMutationPlan? TryCompile(MutationBatchPlan plan)
     {
         try
@@ -196,6 +227,89 @@ public sealed class PostgresBatchedMutationCompiler
         catch (NotSupportedException)
         {
             return null;
+        }
+    }
+
+    private void ValidateCorrelation(
+        IReadOnlyList<MutationOperation> operations,
+        IReadOnlyList<MutationDependency> dependencies,
+        IReadOnlyList<int> levels,
+        IReadOnlyList<OpGroup> groups,
+        IReadOnlyList<int> opToGroup)
+    {
+        var dependencySet = dependencies
+            .Select(d => (d.SourceOperationIndex, d.TargetOperationIndex, d.SourceField, d.TargetColumn))
+            .ToHashSet();
+
+        for (var targetIndex = 0; targetIndex < operations.Count; targetIndex++)
+        {
+            var target = operations[targetIndex];
+
+            foreach (var field in target.Fields)
+            {
+                if (field.Source is not { } source)
+                    continue;
+
+                if (source.SourceOperationIndex < 0 ||
+                    source.SourceOperationIndex >= operations.Count)
+                {
+                    throw new InvalidOperationException(
+                        $"Mutation operation {targetIndex} references missing source operation " +
+                        $"{source.SourceOperationIndex}.");
+                }
+
+                if (source.SourceOperationIndex == targetIndex)
+                    throw new InvalidOperationException(
+                        $"Mutation operation {targetIndex} cannot reference itself.");
+
+                if (levels[source.SourceOperationIndex] >= levels[targetIndex])
+                    throw new InvalidOperationException(
+                        $"Mutation reference {source.SourceOperationIndex} -> {targetIndex} " +
+                        "does not point from an earlier dependency level.");
+
+                var sourceOperation = operations[source.SourceOperationIndex];
+
+                if (sourceOperation.Kind == MutationKind.Delete)
+                    throw new NotSupportedException(
+                        $"Mutation operation {targetIndex} references a deleted source operation " +
+                        $"{source.SourceOperationIndex}; generated-key correlation cannot use DELETE.");
+
+                if (!sourceOperation.Entity.Fields.TryGetValue(source.SourceField, out var sourceColumn))
+                {
+                    throw new InvalidOperationException(
+                        $"Source operation {source.SourceOperationIndex} does not define field " +
+                        $"{source.SourceField.Value}.");
+                }
+
+                if (sourceColumn is null)
+                    throw new InvalidOperationException(
+                        $"Source field {source.SourceField.Value} has no physical column and cannot " +
+                        "participate in provider correlation.");
+
+                var dependency = (
+                    source.SourceOperationIndex,
+                    targetIndex,
+                    source.SourceField,
+                    field.Column);
+
+                if (!dependencySet.Contains(dependency))
+                    throw new InvalidOperationException(
+                        $"Mutation value reference {source.SourceOperationIndex}:{source.SourceField.Value} " +
+                        $"for target operation {targetIndex}:{field.Column.Value} has no matching dependency edge.");
+
+                var sourceGroup = groups[opToGroup[source.SourceOperationIndex]];
+                if (!sourceGroup.OpIndexes.Contains(source.SourceOperationIndex))
+                    throw new InvalidOperationException(
+                        $"Source operation {source.SourceOperationIndex} is not present in its physical group.");
+
+                // Create/Upsert and single Update groups expose an ordinal correlation map.
+                // Delete groups intentionally do not, because their result cannot safely
+                // supply generated values to downstream operations.
+                if (sourceGroup.Kind == MutationKind.Delete)
+                    throw new NotSupportedException(
+                        $"Source operation {source.SourceOperationIndex} is a DELETE group and " +
+                        "cannot provide an ordinal correlation map.");
+            }
         }
     }
 
@@ -233,20 +347,30 @@ public sealed class PostgresBatchedMutationCompiler
             throw new NotSupportedException(
                 $"Upsert '{entity.Name}' contains a NULL literal conflict value; falling back to sequential execution.");
 
-        if (!isUpsert && rows.Length > 1 && conflicts.Length == 0)
-            throw new NotSupportedException(
-                $"Create '{entity.Name}' has no literal-valued column with which to correlate batched rows.");
-
-        if (!isUpsert && rows.Length > 1 && HasDuplicateLiteralKey(rows, conflicts))
-            throw new NotSupportedException(
-                $"Create '{entity.Name}' contains duplicate literal correlation keys; falling back to sequential execution.");
+        // A batched upsert cannot safely represent two operations that resolve
+        // to the same literal conflict identity. PostgreSQL's ON CONFLICT
+        // operates on the target row, while the semantic mutation graph has
+        // two logical operations. DISTINCT ON would silently collapse those
+        // operations and make result correlation ambiguous.
+        //
+        // Treat this as a compilation limitation, not an execution error, so
+        // TryCompile() can deliberately fall back to the sequential provider.
+        if (isUpsert && rows.Length > 1 &&
+            conflicts.All(c => rows.All(r =>
+                r.Fields.First(f => f.Column == c).Source is null)))
+        {
+            if (HasDuplicateLiteralKey(rows, conflicts))
+                throw new NotSupportedException(
+                    $"Upsert '{entity.Name}' contains duplicate literal conflict keys; " +
+                    "falling back to sequential execution.");
+        }
 
         var columnNames = columns.Select(c => ResolveColumn(entity, c)).ToArray();
         var conflictNames = conflicts.Select(c => ResolveColumn(entity, c)).ToArray();
 
         var src = $"g{group.GroupId}_src";
         var keys = $"g{group.GroupId}_keys";
-        var ins = $"g{group.GroupId}_ins";
+        var ins = $"g{group.GroupId}_created";
         var final = $"g{group.GroupId}_final";
         var ordmap = $"g{group.GroupId}_ordmap";
 
@@ -295,7 +419,7 @@ public sealed class PostgresBatchedMutationCompiler
                     ordinals);
 
                 sourceExpressions.Add("@" + parameterName);
-                sourceAliases.Add(name + "__ord");
+                sourceAliases.Add(name + "__fg_corr");
             }
         }
 
@@ -304,14 +428,14 @@ public sealed class PostgresBatchedMutationCompiler
            .Append(string.Join(", ", sourceExpressions))
            .Append(") WITH ORDINALITY AS s(")
            .Append(string.Join(", ", sourceAliases.Select(Q)))
-           .Append(", __ord)\n)");
+           .Append(", __fg_corr)\n)");
 
         sql.Append(",\n");
 
         // Resolve reference columns once in a sibling CTE. This is also used to
         // produce the key values used by the ord-map.
         var resolved = $"g{group.GroupId}_resolved";
-        sql.Append(resolved).Append(" AS (\n  SELECT s.__ord");
+        sql.Append(resolved).Append(" AS (\n  SELECT s.__fg_corr");
 
         foreach (var column in columns)
         {
@@ -360,8 +484,8 @@ public sealed class PostgresBatchedMutationCompiler
 
             sql.Append("\n  JOIN ").Append(source.OrdMapCteName)
                .Append(' ').Append(alias)
-               .Append(" ON ").Append(alias).Append(".__ord = s.")
-               .Append(Q(ResolveColumn(entity, column) + "__ord"));
+               .Append(" ON ").Append(alias).Append(".__fg_corr = s.")
+               .Append(Q(ResolveColumn(entity, column) + "__fg_corr"));
         }
         sql.Append("\n)");
 
@@ -373,16 +497,19 @@ public sealed class PostgresBatchedMutationCompiler
                .Append(") * FROM ").Append(resolved)
                .Append("\n  ORDER BY ")
                .Append(string.Join(", ", conflictNames.Select(Q)))
-               .Append(", __ord DESC\n)");
+               .Append(", __fg_corr DESC\n)");
         }
         else
         {
             sql.Append(",\n").Append(input).Append(" AS (SELECT * FROM ").Append(resolved).Append(")");
         }
 
-        sql.Append(",\n").Append(keys).Append(" AS (\n  SELECT __ord, ")
-           .Append(string.Join(", ", conflictNames.Select(c => Q(c))))
-           .Append("\n  FROM ").Append(input).Append("\n)");
+        if (isUpsert)
+        {
+            sql.Append(",\n").Append(keys).Append(" AS (\n  SELECT __fg_corr, ")
+               .Append(string.Join(", ", conflictNames.Select(c => Q(c))))
+               .Append("\n  FROM ").Append(input).Append("\n)");
+        }
         var requestedFields = (group.Template.ReturnFields is { Count: > 0 }
                 ? group.Template.ReturnFields
                 : entity.EffectiveFields.Where(f => f.Column is not null).Select(f => f.Id).ToArray())
@@ -396,15 +523,35 @@ public sealed class PostgresBatchedMutationCompiler
             fieldId => fieldId,
             fieldId => "r_" + fieldId.Value);
 
-        sql.Append(",\n").Append(ins).Append(" AS (\n  INSERT INTO ")
-           .Append(Table(entity.EffectiveStorageName))
-           .Append(" (").Append(string.Join(", ", columnNames.Select(Q))).Append(")\n")
-           .Append("  SELECT ")
-           .Append(string.Join(", ", columnNames.Select(c => "r." + Q(c))))
-           .Append("\n  FROM ").Append(input).Append(" r");
+        sql.Append(",\n").Append(ins).Append(" AS (\n");
 
-        if (isUpsert)
+        if (!isUpsert)
         {
+            // PostgreSQL 17 MERGE RETURNING is the first native DML boundary
+            // that can return both target values and source-row values. This
+            // lets Foundgine carry __fg_corr through the database without
+            // persisting a correlation column and without joining RETURNING
+            // rows back to the target using a user-visible key.
+            sql.Append("  MERGE INTO ")
+               .Append(Table(entity.EffectiveStorageName)).Append(" t\n")
+               .Append("  USING ").Append(input).Append(" r ON FALSE\n")
+               .Append("  WHEN NOT MATCHED THEN INSERT (")
+               .Append(string.Join(", ", columnNames.Select(Q))).Append(") VALUES (")
+               .Append(string.Join(", ", columnNames.Select(c => "r." + Q(c))))
+               .Append(")\n")
+               .Append("  RETURNING r.__fg_corr, ")
+               .Append(string.Join(", ", returnColumns.Select(x =>
+                   "t." + Q(x.ColumnName) + " AS " + Q(x.Alias))));
+        }
+        else
+        {
+            sql.Append("  INSERT INTO ")
+               .Append(Table(entity.EffectiveStorageName))
+               .Append(" (").Append(string.Join(", ", columnNames.Select(Q))).Append(")\n")
+               .Append("  SELECT ")
+               .Append(string.Join(", ", columnNames.Select(c => "r." + Q(c))))
+               .Append("\n  FROM ").Append(input).Append(" r");
+
             var updateColumns = columnNames
                 .Where((_, i) => !conflicts.Contains(columns[i]))
                 .ToArray();
@@ -428,10 +575,20 @@ public sealed class PostgresBatchedMutationCompiler
             }
         }
 
-        sql.Append("\n  RETURNING ")
-           .Append(string.Join(", ", returnColumns.Select(x =>
-               Q(x.ColumnName) + " AS " + Q(x.Alias))))
-           .Append("\n)");
+        if (isUpsert)
+        {
+            // ON CONFLICT remains the compatibility/concurrency path for
+            // upserts. Unlike MERGE, INSERT RETURNING cannot see r.__fg_corr,
+            // so the existing key-based ord-map is retained for this path.
+            sql.Append("\n  RETURNING ")
+               .Append(string.Join(", ", returnColumns.Select(x =>
+                   Q(x.ColumnName) + " AS " + Q(x.Alias))))
+               .Append("\n)");
+        }
+        else
+        {
+            sql.Append("\n)");
+        }
 
         if (isUpsert)
         {
@@ -448,20 +605,22 @@ public sealed class PostgresBatchedMutationCompiler
                .Append(string.Join(" AND ", conflictNames.Select(c =>
                    $"i.{Q(ReturnAliasForColumn(returnColumns, c))} IS NOT DISTINCT FROM k.{Q(c)}")))
                .Append(")\n)");
+
+            sql.Append(",\n").Append(ordmap).Append(" AS (\n  SELECT k.__fg_corr, f.*\n")
+               .Append("  FROM ").Append(keys).Append(" k\n")
+               .Append("  JOIN ").Append(final).Append(" f ON ")
+               .Append(string.Join(" AND ", conflictNames.Select(c =>
+                   $"k.{Q(c)} IS NOT DISTINCT FROM f.{Q(ReturnAliasForColumn(returnColumns, c))}")))
+               .Append("\n)");
         }
         else
         {
-            sql.Append(",\n").Append(final).Append(" AS (SELECT * FROM ").Append(ins).Append(")");
+            // MERGE RETURNING already carries the logical correlation key. No
+            // post-DML join is required, and no user-visible column is used as
+            // a correlation surrogate.
+            sql.Append(",\n").Append(final).Append(" AS (SELECT * FROM ").Append(ins).Append(")")
+               .Append(",\n").Append(ordmap).Append(" AS (SELECT * FROM ").Append(final).Append(")");
         }
-
-        // Always materialize ordinal correlation for Create/Upsert. The final
-        // result set reads from this CTE so __ord survives row_to_json().
-        sql.Append(",\n").Append(ordmap).Append(" AS (\n  SELECT k.__ord, f.*\n")
-           .Append("  FROM ").Append(keys).Append(" k\n")
-           .Append("  JOIN ").Append(final).Append(" f ON ")
-           .Append(string.Join(" AND ", conflictNames.Select(c =>
-               $"k.{Q(c)} IS NOT DISTINCT FROM f.{Q(ReturnAliasForColumn(returnColumns, c))}")))
-           .Append("\n)");
 
         return new GroupOutputMeta(
             group.GroupId,
@@ -535,7 +694,7 @@ public sealed class PostgresBatchedMutationCompiler
         {
             var ordmap = $"g{group.GroupId}_ordmap";
             sql.Append(",\n").Append(ordmap)
-               .Append(" AS (SELECT 1 AS __ord, f.* FROM ")
+               .Append(" AS (SELECT 1 AS __fg_corr, f.* FROM ")
                .Append(resultCte)
                .Append(" f LIMIT 1)");
 

@@ -75,6 +75,6 @@ public sealed class ConnectionPlanningTests
         Assert.Equal("TenantId", child.Authorization.Right!.Name);
     }
 
-    private static ExecutionPlanNode childPlan(ExecutionPlan plan) =>
+    private static SemanticPlanNode childPlan(SemanticPlan plan) =>
         Assert.Single(plan.Root.Children);
 }

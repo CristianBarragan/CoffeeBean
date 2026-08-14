@@ -50,7 +50,7 @@ public sealed class CursorPaginationTests
 
         var secondResult = await provider.ExecuteAsync(secondPlan, PaginationExecutionContext.Create(2, firstResult.PageInfo.EndCursor));
         var row = Assert.Single(secondResult.Rows);
-        Assert.Equal(3, Convert.ToInt32(row.Values["n0_Id"]));
+        Assert.Equal(3, Convert.ToInt32(row.Values["__fg_0_Id"]));
         Assert.False(secondResult.PageInfo!.HasNextPage);
         Assert.True(secondResult.PageInfo.HasPreviousPage);
     }

@@ -1,6 +1,7 @@
 $ErrorActionPreference = "Stop"
 $ComposeFile = Join-Path $PSScriptRoot "..\compose\update.yml"
-$ProjectName = "coffeebeanery-update"
+$RunId = "{0}-{1}" -f $PID, ([Guid]::NewGuid().ToString("N").Substring(0, 8))
+$ProjectName = "coffeebeanery-update-$RunId"
 
 Write-Host ""
 Write-Host "============================================"

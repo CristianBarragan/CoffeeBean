@@ -34,8 +34,8 @@ public sealed class CompoundCursorPaginationTests
         var firstResult = await provider.ExecuteAsync(firstPlan, PaginationExecutionContext.Create(2));
 
         Assert.Equal(2, firstResult.Rows.Count);
-        Assert.Equal(4, Convert.ToInt32(firstResult.Rows[0].Values["n0_Id"]));
-        Assert.Equal(2, Convert.ToInt32(firstResult.Rows[1].Values["n0_Id"]));
+        Assert.Equal(4, Convert.ToInt32(firstResult.Rows[0].Values["__fg_0_Id"]));
+        Assert.Equal(2, Convert.ToInt32(firstResult.Rows[1].Values["__fg_0_Id"]));
         Assert.NotNull(firstResult.PageInfo);
         Assert.True(firstResult.PageInfo!.HasNextPage);
         Assert.False(firstResult.PageInfo.HasPreviousPage);
@@ -49,8 +49,8 @@ public sealed class CompoundCursorPaginationTests
 
         var rows = secondResult.Rows;
         Assert.Equal(2, rows.Count);
-        Assert.Equal(3, Convert.ToInt32(rows[0].Values["n0_Id"]));
-        Assert.Equal(1, Convert.ToInt32(rows[1].Values["n0_Id"]));
+        Assert.Equal(3, Convert.ToInt32(rows[0].Values["__fg_0_Id"]));
+        Assert.Equal(1, Convert.ToInt32(rows[1].Values["__fg_0_Id"]));
         Assert.False(secondResult.PageInfo!.HasNextPage);
         Assert.True(secondResult.PageInfo.HasPreviousPage);
     }
@@ -72,7 +72,7 @@ public sealed class CompoundCursorPaginationTests
         var firstResult = await provider.ExecuteAsync(firstPlan, PaginationExecutionContext.Create(1));
         var firstRow = Assert.Single(firstResult.Rows);
 
-        Assert.Equal(4, Convert.ToInt32(firstRow.Values["n0_Id"]));
+        Assert.Equal(4, Convert.ToInt32(firstRow.Values["__fg_0_Id"]));
         Assert.True(firstResult.PageInfo!.HasNextPage);
 
         var second = BuildRequest(limit: 1, after: firstResult.PageInfo.EndCursor);
@@ -81,7 +81,7 @@ public sealed class CompoundCursorPaginationTests
             PaginationExecutionContext.Create(1, firstResult.PageInfo.EndCursor));
 
         var secondRow = Assert.Single(secondResult.Rows);
-        Assert.Equal(2, Convert.ToInt32(secondRow.Values["n0_Id"]));
+        Assert.Equal(2, Convert.ToInt32(secondRow.Values["__fg_0_Id"]));
     }
 
     [Fact]

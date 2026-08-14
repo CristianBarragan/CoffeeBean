@@ -37,13 +37,29 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
 
         _compiler = new PostgresBatchedMutationCompiler(metadata);
         _fallbackCompiler = new SqlMutationCompiler(metadata);
-        _fallbackProvider = new SqlMutationExecutionProvider(connection, transaction);
+        _fallbackProvider = new SqlMutationExecutionProvider(connection, transaction, metadata);
     }
 
     /// <summary>
     /// Preferred entry point when the caller still has the provider-neutral
     /// mutation batch. Compilation and fallback happen here.
     /// </summary>
+    /// <summary>
+    /// Canonical execution entry point for mutation IR.
+    /// </summary>
+    public MutationBatchResult ExecuteBatch(
+        ExecutionMutationIR ir,
+        ExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(ir);
+        ArgumentNullException.ThrowIfNull(context);
+
+        var batched = _compiler.TryCompile(ir);
+        return batched is not null
+            ? ExecuteBatchedPlan(batched)
+            : _fallbackProvider.ExecuteBatch(_fallbackCompiler.Compile(ir), context);
+    }
+
     public MutationBatchResult ExecuteBatch(
         MutationBatchPlan plan,
         ExecutionContext context)
@@ -119,9 +135,9 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
             int operationIndex;
             if (group.IsOrdinalAddressable)
             {
-                if (!root.TryGetProperty("__ord", out var ordinalElement))
+                if (!root.TryGetProperty("__fg_corr", out var ordinalElement))
                     throw new InvalidOperationException(
-                        $"Batched mutation group '{groupId}' did not return its __ord correlation value.");
+                        $"Batched mutation group '{groupId}' did not return its __fg_corr correlation value.");
 
                 var ordinal = ordinalElement.GetInt32();
                 if (ordinal < 1 || ordinal > group.OperationIndexesByOrdinal.Count)
@@ -150,7 +166,7 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
             var values = new Dictionary<FieldId, object?>();
             foreach (var property in root.EnumerateObject())
             {
-                if (property.Name == "__ord" ||
+                if (property.Name == "__fg_corr" ||
                     property.Name == "__affected" ||
                     property.Name.StartsWith("r__k_", StringComparison.Ordinal))
                     continue;

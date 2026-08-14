@@ -7,42 +7,17 @@
     <AssemblyName>Foundgine.Aot</AssemblyName>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
-
   <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
     <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
     <ProjectReference Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
-    <ProjectReference Include="../Foundgine.Metadata/Foundgine.Metadata.csproj" PrivateAssets="all" />
+    <ProjectReference Include="../Foundgine.Metadata/Foundgine.Metadata.csproj" />
+    <ProjectReference Include="../Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
-
-  <!-- Build the generator as a packaging input. It is deliberately not an
-       analyzer reference of Foundgine.Aot itself; otherwise the generator runs
-       while compiling the runtime assembly and can emit an empty registry into
-       the package. -->
-  <Target Name="BuildGeneratorForPack" BeforeTargets="Pack">
-    <MSBuild
-      Projects="$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj"
-      Targets="Build"
-      Properties="Configuration=$(Configuration)" />
-  </Target>
-
-  <!-- Add non-standard files to the NuGet package through the official
-       TfmSpecificContentInPackage extension point. These files are built
-       separately but are part of the single AOT package. -->
-  <PropertyGroup>
-    <TargetsForTfmSpecificContentInPackage>
-      $(TargetsForTfmSpecificContentInPackage);PackFoundgineAotContent
-    </TargetsForTfmSpecificContentInPackage>
-  </PropertyGroup>
-
-  <Target Name="PackFoundgineAotContent">
+  <Target Name="PackGeneratorAnalyzer" BeforeTargets="GenerateNuspec" DependsOnTargets="Build">
     <ItemGroup>
-      <TfmSpecificPackageFile Include="$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/bin/$(Configuration)/netstandard2.0/Foundgine.Aot.Generator.dll">
-        <PackagePath>analyzers/dotnet/cs/Foundgine.Aot.Generator.dll</PackagePath>
-      </TfmSpecificPackageFile>
-      <TfmSpecificPackageFile Include="$(MSBuildProjectDirectory)/../Foundgine.Metadata/bin/$(Configuration)/$(TargetFramework)/Foundgine.Metadata.dll">
-        <PackagePath>lib/$(TargetFramework)/Foundgine.Metadata.dll</PackagePath>
-      </TfmSpecificPackageFile>
+      <_FoundgineGenerator Include="$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/bin/$(Configuration)/netstandard2.0/Foundgine.Aot.Generator.dll" />
+      <TfmSpecificPackageFile Include="$(_FoundgineGenerator)" PackagePath="analyzers/dotnet/cs/Foundgine.Aot.Generator.dll" />
     </ItemGroup>
   </Target>
 </Project>

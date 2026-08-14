@@ -1,6 +1,7 @@
 using Foundgine.Abstractions;
 using Foundgine.Planning;
 using Foundgine.Semantics;
+using Foundgine.Semantics.Results;
 
 namespace Foundgine.Execution;
 
@@ -15,23 +16,38 @@ public sealed class ResultMaterializer
     public ResultMaterializer(SemanticModel model) =>
         _model = model ?? throw new ArgumentNullException(nameof(model));
 
-    public MaterializedResult Materialize(ExecutionPlan plan, ExecutionResult result)
+    public SemanticResult Materialize(SemanticPlan plan, ExecutionResult result)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(result);
 
-        var roots = new List<MaterializedNode>();
+        var roots = new List<SemanticResultNode>();
         foreach (var row in result.Rows)
             AddNode(plan.Root, row, roots, null);
 
-        return new MaterializedResult(roots, result.PageInfo, result.Evidence);
+        return new SemanticResult(
+            roots,
+            result.PageInfo is null ? null : new SemanticResultPageInfo(
+                result.PageInfo.StartCursor,
+                result.PageInfo.EndCursor,
+                result.PageInfo.HasNextPage,
+                result.PageInfo.HasPreviousPage),
+            result.Evidence is null ? null : new SemanticResultEvidence(
+                result.Evidence.Provider,
+                result.Evidence.PlanFingerprint,
+                result.Evidence.AuthorizedNodeIds,
+                result.Evidence.RowsReturned,
+                result.Evidence.ElapsedMilliseconds,
+                result.Evidence.ProviderOperationFingerprint,
+                result.Evidence.IntentFingerprint,
+                result.Evidence.AuthorizationFingerprint));
     }
 
     private void AddNode(
-        ExecutionPlanNode planNode,
+        SemanticPlanNode planNode,
         ExecutionRow row,
-        List<MaterializedNode> siblings,
-        MaterializedNode? parent)
+        List<SemanticResultNode> siblings,
+        SemanticResultNode? parent)
     {
         var entity = _model.Get(planNode.EntityId);
         var identityField = entity.Identity.FieldId;
@@ -46,7 +62,7 @@ public sealed class ResultMaterializer
                 $"Root entity '{entity.Name}' has a null identity value.");
         }
 
-        var node = siblings.FirstOrDefault(x => Equals(x.IdentityValue, identityValue));
+        var node = siblings.FirstOrDefault(x => x.EntityId == planNode.EntityId && Equals(x.IdentityValue, identityValue));
 
         if (node is null)
         {
@@ -54,7 +70,7 @@ public sealed class ResultMaterializer
                 field => field,
                 field => GetValue(row, planNode, field));
 
-            node = new MaterializedNode(planNode.Id, planNode.EntityId, identityValue, values);
+            node = new SemanticResultNode(planNode.Id, planNode.EntityId, identityValue, values);
             siblings.Add(node);
         }
 
@@ -81,7 +97,7 @@ public sealed class ResultMaterializer
 
     private static object? GetValue(
         ExecutionRow row,
-        ExecutionPlanNode planNode,
+        SemanticPlanNode planNode,
         FieldId fieldId)
     {
         var key = new ExecutionCellKey(planNode.Id, planNode.EntityId, fieldId);
