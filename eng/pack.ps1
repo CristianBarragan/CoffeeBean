@@ -19,6 +19,9 @@ $projects = @(
   'src/Foundgine.Aot/Foundgine.Aot.csproj'
 )
 
+dotnet build (Join-Path $root 'src/Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj') --configuration Release --no-restore
+if ($LASTEXITCODE -ne 0) { throw 'Building failed: Foundgine.Aot.Generator' }
+
 foreach ($project in $projects) {
   dotnet pack (Join-Path $root $project) --configuration Release --output $out --no-restore
   if ($LASTEXITCODE -ne 0) { throw "Packing failed: $project" }
