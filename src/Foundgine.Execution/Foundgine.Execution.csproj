@@ -3,7 +3,6 @@
     <PackageId>Foundgine.Execution</PackageId>
     <Description>Execution contracts, provider boundary and execution coordination for Foundgine.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.Execution</RootNamespace>
     <AssemblyName>Foundgine.Execution</AssemblyName>
     <IsPackable>true</IsPackable>

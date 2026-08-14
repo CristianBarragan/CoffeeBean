@@ -3,7 +3,6 @@
     <PackageId>Foundgine.Intent.Json</PackageId>
     <Description>JSON intent adapter for Foundgine semantic requests.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.Intent.Json</RootNamespace>
     <AssemblyName>Foundgine.Intent.Json</AssemblyName>
     <IsPackable>true</IsPackable>

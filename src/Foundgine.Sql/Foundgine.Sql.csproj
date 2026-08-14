@@ -3,7 +3,6 @@
     <PackageId>Foundgine.Sql</PackageId>
     <Description>SQL execution provider and PostgreSQL mutation/query compilation for Foundgine.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine.Sql</RootNamespace>
     <AssemblyName>Foundgine.Sql</AssemblyName>
     <IsPackable>true</IsPackable>

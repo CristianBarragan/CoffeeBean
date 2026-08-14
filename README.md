@@ -33,13 +33,6 @@ The important boundary is simple:
 
 > **Foundgine owns semantics, intent, authorization, planning, and execution coordination. It does not own the transport or the physical provider.**
 
-
-## NuGet packaging
-
-Foundgine is organized as focused packages rather than one provider-heavy dependency. The `Foundgine` package contains the main semantic execution facade; provider and transport integrations are separate packages such as `Foundgine.Sql`, `Foundgine.InMemory`, and `Foundgine.GraphQL.HotChocolate`. The AOT source generator is delivered through `Foundgine.Aot` as a packaged analyzer. Benchmarks and tests remain repository-only and are not shipped in NuGet packages.
-
-The release packaging layout and commands are documented in [`eng/README.md`](eng/README.md).
-
 ## Product identity
 
 Foundgine is a **semantic execution layer for .NET**. Its job is to provide one semantic boundary between structured application intent and physical execution. See [Product identity](docs/PRODUCT-IDENTITY.md) for the canonical positioning and non-goals.

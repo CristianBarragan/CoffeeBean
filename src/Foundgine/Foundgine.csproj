@@ -3,7 +3,6 @@
     <PackageId>Foundgine</PackageId>
     <Description>Semantic execution layer for .NET. Resolves structured intent into authorized, deterministic execution plans.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RootNamespace>Foundgine</RootNamespace>
     <AssemblyName>Foundgine</AssemblyName>
     <IsPackable>true</IsPackable>
