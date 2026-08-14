@@ -2,7 +2,6 @@ publish-nuget:
   if: startsWith(github.ref, 'refs/tags/v')
   needs: build-test-pack
   runs-on: ubuntu-latest
-
   permissions:
     contents: read
     id-token: write
@@ -31,7 +30,6 @@ publish-nuget:
         set -euo pipefail
 
         for package in artifacts/nuget/*.nupkg; do
-          echo "Publishing $package"
           dotnet nuget push "$package" \
             --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
             --source "https://api.nuget.org/v3/index.json" \
