@@ -69,7 +69,7 @@
     <MSBuild
       Projects="$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj"
       Targets="Build"
-      Properties="Configuration=$(Configuration)" />
+      Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0" />
   </Target>
 
   <Target
