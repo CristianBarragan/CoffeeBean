@@ -50,11 +50,28 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         var input = entities.Combine(models).Combine(conversions).Combine(authorizations);
         context.RegisterSourceOutput(input, static (spc, pair) =>
         {
+            var entities = pair.Left.Left.Left;
+            var models = pair.Left.Left.Right;
+            var conversions = pair.Left.Right;
+            var authorizations = pair.Right;
+
+            // Do not emit a GeneratedMetadata type for projects that do not
+            // contain any Foundgine AOT declarations. This keeps the runtime
+            // AOT assembly free of an accidental empty generated type if the
+            // analyzer is ever included transitively.
+            if (entities.IsDefaultOrEmpty &&
+                models.IsDefaultOrEmpty &&
+                conversions.IsDefaultOrEmpty &&
+                authorizations.IsDefaultOrEmpty)
+            {
+                return;
+            }
+
             spc.AddSource("Foundgine.GeneratedMetadata.g.cs", Emit(
-                pair.Left.Left.Left,
-                pair.Left.Left.Right,
-                pair.Left.Right,
-                pair.Right));
+                entities,
+                models,
+                conversions,
+                authorizations));
         });
     }
 

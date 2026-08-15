@@ -63,6 +63,16 @@ public sealed class FoundgineEngine : IFoundgine
         SemanticAuthorizationCapabilityDiscovery.Describe(_model, _authorizationPolicy);
 
     public Task<ExecutionResult> ExecuteAsync(
+        Foundgine.Semantics.Intent.ReadIntent intent,
+        ExecutionContext? context = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(intent);
+        var request = new Foundgine.Semantics.Intent.ReadIntentCompiler(_model).Compile(intent);
+        return ExecuteAsync(request, context, cancellationToken);
+    }
+
+    public Task<ExecutionResult> ExecuteAsync(
         SemanticRequest request,
         ExecutionContext? context = null,
         CancellationToken cancellationToken = default)

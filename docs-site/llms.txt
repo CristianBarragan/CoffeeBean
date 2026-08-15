@@ -1,0 +1,17 @@
+# Foundgine
+
+> Foundgine is a programmable semantic execution platform for .NET. It creates a controlled boundary between application callers — including APIs, GraphQL, automation, and AI agents — and the data and operations they are allowed to execute. Callers submit structured intent; Foundgine resolves it against an application-defined semantic model, applies authorization, builds a provider-independent execution plan, and executes it through a provider (SQL, InMemory, or others).
+
+Foundgine is not an ORM replacement, a database, a GraphQL server, an LLM, an agent framework, or an identity provider. It is an execution layer that can sit underneath those kinds of systems.
+
+## Docs
+
+- [What is Foundgine?](https://cristianbarragan.github.io/Foundgine/what-is-foundgine.html): The problem Foundgine solves, the semantic-vs-persistence model distinction, and where Foundgine fits relative to REST/GraphQL/automation/AI-agent callers.
+- [AI agents with Foundgine](https://cristianbarragan.github.io/Foundgine/ai-agents/): Why AI agents should not generate SQL directly or hold database credentials, the intended agent → structured intent → Foundgine → PostgreSQL boundary, and required security scenarios (field authorization, tenant isolation, prompt injection).
+- [Architecture](https://cristianbarragan.github.io/Foundgine/architecture/): The core execution pipeline (intent, semantic model, resolution, authorization, plan, rewrite/optimize, provider compilation, execution, evidence) and how multiple callers share one execution model.
+- [Performance](https://cristianbarragan.github.io/Foundgine/performance/): CoffeeBeanery PostgreSQL graph benchmark (12 August 2026) — Foundgine vs Hot Chocolate + EF Core, throughput and p95 latency, explicitly scoped to a relationship-heavy query workload.
+
+## Optional
+
+- [Full documentation, single file](https://cristianbarragan.github.io/Foundgine/llms-full.md): All pages above concatenated for full-context ingestion.
+- [Repository](https://github.com/cristianbarragan/Foundgine): Source, development setup, and benchmark source data.

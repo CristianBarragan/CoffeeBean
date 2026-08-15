@@ -1,0 +1,52 @@
+# Foundgine.AI
+
+Provider-neutral AI agent integration for Foundgine using `Microsoft.Extensions.AI`.
+
+## Agent flow
+
+```text
+User
+  |
+  v
+AI agent
+  |
+  +-- foundgine_capabilities
+  |
+  +-- foundgine_query
+           |
+           v
+      ReadIntent
+           |
+      resolution
+           |
+      authorization
+           |
+         plan
+           |
+       provider
+           |
+         result
+```
+
+`FoundgineAiAgent` wraps any `IChatClient` with Foundgine tools and a bounded
+function-calling loop. The model chooses tools, but the host application owns
+`ExecutionContext`; tenant, identity and authorization values are never tool
+arguments.
+
+## Usage
+
+```csharp
+var toolset = new FoundgineAiToolset(
+    foundgine,
+    contextFactory: () => currentExecutionContext);
+
+var agent = new FoundgineAiAgent(chatClient, toolset);
+var response = await agent.RunAsync(
+    "Show me customers with accounts over $5,000");
+
+Console.WriteLine(response.Text);
+```
+
+The implementation uses `FunctionInvokingChatClient` and limits each request to
+a small number of tool iterations. Foundgine still re-validates, authorizes,
+plans and executes every query.
