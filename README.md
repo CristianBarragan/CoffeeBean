@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs-site/assets/logo/foundgine-logo-dark.png">
+  <img src="docs-site/assets/logo/foundgine-logo.png" alt="Foundgine" width="360">
+</picture>
+
 # [Foundgine.io](https://cristianbarragan.github.io/Foundgine/docs-site/index.html)
 
 ## From intent to authorized execution.

@@ -102,11 +102,16 @@ header.site-header {
 }
 
 .site-header-inner a.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   font-weight: 700;
   font-size: 1.05rem;
   color: var(--ink);
   letter-spacing: -0.01em;
 }
+
+.brand-mark { flex-shrink: 0; }
 
 .site-header-inner nav a {
   color: var(--muted);
