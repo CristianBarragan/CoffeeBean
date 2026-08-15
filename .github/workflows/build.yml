@@ -1,78 +1,36 @@
+---
 name: Build, Test & Pack
-
 on:
   push:
-    branches: ["main"]
-    tags: ["v*"]
-
+    branches:
+      - main
+    tags:
+      - v*
   pull_request:
-    branches: ["main"]
-
+    branches:
+      - main
 permissions:
   contents: read
-
 jobs:
   build-test-pack:
-    name: Build, Test, E2E & Pack
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "9.0.x"
-
+          dotnet-version: 9.0.x
       - name: Restore
         run: dotnet restore Foundgine.sln
-
       - name: Build
         run: dotnet build Foundgine.sln --no-restore --configuration Release
-
       - name: Test
-        run: dotnet test Foundgine.sln --no-build --configuration Release --verbosity normal
-
-      # ------------------------------------------------------------
-      # PostgreSQL 17 E2E
-      # ------------------------------------------------------------
-
-      - name: Start PostgreSQL 17
-        run: docker compose -f docker-compose.postgres.yml up -d --wait postgres
-
-      - name: Verify PostgreSQL 17
-        run: |
-          docker compose -f docker-compose.postgres.yml exec -T postgres \
-            psql -U foundgine -d foundgine_e2e -c 'select version();'
-
-      - name: Run PostgreSQL E2E
-        run: >-
-          dotnet test tests/Foundgine.E2E.Tests/Foundgine.E2E.Tests.csproj
-          --no-build
-          --configuration Release
-          --filter "FullyQualifiedName~Foundgine.E2E.Tests"
-          --logger "console;verbosity=normal"
-
-      - name: PostgreSQL diagnostics on failure
-        if: failure()
-        run: |
-          docker compose -f docker-compose.postgres.yml logs --no-color postgres
-
-      - name: Stop PostgreSQL
-        if: always()
-        run: |
-          docker compose -f docker-compose.postgres.yml down \
-            --volumes \
-            --remove-orphans
-
-      # ------------------------------------------------------------
-      # NuGet packaging
-      # ------------------------------------------------------------
-
-      - name: Pack NuGet package
+        run: dotnet test Foundgine.sln --no-build --configuration Release --verbosity
+          normal
+      - name: Pack NuGet packages
         shell: bash
         run: |
           set -euo pipefail
@@ -87,12 +45,15 @@ jobs:
 
           mkdir -p artifacts/nuget
 
-          dotnet pack src/Foundgine.Aot/Foundgine.Aot.csproj \
-            --no-restore \
-            --configuration Release \
-            --output artifacts/nuget \
-            -p:PackageVersion="$version"
+          while IFS= read -r project; do
+            echo "Packing $project"
 
+            dotnet pack "$project" \
+              --no-restore \
+              --configuration Release \
+              --output artifacts/nuget \
+              -p:PackageVersion="$version"
+          done < <(find src -name '*.csproj' -print | sort)
       - name: Validate NuGet package
         shell: bash
         run: |
@@ -108,15 +69,12 @@ jobs:
           echo "Package contents:"
           unzip -l "$package"
 
-          echo "Checking generator location..."
           unzip -l "$package" \
             | grep -F "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"
 
-          echo "Checking Foundgine.Aot..."
           unzip -l "$package" \
             | grep -F "lib/net9.0/Foundgine.Aot.dll"
 
-          echo "Checking Foundgine.Metadata..."
           unzip -l "$package" \
             | grep -F "lib/net9.0/Foundgine.Metadata.dll"
 
@@ -127,48 +85,67 @@ jobs:
             echo "Generator was packaged outside the analyzer directory."
             exit 1
           fi
-
       - name: Upload NuGet artifact
         uses: actions/upload-artifact@v4
         with:
           name: nuget-packages
           path: artifacts/nuget/*
           if-no-files-found: error
-
-  # --------------------------------------------------------------
-  # NuGet.org release
-  # --------------------------------------------------------------
-
+  postgres-e2e:
+    name: PostgreSQL 17 E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Restore
+        run: dotnet restore Foundgine.sln
+      - name: Build
+        run: dotnet build Foundgine.sln --no-restore --configuration Release
+      - name: Start PostgreSQL 17
+        run: docker compose -f docker-compose.postgres.yml up -d --wait postgres
+      - name: Verify PostgreSQL 17
+        run: |
+          docker compose -f docker-compose.postgres.yml exec -T postgres \
+            psql -U foundgine -d foundgine_e2e -c 'select version();'
+      - name: Run PostgreSQL E2E
+        run: dotnet test tests/Foundgine.E2E.Tests/Foundgine.E2E.Tests.csproj --no-build
+          --configuration Release --filter
+          "FullyQualifiedName~Foundgine.E2E.Tests" --logger
+          "console;verbosity=normal"
+      - name: PostgreSQL diagnostics on failure
+        if: failure()
+        run: docker compose -f docker-compose.postgres.yml logs --no-color postgres
+      - name: Stop PostgreSQL
+        if: always()
+        run: docker compose -f docker-compose.postgres.yml down --volumes
+          --remove-orphans
   publish-nuget:
-    name: Publish to NuGet.org
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build-test-pack
     runs-on: ubuntu-latest
-
     environment: production
-
     permissions:
       contents: read
       id-token: write
-
     steps:
       - name: Download NuGet artifact
         uses: actions/download-artifact@v4
         with:
           name: nuget-packages
           path: artifacts/nuget
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "9.0.x"
-
+          dotnet-version: 9.0.x
       - name: NuGet login (OIDC)
         uses: NuGet/login@v1
         id: nuget-login
         with:
           user: dero
-
       - name: Publish to NuGet.org
         shell: bash
         run: |
