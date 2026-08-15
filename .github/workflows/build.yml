@@ -72,7 +72,7 @@ jobs:
       # NuGet packaging
       # ------------------------------------------------------------
 
-      - name: Pack NuGet packages
+      - name: Pack NuGet package
         shell: bash
         run: |
           set -euo pipefail
@@ -87,15 +87,11 @@ jobs:
 
           mkdir -p artifacts/nuget
 
-          while IFS= read -r project; do
-            echo "Packing $project"
-
-            dotnet pack "$project" \
-              --no-restore \
-              --configuration Release \
-              --output artifacts/nuget \
-              -p:PackageVersion="$version"
-          done < <(find src -name '*.csproj' -print | sort)
+          dotnet pack src/Foundgine.Aot/Foundgine.Aot.csproj \
+            --no-restore \
+            --configuration Release \
+            --output artifacts/nuget \
+            -p:PackageVersion="$version"
 
       - name: Validate NuGet package
         shell: bash

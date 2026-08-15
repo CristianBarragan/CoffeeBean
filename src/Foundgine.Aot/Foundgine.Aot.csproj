@@ -7,17 +7,40 @@
     <AssemblyName>Foundgine.Aot</AssemblyName>
     <IsPackable>true</IsPackable>
   </PropertyGroup>
+
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="README.md" />
     <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
+
     <ProjectReference Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
     <ProjectReference Include="../Foundgine.Metadata/Foundgine.Metadata.csproj" />
-    <ProjectReference Include="../Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj" ReferenceOutputAssembly="false" />
+
+    <!-- Build the source generator, but do not expose it as a normal assembly reference. -->
+    <ProjectReference
+      Include="../Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj"
+      ReferenceOutputAssembly="false"
+      PrivateAssets="all" />
   </ItemGroup>
-  <Target Name="PackGeneratorAnalyzer" BeforeTargets="GenerateNuspec" DependsOnTargets="Build">
+
+  <!--
+    Foundgine.Aot is the distributable package. The generator is intentionally
+    stored in the analyzer directory so NuGet/Roslyn discovers it automatically.
+    Foundgine.Metadata is also shipped inside this package because Aot references
+    its runtime metadata types.
+  -->
+  <Target Name="PackFoundgineContents" BeforeTargets="GenerateNuspec" DependsOnTargets="Build">
     <ItemGroup>
-      <_FoundgineGenerator Include="$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/bin/$(Configuration)/netstandard2.0/Foundgine.Aot.Generator.dll" />
-      <TfmSpecificPackageFile Include="$(_FoundgineGenerator)" PackagePath="analyzers/dotnet/cs/Foundgine.Aot.Generator.dll" />
+      <None
+        Include="$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/bin/$(Configuration)/netstandard2.0/Foundgine.Aot.Generator.dll"
+        Pack="true"
+        PackagePath="analyzers/dotnet/cs"
+        Visible="false" />
+
+      <None
+        Include="$(MSBuildProjectDirectory)/../Foundgine.Metadata/bin/$(Configuration)/$(TargetFramework)/Foundgine.Metadata.dll"
+        Pack="true"
+        PackagePath="lib/$(TargetFramework)"
+        Visible="false" />
     </ItemGroup>
   </Target>
 </Project>
