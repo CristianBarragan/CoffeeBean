@@ -4,10 +4,10 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageReference Include="xunit" Version="2.9.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <ProjectReference Include="../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
     <ProjectReference Include="../../src/Foundgine/Foundgine.csproj" />
     <ProjectReference Include="../../src/Foundgine.Planning/Foundgine.Planning.csproj" />
@@ -20,7 +20,7 @@
     <ProjectReference Include="../../src/Foundgine.InMemory/Foundgine.InMemory.csproj" />
     <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" />
     <ProjectReference Include="../../src/Foundgine.Intent.Json/Foundgine.Intent.Json.csproj" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
-    <PackageReference Include="Npgsql" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="Npgsql" />
   </ItemGroup>
 </Project>

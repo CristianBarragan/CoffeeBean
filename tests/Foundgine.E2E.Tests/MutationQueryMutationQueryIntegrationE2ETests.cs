@@ -201,6 +201,94 @@ public sealed class MutationQueryMutationQueryIntegrationE2ETests
         }
     }
 
+    [PostgreSqlFact]
+    public async Task PostgresE2E_explore_query_mutation_query_mutation_is_stateful_end_to_end_against_postgresql17()
+    {
+        var cs = Environment.GetEnvironmentVariable(ConnectionEnvironmentVariable);
+
+        await using var connection = new NpgsqlConnection(cs);
+        await connection.OpenAsync();
+        await using var isolation = await BeginIsolatedSchemaAsync(connection);
+        await PrepareUnifiedDatabaseAsync(connection);
+
+        var mutationMetadata = PostgresE2ETests.BuildMetadata();
+        var queryMetadata = ComplexQueryPostgresE2ETests.BuildMetadata();
+        var metadata = MergeMetadata(mutationMetadata, queryMetadata);
+
+        // PASS 1 — explore: resolve the semantic topology before touching data.
+        Assert.NotEmpty(metadata.Entities);
+        Assert.NotEmpty(metadata.Relationships);
+        Assert.All(metadata.Entities, entity => Assert.NotEmpty(entity.Name));
+
+        await SeedQueryBaselineAsync(connection);
+
+        await using var transaction = await connection.BeginTransactionAsync();
+        try
+        {
+            var queryModel = ComplexQueryPostgresE2ETests.BuildModel();
+            var queryPlan = ComplexQueryPostgresE2ETests.Compile(
+                queryModel,
+                metadata,
+                ComplexQueryPostgresE2ETests.BuildComplexRequest(50, 3));
+
+            var queryProvider = new SqlExecutionProvider(connection, transaction);
+            var mutationProvider = new PostgresBatchedMutationExecutionProvider(
+                connection, metadata, transaction);
+
+            // PASS 2 — query: establish the pre-mutation state.
+            var beforeMutation = await queryProvider.ExecuteAsync(
+                queryPlan, new ExecutionContext());
+            var beforeIds = beforeMutation.Rows
+                .Select(r => Convert.ToInt64(r.Values["__fg_0_Id"]))
+                .Distinct()
+                .ToHashSet();
+
+            Assert.Contains(1L, beforeIds);
+            Assert.Contains(3L, beforeIds);
+
+            // PASS 3 — mutation: create the graph through semantic mutation.
+            var createGraph = ComplexSemanticMutationE2ETests.BuildGraph();
+            var createPlan = new SemanticMutationPlanner().Plan(createGraph);
+            var createIr = new SemanticMutationExecutionLowerer(metadata).Lower(createPlan);
+            createIr.ValidateDerivedDependencies();
+
+            var created = mutationProvider.ExecuteBatch(createIr, new ExecutionContext());
+            var createdCustomerId = Convert.ToInt64(
+                created.Results[0].ReturnedFields![ComplexSemanticMutationE2ETests.Id]);
+
+            Assert.True(createdCustomerId > 0);
+
+            // PASS 4 — query: the same query now sees the newly-created graph.
+            var afterCreate = await queryProvider.ExecuteAsync(
+                queryPlan, new ExecutionContext());
+            var afterCreateIds = afterCreate.Rows
+                .Select(r => Convert.ToInt64(r.Values["__fg_0_Id"]))
+                .Distinct()
+                .ToHashSet();
+
+            Assert.Contains(createdCustomerId, afterCreateIds);
+            Assert.True(afterCreateIds.IsSupersetOf(beforeIds));
+
+            // PASS 5 — mutation: change only the newly-created account.
+            var blockGraph = BuildBlockAccountGraph(createdCustomerId);
+            var blockPlan = new SemanticMutationPlanner().Plan(blockGraph);
+            var blockIr = new SemanticMutationExecutionLowerer(metadata).Lower(blockPlan);
+            blockIr.ValidateDerivedDependencies();
+
+            var blocked = mutationProvider.ExecuteBatch(blockIr, new ExecutionContext());
+
+            Assert.Single(blocked.Results);
+            Assert.Equal(1, blocked.Results[0].AffectedRows);
+            Assert.Equal(
+                "Blocked",
+                blocked.Results[0].ReturnedFields![ComplexSemanticMutationE2ETests.Status]?.ToString());
+        }
+        finally
+        {
+            await transaction.RollbackAsync();
+        }
+    }
+
     /// <summary>
     /// Negative counterpart to the main scenario above. It exists to prove
     /// that scoping the second mutation's filter by CustomerId (in addition

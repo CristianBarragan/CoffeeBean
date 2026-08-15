@@ -49,9 +49,9 @@ public sealed class FoundgineAiToolset
             "Execute a provider-neutral Foundgine read intent. The intent must use only entities, fields and relationships discovered through foundgine_capabilities. Do not provide tenant, identity or authorization context; the application supplies that.")
     ];
 
-    [Description("Returns the semantic capabilities available to the current caller.")]
+    [Description("Returns the canonical semantic capability contract available to the current caller.")]
     public string DescribeCapabilities() =>
-        JsonSerializer.Serialize(_foundgine.DescribeCapabilities(), JsonOptions);
+        JsonSerializer.Serialize(_foundgine.DescribeCapabilityContract(), JsonOptions);
 
     [Description("Executes a Foundgine read intent represented as JSON and returns rows plus execution evidence.")]
     public async Task<string> ExecuteQueryAsync(

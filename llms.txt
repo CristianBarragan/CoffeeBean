@@ -1,4 +1,6 @@
-# Foundgine 
+# Foundgine 0.2.1
+
+Foundgine 0.2.1 is the current shipped release.
 
 Foundgine is a **semantic execution layer for .NET**.
 
@@ -46,6 +48,7 @@ The core does not depend on GraphQL, Hot Chocolate, SQL, EF Core, OpenAI, MCP, o
 - `Foundgine.GraphQL.HotChocolate.Mutations` — GraphQL mutations
 - `Foundgine.Aot` — AOT contracts
 - `Foundgine.Aot.Generator` — generated metadata
+- `Foundgine.MCP` — MCP boundary and mutation-safe execution
 
 ## AI
 
@@ -54,6 +57,10 @@ AI can create a request.
 AI does not decide what the application allows.
 
 Foundgine resolves and authorizes the request before execution.
+
+## Release validation
+
+The current repository has passed `dotnet restore`, `dotnet build`, and the full automated test suite. PostgreSQL E2E and performance benchmarks are separate environment-dependent workflows.
 
 ## Current proof
 

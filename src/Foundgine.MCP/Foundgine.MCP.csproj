@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <PackageId>Foundgine.MCP</PackageId>
+    <Description>MCP adapter for exposing Foundgine semantic capabilities and provider-neutral intent.</Description>
+    <RootNamespace>Foundgine.MCP</RootNamespace>
+    <AssemblyName>Foundgine.MCP</AssemblyName>
+    <IsPackable>true</IsPackable>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
+    <ProjectReference Include="../Foundgine/Foundgine.csproj" />
+    <ProjectReference Include="../Foundgine.Intent.Json/Foundgine.Intent.Json.csproj" />
+    <PackageReference Include="ModelContextProtocol" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+</Project>

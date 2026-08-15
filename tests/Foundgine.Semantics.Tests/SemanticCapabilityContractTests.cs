@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Foundgine.Abstractions;
 using Foundgine.Semantics.Authorization;
+using Foundgine.Semantics.Capabilities;
 using Xunit;
 
 namespace Foundgine.Semantics.Tests;
@@ -49,6 +50,88 @@ public sealed class SemanticCapabilityContractTests
         Assert.Null(customer.Read.Predicate);
     }
 
+
+    [Fact]
+    public void Canonical_contract_contains_read_write_and_traversal_capabilities()
+    {
+        var model = new SemanticModelBuilder()
+            .Entity(new EntityId(1), "Customer", e => e
+                .Identity(new FieldId(1), "Id")
+                .Field(new FieldId(2), "Name", typeof(string))
+                .Relationship(new RelationshipId(1), "Accounts", new EntityId(2), RelationshipCardinality.Many))
+            .Entity(new EntityId(2), "Account", e => e
+                .Identity(new FieldId(3), "Id")
+                .Field(new FieldId(4), "Balance", typeof(decimal)))
+            .Build();
+
+        var contract = SemanticCapabilityContractDiscovery.Describe(
+            model,
+            new AllowAllSemanticAuthorizationPolicy());
+
+        Assert.Equal(SemanticCapabilityContractDiscovery.CurrentVersion, contract.Version);
+        Assert.Contains(contract.Capabilities, x => x.Id == "Customer.read" && x.Fields.Contains("Name"));
+        Assert.Contains(contract.Capabilities, x => x.Id == "Customer.write" && x.Fields.Contains("Name"));
+
+        var traversal = Assert.Single(contract.Capabilities, x => x.Id == "Customer.Accounts.traverse");
+        Assert.Equal(new EntityId(2), traversal.TargetEntityId);
+        Assert.Equal(AuthorizationAccess.Allowed, traversal.Access.Access);
+    }
+
+    [Fact]
+    public void Canonical_contract_exposes_explicit_mutation_actions_and_semantic_constraints()
+    {
+        var model = new SemanticModelBuilder()
+            .Entity(new EntityId(1), "Order", e => e
+                .Identity(new FieldId(1), "Id")
+                .Field(new FieldId(2), "Total", typeof(decimal)))
+            .Build();
+
+        var contract = SemanticCapabilityContractDiscovery.Describe(
+            model,
+            new AllowAllSemanticAuthorizationPolicy());
+
+        var update = Assert.Single(contract.Capabilities, x => x.Id == "Order.update");
+        Assert.Equal("update", update.Operation);
+        Assert.True(update.HasSideEffects);
+        Assert.True(update.IsIdempotent);
+        Assert.Contains(update.Constraints, x => x.Name == "target-selection");
+        Assert.Contains(update.Constraints, x => x.Name == "writable-fields");
+        Assert.Contains(update.Effects, x => x.Name == "data.update");
+
+        var create = Assert.Single(contract.Capabilities, x => x.Id == "Order.create");
+        Assert.Equal("create", create.Operation);
+        Assert.False(create.IsIdempotent);
+
+        var delete = Assert.Single(contract.Capabilities, x => x.Id == "Order.delete");
+        Assert.Equal("delete", delete.Operation);
+        Assert.Contains(delete.Constraints, x => x.Name == "target-selection");
+
+        var upsert = Assert.Single(contract.Capabilities, x => x.Id == "Order.upsert");
+        Assert.Equal("upsert", upsert.Operation);
+        Assert.Contains(upsert.Constraints, x => x.Name == "conflict-key");
+    }
+
+    [Fact]
+    public void Canonical_contract_preserves_policy_scoped_access()
+    {
+        var model = new SemanticModelBuilder()
+            .Entity(new EntityId(1), "Customer", e => e
+                .Identity(new FieldId(1), "Id")
+                .Field(new FieldId(2), "Name", typeof(string)))
+            .Build();
+
+        var contract = SemanticCapabilityContractDiscovery.Describe(
+            model,
+            new ReadOnlyPolicy());
+
+        var read = Assert.Single(contract.Capabilities, x => x.Id == "Customer.read");
+        var write = Assert.Single(contract.Capabilities, x => x.Id == "Customer.write");
+
+        Assert.Equal(AuthorizationAccess.Allowed, read.Access.Access);
+        Assert.Equal(AuthorizationAccess.Denied, write.Access.Access);
+        Assert.Empty(write.Effects);
+    }
+
     [Fact]
     public void Capability_document_is_machine_serializable_without_provider_types()
     {
@@ -71,6 +154,12 @@ public sealed class SemanticCapabilityContractTests
         Assert.DoesNotContain("Npgsql", json, StringComparison.OrdinalIgnoreCase);
     }
 
+    private sealed class ReadOnlyPolicy : AllowAllSemanticAuthorizationPolicy
+    {
+        public override bool CanWriteEntity(EntityId entityId) => false;
+        public override bool CanWriteField(EntityId entityId, FieldId fieldId) => false;
+    }
+
     private sealed class ConditionalCustomerPolicy : AllowAllSemanticAuthorizationPolicy
     {
         public override AuthorizationPredicate? GetPredicate(
@@ -82,5 +171,45 @@ public sealed class SemanticCapabilityContractTests
                         AuthorizationPredicate.Parameter("customer"), "TenantId"),
                     AuthorizationPredicate.ContextParameter("tenantId"))
                 : null;
+    }
+}
+
+public sealed class SemanticVersioningTests
+{
+    [Fact]
+    public void Version_set_is_stable_for_equivalent_models()
+    {
+        var first = SemanticVersionSet.For(BuildModel());
+        var second = SemanticVersionSet.For(BuildModel());
+
+        Assert.Equal(first.SemanticModelVersion, second.SemanticModelVersion);
+        Assert.Equal(1, first.CapabilityContractVersion);
+        Assert.Equal(1, first.CapabilityVersion);
+        Assert.Equal(1, first.IntentVersion);
+        Assert.Equal(1, first.PlanVersion);
+    }
+
+    [Fact]
+    public void Semantic_model_version_changes_when_topology_changes()
+    {
+        var first = SemanticVersionSet.For(BuildModel());
+        var changed = SemanticVersionSet.For(BuildModel(includeExtraEntity: true));
+
+        Assert.NotEqual(first.SemanticModelVersion, changed.SemanticModelVersion);
+    }
+
+    private static SemanticModel BuildModel(bool includeExtraEntity = false)
+    {
+        var builder = new SemanticModelBuilder()
+            .Entity(new EntityId(1), "Customer", e => e
+                .Identity(new FieldId(1), "Id")
+                .Field(new FieldId(1), "Name", typeof(string)));
+
+        if (includeExtraEntity)
+            builder.Entity(new EntityId(2), "Account", e => e
+                .Identity(new FieldId(2), "Id")
+                .Field(new FieldId(2), "Number", typeof(string)));
+
+        return builder.Build();
     }
 }

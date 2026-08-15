@@ -1,6 +1,6 @@
 > Source content for [`index.html`](index.html), the page actually served on the site. Edit this file, then regenerate the HTML page and `llms-full.md`.
 
-# Foundgine Performance
+# Foundgine Performance — 0.2.1 evidence
 
 ## CoffeeBeanery PostgreSQL graph benchmark — 12 August 2026
 
