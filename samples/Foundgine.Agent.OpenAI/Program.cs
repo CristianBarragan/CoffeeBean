@@ -53,15 +53,21 @@ metadata.Register(new EntityMetadata(
 var data = new InMemoryDataSet()
     .Add(new InMemoryRow(customer, new Dictionary<FieldId, object?>
     {
-        [id] = 1, [name] = "Alice", [tenantId] = 7
+        [id] = 1,
+        [name] = "Alice",
+        [tenantId] = 7
     }))
     .Add(new InMemoryRow(customer, new Dictionary<FieldId, object?>
     {
-        [id] = 2, [name] = "Bob", [tenantId] = 7
+        [id] = 2,
+        [name] = "Bob",
+        [tenantId] = 7
     }))
     .Add(new InMemoryRow(customer, new Dictionary<FieldId, object?>
     {
-        [id] = 3, [name] = "Carol", [tenantId] = 9
+        [id] = 3,
+        [name] = "Carol",
+        [tenantId] = 9
     }));
 
 var services = new ServiceCollection();
