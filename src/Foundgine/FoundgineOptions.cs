@@ -1,6 +1,7 @@
 using Foundgine.Semantics;
 using Foundgine.Execution;
 using Foundgine.Semantics.Authorization;
+using Foundgine.Abstractions;
 
 namespace Foundgine;
 
@@ -19,4 +20,8 @@ public sealed class FoundgineOptions
     /// before a cache lookup, and authorization predicates remain part of the cached plan.
     /// </summary>
     public IProviderPlanCache? PlanCache { get; set; }
+
+    /// <summary>Optional mutation schema and provider for the semantic mutation pipeline.</summary>
+    public IMutationSchema? MutationSchema { get; set; }
+    public Foundgine.Execution.Mutation.IMutationBatchExecutionProvider? MutationProvider { get; set; }
 }

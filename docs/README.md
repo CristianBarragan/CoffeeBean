@@ -1,5 +1,7 @@
 # Documentation
 
+These documents describe the current Foundgine 0.2.1 release. Historical phase and milestone material is kept under `docs/history`.
+
 Use these pages in this order.
 
 ## Start here
@@ -10,6 +12,7 @@ Use these pages in this order.
 4. [Testing](TESTING.md)
 5. [PostgreSQL E2E](POSTGRES-E2E.md)
 6. [Current status](CURRENT-STATUS.md)
+7. [Release 0.2.1](RELEASE-0.2.1.md)
 
 ## Understand the product
 
@@ -19,6 +22,7 @@ Use these pages in this order.
 - [Security](SECURITY.md)
 - [AI capability interface](AI-CAPABILITY-INTERFACE.md)
 - [Agent semantic boundary](AGENT-SEMANTIC-BOUNDARY.md)
+- [MCP adapter](MCP-ADAPTER.md)
 
 ## Work on the implementation
 
@@ -39,7 +43,7 @@ Use these pages in this order.
 - [PostgreSQL physical boundary](POSTGRES-PHYSICAL-BOUNDARY.md)
 - [PostgreSQL correlation](POSTGRES-BATCH-CORRELATION-INVARIANTS.md)
 - [PostgreSQL generated-key correlation](POSTGRES-GENERATED-KEY-CORRELATION.md)
-- [PostgreSQL E2E measurement gate](stage-48-MEASUREMENT-GATE-RECOMMENDATION.md)
+- [PostgreSQL E2E measurement gate](MEASUREMENT-GATE-RECOMMENDATION.md)
 
 ## History
 
