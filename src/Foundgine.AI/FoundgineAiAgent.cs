@@ -1,3 +1,4 @@
+using System.Linq;
 using Foundgine.Execution;
 using Microsoft.Extensions.AI;
 
@@ -52,7 +53,7 @@ public sealed class FoundgineAiAgent
         var options = new ChatOptions
         {
             Instructions = _instructions,
-            Tools = _tools
+            Tools = _tools.Cast<AITool>().ToList()
         };
 
         return await invokingClient.GetResponseAsync(

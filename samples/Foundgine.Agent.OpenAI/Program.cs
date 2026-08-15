@@ -9,6 +9,7 @@ using Foundgine.Semantics.Authorization;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using OpenAI;
+using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
 if (string.IsNullOrWhiteSpace(apiKey))
@@ -52,15 +53,21 @@ metadata.Register(new EntityMetadata(
 var data = new InMemoryDataSet()
     .Add(new InMemoryRow(customer, new Dictionary<FieldId, object?>
     {
-        [id] = 1, [name] = "Alice", [tenantId] = 7
+        [id] = 1,
+        [name] = "Alice",
+        [tenantId] = 7
     }))
     .Add(new InMemoryRow(customer, new Dictionary<FieldId, object?>
     {
-        [id] = 2, [name] = "Bob", [tenantId] = 7
+        [id] = 2,
+        [name] = "Bob",
+        [tenantId] = 7
     }))
     .Add(new InMemoryRow(customer, new Dictionary<FieldId, object?>
     {
-        [id] = 3, [name] = "Carol", [tenantId] = 9
+        [id] = 3,
+        [name] = "Carol",
+        [tenantId] = 9
     }));
 
 var services = new ServiceCollection();
@@ -86,3 +93,4 @@ var prompt = args.Length == 0
 
 var response = await agent.RunAsync(prompt);
 Console.WriteLine(response.Text);
+return 0;

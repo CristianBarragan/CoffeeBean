@@ -4,6 +4,7 @@ using Foundgine.Execution;
 using Foundgine.Intent.Json;
 using Foundgine.Semantics.Authorization;
 using Microsoft.Extensions.AI;
+using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine.AI;
 
