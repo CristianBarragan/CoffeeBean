@@ -28,33 +28,53 @@ public sealed class InMemoryDataSet
         _rows.TryGetValue(entityId, out var rows) ? rows : [];
 }
 
-public sealed record InMemoryPlan(ExecutionPlan Plan) : ProviderPlan("in-memory");
+public sealed record InMemoryPlan(ExecutionIR IR) : ProviderPlan("in-memory");
 
 /// <summary>
-/// Executes the logical execution plan directly over CLR data. It deliberately
+/// Executes the provider-neutral execution IR directly over CLR data. It deliberately
 /// has no SQL dependency and uses metadata only to resolve relationships.
 /// This provider is intentionally small: its purpose is to prove that the
 /// execution plan is not merely SQL with the SQL removed.
 /// </summary>
-public sealed class InMemoryCompiler : IProviderPlanCompiler
-{
-    public ProviderPlan Compile(ExecutionPlan plan) =>
-        new InMemoryPlan(ArgumentNull(plan));
-
-    private static ExecutionPlan ArgumentNull(ExecutionPlan plan) =>
-        plan ?? throw new ArgumentNullException(nameof(plan));
-}
-
 public sealed class InMemoryExecutionProvider : IExecutionProvider
 {
-    private readonly IMetadataProvider _metadata;
-    private readonly InMemoryDataSet _data;
+    private readonly InMemoryCompiler _compiler;
 
     public InMemoryExecutionProvider(IMetadataProvider metadata, InMemoryDataSet data)
+    {
+        _compiler = new InMemoryCompiler(metadata, data);
+    }
+
+    public Task<ExecutionResult> ExecuteAsync(
+        ProviderPlan plan,
+        ExecutionContext context,
+        CancellationToken cancellationToken = default) =>
+        _compiler.ExecuteAsync(plan, context, cancellationToken);
+}
+
+public sealed class InMemoryCompiler : IProviderPlanCompiler
+{
+    private readonly IMetadataProvider? _metadata;
+    private readonly InMemoryDataSet? _data;
+
+    public InMemoryCompiler() { }
+
+    public InMemoryCompiler(IMetadataProvider metadata, InMemoryDataSet data)
     {
         _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
         _data = data ?? throw new ArgumentNullException(nameof(data));
     }
+
+    /// <summary>Compatibility bridge for callers holding a semantic plan.
+    /// Lowering remains explicit and provider-neutral.</summary>
+    public ProviderPlan Compile(SemanticPlan plan) => Compile(ExecutionIRCompiler.Compile(plan));
+
+    public ProviderPlan Compile(ExecutionIR ir)
+    {
+        ArgumentNullException.ThrowIfNull(ir);
+        return new InMemoryPlan(ir);
+    }
+
 
     public Task<ExecutionResult> ExecuteAsync(
         ProviderPlan plan,
@@ -65,19 +85,22 @@ public sealed class InMemoryExecutionProvider : IExecutionProvider
             throw new ArgumentException("Expected an InMemoryPlan.", nameof(plan));
 
         cancellationToken.ThrowIfCancellationRequested();
-        var rows = ExecuteNode(memoryPlan.Plan.Root, context, cancellationToken, null, isRoot: true).ToList();
+        if (_metadata is null || _data is null)
+            throw new InvalidOperationException("InMemoryCompiler execution requires metadata and data. Construct it with InMemoryCompiler(metadata, data).");
+        var rows = ExecuteNode(memoryPlan.IR.Root, context, cancellationToken, null, isRoot: true).ToList();
         return Task.FromResult(new ExecutionResult(rows));
     }
 
     private IEnumerable<ExecutionRow> ExecuteNode(
-        ExecutionPlanNode node,
+        ExecutionIRNode node,
         ExecutionContext context,
         CancellationToken cancellationToken,
         InMemoryRow? parent,
         bool isRoot)
     {
+        var data = _data ?? throw new InvalidOperationException("InMemoryCompiler requires data for execution.");
         IEnumerable<InMemoryRow> candidates = parent is null
-            ? _data.Get(node.EntityId)
+            ? data.Get(node.EntityId)
             : Traverse(parent, node);
 
         if (node.Authorization is not null)
@@ -109,17 +132,19 @@ public sealed class InMemoryExecutionProvider : IExecutionProvider
         }
     }
 
-    private IEnumerable<InMemoryRow> Traverse(InMemoryRow parent, ExecutionPlanNode child)
+    private IEnumerable<InMemoryRow> Traverse(InMemoryRow parent, ExecutionIRNode child)
     {
         if (child.ViaRelationship is not { } relationshipId)
             throw new NotSupportedException("The in-memory provider currently supports relationship traversal only.");
 
-        var source = _metadata.GetRelationship(relationshipId);
+        var metadata = _metadata ?? throw new InvalidOperationException("InMemoryCompiler requires metadata for execution.");
+        var data = _data ?? throw new InvalidOperationException("InMemoryCompiler requires data for execution.");
+        var source = metadata.GetRelationship(relationshipId);
         var sourceField = FieldForColumn(source.Source, source.SourceKey.ColumnId);
         var targetField = FieldForColumn(source.Target, source.TargetKey.ColumnId);
         var parentValue = parent.Values.TryGetValue(sourceField, out var value) ? value : null;
 
-        return _data.Get(child.EntityId).Where(row =>
+        return data.Get(child.EntityId).Where(row =>
             row.Values.TryGetValue(targetField, out var childValue) && Equals(parentValue, childValue));
     }
 
@@ -197,7 +222,7 @@ public sealed class InMemoryExecutionProvider : IExecutionProvider
         if (target.Kind == AuthorizationPredicateKind.ResourceParameter)
         {
             var name = node.Name ?? throw new InvalidOperationException("Resource member has no name.");
-            var entity = _metadata.GetEntity(row.EntityId);
+            var entity = (_metadata ?? throw new InvalidOperationException("InMemoryCompiler requires metadata for execution.")).GetEntity(row.EntityId);
             var field = entity.EffectiveFields.FirstOrDefault(x => x.Name == name)
                 ?? throw new InvalidOperationException($"Authorization resource member '{entity.Name}.{name}' has no field mapping.");
             return row.Values.TryGetValue(field.Id, out var value) ? value : null;
@@ -210,7 +235,7 @@ public sealed class InMemoryExecutionProvider : IExecutionProvider
         throw new NotSupportedException("Only context and resource member authorization is supported by this minimal provider.");
     }
 
-    private ExecutionRow ToExecutionRow(ExecutionPlanNode node, InMemoryRow row) =>
+    private ExecutionRow ToExecutionRow(ExecutionIRNode node, InMemoryRow row) =>
         new(
             row.Values.ToDictionary(x => x.Key.ToString(), x => x.Value),
             node.Fields.ToDictionary(
@@ -256,7 +281,7 @@ public sealed class InMemoryExecutionProvider : IExecutionProvider
 
     private FieldId FieldForColumn(EntityId entityId, ColumnId columnId)
     {
-        var entity = _metadata.GetEntity(entityId);
+        var entity = (_metadata ?? throw new InvalidOperationException("InMemoryCompiler requires metadata for execution.")).GetEntity(entityId);
         return entity.EffectiveFields.First(x => x.Column?.ColumnId == columnId).Id;
     }
 }

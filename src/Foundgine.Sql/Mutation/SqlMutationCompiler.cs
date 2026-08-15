@@ -1,5 +1,6 @@
 using System.Text;
 using Foundgine.Metadata;
+using Foundgine.Execution.Mutation;
 using Foundgine.Abstractions;
 using Foundgine.Planning.Mutation;
 using Foundgine.Semantics.Query;
@@ -17,6 +18,14 @@ public sealed class SqlMutationCompiler
 
     public SqlMutationCompiler(IMetadataProvider metadata) =>
         _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+
+    /// <summary>
+    /// Canonical execution entry point. Provider-specific SQL lowering starts
+    /// from ExecutionMutationIR; the legacy planning overload remains as an
+    /// internal compatibility surface for existing callers.
+    /// </summary>
+    public SqlMutationBatchPlan Compile(ExecutionMutationIR ir) =>
+        Compile(ir.ToMutationBatchPlan());
 
     public SqlMutationBatchPlan Compile(MutationBatchPlan plan)
     {

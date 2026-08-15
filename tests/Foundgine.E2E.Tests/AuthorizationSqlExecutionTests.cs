@@ -7,6 +7,7 @@ using Foundgine.Semantics;
 using Foundgine.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
+using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -44,7 +45,7 @@ public sealed class AuthorizationSqlExecutionTests
             }));
 
         Assert.Single(result.Rows);
-        Assert.Equal(1L, result.Rows[0].Values["n0_Id"]);
+        Assert.Equal(1L, result.Rows[0].Values["__fg_0_Id"]);
     }
     [Fact]
     public async Task Missing_authorization_context_value_fails_closed()

@@ -116,3 +116,15 @@ The next benchmark cycle should answer four questions:
 4. Does a FASTER-backed cache change throughput, memory or PostgreSQL pressure enough to justify its complexity?
 
 For the full findings, limitations and proposed experiments, see [the performance analysis](../../docs/benchmarks/2026-08-13-performance-analysis.md).
+
+
+## Current benchmark status — 2026-08-15
+
+The latest confirmed benchmark baseline is documented in [`docs/benchmarks/2026-08-15-performance-results.md`](../../docs/benchmarks/2026-08-15-performance-results.md).
+
+The current evidence shows:
+
+- Hot Chocolate + EF Core remains substantially faster for the measured top-50 query workload.
+- Foundgine's whole-graph mutation path is substantially more competitive.
+- Provider-plan caching improves the available lower-concurrency mutation measurements, but it is not a universal end-to-end optimization.
+- Performance and PostgreSQL E2E correctness results are tracked separately.

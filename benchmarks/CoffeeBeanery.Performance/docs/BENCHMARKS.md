@@ -46,3 +46,8 @@ The Foundgine warm configuration caches only the provider execution plan for the
 The corrected loader performs a real upsert against existing deterministic customer rows using `CustomerKey` as the conflict identity, then immediately executes the exact same `QueryTop50` full graph. Batch sizes represent multiple existing-row upserts in one GraphQL request. One latency sample covers the complete upsert + refetch operation.
 
 The read half is intentionally identical to the standalone query workload, so the combined result can be compared directly with the query baseline.
+
+
+## Current performance baseline — 2026-08-15
+
+See [`docs/benchmarks/2026-08-15-performance-results.md`](../../../docs/benchmarks/2026-08-15-performance-results.md) for the latest confirmed results. The current baseline shows a substantial query-performance gap versus Hot Chocolate + EF Core, while Foundgine mutation throughput is considerably stronger. Do not mix historical benchmark runs with the current baseline.

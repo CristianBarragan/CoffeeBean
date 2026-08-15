@@ -1,35 +1,48 @@
 # Documentation
 
-Keep this documentation practical. If the code and docs disagree, the code and tests win.
+Use these pages in this order.
 
 ## Start here
 
-1. [Product identity](PRODUCT-IDENTITY.md)
-2. [Why Foundgine](WHY-FOUNDGINE.md)
-3. [Getting started](GETTING-STARTED.md)
-4. [Execution Algebra](EXECUTION-ALGEBRA.md)
-5. [Authorization Golden Path](AUTHORIZATION-GOLDEN-PATH.md)
-6. [Architecture](ARCHITECTURE.md)
-7. [Current status](CURRENT-STATUS.md)
-8. [Documentation truth](DOCUMENTATION-TRUTH.md)
-9. [Runtime](RUNTIME.md)
-10. [GraphQL](GRAPHQL.md)
-11. [AOT](AOT.md)
-12. [Testing](TESTING.md)
-13. [Roadmap](ROADMAP.md)
+1. [Getting started](GETTING-STARTED.md)
+2. [Layer setup](LAYER-SETUP.md)
+3. [Architecture](ARCHITECTURE.md)
+4. [Testing](TESTING.md)
+5. [PostgreSQL E2E](POSTGRES-E2E.md)
+6. [Current status](CURRENT-STATUS.md)
 
-## Architecture boundaries
+## Understand the product
 
-- [Mapping and Connections](MAPPING.md)
-- [Provider independence](PROVIDER-INDEPENDENCE.md) — why the second provider exists and what it proves.
+- [Product identity](PRODUCT-IDENTITY.md)
+- [Why Foundgine](WHY-FOUNDGINE.md)
+- [Provider independence](PROVIDER-INDEPENDENCE.md)
+- [Security](SECURITY.md)
+- [AI capability interface](AI-CAPABILITY-INTERFACE.md)
+- [Agent semantic boundary](AGENT-SEMANTIC-BOUNDARY.md)
 
-Historical design notes and milestone documents live under [history](history/README.md).
+## Work on the implementation
 
-- [Agent Semantic Boundary](AGENT-SEMANTIC-BOUNDARY.md) — how LLMs and agents produce semantic intent without becoming execution authorities.
+- [Architecture boundaries](ARCHITECTURE-BOUNDARIES.md)
+- [Semantic IR](SEMANTIC-IR.md)
+- [Execution IR](EXECUTION-IR.md)
+- [Execution algebra](EXECUTION-ALGEBRA.md)
+- [Semantic mutation plan](SEMANTIC-MUTATION-PLAN.md)
+- [Semantic mutation planner](SEMANTIC-MUTATION-PLANNER.md)
+- [Authorization](AUTHORIZATION.md)
+- [Execution evidence](EVIDENCE.md)
+- [AOT](AOT.md)
+- [GraphQL](GRAPHQL.md)
+- [Runtime](RUNTIME.md)
 
-- [Context-safe plan caching](CONTEXT-SAFE-PLAN-CACHING.md)
+## PostgreSQL
 
-- [Execution Evidence](EVIDENCE.md)
+- [PostgreSQL physical boundary](POSTGRES-PHYSICAL-BOUNDARY.md)
+- [PostgreSQL correlation](POSTGRES-BATCH-CORRELATION-INVARIANTS.md)
+- [PostgreSQL generated-key correlation](POSTGRES-GENERATED-KEY-CORRELATION.md)
+- [PostgreSQL E2E measurement gate](stage-48-MEASUREMENT-GATE-RECOMMENDATION.md)
 
-- [Benchmark Baseline](PRIORITY-8-BENCHMARKS.md)
-- [2026-08-13 Performance Results](benchmarks/2026-08-13-performance-results.md)
+## History
+
+Historical design notes and old stage material are under [history](history/README.md).
+
+When current code and historical notes disagree, use the code and current tests as the source of truth.

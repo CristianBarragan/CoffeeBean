@@ -9,7 +9,7 @@ using Foundgine.Sql.Query;
 namespace Foundgine.Sql;
 
 /// <summary>
-/// Compiles the provider-independent execution plan into SQL, including
+/// Compiles the provider-independent Execution IR into SQL, including
 /// filtering, ordering, aggregation, and cursor pagination.
 /// </summary>
 public sealed class SqlCompiler : IProviderPlanCompiler
@@ -19,12 +19,17 @@ public sealed class SqlCompiler : IProviderPlanCompiler
     public SqlCompiler(IMetadataProvider metadata) =>
         _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
 
-    public SqlPlan Compile(ExecutionPlan plan)
+    /// <summary>Compatibility bridge for existing callers that still hold a semantic plan.
+    /// The semantic plan is lowered immediately into provider-neutral Execution IR;
+    /// no provider-specific information is introduced at this boundary.</summary>
+    public SqlPlan Compile(SemanticPlan plan) => Compile(ExecutionIRCompiler.Compile(plan));
+
+    public SqlPlan Compile(ExecutionIR ir)
     {
-        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(ir);
 
         var occurrences = new List<NodeOccurrence>();
-        Collect(plan.Root, occurrences);
+        Collect(ir.Root, occurrences);
         var aliases = occurrences.ToDictionary(x => x.Node.Id, x => $"t{x.Node.Id}");
         var select = new List<string>();
         var bindings = new List<SqlColumnBinding>();
@@ -53,12 +58,12 @@ public sealed class SqlCompiler : IProviderPlanCompiler
         }
 
         if (select.Count == 0)
-            throw new InvalidOperationException("The execution plan selects no fields.");
+            throw new InvalidOperationException("The execution IR selects no fields.");
 
         var parameters = new List<SqlParameterBinding>();
         var root = occurrences[0];
         var rootEntity = _metadata.GetEntity(root.Node.EntityId);
-        var rootOptions = plan.Root.QueryOptions;
+        var rootOptions = root.Node.QueryOptions;
         var requestedOrder = rootOptions?.EffectiveOrder ?? [];
         var hasCursor = rootOptions?.Limit is > 0 && rootOptions.After is not null;
         var hasForwardPagination = rootOptions?.Limit is > 0 && rootOptions.Offset is null;
@@ -84,7 +89,7 @@ public sealed class SqlCompiler : IProviderPlanCompiler
         var orderTerms = hasForwardPagination ? effectiveCursorOrder : requestedOrder;
         foreach (var term in orderTerms)
         {
-            ExecutionPlanNode orderNode;
+            ExecutionIRNode orderNode;
             EntityMetadata orderEntity;
             FieldMetadata field;
 
@@ -265,10 +270,12 @@ public sealed class SqlCompiler : IProviderPlanCompiler
         return new SqlPlan(sql.ToString(), bindings, parameters, pagination, authorization);
     }
 
-    ProviderPlan IProviderPlanCompiler.Compile(ExecutionPlan plan) => Compile(plan);
+    ProviderPlan IProviderPlanCompiler.Compile(ExecutionIR ir) => Compile(ir);
 
-    private void AddFieldSelection(
-        ExecutionPlanNode node,
+    // Compatibility adapter for callers still holding the legacy plan.
+
+    private static void AddFieldSelection(
+        ExecutionIRNode node,
         EntityMetadata entity,
         FieldId fieldId,
         IReadOnlyDictionary<int, string> aliases,
@@ -276,16 +283,18 @@ public sealed class SqlCompiler : IProviderPlanCompiler
         ICollection<SqlColumnBinding> bindings)
     {
         var field = entity.EffectiveFields.FirstOrDefault(x => x.Id == fieldId)
-            ?? throw new InvalidOperationException($"Entity '{entity.Name}' has no field '{fieldId}'.");
+            ?? throw new InvalidOperationException(
+                $"Unknown field '{fieldId}' on entity '{entity.Name}'.");
 
         if (field.Column is null)
-            throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' has no storage column mapping.");
+            throw new InvalidOperationException(
+                $"Field '{entity.Name}.{field.Name}' has no storage column mapping.");
 
         var column = entity.Columns.FirstOrDefault(x => x.Id == field.Column.ColumnId)
             ?? throw new InvalidOperationException(
-                $"Field '{entity.Name}.{field.Name}' references missing column '{field.Column.ColumnId}'.");
+                $"Field '{entity.Name}.{field.Name}' references a missing column '{field.Column.ColumnId}'.");
 
-        var resultName = $"n{node.Id}_{field.Name}";
+        var resultName = $"__fg_{node.Id}_{field.Name}";
         select.Add(
             $"{QuoteIdentifier(aliases[node.Id])}.{QuoteIdentifier(column.EffectiveStorageName)} AS {QuoteIdentifier(resultName)}");
 
@@ -299,7 +308,7 @@ public sealed class SqlCompiler : IProviderPlanCompiler
 
     private void AddHiddenAggregateCursorSelection(
         SemanticOrderTerm term,
-        ExecutionPlanNode node,
+        ExecutionIRNode node,
         EntityMetadata entity,
         FieldMetadata field,
         IReadOnlyDictionary<int, string> aliases,
@@ -331,7 +340,7 @@ public sealed class SqlCompiler : IProviderPlanCompiler
     }
 
     private static void AddHiddenCursorSelection(
-        ExecutionPlanNode node,
+        ExecutionIRNode node,
         EntityMetadata entity,
         FieldMetadata field,
         SemanticSortDirection direction,
@@ -463,7 +472,7 @@ public sealed class SqlCompiler : IProviderPlanCompiler
 
     private string BuildAggregateReference(
         SemanticOrderTerm term,
-        ExecutionPlanNode sourceNode,
+        ExecutionIRNode sourceNode,
         EntityMetadata sourceEntity,
         FieldMetadata field,
         IReadOnlyDictionary<int, string> aliases)
@@ -549,7 +558,7 @@ public sealed class SqlCompiler : IProviderPlanCompiler
         return "ORDER BY " + string.Join(", ", parts);
     }
 
-    private ExecutionPlanNode ResolveOrderParentNode(ExecutionPlanNode root, IReadOnlyList<RelationshipId> path)
+    private ExecutionIRNode ResolveOrderParentNode(ExecutionIRNode root, IReadOnlyList<RelationshipId> path)
     {
         if (path.Count == 0)
             return root;
@@ -560,20 +569,20 @@ public sealed class SqlCompiler : IProviderPlanCompiler
             var relationshipId = path[i];
             current = current.Children.FirstOrDefault(x => x.ViaRelationship == relationshipId)
                 ?? throw new InvalidOperationException(
-                    $"Order path relationship '{relationshipId}' is not part of the execution plan.");
+                    $"Order path relationship '{relationshipId}' is not part of the execution IR.");
         }
 
         return current;
     }
 
-    private ExecutionPlanNode ResolveOrderNode(ExecutionPlanNode root, IReadOnlyList<RelationshipId> path)
+    private ExecutionIRNode ResolveOrderNode(ExecutionIRNode root, IReadOnlyList<RelationshipId> path)
     {
         var current = root;
         foreach (var relationshipId in path)
         {
             current = current.Children.FirstOrDefault(x => x.ViaRelationship == relationshipId)
                 ?? throw new InvalidOperationException(
-                    $"Order path relationship '{relationshipId}' is not part of the execution plan. " +
+                    $"Order path relationship '{relationshipId}' is not part of the execution IR. " +
                     "The relationship must be selected before it can be used for ordering.");
         }
 
@@ -582,12 +591,12 @@ public sealed class SqlCompiler : IProviderPlanCompiler
 
     private sealed record ResolvedOrderTerm(
         SemanticOrderTerm Term,
-        ExecutionPlanNode Node,
+        ExecutionIRNode Node,
         EntityMetadata Entity,
         string Alias,
         FieldMetadata Field);
 
-    private static void Collect(ExecutionPlanNode node, ICollection<NodeOccurrence> result, int? parentId = null)
+    private static void Collect(ExecutionIRNode node, ICollection<NodeOccurrence> result, int? parentId = null)
     {
         result.Add(new NodeOccurrence(node, parentId));
         foreach (var child in node.Children)
@@ -596,8 +605,8 @@ public sealed class SqlCompiler : IProviderPlanCompiler
 
     private string RenderJoinColumn(
         ColumnReference reference,
-        ExecutionPlanNode parent,
-        ExecutionPlanNode child,
+        ExecutionIRNode parent,
+        ExecutionIRNode child,
         IReadOnlyDictionary<int, string> aliases)
     {
         var node = parent.EntityId == reference.EntityId
@@ -626,5 +635,5 @@ public sealed class SqlCompiler : IProviderPlanCompiler
         return string.Join(".", parts.Select(QuoteIdentifier));
     }
 
-    private sealed record NodeOccurrence(ExecutionPlanNode Node, int? ParentId);
+    private sealed record NodeOccurrence(ExecutionIRNode Node, int? ParentId);
 }

@@ -17,7 +17,7 @@ namespace CoffeeBeanery.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.4")
+                .HasAnnotation("ProductVersion", "9.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -126,6 +126,8 @@ namespace CoffeeBeanery.Database.Migrations
                     b.HasIndex("ContractKey")
                         .IsUnique();
 
+                    b.HasIndex("CustomerBankingRelationshipId");
+
                     b.HasIndex("CustomerBankingRelationshipId", "Id");
 
                     b.ToTable("Contract", "Lending");
@@ -193,6 +195,8 @@ namespace CoffeeBeanery.Database.Migrations
 
                     b.HasIndex("CustomerBankingRelationshipKey")
                         .IsUnique();
+
+                    b.HasIndex("CustomerId");
 
                     b.HasIndex("CustomerId", "Id");
 
@@ -275,10 +279,12 @@ namespace CoffeeBeanery.Database.Migrations
 
                     b.HasIndex("AccountId");
 
-                    b.HasIndex("TransactionKey")
-                        .IsUnique();
+                    b.HasIndex("ContractId");
 
                     b.HasIndex("ContractId", "Id");
+
+                    b.HasIndex("TransactionKey")
+                        .IsUnique();
 
                     b.ToTable("Transaction", "Lending");
                 });

@@ -2,7 +2,7 @@
 
 [Home](../../README.md) → [Direction](README.md) → **Milestones**
 
-These milestones are intentionally vertical-slice driven. They are not a commitment to implement every future capability; they are checkpoints for deciding whether the architecture has earned further investment.
+These milestones are intentionally vertical-slice driven. They are not a commitment to implement every future capability; they are stages for deciding whether the architecture has earned further investment.
 
 ## M0 — Execution substrate
 

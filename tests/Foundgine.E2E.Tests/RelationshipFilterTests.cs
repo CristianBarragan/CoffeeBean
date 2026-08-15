@@ -51,7 +51,7 @@ public sealed class RelationshipFilterTests
             .ExecuteAsync(sql, new ExecutionContext());
 
         var row = Assert.Single(result.Rows);
-        Assert.Equal("Alice", row.Values["n0_Name"]);
+        Assert.Equal("Alice", row.Values["__fg_0_Name"]);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public sealed class RelationshipFilterTests
             .ExecuteAsync(sql, new ExecutionContext());
 
         var row = Assert.Single(result.Rows);
-        Assert.Equal("Bob", row.Values["n0_Name"]);
+        Assert.Equal("Bob", row.Values["__fg_0_Name"]);
     }
 
     private static async Task SeedAsync(SqliteConnection connection)

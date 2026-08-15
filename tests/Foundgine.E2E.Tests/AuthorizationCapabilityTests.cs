@@ -43,7 +43,7 @@ public sealed class AuthorizationCapabilityTests
 
     private sealed class TestProviderPlanCompiler : IProviderPlanCompiler
     {
-        public ProviderPlan Compile(ExecutionPlan plan) => new TestPlan();
+        public ProviderPlan Compile(ExecutionIR ir) => new TestPlan();
     }
 
     private sealed class TestExecutionProvider : IExecutionProvider

@@ -1,4 +1,5 @@
 using Foundgine.Abstractions;
+using Foundgine.Semantics.IR;
 
 namespace Foundgine.Semantics.Authorization;
 
@@ -110,6 +111,118 @@ public sealed class SemanticAuthorizer
         }
 
         return authorized;
+    }
+
+
+    /// <summary>
+    /// Authorizes canonical Semantic IR directly. This is the authoritative
+    /// semantic-to-planning authorization boundary: physical providers are
+    /// deliberately not involved.
+    /// </summary>
+    public SemanticOperation Authorize(SemanticOperation operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+
+        var root = AuthorizeNode(operation.Root, isRoot: true);
+        if (root is null)
+            throw new SemanticAuthorizationException(
+                $"Access denied for entity '{operation.Root.EntityId}'.");
+
+        return new SemanticOperation(root);
+    }
+
+    private SemanticReadNode? AuthorizeNode(SemanticReadNode node, bool isRoot)
+    {
+        var entity = _policy.GetEntityAccess(node.EntityId, AuthorizationOperation.Read);
+        var predicate = _policy.GetPredicate(node.EntityId, AuthorizationOperation.Read);
+
+        var effective = AuthorizationDecision.Combine(
+            entity,
+            predicate is null
+                ? AuthorizationDecision.Allowed
+                : AuthorizationDecision.Conditional(predicate));
+
+        // A denied entity removes a child subtree; a denied root rejects the
+        // operation. This mirrors graph authorization while keeping the
+        // canonical Semantic IR as the authorization boundary.
+        if (!effective.IsAllowed)
+        {
+            if (isRoot)
+                throw new SemanticAuthorizationException(
+                    $"Access denied for entity '{node.EntityId}'.");
+            return null;
+        }
+
+        var fieldDecisions = node.Fields
+            .Distinct()
+            .Select(fieldId => (
+                FieldId: fieldId,
+                Decision: _policy.GetFieldAccess(
+                    node.EntityId, fieldId, AuthorizationOperation.Read)))
+            .ToArray();
+
+        var fields = new List<FieldId>(fieldDecisions.Length);
+        foreach (var field in fieldDecisions)
+        {
+            if (!field.Decision.IsAllowed)
+                continue;
+
+            fields.Add(field.FieldId);
+            effective = AuthorizationDecision.Combine(effective, field.Decision);
+        }
+
+        if (node.Authorization is not null)
+            effective = AuthorizationDecision.Combine(
+                effective,
+                AuthorizationDecision.Conditional(node.Authorization));
+
+        if (!effective.IsAllowed)
+        {
+            if (isRoot)
+                throw new SemanticAuthorizationException(
+                    $"Authorization constraints denied semantic node '{node.Id}'.");
+            return null;
+        }
+
+        var children = new List<SemanticReadNode>();
+        foreach (var child in node.Children)
+        {
+            if (child.ViaRelationship is { } relationshipId)
+            {
+                var relationship = _policy.GetRelationshipAccess(
+                    node.EntityId, relationshipId, AuthorizationOperation.Read);
+
+                if (!relationship.IsAllowed)
+                    continue;
+
+                var childAuthorized = AuthorizeNode(child, isRoot: false);
+                if (childAuthorized is null)
+                    continue;
+
+                var combined = AuthorizationDecision.Combine(
+                    relationship,
+                    childAuthorized.Authorization is null
+                        ? AuthorizationDecision.Allowed
+                        : AuthorizationDecision.Conditional(childAuthorized.Authorization));
+
+                children.Add(childAuthorized with
+                {
+                    Authorization = combined.Predicate
+                });
+                continue;
+            }
+
+            var authorizedChild = AuthorizeNode(child, isRoot: false);
+            if (authorizedChild is not null)
+                children.Add(authorizedChild);
+        }
+
+        return node with
+        {
+            Fields = fields.ToArray(),
+            Children = children,
+            Authorization = effective.Predicate
+        };
     }
 
     private static AuthorizationDecision AuthorizationDecisionFromPredicate(AuthorizationPredicate? predicate) =>

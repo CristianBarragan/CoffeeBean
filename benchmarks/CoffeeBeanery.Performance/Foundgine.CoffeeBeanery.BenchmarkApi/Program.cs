@@ -72,7 +72,9 @@ app.MapPost("/graphql/{mode}", async (
             // automatically otherwise - the mutation never fails just because
             // it couldn't be batched.
             var result = new PostgresBatchedMutationExecutionProvider(connection, metadata)
-                .ExecuteBatch(plan, new ExecutionContext());
+                .ExecuteBatch(
+                    ExecutionMutationIRCompiler.Compile(plan),
+                    new ExecutionContext());
 
             var materializedItems = mutationMaterializer.MaterializeBatch(
                 items.Select(i => (i.ResultKey, i.Adaptation.Intent)).ToArray(),
@@ -101,7 +103,7 @@ app.MapPost("/graphql/{mode}", async (
             ? (IProviderPlanCache)warmQueryCache
             : NoOpProviderPlanCache.Instance;
 
-        var cacheKey = ExecutionPlanFingerprint.CreateShapeKey(planQuery);
+        var cacheKey = SemanticPlanFingerprint.CreateShapeKey(planQuery);
         var providerPlanQuery = cache.GetOrAdd(
             cacheKey,
             () => compiler.Compile(planQuery));
@@ -159,7 +161,7 @@ app.MapGet("/health/ready", async (CancellationToken cancellationToken) =>
 });
 app.Run();
 
-static ExecutionContext BuildExecutionContext(Foundgine.Planning.ExecutionPlan plan)
+static ExecutionContext BuildExecutionContext(Foundgine.Planning.SemanticPlan plan)
 {
     var options = plan.Root.QueryOptions;
     if (options?.Limit is null && options?.Offset is null)

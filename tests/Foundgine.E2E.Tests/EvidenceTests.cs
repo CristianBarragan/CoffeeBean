@@ -8,6 +8,7 @@ using Foundgine.Semantics.Authorization;
 using Foundgine.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
+using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -115,7 +116,7 @@ public sealed class EvidenceTests
 
     private sealed class CapturingEvidenceCompiler : IProviderPlanCompiler
     {
-        public ProviderPlan Compile(ExecutionPlan plan) => new TestProviderPlan();
+        public ProviderPlan Compile(ExecutionIR ir) => new TestProviderPlan();
     }
 
     private sealed class CapturingEvidenceProvider : IExecutionProvider

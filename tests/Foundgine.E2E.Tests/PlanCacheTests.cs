@@ -131,7 +131,7 @@ public sealed class PlanCacheTests
     {
         public int Count { get; private set; }
 
-        public ProviderPlan Compile(ExecutionPlan plan)
+        public ProviderPlan Compile(ExecutionIR ir)
         {
             Count++;
             return new TestPlan();

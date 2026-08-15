@@ -33,7 +33,7 @@ public sealed class AuthorizationGoldenPathTests
 
         // Discovery does not invoke the provider or compile an execution plan.
         // The actual request below still passes through SemanticAuthorizer.
-        Assert.Null(compiler.Plan);
+        Assert.Null(compiler.IR);
     }
 
     [Fact]
@@ -54,9 +54,9 @@ public sealed class AuthorizationGoldenPathTests
         await engine.ExecuteAsync(request, new ExecutionContext(
             new Dictionary<string, object?> { ["user.TenantId"] = 7 }));
 
-        Assert.NotNull(compiler.Plan);
-        Assert.NotNull(compiler.Plan!.Root.Authorization);
-        Assert.Equal(AuthorizationPredicateKind.Equal, compiler.Plan.Root.Authorization!.Kind);
+        Assert.NotNull(compiler.IR);
+        Assert.NotNull(compiler.IR!.Root.Authorization);
+        Assert.Equal(AuthorizationPredicateKind.Equal, compiler.IR.Root.Authorization!.Kind);
         Assert.NotNull(provider.Context);
         Assert.Equal(7, provider.Context!.EffectiveValues["user.TenantId"]);
         Assert.Equal(1, policy.EntityChecks);
@@ -86,11 +86,11 @@ public sealed class AuthorizationGoldenPathTests
 
     private sealed class CapturingCompiler : IProviderPlanCompiler
     {
-        public ExecutionPlan? Plan { get; private set; }
+        public ExecutionIR? IR { get; private set; }
 
-        public ProviderPlan Compile(ExecutionPlan plan)
+        public ProviderPlan Compile(ExecutionIR ir)
         {
-            Plan = plan;
+            IR = ir;
             return new TestPlan();
         }
     }

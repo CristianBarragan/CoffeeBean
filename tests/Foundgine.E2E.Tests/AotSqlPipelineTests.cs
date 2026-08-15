@@ -76,8 +76,8 @@ public sealed class AotSqlPipelineTests
             .ExecuteAsync(sqlPlan, new ExecutionContext());
 
         Assert.Equal(2, result.Rows.Count);
-        Assert.Contains(result.Rows, row => Equals(row.Values["n0_Name"], "Ada"));
-        Assert.Contains(result.Rows, row => Equals(row.Values["n0_Name"], "Grace"));
+        Assert.Contains(result.Rows, row => Equals(row.Values["__fg_0_Name"], "Ada"));
+        Assert.Contains(result.Rows, row => Equals(row.Values["__fg_0_Name"], "Grace"));
     }
 
     private static SemanticModel BuildSemanticModel()

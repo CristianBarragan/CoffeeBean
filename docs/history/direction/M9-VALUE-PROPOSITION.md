@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This milestone is a decision checkpoint, not a feature port.
+This milestone is a decision stage, not a feature port.
 
 The question is not whether Foundgine can execute queries. The current source already demonstrates a semantic request → resolution → authorization → planning → provider path, plus AOT and a GraphQL adapter.
 

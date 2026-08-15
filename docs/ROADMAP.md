@@ -70,3 +70,8 @@ These are ideas, not current core capabilities.
 ## Documentation rule
 
 The active source and tests are the source of truth. Public documentation must distinguish implemented/demonstrated capabilities from planned work and historical material. See [Documentation truth](DOCUMENTATION-TRUTH.md).
+
+
+## Execution IR
+
+The canonical `ExecutionIR` boundary has been introduced. Provider migration to consume it directly is the next execution-layer step.

@@ -1,51 +1,77 @@
 # Current status
 
-Foundgine has completed its ground-up foundation and has a working end-to-end proof.
+Foundgine has a working end-to-end foundation.
 
-## Proven
+## Proven by the active tests
 
-- semantic entities, fields, relationships, and identities;
-- request resolution and granular semantic authorization;
-- entity/field/relationship read/write capability discovery;
-- conditional authorization predicates preserved into execution plans;
-- mutation write authorization;
+- semantic entities, fields, relationships, and IDs;
+- request resolution;
+- read and write authorization;
+- authorization rules carried into execution;
 - provider-independent query planning;
-- CRUD/upsert mutation planning;
-- nested/dependency-aware mutation planning;
-- SQL compilation and SQLite execution;
-- a deliberately small in-memory provider consuming the same provider-independent plan;
+- provider-independent mutation planning;
+- SQL compilation;
+- SQLite execution;
+- a small InMemory provider;
 - AOT metadata generation;
-- JSON structured intent;
-- GraphQL queries and mutations through Hot Chocolate;
-- GraphQL variables, fragments, aliases, directives, operation selection, input coercion, schema generation, and structured adapter errors;
-- relationship filters/order, aggregate filters/order, and cursor pagination covered by tests.
+- JSON input;
+- GraphQL input and mutations;
+- nested relationships;
+- filters and aggregates;
+- cursor pagination;
+- execution evidence;
+- PostgreSQL integration contracts;
+- real PostgreSQL E2E tests when PostgreSQL 17 is available.
 
-## M39 architectural rule
+## Main rule
 
-Authorization is semantic execution state. Capability discovery is advisory
-context for callers such as AI agents; it never replaces authorization at
-execution time. Conditional predicates remain in the provider-independent plan
-so future plan caching cannot accidentally cache away tenant or user-specific
-constraints.
+The semantic core does not depend on GraphQL or SQL.
 
-## Main architectural rule
+```text
+Input
+ ↓
+Semantics
+ ↓
+Authorization
+ ↓
+Plan
+ ↓
+Provider
+ ↓
+Result
+```
 
-Adapters produce semantic contracts. Providers consume plans. GraphQL and SQL do not enter the semantic core.
+## PostgreSQL status
 
-## Not claimed
+PostgreSQL 17 is part of the PR test path.
 
-Foundgine is not yet presented as a production-ready autonomous-agent platform, universal database provider, ORM replacement, or benchmark winner.
+The local PostgreSQL tests require:
 
-Those claims require additional implementation and evidence.
+```text
+FOUNDGINE_POSTGRES_CONNECTION_STRING
+```
+
+The CI job starts its own PostgreSQL 17 container, so the database tests are real PR checks.
+
+## What is not claimed
+
+The repository does not claim:
+
+- universal database support;
+- universal performance superiority;
+- autonomous agent execution;
+- workflow orchestration;
+- rollback or compensation semantics.
+
+Those claims require separate implementation and evidence.
 
 ## Source of truth
 
-The current source and tests define reality. Historical milestone documents under `docs/history` explain how the repository got here. Performance reports under `benchmarks/` are evidence for specific benchmark runs, not general performance claims.
+Use this order when information conflicts:
 
-## M40 architectural rule
+1. current source code;
+2. active tests;
+3. current documentation;
+4. historical notes under `docs/history`.
 
-Compiled provider plans may be cached only **after** semantic authorization has
-completed. The cache key represents the complete authorized execution plan,
-including authorization predicates and exact request values. Runtime execution
-context is deliberately not cached; providers resolve context-bound authorization
-parameters at execution time.
+Historical stage notes explain how the project changed. They are not the current design.

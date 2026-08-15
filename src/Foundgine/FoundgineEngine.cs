@@ -2,6 +2,7 @@ using Foundgine.Execution;
 using Foundgine.Planning;
 using Foundgine.Semantics;
 using Foundgine.Semantics.Authorization;
+using Foundgine.Semantics.IR;
 using Foundgine.Semantics.Resolution;
 using System.Text.Json;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
@@ -69,12 +70,14 @@ public sealed class FoundgineEngine : IFoundgine
         ArgumentNullException.ThrowIfNull(request);
 
         var graph = new SemanticRequestResolver(_model).Resolve(request);
-        var authorized = new SemanticAuthorizer(_authorizationPolicy).Authorize(graph);
-        var plan = _planner.Plan(authorized);
-        var cacheKey = _cacheNamespace + ":" + ExecutionPlanFingerprint.CreateShapeKey(plan);
+        var semanticOperation = SemanticOperationCompiler.Compile(graph);
+        var authorizedOperation = new SemanticAuthorizer(_authorizationPolicy).Authorize(semanticOperation);
+        var plan = _planner.Plan(authorizedOperation);
+        var executionIr = ExecutionIRCompiler.Compile(plan);
+        var cacheKey = _cacheNamespace + ":" + SemanticPlanFingerprint.CreateShapeKey(plan);
         var providerPlan = _planCache.GetOrAdd(
             cacheKey,
-            () => _compiler.Compile(plan));
+            () => _compiler.Compile(executionIr));
 
         var executionContext = AttachPaginationContext(plan, context ?? new ExecutionContext());
 
@@ -87,7 +90,7 @@ public sealed class FoundgineEngine : IFoundgine
     }
     private async Task<ExecutionResult> ExecuteAndEnrichEvidenceAsync(
         SemanticRequest request,
-        ExecutionPlan plan,
+        SemanticPlan plan,
         ProviderPlan providerPlan,
         ExecutionContext context,
         CancellationToken cancellationToken)
@@ -99,7 +102,7 @@ public sealed class FoundgineEngine : IFoundgine
         var intentFingerprint = ExecutionEvidenceFactory.Hash(
             JsonSerializer.Serialize(request));
         var authorizationFingerprint = ExecutionEvidenceFactory.Hash(
-            ExecutionPlanFingerprint.Create(plan));
+            SemanticPlanFingerprint.Create(plan));
 
         return result with
         {
@@ -111,7 +114,7 @@ public sealed class FoundgineEngine : IFoundgine
         };
     }
 
-    private static ExecutionContext AttachPaginationContext(ExecutionPlan plan, ExecutionContext context)
+    private static ExecutionContext AttachPaginationContext(SemanticPlan plan, ExecutionContext context)
     {
         var options = plan.Root.QueryOptions;
         if (options?.Limit is null && options?.Offset is null)

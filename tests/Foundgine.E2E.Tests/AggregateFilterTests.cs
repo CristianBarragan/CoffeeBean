@@ -50,7 +50,7 @@ public sealed class AggregateFilterTests
         var result = await new SqlExecutionProvider(connection).ExecuteAsync(plan, new ExecutionContext());
 
         Assert.Equal(2, result.Rows.Count);
-        Assert.Equal(new[] { 1, 2 }, result.Rows.Select(r => Convert.ToInt32(r.Values["n0_Id"])).ToArray());
+        Assert.Equal(new[] { 1, 2 }, result.Rows.Select(r => Convert.ToInt32(r.Values["__fg_0_Id"])).ToArray());
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public sealed class AggregateFilterTests
         var result = await new SqlExecutionProvider(connection).ExecuteAsync(plan, new ExecutionContext());
 
         Assert.Single(result.Rows);
-        Assert.Equal(2, Convert.ToInt32(result.Rows[0].Values["n0_Id"]));
+        Assert.Equal(2, Convert.ToInt32(result.Rows[0].Values["__fg_0_Id"]));
     }
 
     private static SemanticModel BuildModel() =>

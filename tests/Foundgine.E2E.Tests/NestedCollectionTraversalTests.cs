@@ -9,6 +9,7 @@ using Foundgine.Semantics.Resolution;
 using Foundgine.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
+using ExecutionContext = Foundgine.Execution.ExecutionContext;
 using BankingModel = Foundgine.E2E.Tests.Banking.BankingSemanticModel;
 using Foundgine.E2E.Tests.Banking;
 
@@ -59,7 +60,7 @@ public sealed class NestedCollectionTraversalTests
             .ExecuteAsync(sql, new FoundgineExecutionContext());
 
         var row = Assert.Single(result.Rows);
-        Assert.Equal("Alice", row.Values["n0_Name"]);
+        Assert.Equal("Alice", row.Values["__fg_0_Name"]);
     }
 
     private static async Task SeedAsync(SqliteConnection connection)

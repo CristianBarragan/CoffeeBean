@@ -45,7 +45,7 @@ public sealed class PublicApiTests
     {
         public int CompiledCount { get; private set; }
 
-        public ProviderPlan Compile(ExecutionPlan plan)
+        public ProviderPlan Compile(ExecutionIR ir)
         {
             CompiledCount++;
             return new TestPlan();

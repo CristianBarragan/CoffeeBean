@@ -7,6 +7,7 @@ using Foundgine.Semantics.Authorization;
 using Foundgine.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
+using ExecutionContext = Foundgine.Execution.ExecutionContext;
 using Foundgine.E2E.Tests.Banking;
 
 namespace Foundgine.E2E.Tests;
@@ -55,7 +56,7 @@ public sealed class NestedAuthorizationExecutionTests
             }));
 
         var row = Assert.Single(result.Rows);
-        Assert.Equal("Alice", row.Values["n0_Name"]);
+        Assert.Equal("Alice", row.Values["__fg_0_Name"]);
     }
 
     [Fact]

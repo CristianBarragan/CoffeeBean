@@ -37,7 +37,7 @@ public sealed class RelationshipOrderingTests
         var firstResult = await provider.ExecuteAsync(firstPlan, PaginationExecutionContext.Create(1));
 
         Assert.Single(firstResult.Rows);
-        Assert.Equal("Zoe", firstResult.Rows[0].Values["n1_DisplayName"]);
+        Assert.Equal("Zoe", firstResult.Rows[0].Values["__fg_1_DisplayName"]);
         Assert.True(firstResult.PageInfo!.HasNextPage);
         Assert.NotNull(firstResult.PageInfo.EndCursor);
 
@@ -50,7 +50,7 @@ public sealed class RelationshipOrderingTests
 
         var secondResult = await provider.ExecuteAsync(secondPlan, PaginationExecutionContext.Create(1, firstResult.PageInfo.EndCursor));
         Assert.Single(secondResult.Rows);
-        Assert.Equal("Alice", secondResult.Rows[0].Values["n1_DisplayName"]);
+        Assert.Equal("Alice", secondResult.Rows[0].Values["__fg_1_DisplayName"]);
         Assert.False(secondResult.PageInfo!.HasNextPage);
     }
 

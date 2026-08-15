@@ -1,56 +1,62 @@
 # Foundgine
 
-Foundgine is a semantic execution layer for .NET.
+Foundgine is a **semantic execution layer for .NET**.
 
-Canonical description:
-"Foundgine converts structured application intent into deterministic, authorization-preserving execution plans that can be executed by a physical provider."
+It converts a structured request into an authorized, provider-independent execution plan.
 
-## Core concepts
+Simple model:
 
-- Semantic Model — what the application exposes.
-- Intent — what the caller requests.
-- Authorization — what the caller is allowed to do.
-- Execution Plan — what Foundgine intends to execute.
-- Provider — what physically executes the plan.
-- Evidence — what happened and why.
+```text
+Request
+ → Meaning
+ → Authorization
+ → Plan
+ → Provider
+ → Result
+```
 
-## Architecture
+## Vocabulary
 
-Intent source → Semantic Intent → Resolution → Authorization → Execution Plan → Provider → Result + Evidence
+- **Model** — what the application exposes.
+- **Request** — what the caller wants.
+- **Authorization** — what the caller may do.
+- **Plan** — what Foundgine will ask a provider to do.
+- **Provider** — the system that performs the physical work.
+- **Result** — the returned data and execution evidence.
 
 ## Boundaries
 
-The core must not depend on GraphQL, Hot Chocolate, SQL, EF Core, OpenAI, MCP, or another transport/provider implementation.
+GraphQL, JSON, AI, and application code are input sources.
 
-GraphQL, JSON, AI, and application code are intent sources. SQL and other physical systems are execution providers.
+SQL and InMemory are providers.
 
-## AI
-
-AI is a consumer of Foundgine, not the definition of the core. AI may generate structured intent; Foundgine remains responsible for semantics, authorization, planning, execution, and evidence.
-
-Foundgine exposes a policy-scoped semantic capability graph through `DescribeCapabilities()`. It describes entity, field, and relationship read/write access for callers such as AI adapters. Capability discovery is descriptive and never grants authorization; execution evaluates the policy again.
-
-## ORM distinction
-
-An ORM maps application objects to persistence. Foundgine maps structured application intent to authorized executable operations. Foundgine does not provide change tracking, identity maps, lazy loading, entity materialization, or migrations.
+The core does not depend on GraphQL, Hot Chocolate, SQL, EF Core, OpenAI, MCP, or another provider.
 
 ## Projects
 
-- Foundgine.Abstractions — stable cross-layer contracts and IDs
-- Foundgine.Metadata — domain and storage metadata
-- Foundgine.Semantics — semantic model, intent, resolution, and authorization
-- Foundgine.Planning — provider-independent execution planning
-- Foundgine.Execution — execution contracts and result materialization
-- Foundgine.Sql — SQL execution provider
-- Foundgine.InMemory — deliberately small CLR-backed proof provider
-- Foundgine.Aot / Foundgine.Aot.Generator — compile-time metadata
-- Foundgine.Intent.Json — JSON intent adapter
-- Foundgine.GraphQL.HotChocolate* — GraphQL adapters
+- `Foundgine.Abstractions` — shared contracts and IDs
+- `Foundgine.Metadata` — application and storage metadata
+- `Foundgine.Semantics` — meaning, requests, resolution, authorization
+- `Foundgine.Planning` — provider-independent plans
+- `Foundgine.Execution` — provider execution contracts and results
+- `Foundgine.Sql` — SQL provider
+- `Foundgine.InMemory` — small non-SQL provider
+- `Foundgine.Intent.Json` — JSON input
+- `Foundgine.GraphQL.HotChocolate` — GraphQL input
+- `Foundgine.GraphQL.HotChocolate.Mutations` — GraphQL mutations
+- `Foundgine.Aot` — AOT contracts
+- `Foundgine.Aot.Generator` — generated metadata
+
+## AI
+
+AI can create a request.
+
+AI does not decide what the application allows.
+
+Foundgine resolves and authorizes the request before execution.
 
 ## Current proof
 
-The active repository proves semantic modelling and resolution, authorization, provider-independent query and mutation planning, SQL/SQLite execution, a small in-memory execution provider, nested traversal, deterministic plan fingerprints, execution evidence, AOT metadata generation, JSON intent, and Hot Chocolate GraphQL adapters.
+The active tests cover semantic modelling, authorization, query and mutation planning, SQL/SQLite execution, InMemory execution, AOT, JSON, GraphQL, relationships, aggregates, pagination, and PostgreSQL integration.
 
-Do not claim autonomous-agent execution, workflow orchestration, rollback/compensation semantics, universal provider support, or benchmark superiority unless later implementation and tests establish those claims.
-
-Historical material under archive/ is not part of the active runtime or current product identity.
+Do not claim autonomous-agent execution, workflow orchestration, universal provider support, or universal performance superiority unless the implementation and tests prove it.

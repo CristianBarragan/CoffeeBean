@@ -13,5 +13,4 @@
     <ProjectReference Include="../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />
     <ProjectReference Include="../../src/Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
-
 </Project>
