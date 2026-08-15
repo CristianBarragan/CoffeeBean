@@ -21,4 +21,14 @@ public interface IFoundgine
         SemanticRequest request,
         ExecutionContext? context = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Executes external, provider-neutral read intent after compiling it into
+    /// the canonical semantic request. This overload is intended for adapters
+    /// such as JSON APIs and AI tools.
+    /// </summary>
+    Task<ExecutionResult> ExecuteAsync(
+        Foundgine.Semantics.Intent.ReadIntent intent,
+        ExecutionContext? context = null,
+        CancellationToken cancellationToken = default);
 }

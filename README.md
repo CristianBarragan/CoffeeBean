@@ -1,456 +1,235 @@
 # Foundgine
 
-**Foundgine is a semantic execution layer for .NET.**
+## From intent to authorized execution.
 
-It takes a structured request, checks what that request means and what the caller is allowed to do, builds a provider-independent plan, and lets a provider execute that plan.
+**Foundgine is a programmable semantic execution platform for .NET.**
 
-The simple idea is:
+It creates a controlled boundary between application callers — including APIs, GraphQL, automation, and AI agents — and the data and operations they are allowed to execute.
+
+Instead of allowing every caller to implement its own validation, authorization, query translation, and data-access logic, Foundgine turns structured intent into an authorized execution plan and executes that plan through a provider.
+
+```text
+Caller
+  │
+  ▼
+Intent
+  │
+  ▼
+Semantic Model
+  │
+  ▼
+Authorization
+  │
+  ▼
+Execution Plan
+  │
+  ▼
+Provider
+  │
+  ▼
+Result
+```
+
+## What is Foundgine?
+
+Foundgine separates **what a caller wants** from **how the application executes it**.
+
+A caller submits structured intent. Foundgine resolves that intent against an application-defined semantic model, validates the requested capabilities, applies authorization constraints, builds an execution plan, and sends the plan to a provider such as SQL or InMemory.
+
+The result is a reusable execution boundary that can sit underneath multiple interfaces.
+
+```text
+                 Intent Sources
+
+     API       GraphQL       Automation       AI Agent
+       \          |              |              /
+        \         |              |             /
+         └────────┴──────────────┴─────────────┘
+                          │
+                          ▼
+                  ┌───────────────┐
+                  │   Foundgine   │
+                  │               │
+                  │ Semantic      │
+                  │ Authorization │
+                  │ Planning      │
+                  │ Execution     │
+                  └───────┬───────┘
+                          │
+              ┌───────────┼───────────┐
+              ▼           ▼           ▼
+             SQL       InMemory     Providers
+```
+
+## Why does Foundgine exist?
+
+Modern applications increasingly have many callers:
+
+- web and mobile applications
+- APIs
+- GraphQL clients
+- internal services
+- automation
+- AI agents
+
+Without a common execution boundary, each interface can grow its own authorization, validation, query translation, and data-access path.
+
+Foundgine is designed to centralize the semantic execution model so that different callers can share the same application-defined capabilities and execution rules.
+
+### The key idea
+
+> **Callers describe what they want. Foundgine determines what is allowed, how it should execute, and which provider performs it.**
+
+## Foundgine and AI agents
+
+AI agents make this boundary particularly important.
+
+An AI model can decide what it wants to accomplish. It should not become the authority over which application data it is allowed to access, nor should it need direct database credentials.
+
+Instead:
+
+```text
+AI Agent
+    │
+    │ structured intent
+    ▼
+Foundgine
+    ├── resolve
+    ├── validate
+    ├── authorize
+    ├── plan
+    └── execute
+            │
+            ▼
+        PostgreSQL
+```
+
+This is deliberately different from:
+
+```text
+AI → generate SQL → database
+```
+
+Foundgine is intended to keep the application in control of authorization and execution while allowing AI and other structured callers to use application capabilities.
+
+## Capabilities
+
+| Capability | Purpose |
+|---|---|
+| Semantic modeling | Define the application-facing model independently of physical persistence details |
+| Structured intent | Represent requested operations without coupling callers directly to SQL |
+| Relationship traversal | Express operations across connected domain data |
+| Authorization-aware planning | Carry application authorization constraints into execution planning |
+| Execution planning | Convert semantic operations into provider-independent plans |
+| Plan rewriting and optimization | Transform plans before physical execution |
+| Provider independence | Separate semantic operations from provider-specific execution |
+| SQL execution | Execute relational plans against SQL providers |
+| InMemory execution | Execute the same semantic model without a database |
+| GraphQL integration | Use GraphQL as an interface without making GraphQL the execution model |
+| JSON / structured input | Accept structured intent from non-GraphQL callers |
+| AOT support | Support generated metadata and Native AOT-oriented deployments |
+| AI-agent integration | Allow agents to request application capabilities without direct database authority |
+| Execution evidence | Make authorization, planning, and execution observable |
+
+## A 30-second example
+
+A caller asks:
+
+```text
+Find customers with accounts over $10,000.
+```
+
+The caller does not need to know the database schema or generate SQL.
+
+Conceptually:
 
 ```text
 Request
   ↓
-Semantic meaning
+Customer
+  └── Accounts
+        └── Balance > 10,000
   ↓
 Authorization
   ↓
 Execution plan
   ↓
-Provider
+SQL provider
   ↓
 Result
 ```
 
-A request can come from GraphQL, JSON, application code, or an AI system.
-
-The request format is **not** the source of truth. Foundgine's semantic model is.
-
----
-
-## Why Foundgine exists
-
-A complex application often has several ways to ask for the same data:
+The important boundary is:
 
 ```text
-GraphQL ─┐
-JSON ────┤
-AI ──────┤
-Code ────┘
-          ↓
-      Foundgine
-          ↓
-   SQL / InMemory / ...
+What the caller requested
+          ≠
+What the database can execute
 ```
 
-Without a common layer, each entry point can end up with its own rules for:
+Foundgine connects those two through an application-controlled semantic and planning layer.
 
-- fields
-- relationships
-- filters
-- authorization
-- pagination
-- mutations
-- provider-specific execution
+## Performance evidence
 
-Foundgine puts those rules in one place.
+The 12 August 2026 CoffeeBeanery benchmark contains three successful runs over a deterministic PostgreSQL graph workload.
 
-The goal is simple:
+At concurrency 32:
 
-> **Describe the operation once, authorize it once, plan it once, and let different providers execute it.**
+| Implementation | Average RPS | Average p95 |
+|---|---:|---:|
+| Hot Chocolate + EF Core | 139.4 | 338.4 ms |
+| Foundgine — no cache | 2,781.0 | 20.3 ms |
+| Foundgine — provider-plan cache | 2,838.9 | 19.9 ms |
 
----
+That corresponds to approximately **20.0× the throughput** of the baseline without the cache and **20.4× with the cache** for this workload.
 
-## The six words to know
+The benchmark also reports zero application errors, zero request timeouts, and zero cancelled requests across the three successful runs.
 
-Foundgine deliberately uses a small vocabulary.
+These results are workload-specific evidence, not a universal claim that Foundgine is faster than every EF Core or GraphQL workload.
 
-| Word | Simple meaning |
-|---|---|
-| **Model** | What the application exposes |
-| **Request** | What the caller wants |
-| **Authorization** | What the caller may do |
-| **Plan** | What Foundgine decided should run |
-| **Provider** | The system that does the physical work |
-| **Result** | What came back, with execution evidence when available |
-
-The code contains more detailed types and intermediate objects, but these six words are the main mental model.
-
----
-
-## The layers
-
-```text
-                 GraphQL / JSON / AI / Code
-                            │
-                            ▼
-                    Semantic request
-                            │
-                            ▼
-                         Resolve
-                            │
-                            ▼
-                       Authorize
-                            │
-                            ▼
-                          Plan
-                            │
-                 ┌──────────┴──────────┐
-                 ▼                     ▼
-                SQL                InMemory
-                 │                     │
-                 └──────────┬──────────┘
-                            ▼
-                         Result
-```
-
-Each layer has one job.
-
-### 1. Abstractions
-
-Small shared contracts and IDs.
-
-Project:
-
-```text
-src/Foundgine.Abstractions
-```
-
-### 2. Metadata
-
-Describes the application model and the storage mapping.
-
-Project:
-
-```text
-src/Foundgine.Metadata
-```
-
-### 3. Semantics
-
-Defines entities, fields, relationships, requests, resolution, and authorization.
-
-Project:
-
-```text
-src/Foundgine.Semantics
-```
-
-### 4. Planning
-
-Turns an authorized request into a provider-independent plan.
-
-Project:
-
-```text
-src/Foundgine.Planning
-```
-
-### 5. Execution
-
-Defines provider execution contracts and turns provider rows into semantic results.
-
-Project:
-
-```text
-src/Foundgine.Execution
-```
-
-### 6. Providers
-
-Physical execution lives outside the semantic core.
-
-Current providers:
-
-```text
-src/Foundgine.Sql
-src/Foundgine.InMemory
-```
-
-SQL is the physical database path. InMemory is deliberately small and is mainly used to prove that the plan is not SQL-specific.
-
-### 7. Input adapters
-
-Input formats stay at the edge.
-
-```text
-src/Foundgine.Intent.Json
-src/Foundgine.GraphQL.HotChocolate
-src/Foundgine.GraphQL.HotChocolate.Mutations
-```
-
-### 8. AOT
-
-Compile-time metadata support:
-
-```text
-src/Foundgine.Aot
-src/Foundgine.Aot.Generator
-```
-
----
+See [`docs-site/performance/index.md`](docs-site/performance/index.md).
 
 ## What Foundgine is not
 
 Foundgine is not:
 
-- an ORM;
-- a GraphQL server;
-- a database;
-- an LLM framework;
-- an agent framework;
-- a workflow engine;
-- an identity provider.
+- an ORM replacement
+- a database
+- a GraphQL server
+- an LLM
+- an agent framework
+- an identity provider
 
-For normal object persistence, an ORM such as EF Core may still be the right tool.
+It is an execution layer that can sit underneath those kinds of systems.
 
-Foundgine solves a different problem: **turning structured application intent into an authorized executable operation.**
+## Vision
 
----
+> **Make application capabilities understandable and safely executable by machines.**
 
-## Quick start
+The long-term vision is a stable semantic execution boundary between **what a system asks for** and **what an application is willing to execute**.
 
-### Requirements
-
-- .NET 9 SDK
-- Docker Engine + Docker Compose for PostgreSQL E2E tests
-- Git
-- Windows, Linux, or macOS
-
-Check .NET:
-
-```bash
-dotnet --version
-```
-
-Check Docker:
-
-```bash
-docker version
-docker compose version
-```
-
-### Build everything
-
-From the repository root:
-
-```bash
-dotnet restore Foundgine.sln
-dotnet build Foundgine.sln --configuration Release
-```
-
-### Run the normal test suite
-
-```bash
-dotnet test Foundgine.sln --configuration Release
-```
-
-### Run PostgreSQL E2E tests
-
-Start PostgreSQL 17:
-
-```bash
-docker compose -f docker-compose.postgres.yml up -d
-```
-
-Set the connection string.
-
-PowerShell:
-
-```powershell
-$env:FOUNDGINE_POSTGRES_CONNECTION_STRING="Host=localhost;Port=55432;Database=foundgine_e2e;Username=foundgine;Password=foundgine"
-```
-
-Bash:
-
-```bash
-export FOUNDGINE_POSTGRES_CONNECTION_STRING='Host=localhost;Port=55432;Database=foundgine_e2e;Username=foundgine;Password=foundgine'
-```
-
-Run the E2E project:
-
-```bash
-dotnet test tests/Foundgine.E2E.Tests/Foundgine.E2E.Tests.csproj \
-  --configuration Release \
-  --filter "FullyQualifiedName~Foundgine.E2E.Tests"
-```
-
-Stop PostgreSQL when finished:
-
-```bash
-docker compose -f docker-compose.postgres.yml down --volumes --remove-orphans
-```
-
-For a one-command Bash run, see `scripts/run-postgres-e2e.sh`.
-
-For Windows PowerShell, see `scripts/run-postgres-e2e.ps1`.
-
----
-
-## Set up each layer
-
-The detailed guide is:
-
-**[Layer setup guide](docs/LAYER-SETUP.md)**
-
-It explains, in order:
-
-1. Abstractions
-2. Metadata
-3. Semantics
-4. Planning
-5. Execution
-6. SQL
-7. InMemory
-8. JSON
-9. GraphQL
-10. AOT
-11. PostgreSQL E2E
-12. PR checks
-
-The guide also shows the smallest useful test for each layer.
-
----
-
-## The best place to learn the code
-
-Start here:
-
-```text
-tests/Foundgine.E2E.Tests
-```
-
-The Banking tests show the full read path:
-
-```text
-input
- → semantic request
- → resolution
- → authorization
- → plan
- → SQL
- → database
- → result
-```
-
-The PostgreSQL PostgreSQL E2E tests extend this to real PostgreSQL and complex mutation/query flows.
-
-Then read:
-
-- [Architecture](docs/ARCHITECTURE.md)
-- [Layer setup](docs/LAYER-SETUP.md)
-- [Testing](docs/TESTING.md)
-- [PostgreSQL E2E](docs/POSTGRES-E2E.md)
-- [Current status](docs/CURRENT-STATUS.md)
-
----
-
-## PostgreSQL measurement gate
-
-The repository has a deliberate measurement gate.
-
-Before changing the PostgreSQL mutation compiler, run the real database tests and collect execution evidence.
-
-The target matrix is:
-
-```text
-batch size: 1 / 10 / 50 / 500
-depth:      1 / 2 / 3
-```
-
-The measurement should include:
-
-```text
-planning time
-execution time
-
-shared buffer hit/read/write
-temporary read/write
-
-WAL bytes
-
-join type
-sorts
-materialization
-
-estimated rows
-actual rows
-actual loops
-```
-
-The purpose is to optimize from PostgreSQL evidence rather than from guesses.
-
-See:
-
-- [PostgreSQL E2E](docs/POSTGRES-E2E.md)
-- [PostgreSQL E2E measurement gate](docs/stage-48-MEASUREMENT-GATE-RECOMMENDATION.md)
-
----
-
-## Pull requests
-
-Every pull request to `main` runs:
-
-```text
-Build
-  ↓
-All tests
-  ↓
-PostgreSQL 17 E2E
-```
-
-The PostgreSQL job starts a clean PostgreSQL 17 container, runs the E2E tests, prints database diagnostics on failure, and removes the container afterwards.
-
-Workflow:
-
-```text
-.github/workflows/build.yml
-```
-
-This means the PostgreSQL tests are optional on a developer machine but are a real CI check for pull requests.
-
----
-
-## Project map
-
-| Project | Job |
-|---|---|
-| `Foundgine.Abstractions` | Shared contracts and IDs |
-| `Foundgine.Metadata` | Application and storage metadata |
-| `Foundgine.Semantics` | Meaning, requests, resolution, authorization |
-| `Foundgine.Planning` | Provider-independent plans |
-| `Foundgine.Execution` | Execution contracts and result materialization |
-| `Foundgine.Sql` | SQL provider |
-| `Foundgine.InMemory` | Small non-SQL provider |
-| `Foundgine.Intent.Json` | JSON input |
-| `Foundgine.GraphQL.HotChocolate` | GraphQL input/schema |
-| `Foundgine.GraphQL.HotChocolate.Mutations` | GraphQL mutations |
-| `Foundgine.Aot` | AOT contracts |
-| `Foundgine.Aot.Generator` | Generated metadata |
-
----
-
-## Current proof
-
-The active tests prove semantic modelling, resolution, authorization, provider-independent query and mutation planning, SQL/SQLite execution, a small InMemory provider, AOT metadata, JSON input, GraphQL adapters, relationship and aggregate operations, pagination, and PostgreSQL integration contracts.
-
-The real PostgreSQL tests are the authoritative proof for the PostgreSQL execution path when `FOUNDGINE_POSTGRES_CONNECTION_STRING` is available.
-
-The project does **not** claim universal provider support, autonomous-agent execution, workflow orchestration, or universal performance superiority.
-
----
+That boundary should work for traditional software and intelligent agents alike.
 
 ## Documentation
 
-Start with:
+- [What is Foundgine?](docs-site/what-is-foundgine.md)
+- [AI agents and PostgreSQL](docs-site/ai-agents/index.md)
+- [Architecture](docs-site/architecture/index.md)
+- [Performance](docs-site/performance/index.md)
+- [llms.txt](docs-site/llms.txt) / [llms-full.md](docs-site/llms-full.md) — machine-readable documentation index for AI agents and LLM tooling
 
-1. [Getting started](docs/GETTING-STARTED.md)
-2. [Layer setup](docs/LAYER-SETUP.md)
-3. [Architecture](docs/ARCHITECTURE.md)
-4. [Testing](docs/TESTING.md)
-5. [PostgreSQL E2E](docs/POSTGRES-E2E.md)
-6. [Current status](docs/CURRENT-STATUS.md)
-7. [Why Foundgine](docs/WHY-FOUNDGINE.md)
-8. [Provider independence](docs/PROVIDER-INDEPENDENCE.md)
-9. [Security](docs/SECURITY.md)
-10. [Roadmap](docs/ROADMAP.md)
+The published site (built from `docs-site/`) is available at https://cristianbarragan.github.io/Foundgine/.
 
-Historical design notes are kept under `docs/history`.
+## Development
+
+Repository development setup, tests, benchmarks, deployment templates, and contribution guidance should remain separate from the first-time user experience.
+
+[`BENCHMARK-RESULTS-2026-08-12-CLEAN.md`](BENCHMARK-RESULTS-2026-08-12-CLEAN.md) is the source data behind [`docs-site/performance/index.md`](docs-site/performance/index.md); it's kept at the repo root as development/benchmark evidence rather than published-site content.
+
+## Security
+
+Foundgine's authorization and execution boundaries are intended to reduce unsafe access paths, but application security remains a shared responsibility. Authentication, secret management, transport security, rate limiting, database permissions, and deployment security remain application and infrastructure responsibilities.
+
+## Status
+
+Foundgine is actively evolving. Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
