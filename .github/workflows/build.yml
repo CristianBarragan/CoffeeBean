@@ -65,19 +65,16 @@ jobs:
           rm -rf artifacts/nuget
           mkdir -p artifacts/nuget
 
-          while IFS= read -r project; do
-            echo
-            echo "========================================"
-            echo "Packing: $project"
-            echo "========================================"
+          echo
+          echo "========================================"
+          echo "Packing packable projects in Foundgine.sln"
+          echo "========================================"
 
-            dotnet pack "$project" \
-              --no-restore \
-              --configuration Release \
-              --output artifacts/nuget \
-              -p:PackageVersion="$version"
-
-          done < <(find src -name '*.csproj' -print | sort)
+          dotnet pack Foundgine.sln \
+            --no-restore \
+            --configuration Release \
+            --output artifacts/nuget \
+            -p:PackageVersion="$version"
 
       # ----------------------------------------------------------
       # Validate generated packages

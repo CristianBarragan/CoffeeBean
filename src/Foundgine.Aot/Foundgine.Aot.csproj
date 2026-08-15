@@ -1,15 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <PackageId>Foundgine.Aot</PackageId>
-    <Description>AOT metadata attributes and runtime support for generated Foundgine metadata.</Description>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <TargetFramework>net9.0</TargetFramework>
 
+    <PackageId>Foundgine.Aot</PackageId>
     <RootNamespace>Foundgine.Aot</RootNamespace>
     <AssemblyName>Foundgine.Aot</AssemblyName>
-    <IsPackable>true</IsPackable>
 
-    <!-- Custom framework-specific package content -->
+    <Description>
+      AOT metadata attributes and runtime support for generated Foundgine metadata.
+    </Description>
+
+    <IsPackable>true</IsPackable>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <!-- Include custom package assets -->
     <TargetsForTfmSpecificContentInPackage>
       $(TargetsForTfmSpecificContentInPackage);
       IncludeFoundginePackageContent
@@ -18,24 +23,27 @@
 
   <ItemGroup>
 
-    <None Include="../../README.md"
-          Pack="true"
-          PackagePath="README.md" />
-
-    <None Include="../../LICENSE"
-          Pack="true"
-          PackagePath="LICENSE/LICENSE" />
-
+    <!-- Public API -->
     <ProjectReference
             Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
 
-    <!-- Build Metadata into the package project output,
-         but do not expose it as a NuGet dependency. -->
+    <!--
+      Required runtime implementation.
+
+      It is intentionally not exposed as a NuGet dependency because
+      Foundgine.Aot packages the runtime assembly directly.
+    -->
     <ProjectReference
             Include="../Foundgine.Metadata/Foundgine.Metadata.csproj"
+            ReferenceOutputAssembly="true"
             PrivateAssets="all" />
 
-    <!-- Source generator -->
+    <!--
+      Roslyn source generator.
+
+      It is consumed only as an analyzer and must not become
+      a normal assembly dependency.
+    -->
     <ProjectReference
             Include="../Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj"
             OutputItemType="Analyzer"
@@ -44,10 +52,26 @@
 
   </ItemGroup>
 
+  <ItemGroup>
+
+    <!-- Package documentation -->
+    <None
+            Include="../../README.md"
+            Pack="true"
+            PackagePath="README.md" />
+
+    <None
+            Include="../../LICENSE"
+            Pack="true"
+            PackagePath="LICENSE/LICENSE" />
+
+  </ItemGroup>
+
   <!--
-    The important part:
-    use the actual MSBuild output paths rather than assuming
-    the generator has already been built somewhere under bin/.
+    The generator targets netstandard2.0.
+
+    Build it through the project dependency rather than assuming
+    that the DLL already exists in an arbitrary output directory.
   -->
   <Target
           Name="IncludeFoundginePackageContent"
@@ -56,27 +80,21 @@
     <ItemGroup>
 
       <!--
-        Foundgine.Metadata is a runtime assembly and belongs in
-        lib/<tfm>.
+        Foundgine.Metadata is bundled into Foundgine.Aot as a runtime
+        library.
       -->
       <TfmSpecificPackageFile
               Include="$(TargetDir)Foundgine.Metadata.dll"
-              Condition="Exists('$(TargetDir)Foundgine.Metadata.dll')">
-
-        <PackagePath>lib/$(TargetFramework)</PackagePath>
-
-      </TfmSpecificPackageFile>
+              Condition="Exists('$(TargetDir)Foundgine.Metadata.dll')"
+              PackagePath="lib/$(TargetFramework)" />
 
       <!--
-        Source generator belongs under analyzers/dotnet/cs.
+        Source generator.
       -->
       <TfmSpecificPackageFile
               Include="$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/bin/$(Configuration)/netstandard2.0/Foundgine.Aot.Generator.dll"
-              Condition="Exists('$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/bin/$(Configuration)/netstandard2.0/Foundgine.Aot.Generator.dll')">
-
-        <PackagePath>analyzers/dotnet/cs</PackagePath>
-
-      </TfmSpecificPackageFile>
+              Condition="Exists('$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/bin/$(Configuration)/netstandard2.0/Foundgine.Aot.Generator.dll')"
+              PackagePath="analyzers/dotnet/cs" />
 
     </ItemGroup>
 
