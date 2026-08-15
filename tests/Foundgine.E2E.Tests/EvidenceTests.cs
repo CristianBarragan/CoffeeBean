@@ -112,6 +112,10 @@ public sealed class EvidenceTests
         Assert.False(string.IsNullOrWhiteSpace(result.Evidence!.IntentFingerprint));
         Assert.False(string.IsNullOrWhiteSpace(result.Evidence.AuthorizationFingerprint));
         Assert.NotEqual(result.Evidence.IntentFingerprint, result.Evidence.AuthorizationFingerprint);
+        Assert.NotNull(result.Receipt);
+        Assert.Equal(result.Evidence.PlanFingerprint, result.Receipt!.PlanFingerprint);
+        Assert.Equal(result.Evidence.Provider, result.Receipt.Provider);
+        Assert.False(string.IsNullOrWhiteSpace(result.Receipt.ResultFingerprint));
     }
 
     private sealed class CapturingEvidenceCompiler : IProviderPlanCompiler

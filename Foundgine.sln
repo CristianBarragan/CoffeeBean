@@ -46,12 +46,36 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.AI", "src\Foundgi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Agent.OpenAI", "samples\Foundgine.Agent.OpenAI\Foundgine.Agent.OpenAI.csproj", "{1000000F-0000-0000-0000-00000000000F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.MCP", "src\Foundgine.MCP\Foundgine.MCP.csproj", "{10000010-0000-0000-0000-000000000010}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.MCP.Tests", "tests\Foundgine.MCP.Tests\Foundgine.MCP.Tests.csproj", "{20000008-0000-0000-0000-000000000008}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Security.Tests", "tests\Foundgine.Security.Tests\Foundgine.Security.Tests.csproj", "{20000009-0000-0000-0000-000000000009}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.CoffeeBeanery.Product", "samples\\Foundgine.CoffeeBeanery.Product\\Foundgine.CoffeeBeanery.Product.csproj", "{843BA4B0-511E-4110-ADDB-51E722C67DE6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+        {843BA4B0-511E-4110-ADDB-51E722C67DE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {843BA4B0-511E-4110-ADDB-51E722C67DE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {843BA4B0-511E-4110-ADDB-51E722C67DE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {843BA4B0-511E-4110-ADDB-51E722C67DE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000010-0000-0000-0000-000000000010}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000010-0000-0000-0000-000000000010}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000010-0000-0000-0000-000000000010}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000010-0000-0000-0000-000000000010}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20000008-0000-0000-0000-000000000008}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20000008-0000-0000-0000-000000000008}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20000008-0000-0000-0000-000000000008}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20000008-0000-0000-0000-000000000008}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20000009-0000-0000-0000-000000000009}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20000009-0000-0000-0000-000000000009}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20000009-0000-0000-0000-000000000009}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20000009-0000-0000-0000-000000000009}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1000000C-0000-0000-0000-00000000000C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1000000C-0000-0000-0000-00000000000C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1000000C-0000-0000-0000-00000000000C}.Release|Any CPU.ActiveCfg = Release|Any CPU

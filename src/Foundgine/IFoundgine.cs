@@ -1,6 +1,7 @@
 using Foundgine.Execution;
 using Foundgine.Semantics;
 using Foundgine.Semantics.Authorization;
+using Foundgine.Semantics.Capabilities;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine;
@@ -16,6 +17,24 @@ public interface IFoundgine
     /// decision cache; execution evaluates the policy again.
     /// </summary>
     SemanticAuthorizationCapabilities DescribeCapabilities();
+
+    /// <summary>Returns the canonical machine-readable semantic capability contract.</summary>
+    SemanticCapabilityContract DescribeCapabilityContract();
+
+    /// <summary>Returns the semantic compatibility versions used by this engine.</summary>
+    SemanticVersionSet DescribeVersionSet();
+
+    /// <summary>Plans and authorizes a request without executing provider work.</summary>
+    DryRunResult DryRun(SemanticRequest request);
+
+    /// <summary>Creates an approval bound to the exact currently authorized plan.</summary>
+    PlanApproval ApprovePlan(SemanticRequest request, string approvedBy);
+
+    /// <summary>Executes only when the current authorized plan exactly matches the approval fingerprint.</summary>
+    Task<ExecutionResult> ExecuteApprovedAsync(
+        PlanApproval approval,
+        ExecutionContext? context = null,
+        CancellationToken cancellationToken = default);
 
     Task<ExecutionResult> ExecuteAsync(
         SemanticRequest request,

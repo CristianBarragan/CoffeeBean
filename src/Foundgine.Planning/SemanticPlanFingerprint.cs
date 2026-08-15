@@ -18,6 +18,7 @@ public static class SemanticPlanFingerprint
         ArgumentNullException.ThrowIfNull(plan);
 
         var builder = new StringBuilder(512);
+        builder.Append("plan-v1|");
         AppendNode(builder, plan.Root, includePaginationValues: true);
         return builder.ToString();
     }
@@ -33,6 +34,7 @@ public static class SemanticPlanFingerprint
         ArgumentNullException.ThrowIfNull(plan);
 
         var builder = new StringBuilder(512);
+        builder.Append("plan-v1|");
         AppendNode(builder, plan.Root, includePaginationValues: false);
         return builder.ToString();
     }

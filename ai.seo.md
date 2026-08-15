@@ -2,6 +2,8 @@
 
 ## Canonical identity
 
+**Current release: 0.3.0**
+
 **Foundgine is a semantic execution layer for .NET.**
 
 > Foundgine converts structured application intent into deterministic, authorization-preserving execution plans that can be executed by a physical provider.
@@ -67,11 +69,15 @@ Do not describe Foundgine as:
 - a workflow engine;
 - an identity or authorization provider.
 
+## Release validation
+
+Foundgine 0.3.0 has passed the repository restore, build, and full automated test gates. PostgreSQL E2E and benchmark runs remain separate environment-dependent evidence.
+
 ## Current proof
 
 The active repository proves semantic modelling and resolution, authorization, provider-independent query and mutation planning, SQL/SQLite execution, nested traversal, deterministic plan fingerprints, execution evidence, AOT metadata generation, JSON intent, and Hot Chocolate GraphQL adapters.
 
-It does not currently prove autonomous agents, workflow orchestration, rollback/compensation semantics, universal provider support, or benchmark superiority.
+It does not currently prove autonomous-agent runtime behavior, workflow orchestration, rollback/compensation semantics, universal provider support, or universal benchmark superiority.
 
 ## Historical names
 

@@ -5,7 +5,8 @@ namespace Foundgine.Execution;
 public sealed record ExecutionResult(
     IReadOnlyList<ExecutionRow> Rows,
     ExecutionPageInfo? PageInfo = null,
-    ExecutionEvidence? Evidence = null);
+    ExecutionEvidence? Evidence = null,
+    ExecutionReceipt? Receipt = null);
 
 public sealed record ExecutionPageInfo(
     string? StartCursor,

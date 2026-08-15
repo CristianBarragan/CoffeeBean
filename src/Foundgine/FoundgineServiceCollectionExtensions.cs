@@ -50,6 +50,10 @@ public static class FoundgineServiceCollectionExtensions
             serviceProvider.GetRequiredService<IProviderPlanCompiler>(),
             serviceProvider.GetRequiredService<IExecutionProvider>()));
 
+        if (options.MutationSchema is not null && options.MutationProvider is not null)
+            services.AddSingleton<IFoundgineMutations>(_ => new FoundgineMutationEngine(
+                options.MutationSchema, options.AuthorizationPolicy, options.MutationProvider));
+
         return services;
     }
 }

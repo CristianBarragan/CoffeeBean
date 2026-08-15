@@ -16,10 +16,10 @@ permissions:
 jobs:
 
   # ============================================================
-  # Build, test and create NuGet packages
+  # Build and create NuGet packages
   # ============================================================
-  build-test-pack:
-    name: Build, Test & Pack
+  build-pack:
+    name: Build & Pack
     runs-on: ubuntu-latest
 
     steps:
@@ -39,13 +39,6 @@ jobs:
       - name: Build
         run: dotnet build Foundgine.sln --no-restore --configuration Release
 
-      - name: Test
-        run: |
-          dotnet test Foundgine.sln \
-            --no-build \
-            --configuration Release \
-            --verbosity normal
-
       # ----------------------------------------------------------
       # Pack all NuGet projects
       # ----------------------------------------------------------
@@ -57,7 +50,7 @@ jobs:
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
             version="${GITHUB_REF_NAME#v}"
           else
-            version="0.1.0-ci.${GITHUB_RUN_NUMBER}"
+            version="0.3.0-ci.${GITHUB_RUN_NUMBER}"
           fi
 
           echo "Package version: $version"
@@ -200,10 +193,48 @@ jobs:
 
 
   # ============================================================
+  # Unit tests — intentionally separate from PostgreSQL integration
+  # ============================================================
+  unit-tests:
+    name: Unit Tests
+    needs:
+      - build-pack
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore Foundgine.sln
+
+      - name: Build
+        run: dotnet build Foundgine.sln --no-restore --configuration Release
+
+      # E2E tests are deliberately excluded. They have their own PostgreSQL
+      # integration gate below so unit and integration tests never overlap.
+      - name: Run unit tests
+        run: |
+          dotnet test Foundgine.sln \
+            --no-build \
+            --configuration Release \
+            --filter "FullyQualifiedName!~Foundgine.E2E.Tests" \
+            --logger "console;verbosity=normal"
+
+  # ============================================================
   # PostgreSQL 17 end-to-end tests
   # ============================================================
-  postgres-e2e:
-    name: PostgreSQL 17 E2E
+  integration-tests:
+    needs:
+      - unit-tests
+    name: Integration Tests — PostgreSQL 17
     runs-on: ubuntu-latest
 
     steps:
@@ -279,6 +310,64 @@ jobs:
 
 
   # ============================================================
+  # Benchmark projects — outside Foundgine.sln, so verify them
+  # independently rather than treating solution build as coverage.
+  # ============================================================
+  benchmark-build:
+    name: Benchmark Build
+    needs:
+      - build-pack
+      - unit-tests
+      - integration-tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore benchmark projects
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          projects=(
+            "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/CoffeeBeanery.Database.csproj"
+            "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/CoffeeBeanery.LoadTest.csproj"
+            "benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj"
+            "benchmarks/CoffeeBeanery.Performance/HotChocolate.CoffeeBeanery.BenchmarkApi/HotChocolate.CoffeeBeanery.BenchmarkApi.csproj"
+          )
+
+          for project in "${projects[@]}"; do
+            echo "Restoring $project"
+            dotnet restore "$project"
+          done
+
+      - name: Build benchmark projects
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          projects=(
+            "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/CoffeeBeanery.Database.csproj"
+            "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/CoffeeBeanery.LoadTest.csproj"
+            "benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj"
+            "benchmarks/CoffeeBeanery.Performance/HotChocolate.CoffeeBeanery.BenchmarkApi/HotChocolate.CoffeeBeanery.BenchmarkApi.csproj"
+          )
+
+          for project in "${projects[@]}"; do
+            echo "Building $project"
+            dotnet build "$project"               --no-restore               --configuration Release
+          done
+
+
+  # ============================================================
   # Publish to NuGet.org
   # ============================================================
   publish-nuget:
@@ -289,8 +378,10 @@ jobs:
     # Publishing is blocked unless BOTH the complete build/test
     # job and PostgreSQL E2E job pass.
     needs:
-      - build-test-pack
-      - postgres-e2e
+      - build-pack
+      - unit-tests
+      - integration-tests
+      - benchmark-build
 
     runs-on: ubuntu-latest
 

@@ -1,8 +1,8 @@
-# Current status
+# Current status — Foundgine 0.3.0
 
-Foundgine has a working end-to-end foundation.
+Foundgine 0.3.0 is the current shipped release. The repository has crossed the build-validation gate: restore, compilation, and the full automated test suite have been run successfully for the current source tree.
 
-## Proven by the active tests
+## Proven by the active repository
 
 - semantic entities, fields, relationships, and IDs;
 - request resolution;
@@ -19,9 +19,21 @@ Foundgine has a working end-to-end foundation.
 - nested relationships;
 - filters and aggregates;
 - cursor pagination;
-- execution evidence;
-- PostgreSQL integration contracts;
-- real PostgreSQL E2E tests when PostgreSQL 17 is available.
+- execution evidence and canonical receipts;
+- deterministic plan fingerprints and provider-plan caching;
+- MCP boundary and mutation-safe execution contracts;
+- PostgreSQL integration contracts and PostgreSQL E2E workflows when PostgreSQL 17 is available.
+
+## Validation gates
+
+```text
+dotnet restore   ✓
+dotnet build     ✓
+dotnet test      ✓
+
+PostgreSQL E2E   separate environment-dependent gate
+Benchmarks       separate measurement workflow
+```
 
 ## Main rule
 
@@ -38,20 +50,18 @@ Plan
  ↓
 Provider
  ↓
-Result
+Result + Evidence
 ```
 
 ## PostgreSQL status
 
-PostgreSQL 17 is part of the PR test path.
-
-The local PostgreSQL tests require:
+PostgreSQL 17 is part of the CI/integration path. Local PostgreSQL tests require:
 
 ```text
 FOUNDGINE_POSTGRES_CONNECTION_STRING
 ```
 
-The CI job starts its own PostgreSQL 17 container, so the database tests are real PR checks.
+PostgreSQL correctness and PostgreSQL performance are separate forms of evidence: integration tests establish runtime behavior, while the CoffeeBeanery benchmark documents measured performance for a specific workload.
 
 ## What is not claimed
 
@@ -59,11 +69,10 @@ The repository does not claim:
 
 - universal database support;
 - universal performance superiority;
-- autonomous agent execution;
+- autonomous-agent execution as a general runtime;
 - workflow orchestration;
-- rollback or compensation semantics.
-
-Those claims require separate implementation and evidence.
+- rollback or compensation semantics;
+- production security or operational guarantees beyond the tested repository invariants.
 
 ## Source of truth
 

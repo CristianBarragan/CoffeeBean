@@ -1,77 +1,53 @@
 # Roadmap
 
-The foundation is intentionally small. The next work should improve usefulness
-without weakening the boundaries.
+Foundgine 0.3.0 is the current shipped release. The core semantic execution pipeline is now validated by restore, build, and the full automated test suite. The roadmap therefore focuses on usefulness, provider depth, public API clarity, and evidence rather than another architecture-freeze cycle.
 
-## M39 — Semantic authorization and capability discovery
+## Current foundation — shipped
 
-M39 establishes granular authorization as part of semantic execution:
+The current release includes the validated foundation for:
 
-- entity read/write access;
-- field read/write access;
-- relationship read/write access;
-- provider-independent conditional predicates;
-- capability discovery for callers such as AI agents;
-- mutation write authorization;
-- authorization predicates preserved into the execution plan.
+- semantic modeling and request resolution;
+- granular authorization and authorization-aware planning;
+- query and mutation planning;
+- execution IR and provider lowering;
+- SQL and InMemory execution;
+- GraphQL and JSON adapters;
+- AOT metadata generation;
+- MCP boundary and mutation-safe execution;
+- execution receipts and plan-bound approval;
+- deterministic plan fingerprints and provider-plan caching; and
+- PostgreSQL integration and benchmark workflows.
 
-M39 deliberately does **not** introduce identity management, claims parsing,
-role administration, OAuth/JWT handling, policy storage, or an authorization
-server. Those concerns can sit above the semantic policy contract later.
+The former M39–M42 material remains available in the implementation history and detailed architecture documents; it is no longer the primary public roadmap.
 
-The key invariant is:
+## Next
 
-```text
-Caller capability context
-        ↓
-Authorization policy
-        ↓
-Semantic graph
-        ↓
-Authorization predicates
-        ↓
-Execution plan
-        ↓
-Provider execution
-```
+### Public API simplification
 
-Capability discovery is advisory context only. Execution always evaluates the
-configured policy again.
+Reduce unnecessary surface complexity while preserving the semantic/execution boundaries that are now validated.
 
-## M40 — Authorization-aware plan caching
+### Provider depth
 
-M40 establishes a narrow, safe cache boundary for compiled provider plans.
+Improve provider composition and extend real-world provider scenarios without weakening the provider-independent semantic model.
 
-- semantic resolution still runs on every request;
-- authorization still runs on every request;
-- only the provider compilation step is cached;
-- authorization predicates remain in the cached provider plan;
-- runtime execution context is resolved by the provider on every execution;
-- exact request values are part of the current cache fingerprint.
+### PostgreSQL hardening
 
-This deliberately establishes correctness before introducing parameterized plan
-templates or distributed caching.
+Expand real PostgreSQL E2E coverage, mutation coverage, and repeatable benchmark methodology.
 
-## Near term
+### Developer experience
 
-- simplify public APIs where the current contracts are more complex than necessary;
-- improve provider composition and real-world examples;
-- measure end-to-end performance;
-- keep GraphQL and JSON adapters thin;
-- document only capabilities that are implemented and tested.
+Improve examples, getting-started material, package documentation, and diagnostics around plan inspection and execution evidence.
+
+### AI and MCP integration
+
+Expand safe capability discovery and caller integration while keeping authorization and execution authority inside Foundgine.
 
 ## Later
 
-Potential work includes more providers, richer semantic actions, claims/roles
-integration above the policy contract, and stronger AI/agent integration.
+Potential future work includes additional providers, richer semantic actions, claims/roles integration above the policy contract, parameterized plan templates, and deeper AI/agent integration.
 
-These are ideas, not current core capabilities.
+These are future directions, not current core guarantees.
 
-## Documentation rule
+## Roadmap rule
 
-The active source and tests are the source of truth. Public documentation must distinguish implemented/demonstrated capabilities from planned work and historical material. See [Documentation truth](DOCUMENTATION-TRUTH.md).
-
-
-## Execution IR
-
-The canonical `ExecutionIR` boundary has been introduced. Provider migration to consume it directly is the next execution-layer step.
+The active source and tests are the source of truth. Public documentation must distinguish shipped/tested capabilities from planned work and historical material. See [Documentation truth](DOCUMENTATION-TRUTH.md).

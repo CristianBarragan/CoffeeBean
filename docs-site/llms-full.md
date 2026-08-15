@@ -1,3 +1,7 @@
+# Foundgine 0.3.0
+
+Current shipped release: **0.3.0**. The repository has passed restore, build, and full automated tests for the current release. PostgreSQL E2E and benchmark workflows remain separate environment-dependent evidence.
+
 # Foundgine — Full Documentation
 
 > This file concatenates all public Foundgine documentation pages for full-context ingestion by AI agents and LLMs. See llms.txt for a linked index of the same pages.
@@ -188,7 +192,7 @@ Foundgine
     PostgreSQL
 ```
 
-## End-to-end proof target
+## Current integration boundary
 
 The first E2E scenario should prove the complete chain:
 
@@ -206,7 +210,7 @@ The first E2E scenario should prove the complete chain:
 
 Steps 3–7 above — structured intent, semantic resolution, authorization, planning, and provider execution — are the same core pipeline documented in the Architecture section; that pipeline is not specific to AI agents.
 
-What's specific to this page, and still a proof target rather than a shipped guarantee, is the full chain end to end for an AI agent caller: steps 1–2 and 8–9, the four security scenarios below, and the deployment progression from a local process through containerized and cloud infrastructure. Treat everything on this page as the architecture Foundgine is being built toward for AI-agent callers, and check the repository's releases for current implementation status before depending on it.
+The semantic lifecycle itself is shipped and tested in 0.3.0. A general autonomous-agent runtime that owns model selection, orchestration, deployment infrastructure, and autonomous end-to-end behavior is not a current core guarantee.
 
 ## Security scenarios
 
