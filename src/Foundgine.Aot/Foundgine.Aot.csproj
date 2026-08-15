@@ -6,6 +6,9 @@
     <RootNamespace>Foundgine.Aot</RootNamespace>
     <AssemblyName>Foundgine.Aot</AssemblyName>
     <IsPackable>true</IsPackable>
+
+    <!-- Register custom target to safely include extra assemblies in the nupkg -->
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeExtraPackageContent</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,34 +16,32 @@
     <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
 
     <ProjectReference Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
-    <ProjectReference Include="../Foundgine.Metadata/Foundgine.Metadata.csproj" />
 
-    <!-- Build the source generator, but do not expose it as a normal assembly reference. -->
+    <!-- 
+      Package Foundgine.Metadata inside this package without declaring it as a NuGet dependency.
+      Setting PrivateAssets="all" avoids putting it in the nuspec <dependencies> section.
+    -->
+    <ProjectReference Include="../Foundgine.Metadata/Foundgine.Metadata.csproj" PrivateAssets="all" />
+
+    <!-- Roslyn Source Generator reference -->
     <ProjectReference
             Include="../Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj"
+            OutputItemType="Analyzer"
             ReferenceOutputAssembly="false"
             PrivateAssets="all" />
   </ItemGroup>
 
-  <!--
-    Foundgine.Aot is the distributable package. The generator is intentionally
-    stored in the analyzer directory so NuGet/Roslyn discovers it automatically.
-    Foundgine.Metadata is also shipped inside this package because Aot references
-    its runtime metadata types.
-  -->
-  <Target Name="PackFoundgineContents" BeforeTargets="GenerateNuspec" DependsOnTargets="Build">
+  <Target Name="IncludeExtraPackageContent">
     <ItemGroup>
-      <None
-              Include="$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/bin/$(Configuration)/netstandard2.0/Foundgine.Aot.Generator.dll"
-              Pack="true"
-              PackagePath="analyzers/dotnet/cs"
-              Visible="false" />
+      <!-- Pack Foundgine.Metadata.dll into lib/net9.0 -->
+      <TfmSpecificPackageFile Include="$(TargetDir)Foundgine.Metadata.dll">
+        <PackagePath>lib/$(TargetFramework)</PackagePath>
+      </TfmSpecificPackageFile>
 
-      <None
-              Include="$(MSBuildProjectDirectory)/../Foundgine.Metadata/bin/$(Configuration)/$(TargetFramework)/Foundgine.Metadata.dll"
-              Pack="true"
-              PackagePath="lib/$(TargetFramework)"
-              Visible="false" />
+      <!-- Pack Foundgine.Aot.Generator.dll into analyzers/dotnet/cs -->
+      <TfmSpecificPackageFile Include="$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/bin/$(Configuration)/netstandard2.0/Foundgine.Aot.Generator.dll">
+        <PackagePath>analyzers/dotnet/cs</PackagePath>
+      </TfmSpecificPackageFile>
     </ItemGroup>
   </Target>
 </Project>
