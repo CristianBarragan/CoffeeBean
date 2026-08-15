@@ -42,6 +42,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.InMemory", "src\F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.InMemory.Tests", "tests\Foundgine.InMemory.Tests\Foundgine.InMemory.Tests.csproj", "{20000007-0000-0000-0000-000000000007}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.AI", "src\Foundgine.AI\Foundgine.AI.csproj", "{1000000E-0000-0000-0000-00000000000E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Agent.OpenAI", "samples\Foundgine.Agent.OpenAI\Foundgine.Agent.OpenAI.csproj", "{1000000F-0000-0000-0000-00000000000F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -128,6 +132,14 @@ Global
 		{20000007-0000-0000-0000-000000000007}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{20000007-0000-0000-0000-000000000007}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{20000007-0000-0000-0000-000000000007}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1000000E-0000-0000-0000-00000000000E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1000000E-0000-0000-0000-00000000000E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1000000E-0000-0000-0000-00000000000E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1000000E-0000-0000-0000-00000000000E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1000000F-0000-0000-0000-00000000000F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1000000F-0000-0000-0000-00000000000F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1000000F-0000-0000-0000-00000000000F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1000000F-0000-0000-0000-00000000000F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Foundgine — Authorized Semantic Execution for .NET and AI Agents</title>
+  <meta name="description" content="Foundgine is a semantic execution platform for .NET that turns structured intent into authorized execution plans for APIs, GraphQL, automation, and AI agents.">
+  <link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/">
+  <meta property="og:title" content="Foundgine — From intent to authorized execution">
+  <meta property="og:description" content="A programmable semantic execution platform for .NET, APIs, GraphQL, automation, and AI agents.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cristianbarragan.github.io/Foundgine/">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Foundgine — From intent to authorized execution">
+  <meta name="twitter:description" content="A programmable semantic execution platform for .NET, APIs, GraphQL, automation, and AI agents.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="brand" href="index.html">Foundgine</a>
+      <nav>
+        <a href="what-is-foundgine.html">What is it</a>
+        <a href="ai-agents/index.html">AI agents</a>
+        <a href="architecture/index.html">Architecture</a>
+        <a href="performance/index.html">Performance</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="page">
+    <main class="article">
+      <span class="eyebrow">.NET · Semantic execution</span>
+      <h1>From intent to authorized execution.</h1>
+      <p class="subtitle">Foundgine is a programmable semantic execution platform for .NET. It creates a controlled boundary between callers and the data and operations they're allowed to execute.</p>
+
+      <div class="rail" role="img" aria-label="Pipeline: Caller, Intent, Semantic Model, Authorization, Execution Plan, Provider, Result">
+        <div class="rail-step"><span class="dot"></span>Caller</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Intent</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Semantic Model</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step is-current"><span class="dot"></span>Authorization</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Execution Plan</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Provider</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Result</div>
+      </div>
+      <p class="rail-caption">Every request crosses this boundary — this is the shape you'll see on every page.</p>
+
+      <h2>What is Foundgine?</h2>
+      <p>Foundgine separates <strong>what a caller wants</strong> from <strong>how the application executes it</strong>.</p>
+      <p>A caller submits structured intent. Foundgine resolves that intent against an application-defined semantic model, validates the requested capabilities, applies authorization constraints, builds an execution plan, and sends the plan to a provider such as SQL or InMemory. The result is a reusable execution boundary that can sit underneath multiple interfaces.</p>
+
+      <div class="converge">
+        <div class="converge-row">
+          <span class="converge-chip">API</span>
+          <span class="converge-chip">GraphQL</span>
+          <span class="converge-chip">Automation</span>
+          <span class="converge-chip">AI Agent</span>
+        </div>
+        <div class="converge-arrow">↓</div>
+        <div class="converge-core">Foundgine</div>
+        <div class="converge-arrow">↓</div>
+        <div class="converge-row">
+          <span class="converge-chip">SQL</span>
+          <span class="converge-chip">InMemory</span>
+          <span class="converge-chip">Providers</span>
+        </div>
+      </div>
+
+      <h2>Why does Foundgine exist?</h2>
+      <p>Modern applications increasingly have many callers: web and mobile applications, APIs, GraphQL clients, internal services, automation, and AI agents.</p>
+      <p>Without a common execution boundary, each interface can grow its own authorization, validation, query translation, and data-access path. Foundgine is designed to centralize the semantic execution model so that different callers can share the same application-defined capabilities and execution rules.</p>
+
+      <blockquote><strong>Callers describe what they want. Foundgine determines what is allowed, how it should execute, and which provider performs it.</strong></blockquote>
+
+      <h2>Foundgine and AI agents</h2>
+      <p>AI agents make this boundary particularly important. An AI model can decide what it wants to accomplish. It should not become the authority over which application data it is allowed to access, nor should it need direct database credentials.</p>
+      <p>This is deliberately different from a model generating SQL directly against a database. Foundgine is intended to keep the application in control of authorization and execution while allowing AI and other structured callers to use application capabilities. Read more in <a href="ai-agents/index.html">AI agents with Foundgine</a>.</p>
+
+      <h2>Capabilities</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Capability</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Semantic modeling</td><td>Define the application-facing model independently of physical persistence details</td></tr>
+            <tr><td>Structured intent</td><td>Represent requested operations without coupling callers directly to SQL</td></tr>
+            <tr><td>Relationship traversal</td><td>Express operations across connected domain data</td></tr>
+            <tr><td>Authorization-aware planning</td><td>Carry application authorization constraints into execution planning</td></tr>
+            <tr><td>Execution planning</td><td>Convert semantic operations into provider-independent plans</td></tr>
+            <tr><td>Plan rewriting and optimization</td><td>Transform plans before physical execution</td></tr>
+            <tr><td>Provider independence</td><td>Separate semantic operations from provider-specific execution</td></tr>
+            <tr><td>SQL execution</td><td>Execute relational plans against SQL providers</td></tr>
+            <tr><td>InMemory execution</td><td>Execute the same semantic model without a database</td></tr>
+            <tr><td>GraphQL integration</td><td>Use GraphQL as an interface without making GraphQL the execution model</td></tr>
+            <tr><td>JSON / structured input</td><td>Accept structured intent from non-GraphQL callers</td></tr>
+            <tr><td>AOT support</td><td>Support generated metadata and Native AOT-oriented deployments</td></tr>
+            <tr><td>AI-agent integration</td><td>Allow agents to request application capabilities without direct database authority</td></tr>
+            <tr><td>Execution evidence</td><td>Make authorization, planning, and execution observable</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>A 30-second example</h2>
+      <p>A caller asks: <em>"Find customers with accounts over $10,000."</em> The caller does not need to know the database schema or generate SQL.</p>
+      <pre>Request
+  ↓
+Customer
+  └── Accounts
+        └── Balance &gt; 10,000
+  ↓
+Authorization
+  ↓
+Execution plan
+  ↓
+SQL provider
+  ↓
+Result</pre>
+      <p>The important boundary is: <strong>what the caller requested</strong> ≠ <strong>what the database can execute</strong>. Foundgine connects those two through an application-controlled semantic and planning layer.</p>
+
+      <h2>Performance evidence</h2>
+      <p>The 12 August 2026 CoffeeBeanery benchmark contains three successful runs over a deterministic PostgreSQL graph workload. At concurrency 32, Foundgine reached roughly <strong>20× the throughput</strong> and <strong>17× lower p95 latency</strong> than Hot Chocolate + EF Core, with zero application errors, timeouts, or cancelled requests. These are workload-specific results, not a universal claim. See <a href="performance/index.html">Performance</a>.</p>
+
+      <h2>What Foundgine is not</h2>
+      <p>Foundgine is not an ORM replacement, a database, a GraphQL server, an LLM, an agent framework, or an identity provider. It is an execution layer that can sit underneath those kinds of systems.</p>
+
+      <h2>Vision</h2>
+      <blockquote><strong>Make application capabilities understandable and safely executable by machines.</strong></blockquote>
+      <p>The long-term vision is a stable semantic execution boundary between what a system asks for and what an application is willing to execute — for traditional software and intelligent agents alike.</p>
+
+      <h2>Security</h2>
+      <p>Foundgine's authorization and execution boundaries are intended to reduce unsafe access paths, but application security remains a shared responsibility. Authentication, secret management, transport security, rate limiting, database permissions, and deployment security remain application and infrastructure responsibilities.</p>
+
+      <nav class="sitenav">
+        <a href="what-is-foundgine.html">What is Foundgine?</a> ·
+        <a href="ai-agents/index.html">AI agents</a> ·
+        <a href="architecture/index.html">Architecture</a> ·
+        <a href="performance/index.html">Performance</a> ·
+        <a href="llms.txt">llms.txt</a>
+      </nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">Foundgine · actively evolving · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer>
+</body>
+</html>
