@@ -1,47 +1,85 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <PackageId>Foundgine.Aot</PackageId>
     <Description>AOT metadata attributes and runtime support for generated Foundgine metadata.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+
     <RootNamespace>Foundgine.Aot</RootNamespace>
     <AssemblyName>Foundgine.Aot</AssemblyName>
     <IsPackable>true</IsPackable>
 
-    <!-- Register custom target to safely include extra assemblies in the nupkg -->
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeExtraPackageContent</TargetsForTfmSpecificContentInPackage>
+    <!-- Custom framework-specific package content -->
+    <TargetsForTfmSpecificContentInPackage>
+      $(TargetsForTfmSpecificContentInPackage);
+      IncludeFoundginePackageContent
+    </TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
-    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
 
-    <ProjectReference Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
+    <None Include="../../README.md"
+          Pack="true"
+          PackagePath="README.md" />
 
-    <!-- 
-      Package Foundgine.Metadata inside this package without declaring it as a NuGet dependency.
-      Setting PrivateAssets="all" avoids putting it in the nuspec <dependencies> section.
-    -->
-    <ProjectReference Include="../Foundgine.Metadata/Foundgine.Metadata.csproj" PrivateAssets="all" />
+    <None Include="../../LICENSE"
+          Pack="true"
+          PackagePath="LICENSE/LICENSE" />
 
-    <!-- Roslyn Source Generator reference -->
+    <ProjectReference
+            Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
+
+    <!-- Build Metadata into the package project output,
+         but do not expose it as a NuGet dependency. -->
+    <ProjectReference
+            Include="../Foundgine.Metadata/Foundgine.Metadata.csproj"
+            PrivateAssets="all" />
+
+    <!-- Source generator -->
     <ProjectReference
             Include="../Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj"
             OutputItemType="Analyzer"
             ReferenceOutputAssembly="false"
             PrivateAssets="all" />
+
   </ItemGroup>
 
-  <Target Name="IncludeExtraPackageContent">
+  <!--
+    The important part:
+    use the actual MSBuild output paths rather than assuming
+    the generator has already been built somewhere under bin/.
+  -->
+  <Target
+          Name="IncludeFoundginePackageContent"
+          DependsOnTargets="Build">
+
     <ItemGroup>
-      <!-- Pack Foundgine.Metadata.dll into lib/net9.0 -->
-      <TfmSpecificPackageFile Include="$(TargetDir)Foundgine.Metadata.dll">
+
+      <!--
+        Foundgine.Metadata is a runtime assembly and belongs in
+        lib/<tfm>.
+      -->
+      <TfmSpecificPackageFile
+              Include="$(TargetDir)Foundgine.Metadata.dll"
+              Condition="Exists('$(TargetDir)Foundgine.Metadata.dll')">
+
         <PackagePath>lib/$(TargetFramework)</PackagePath>
+
       </TfmSpecificPackageFile>
 
-      <!-- Pack Foundgine.Aot.Generator.dll into analyzers/dotnet/cs -->
-      <TfmSpecificPackageFile Include="$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/bin/$(Configuration)/netstandard2.0/Foundgine.Aot.Generator.dll">
+      <!--
+        Source generator belongs under analyzers/dotnet/cs.
+      -->
+      <TfmSpecificPackageFile
+              Include="$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/bin/$(Configuration)/netstandard2.0/Foundgine.Aot.Generator.dll"
+              Condition="Exists('$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/bin/$(Configuration)/netstandard2.0/Foundgine.Aot.Generator.dll')">
+
         <PackagePath>analyzers/dotnet/cs</PackagePath>
+
       </TfmSpecificPackageFile>
+
     </ItemGroup>
+
   </Target>
+
 </Project>

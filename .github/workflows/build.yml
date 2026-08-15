@@ -1,5 +1,5 @@
----
 name: Build, Test & Pack
+
 on:
   push:
     branches:
@@ -9,27 +9,46 @@ on:
   pull_request:
     branches:
       - main
+
 permissions:
   contents: read
+
 jobs:
+
+  # ============================================================
+  # Build, test and create NuGet packages
+  # ============================================================
   build-test-pack:
+    name: Build, Test & Pack
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
+
       - name: Restore
         run: dotnet restore Foundgine.sln
+
       - name: Build
         run: dotnet build Foundgine.sln --no-restore --configuration Release
+
       - name: Test
-        run: dotnet test Foundgine.sln --no-build --configuration Release --verbosity
-          normal
+        run: |
+          dotnet test Foundgine.sln \
+            --no-build \
+            --configuration Release \
+            --verbosity normal
+
+      # ----------------------------------------------------------
+      # Pack all NuGet projects
+      # ----------------------------------------------------------
       - name: Pack NuGet packages
         shell: bash
         run: |
@@ -43,119 +62,375 @@ jobs:
 
           echo "Package version: $version"
 
+          rm -rf artifacts/nuget
           mkdir -p artifacts/nuget
 
           while IFS= read -r project; do
-            echo "Packing $project"
+            echo
+            echo "========================================"
+            echo "Packing: $project"
+            echo "========================================"
 
             dotnet pack "$project" \
               --no-restore \
               --configuration Release \
               --output artifacts/nuget \
               -p:PackageVersion="$version"
+
           done < <(find src -name '*.csproj' -print | sort)
-      - name: Validate NuGet package
+
+      # ----------------------------------------------------------
+      # Validate generated packages
+      # ----------------------------------------------------------
+      - name: Validate NuGet packages
         shell: bash
         run: |
           set -euo pipefail
 
-          package=(artifacts/nuget/Foundgine.Aot.*.nupkg)
+          shopt -s nullglob
 
-          test "${#package[@]}" -eq 1
+          echo "Available packages:"
+          printf '  %s\n' artifacts/nuget/*.nupkg
 
-          package="${package[0]}"
+          packages=(artifacts/nuget/*.nupkg)
 
-          echo "Package: $package"
+          if [[ "${#packages[@]}" -eq 0 ]]; then
+            echo "ERROR: No NuGet packages were produced."
+            exit 1
+          fi
+
+          # ------------------------------------------------------
+          # Find Foundgine.Aot package
+          # ------------------------------------------------------
+
+          aot_packages=(artifacts/nuget/Foundgine.Aot.*.nupkg)
+
+          if [[ "${#aot_packages[@]}" -ne 1 ]]; then
+            echo
+            echo "ERROR: Expected exactly one Foundgine.Aot package."
+            echo "Found:"
+            printf '  %s\n' "${aot_packages[@]}"
+            exit 1
+          fi
+
+          package="${aot_packages[0]}"
+
+          echo
+          echo "========================================"
+          echo "Validating:"
+          echo "$package"
+          echo "========================================"
+          echo
+
           echo "Package contents:"
           unzip -l "$package"
 
-          unzip -l "$package" \
-            | grep -F "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"
+          # ------------------------------------------------------
+          # Validate required files
+          # ------------------------------------------------------
 
-          unzip -l "$package" \
-            | grep -F "lib/net9.0/Foundgine.Aot.dll"
+          required=(
+            "lib/net9.0/Foundgine.Aot.dll"
+            "lib/net9.0/Foundgine.Metadata.dll"
+            "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"
+            "README.md"
+            "LICENSE/LICENSE"
+          )
 
-          unzip -l "$package" \
-            | grep -F "lib/net9.0/Foundgine.Metadata.dll"
+          echo
+          echo "Checking required package assets..."
+          echo
+
+          for file in "${required[@]}"; do
+            if ! unzip -l "$package" | grep -Fq "$file"; then
+              echo
+              echo "ERROR: Required package asset is missing:"
+              echo "  $file"
+              echo
+              echo "Actual package contents:"
+              unzip -l "$package"
+              exit 1
+            fi
+
+            echo "OK: $file"
+          done
+
+          # ------------------------------------------------------
+          # Generator must only exist in analyzer directory
+          # ------------------------------------------------------
+
+          echo
+          echo "Checking generator placement..."
 
           if unzip -l "$package" \
-            | grep -E '(^|/)Foundgine.Aot.Generator.dll$' \
-            | grep -v 'analyzers/dotnet/cs/'; then
+              | grep -E '(^|/)Foundgine\.Aot\.Generator\.dll$' \
+              | grep -v 'analyzers/dotnet/cs/'; then
 
-            echo "Generator was packaged outside the analyzer directory."
+            echo
+            echo "ERROR:"
+            echo "Foundgine.Aot.Generator.dll was packaged outside:"
+            echo "  analyzers/dotnet/cs/"
             exit 1
           fi
+
+          echo "OK: generator placement"
+
+          # ------------------------------------------------------
+          # Verify package archive
+          # ------------------------------------------------------
+
+          echo
+          echo "Checking ZIP integrity..."
+
+          unzip -t "$package" >/dev/null
+
+          echo "OK: package archive"
+
+          echo
+          echo "========================================"
+          echo "NuGet package validation passed."
+          echo "========================================"
+
+      # ----------------------------------------------------------
+      # Upload packages for publish job
+      # ----------------------------------------------------------
       - name: Upload NuGet artifact
         uses: actions/upload-artifact@v4
         with:
           name: nuget-packages
           path: artifacts/nuget/*
           if-no-files-found: error
+
+
+  # ============================================================
+  # PostgreSQL 17 end-to-end tests
+  # ============================================================
   postgres-e2e:
     name: PostgreSQL 17 E2E
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
+
       - name: Restore
         run: dotnet restore Foundgine.sln
+
       - name: Build
         run: dotnet build Foundgine.sln --no-restore --configuration Release
+
+      # ----------------------------------------------------------
+      # Start PostgreSQL
+      # ----------------------------------------------------------
       - name: Start PostgreSQL 17
-        run: docker compose -f docker-compose.postgres.yml up -d --wait postgres
+        run: |
+          docker compose \
+            -f docker-compose.postgres.yml \
+            up -d --wait postgres
+
+      # ----------------------------------------------------------
+      # Verify PostgreSQL
+      # ----------------------------------------------------------
       - name: Verify PostgreSQL 17
         run: |
-          docker compose -f docker-compose.postgres.yml exec -T postgres \
-            psql -U foundgine -d foundgine_e2e -c 'select version();'
+          docker compose \
+            -f docker-compose.postgres.yml \
+            exec -T postgres \
+            psql \
+              -U foundgine \
+              -d foundgine_e2e \
+              -c 'select version();'
+
+      # ----------------------------------------------------------
+      # Run E2E tests
+      # ----------------------------------------------------------
       - name: Run PostgreSQL E2E
-        run: dotnet test tests/Foundgine.E2E.Tests/Foundgine.E2E.Tests.csproj --no-build
-          --configuration Release --filter
-          "FullyQualifiedName~Foundgine.E2E.Tests" --logger
-          "console;verbosity=normal"
+        run: |
+          dotnet test \
+            tests/Foundgine.E2E.Tests/Foundgine.E2E.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --filter "FullyQualifiedName~Foundgine.E2E.Tests" \
+            --logger "console;verbosity=normal"
+
+      # ----------------------------------------------------------
+      # Diagnostics
+      # ----------------------------------------------------------
       - name: PostgreSQL diagnostics on failure
         if: failure()
-        run: docker compose -f docker-compose.postgres.yml logs --no-color postgres
+        run: |
+          docker compose \
+            -f docker-compose.postgres.yml \
+            logs --no-color postgres
+
+      # ----------------------------------------------------------
+      # Cleanup
+      # ----------------------------------------------------------
       - name: Stop PostgreSQL
         if: always()
-        run: docker compose -f docker-compose.postgres.yml down --volumes
-          --remove-orphans
+        run: |
+          docker compose \
+            -f docker-compose.postgres.yml \
+            down \
+            --volumes \
+            --remove-orphans
+
+
+  # ============================================================
+  # Publish to NuGet.org
+  # ============================================================
   publish-nuget:
+    name: Publish NuGet packages
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build-test-pack
+
+    # IMPORTANT:
+    # Publishing is blocked unless BOTH the complete build/test
+    # job and PostgreSQL E2E job pass.
+    needs:
+      - build-test-pack
+      - postgres-e2e
+
     runs-on: ubuntu-latest
+
     environment: production
+
     permissions:
       contents: read
       id-token: write
+
     steps:
+
+      # ----------------------------------------------------------
+      # Download packages generated by build-test-pack
+      # ----------------------------------------------------------
       - name: Download NuGet artifact
         uses: actions/download-artifact@v4
         with:
           name: nuget-packages
           path: artifacts/nuget
+
+      # ----------------------------------------------------------
+      # Setup .NET
+      # ----------------------------------------------------------
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
+
+      # ----------------------------------------------------------
+      # Validate downloaded artifacts
+      # ----------------------------------------------------------
+      - name: Validate downloaded packages
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          shopt -s nullglob
+
+          packages=(artifacts/nuget/*.nupkg)
+
+          if [[ "${#packages[@]}" -eq 0 ]]; then
+            echo "ERROR: No NuGet packages downloaded."
+            exit 1
+          fi
+
+          echo "Downloaded packages:"
+          printf '  %s\n' "${packages[@]}"
+
+          # ------------------------------------------------------
+          # Verify every package archive
+          # ------------------------------------------------------
+
+          for package in "${packages[@]}"; do
+            echo
+            echo "Checking archive:"
+            echo "  $package"
+
+            unzip -t "$package" >/dev/null
+
+            echo "OK"
+          done
+
+          # ------------------------------------------------------
+          # Validate Foundgine.Aot package
+          # ------------------------------------------------------
+
+          aot_packages=(artifacts/nuget/Foundgine.Aot.*.nupkg)
+
+          if [[ "${#aot_packages[@]}" -ne 1 ]]; then
+            echo
+            echo "ERROR: Expected exactly one Foundgine.Aot package."
+            exit 1
+          fi
+
+          aot="${aot_packages[0]}"
+
+          echo
+          echo "Validating:"
+          echo "  $aot"
+
+          required=(
+            "lib/net9.0/Foundgine.Aot.dll"
+            "lib/net9.0/Foundgine.Metadata.dll"
+            "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"
+          )
+
+          for file in "${required[@]}"; do
+            if ! unzip -l "$aot" | grep -Fq "$file"; then
+              echo
+              echo "ERROR: Required asset missing:"
+              echo "  $file"
+              exit 1
+            fi
+
+            echo "OK: $file"
+          done
+
+          echo
+          echo "Downloaded NuGet artifacts validated successfully."
+
+      # ----------------------------------------------------------
+      # Authenticate with NuGet.org using OIDC
+      # ----------------------------------------------------------
       - name: NuGet login (OIDC)
         uses: NuGet/login@v1
         id: nuget-login
         with:
           user: dero
+
+      # ----------------------------------------------------------
+      # Publish
+      # ----------------------------------------------------------
       - name: Publish to NuGet.org
         shell: bash
         run: |
           set -euo pipefail
 
-          for package in artifacts/nuget/*.nupkg; do
-            echo "Publishing $package"
+          shopt -s nullglob
+
+          packages=(artifacts/nuget/*.nupkg)
+
+          if [[ "${#packages[@]}" -eq 0 ]]; then
+            echo "ERROR: No packages found."
+            exit 1
+          fi
+
+          for package in "${packages[@]}"; do
+            echo
+            echo "========================================"
+            echo "Publishing:"
+            echo "$package"
+            echo "========================================"
 
             dotnet nuget push "$package" \
               --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
               --source "https://api.nuget.org/v3/index.json" \
               --skip-duplicate
+
+            echo "Published successfully."
           done
