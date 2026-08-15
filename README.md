@@ -1,4 +1,4 @@
-# Foundgine
+# Foundgine -> [Get Started](https://cristianbarragan.github.io/Foundgine/docs-site/what-is-foundgine.html#the-problem)
 
 ## From intent to authorized execution.
 
