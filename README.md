@@ -9,7 +9,7 @@
 
 **Foundgine is a programmable semantic execution platform for .NET.**
 
-**Current release: 0.2.1**
+**Current release: 0.3.0**
 
 It creates a controlled boundary between application callers — including APIs, GraphQL, automation, and AI agents — and the data and operations they are allowed to execute.
 
@@ -182,7 +182,7 @@ Foundgine connects those two through an application-controlled semantic and plan
 
 ## Validation status
 
-Foundgine 0.2.1 has passed the repository restore, build, and full automated test gates used for the current release. PostgreSQL-specific integration and benchmark workflows remain separately documented because they depend on a real PostgreSQL environment.
+Foundgine 0.3.0 has passed the repository restore, build, and full automated test gates used for the current release. PostgreSQL-specific integration and benchmark workflows remain separately documented because they depend on a real PostgreSQL environment.
 
 ## Performance evidence
 
@@ -247,4 +247,4 @@ Foundgine's authorization and execution boundaries are intended to reduce unsafe
 
 ## Status
 
-Foundgine is actively evolving. Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be evaluated against the current 0.2.1 release and the explicit claims in the documentation.
+Foundgine is actively evolving. Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be evaluated against the current 0.3.0 release and the explicit claims in the documentation.

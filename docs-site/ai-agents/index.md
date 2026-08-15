@@ -63,7 +63,7 @@ Foundgine
 
 ## Current integration boundary
 
-The shipped 0.2.1 integration boundary proves the Foundgine semantic lifecycle and MCP/mutation safety contracts. The full autonomous-agent caller loop remains a separate integration target:
+The shipped 0.3.0 integration boundary proves the Foundgine semantic lifecycle and MCP/mutation safety contracts. The full autonomous-agent caller loop remains a separate integration target:
 
 1. An AI agent receives a natural-language task.
 2. The model selects a Foundgine capability.
@@ -77,7 +77,7 @@ The shipped 0.2.1 integration boundary proves the Foundgine semantic lifecycle a
 
 ## What this page describes vs. what exists today
 
-> The semantic lifecycle itself is shipped and tested in 0.2.1. What remains outside the current core guarantee is a general autonomous-agent runtime that owns model selection, agent orchestration, deployment infrastructure, and end-to-end autonomous behavior.
+> The semantic lifecycle itself is shipped and tested in 0.3.0. What remains outside the current core guarantee is a general autonomous-agent runtime that owns model selection, agent orchestration, deployment infrastructure, and end-to-end autonomous behavior.
 
 ## Security scenarios
 

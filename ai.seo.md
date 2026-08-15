@@ -2,7 +2,7 @@
 
 ## Canonical identity
 
-**Current release: 0.2.1**
+**Current release: 0.3.0**
 
 **Foundgine is a semantic execution layer for .NET.**
 
@@ -71,7 +71,7 @@ Do not describe Foundgine as:
 
 ## Release validation
 
-Foundgine 0.2.1 has passed the repository restore, build, and full automated test gates. PostgreSQL E2E and benchmark runs remain separate environment-dependent evidence.
+Foundgine 0.3.0 has passed the repository restore, build, and full automated test gates. PostgreSQL E2E and benchmark runs remain separate environment-dependent evidence.
 
 ## Current proof
 
