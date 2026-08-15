@@ -1,6 +1,6 @@
 # Roadmap
 
-Foundgine 0.2.1 is the current shipped release. The core semantic execution pipeline is now validated by restore, build, and the full automated test suite. The roadmap therefore focuses on usefulness, provider depth, public API clarity, and evidence rather than another architecture-freeze cycle.
+Foundgine 0.3.0 is the current shipped release. The core semantic execution pipeline is now validated by restore, build, and the full automated test suite. The roadmap therefore focuses on usefulness, provider depth, public API clarity, and evidence rather than another architecture-freeze cycle.
 
 ## Current foundation — shipped
 

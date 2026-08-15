@@ -12,7 +12,7 @@ Foundgine documentation uses five claim states. This prevents historical plans a
 
 ## Current release
 
-**0.2.1** is the current shipped release. The release has passed the repository restore, build, and full automated test gates.
+**0.3.0** is the current shipped release. The release has passed the repository restore, build, and full automated test gates.
 
 ## Current demonstrated surface
 
