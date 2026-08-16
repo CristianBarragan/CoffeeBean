@@ -178,3 +178,36 @@ If the answer is no, it should probably be a clause, property, or provider conce
 This rule is intended to prevent `ExecutionPlanNode` and `ExecutionOperation` from becoming a catch-all abstraction.
 
 See the repository-level [P0.3 Authorization Invariants](../../Documentation/PRIORITY-3-AUTHORIZATION-INVARIANTS.md) for the security contract that the plan must preserve.
+
+## Provider-aware rewrite cost (M18.6)
+
+Rewrite selection may optionally consume an `IProviderCostEstimator`. The provider supplies an advisory execution-cost estimate for each candidate semantic plan. This estimate can influence ranking but never replaces semantic-equivalence or security-preservation proofs.
+
+```text
+semantic candidate
+      ↓
+provider cost estimate
+      ↓
+selection
+      ↓
+semantic proof + security proof
+```
+
+Provider-specific physical concepts remain outside the logical planning model.
+
+## Cost provenance and statistics freshness
+
+Provider cost estimates carry explicit provenance: source, optional statistics version, estimate timestamp, statistics age, and freshness state. Heuristic estimates are explicitly labelled and do not pretend to originate from live database statistics. Freshness is advisory evidence for planning quality; it never changes semantic or security requirements.
+
+### M18.8 Predicate Pushdown
+
+The planner includes the conservative `predicate.pushdown.disjunction` rule. It applies bounded Boolean distributivity while preserving semantic equivalence and security invariants.
+
+## M18.10 relationship traversal optimization
+
+Relationship traversal nodes can carry optional cardinality metadata and receive a provider-neutral `SingleHop` or `SetBased` traversal hint. The hint is physical-plan metadata and is not treated as semantic meaning.
+
+
+### M18.12 aggregate cardinality optimization
+
+The planner exposes the `aggregate.cardinality.short-circuit` rule. It adds physical hints for provably equivalent COUNT emptiness tests while leaving semantic filters unchanged.

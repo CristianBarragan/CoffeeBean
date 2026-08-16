@@ -44,6 +44,8 @@ internal static class SemanticFilterValidator
                     throw Invalid("Aggregate filters are only valid on collection relationships.");
 
                 var aggregateTarget = model.Get(aggregateRelationship.Target);
+                if (aggregate.Predicate is not null)
+                    Visit(aggregate.Predicate, aggregateTarget, model);
                 if (aggregate.Aggregate == SemanticFilterAggregate.Count)
                 {
                     if (aggregate.Field is not null)

@@ -21,11 +21,13 @@ if (string.IsNullOrWhiteSpace(apiKey))
 var customer = new EntityId(1);
 var id = new FieldId(1);
 var name = new FieldId(2);
+var tenantId = new FieldId(3);
 
 var model = new SemanticModelBuilder()
     .Entity(customer, "Customer", e => e
         .Identity(id, "Id")
-        .Field(name, "Name", typeof(string)))
+        .Field(name, "Name", typeof(string))
+        .Field(tenantId, "TenantId", typeof(int)))
     .Build();
 
 var metadata = new MetadataRegistry();
@@ -33,19 +35,22 @@ metadata.Register(new EntityMetadata(
     customer,
     "Customer",
     [
-        new ColumnMetadata(new ColumnId(1), "Id"),
-        new ColumnMetadata(new ColumnId(2), "Name")
+        new ColumnMetadata(new ColumnId(11), "Id"),
+        new ColumnMetadata(new ColumnId(12), "Name"),
+        new ColumnMetadata(new ColumnId(13), "TenantId")
     ],
     Fields:
     [
-        new FieldMetadata(id, "Id", typeof(int), new ColumnReference(customer, new ColumnId(1))),
-        new FieldMetadata(name, "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+        new FieldMetadata(id, "Id", typeof(int), new ColumnReference(customer, new ColumnId(11))),
+        new FieldMetadata(name, "Name", typeof(string), new ColumnReference(customer, new ColumnId(12))),
+        new FieldMetadata(tenantId, "TenantId", typeof(int), new ColumnReference(customer, new ColumnId(13)))
     ],
-    PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
+    PrimaryKey: new ColumnReference(customer, new ColumnId(11))));
 
 var data = new InMemoryDataSet()
-    .Add(new InMemoryRow(customer, new Dictionary<FieldId, object?> { [id] = 1, [name] = "Alice" }))
-    .Add(new InMemoryRow(customer, new Dictionary<FieldId, object?> { [id] = 2, [name] = "Bob" }));
+    .Add(new InMemoryRow(customer, new Dictionary<FieldId, object?> { [id] = 1, [name] = "Alice", [tenantId] = 7 }))
+    .Add(new InMemoryRow(customer, new Dictionary<FieldId, object?> { [id] = 2, [name] = "Bob", [tenantId] = 7 }))
+    .Add(new InMemoryRow(customer, new Dictionary<FieldId, object?> { [id] = 3, [name] = "Carol", [tenantId] = 9 }));
 
 var services = new ServiceCollection();
 services.AddSingleton<IProviderPlanCompiler>(_ => new InMemoryCompiler(metadata, data));
@@ -63,8 +68,10 @@ var agent = new FoundgineAiAgent(
     chatClient,
     new FoundgineAiToolset(foundgine, () => new ExecutionContext()));
 
-var prompt = args.Length == 0 ? "List the customers and their names." : string.Join(' ', args);
-var response = await agent.RunAsync(prompt);
+var prompt = args.Length == 0
+    ? "List the customers and their names."
+    : string.Join(' ', args);
 
+var response = await agent.RunAsync(prompt);
 Console.WriteLine(response.Text);
 return 0;

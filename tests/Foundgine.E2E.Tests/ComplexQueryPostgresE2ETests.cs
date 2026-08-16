@@ -313,7 +313,7 @@ public sealed class ComplexQueryPostgresE2ETests
             command.CommandText = "INSERT INTO \"Account\"(\"Id\",\"CustomerId\",\"Balance\",\"Status\") VALUES ($1,$2,$3,$4);";
             command.Parameters.AddWithValue(i * 10L);
             command.Parameters.AddWithValue(i);
-            command.Parameters.AddWithValue(i == 2 ? 50m : 150m);
+            command.Parameters.AddWithValue(i == 2 ? 50m : 250m);
             command.Parameters.AddWithValue(i == 2 ? "Closed" : "Active");
             await command.ExecuteNonQueryAsync();
 

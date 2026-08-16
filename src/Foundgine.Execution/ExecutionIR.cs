@@ -12,12 +12,17 @@ namespace Foundgine.Execution;
 /// provider-neutral work must be performed. It deliberately contains no SQL,
 /// storage names, provider types, aliases, or connection details.
 /// </summary>
-public sealed record ExecutionIR(ExecutionIRNode Root)
+public sealed record ExecutionIR(
+    ExecutionIRNode Root,
+    IReadOnlyList<string> RequiredSecurityInvariants)
 {
     public static ExecutionIR From(SemanticPlan plan)
     {
         ArgumentNullException.ThrowIfNull(plan);
-        return new ExecutionIR(ExecutionIRNode.From(plan.Root));
+
+        return new ExecutionIR(
+            ExecutionIRNode.From(plan.Root),
+            plan.RequiredSecurityInvariants ?? Array.Empty<string>());
     }
 }
 
@@ -30,7 +35,8 @@ public sealed record ExecutionIRNode(
     ConnectionId? ViaConnection,
     IReadOnlyList<ExecutionIRNode> Children,
     SemanticQueryOptions? QueryOptions = null,
-    AuthorizationPredicate? Authorization = null)
+    AuthorizationPredicate? Authorization = null,
+    AggregateExecutionStrategy AggregateExecutionStrategy = AggregateExecutionStrategy.Default)
 {
     internal static ExecutionIRNode From(SemanticPlanNode node) =>
         new(
@@ -42,7 +48,8 @@ public sealed record ExecutionIRNode(
             node.ViaConnection,
             node.Children.Select(From).ToArray(),
             node.QueryOptions,
-            node.Authorization);
+            node.Authorization,
+            node.AggregateExecutionStrategy);
 }
 
 /// <summary>

@@ -2,8 +2,6 @@
 
 These documents describe the current Foundgine 0.3.0 release. Historical phase and milestone material is kept under `docs/history`.
 
-Use these pages in this order.
-
 ## Start here
 
 1. [Getting started](GETTING-STARTED.md)
@@ -22,7 +20,7 @@ Use these pages in this order.
 - [Security](SECURITY.md)
 - [AI capability interface](AI-CAPABILITY-INTERFACE.md)
 - [Agent semantic boundary](AGENT-SEMANTIC-BOUNDARY.md)
-- [MCP adapter](MCP-ADAPTER.md)
+- [Adversarial intent](ADVERSARIAL-INTENT.md)
 
 ## Work on the implementation
 
@@ -43,10 +41,10 @@ Use these pages in this order.
 - [PostgreSQL physical boundary](POSTGRES-PHYSICAL-BOUNDARY.md)
 - [PostgreSQL correlation](POSTGRES-BATCH-CORRELATION-INVARIANTS.md)
 - [PostgreSQL generated-key correlation](POSTGRES-GENERATED-KEY-CORRELATION.md)
-- [PostgreSQL E2E measurement gate](MEASUREMENT-GATE-RECOMMENDATION.md)
+- [PostgreSQL E2E](POSTGRES-E2E.md)
 
 ## History
 
-Historical design notes and old stage material are under [history](history/README.md).
+Historical design notes, numbered milestones, and old stage material are under [history](history/README.md).
 
 When current code and historical notes disagree, use the code and current tests as the source of truth.

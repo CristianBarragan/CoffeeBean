@@ -2,6 +2,7 @@ using Foundgine.Abstractions;
 using Foundgine.Execution;
 using Foundgine.Planning;
 using Foundgine.Semantics;
+using Foundgine.Semantics.Security;
 using Foundgine.Semantics.Authorization;
 using Xunit;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
@@ -127,8 +128,10 @@ public sealed class PlanCacheTests
         }
     }
 
-    private sealed class CountingCompiler : IProviderPlanCompiler
+    private sealed class CountingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
     {
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
         public int Count { get; private set; }
 
         public ProviderPlan Compile(ExecutionIR ir)

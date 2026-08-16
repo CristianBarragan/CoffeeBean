@@ -11,4 +11,7 @@ public sealed record JsonReadIntentAdapterOptions
     public int MaxFilterDepth { get; init; } = 32;
     public int MaxFilterNodes { get; init; } = 256;
     public int MaxJsonValueDepth { get; init; } = 16;
+
+    /// <summary>Rejects model-controlled properties that are outside the canonical intent contract.</summary>
+    public bool RejectUnknownProperties { get; init; } = true;
 }

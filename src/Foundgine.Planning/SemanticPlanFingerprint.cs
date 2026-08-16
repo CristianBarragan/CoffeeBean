@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using Foundgine.Abstractions;
 using Foundgine.Semantics.Query;
+using Foundgine.Semantics.Security;
 
 namespace Foundgine.Planning;
 
@@ -18,7 +19,9 @@ public static class SemanticPlanFingerprint
         ArgumentNullException.ThrowIfNull(plan);
 
         var builder = new StringBuilder(512);
-        builder.Append("plan-v1|");
+        builder.Append("plan-v2|");
+        AppendSecurityInvariants(builder, plan.RequiredSecurityInvariants != null ? 
+            plan.RequiredSecurityInvariants : new string[0]);
         AppendNode(builder, plan.Root, includePaginationValues: true);
         return builder.ToString();
     }
@@ -34,9 +37,29 @@ public static class SemanticPlanFingerprint
         ArgumentNullException.ThrowIfNull(plan);
 
         var builder = new StringBuilder(512);
-        builder.Append("plan-v1|");
+        builder.Append("plan-v2|");
+        AppendSecurityInvariants(builder, plan.RequiredSecurityInvariants);
         AppendNode(builder, plan.Root, includePaginationValues: false);
         return builder.ToString();
+    }
+
+    private static void AppendSecurityInvariants(
+        StringBuilder builder,
+        IReadOnlyList<string>? invariants)
+    {
+        builder.Append("security[");
+
+        if (invariants is not null)
+        {
+            foreach (var invariant in invariants.OrderBy(
+                         x => x,
+                         StringComparer.Ordinal))
+            {
+                builder.Append(invariant).Append(',');
+            }
+        }
+
+        builder.Append(']');
     }
 
     private static void AppendNode(StringBuilder builder, SemanticPlanNode node, bool includePaginationValues)
@@ -46,7 +69,11 @@ public static class SemanticPlanFingerprint
             .Append((byte)node.Operation).Append('|')
             .Append(node.EntityId.Value).Append('|')
             .Append(node.ViaRelationship?.Value.ToString() ?? "-").Append('|')
-            .Append(node.ViaConnection?.Value.ToString() ?? "-").Append(')');
+            .Append(node.ViaConnection?.Value.ToString() ?? "-").Append('|')
+            .Append(node.RelationshipCardinality?.ToString() ?? "-").Append('|')
+            .Append((byte)node.TraversalMode).Append('|')
+            .Append(node.TraversalOrder).Append('|')
+            .Append((byte)node.AggregateExecutionStrategy).Append(')');
 
         builder.Append("fields[");
         foreach (var field in node.Fields)
@@ -123,6 +150,8 @@ public static class SemanticPlanFingerprint
                     .Append(aggregate.Field?.Value.ToString() ?? "-").Append('|')
                     .Append((byte)aggregate.Operator).Append('|');
                 AppendValue(builder, aggregate.Value);
+                builder.Append('|');
+                AppendFilter(builder, aggregate.Predicate);
                 builder.Append(')');
                 break;
             case SemanticAndFilter and:

@@ -1,5 +1,6 @@
 using Foundgine.Abstractions;
 using Foundgine.Semantics.Authorization;
+using Foundgine.Semantics.Security;
 
 namespace Foundgine.Semantics.Capabilities;
 
@@ -36,6 +37,14 @@ public sealed record SemanticCapability(
 
     /// <summary>Semantic compatibility version of this capability definition.</summary>
     public int Version { get; init; } = SemanticVersionSet.CurrentCapabilityVersion;
+
+    /// <summary>Security guarantees that planners/providers must preserve.</summary>
+    public IReadOnlyList<string> RequiredSecurityInvariants { get; init; } = [];
+
+    /// <summary>Returns the canonical invariant set when callers did not explicitly supply one.</summary>
+    public IReadOnlyList<string> EffectiveSecurityInvariants => RequiredSecurityInvariants.Count > 0
+        ? RequiredSecurityInvariants
+        : SemanticCapabilitySecurityDefaults.For(this);
 }
 
 /// <summary>
@@ -78,13 +87,31 @@ public static class SemanticCapabilityContractDiscovery
         ArgumentNullException.ThrowIfNull(policy);
 
         var discovered = SemanticAuthorizationCapabilityDiscovery.Describe(model, policy);
+        // Capability discovery intentionally hides authorization predicates, but
+        // the canonical semantic contract must retain the exact policy predicate
+        // for planning/security consumers that need to carry it forward.
+        // Rehydrate only the top-level entity decision here; the descriptive
+        // authorization capability surface remains predicate-free.
         var capabilities = discovered.Entities
+            .Select(entity => entity with
+            {
+                Read = PreservePredicate(entity.Read, policy.GetPredicate(entity.EntityId, AuthorizationOperation.Read)),
+                Write = PreservePredicate(entity.Write, policy.GetPredicate(entity.EntityId, AuthorizationOperation.Write))
+            })
             .SelectMany(entity => BuildCapabilities(model, entity))
             .OrderBy(capability => capability.Id, StringComparer.Ordinal)
             .ToArray();
 
         return new SemanticCapabilityContract(CurrentVersion, capabilities);
     }
+
+
+    private static AuthorizationDecision PreservePredicate(
+        AuthorizationDecision decision,
+        AuthorizationPredicate? predicate) =>
+        predicate is not null
+            ? AuthorizationDecision.Conditional(predicate)
+            : decision;
 
     private static IEnumerable<SemanticCapability> BuildCapabilities(
         SemanticModel model,

@@ -2,6 +2,7 @@ using Foundgine.Abstractions;
 using Foundgine.Execution;
 using Foundgine.Planning;
 using Foundgine.Semantics;
+using Foundgine.Semantics.Security;
 using Foundgine.Semantics.Authorization;
 using Xunit;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
@@ -66,8 +67,10 @@ public sealed class PlanApprovalTests
         Banking.BankingSemanticModel.Customer,
         [new SemanticSelection(new FieldId(2), null, [])]);
 
-    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler
+    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
     {
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
         public ProviderPlan Compile(ExecutionIR ir) => new TestPlan();
     }
 

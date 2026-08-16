@@ -34,7 +34,7 @@ namespace Foundgine.E2E.Tests;
 public sealed class ComplexSemanticMutationE2ETests
 {
     // Internal (not private): downstream stateful integration tests — e.g.
-    // MutationQueryMutationQueryIntegrationE2ETests — reference
+    // QueryMutationQueryMutationIntegrationE2ETests — reference
     // these identifiers directly instead of restating magic EntityId/FieldId
     // literals that would silently drift out of sync with BuildGraph() below.
     internal static readonly EntityId Customer = new(700);

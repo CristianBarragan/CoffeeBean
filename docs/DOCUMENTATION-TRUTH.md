@@ -1,13 +1,12 @@
 # Documentation truth
 
-Foundgine documentation uses five claim states. This prevents historical plans and architectural intent from being mistaken for implemented capability.
+Foundgine documentation uses four claim states. This prevents historical plans and architectural intent from being mistaken for implemented capability.
 
 | State | Meaning |
 |---|---|
 | **Implemented** | Present in the active source tree. |
 | **Demonstrated** | Implemented and covered by an active test or explicit repository proof. |
 | **Planned** | Intentionally proposed future work; not a current capability. |
-| **Released** | Implemented, tested, and included in the current shipped release. |
 | **Historical** | Retained under `docs/history` or `archive` to explain prior direction; not current product identity. |
 
 ## Current release
@@ -28,9 +27,7 @@ The active repository demonstrates:
 - execution evidence with intent and authorization fingerprints;
 - AOT metadata generation;
 - structured JSON intent; and
-- Hot Chocolate GraphQL query and mutation adapters;
-- MCP boundary and mutation-safe execution contracts; and
-- canonical execution receipts and plan-bound execution evidence.
+- Hot Chocolate GraphQL query and mutation adapters.
 
 ## Current non-claims
 

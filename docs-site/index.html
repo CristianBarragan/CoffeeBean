@@ -7,12 +7,12 @@
   <meta name="description" content="Foundgine is a semantic execution platform for .NET that turns structured intent into authorized execution plans for APIs, GraphQL, automation, and AI agents.">
   <link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/">
   <meta property="og:title" content="Foundgine — From intent to authorized execution">
-  <meta property="og:description" content="Foundgine 0.3.0 — a programmable semantic execution platform for .NET, APIs, GraphQL, automation, and AI agents.">
+  <meta property="og:description" content="A programmable semantic execution platform for .NET, APIs, GraphQL, automation, and AI agents.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://cristianbarragan.github.io/Foundgine/">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Foundgine — From intent to authorized execution">
-  <meta name="twitter:description" content="Foundgine 0.3.0 — a programmable semantic execution platform for .NET, APIs, GraphQL, automation, and AI agents.">
+  <meta name="twitter:description" content="A programmable semantic execution platform for .NET, APIs, GraphQL, automation, and AI agents.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -20,13 +20,13 @@
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="site-header-inner">
-      <a class="brand" href="index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a>
-      <nav>
+  <nav>
         <a href="what-is-foundgine.html">What is it</a>
-        <a href="ai-agents/index.html">AI agents</a>
         <a href="architecture/index.html">Architecture</a>
+        <a href="security/index.html">Security</a>
+        <a href="ai-agents/index.html">AI agents</a>
+        <a href="mutations/index.html">Mutations</a>
+        <a href="providers/index.html">Providers</a>
         <a href="performance/index.html">Performance</a>
       </nav>
     </div>
@@ -34,9 +34,9 @@
 
   <div class="page">
     <main class="article">
-      <span class="eyebrow">.NET · Semantic execution · 0.3.0</span>
+      <span class="eyebrow">.NET · Semantic execution</span>
       <h1>From intent to authorized execution.</h1>
-      <p class="subtitle">Foundgine 0.3.0 is a programmable semantic execution platform for .NET. It creates a controlled boundary between callers and the data and operations they're allowed to execute.</p>
+      <p class="subtitle">Foundgine is a programmable semantic execution platform for .NET. It creates a controlled boundary between callers and the data and operations they're allowed to execute.</p>
 
       <div class="rail" role="img" aria-label="Pipeline: Caller, Intent, Semantic Model, Authorization, Execution Plan, Provider, Result">
         <div class="rail-step"><span class="dot"></span>Caller</div>
@@ -126,8 +126,48 @@ SQL provider
 Result</pre>
       <p>The important boundary is: <strong>what the caller requested</strong> ≠ <strong>what the database can execute</strong>. Foundgine connects those two through an application-controlled semantic and planning layer.</p>
 
+
+      <h2>Why the semantic boundary matters</h2>
+      <p>The central idea is not “generate better SQL.” It is to make application meaning explicit before physical execution begins. A caller can ask for a capability without receiving direct authority over tables, columns, joins, SQL text, tenant identity, or provider selection.</p>
+      <div class="card-grid">
+        <div class="card"><span class="badge badge--good">Meaning</span><h3>Semantic model</h3><p>Defines application-facing entities, fields, relationships, operations, and constraints separately from persistence details.</p></div>
+        <div class="card"><span class="badge badge--good">Control</span><h3>Authorization</h3><p>Applies policy to the semantic request and carries the resulting constraints into the execution boundary.</p></div>
+        <div class="card"><span class="badge">Planning</span><h3>Provider-neutral plan</h3><p>Gives optimization and provider compilation a stable representation of what the application means.</p></div>
+        <div class="card"><span class="badge">Evidence</span><h3>Execution evidence</h3><p>Records the security and execution context needed to make the boundary observable and testable.</p></div>
+      </div>
+
+      <h2>Designed for consequential operations too</h2>
+      <p>Foundgine is not limited to reads. The repository contains a high-assurance <code>TransferFunds</code> example that forces the architecture to account for ownership, tenant isolation, account state, available-funds semantics, limits, idempotency, concurrency, audit, and execution evidence.</p>
+      <pre>Capability
+   ↓
+Semantic invariants
+   ↓
+Authorization
+   ↓
+Current state + concurrency checks
+   ↓
+Atomic provider execution
+   ↓
+Receipt / evidence</pre>
+      <p>See <a href="mutations/index.html">High-assurance mutations</a> and <a href="security/index.html">Security</a>.</p>
+
+      <h2>Not an AI-to-SQL shortcut</h2>
+      <p>AI is one caller. It is not the security authority and it is not the database layer.</p>
+      <pre>AI interpretation
+      ↓
+structured intent
+      ↓
+semantic validation
+      ↓
+authorization
+      ↓
+plan
+      ↓
+provider</pre>
+      <p>This lets the host application keep identity, tenant context, policy, provider selection, and connection details outside the model-controlled input.</p>
+
       <h2>Performance evidence</h2>
-      <p>The 12 August 2026 CoffeeBeanery benchmark contains three successful runs over a deterministic PostgreSQL graph workload. At concurrency 32, Foundgine reached roughly <strong>20× the throughput</strong> and <strong>17× lower p95 latency</strong> than Hot Chocolate + EF Core, with zero application errors, timeouts, or cancelled requests. These are workload-specific results, not a universal claim. See <a href="performance/index.html">Performance</a>.</p>
+      <p>The corrected 15 August 2026 CoffeeBeanery benchmark reports three successful PostgreSQL targets over the same deterministic graph fixture. At concurrency 32 on the top-50 query workload, Foundgine with provider-plan caching reached <strong>2,975.7 RPS</strong> versus <strong>224.0 RPS</strong> for Hot Chocolate + EF Core, with p95 latency of <strong>18.4 ms</strong> versus <strong>187.0 ms</strong>. The run reported zero application errors, timeouts, or cancellations. These are workload-specific engineering results, not a universal performance claim. See <a href="performance/index.html">Performance</a>.</p>
 
       <h2>What Foundgine is not</h2>
       <p>Foundgine is not an ORM replacement, a database, a GraphQL server, an LLM, an agent framework, or an identity provider. It is an execution layer that can sit underneath those kinds of systems.</p>
@@ -143,6 +183,10 @@ Result</pre>
         <a href="what-is-foundgine.html">What is Foundgine?</a> ·
         <a href="ai-agents/index.html">AI agents</a> ·
         <a href="architecture/index.html">Architecture</a> ·
+        <a href="security/index.html">Security</a> ·
+        <a href="mutations/index.html">Mutations</a> ·
+        <a href="providers/index.html">Providers</a> ·
+        <a href="getting-started/index.html">Get started</a> ·
         <a href="performance/index.html">Performance</a> ·
         <a href="llms.txt">llms.txt</a>
       </nav>
@@ -152,36 +196,3 @@ Result</pre>
   <footer class="site-footer">Foundgine · actively evolving · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer>
 </body>
 </html>
-
-## What's new in 0.3.0
-
-Foundgine 0.3.0 expands the validated semantic execution surface across querying, mutations, authorization, execution, and integrations.
-
-### Richer query semantics
-- Relationship filtering and ordering
-- Cursor and compound-cursor pagination
-- Aggregates and aggregate filtering
-- Nested collection traversal
-
-### Mutation execution
-- Nested mutations
-- Upsert workflows
-- Mutation dependency graphs
-- Mutation → Query → Mutation → Query workflows
-- Structured mutation results
-
-### Execution safety and control
-- Authorization-aware planning and execution
-- Plan approval
-- Context-safe plan caching
-- Execution IR and execution receipts
-- Untrusted/adversarial intent safety
-
-### Integration and deployment
-- GraphQL queries and mutations
-- JSON structured intent
-- MCP integration
-- AI-agent semantic boundary
-- Native AOT metadata and SQL pipeline
-- SQL, PostgreSQL, and InMemory execution
-
