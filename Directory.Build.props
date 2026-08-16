@@ -7,7 +7,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
     <!-- Common NuGet metadata. Individual packages override PackageId/Description. -->
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionPrefix>0.4.0</VersionPrefix>
     <Authors>Foundgine</Authors>
     <Company>Foundgine</Company>
     <Copyright>Copyright © 2026 Foundgine</Copyright>
@@ -17,7 +17,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/CristianBarragan/Foundgine</RepositoryUrl>
     <PackageProjectUrl>https://github.com/CristianBarragan/Foundgine</PackageProjectUrl>
-    <PackageReleaseNotes>Initial public packaging of the Foundgine semantic execution layer.</PackageReleaseNotes>
+    <PackageReleaseNotes>See CHANGELOG.md.</PackageReleaseNotes>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Public API documentation is generated for NuGet packages; missing XML comments are not a CI error. -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>
