@@ -439,3 +439,8 @@ Results depend on the workload, schema, provider versions, host, fixture, and im
 The appropriate claim is:
 
 > **Foundgine demonstrates a substantial performance advantage for this relationship-heavy graph query workload.**
+
+
+## End-to-end agent benchmark
+
+The repository contains an end-to-end benchmark comparing a conventional application/AI tool flow with a Foundgine semantic flow against the same PostgreSQL fixture. It measures provider-reported input/output/total tokens, cached input tokens, model calls, tool calls, wall-clock time, model time, tool time and final-state equivalence. See `benchmarks/AgentEndToEnd` and the website page `/agent-benchmark/`.

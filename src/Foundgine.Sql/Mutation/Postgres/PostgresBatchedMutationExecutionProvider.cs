@@ -108,6 +108,7 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
             var parameter = command.CreateParameter();
             parameter.ParameterName = "@" + binding.Name;
             parameter.Value = binding.Value ?? DBNull.Value;
+            ApplyClrType(parameter, binding.ClrType);
             command.Parameters.Add(parameter);
         }
 
@@ -204,6 +205,30 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
         }
 
         return new MutationBatchResult(results);
+    }
+
+    private static void ApplyClrType(DbParameter parameter, Type? clrType)
+    {
+        if (clrType is null) return;
+        var type = Nullable.GetUnderlyingType(clrType) ?? clrType;
+        if (type == typeof(string)) parameter.DbType = System.Data.DbType.String;
+        else if (type == typeof(Guid)) parameter.DbType = System.Data.DbType.Guid;
+        else if (type == typeof(bool)) parameter.DbType = System.Data.DbType.Boolean;
+        else if (type == typeof(byte)) parameter.DbType = System.Data.DbType.Byte;
+        else if (type == typeof(sbyte)) parameter.DbType = System.Data.DbType.SByte;
+        else if (type == typeof(short)) parameter.DbType = System.Data.DbType.Int16;
+        else if (type == typeof(ushort)) parameter.DbType = System.Data.DbType.UInt16;
+        else if (type == typeof(int)) parameter.DbType = System.Data.DbType.Int32;
+        else if (type == typeof(uint)) parameter.DbType = System.Data.DbType.UInt32;
+        else if (type == typeof(long)) parameter.DbType = System.Data.DbType.Int64;
+        else if (type == typeof(ulong)) parameter.DbType = System.Data.DbType.UInt64;
+        else if (type == typeof(float)) parameter.DbType = System.Data.DbType.Single;
+        else if (type == typeof(double)) parameter.DbType = System.Data.DbType.Double;
+        else if (type == typeof(decimal)) parameter.DbType = System.Data.DbType.Decimal;
+        else if (type == typeof(DateTime)) parameter.DbType = System.Data.DbType.DateTime2;
+        else if (type == typeof(DateTimeOffset)) parameter.DbType = System.Data.DbType.DateTimeOffset;
+        else if (type == typeof(DateOnly)) parameter.DbType = System.Data.DbType.Date;
+        else if (type == typeof(TimeOnly)) parameter.DbType = System.Data.DbType.Time;
     }
 
     private static object? ConvertJsonValue(JsonElement element, Type clrType)

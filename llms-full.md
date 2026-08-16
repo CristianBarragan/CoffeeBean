@@ -128,3 +128,8 @@ Foundgine can assign deterministic `TraversalOrder` metadata to sibling relation
 ## M18.13 Aggregate Relationship Filter Pushdown
 
 The planner recognizes COUNT-existence plus SOME relationship predicates and can represent the equivalent filtered COUNT. The transformation is bounded to proven count-existence cases and remains subject to semantic-equivalence, security-preservation, provider-capability, and cost checks.
+
+
+## End-to-end agent benchmark
+
+The repository contains an end-to-end benchmark comparing a conventional application/AI tool flow with a Foundgine semantic flow against the same PostgreSQL fixture. It measures provider-reported input/output/total tokens, cached input tokens, model calls, tool calls, wall-clock time, model time, tool time and final-state equivalence. See `benchmarks/AgentEndToEnd` and the website page `/agent-benchmark/`.

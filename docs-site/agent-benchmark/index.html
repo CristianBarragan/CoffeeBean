@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Foundgine — AI agent benchmark</title>
+  <meta name="description" content="Executive summary of Foundgine's end-to-end AI agent benchmark: same business task, same final state, different execution boundary.">
+  <link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/agent-benchmark/">
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/agent-benchmark.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand" href="../index.html" data-nav="home"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a>
+    <button class="site-menu-toggle" type="button" aria-expanded="false" aria-controls="main-navigation">Menu</button>
+    <nav id="main-navigation" aria-label="Main navigation">
+      <a href="../index.html" data-nav>Home</a>
+      <a href="../what-is-foundgine.html" data-nav>What is it</a>
+      <a href="../architecture/index.html" data-nav>How it works</a>
+      <a href="../ai-agents/index.html" data-nav>AI agents</a>
+      <a href="index.html" data-nav>Agent benchmark</a>
+      <a href="../performance/index.html" data-nav>Performance</a>
+      <a href="https://github.com/cristianbarragan/Foundgine" data-nav>GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="page">
+<main class="article article-wide">
+  <span class="eyebrow">AI agents · End-to-end evidence</span>
+  <h1>Same business task. Same final state. Different boundary.</h1>
+  <p class="subtitle">This benchmark asks a practical question: how much work must an AI agent do itself to complete a complex business operation, versus how much can be delegated to an application-controlled semantic execution layer?</p>
+
+  <div class="benchmark-callout">
+    <strong>The comparison is not simply about speed.</strong> The benchmark separates <strong>agent effort</strong> (context, model calls, tool calls and payloads) from <strong>application execution</strong> (CPU, memory and elapsed time). Both flows must produce the same final business state before the comparison is considered valid.
+  </div>
+
+  <h2>The scenario</h2>
+  <p>A realistic customer review is deliberately more complicated than a single query. Customer 1 has <strong>4 banking relationships, 12 contracts and 48 transactions</strong>. The task requires exposure analysis, concentration analysis, top-contract analysis, a threshold decision, a mutation and final verification.</p>
+  <pre class="process-map">Customer
+  ├── 4 banking relationships
+  │     └── 12 contracts
+  │            └── 48 transactions
+  │
+  ├── calculate total exposure
+  ├── analyse concentration
+  ├── identify top contracts
+  ├── compare with $48,000 threshold
+  ├── mark customer as reviewed
+  └── verify final state</pre>
+
+  <h2>What changes between the two approaches?</h2>
+  <div class="flow-compare" data-flow-compare></div>
+
+  <div class="metric-grid">
+    <div class="metric-card"><span>Agent effort</span><strong>How much the AI must process</strong><small>Model turns, tokens, context, tool calls and tool payloads.</small></div>
+    <div class="metric-card"><span>Application effort</span><strong>How much the system must execute</strong><small>Wall time, CPU time, memory and provider/database work.</small></div>
+    <div class="metric-card"><span>Correctness</span><strong>Did both do the same thing?</strong><small>Same business result and the same final-state assertions.</small></div>
+  </div>
+
+  <h2>Tokens vs. API time vs. application load: the full picture</h2>
+  <p>These are three different measurements. A flow can win on one and lose on another, and none of them substitutes for the others:</p>
+  <div class="metric-grid">
+    <div class="metric-card"><span>Tokens</span><strong>How much context the agent carries</strong><small>The size of what the agent reads and writes — drives per-call API cost and context-window pressure.</small></div>
+    <div class="metric-card"><span>API / model time</span><strong>How long the model spends thinking</strong><small>Wall-clock time actually billed to inference. Moves with tokens, but not proportionally.</small></div>
+    <div class="metric-card"><span>Application load</span><strong>How long the system takes to execute</strong><small>Tool calls, database work, the semantic engine — can go <em>up</em> even when tokens go <em>down</em>.</small></div>
+    <div class="metric-card"><span>Correctness</span><strong>Same result, or it doesn't count</strong><small>None of the above matters if the two flows don't reach the same final state.</small></div>
+  </div>
+  <p>This published result was captured in <code>replay</code> mode, which never calls a model — so the harness's own provider-reported token counts are correctly zero, not evidence of "no difference." The table below is fetched live from the same JSON report and adds an <strong>offline, heuristic token-load estimate</strong> computed from the recorded tool payload sizes, so the token dimension isn't a blank instead of a signal.</p>
+  <div data-report-status class="report-status" data-report-source="../assets/agent-benchmark.json"></div>
+  <div data-report-table></div>
+  <h3>Estimated token load (heuristic, not provider-reported)</h3>
+  <div data-token-estimate class="report-status">Loading token estimate…</div>
+  <p class="small-note">Method: <code>tokens ≈ max(chars/4, words×1.3)</code> applied to every recorded tool input/output payload, plus the fixed system prompt and scenario request. This tracks real BPE tokenizers within roughly ±15% for payloads like these — it is not a substitute for provider-reported usage from a <code>live</code> run, and it does not include the model's own reasoning/response tokens. See the technical report for the full method and caveats.</p>
+
+  <h3>Estimated $ savings at scale (heuristic, list price)</h3>
+  <div data-cost-estimate class="report-status">Loading cost estimate…</div>
+  <p class="small-note">Converts the token-load estimate above into dollars using current Claude API list prices (Aug 2026) and the billing split described in the technical report: tool-output payloads bill as input tokens on the agent's next turn, tool-input payloads (the model's own generated arguments) bill as output tokens. Reproduce or re-price this with <code>scripts/estimate_cost_savings.py</code> in the repo — pass your own <code>--calls-per-day</code> and <code>--input-price</code>/<code>--output-price</code>. Treat every figure as an order-of-magnitude planning number, not a quote.</p>
+
+  <h2>What if this ran at data-center scale?</h2>
+  <p>Every number on this page so far is one paired scenario, replayed 10 times, on one fixture. The question worth asking next is directional, not precise: <strong>if a meaningful slice of the world's agentic AI traffic looked like the conventional flow above — an agent rediscovering schema and hauling raw rows through its own context instead of using an authorized semantic boundary — what would a ~61-63% cut in that traffic's token load be worth in electricity, not just dollars?</strong> This section is a napkin calculation, built from public 2026 data-center energy figures, explicitly so it can be checked and argued with rather than quoted as fact.</p>
+  <div class="metric-grid">
+    <div class="metric-card"><span>Global data-center electricity, 2026</span><strong>~565 TWh</strong><small>Gartner's June 2026 forecast; the IEA's April 2026 base case puts 2025 at ~485 TWh, rising toward ~950 TWh by 2030.</small></div>
+    <div class="metric-card"><span>Share drawn by AI-optimized servers</span><strong>~31%</strong><small>≈ 175 TWh/year, per the same Gartner data — and the IEA notes this slice is growing roughly 3x faster than conventional data-center load.</small></div>
+    <div class="metric-card"><span>Agentic/tool-calling premium</span><strong>Higher, not lower</strong><small>The IEA specifically flags agentic and reasoning tasks as consuming "hundreds or thousands of times more energy per query" than a simple text prompt — this is the workload class this benchmark targets.</small></div>
+    <div class="metric-card"><span>Baseline single-prompt cost</span><strong>~0.24 Wh</strong><small>Google's May 2025 measured median for one simple Gemini text prompt — useful as a floor, not as what an 8-tool agent loop costs.</small></div>
+  </div>
+  <p><strong>Illustrative scenario, not a forecast:</strong> assume (a) energy scales roughly with tokens processed for a fixed model and hardware generation — a simplification; attention cost is superlinear in context length, so this likely understates savings at long context — and (b) some slice of that ~175 TWh/year AI-server budget is spent on agentic, multi-tool-call loops structurally similar to the conventional flow measured here. Applying this benchmark's measured ~62.9% token-load reduction to that slice:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>If this share of AI-server power is agentic tool-calling traffic like the conventional flow…</th><th>…that's about</th><th>…and a ~63% token-load cut would save roughly</th><th>At ~$0.12/kWh commercial rate</th></tr></thead>
+      <tbody>
+        <tr><td>1%</td><td>~1.75 TWh/yr</td><td>~1.1 TWh/yr</td><td>~$132M/yr</td></tr>
+        <tr><td>5%</td><td>~8.75 TWh/yr</td><td>~5.5 TWh/yr</td><td>~$660M/yr</td></tr>
+        <tr><td>10%</td><td>~17.5 TWh/yr</td><td>~11 TWh/yr</td><td>~$1.3B/yr</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small-note">1.1 TWh/year is roughly the annual electricity use of a small country's single mid-size city, or about 100,000 average US homes — offered as a sense-of-scale comparison, not a precise conversion. At a global average grid intensity of roughly 0.4-0.48 kg CO₂/kWh, that same 1.1 TWh corresponds to very roughly 450,000-530,000 tonnes of CO₂e avoided per year, scaling linearly with the other two rows. None of these percentages (1%, 5%, 10%) is a measured or claimed figure — they are scenario inputs you should argue with, not conclusions. The only measured fact underneath all three columns is the ~62.9% token-load reduction from section 6 of the technical report, on this one scenario.</p>
+  <p>The honest takeaway isn't a headline number — it's the shape of the argument: agentic AI's energy footprint is dominated by <em>how much an agent has to read and re-read to get its bearings</em>, not by the business logic itself. A semantic execution boundary that resolves the graph once, behind the application, rather than making the model walk it turn-by-turn, is a lever on that footprint whether the unit you care about is a dollar, a token, or a kilowatt-hour.</p>
+
+  <h2>Guardrails: efficiency is not the same as autonomy</h2>
+  <p>A faster, cheaper agent is not automatically a safer one, and this benchmark is deliberately silent on that question — so it's worth being explicit about it here. Collapsing seven tool calls into four, and cutting the tokens an agent has to carry, does not by itself change what the agent is <em>authorized</em> to do. That has to be designed in, separately, on purpose:</p>
+  <div class="metric-grid">
+    <div class="metric-card"><span>Application stays the authority</span><strong>Not the model</strong><small>Foundgine's semantic capability and mutation boundary are application-defined. The agent requests intent; it never gets raw SQL or physical schema access, so a cheaper path can't become a wider one.</small></div>
+    <div class="metric-card"><span>Mutations require explicit intent</span><strong>No implicit writes</strong><small>The benchmark's own scenario only mutates <code>Customer.FullName</code> because that's the one field the capability allows — narrower tool surface, narrower blast radius, independent of token count.</small></div>
+    <div class="metric-card"><span>Verify after every mutation</span><strong>Trust, but check</strong><small>Both flows call a verification step after the update in this benchmark. Fewer tokens should never mean fewer checks — cheap and unverified is a worse trade than expensive and confirmed.</small></div>
+    <div class="metric-card"><span>Same-final-state is the gate</span><strong>Correctness first</strong><small>Every efficiency number on this page is reported conditional on <code>SameFinalState: true</code>. An efficient agent that reaches the wrong state is not a result — it's a regression that happens to look fast.</small></div>
+  </div>
+  <p>Put plainly: token and dollar savings are a side effect of giving an agent a narrower, application-controlled interface to work through — not a goal to chase by loosening what the agent can do on its own. The efficiency case for a semantic execution boundary and the safety case for one are the same case, not a trade-off between them.</p>
+
+  <h2>Why this matters for AI agents</h2>
+  <p>In the conventional flow, the agent has to discover the physical application surface, request pieces of the graph, keep those results in context and decide how to combine them. As the graph becomes larger, this creates more opportunities for lost context, repeated work, incorrect assumptions and hallucinated fields.</p>
+  <p>In the Foundgine flow, the agent works against a semantic capability. Foundgine resolves the business graph, applies the application's execution boundary, builds the plan and invokes the provider. The agent can therefore spend more of its reasoning budget on the business decision instead of reconstructing the application's data model.</p>
+
+  <h2>What the benchmark measures</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Measurements</th><th>Question</th></tr></thead>
+    <tbody>
+      <tr><td>Agent effort</td><td>Model calls, input/output/total tokens, context, tool calls, tool input/output</td><td>How much AI-side work is required?</td></tr>
+      <tr><td>Application effort</td><td>Wall clock, tool time, CPU time, peak memory</td><td>What does the application have to do?</td></tr>
+      <tr><td>Correctness</td><td>Final snapshot and business assertions</td><td>Did both approaches actually complete the same task?</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Current benchmark status</h2>
+  <div class="benchmark-callout"><strong>Benchmark completed successfully.</strong> Both flows completed the same scenario and produced the same final state. Foundgine used 4 tool calls versus 7, a 42.9% reduction, and an estimated ~63% lower token load per the heuristic above. In this replay, Foundgine's wall-clock time was higher — fewer, smaller round trips for the agent traded against more work done inside the application boundary. The technical report shows the complete measurements and the reasoning behind that trade-off.</div>
+
+  <h2 id="fifty-year-projection">If this became the default pattern: a 50-year projection</h2>
+  <div class="benchmark-callout"><strong>Read this section as an argument, not an answer.</strong> Everything above this point on the page is either a direct measurement (tool calls, final state) or a heuristic applied to recorded data (token load, $ cost). Everything in this section is neither — it's a compounding scenario built on public growth forecasts and named assumptions, run 50 years forward. Fifty years is long enough that hardware efficiency, grid decarbonization, new architectures, and AI usage patterns could each individually swamp this entire estimate. It exists to show <em>shape and scale</em>, not to be quoted as a number.</div>
+  <p>The question we're illustrating: <strong>if a growing share of the world's agentic AI traffic adopted a semantic-execution-boundary pattern like the one measured in this benchmark, and data centers grow roughly along their published trajectories, what's the order of magnitude of electricity, dollars, and CO₂ over 50 years?</strong></p>
+
+  <h3>Assumptions (change any of these and the answer changes a lot)</h3>
+  <table>
+    <thead><tr><th>Input</th><th>2026</th><th>Path</th><th>Source / basis</th></tr></thead>
+    <tbody>
+      <tr><td>Global data-center electricity</td><td>565 TWh</td><td>→ 950 TWh by 2030 (IEA base case), then 6%/yr to 2040, then 3%/yr through 2075</td><td>Gartner June 2026 forecast; IEA April 2026 base case. The post-2030 tail is <strong>not</strong> an IEA number — it's a taper we chose because no agency projects this far.</td></tr>
+      <tr><td>AI-optimized servers' share of that</td><td>31%</td><td>ramps linearly to 70% by 2046, flat after</td><td>2026 figure is Gartner-reported; the ramp and 70% ceiling are assumptions, not forecasts.</td></tr>
+      <tr><td>Agentic/tool-calling share of AI-server power</td><td>2–8%</td><td>ramps linearly to 10–40% by 2046, flat after (conservative / base / aggressive bands)</td><td>No public source breaks this out today — treated as an open scenario input, deliberately given as a range.</td></tr>
+      <tr><td>Adoption of a semantic-boundary pattern across that agentic slice</td><td>~0%</td><td>ramps to 100% by 2041, flat after</td><td>This is the "if every process adopts this" input you asked to model — a full-adoption assumption, phased in over 15 years rather than overnight.</td></tr>
+      <tr><td>Energy/token reduction applied</td><td colspan="2">62.9% — the one number in this table that is <strong>measured</strong>, from section 6 above</td><td>This benchmark, 10 runs, paired scenario.</td></tr>
+      <tr><td>Electricity price</td><td colspan="2">$0.12/kWh, held flat (nominal, not inflation-adjusted)</td><td>Rough global commercial average today; real rates range roughly $0.08–$0.30/kWh and will move over 50 years.</td></tr>
+      <tr><td>Grid carbon intensity</td><td colspan="2">0.45 kg CO₂e/kWh, held flat</td><td>Global average today. Real grids are decarbonizing, so this almost certainly <em>overstates</em> avoided emissions in later decades — a deliberately conservative simplification in the other direction from the price assumption.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Cumulative result, three scenarios</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Scenario</th><th>Through 2035 (10yr)</th><th>Through 2050 (25yr)</th><th>Through 2075 (50yr)</th></tr></thead>
+      <tbody>
+        <tr><td>Conservative (agentic share 2%→10%)</td><td>43 TWh · $5.1B · 19 Mt CO₂e</td><td>997 TWh · $120B · 449 Mt CO₂e</td><td><strong>4,778 TWh · $573B · 2,150 Mt CO₂e</strong></td></tr>
+        <tr><td>Base (agentic share 5%→25%)</td><td>107 TWh · $12.8B · 48 Mt CO₂e</td><td>2,494 TWh · $299B · 1,122 Mt CO₂e</td><td><strong>11,945 TWh · $1.43T · 5,375 Mt CO₂e</strong></td></tr>
+        <tr><td>Aggressive (agentic share 8%→40%)</td><td>171 TWh · $20.5B · 77 Mt CO₂e</td><td>3,990 TWh · $479B · 1,795 Mt CO₂e</td><td><strong>19,112 TWh · $2.29T · 8,600 Mt CO₂e</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small-note">For scale: 5,375 Mt CO₂e is roughly comparable to a large industrial economy's multi-year emissions; 11,945 TWh is more electricity than the United States currently uses in six years. Numbers this large over a 50-year horizon are a sign to treat the scenario as illustrative, not as due diligence — a single architectural shift, efficiency breakthrough, or slowdown in AI-agent adoption could move any of these figures by an order of magnitude in either direction. The only load-bearing, non-assumed fact underneath all nine cells in this table is the same one from section 6: <strong>62.9% measured token-load reduction on one paired benchmark scenario.</strong></p>
+  <p><a class="benchmark-detail-link" href="detail.html">Read the complete benchmark analysis →</a></p>
+  <p class="small-note">The detailed page contains the process, payload model, measurement definitions, normalization ideas, interpretation rules, limitations and failure handling. The executive page intentionally keeps those details out of the main narrative.</p>
+
+  <nav class="sitenav">
+    <a href="../ai-agents/index.html">AI agents</a> ·
+    <a href="../architecture/index.html">Architecture</a> ·
+    <a href="../performance/index.html">Performance</a> ·
+    <a href="../index.html">Home</a>
+  </nav>
+</main>
+</div>
+<footer class="site-footer">Foundgine · end-to-end agent evidence · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer>
+<script src="../assets/site.js"></script>
+<script src="../assets/agent-benchmark.js"></script>
+</body>
+</html>

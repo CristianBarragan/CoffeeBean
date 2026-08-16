@@ -19,3 +19,8 @@ Foundgine is not an ORM replacement, a database, a GraphQL server, an LLM, an ag
 
 - [Full documentation, single file](https://cristianbarragan.github.io/Foundgine/llms-full.md): All pages above concatenated for full-context ingestion.
 - [Repository](https://github.com/cristianbarragan/Foundgine): Source, development setup, and benchmark source data.
+
+
+## End-to-end agent benchmark
+
+The repository contains an end-to-end benchmark comparing a conventional application/AI tool flow with a Foundgine semantic flow against the same PostgreSQL fixture. It measures provider-reported input/output/total tokens, cached input tokens, model calls, tool calls, wall-clock time, model time, tool time and final-state equivalence. See `benchmarks/AgentEndToEnd` and the website page `/agent-benchmark/`.

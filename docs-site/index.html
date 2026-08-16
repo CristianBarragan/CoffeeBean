@@ -29,6 +29,7 @@
         <a href="what-is-foundgine.html" data-nav>What is it</a>
         <a href="architecture/index.html" data-nav>How it works</a>
         <a href="ai-agents/index.html" data-nav>AI agents</a>
+        <a href="agent-benchmark/index.html" data-nav>Agent benchmark</a>
         <a href="performance/index.html" data-nav>Performance</a>
         <a href="https://github.com/cristianbarragan/Foundgine" data-nav>GitHub</a>
       </nav>
@@ -57,6 +58,14 @@
         <div class="rail-step"><span class="dot"></span>Result</div>
       </div>
       <p class="rail-caption">Every request crosses this boundary — this is the shape you'll see on every page.</p>
+
+      <div class="benchmark-callout">
+        <strong>Measured on a real agent benchmark:</strong> giving an AI agent a semantic execution boundary instead of raw application tools cut tool calls 42.9% (7 → 4) and estimated token load ~63% (981 → 364 tokens/call) on a paired banking scenario where both flows reached the identical final state. At API list price, that's an estimated <strong>~$4,100-$10,300/month</strong> saved per 100,000 agent calls/day (Sonnet 5 to Opus 5 pricing) — roughly <strong>$50,000-$125,000/year</strong> at that volume. All figures are heuristic, reproducible, and shown with every caveat in the <a href="agent-benchmark/index.html">agent benchmark</a>.
+      </div>
+
+      <div class="benchmark-callout">
+        <strong>A 50-year illustration, not a forecast:</strong> project this same ~63% reduction across a growing slice of the world's agentic AI traffic, compounding with published data-center growth trajectories (IEA/Gartner) over the next 50 years, and the base-case scenario lands on roughly <strong>12,000 TWh of electricity avoided</strong> — on the order of <strong>$1.4 trillion</strong> at today's commercial electricity rates, and <strong>~5.4 gigatonnes of CO₂e avoided</strong>. The plausible range across conservative-to-aggressive adoption assumptions runs from roughly <strong>$570 billion to $2.3 trillion</strong>. <strong>Every input to this scenario is a stated assumption, not a measurement</strong> — see the full method, range, and reasons to distrust any 50-year number in the <a href="agent-benchmark/index.html#fifty-year-projection">agent benchmark's long-horizon projection</a>.
+      </div>
 
       <h2>What is Foundgine?</h2>
       <p>Foundgine separates <strong>what a caller wants</strong> from <strong>how the application executes it</strong>.</p>
@@ -87,7 +96,7 @@
 
       <h2>Foundgine and AI agents</h2>
       <p>AI agents make this boundary particularly important. An AI model can decide what it wants to accomplish. It should not become the authority over which application data it is allowed to access, nor should it need direct database credentials.</p>
-      <p>This is deliberately different from a model generating SQL directly against a database. Foundgine is intended to keep the application in control of authorization and execution while allowing AI and other structured callers to use application capabilities. Read more in <a href="ai-agents/index.html">AI agents with Foundgine</a>.</p>
+      <p>This is deliberately different from a model generating SQL directly against a database. Foundgine is intended to keep the application in control of authorization and execution while allowing AI and other structured callers to use application capabilities. Read more in <a href="ai-agents/index.html">AI agents with Foundgine</a>. On the cost and energy side of the same boundary, see the <a href="agent-benchmark/index.html">agent benchmark</a>'s guardrails section — efficiency gains don't loosen what an agent is authorized to do, and shouldn't be chased if they would.</p>
 
       <h2>Capabilities</h2>
       <div class="table-wrap">

@@ -40,7 +40,7 @@ services:
         COFFEEBEANERY_CONTRACTS_PER_RELATIONSHIP: "3"
         COFFEEBEANERY_TRANSACTIONS_PER_CONTRACT: "4"
 
-  restart: "no"
+      restart: "no"
 
   hotchocolate:
     build:

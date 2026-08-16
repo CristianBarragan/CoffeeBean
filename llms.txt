@@ -62,3 +62,8 @@ Foundgine resolves and authorizes the request before execution.
 The active tests cover semantic modelling, authorization, query and mutation planning, SQL/SQLite execution, InMemory execution, AOT, JSON, GraphQL, relationships, aggregates, pagination, and PostgreSQL integration.
 
 Do not claim autonomous-agent execution, workflow orchestration, universal provider support, or universal performance superiority unless the implementation and tests prove it.
+
+
+## End-to-end agent benchmark
+
+The repository contains an end-to-end benchmark comparing a conventional application/AI tool flow with a Foundgine semantic flow against the same PostgreSQL fixture. It measures provider-reported input/output/total tokens, cached input tokens, model calls, tool calls, wall-clock time, model time, tool time and final-state equivalence. See `benchmarks/AgentEndToEnd` and the website page `/agent-benchmark/`.
