@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "steps": [
+    {"id":"caller","label":"Caller","short":"What starts the request?"},
+    {"id":"intent","label":"Intent","short":"What does the caller want?"},
+    {"id":"semantic-model","label":"Semantic Model","short":"What does the application expose?"},
+    {"id":"authorization","label":"Authorization","short":"What is allowed?"},
+    {"id":"execution-plan","label":"Execution Plan","short":"How should it execute?"},
+    {"id":"provider","label":"Provider","short":"How does the backend execute it?"},
+    {"id":"result","label":"Result","short":"What comes back?"}
+  ],
+  "samples": [
+    {
+      "id":"json-read",
+      "eyebrow":"Sample 01 · Structured JSON read",
+      "title":"Find Alice's latest transactions",
+      "description":"A JSON caller asks for five transactions belonging to an account owned by Alice. The same request crosses the semantic pipeline before SQL is produced.",
+      "caller":"JSON / API client",
+      "accent":"signal",
+      "diagram":["JSON caller","Structured intent","Semantic model","Authorization","Execution plan","SQL provider","Rows"],
+      "steps": {
+        "caller": {
+          "title":"The caller expresses a business question",
+          "body":"The caller does not write SQL or select physical tables. It supplies a structured request describing the outcome it needs.",
+          "inputLabel":"Caller input",
+          "input":{"question":"Show Alice's 5 most recent transactions","format":"application/json"},
+          "outputLabel":"Boundary output",
+          "output":{"next":"structured intent","databaseAccess":false}
+        },
+        "intent": {
+          "title":"Intent makes the request explicit",
+          "body":"The JSON adapter turns the external payload into a read intent. Relationships, fields, predicates, ordering and pagination are explicit data rather than generated SQL.",
+          "inputLabel":"Input payload",
+          "input":{"rootEntity":"Transaction","selections":[{"field":"Id"},{"field":"Amount"},{"field":"TransactionDate"}],"filter":{"kind":"relationship","relationship":"Account","quantifier":"Some","predicate":{"kind":"relationship","relationship":"Customer","quantifier":"Some","predicate":{"kind":"field","field":"Name","operator":"Eq","value":"Alice"}}},"order":[{"field":"TransactionDate","direction":"Desc"}],"limit":5},
+          "outputLabel":"Intent contract",
+          "output":{"operation":"Read","root":"Transaction","relationships":["Account","Customer"],"limit":5}
+        },
+        "semantic-model": {
+          "title":"The semantic model gives names and meaning",
+          "body":"The intent is compiled against the application-facing model. This is where names such as Transaction, Account and Customer become known capabilities instead of arbitrary database identifiers.",
+          "inputLabel":"Resolved request",
+          "input":{"root":"Transaction","fields":["Id","Amount","TransactionDate"],"path":["Transaction","Account","Customer"],"predicate":"Customer.Name == 'Alice'"},
+          "outputLabel":"Semantic contract",
+          "output":{"Transaction":{"fields":["Id","Amount","TransactionDate"],"relationships":["Account"]},"Account":{"relationships":["Customer"]},"Customer":{"fields":["Name"]}}
+        },
+        "authorization": {
+          "title":"Authorization constrains the operation",
+          "body":"Authorization is evaluated before provider execution. The policy can preserve or reject fields and can contribute predicates that must remain true when the plan reaches the provider.",
+          "inputLabel":"Authorized request",
+          "input":{"principal":"application-caller","requestedFields":["Transaction.Id","Transaction.Amount","Transaction.TransactionDate"],"requestedPath":["Transaction.Account.Customer"],"policy":"AllowAllSemanticAuthorizationPolicy"},
+          "outputLabel":"Authorization evidence",
+          "output":{"decision":"allow","visibleFields":["Id","Amount","TransactionDate"],"requiredConstraints":[],"databaseExecutionAllowed":true}
+        },
+        "execution-plan": {
+          "title":"The provider-independent plan captures execution intent",
+          "body":"Foundgine lowers the authorized request into an execution representation. It contains the relationship traversal, filter, order and pagination without becoming PostgreSQL- or SQLite-specific.",
+          "inputLabel":"Plan inputs",
+          "input":{"root":"Transaction","joinPath":["Account","Customer"],"filter":"Customer.Name = 'Alice'","order":"TransactionDate DESC","limit":5},
+          "outputLabel":"Execution plan",
+          "output":{"root":"Transaction","joins":["Account","Customer"],"filter":"Customer.Name = @p0","order":["TransactionDate DESC"],"pagination":{"limitParameter":"@__fg_limit","limit":5}}
+        },
+        "provider": {
+          "title":"The provider translates the plan into executable operations",
+          "body":"The SQL provider is now responsible for physical execution. Values remain parameters; the semantic pipeline has already decided what the operation means and what is allowed.",
+          "inputLabel":"Provider input",
+          "input":{"provider":"SQL","parameter":{"name":"@p0","value":"Alice"},"limitParameter":{"name":"@__fg_limit","value":5}},
+          "outputLabel":"SQL shape",
+          "output":{"statement":"SELECT ... FROM \"Transaction\" t0 INNER JOIN \"Account\" t1 ... WHERE ... = @p0 ORDER BY ... DESC LIMIT @__fg_limit","parameterized":true}
+        },
+        "result": {
+          "title":"The result returns business data, not provider internals",
+          "body":"The provider returns rows through the execution boundary. The example test verifies five descending transactions for Alice.",
+          "inputLabel":"Execution output",
+          "input":{"rows":5,"orderedBy":"TransactionDate DESC"},
+          "outputLabel":"Result payload",
+          "output":{"items":[{"Id":106,"Amount":60.0,"TransactionDate":"2026-01-06"},{"Id":105,"Amount":50.0,"TransactionDate":"2026-01-05"},{"Id":104,"Amount":40.0,"TransactionDate":"2026-01-04"},{"Id":103,"Amount":30.0,"TransactionDate":"2026-01-03"},{"Id":102,"Amount":20.0,"TransactionDate":"2026-01-02"}],"count":5}
+        }
+      }
+    },
+    {
+      "id":"ai-read",
+      "eyebrow":"Sample 02 · AI agent capability",
+      "title":"Let an agent ask for customer data without SQL access",
+      "description":"An AI agent can produce intent, but the application remains the authority. This flow makes the security boundary visible: the model asks, Foundgine decides what the application will execute.",
+      "caller":"AI agent / tool call",
+      "accent":"gate",
+      "diagram":["User task","AI agent","Capability tool","Foundgine","Authorization","Provider","Safe result"],
+      "steps": {
+        "caller": {
+          "title":"The agent receives a natural-language task",
+          "body":"The model starts with a user request. It has no database credentials and no authority to invent a SQL query.",
+          "inputLabel":"User task",
+          "input":{"message":"Find customer Alice and show her name and account balance","agent":"customer-support-agent"},
+          "outputLabel":"Tool boundary",
+          "output":{"capability":"customer.read","credentials":"none","next":"structured intent"}
+        },
+        "intent": {
+          "title":"The tool call becomes structured intent",
+          "body":"The agent selects an application capability. The structured payload is deliberately smaller than a database query and contains only semantic operations the capability exposes.",
+          "inputLabel":"Tool call",
+          "input":{"tool":"customer.read","arguments":{"customerName":"Alice","fields":["name","accounts.balance"]}},
+          "outputLabel":"Structured intent",
+          "output":{"operation":"Read","entity":"Customer","filter":{"field":"Name","operator":"Eq","value":"Alice"},"select":["Name","Accounts.Balance"]}
+        },
+        "semantic-model": {
+          "title":"The application maps intent to its semantic surface",
+          "body":"The agent cannot choose arbitrary persistence fields. The semantic model exposes Customer.name and Accounts.balance while internal fields can remain outside the contract.",
+          "inputLabel":"Requested capability",
+          "input":{"entity":"Customer","fields":["Name","Accounts.Balance"],"hiddenExample":"InternalRiskScore"},
+          "outputLabel":"Semantic surface",
+          "output":{"Customer":{"exposed":["Name","Accounts"]},"Account":{"exposed":["Balance"]},"InternalRiskScore":{"exposed":false}}
+        },
+        "authorization": {
+          "title":"Authorization decides what the agent may actually access",
+          "body":"This is the trust boundary. The model's output is treated as untrusted input. Application policy determines visibility and tenant constraints before any provider call is made.",
+          "inputLabel":"Policy evaluation",
+          "input":{"principal":"customer-support-agent","requestedFields":["Customer.Name","Account.Balance"],"tenant":"current-tenant","forbiddenField":"Customer.InternalRiskScore"},
+          "outputLabel":"Authorization result",
+          "output":{"decision":"allow","visibleFields":["Customer.Name","Account.Balance"],"forbiddenFields":["Customer.InternalRiskScore"],"tenantConstraint":"current-tenant"}
+        },
+        "execution-plan": {
+          "title":"The authorized request becomes a provider-neutral plan",
+          "body":"The plan carries the allowed projection and the tenant restriction forward. The agent never receives a way to bypass this layer by changing SQL text.",
+          "inputLabel":"Authorized intent",
+          "input":{"root":"Customer","select":["Name","Accounts.Balance"],"filter":"Name = 'Alice'","authorization":"tenant = current-tenant"},
+          "outputLabel":"Execution plan",
+          "output":{"root":"Customer","joins":["Account"],"projection":["Customer.Name","Account.Balance"],"predicates":["Customer.Name = @p0","Customer.TenantId = @tenant"],"parameterized":true}
+        },
+        "provider": {
+          "title":"The provider executes only the authorized plan",
+          "body":"SQL is produced after the semantic and authorization boundaries. The provider receives parameters and a constrained plan rather than an instruction from the model.",
+          "inputLabel":"Provider request",
+          "input":{"provider":"PostgreSQL","parameters":{"@p0":"Alice","@tenant":"current-tenant"},"source":"authorized execution plan"},
+          "outputLabel":"Physical operation",
+          "output":{"statement":"SELECT customer.name, account.balance FROM customer JOIN account ... WHERE customer.name = @p0 AND customer.tenant_id = @tenant","parameterized":true,"agentCanRewriteSql":false}
+        },
+        "result": {
+          "title":"The agent receives only the requested business result",
+          "body":"The response can be returned to the application or agent without exposing database credentials, hidden fields or provider-specific control.",
+          "inputLabel":"Provider result",
+          "input":{"customer":"Alice","accounts":[{"balance":10050.25},{"balance":2500.00}]},
+          "outputLabel":"Agent-facing result",
+          "output":{"customer":{"name":"Alice","accounts":[{"balance":10050.25},{"balance":2500.0}]},"evidence":{"authorized":true,"provider":"PostgreSQL"}}
+        }
+      }
+    }
+  ]
+}
