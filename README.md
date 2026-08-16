@@ -89,7 +89,7 @@ Foundgine is designed to centralize the semantic execution model so that differe
 
 Foundgine treats security requirements as part of the semantic execution contract. Required security invariants are propagated into plans and checked against provider capabilities before execution. This prevents a provider from silently executing a capability whose security guarantees it cannot preserve.
 
-Security requirements are represented as semantic invariants and carried into the planning/provider boundary. The repository contains conformance and adversarial tests for these contracts; current validation status is tracked in `docs/CURRENT-STATUS.md`.
+The security progression currently includes M17.3 security invariants, M17.4 plan-level proof, M17.5 SQL conformance, M17.6 high-assurance mutation conformance, and M17.7 cross-provider conformance.
 
 ## Foundgine and AI agents
 
@@ -230,11 +230,7 @@ That boundary should work for traditional software and intelligent agents alike.
 - [What is Foundgine?](docs-site/what-is-foundgine.md)
 - [AI agents and PostgreSQL](docs-site/ai-agents/index.md)
 - [Architecture](docs-site/architecture/index.md)
-- [Performance](docs-site/performance/index.html)
-- [Security](docs-site/security/index.html)
-- [High-assurance mutations](docs-site/mutations/index.html)
-- [Providers](docs-site/providers/index.html)
-- [Getting started](docs-site/getting-started/index.html)
+- [Performance](docs-site/performance/index.md)
 - [llms.txt](docs-site/llms.txt) / [llms-full.md](docs-site/llms-full.md) — machine-readable documentation index for AI agents and LLM tooling
 
 The published site (built from `docs-site/`) is available at https://cristianbarragan.github.io/Foundgine/.
@@ -243,7 +239,7 @@ The published site (built from `docs-site/`) is available at https://cristianbar
 
 Repository development setup, tests, benchmarks, deployment templates, and contribution guidance should remain separate from the first-time user experience.
 
-The current benchmark evidence is in [`docs/benchmarks/2026-08-15-performance-results.md`](docs/benchmarks/2026-08-15-performance-results.md) and is summarized on [`docs-site/performance/index.html`](docs-site/performance/index.html).
+[`BENCHMARK-RESULTS-2026-08-12-CLEAN.md`](BENCHMARK-RESULTS-2026-08-12-CLEAN.md) is the source data behind [`docs-site/performance/index.md`](docs-site/performance/index.md); it's kept at the repo root as development/benchmark evidence rather than published-site content.
 
 ## Security
 
@@ -253,4 +249,14 @@ Foundgine's authorization and execution boundaries are intended to reduce unsafe
 
 Foundgine is actively evolving. Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
 
+### M18.9 — Projection Pruning
+
+Foundgine's planner includes a conservative projection-pruning rule that removes redundant duplicate fields without changing requested field order. Fields required by filters and ordering are tracked explicitly, and every accepted rewrite continues through semantic-equivalence and security-preservation proofs.
+
+The current semantic model intentionally does not remove unique requested fields because output and working projections are not yet represented separately. That stronger dead-field optimization is reserved for a future projection-dependency milestone.
+
+
+### M18.11 — Join Ordering / Multi-Relationship Planning
+
+Adds conservative cardinality- and selectivity-aware traversal ordering metadata for sibling relationship plans. Logical child order remains unchanged; providers may use `TraversalOrder` for physical planning subject to semantic and security conformance.
 
