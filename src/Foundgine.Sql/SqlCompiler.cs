@@ -5,6 +5,8 @@ using Foundgine.Abstractions;
 using Foundgine.Planning;
 using Foundgine.Semantics.Query;
 using Foundgine.Sql.Query;
+using Foundgine.Semantics.Security;
+using Foundgine.Sql.Security;
 
 namespace Foundgine.Sql;
 
@@ -12,12 +14,22 @@ namespace Foundgine.Sql;
 /// Compiles the provider-independent Execution IR into SQL, including
 /// filtering, ordering, aggregation, and cursor pagination.
 /// </summary>
-public sealed class SqlCompiler : IProviderPlanCompiler
+public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
 {
     private readonly IMetadataProvider _metadata;
 
     public SqlCompiler(IMetadataProvider metadata) =>
         _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+
+    public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+    [
+        SecurityInvariantIds.AuthorizationRequired,
+        SecurityInvariantIds.RuntimeAuthorization,
+        SecurityInvariantIds.FieldVisibility,
+        SecurityInvariantIds.RelationshipVisibility,
+        SecurityInvariantIds.ParameterizedValues,
+        SecurityInvariantIds.PlanCacheContextIsolation
+    ];
 
     /// <summary>Compatibility bridge for existing callers that still hold a semantic plan.
     /// The semantic plan is lowered immediately into provider-neutral Execution IR;
@@ -187,7 +199,8 @@ public sealed class SqlCompiler : IProviderPlanCompiler
             rootEntity,
             aliases[root.Node.Id],
             parameters,
-            _metadata);
+            _metadata,
+            root.Node.AggregateExecutionStrategy);
 
         foreach (var occurrence in occurrences)
         {
@@ -267,7 +280,11 @@ public sealed class SqlCompiler : IProviderPlanCompiler
             }
         }
 
-        return new SqlPlan(sql.ToString(), bindings, parameters, pagination, authorization);
+        var compiledPlan = new SqlPlan(sql.ToString(), bindings, parameters, pagination, authorization);
+        if (ir.RequiredSecurityInvariants.Count > 0)
+            SqlSecurityConformance.EnsureSatisfied(ir, compiledPlan);
+
+        return compiledPlan;
     }
 
     ProviderPlan IProviderPlanCompiler.Compile(ExecutionIR ir) => Compile(ir);

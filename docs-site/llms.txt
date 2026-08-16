@@ -1,21 +1,50 @@
 # Foundgine 0.3.0
 
-Current release: 0.3.0. The current repository has passed restore, build, and full automated tests. PostgreSQL E2E and benchmark workflows are separate environment-dependent evidence.
+Current release: 0.3.0. Foundgine is a programmable semantic execution platform for .NET. The active source and tests are the source of truth; historical milestone documents are not current roadmap commitments.
 
-# Foundgine
+> Foundgine creates a controlled boundary between application callers — including APIs, GraphQL, automation, and AI agents — and the data and operations they are allowed to execute. Callers submit structured intent; Foundgine resolves it against an application-defined semantic model, applies authorization, builds a provider-independent execution plan, and executes it through a provider.
 
-> Foundgine is a programmable semantic execution platform for .NET. It creates a controlled boundary between application callers — including APIs, GraphQL, automation, and AI agents — and the data and operations they are allowed to execute. Callers submit structured intent; Foundgine resolves it against an application-defined semantic model, applies authorization, builds a provider-independent execution plan, and executes it through a provider (SQL, InMemory, or others).
+## Core pipeline
 
-Foundgine is not an ORM replacement, a database, a GraphQL server, an LLM, an agent framework, or an identity provider. It is an execution layer that can sit underneath those kinds of systems.
+```text
+Caller → Intent → Semantic model → Authorization → Plan → Provider → Result
+```
 
-## Docs
+## Key ideas
 
-- [What is Foundgine?](https://cristianbarragan.github.io/Foundgine/what-is-foundgine.html): The problem Foundgine solves, the semantic-vs-persistence model distinction, and where Foundgine fits relative to REST/GraphQL/automation/AI-agent callers.
-- [AI agents with Foundgine](https://cristianbarragan.github.io/Foundgine/ai-agents/): Why AI agents should not generate SQL directly or hold database credentials, the intended agent → structured intent → Foundgine → PostgreSQL boundary, and required security scenarios (field authorization, tenant isolation, prompt injection).
-- [Architecture](https://cristianbarragan.github.io/Foundgine/architecture/): The core execution pipeline (intent, semantic model, resolution, authorization, plan, rewrite/optimize, provider compilation, execution, evidence) and how multiple callers share one execution model.
-- [Performance](https://cristianbarragan.github.io/Foundgine/performance/): CoffeeBeanery PostgreSQL graph benchmark (12 August 2026) — Foundgine vs Hot Chocolate + EF Core, throughput and p95 latency, explicitly scoped to a relationship-heavy query workload.
+- semantic meaning is separated from persistence details;
+- authorization is part of the semantic execution contract;
+- providers consume a logical execution model rather than defining application meaning;
+- GraphQL and JSON are adapters, not the execution architecture;
+- AI is an untrusted producer of structured intent; trusted execution context remains host-owned;
+- consequential mutations can carry business invariants, authorization, idempotency, concurrency, audit, and execution evidence;
+- optimization must preserve semantic meaning and security constraints.
 
-## Optional
+## Security boundary
 
-- [Full documentation, single file](https://cristianbarragan.github.io/Foundgine/llms-full.md): All pages above concatenated for full-context ingestion.
-- [Repository](https://github.com/cristianbarragan/Foundgine): Source, development setup, and benchmark source data.
+Foundgine does not claim to solve authentication, identity management, secrets, transport security, rate limiting, database permissions, deployment security, or the correctness of application business policy. It provides a deterministic boundary for enforcing the policies and semantics the application defines.
+
+## Website
+
+- [What is Foundgine?](https://cristianbarragan.github.io/Foundgine/what-is-foundgine.html)
+- [Architecture](https://cristianbarragan.github.io/Foundgine/architecture/)
+- [Security](https://cristianbarragan.github.io/Foundgine/security/)
+- [High-assurance mutations](https://cristianbarragan.github.io/Foundgine/mutations/)
+- [Providers](https://cristianbarragan.github.io/Foundgine/providers/)
+- [AI agents](https://cristianbarragan.github.io/Foundgine/ai-agents/)
+- [Getting started](https://cristianbarragan.github.io/Foundgine/getting-started/)
+- [Performance](https://cristianbarragan.github.io/Foundgine/performance/)
+
+## Evidence
+
+The CoffeeBeanery PostgreSQL benchmark reports substantial query-performance advantages for the tested relationship-heavy workload. It is workload-specific evidence, not a universal performance claim.
+
+The repository also contains a flagship semantic proof, provider tests, authorization tests, adversarial structured-intent tests, and PostgreSQL integration infrastructure.
+
+## What Foundgine is not
+
+Foundgine is not an ORM replacement, database, GraphQL server, LLM, agent framework, identity provider, or general workflow engine. It is an execution layer that can sit underneath those systems.
+
+## Repository
+
+https://github.com/CristianBarragan/Foundgine

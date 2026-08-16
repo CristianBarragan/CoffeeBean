@@ -28,7 +28,10 @@ public sealed record ExecutionReceipt(
     string ResultFingerprint,
     string? ApprovalId = null,
     string? ApprovedBy = null,
-    DateTimeOffset? ApprovedAt = null)
+    DateTimeOffset? ApprovedAt = null,
+    string? WarrantId = null,
+    string? WarrantDigest = null,
+    string? SecurityInvariantDigest = null)
 {
     public long ElapsedMilliseconds => Math.Max(0, (long)(CompletedAt - StartedAt).TotalMilliseconds);
 }
@@ -75,7 +78,10 @@ public static class ExecutionReceiptFactory
             resultFingerprint,
             approvalId,
             approvedBy,
-            approvedAt);
+            approvedAt,
+            evidence.WarrantId,
+            evidence.WarrantDigest,
+            evidence.SecurityInvariantDigest);
     }
 
     public static string FingerprintResult(ExecutionResult result)

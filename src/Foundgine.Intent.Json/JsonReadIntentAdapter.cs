@@ -25,7 +25,13 @@ public sealed class JsonReadIntentAdapter
         PropertyNameCaseInsensitive = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
+        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
         Converters = { new JsonStringEnumConverter() }
+    };
+
+    private static readonly JsonSerializerOptions PermissiveOptions = new(Options)
+    {
+        UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
     };
 
     public ReadIntent Parse(string json)
@@ -34,7 +40,8 @@ public sealed class JsonReadIntentAdapter
 
         try
         {
-            var dto = JsonSerializer.Deserialize<ReadIntentDto>(json, Options)
+            var options = _limits.RejectUnknownProperties ? Options : PermissiveOptions;
+            var dto = JsonSerializer.Deserialize<ReadIntentDto>(json, options)
                       ?? throw Invalid("JSON document is empty.");
             return ToIntent(dto);
         }

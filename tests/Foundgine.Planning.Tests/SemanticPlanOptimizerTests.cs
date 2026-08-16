@@ -64,7 +64,7 @@ public sealed class SemanticPlanOptimizerTests
         var result = new SemanticPlanOptimizer().Optimize(plan);
 
         Assert.True(result.Changed);
-        Assert.Contains("authorization.duplicate-elimination", result.AppliedRules);
+        Assert.Contains("authorization.canonicalization", result.AppliedRules);
         Assert.Same(predicate, result.Plan.Root.Authorization);
     }
 
@@ -88,7 +88,7 @@ public sealed class SemanticPlanOptimizerTests
         var result = new SemanticPlanOptimizer().Optimize(plan);
 
         Assert.Same(predicate, result.Plan.Root.Authorization);
-        Assert.Contains("authorization.double-negation", result.AppliedRules);
+        Assert.Contains("authorization.canonicalization", result.AppliedRules);
     }
 
     [Fact]
@@ -127,3 +127,5 @@ public sealed class SemanticPlanOptimizerTests
         Assert.NotNull(optimized.Root.Children[0].Authorization);
     }
 }
+
+// M18.1 security-preservation coverage

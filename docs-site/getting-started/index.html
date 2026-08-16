@@ -1,0 +1,31 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Getting Started | Foundgine</title><meta name="description" content="Build, test, and explore Foundgine from the repository, including semantic execution, PostgreSQL integration, GraphQL, JSON, and examples."><link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/getting-started/"><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/style.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet"></head><body>
+<nav>
+        <a href="../what-is-foundgine.html">What is it</a>
+        <a href="../architecture/index.html">Architecture</a>
+        <a href="../security/index.html">Security</a>
+        <a href="../ai-agents/index.html">AI agents</a>
+        <a href="../mutations/index.html">Mutations</a>
+        <a href="../providers/index.html">Providers</a>
+        <a href="../performance/index.html">Performance</a>
+      </nav></div></header>
+<div class="page has-toc"><main class="article"><nav class="breadcrumbs"><a href="../index.html">Foundgine</a> / Getting started</nav><span class="eyebrow">Repository walkthrough</span><h1>Start with one request.</h1><p class="subtitle">The fastest way to understand Foundgine is to follow a small semantic request through resolution, authorization, planning, and execution.</p>
+<h2 id="requirements">Requirements</h2><ul><li>.NET 9 SDK</li><li>Git</li><li>Docker and Docker Compose for PostgreSQL integration tests</li></ul>
+<h2 id="build">Build and test</h2><pre>dotnet restore Foundgine.sln
+dotnet build Foundgine.sln --configuration Release
+dotnet test Foundgine.sln --configuration Release</pre><p>PostgreSQL-backed tests are environment-dependent. Set <code>FOUNDGINE_POSTGRES_CONNECTION_STRING</code> when running the local database integration path.</p>
+<h2 id="read">Read the flagship proof</h2><p>Start with the repository's flagship semantic proof and then inspect the layer projects. The important question is not “how does Foundgine generate SQL?” but “where is application meaning decided?”</p><pre>JSON / GraphQL / caller
+          ↓
+   semantic request
+          ↓
+       resolve
+          ↓
+      authorize
+          ↓
+   provider-neutral plan
+          ↓
+  SQL / InMemory provider
+          ↓
+        result</pre>
+<h2 id="examples">Examples worth opening</h2><div class="card-grid"><div class="card"><span class="badge">Core proof</span><h3>Flagship proof</h3><p>Small semantic intent crossing authorization, planning, and two providers.</p></div><div class="card"><span class="badge">Domain composition</span><h3>CoffeeBeanery composite</h3><p>A semantic Product composition over CustomerBankingRelationship, Contract, Account, and Transaction.</p></div><div class="card"><span class="badge">AI</span><h3>Agent integration</h3><p>AI produces intent while trusted execution context remains host-owned.</p></div><div class="card"><span class="badge">Mutation</span><h3>High-assurance transfer</h3><p>A consequential mutation showing authorization, business invariants, idempotency, concurrency, audit, and receipts.</p></div></div>
+<h2 id="next">Next reading</h2><ol><li><a href="../what-is-foundgine.html">What is Foundgine?</a></li><li><a href="../architecture/index.html">Architecture</a></li><li><a href="../security/index.html">Security boundary</a></li><li><a href="../mutations/index.html">High-assurance mutations</a></li><li><a href="../providers/index.html">Providers</a></li><li><a href="../performance/index.html">Performance evidence</a></li></ol>
+<nav class="sitenav"><a href="../index.html">Home</a> · <a href="../architecture/index.html">Architecture</a> · <a href="../security/index.html">Security</a> · <a href="../performance/index.html">Performance</a></nav></main><aside class="toc"><div class="toc-label">On this page</div><ol><li><a href="#requirements">Requirements</a></li><li><a href="#build">Build and test</a></li><li><a href="#read">Flagship proof</a></li><li><a href="#examples">Examples</a></li><li><a href="#next">Next reading</a></li></ol></aside></div><footer class="site-footer">Foundgine · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer><script src="../assets/toc.js"></script></body></html>

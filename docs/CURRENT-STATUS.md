@@ -1,8 +1,8 @@
 # Current status — Foundgine 0.3.0
 
-Foundgine 0.3.0 is the current shipped release. The repository has crossed the build-validation gate: restore, compilation, and the full automated test suite have been run successfully for the current source tree.
+Foundgine 0.3.0 is the current shipped release. The repository contains the semantic execution pipeline, authorization-aware planning, SQL and InMemory execution paths, GraphQL/JSON adapters, AOT metadata support, AI integration surfaces, execution evidence, and PostgreSQL integration infrastructure.
 
-## Proven by the active repository
+## Proven by the active code and tests
 
 - semantic entities, fields, relationships, and IDs;
 - request resolution;
@@ -12,28 +12,22 @@ Foundgine 0.3.0 is the current shipped release. The repository has crossed the b
 - provider-independent mutation planning;
 - SQL compilation;
 - SQLite execution;
-- a small InMemory provider;
+- InMemory execution;
 - AOT metadata generation;
 - JSON input;
 - GraphQL input and mutations;
 - nested relationships;
 - filters and aggregates;
 - cursor pagination;
-- execution evidence and canonical receipts;
-- deterministic plan fingerprints and provider-plan caching;
-- MCP boundary and mutation-safe execution contracts;
-- PostgreSQL integration contracts and PostgreSQL E2E workflows when PostgreSQL 17 is available.
+- execution evidence;
+- PostgreSQL integration contracts;
+- PostgreSQL E2E tests when PostgreSQL is configured.
 
-## Validation gates
+## Validation status
 
-```text
-dotnet restore   ✓
-dotnet build     ✓
-dotnet test      ✓
+The latest supplied test run is **not green**. It reported failures in semantic security/capability validation and an aggregate optimizer expectation, while the JSON intent safety suite passed. PostgreSQL integration tests also require a configured PostgreSQL connection and should be treated as environment-dependent integration tests rather than silently interpreted as unit-test failures.
 
-PostgreSQL E2E   separate environment-dependent gate
-Benchmarks       separate measurement workflow
-```
+This document intentionally does not claim a passing full-suite result until a fresh `dotnet test Foundgine.sln` run is green.
 
 ## Main rule
 
@@ -50,18 +44,12 @@ Plan
  ↓
 Provider
  ↓
-Result + Evidence
+Result
 ```
 
 ## PostgreSQL status
 
-PostgreSQL 17 is part of the CI/integration path. Local PostgreSQL tests require:
-
-```text
-FOUNDGINE_POSTGRES_CONNECTION_STRING
-```
-
-PostgreSQL correctness and PostgreSQL performance are separate forms of evidence: integration tests establish runtime behavior, while the CoffeeBeanery benchmark documents measured performance for a specific workload.
+PostgreSQL 17 is part of the PR test path. The local PostgreSQL tests use `FOUNDGINE_POSTGRES_CONNECTION_STRING`. CI starts its own PostgreSQL 17 container for database-backed checks.
 
 ## What is not claimed
 
@@ -69,10 +57,11 @@ The repository does not claim:
 
 - universal database support;
 - universal performance superiority;
-- autonomous-agent execution as a general runtime;
+- autonomous agent execution;
 - workflow orchestration;
-- rollback or compensation semantics;
-- production security or operational guarantees beyond the tested repository invariants.
+- authentication or identity management;
+- automatic correctness of business policy;
+- rollback or compensation semantics for every provider.
 
 ## Source of truth
 
@@ -83,4 +72,4 @@ Use this order when information conflicts:
 3. current documentation;
 4. historical notes under `docs/history`.
 
-Historical stage notes explain how the project changed. They are not the current design.
+Historical milestone documents explain how the project changed. They are not the current design or a priority list.

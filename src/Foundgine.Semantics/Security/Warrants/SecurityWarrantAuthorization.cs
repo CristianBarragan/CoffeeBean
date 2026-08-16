@@ -1,0 +1,85 @@
+namespace Foundgine.Semantics.Security.Warrants;
+
+/// <summary>
+/// Runtime authorization over a verified warrant. It deliberately requires the
+/// current subject, audience, tenant and resource rather than trusting values
+/// supplied by an agent or transport.
+/// </summary>
+public static class SecurityWarrantAuthorization
+{
+    public static bool Allows(
+        SecurityWarrant warrant,
+        string subject,
+        string audience,
+        string capability,
+        string operation,
+        string? tenant,
+        string? resourceScope,
+        long? requestedResults = null,
+        decimal? requestedAmount = null)
+    {
+        ArgumentNullException.ThrowIfNull(warrant);
+        if (!StringComparer.Ordinal.Equals(warrant.Subject, subject) ||
+            !StringComparer.Ordinal.Equals(warrant.Audience, audience) ||
+            !warrant.IsTimeValid(DateTimeOffset.UtcNow))
+            return false;
+
+        var grant = warrant.Grants.Any(g =>
+            StringComparer.Ordinal.Equals(g.Capability, capability) &&
+            StringComparer.Ordinal.Equals(g.Operation, operation) &&
+            (g.ResourceScopes.Count == 0 || resourceScope is not null && g.ResourceScopes.Contains(resourceScope, StringComparer.Ordinal)));
+        if (!grant)
+            return false;
+
+        var c = warrant.Constraints;
+        if (tenant is not null && c.AllowedTenants.Count > 0 && !c.AllowedTenants.Contains(tenant, StringComparer.Ordinal)) return false;
+        if (c.AllowedOperations.Count > 0 && !c.AllowedOperations.Contains(operation, StringComparer.Ordinal)) return false;
+        if (resourceScope is not null && c.ResourceScopes.Count > 0 && !c.ResourceScopes.Contains(resourceScope, StringComparer.Ordinal)) return false;
+        if (requestedResults is not null && c.MaxResults is not null && requestedResults > c.MaxResults) return false;
+        if (requestedAmount is not null && c.MaxAmount is not null && requestedAmount > c.MaxAmount) return false;
+        return true;
+    }
+}
+
+/// <summary>Mechanically enforces non-escalating warrant delegation.</summary>
+public static class SecurityWarrantAttenuator
+{
+    public static SecurityWarrant Attenuate(
+        SecurityWarrant parent,
+        SecurityWarrant child,
+        DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(parent);
+        ArgumentNullException.ThrowIfNull(child);
+        if (!parent.IsTimeValid(now))
+            throw new InvalidOperationException("Cannot attenuate an expired or not-yet-valid parent warrant.");
+        if (!StringComparer.Ordinal.Equals(child.ParentId, parent.Id))
+            throw new InvalidOperationException("Child warrant must identify its parent warrant.");
+        if (!StringComparer.Ordinal.Equals(child.Issuer, parent.Subject))
+            throw new InvalidOperationException("Delegated issuer must be the parent subject.");
+        if (!StringComparer.Ordinal.Equals(child.Audience, parent.Audience))
+            throw new InvalidOperationException("Delegation cannot broaden the audience.");
+        if (!StringComparer.Ordinal.Equals(child.Subject, parent.Subject))
+            throw new InvalidOperationException("Delegation cannot change the authorized subject.");
+        if (child.IssuedAt < parent.IssuedAt)
+            throw new InvalidOperationException("Child warrant cannot predate parent issuance.");
+        if (child.ExpiresAt > parent.ExpiresAt)
+            throw new InvalidOperationException("Child warrant cannot extend parent expiry.");
+        if (!child.Constraints.IsAtMostAsPowerfulAs(parent.Constraints))
+            throw new InvalidOperationException("Child warrant constraints broaden parent authority.");
+
+        foreach (var grant in child.Grants)
+        {
+            var parentGrant = parent.Grants.FirstOrDefault(g =>
+                StringComparer.Ordinal.Equals(g.Capability, grant.Capability) &&
+                StringComparer.Ordinal.Equals(g.Operation, grant.Operation));
+            if (parentGrant is null)
+                throw new InvalidOperationException($"Child warrant adds capability '{grant.Capability}'.");
+            if (parentGrant.ResourceScopes.Count > 0 &&
+                grant.ResourceScopes.Any(x => !parentGrant.ResourceScopes.Contains(x, StringComparer.Ordinal)))
+                throw new InvalidOperationException($"Child warrant broadens resource scope for '{grant.Capability}'.");
+        }
+
+        return child;
+    }
+}

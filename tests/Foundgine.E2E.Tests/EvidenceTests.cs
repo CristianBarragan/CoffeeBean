@@ -5,6 +5,7 @@ using Foundgine.Generated;
 using Foundgine.Planning;
 using Foundgine.Semantics;
 using Foundgine.Semantics.Authorization;
+using Foundgine.Semantics.Security;
 using Foundgine.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
@@ -118,8 +119,11 @@ public sealed class EvidenceTests
         Assert.False(string.IsNullOrWhiteSpace(result.Receipt.ResultFingerprint));
     }
 
-    private sealed class CapturingEvidenceCompiler : IProviderPlanCompiler
+    private sealed class CapturingEvidenceCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
     {
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
+
         public ProviderPlan Compile(ExecutionIR ir) => new TestProviderPlan();
     }
 

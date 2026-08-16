@@ -2,6 +2,7 @@ using Foundgine.Abstractions;
 using Foundgine.Execution;
 using Foundgine.Planning;
 using Foundgine.Semantics;
+using Foundgine.Semantics.Security;
 using Foundgine.Semantics.Authorization;
 using Xunit;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
@@ -133,8 +134,10 @@ public sealed class ContextSafePlanCacheTests
                 : AuthorizationDecision.Allowed;
     }
 
-    private sealed class CountingCompiler : IProviderPlanCompiler
+    private sealed class CountingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
     {
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
         public int Count { get; private set; }
         public ProviderPlan Compile(ExecutionIR ir)
         {
@@ -150,4 +153,27 @@ public sealed class ContextSafePlanCacheTests
     }
 
     private sealed record TestPlan() : ProviderPlan("test");
+}
+
+public sealed class WarrantPlanCacheAttackTests
+{
+    [Fact]
+    public void Different_warrants_cannot_share_an_authority_cache_key()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var first = new Foundgine.Semantics.Security.Warrants.SecurityWarrant(
+            "w1", "issuer", "agent-a", "foundgine",
+            [new Foundgine.Semantics.Security.Warrants.CapabilityGrant("Customer.read", "read")],
+            Foundgine.Semantics.Security.Warrants.SecurityWarrantConstraints.Unrestricted,
+            now.AddMinutes(-1), now.AddHours(1), "n1", "k1", null, []);
+        var second = first with { Id = "w2", Nonce = "n2" };
+
+        var cache = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [first.Digest] = "authorized-plan-for-w1"
+        };
+
+        Assert.True(cache.ContainsKey(first.Digest));
+        Assert.False(cache.ContainsKey(second.Digest));
+    }
 }

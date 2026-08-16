@@ -77,7 +77,7 @@ Foundgine 0.3.0 has passed the repository restore, build, and full automated tes
 
 The active repository proves semantic modelling and resolution, authorization, provider-independent query and mutation planning, SQL/SQLite execution, nested traversal, deterministic plan fingerprints, execution evidence, AOT metadata generation, JSON intent, and Hot Chocolate GraphQL adapters.
 
-It does not currently prove autonomous-agent runtime behavior, workflow orchestration, rollback/compensation semantics, universal provider support, or universal benchmark superiority.
+It does not currently prove autonomous agents, workflow orchestration, rollback/compensation semantics, universal provider support, or benchmark superiority.
 
 ## Historical names
 
@@ -85,3 +85,7 @@ It does not currently prove autonomous-agent runtime behavior, workflow orchestr
 - CoffeeBeanery — historical prototype.
 
 These are not the current product identity.
+
+## M18.6 — Provider-Aware Cost Estimation
+
+Foundgine now supports provider-aware semantic plan optimization. An `IProviderCostEstimator` can supply execution-cost estimates for candidate rewrites, allowing provider-aware rule selection while preserving provider independence. Provider cost remains advisory: semantic equivalence and security preservation are mandatory before execution. SQL currently provides a conservative heuristic cost estimator, establishing a path toward statistics-backed optimization without leaking SQL physical concepts into the semantic planner.

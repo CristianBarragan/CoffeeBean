@@ -1,53 +1,59 @@
-# Roadmap
+# Current direction
 
-Foundgine 0.3.0 is the current shipped release. The core semantic execution pipeline is now validated by restore, build, and the full automated test suite. The roadmap therefore focuses on usefulness, provider depth, public API clarity, and evidence rather than another architecture-freeze cycle.
+Foundgine 0.3.0 is the current shipped release. The repository is organized around a stable semantic execution boundary rather than a numbered milestone program.
 
-## Current foundation — shipped
+## What the active codebase is focused on
 
-The current release includes the validated foundation for:
+### Semantic execution
 
-- semantic modeling and request resolution;
-- granular authorization and authorization-aware planning;
-- query and mutation planning;
-- execution IR and provider lowering;
-- SQL and InMemory execution;
-- GraphQL and JSON adapters;
-- AOT metadata generation;
-- MCP boundary and mutation-safe execution;
-- execution receipts and plan-bound approval;
-- deterministic plan fingerprints and provider-plan caching; and
-- PostgreSQL integration and benchmark workflows.
+The core pipeline is:
 
-The former M39–M42 material remains available in the implementation history and detailed architecture documents; it is no longer the primary public roadmap.
+```text
+Caller
+  ↓
+Structured intent
+  ↓
+Semantic resolution
+  ↓
+Authorization
+  ↓
+Semantic plan
+  ↓
+Plan validation / rewriting
+  ↓
+Provider execution
+  ↓
+Result + evidence
+```
 
-## Next
+The semantic layer is deliberately independent of GraphQL, SQL, AI frameworks, and transport concerns.
 
-### Public API simplification
+### Authorization and security
 
-Reduce unnecessary surface complexity while preserving the semantic/execution boundaries that are now validated.
+Authorization is represented as application-defined semantic policy and carried into planning and execution. Security invariants are part of the execution contract. Provider capabilities must be able to preserve the required guarantees before execution is allowed.
 
-### Provider depth
+Foundgine does not claim to solve authentication, identity management, secrets, transport security, rate limiting, database permissions, or deployment security.
 
-Improve provider composition and extend real-world provider scenarios without weakening the provider-independent semantic model.
+### Provider execution
 
-### PostgreSQL hardening
+The repository contains SQL and InMemory execution paths, with PostgreSQL integration and end-to-end coverage where the environment is configured. Provider independence means the semantic meaning is not expressed as SQL; providers translate the logical execution model into their own physical work.
 
-Expand real PostgreSQL E2E coverage, mutation coverage, and repeatable benchmark methodology.
+### Planning and optimization
 
-### Developer experience
+The planner contains conservative rewrite and optimization infrastructure. Transformations are expected to preserve semantic meaning and security constraints. Optimization is therefore a proof-bearing part of planning, not a license to alter business meaning.
 
-Improve examples, getting-started material, package documentation, and diagnostics around plan inspection and execution evidence.
+### AI and structured callers
 
-### AI and MCP integration
+AI agents are treated as untrusted producers of structured intent. Trusted execution context remains host-owned. The agent does not choose tenant identity, authorization context, provider, or database connection.
 
-Expand safe capability discovery and caller integration while keeping authorization and execution authority inside Foundgine.
+The project also exposes JSON and GraphQL adapters that converge on the same semantic execution boundary.
 
-## Later
+## Evidence over roadmap claims
 
-Potential future work includes additional providers, richer semantic actions, claims/roles integration above the policy contract, parameterized plan templates, and deeper AI/agent integration.
+The active source tree and active tests are the source of truth. Performance numbers, security properties, provider support, and examples should only be presented when they are implemented and backed by repository evidence.
 
-These are future directions, not current core guarantees.
+Detailed numbered milestone documents are retained under `docs/history/milestones` as development history. They are not a statement of current or future priority.
 
-## Roadmap rule
+## Areas for continued development
 
-The active source and tests are the source of truth. Public documentation must distinguish shipped/tested capabilities from planned work and historical material. See [Documentation truth](DOCUMENTATION-TRUTH.md).
+The repository can continue to deepen: provider coverage, public API ergonomics, semantic actions, authorization integrations above the policy boundary, agent integrations, observability, and end-to-end measurement. These are areas of development rather than promised milestone commitments.

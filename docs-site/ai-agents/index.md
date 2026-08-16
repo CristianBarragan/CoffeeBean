@@ -61,7 +61,7 @@ Foundgine
     PostgreSQL
 ```
 
-## Current integration boundary
+## End-to-end proof target
 
 The shipped 0.3.0 integration boundary proves the Foundgine semantic lifecycle and MCP/mutation safety contracts. The full autonomous-agent caller loop remains a separate integration target:
 
@@ -128,36 +128,3 @@ Build the E2E in this order:
 ```
 
 The local deterministic test should prove the architecture before infrastructure is introduced.
-
-## What's new in 0.3.0
-
-Foundgine 0.3.0 expands the validated semantic execution surface across querying, mutations, authorization, execution, and integrations.
-
-### Richer query semantics
-- Relationship filtering and ordering
-- Cursor and compound-cursor pagination
-- Aggregates and aggregate filtering
-- Nested collection traversal
-
-### Mutation execution
-- Nested mutations
-- Upsert workflows
-- Mutation dependency graphs
-- Mutation → Query → Mutation → Query workflows
-- Structured mutation results
-
-### Execution safety and control
-- Authorization-aware planning and execution
-- Plan approval
-- Context-safe plan caching
-- Execution IR and execution receipts
-- Untrusted/adversarial intent safety
-
-### Integration and deployment
-- GraphQL queries and mutations
-- JSON structured intent
-- MCP integration
-- AI-agent semantic boundary
-- Native AOT metadata and SQL pipeline
-- SQL, PostgreSQL, and InMemory execution
-

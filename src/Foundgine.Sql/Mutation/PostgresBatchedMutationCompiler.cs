@@ -54,6 +54,7 @@ public sealed class PostgresBatchedMutationCompiler
             throw new InvalidOperationException("A mutation batch must contain at least one operation.");
 
         var ops = plan.Operations;
+
         var levels = ComputeLevels(ops.Count, plan.Dependencies);
         var opToGroup = new int[ops.Count];
         var groups = new List<OpGroup>();
@@ -220,6 +221,17 @@ public sealed class PostgresBatchedMutationCompiler
 
     public SqlBatchedMutationPlan? TryCompile(MutationBatchPlan plan)
     {
+        ArgumentNullException.ThrowIfNull(plan);
+
+        // PostgreSQL data-modifying CTEs share a statement snapshot. A mutation
+        // that creates/upserts an entity and another mutation that updates/deletes
+        // the same entity therefore cannot be represented as independent CTEs and
+        // still observe the logical mutation ordering. Keep Compile() available
+        // for inspection/measurement, but make the executable path fall back to
+        // the sequential provider for this shape.
+        if (RequiresSequentialEntityMutation(plan.Operations))
+            return null;
+
         try
         {
             return Compile(plan);
@@ -228,6 +240,30 @@ public sealed class PostgresBatchedMutationCompiler
         {
             return null;
         }
+    }
+
+    private static bool RequiresSequentialEntityMutation(IReadOnlyList<MutationOperation> operations)
+    {
+        var kindsByEntity = new Dictionary<EntityId, HashSet<MutationKind>>();
+
+        foreach (var operation in operations)
+        {
+            if (!kindsByEntity.TryGetValue(operation.Entity.Id, out var kinds))
+                kindsByEntity[operation.Entity.Id] = kinds = [];
+
+            kinds.Add(operation.Kind);
+        }
+
+        foreach (var kinds in kindsByEntity.Values)
+        {
+            var hasInsertLike = kinds.Contains(MutationKind.Create) || kinds.Contains(MutationKind.Upsert);
+            var hasUpdateLike = kinds.Contains(MutationKind.Update) || kinds.Contains(MutationKind.Delete);
+
+            if (hasInsertLike && hasUpdateLike)
+                return true;
+        }
+
+        return false;
     }
 
     private void ValidateCorrelation(

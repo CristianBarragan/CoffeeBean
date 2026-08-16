@@ -18,13 +18,13 @@
   <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="site-header-inner">
-      <a class="brand" href="../index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a>
-      <nav>
+  <nav>
         <a href="../what-is-foundgine.html">What is it</a>
-        <a href="index.html">AI agents</a>
         <a href="../architecture/index.html">Architecture</a>
+        <a href="../security/index.html">Security</a>
+        <a href="../ai-agents/index.html">AI agents</a>
+        <a href="../mutations/index.html">Mutations</a>
+        <a href="../providers/index.html">Providers</a>
         <a href="../performance/index.html">Performance</a>
       </nav>
     </div>
@@ -171,36 +171,3 @@ Foundgine
   <script src="../assets/toc.js"></script>
 </body>
 </html>
-
-## What's new in 0.3.0
-
-Foundgine 0.3.0 expands the validated semantic execution surface across querying, mutations, authorization, execution, and integrations.
-
-### Richer query semantics
-- Relationship filtering and ordering
-- Cursor and compound-cursor pagination
-- Aggregates and aggregate filtering
-- Nested collection traversal
-
-### Mutation execution
-- Nested mutations
-- Upsert workflows
-- Mutation dependency graphs
-- Mutation → Query → Mutation → Query workflows
-- Structured mutation results
-
-### Execution safety and control
-- Authorization-aware planning and execution
-- Plan approval
-- Context-safe plan caching
-- Execution IR and execution receipts
-- Untrusted/adversarial intent safety
-
-### Integration and deployment
-- GraphQL queries and mutations
-- JSON structured intent
-- MCP integration
-- AI-agent semantic boundary
-- Native AOT metadata and SQL pipeline
-- SQL, PostgreSQL, and InMemory execution
-

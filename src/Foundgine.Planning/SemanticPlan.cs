@@ -7,7 +7,13 @@ namespace Foundgine.Planning;
 /// It describes the provider-neutral execution strategy without representing
 /// physical provider work.
 /// </summary>
-public sealed record SemanticPlan(SemanticPlanNode Root);
+public sealed record SemanticPlan(
+    SemanticPlanNode Root,
+    IReadOnlyList<string>? RequiredSecurityInvariants = null)
+{
+    public IReadOnlyList<string> EffectiveSecurityInvariants =>
+        RequiredSecurityInvariants ?? [];
+}
 
 /// <summary>
 /// One node in the canonical semantic planning artifact.
@@ -21,7 +27,11 @@ public sealed record SemanticPlanNode(
     ConnectionId? ViaConnection,
     IReadOnlyList<SemanticPlanNode> Children,
     Foundgine.Semantics.Query.SemanticQueryOptions? QueryOptions = null,
-    AuthorizationPredicate? Authorization = null)
+    AuthorizationPredicate? Authorization = null,
+    Foundgine.Semantics.RelationshipCardinality? RelationshipCardinality = null,
+    RelationshipTraversalMode TraversalMode = RelationshipTraversalMode.Default,
+    int TraversalOrder = -1,
+    AggregateExecutionStrategy AggregateExecutionStrategy = AggregateExecutionStrategy.Default)
 {
     public SemanticPlanNode(
         int id,

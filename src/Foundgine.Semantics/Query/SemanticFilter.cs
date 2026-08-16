@@ -23,7 +23,8 @@ public sealed record SemanticAggregateFilter(
     SemanticFilterAggregate Aggregate,
     FieldId? Field,
     SemanticAggregateFilterOperator Operator,
-    object? Value) : SemanticFilterExpression;
+    object? Value,
+    SemanticFilterExpression? Predicate = null) : SemanticFilterExpression;
 
 public sealed record SemanticAndFilter(
     IReadOnlyList<SemanticFilterExpression> Expressions) : SemanticFilterExpression;

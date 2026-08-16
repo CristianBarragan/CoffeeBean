@@ -82,7 +82,8 @@ public sealed class FoundgineEngine : IFoundgine
         var graph = new SemanticRequestResolver(_model).Resolve(request);
         var semanticOperation = SemanticOperationCompiler.Compile(graph);
         var authorizedOperation = new SemanticAuthorizer(_authorizationPolicy).Authorize(semanticOperation);
-        var plan = _planOptimizer.Optimize(_planner.Plan(authorizedOperation)).Plan;
+        var plan = SecurityInvariantPlanRequirements.Attach(
+            _planOptimizer.Optimize(_planner.Plan(authorizedOperation)).Plan);
         return new DryRunResult(PlanInspector.Inspect(plan));
     }
 
@@ -125,7 +126,8 @@ public sealed class FoundgineEngine : IFoundgine
         var graph = new SemanticRequestResolver(_model).Resolve(approval.Request);
         var semanticOperation = SemanticOperationCompiler.Compile(graph);
         var authorizedOperation = new SemanticAuthorizer(_authorizationPolicy).Authorize(semanticOperation);
-        var plan = _planOptimizer.Optimize(_planner.Plan(authorizedOperation)).Plan;
+        var plan = SecurityInvariantPlanRequirements.Attach(
+            _planOptimizer.Optimize(_planner.Plan(authorizedOperation)).Plan);
         var currentFingerprint = SemanticPlanFingerprint.Create(plan);
 
         if (!string.Equals(currentFingerprint, approval.PlanFingerprint, StringComparison.Ordinal))
@@ -138,7 +140,8 @@ public sealed class FoundgineEngine : IFoundgine
         var cacheKey = _cacheNamespace + ":" + SemanticPlanFingerprint.CreateShapeKey(plan);
         var providerPlan = _planCache.GetOrAdd(
             cacheKey,
-            () => _compiler.Compile(executionIr));
+            () => SecurityInvariantProofGate.AttachAndValidate(
+                _compiler.Compile(executionIr), executionIr, _compiler));
 
         var executionContext = AttachPaginationContext(plan, context ?? new ExecutionContext());
         return ExecuteAndEnrichEvidenceAsync(
@@ -170,12 +173,14 @@ public sealed class FoundgineEngine : IFoundgine
         var graph = new SemanticRequestResolver(_model).Resolve(request);
         var semanticOperation = SemanticOperationCompiler.Compile(graph);
         var authorizedOperation = new SemanticAuthorizer(_authorizationPolicy).Authorize(semanticOperation);
-        var plan = _planOptimizer.Optimize(_planner.Plan(authorizedOperation)).Plan;
+        var plan = SecurityInvariantPlanRequirements.Attach(
+            _planOptimizer.Optimize(_planner.Plan(authorizedOperation)).Plan);
         var executionIr = ExecutionIRCompiler.Compile(plan);
         var cacheKey = _cacheNamespace + ":" + SemanticPlanFingerprint.CreateShapeKey(plan);
         var providerPlan = _planCache.GetOrAdd(
             cacheKey,
-            () => _compiler.Compile(executionIr));
+            () => SecurityInvariantProofGate.AttachAndValidate(
+                _compiler.Compile(executionIr), executionIr, _compiler));
 
         var executionContext = AttachPaginationContext(plan, context ?? new ExecutionContext());
 

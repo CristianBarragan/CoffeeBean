@@ -3,6 +3,7 @@ using Foundgine.Execution;
 using Foundgine.Planning;
 using Foundgine.Semantics;
 using Foundgine.Semantics.Authorization;
+using Foundgine.Semantics.Security;
 using Xunit;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
@@ -84,8 +85,11 @@ public sealed class AuthorizationGoldenPathTests
                 : null;
     }
 
-    private sealed class CapturingCompiler : IProviderPlanCompiler
+    private sealed class CapturingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
     {
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
+
         public ExecutionIR? IR { get; private set; }
 
         public ProviderPlan Compile(ExecutionIR ir)

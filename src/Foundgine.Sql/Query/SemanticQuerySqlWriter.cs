@@ -2,6 +2,7 @@ using System.Collections;
 using System.Text;
 using Foundgine.Metadata;
 using Foundgine.Abstractions;
+using Foundgine.Planning;
 using Foundgine.Semantics.Query;
 
 namespace Foundgine.Sql.Query;
@@ -13,7 +14,8 @@ internal static class SemanticQuerySqlWriter
         EntityMetadata entity,
         string alias,
         ICollection<SqlParameterBinding> parameters,
-        IMetadataProvider metadata)
+        IMetadataProvider metadata,
+        AggregateExecutionStrategy aggregateStrategy = AggregateExecutionStrategy.Default)
     {
         if (filter is null) return null;
 
@@ -29,7 +31,7 @@ internal static class SemanticQuerySqlWriter
         // "operator does not exist: bigint > text").
         var nextParameter = parameters.Count;
         var nextAlias = 0;
-        return WriteFilter(filter, entity, alias, parameters, metadata, ref nextParameter, ref nextAlias);
+        return WriteFilter(filter, entity, alias, parameters, metadata, aggregateStrategy, true, ref nextParameter, ref nextAlias);
     }
 
     public static string? WriteOrder(
@@ -55,6 +57,8 @@ internal static class SemanticQuerySqlWriter
         string alias,
         ICollection<SqlParameterBinding> parameters,
         IMetadataProvider metadata,
+        AggregateExecutionStrategy aggregateStrategy,
+        bool allowAggregateStrategy,
         ref int nextParameter,
         ref int nextAlias)
     {
@@ -96,6 +100,7 @@ internal static class SemanticQuerySqlWriter
                     alias,
                     parameters,
                     metadata,
+                    aggregateStrategy,
                     ref nextParameter,
                     ref nextAlias);
 
@@ -106,14 +111,16 @@ internal static class SemanticQuerySqlWriter
                     alias,
                     parameters,
                     metadata,
+                    aggregateStrategy,
+                    allowAggregateStrategy,
                     ref nextParameter,
                     ref nextAlias);
 
             case SemanticAndFilter andFilter:
-                return Join(andFilter.Expressions, "AND", entity, alias, parameters, metadata, ref nextParameter, ref nextAlias);
+                return Join(andFilter.Expressions, "AND", entity, alias, parameters, metadata, aggregateStrategy, allowAggregateStrategy, ref nextParameter, ref nextAlias);
 
             case SemanticOrFilter orFilter:
-                return Join(orFilter.Expressions, "OR", entity, alias, parameters, metadata, ref nextParameter, ref nextAlias);
+                return Join(orFilter.Expressions, "OR", entity, alias, parameters, metadata, aggregateStrategy, allowAggregateStrategy, ref nextParameter, ref nextAlias);
 
             default:
                 throw new NotSupportedException(expression.GetType().Name);
@@ -126,6 +133,7 @@ internal static class SemanticQuerySqlWriter
         string sourceAlias,
         ICollection<SqlParameterBinding> parameters,
         IMetadataProvider metadata,
+        AggregateExecutionStrategy aggregateStrategy,
         ref int nextParameter,
         ref int nextAlias)
     {
@@ -142,6 +150,8 @@ internal static class SemanticQuerySqlWriter
             targetAlias,
             parameters,
             metadata,
+            aggregateStrategy,
+            false,
             ref nextParameter,
             ref nextAlias);
 
@@ -164,6 +174,8 @@ internal static class SemanticQuerySqlWriter
         string sourceAlias,
         ICollection<SqlParameterBinding> parameters,
         IMetadataProvider metadata,
+        AggregateExecutionStrategy aggregateStrategy,
+        bool allowAggregateStrategy,
         ref int nextParameter,
         ref int nextAlias)
     {
@@ -175,11 +187,29 @@ internal static class SemanticQuerySqlWriter
         var targetAlias = "a" + nextAlias++;
         var join = RenderJoinCondition(relationship.SourceKey, relationship.TargetKey, source, sourceAlias, target, targetAlias);
 
+        // The planner-level AggregateCardinalityOptimizationRule hint proves this bare COUNT
+        // comparison depends only on whether the related collection is empty, not on the
+        // exact count. Rendering it as EXISTS/NOT EXISTS lets the database avoid materializing
+        // a count at all; the semantic meaning (and required security invariants, unaffected
+        // by this rewrite) are exactly the same as the COUNT-subquery form below.
+        if (allowAggregateStrategy && AggregateExecutionStrategyResolver.IsEligibleFor(filter, aggregateStrategy))
+        {
+            var existsExpression = $"EXISTS (SELECT 1 FROM {SqlCompiler.QuoteStorageName(target.EffectiveStorageName)} {SqlCompiler.QuoteIdentifier(targetAlias)} WHERE {join})";
+            return aggregateStrategy == AggregateExecutionStrategy.CountExistsShortCircuit
+                ? existsExpression
+                : $"NOT {existsExpression}";
+        }
+
+        var aggregatePredicate = filter.Predicate is null
+            ? null
+            : WriteFilter(filter.Predicate, target, targetAlias, parameters, metadata, aggregateStrategy, false, ref nextParameter, ref nextAlias);
+        var where = aggregatePredicate is null ? join : $"{join} AND {aggregatePredicate}";
+
         string expression;
         switch (filter.Aggregate)
         {
             case SemanticFilterAggregate.Count:
-                expression = $"(SELECT COUNT(*) FROM {SqlCompiler.QuoteStorageName(target.EffectiveStorageName)} {SqlCompiler.QuoteIdentifier(targetAlias)} WHERE {join})";
+                expression = $"(SELECT COUNT(*) FROM {SqlCompiler.QuoteStorageName(target.EffectiveStorageName)} {SqlCompiler.QuoteIdentifier(targetAlias)} WHERE {where})";
                 break;
 
             case SemanticFilterAggregate.Min:
@@ -190,7 +220,7 @@ internal static class SemanticQuerySqlWriter
                     ?? throw new InvalidOperationException($"Unknown aggregate filter field '{filter.Field}' on '{target.Name}'.");
                 var column = ResolveColumn(target, field);
                 var aggregateName = filter.Aggregate == SemanticFilterAggregate.Min ? "MIN" : "MAX";
-                expression = $"(SELECT {aggregateName}({SqlCompiler.QuoteIdentifier(targetAlias)}.{SqlCompiler.QuoteIdentifier(column.EffectiveStorageName)}) FROM {SqlCompiler.QuoteStorageName(target.EffectiveStorageName)} {SqlCompiler.QuoteIdentifier(targetAlias)} WHERE {join})";
+                expression = $"(SELECT {aggregateName}({SqlCompiler.QuoteIdentifier(targetAlias)}.{SqlCompiler.QuoteIdentifier(column.EffectiveStorageName)}) FROM {SqlCompiler.QuoteStorageName(target.EffectiveStorageName)} {SqlCompiler.QuoteIdentifier(targetAlias)} WHERE {where})";
                 break;
 
             default:
@@ -273,13 +303,15 @@ internal static class SemanticQuerySqlWriter
         string alias,
         ICollection<SqlParameterBinding> parameters,
         IMetadataProvider metadata,
+        AggregateExecutionStrategy aggregateStrategy,
+        bool allowAggregateStrategy,
         ref int nextParameter,
         ref int nextAlias)
     {
         if (expressions.Count == 0) throw new InvalidOperationException("Filter group cannot be empty.");
         var parts = new List<string>(expressions.Count);
         foreach (var expression in expressions)
-            parts.Add(WriteFilter(expression, entity, alias, parameters, metadata, ref nextParameter, ref nextAlias));
+            parts.Add(WriteFilter(expression, entity, alias, parameters, metadata, aggregateStrategy, allowAggregateStrategy, ref nextParameter, ref nextAlias));
         return "(" + string.Join(" " + op + " ", parts) + ")";
     }
 

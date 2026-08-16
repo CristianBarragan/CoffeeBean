@@ -3,6 +3,7 @@ using Foundgine.Execution;
 using Foundgine.Metadata;
 using Foundgine.Planning;
 using Foundgine.Semantics.Query;
+using Foundgine.Semantics.Security;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine.InMemory;
@@ -52,12 +53,22 @@ public sealed class InMemoryExecutionProvider : IExecutionProvider
         _compiler.ExecuteAsync(plan, context, cancellationToken);
 }
 
-public sealed class InMemoryCompiler : IProviderPlanCompiler
+public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
 {
     private readonly IMetadataProvider? _metadata;
     private readonly InMemoryDataSet? _data;
 
     public InMemoryCompiler() { }
+
+    public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+    [
+        SecurityInvariantIds.AuthorizationRequired,
+        SecurityInvariantIds.RuntimeAuthorization,
+        SecurityInvariantIds.FieldVisibility,
+        SecurityInvariantIds.RelationshipVisibility,
+        SecurityInvariantIds.ParameterizedValues,
+        SecurityInvariantIds.PlanCacheContextIsolation
+    ];
 
     public InMemoryCompiler(IMetadataProvider metadata, InMemoryDataSet data)
     {

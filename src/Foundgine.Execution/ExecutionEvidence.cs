@@ -16,7 +16,10 @@ public sealed record ExecutionEvidence(
     long ElapsedMilliseconds,
     string? ProviderOperationFingerprint = null,
     string? IntentFingerprint = null,
-    string? AuthorizationFingerprint = null);
+    string? AuthorizationFingerprint = null,
+    string? WarrantId = null,
+    string? WarrantDigest = null,
+    string? SecurityInvariantDigest = null);
 
 public static class ExecutionEvidenceFactory
 {

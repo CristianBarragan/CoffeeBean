@@ -1,375 +1,130 @@
-# Foundgine 0.3.0
+# Foundgine — full public context
 
-Current shipped release: **0.3.0**. The repository has passed restore, build, and full automated tests for the current release. PostgreSQL E2E and benchmark workflows remain separate environment-dependent evidence.
+## What Foundgine is
 
-# Foundgine — Full Documentation
+Foundgine is a programmable semantic execution platform for .NET. It creates a controlled boundary between application callers — APIs, GraphQL, automation, structured JSON, and AI agents — and the data and operations they are allowed to execute.
 
-> This file concatenates all public Foundgine documentation pages for full-context ingestion by AI agents and LLMs. See llms.txt for a linked index of the same pages.
-
----
-
-## What Is Foundgine?
-
-
-**Foundgine is a semantic execution platform for .NET that turns structured intent into authorized execution plans.**
-
-## The problem
-
-Applications increasingly have multiple callers:
-
-- APIs
-- GraphQL
-- automation
-- internal services
-- AI agents
-
-Each caller can otherwise grow its own rules for validation, authorization, query construction, and data access.
-
-That makes the application harder to reason about and creates multiple execution paths.
-
-## The Foundgine model
-
-Foundgine introduces a semantic boundary:
+The core lifecycle is:
 
 ```text
 Caller
   ↓
-Intent
+Structured intent
   ↓
-Semantic Model
+Semantic resolution
   ↓
 Authorization
   ↓
-Execution Plan
+Provider-neutral plan
   ↓
-Provider
+Provider execution
   ↓
-Result
+Result + evidence
 ```
 
-The caller expresses an operation. The application defines the semantic capabilities and authorization rules. Foundgine builds the execution plan and the provider performs it.
+Foundgine separates application meaning from physical persistence. A semantic model can expose a smaller, more purposeful surface than the underlying tables and columns.
 
-## Why semantic execution?
+## Why the boundary exists
 
-A persistence model describes how data is stored.
+Without a shared execution boundary, every caller can develop its own validation, authorization, query construction, and data-access path. Foundgine centralizes the application-facing semantic model so callers can converge on the same authorization and execution rules.
 
-A semantic model describes what an application is willing to expose and operate on.
+Foundgine is not an ORM replacement, database, GraphQL server, LLM, agent framework, identity provider, or general workflow engine. It is an execution layer that can sit underneath those systems.
 
-Those models do not have to be identical.
+## Architecture
 
-For example, a persistence model might contain:
+Transport adapters and providers depend on Foundgine contracts; the semantic core does not depend on GraphQL, SQL, AI frameworks, or another transport/provider implementation.
 
 ```text
-Customer
- ├── Id
- ├── TenantId
- ├── Name
- ├── InternalRiskScore
- └── Accounts
+GraphQL ─┐
+JSON ────┼──→ Semantic request → Plan → Provider
+AI ──────┘                         ↙        ↘
+                              SQL          InMemory
 ```
 
-An application-facing semantic model might expose:
+The intermediate plan provides a boundary for authorization preservation, dependency validation, rewriting, cost reasoning, provider capabilities, optimization, and execution evidence.
+
+## Security boundary
+
+Foundgine treats authorization as part of semantic execution rather than as a transport-only boolean check. Authorization predicates can be carried into the plan and must be preserved by provider execution.
+
+For example:
 
 ```text
-Customer
- ├── id
- ├── name
- └── accounts
-      └── balance
+resource.TenantId == user.TenantId
 ```
 
-The semantic surface can therefore be smaller, safer, and more purposeful than the physical model.
+The security model has three distinct concerns:
 
-## Why this matters for AI
+1. **Intent interpretation** — probabilistic and untrusted when produced by an AI model.
+2. **Semantic execution** — deterministic once application meaning and policy are defined.
+3. **Operational security** — authentication, identity management, secrets, transport security, rate limiting, database permissions, and deployment security remain application/infrastructure responsibilities.
 
-An AI agent is good at producing intent. It should not be trusted with unrestricted database authority.
+Foundgine does not claim that an incorrect business policy becomes correct merely because it is authorized. A domain definition such as “available funds” must be defined correctly by the application.
 
-A safer architecture is:
+## Adversarial intent
+
+The repository includes tests for hostile structured intent and security-boundary regressions, including cross-tenant access, hidden-field selection, unauthorized relationship traversal, execution-control injection, bounded depth/fan-out/filter input, plan-level security invariants, and mutation replay.
+
+## High-assurance mutations
+
+The repository includes a `TransferFunds` example to exercise consequential mutation semantics:
 
 ```text
-AI
- ↓
+TransferFunds
+  ↓
+resolve source + destination
+  ↓
+verify tenant + ownership
+  ↓
+verify account state
+  ↓
+verify limits + available funds
+  ↓
+verify idempotency
+  ↓
+transactional execution
+  ├── debit
+  ├── credit
+  └── audit
+  ↓
+execution receipt
+```
+
+The example distinguishes raw balance from available funds. Its semantic definition can account for pending transactions and regulatory holds.
+
+The PostgreSQL implementation uses a transaction, deterministic account locking, current-state checks, database-backed idempotency, and audit persistence. This is a concrete proof of one consequential capability, not a claim that every business mutation is automatically safe.
+
+## Providers
+
+The SQL path lowers the provider-neutral execution model into relational SQL. The InMemory provider executes a limited subset directly over CLR-backed data and deliberately does not generate SQL. Provider independence means semantic meaning is not expressed as SQL; it does not mean every provider supports every operation.
+
+A provider should declare supported operations, preserve required security invariants, compile logical operations into provider-native work, validate result semantics, and carry conformance/integration tests.
+
+## AI agents
+
+AI is an intent source, not a core dependency or authority over database access.
+
+```text
+AI interpretation
+      ↓
 structured intent
- ↓
-Foundgine
- ├── resolve
- ├── validate
- ├── authorize
- ├── plan
- └── execute
- ↓
-database
+      ↓
+semantic validation
+      ↓
+authorization
+      ↓
+plan
+      ↓
+provider
 ```
 
-The application remains the authority over what the agent can do.
+The host application owns `ExecutionContext`, so tenant identity, authorization context, provider selection, and database connection details do not become model-controlled tool arguments.
 
-## Core concepts
+The project does not claim a general autonomous-agent runtime. The semantic agent boundary and tool integration are the important architecture; orchestration, model selection, deployment, and autonomous behavior remain application concerns.
 
-Foundgine's public mental model can remain simple:
+## Performance evidence
 
-**Model → Request → Authorize → Plan → Execute → Result**
-
-The deeper architecture adds metadata, expression trees, relationship traversal, rewriting, optimization, cost estimation, provider capabilities, and execution evidence.
-
-## Where Foundgine fits
-
-Foundgine can sit underneath interfaces rather than replacing them:
-
-```text
-REST/API ──────┐
-GraphQL ───────┤
-Automation ────┤
-AI Agent ──────┤
-               ▼
-           Foundgine
-               ▼
-        SQL / InMemory / ...
-```
-
-This lets the interface and the execution model evolve independently.
-
----
-
-## AI Agents with Foundgine
-
-
-## Safe AI access to application data
-
-The purpose of the Foundgine AI integration is not to make the model responsible for database access.
-
-The intended boundary is:
-
-```text
-AI Agent
-   ↓
-Tool / structured intent
-   ↓
-Foundgine
-   ↓
-Authorization + planning
-   ↓
-Provider
-   ↓
-PostgreSQL
-```
-
-## The anti-pattern
-
-Avoid:
-
-```text
-LLM
- ↓
-generated SQL
- ↓
-database credentials
- ↓
-PostgreSQL
-```
-
-The model should not be the authority over database schema access, tenant isolation, or application authorization.
-
-## The Foundgine pattern
-
-```text
-LLM
- │
- │ "Find customers with balances over $10k"
- ▼
-Agent tool
- │
- │ structured request
- ▼
-Foundgine
- ├── semantic resolution
- ├── validation
- ├── authorization
- ├── relationship traversal
- ├── planning
- └── provider execution
-        │
-        ▼
-    PostgreSQL
-```
-
-## Current integration boundary
-
-The first E2E scenario should prove the complete chain:
-
-1. An AI agent receives a natural-language task.
-2. The model selects a Foundgine capability.
-3. The capability produces structured intent.
-4. Foundgine resolves the semantic model.
-5. Authorization is evaluated.
-6. An execution plan is produced.
-7. PostgreSQL executes the plan.
-8. The result returns to the agent.
-9. Evidence is available for inspection.
-
-## What this page describes vs. what exists today
-
-Steps 3–7 above — structured intent, semantic resolution, authorization, planning, and provider execution — are the same core pipeline documented in the Architecture section; that pipeline is not specific to AI agents.
-
-The semantic lifecycle itself is shipped and tested in 0.3.0. A general autonomous-agent runtime that owns model selection, orchestration, deployment infrastructure, and autonomous end-to-end behavior is not a current core guarantee.
-
-## Security scenarios
-
-The E2E suite should include at least:
-
-### Allowed field
-
-```text
-Agent → customer.name
-→ authorized
-→ SQL
-→ result
-```
-
-### Forbidden field
-
-```text
-Agent → customer.internalRiskScore
-→ denied
-→ no database execution
-```
-
-### Tenant isolation
-
-```text
-Agent → another tenant's customer
-→ authorization predicate prevents access
-```
-
-### Prompt injection
-
-A malicious value in application data must not become an instruction that changes the agent's authorization or Foundgine execution boundary.
-
-## Deployment progression
-
-Build the E2E in this order:
-
-```text
-1. Agent process
-2. Foundgine
-3. PostgreSQL
-4. Deterministic E2E
-5. HTTP boundary
-6. Docker
-7. Kubernetes
-8. Terraform
-9. CI/CD
-```
-
-The local deterministic test should prove the architecture before infrastructure is introduced.
-
----
-
-## Foundgine Architecture
-
-
-## Core execution pipeline
-
-```text
-Intent
-  ↓
-Semantic Model
-  ↓
-Resolution
-  ↓
-Authorization
-  ↓
-Plan
-  ↓
-Rewrite / Optimize
-  ↓
-Provider Compilation
-  ↓
-Execution
-  ↓
-Result + Evidence
-```
-
-## Separation of concerns
-
-### Semantic model
-
-Defines the application-facing capabilities.
-
-### Intent
-
-Describes what the caller wants without binding it directly to a physical provider.
-
-### Authorization
-
-Determines which parts of the requested operation are permitted and can contribute predicates or constraints to the execution plan.
-
-### Planner
-
-Builds a provider-independent representation of the requested operation.
-
-### Rewriting and optimization
-
-Transforms the plan while preserving semantics and authorization constraints.
-
-### Provider
-
-Compiles and executes the plan against a concrete backend.
-
-## Multiple callers, one execution model
-
-```text
-REST/API
-GraphQL
-JSON
-AI Agent
-Automation
-   │
-   ▼
-Semantic Intent
-   │
-   ▼
-Foundgine Planner
-   │
-   ├── SQL
-   ├── InMemory
-   └── Future providers
-```
-
-The goal is to avoid implementing separate execution semantics for every interface.
-
-## Why the intermediate plan matters
-
-The plan is the architectural boundary between semantic intent and physical execution.
-
-It gives the runtime a place to:
-
-- preserve authorization constraints
-- validate dependencies
-- rewrite operations
-- estimate cost
-- reason about provider capabilities
-- optimize execution
-- produce execution evidence
-
-This is the core mechanism that allows multiple input surfaces and providers to share execution semantics.
-
----
-
-## Foundgine Performance
-
-
-## CoffeeBeanery PostgreSQL graph benchmark — 12 August 2026
-
-Three independent successful runs were performed against a deterministic PostgreSQL graph workload.
-
-### Workload
-
-```text
-Customer
-  → CustomerBankingRelationship
-      → Contract
-          → Transaction
-```
+The corrected 15 August 2026 CoffeeBeanery PostgreSQL benchmark compares Hot Chocolate + EF Core, Foundgine without provider-plan caching, and Foundgine with provider-plan caching.
 
 Fixture:
 
@@ -377,65 +132,37 @@ Fixture:
 - 4,000 relationships
 - 12,000 contracts
 - 48,000 transactions
-- concurrency 1, 8, 32
-- 10-second measurement per case
-- 3-second warm-up
-- 5-second request timeout
+- concurrency 1/8/16/32/64
+- mutation and upsert batch sizes 1/10/50
 
-## Query result
+At concurrency 32 for the top-50 query:
 
-At concurrency 32:
+| Target | RPS | p50 | p95 | p99 |
+|---|---:|---:|---:|---:|
+| Hot Chocolate + EF Core | 224.0 | 141.8 ms | 187.0 ms | 216.4 ms |
+| Foundgine — no cache | 2,352.2 | 12.5 ms | 25.2 ms | 34.2 ms |
+| Foundgine — provider-plan cache | 2,975.7 | 9.9 ms | 18.4 ms | 23.0 ms |
 
-| Implementation | Average RPS | Average p95 |
-|---|---:|---:|
-| Hot Chocolate + EF Core | 139.4 | 338.4 ms |
-| Foundgine — no cache | 2,781.0 | 20.3 ms |
-| Foundgine — provider-plan cache | 2,838.9 | 19.9 ms |
+The corrected report explicitly retracts an earlier contradictory table. The results are workload-specific engineering evidence, not a universal performance claim.
 
-That is approximately:
+At concurrency 32, logical mutation throughput for batch sizes 1/10/50 was 781.4/5,793/12,990 for Foundgine without cache and 778.8/5,954/13,155 with cache, compared with 715.6/3,656/4,550 for Hot Chocolate + EF Core. The largest difference appears at larger batch sizes.
 
-- 20.0× the throughput without the cache
-- 20.4× with the cache
-- 16.7× lower p95 latency without the cache
-- 17.0× lower p95 latency with the cache
+## Current validation status
 
-The large query advantage is therefore not dependent on provider-plan caching.
+Foundgine 0.3.0 is the current shipped release. The active repository contains semantic execution, authorization-aware planning, SQL and InMemory execution, GraphQL and JSON adapters, AOT metadata support, AI integration surfaces, execution evidence, and PostgreSQL integration infrastructure.
 
-## Reliability
+The latest supplied validation run was not green. It reported failures in semantic security/capability validation and an aggregate optimizer expectation. The JSON intent safety suite passed. PostgreSQL integration tests require a configured database connection and are environment-dependent.
 
-The three successful runs reported:
+Do not interpret historical milestone documents as current status or future commitments. The active source code and active tests are the source of truth.
 
-- 0 application errors
-- 0 request timeouts
-- 0 cancelled requests
+## Public pages
 
-## Mutation results
-
-Mutation performance is more variable.
-
-The benchmark supports the conclusion that Foundgine can perform well at higher concurrency, but mutation performance should not currently be presented as the primary performance claim.
-
-## What this proves
-
-The strongest evidence is for:
-
-> **read/query execution over a relationship-heavy PostgreSQL graph workload.**
-
-The results consistently show substantially higher query throughput and lower p95 latency in this controlled workload.
-
-## What this does not prove
-
-This is not a universal benchmark of every:
-
-- EF Core workload
-- Hot Chocolate workload
-- PostgreSQL schema
-- query shape
-- mutation workload
-- hardware configuration
-
-Results depend on the workload, schema, provider versions, host, fixture, and implementation versions.
-
-The appropriate claim is:
-
-> **Foundgine demonstrates a substantial performance advantage for this relationship-heavy graph query workload.**
+- What is Foundgine: https://cristianbarragan.github.io/Foundgine/what-is-foundgine.html
+- Architecture: https://cristianbarragan.github.io/Foundgine/architecture/
+- Security: https://cristianbarragan.github.io/Foundgine/security/
+- High-assurance mutations: https://cristianbarragan.github.io/Foundgine/mutations/
+- Providers: https://cristianbarragan.github.io/Foundgine/providers/
+- AI agents: https://cristianbarragan.github.io/Foundgine/ai-agents/
+- Getting started: https://cristianbarragan.github.io/Foundgine/getting-started/
+- Performance: https://cristianbarragan.github.io/Foundgine/performance/
+- Repository: https://github.com/CristianBarragan/Foundgine

@@ -3,6 +3,7 @@ using Foundgine.Execution;
 using Foundgine.Planning;
 using Microsoft.Extensions.DependencyInjection;
 using Foundgine.Semantics;
+using Foundgine.Semantics.Security;
 using Foundgine.Semantics.Authorization;
 using Foundgine.Semantics.Resolution;
 using Xunit;
@@ -41,8 +42,10 @@ public sealed class PublicApiTests
         Assert.Equal("Alice", result.Rows[0].Values["Name"]);
     }
 
-    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler
+    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
     {
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
         public int CompiledCount { get; private set; }
 
         public ProviderPlan Compile(ExecutionIR ir)

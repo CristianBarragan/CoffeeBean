@@ -9,8 +9,6 @@
 
 **Foundgine is a programmable semantic execution platform for .NET.**
 
-**Current release: 0.3.0**
-
 It creates a controlled boundary between application callers — including APIs, GraphQL, automation, and AI agents — and the data and operations they are allowed to execute.
 
 Instead of allowing every caller to implement its own validation, authorization, query translation, and data-access logic, Foundgine turns structured intent into an authorized execution plan and executes that plan through a provider.
@@ -86,6 +84,12 @@ Foundgine is designed to centralize the semantic execution model so that differe
 ### The key idea
 
 > **Callers describe what they want. Foundgine determines what is allowed, how it should execute, and which provider performs it.**
+
+## Security conformance
+
+Foundgine treats security requirements as part of the semantic execution contract. Required security invariants are propagated into plans and checked against provider capabilities before execution. This prevents a provider from silently executing a capability whose security guarantees it cannot preserve.
+
+Security requirements are represented as semantic invariants and carried into the planning/provider boundary. The repository contains conformance and adversarial tests for these contracts; current validation status is tracked in `docs/CURRENT-STATUS.md`.
 
 ## Foundgine and AI agents
 
@@ -180,10 +184,6 @@ What the database can execute
 
 Foundgine connects those two through an application-controlled semantic and planning layer.
 
-## Validation status
-
-Foundgine 0.3.0 has passed the repository restore, build, and full automated test gates used for the current release. PostgreSQL-specific integration and benchmark workflows remain separately documented because they depend on a real PostgreSQL environment.
-
 ## Performance evidence
 
 The 12 August 2026 CoffeeBeanery benchmark contains three successful runs over a deterministic PostgreSQL graph workload.
@@ -230,7 +230,11 @@ That boundary should work for traditional software and intelligent agents alike.
 - [What is Foundgine?](docs-site/what-is-foundgine.md)
 - [AI agents and PostgreSQL](docs-site/ai-agents/index.md)
 - [Architecture](docs-site/architecture/index.md)
-- [Performance](docs-site/performance/index.md)
+- [Performance](docs-site/performance/index.html)
+- [Security](docs-site/security/index.html)
+- [High-assurance mutations](docs-site/mutations/index.html)
+- [Providers](docs-site/providers/index.html)
+- [Getting started](docs-site/getting-started/index.html)
 - [llms.txt](docs-site/llms.txt) / [llms-full.md](docs-site/llms-full.md) — machine-readable documentation index for AI agents and LLM tooling
 
 The published site (built from `docs-site/`) is available at https://cristianbarragan.github.io/Foundgine/.
@@ -239,7 +243,7 @@ The published site (built from `docs-site/`) is available at https://cristianbar
 
 Repository development setup, tests, benchmarks, deployment templates, and contribution guidance should remain separate from the first-time user experience.
 
-[`BENCHMARK-RESULTS-2026-08-12-CLEAN.md`](BENCHMARK-RESULTS-2026-08-12-CLEAN.md) is the source data behind [`docs-site/performance/index.md`](docs-site/performance/index.md); it's kept at the repo root as development/benchmark evidence rather than published-site content.
+The current benchmark evidence is in [`docs/benchmarks/2026-08-15-performance-results.md`](docs/benchmarks/2026-08-15-performance-results.md) and is summarized on [`docs-site/performance/index.html`](docs-site/performance/index.html).
 
 ## Security
 
@@ -247,38 +251,6 @@ Foundgine's authorization and execution boundaries are intended to reduce unsafe
 
 ## Status
 
-Foundgine is actively evolving. Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be evaluated against the current 0.3.0 release and the explicit claims in the documentation.
+Foundgine is actively evolving. Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
 
-## What's new in 0.3.0
 
-Foundgine 0.3.0 expands the validated semantic execution surface across querying, mutations, authorization, execution, and integrations.
-
-### Richer query semantics
-- Relationship filtering and ordering
-- Cursor and compound-cursor pagination
-- Aggregates and aggregate filtering
-- Nested collection traversal
-
-### Mutation execution
-- Nested mutations
-- Upsert workflows
-- Mutation dependency graphs
-- Mutation → Query → Mutation → Query workflows
-- Structured mutation results
-
-### Execution safety and control
-- Authorization-aware planning and execution
-- Plan approval
-- Context-safe plan caching
-- Execution IR and execution receipts
-- Untrusted/adversarial intent safety
-
-### Integration and deployment
-- GraphQL queries and mutations
-- JSON structured intent
-- MCP integration
-- AI-agent semantic boundary
-- Native AOT metadata and SQL pipeline
-- SQL, PostgreSQL, and InMemory execution
-
-=======

@@ -52,7 +52,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.MCP.Tests", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Security.Tests", "tests\Foundgine.Security.Tests\Foundgine.Security.Tests.csproj", "{20000009-0000-0000-0000-000000000009}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.CoffeeBeanery.Product", "samples\\Foundgine.CoffeeBeanery.Product\\Foundgine.CoffeeBeanery.Product.csproj", "{843BA4B0-511E-4110-ADDB-51E722C67DE6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.HighAssurance.Banking", "samples\Foundgine.HighAssurance.Banking\Foundgine.HighAssurance.Banking.csproj", "{10000011-0000-0000-0000-000000000011}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.HighAssurance.Tests", "tests\Foundgine.HighAssurance.Tests\Foundgine.HighAssurance.Tests.csproj", "{2000000A-0000-0000-0000-00000000000A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.HighAssurance.Postgres", "samples\Foundgine.HighAssurance.Postgres\Foundgine.HighAssurance.Postgres.csproj", "{10000012-0000-0000-0000-000000000012}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.HighAssurance.Postgres.Tests", "tests\Foundgine.HighAssurance.Postgres.Tests\Foundgine.HighAssurance.Postgres.Tests.csproj", "{2000000B-0000-0000-0000-00000000000B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.CoffeeBeanery.ProductComposite", "samples\Foundgine.CoffeeBeanery.ProductComposite\Foundgine.CoffeeBeanery.ProductComposite.csproj", "{523098A7-4F9B-4E76-8D47-14A910E8FE63}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -60,10 +68,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-        {843BA4B0-511E-4110-ADDB-51E722C67DE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-        {843BA4B0-511E-4110-ADDB-51E722C67DE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-        {843BA4B0-511E-4110-ADDB-51E722C67DE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-        {843BA4B0-511E-4110-ADDB-51E722C67DE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000010-0000-0000-0000-000000000010}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000010-0000-0000-0000-000000000010}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000010-0000-0000-0000-000000000010}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000010-0000-0000-0000-000000000010}.Release|Any CPU.Build.0 = Release|Any CPU
 		{10000010-0000-0000-0000-000000000010}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{10000010-0000-0000-0000-000000000010}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{10000010-0000-0000-0000-000000000010}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -164,7 +172,35 @@ Global
 		{1000000F-0000-0000-0000-00000000000F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1000000F-0000-0000-0000-00000000000F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1000000F-0000-0000-0000-00000000000F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{523098A7-4F9B-4E76-8D47-14A910E8FE63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{523098A7-4F9B-4E76-8D47-14A910E8FE63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{523098A7-4F9B-4E76-8D47-14A910E8FE63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{523098A7-4F9B-4E76-8D47-14A910E8FE63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000011-0000-0000-0000-000000000011}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000011-0000-0000-0000-000000000011}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000012-0000-0000-0000-000000000012}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000012-0000-0000-0000-000000000012}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2000000B-0000-0000-0000-00000000000B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2000000B-0000-0000-0000-00000000000B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2000000A-0000-0000-0000-00000000000A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2000000A-0000-0000-0000-00000000000A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
+		{10000011-0000-0000-0000-000000000011}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000011-0000-0000-0000-000000000011}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000011-0000-0000-0000-000000000011}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000011-0000-0000-0000-000000000011}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2000000A-0000-0000-0000-00000000000A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2000000A-0000-0000-0000-00000000000A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2000000A-0000-0000-0000-00000000000A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2000000A-0000-0000-0000-00000000000A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10000012-0000-0000-0000-000000000012}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000012-0000-0000-0000-000000000012}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000012-0000-0000-0000-000000000012}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000012-0000-0000-0000-000000000012}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2000000B-0000-0000-0000-00000000000B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2000000B-0000-0000-0000-00000000000B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2000000B-0000-0000-0000-00000000000B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2000000B-0000-0000-0000-00000000000B}.Release|Any CPU.Build.0 = Release|Any CPU
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
