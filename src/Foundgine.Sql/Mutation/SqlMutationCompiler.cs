@@ -78,7 +78,7 @@ public sealed class SqlMutationCompiler
             if (i > 0) sb.Append(", ");
             var name = "p" + i;
             sb.Append("@").Append(name);
-            parameters.Add(new SqlParameterBinding(name, fields[i].Value, fields[i].Source));
+            parameters.Add(new SqlParameterBinding(name, fields[i].Value, fields[i].Source, ClrType: entity.EffectiveFields.First(f => f.Column is { } c && c.ColumnId == fields[i].Column).ClrType));
         }
         sb.Append(") ON CONFLICT (")
           .Append(string.Join(", ", conflicts.Select(c => Q(ResolveColumn(entity, c)))))
@@ -187,7 +187,7 @@ public sealed class SqlMutationCompiler
             if (i > 0) sb.Append(", ");
             var name = "p" + i;
             sb.Append("@").Append(name);
-            parameters.Add(new SqlParameterBinding(name, fields[i].Value, fields[i].Source));
+            parameters.Add(new SqlParameterBinding(name, fields[i].Value, fields[i].Source, ClrType: entity.EffectiveFields.First(f => f.Column is { } c && c.ColumnId == fields[i].Column).ClrType));
         }
         sb.Append(')');
         AppendReturning(sb, entity, op.ReturnFields, out var returns);
@@ -206,7 +206,7 @@ public sealed class SqlMutationCompiler
             if (i > 0) sb.Append(", ");
             var name = "p" + i;
             sb.Append(Q(ResolveColumn(entity, op.Fields[i].Column))).Append(" = @").Append(name);
-            parameters.Add(new SqlParameterBinding(name, op.Fields[i].Value, op.Fields[i].Source));
+            parameters.Add(new SqlParameterBinding(name, op.Fields[i].Value, op.Fields[i].Source, ClrType: entity.EffectiveFields.First(f => f.Column is { } c && c.ColumnId == op.Fields[i].Column).ClrType));
         }
         var alias = "t0";
         sb.Append(" WHERE ");

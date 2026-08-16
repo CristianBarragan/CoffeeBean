@@ -39,8 +39,9 @@ internal static class CoffeeBeanerySemanticModel
             .Entity(Contract, "Contract", e => e
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(2), "ContractKey", typeof(Guid))
-                .Field(new FieldId(3), "Amount", typeof(decimal?))
-                .Field(new FieldId(4), "CustomerBankingRelationshipId", typeof(int?))
+                .Field(new FieldId(3), "ContractType", typeof(int?))
+                .Field(new FieldId(4), "Amount", typeof(decimal?))
+                .Field(new FieldId(5), "CustomerBankingRelationshipId", typeof(int?))
                 .Relationship(
                     ContractTransactions,
                     "Transaction",

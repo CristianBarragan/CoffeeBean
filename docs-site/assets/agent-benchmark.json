@@ -1,0 +1,1612 @@
+{
+  "GeneratedAtUtc": "2026-08-16T10:33:47.7380608+00:00",
+  "Scenario": "customer-exposure-review",
+  "Mode": "replay",
+  "Configuration": {
+    "Runs": 10,
+    "Warmups": 3,
+    "CustomerId": 1,
+    "ExposureThreshold": 48000,
+    "BaselineFullName": "Customer 1 Benchmark",
+    "ReviewedFullName": "Customer 1 Benchmark | Reviewed"
+  },
+  "Fixture": {
+    "CustomerId": 1,
+    "CustomerKey": "a41c0fea-0a7b-5282-bc1e-84d3df2a1f35",
+    "FullName": "Customer 1 Benchmark | Reviewed",
+    "RelationshipCount": 4,
+    "ContractCount": 12,
+    "TransactionCount": 48,
+    "Exposure": 48240
+  },
+  "Results": [
+    {
+      "Run": 1,
+      "Flow": "Conventional application/AI flow",
+      "WallClockMs": 8.4898,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 6.7799,
+      "ModelCalls": 0,
+      "ToolCalls": 7,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 36,
+      "EstimatedToolOutputTokens": 712,
+      "EstimatedContextLoadTokens": 932,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.0186113+00:00",
+          "Kind": "tool",
+          "Name": "describe_schema",
+          "Input": "{}",
+          "Output": "Customer(Id, CustomerKey, FirstName, LastName, FullName) -\u003E CustomerBankingRelationship(Id, CustomerId) -\u003E Contract(Id, CustomerBankingRelationshipId, ContractType, Amount) -\u003E Transaction(Id, ContractId, Amount, Balance). Customer 1 is the benchmark target.",
+          "ElapsedMs": 0.0011,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0194636+00:00",
+          "Kind": "tool",
+          "Name": "find_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022customer\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark\u0022}]}",
+          "ElapsedMs": 0.8489,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0202355+00:00",
+          "Kind": "tool",
+          "Name": "list_relationships",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022relationships\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1},{\u0022Id\u0022:2},{\u0022Id\u0022:3},{\u0022Id\u0022:4}]}",
+          "ElapsedMs": 0.7683,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0211603+00:00",
+          "Kind": "tool",
+          "Name": "list_contracts",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022contracts\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:1002},{\u0022Id\u0022:3,\u0022Amount\u0022:1003},{\u0022Id\u0022:4,\u0022Amount\u0022:1004},{\u0022Id\u0022:5,\u0022Amount\u0022:1005},{\u0022Id\u0022:6,\u0022Amount\u0022:1006},{\u0022Id\u0022:7,\u0022Amount\u0022:1007},{\u0022Id\u0022:8,\u0022Amount\u0022:1008},{\u0022Id\u0022:9,\u0022Amount\u0022:1009},{\u0022Id\u0022:10,\u0022Amount\u0022:1010},{\u0022Id\u0022:11,\u0022Amount\u0022:1011},{\u0022Id\u0022:12,\u0022Amount\u0022:1012}]}",
+          "ElapsedMs": 0.9215,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0222888+00:00",
+          "Kind": "tool",
+          "Name": "list_transactions",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022transactions\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:10,\u0022Balance\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:11,\u0022Balance\u0022:1000},{\u0022Id\u0022:3,\u0022Amount\u0022:12,\u0022Balance\u0022:999},{\u0022Id\u0022:4,\u0022Amount\u0022:13,\u0022Balance\u0022:998},{\u0022Id\u0022:5,\u0022Amount\u0022:10,\u0022Balance\u0022:1002},{\u0022Id\u0022:6,\u0022Amount\u0022:11,\u0022Balance\u0022:1001},{\u0022Id\u0022:7,\u0022Amount\u0022:12,\u0022Balance\u0022:1000},{\u0022Id\u0022:8,\u0022Amount\u0022:13,\u0022Balance\u0022:999},{\u0022Id\u0022:9,\u0022Amount\u0022:10,\u0022Balance\u0022:1003},{\u0022Id\u0022:10,\u0022Amount\u0022:11,\u0022Balance\u0022:1002},{\u0022Id\u0022:11,\u0022Amount\u0022:12,\u0022Balance\u0022:1001},{\u0022Id\u0022:12,\u0022Amount\u0022:13,\u0022Balance\u0022:1000},{\u0022Id\u0022:13,\u0022Amount\u0022:10,\u0022Balance\u0022:1004},{\u0022Id\u0022:14,\u0022Amount\u0022:11,\u0022Balance\u0022:1003},{\u0022Id\u0022:15,\u0022Amount\u0022:12,\u0022Balance\u0022:1002},{\u0022Id\u0022:16,\u0022Amount\u0022:13,\u0022Balance\u0022:1001},{\u0022Id\u0022:17,\u0022Amount\u0022:10,\u0022Balance\u0022:1005},{\u0022Id\u0022:18,\u0022Amount\u0022:11,\u0022Balance\u0022:1004},{\u0022Id\u0022:19,\u0022Amount\u0022:12,\u0022Balance\u0022:1003},{\u0022Id\u0022:20,\u0022Amount\u0022:13,\u0022Balance\u0022:1002},{\u0022Id\u0022:21,\u0022Amount\u0022:10,\u0022Balance\u0022:1006},{\u0022Id\u0022:22,\u0022Amount\u0022:11,\u0022Balance\u0022:1005},{\u0022Id\u0022:23,\u0022Amount\u0022:12,\u0022Balance\u0022:1004},{\u0022Id\u0022:24,\u0022Amount\u0022:13,\u0022Balance\u0022:1003},{\u0022Id\u0022:25,\u0022Amount\u0022:10,\u0022Balance\u0022:1007},{\u0022Id\u0022:26,\u0022Amount\u0022:11,\u0022Balance\u0022:1006},{\u0022Id\u0022:27,\u0022Amount\u0022:12,\u0022Balance\u0022:1005},{\u0022Id\u0022:28,\u0022Amount\u0022:13,\u0022Balance\u0022:1004},{\u0022Id\u0022:29,\u0022Amount\u0022:10,\u0022Balance\u0022:1008},{\u0022Id\u0022:30,\u0022Amount\u0022:11,\u0022Balance\u0022:1007},{\u0022Id\u0022:31,\u0022Amount\u0022:12,\u0022Balance\u0022:1006},{\u0022Id\u0022:32,\u0022Amount\u0022:13,\u0022Balance\u0022:1005},{\u0022Id\u0022:33,\u0022Amount\u0022:10,\u0022Balance\u0022:1009},{\u0022Id\u0022:34,\u0022Amount\u0022:11,\u0022Balance\u0022:1008},{\u0022Id\u0022:35,\u0022Amount\u0022:12,\u0022Balance\u0022:1007},{\u0022Id\u0022:36,\u0022Amount\u0022:13,\u0022Balance\u0022:1006},{\u0022Id\u0022:37,\u0022Amount\u0022:10,\u0022Balance\u0022:1010},{\u0022Id\u0022:38,\u0022Amount\u0022:11,\u0022Balance\u0022:1009},{\u0022Id\u0022:39,\u0022Amount\u0022:12,\u0022Balance\u0022:1008},{\u0022Id\u0022:40,\u0022Amount\u0022:13,\u0022Balance\u0022:1007},{\u0022Id\u0022:41,\u0022Amount\u0022:10,\u0022Balance\u0022:1011},{\u0022Id\u0022:42,\u0022Amount\u0022:11,\u0022Balance\u0022:1010},{\u0022Id\u0022:43,\u0022Amount\u0022:12,\u0022Balance\u0022:1009},{\u0022Id\u0022:44,\u0022Amount\u0022:13,\u0022Balance\u0022:1008},{\u0022Id\u0022:45,\u0022Amount\u0022:10,\u0022Balance\u0022:1012},{\u0022Id\u0022:46,\u0022Amount\u0022:11,\u0022Balance\u0022:1011},{\u0022Id\u0022:47,\u0022Amount\u0022:12,\u0022Balance\u0022:1010},{\u0022Id\u0022:48,\u0022Amount\u0022:13,\u0022Balance\u0022:1009}]}",
+          "ElapsedMs": 1.1248,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0240456+00:00",
+          "Kind": "tool",
+          "Name": "update_customer",
+          "Input": "{\u0022customerId\u0022:1,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "ElapsedMs": 1.7486,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0254169+00:00",
+          "Kind": "tool",
+          "Name": "verify_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 1.3667,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0270812+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 2,
+      "Flow": "Conventional application/AI flow",
+      "WallClockMs": 9.0477,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 7.1622,
+      "ModelCalls": 0,
+      "ToolCalls": 7,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 36,
+      "EstimatedToolOutputTokens": 712,
+      "EstimatedContextLoadTokens": 932,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.0334837+00:00",
+          "Kind": "tool",
+          "Name": "describe_schema",
+          "Input": "{}",
+          "Output": "Customer(Id, CustomerKey, FirstName, LastName, FullName) -\u003E CustomerBankingRelationship(Id, CustomerId) -\u003E Contract(Id, CustomerBankingRelationshipId, ContractType, Amount) -\u003E Transaction(Id, ContractId, Amount, Balance). Customer 1 is the benchmark target.",
+          "ElapsedMs": 0.0014,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0345599+00:00",
+          "Kind": "tool",
+          "Name": "find_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022customer\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark\u0022}]}",
+          "ElapsedMs": 1.0714,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0353281+00:00",
+          "Kind": "tool",
+          "Name": "list_relationships",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022relationships\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1},{\u0022Id\u0022:2},{\u0022Id\u0022:3},{\u0022Id\u0022:4}]}",
+          "ElapsedMs": 0.7644,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0363882+00:00",
+          "Kind": "tool",
+          "Name": "list_contracts",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022contracts\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:1002},{\u0022Id\u0022:3,\u0022Amount\u0022:1003},{\u0022Id\u0022:4,\u0022Amount\u0022:1004},{\u0022Id\u0022:5,\u0022Amount\u0022:1005},{\u0022Id\u0022:6,\u0022Amount\u0022:1006},{\u0022Id\u0022:7,\u0022Amount\u0022:1007},{\u0022Id\u0022:8,\u0022Amount\u0022:1008},{\u0022Id\u0022:9,\u0022Amount\u0022:1009},{\u0022Id\u0022:10,\u0022Amount\u0022:1010},{\u0022Id\u0022:11,\u0022Amount\u0022:1011},{\u0022Id\u0022:12,\u0022Amount\u0022:1012}]}",
+          "ElapsedMs": 1.0515,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.037493+00:00",
+          "Kind": "tool",
+          "Name": "list_transactions",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022transactions\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:10,\u0022Balance\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:11,\u0022Balance\u0022:1000},{\u0022Id\u0022:3,\u0022Amount\u0022:12,\u0022Balance\u0022:999},{\u0022Id\u0022:4,\u0022Amount\u0022:13,\u0022Balance\u0022:998},{\u0022Id\u0022:5,\u0022Amount\u0022:10,\u0022Balance\u0022:1002},{\u0022Id\u0022:6,\u0022Amount\u0022:11,\u0022Balance\u0022:1001},{\u0022Id\u0022:7,\u0022Amount\u0022:12,\u0022Balance\u0022:1000},{\u0022Id\u0022:8,\u0022Amount\u0022:13,\u0022Balance\u0022:999},{\u0022Id\u0022:9,\u0022Amount\u0022:10,\u0022Balance\u0022:1003},{\u0022Id\u0022:10,\u0022Amount\u0022:11,\u0022Balance\u0022:1002},{\u0022Id\u0022:11,\u0022Amount\u0022:12,\u0022Balance\u0022:1001},{\u0022Id\u0022:12,\u0022Amount\u0022:13,\u0022Balance\u0022:1000},{\u0022Id\u0022:13,\u0022Amount\u0022:10,\u0022Balance\u0022:1004},{\u0022Id\u0022:14,\u0022Amount\u0022:11,\u0022Balance\u0022:1003},{\u0022Id\u0022:15,\u0022Amount\u0022:12,\u0022Balance\u0022:1002},{\u0022Id\u0022:16,\u0022Amount\u0022:13,\u0022Balance\u0022:1001},{\u0022Id\u0022:17,\u0022Amount\u0022:10,\u0022Balance\u0022:1005},{\u0022Id\u0022:18,\u0022Amount\u0022:11,\u0022Balance\u0022:1004},{\u0022Id\u0022:19,\u0022Amount\u0022:12,\u0022Balance\u0022:1003},{\u0022Id\u0022:20,\u0022Amount\u0022:13,\u0022Balance\u0022:1002},{\u0022Id\u0022:21,\u0022Amount\u0022:10,\u0022Balance\u0022:1006},{\u0022Id\u0022:22,\u0022Amount\u0022:11,\u0022Balance\u0022:1005},{\u0022Id\u0022:23,\u0022Amount\u0022:12,\u0022Balance\u0022:1004},{\u0022Id\u0022:24,\u0022Amount\u0022:13,\u0022Balance\u0022:1003},{\u0022Id\u0022:25,\u0022Amount\u0022:10,\u0022Balance\u0022:1007},{\u0022Id\u0022:26,\u0022Amount\u0022:11,\u0022Balance\u0022:1006},{\u0022Id\u0022:27,\u0022Amount\u0022:12,\u0022Balance\u0022:1005},{\u0022Id\u0022:28,\u0022Amount\u0022:13,\u0022Balance\u0022:1004},{\u0022Id\u0022:29,\u0022Amount\u0022:10,\u0022Balance\u0022:1008},{\u0022Id\u0022:30,\u0022Amount\u0022:11,\u0022Balance\u0022:1007},{\u0022Id\u0022:31,\u0022Amount\u0022:12,\u0022Balance\u0022:1006},{\u0022Id\u0022:32,\u0022Amount\u0022:13,\u0022Balance\u0022:1005},{\u0022Id\u0022:33,\u0022Amount\u0022:10,\u0022Balance\u0022:1009},{\u0022Id\u0022:34,\u0022Amount\u0022:11,\u0022Balance\u0022:1008},{\u0022Id\u0022:35,\u0022Amount\u0022:12,\u0022Balance\u0022:1007},{\u0022Id\u0022:36,\u0022Amount\u0022:13,\u0022Balance\u0022:1006},{\u0022Id\u0022:37,\u0022Amount\u0022:10,\u0022Balance\u0022:1010},{\u0022Id\u0022:38,\u0022Amount\u0022:11,\u0022Balance\u0022:1009},{\u0022Id\u0022:39,\u0022Amount\u0022:12,\u0022Balance\u0022:1008},{\u0022Id\u0022:40,\u0022Amount\u0022:13,\u0022Balance\u0022:1007},{\u0022Id\u0022:41,\u0022Amount\u0022:10,\u0022Balance\u0022:1011},{\u0022Id\u0022:42,\u0022Amount\u0022:11,\u0022Balance\u0022:1010},{\u0022Id\u0022:43,\u0022Amount\u0022:12,\u0022Balance\u0022:1009},{\u0022Id\u0022:44,\u0022Amount\u0022:13,\u0022Balance\u0022:1008},{\u0022Id\u0022:45,\u0022Amount\u0022:10,\u0022Balance\u0022:1012},{\u0022Id\u0022:46,\u0022Amount\u0022:11,\u0022Balance\u0022:1011},{\u0022Id\u0022:47,\u0022Amount\u0022:12,\u0022Balance\u0022:1010},{\u0022Id\u0022:48,\u0022Amount\u0022:13,\u0022Balance\u0022:1009}]}",
+          "ElapsedMs": 1.1013,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0392958+00:00",
+          "Kind": "tool",
+          "Name": "update_customer",
+          "Input": "{\u0022customerId\u0022:1,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "ElapsedMs": 1.7962,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0406758+00:00",
+          "Kind": "tool",
+          "Name": "verify_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 1.376,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0425018+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 3,
+      "Flow": "Conventional application/AI flow",
+      "WallClockMs": 8.727,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 6.896599999999999,
+      "ModelCalls": 0,
+      "ToolCalls": 7,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 36,
+      "EstimatedToolOutputTokens": 712,
+      "EstimatedContextLoadTokens": 932,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.0442151+00:00",
+          "Kind": "tool",
+          "Name": "describe_schema",
+          "Input": "{}",
+          "Output": "Customer(Id, CustomerKey, FirstName, LastName, FullName) -\u003E CustomerBankingRelationship(Id, CustomerId) -\u003E Contract(Id, CustomerBankingRelationshipId, ContractType, Amount) -\u003E Transaction(Id, ContractId, Amount, Balance). Customer 1 is the benchmark target.",
+          "ElapsedMs": 0.0011,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0451414+00:00",
+          "Kind": "tool",
+          "Name": "find_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022customer\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark\u0022}]}",
+          "ElapsedMs": 0.9228,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.045991+00:00",
+          "Kind": "tool",
+          "Name": "list_relationships",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022relationships\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1},{\u0022Id\u0022:2},{\u0022Id\u0022:3},{\u0022Id\u0022:4}]}",
+          "ElapsedMs": 0.8454,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0469357+00:00",
+          "Kind": "tool",
+          "Name": "list_contracts",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022contracts\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:1002},{\u0022Id\u0022:3,\u0022Amount\u0022:1003},{\u0022Id\u0022:4,\u0022Amount\u0022:1004},{\u0022Id\u0022:5,\u0022Amount\u0022:1005},{\u0022Id\u0022:6,\u0022Amount\u0022:1006},{\u0022Id\u0022:7,\u0022Amount\u0022:1007},{\u0022Id\u0022:8,\u0022Amount\u0022:1008},{\u0022Id\u0022:9,\u0022Amount\u0022:1009},{\u0022Id\u0022:10,\u0022Amount\u0022:1010},{\u0022Id\u0022:11,\u0022Amount\u0022:1011},{\u0022Id\u0022:12,\u0022Amount\u0022:1012}]}",
+          "ElapsedMs": 0.9406,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0481186+00:00",
+          "Kind": "tool",
+          "Name": "list_transactions",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022transactions\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:10,\u0022Balance\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:11,\u0022Balance\u0022:1000},{\u0022Id\u0022:3,\u0022Amount\u0022:12,\u0022Balance\u0022:999},{\u0022Id\u0022:4,\u0022Amount\u0022:13,\u0022Balance\u0022:998},{\u0022Id\u0022:5,\u0022Amount\u0022:10,\u0022Balance\u0022:1002},{\u0022Id\u0022:6,\u0022Amount\u0022:11,\u0022Balance\u0022:1001},{\u0022Id\u0022:7,\u0022Amount\u0022:12,\u0022Balance\u0022:1000},{\u0022Id\u0022:8,\u0022Amount\u0022:13,\u0022Balance\u0022:999},{\u0022Id\u0022:9,\u0022Amount\u0022:10,\u0022Balance\u0022:1003},{\u0022Id\u0022:10,\u0022Amount\u0022:11,\u0022Balance\u0022:1002},{\u0022Id\u0022:11,\u0022Amount\u0022:12,\u0022Balance\u0022:1001},{\u0022Id\u0022:12,\u0022Amount\u0022:13,\u0022Balance\u0022:1000},{\u0022Id\u0022:13,\u0022Amount\u0022:10,\u0022Balance\u0022:1004},{\u0022Id\u0022:14,\u0022Amount\u0022:11,\u0022Balance\u0022:1003},{\u0022Id\u0022:15,\u0022Amount\u0022:12,\u0022Balance\u0022:1002},{\u0022Id\u0022:16,\u0022Amount\u0022:13,\u0022Balance\u0022:1001},{\u0022Id\u0022:17,\u0022Amount\u0022:10,\u0022Balance\u0022:1005},{\u0022Id\u0022:18,\u0022Amount\u0022:11,\u0022Balance\u0022:1004},{\u0022Id\u0022:19,\u0022Amount\u0022:12,\u0022Balance\u0022:1003},{\u0022Id\u0022:20,\u0022Amount\u0022:13,\u0022Balance\u0022:1002},{\u0022Id\u0022:21,\u0022Amount\u0022:10,\u0022Balance\u0022:1006},{\u0022Id\u0022:22,\u0022Amount\u0022:11,\u0022Balance\u0022:1005},{\u0022Id\u0022:23,\u0022Amount\u0022:12,\u0022Balance\u0022:1004},{\u0022Id\u0022:24,\u0022Amount\u0022:13,\u0022Balance\u0022:1003},{\u0022Id\u0022:25,\u0022Amount\u0022:10,\u0022Balance\u0022:1007},{\u0022Id\u0022:26,\u0022Amount\u0022:11,\u0022Balance\u0022:1006},{\u0022Id\u0022:27,\u0022Amount\u0022:12,\u0022Balance\u0022:1005},{\u0022Id\u0022:28,\u0022Amount\u0022:13,\u0022Balance\u0022:1004},{\u0022Id\u0022:29,\u0022Amount\u0022:10,\u0022Balance\u0022:1008},{\u0022Id\u0022:30,\u0022Amount\u0022:11,\u0022Balance\u0022:1007},{\u0022Id\u0022:31,\u0022Amount\u0022:12,\u0022Balance\u0022:1006},{\u0022Id\u0022:32,\u0022Amount\u0022:13,\u0022Balance\u0022:1005},{\u0022Id\u0022:33,\u0022Amount\u0022:10,\u0022Balance\u0022:1009},{\u0022Id\u0022:34,\u0022Amount\u0022:11,\u0022Balance\u0022:1008},{\u0022Id\u0022:35,\u0022Amount\u0022:12,\u0022Balance\u0022:1007},{\u0022Id\u0022:36,\u0022Amount\u0022:13,\u0022Balance\u0022:1006},{\u0022Id\u0022:37,\u0022Amount\u0022:10,\u0022Balance\u0022:1010},{\u0022Id\u0022:38,\u0022Amount\u0022:11,\u0022Balance\u0022:1009},{\u0022Id\u0022:39,\u0022Amount\u0022:12,\u0022Balance\u0022:1008},{\u0022Id\u0022:40,\u0022Amount\u0022:13,\u0022Balance\u0022:1007},{\u0022Id\u0022:41,\u0022Amount\u0022:10,\u0022Balance\u0022:1011},{\u0022Id\u0022:42,\u0022Amount\u0022:11,\u0022Balance\u0022:1010},{\u0022Id\u0022:43,\u0022Amount\u0022:12,\u0022Balance\u0022:1009},{\u0022Id\u0022:44,\u0022Amount\u0022:13,\u0022Balance\u0022:1008},{\u0022Id\u0022:45,\u0022Amount\u0022:10,\u0022Balance\u0022:1012},{\u0022Id\u0022:46,\u0022Amount\u0022:11,\u0022Balance\u0022:1011},{\u0022Id\u0022:47,\u0022Amount\u0022:12,\u0022Balance\u0022:1010},{\u0022Id\u0022:48,\u0022Amount\u0022:13,\u0022Balance\u0022:1009}]}",
+          "ElapsedMs": 1.1785,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.049859+00:00",
+          "Kind": "tool",
+          "Name": "update_customer",
+          "Input": "{\u0022customerId\u0022:1,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "ElapsedMs": 1.7325,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0511388+00:00",
+          "Kind": "tool",
+          "Name": "verify_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 1.2757,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0529197+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 4,
+      "Flow": "Conventional application/AI flow",
+      "WallClockMs": 8.7627,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 6.9685999999999995,
+      "ModelCalls": 0,
+      "ToolCalls": 7,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 36,
+      "EstimatedToolOutputTokens": 712,
+      "EstimatedContextLoadTokens": 932,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.0548102+00:00",
+          "Kind": "tool",
+          "Name": "describe_schema",
+          "Input": "{}",
+          "Output": "Customer(Id, CustomerKey, FirstName, LastName, FullName) -\u003E CustomerBankingRelationship(Id, CustomerId) -\u003E Contract(Id, CustomerBankingRelationshipId, ContractType, Amount) -\u003E Transaction(Id, ContractId, Amount, Balance). Customer 1 is the benchmark target.",
+          "ElapsedMs": 0.0009,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0556424+00:00",
+          "Kind": "tool",
+          "Name": "find_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022customer\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark\u0022}]}",
+          "ElapsedMs": 0.8286,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0563798+00:00",
+          "Kind": "tool",
+          "Name": "list_relationships",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022relationships\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1},{\u0022Id\u0022:2},{\u0022Id\u0022:3},{\u0022Id\u0022:4}]}",
+          "ElapsedMs": 0.7336,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0572672+00:00",
+          "Kind": "tool",
+          "Name": "list_contracts",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022contracts\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:1002},{\u0022Id\u0022:3,\u0022Amount\u0022:1003},{\u0022Id\u0022:4,\u0022Amount\u0022:1004},{\u0022Id\u0022:5,\u0022Amount\u0022:1005},{\u0022Id\u0022:6,\u0022Amount\u0022:1006},{\u0022Id\u0022:7,\u0022Amount\u0022:1007},{\u0022Id\u0022:8,\u0022Amount\u0022:1008},{\u0022Id\u0022:9,\u0022Amount\u0022:1009},{\u0022Id\u0022:10,\u0022Amount\u0022:1010},{\u0022Id\u0022:11,\u0022Amount\u0022:1011},{\u0022Id\u0022:12,\u0022Amount\u0022:1012}]}",
+          "ElapsedMs": 0.8783,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0584093+00:00",
+          "Kind": "tool",
+          "Name": "list_transactions",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022transactions\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:10,\u0022Balance\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:11,\u0022Balance\u0022:1000},{\u0022Id\u0022:3,\u0022Amount\u0022:12,\u0022Balance\u0022:999},{\u0022Id\u0022:4,\u0022Amount\u0022:13,\u0022Balance\u0022:998},{\u0022Id\u0022:5,\u0022Amount\u0022:10,\u0022Balance\u0022:1002},{\u0022Id\u0022:6,\u0022Amount\u0022:11,\u0022Balance\u0022:1001},{\u0022Id\u0022:7,\u0022Amount\u0022:12,\u0022Balance\u0022:1000},{\u0022Id\u0022:8,\u0022Amount\u0022:13,\u0022Balance\u0022:999},{\u0022Id\u0022:9,\u0022Amount\u0022:10,\u0022Balance\u0022:1003},{\u0022Id\u0022:10,\u0022Amount\u0022:11,\u0022Balance\u0022:1002},{\u0022Id\u0022:11,\u0022Amount\u0022:12,\u0022Balance\u0022:1001},{\u0022Id\u0022:12,\u0022Amount\u0022:13,\u0022Balance\u0022:1000},{\u0022Id\u0022:13,\u0022Amount\u0022:10,\u0022Balance\u0022:1004},{\u0022Id\u0022:14,\u0022Amount\u0022:11,\u0022Balance\u0022:1003},{\u0022Id\u0022:15,\u0022Amount\u0022:12,\u0022Balance\u0022:1002},{\u0022Id\u0022:16,\u0022Amount\u0022:13,\u0022Balance\u0022:1001},{\u0022Id\u0022:17,\u0022Amount\u0022:10,\u0022Balance\u0022:1005},{\u0022Id\u0022:18,\u0022Amount\u0022:11,\u0022Balance\u0022:1004},{\u0022Id\u0022:19,\u0022Amount\u0022:12,\u0022Balance\u0022:1003},{\u0022Id\u0022:20,\u0022Amount\u0022:13,\u0022Balance\u0022:1002},{\u0022Id\u0022:21,\u0022Amount\u0022:10,\u0022Balance\u0022:1006},{\u0022Id\u0022:22,\u0022Amount\u0022:11,\u0022Balance\u0022:1005},{\u0022Id\u0022:23,\u0022Amount\u0022:12,\u0022Balance\u0022:1004},{\u0022Id\u0022:24,\u0022Amount\u0022:13,\u0022Balance\u0022:1003},{\u0022Id\u0022:25,\u0022Amount\u0022:10,\u0022Balance\u0022:1007},{\u0022Id\u0022:26,\u0022Amount\u0022:11,\u0022Balance\u0022:1006},{\u0022Id\u0022:27,\u0022Amount\u0022:12,\u0022Balance\u0022:1005},{\u0022Id\u0022:28,\u0022Amount\u0022:13,\u0022Balance\u0022:1004},{\u0022Id\u0022:29,\u0022Amount\u0022:10,\u0022Balance\u0022:1008},{\u0022Id\u0022:30,\u0022Amount\u0022:11,\u0022Balance\u0022:1007},{\u0022Id\u0022:31,\u0022Amount\u0022:12,\u0022Balance\u0022:1006},{\u0022Id\u0022:32,\u0022Amount\u0022:13,\u0022Balance\u0022:1005},{\u0022Id\u0022:33,\u0022Amount\u0022:10,\u0022Balance\u0022:1009},{\u0022Id\u0022:34,\u0022Amount\u0022:11,\u0022Balance\u0022:1008},{\u0022Id\u0022:35,\u0022Amount\u0022:12,\u0022Balance\u0022:1007},{\u0022Id\u0022:36,\u0022Amount\u0022:13,\u0022Balance\u0022:1006},{\u0022Id\u0022:37,\u0022Amount\u0022:10,\u0022Balance\u0022:1010},{\u0022Id\u0022:38,\u0022Amount\u0022:11,\u0022Balance\u0022:1009},{\u0022Id\u0022:39,\u0022Amount\u0022:12,\u0022Balance\u0022:1008},{\u0022Id\u0022:40,\u0022Amount\u0022:13,\u0022Balance\u0022:1007},{\u0022Id\u0022:41,\u0022Amount\u0022:10,\u0022Balance\u0022:1011},{\u0022Id\u0022:42,\u0022Amount\u0022:11,\u0022Balance\u0022:1010},{\u0022Id\u0022:43,\u0022Amount\u0022:12,\u0022Balance\u0022:1009},{\u0022Id\u0022:44,\u0022Amount\u0022:13,\u0022Balance\u0022:1008},{\u0022Id\u0022:45,\u0022Amount\u0022:10,\u0022Balance\u0022:1012},{\u0022Id\u0022:46,\u0022Amount\u0022:11,\u0022Balance\u0022:1011},{\u0022Id\u0022:47,\u0022Amount\u0022:12,\u0022Balance\u0022:1010},{\u0022Id\u0022:48,\u0022Amount\u0022:13,\u0022Balance\u0022:1009}]}",
+          "ElapsedMs": 1.1374,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0602614+00:00",
+          "Kind": "tool",
+          "Name": "update_customer",
+          "Input": "{\u0022customerId\u0022:1,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "ElapsedMs": 1.8345,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0618246+00:00",
+          "Kind": "tool",
+          "Name": "verify_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 1.5553,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0635516+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 5,
+      "Flow": "Conventional application/AI flow",
+      "WallClockMs": 8.5159,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 6.8459,
+      "ModelCalls": 0,
+      "ToolCalls": 7,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 36,
+      "EstimatedToolOutputTokens": 712,
+      "EstimatedContextLoadTokens": 932,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.0654212+00:00",
+          "Kind": "tool",
+          "Name": "describe_schema",
+          "Input": "{}",
+          "Output": "Customer(Id, CustomerKey, FirstName, LastName, FullName) -\u003E CustomerBankingRelationship(Id, CustomerId) -\u003E Contract(Id, CustomerBankingRelationshipId, ContractType, Amount) -\u003E Transaction(Id, ContractId, Amount, Balance). Customer 1 is the benchmark target.",
+          "ElapsedMs": 0.0009,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0664346+00:00",
+          "Kind": "tool",
+          "Name": "find_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022customer\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark\u0022}]}",
+          "ElapsedMs": 1.0092,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0673144+00:00",
+          "Kind": "tool",
+          "Name": "list_relationships",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022relationships\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1},{\u0022Id\u0022:2},{\u0022Id\u0022:3},{\u0022Id\u0022:4}]}",
+          "ElapsedMs": 0.8744,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0683188+00:00",
+          "Kind": "tool",
+          "Name": "list_contracts",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022contracts\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:1002},{\u0022Id\u0022:3,\u0022Amount\u0022:1003},{\u0022Id\u0022:4,\u0022Amount\u0022:1004},{\u0022Id\u0022:5,\u0022Amount\u0022:1005},{\u0022Id\u0022:6,\u0022Amount\u0022:1006},{\u0022Id\u0022:7,\u0022Amount\u0022:1007},{\u0022Id\u0022:8,\u0022Amount\u0022:1008},{\u0022Id\u0022:9,\u0022Amount\u0022:1009},{\u0022Id\u0022:10,\u0022Amount\u0022:1010},{\u0022Id\u0022:11,\u0022Amount\u0022:1011},{\u0022Id\u0022:12,\u0022Amount\u0022:1012}]}",
+          "ElapsedMs": 0.9993,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0694271+00:00",
+          "Kind": "tool",
+          "Name": "list_transactions",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022transactions\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:10,\u0022Balance\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:11,\u0022Balance\u0022:1000},{\u0022Id\u0022:3,\u0022Amount\u0022:12,\u0022Balance\u0022:999},{\u0022Id\u0022:4,\u0022Amount\u0022:13,\u0022Balance\u0022:998},{\u0022Id\u0022:5,\u0022Amount\u0022:10,\u0022Balance\u0022:1002},{\u0022Id\u0022:6,\u0022Amount\u0022:11,\u0022Balance\u0022:1001},{\u0022Id\u0022:7,\u0022Amount\u0022:12,\u0022Balance\u0022:1000},{\u0022Id\u0022:8,\u0022Amount\u0022:13,\u0022Balance\u0022:999},{\u0022Id\u0022:9,\u0022Amount\u0022:10,\u0022Balance\u0022:1003},{\u0022Id\u0022:10,\u0022Amount\u0022:11,\u0022Balance\u0022:1002},{\u0022Id\u0022:11,\u0022Amount\u0022:12,\u0022Balance\u0022:1001},{\u0022Id\u0022:12,\u0022Amount\u0022:13,\u0022Balance\u0022:1000},{\u0022Id\u0022:13,\u0022Amount\u0022:10,\u0022Balance\u0022:1004},{\u0022Id\u0022:14,\u0022Amount\u0022:11,\u0022Balance\u0022:1003},{\u0022Id\u0022:15,\u0022Amount\u0022:12,\u0022Balance\u0022:1002},{\u0022Id\u0022:16,\u0022Amount\u0022:13,\u0022Balance\u0022:1001},{\u0022Id\u0022:17,\u0022Amount\u0022:10,\u0022Balance\u0022:1005},{\u0022Id\u0022:18,\u0022Amount\u0022:11,\u0022Balance\u0022:1004},{\u0022Id\u0022:19,\u0022Amount\u0022:12,\u0022Balance\u0022:1003},{\u0022Id\u0022:20,\u0022Amount\u0022:13,\u0022Balance\u0022:1002},{\u0022Id\u0022:21,\u0022Amount\u0022:10,\u0022Balance\u0022:1006},{\u0022Id\u0022:22,\u0022Amount\u0022:11,\u0022Balance\u0022:1005},{\u0022Id\u0022:23,\u0022Amount\u0022:12,\u0022Balance\u0022:1004},{\u0022Id\u0022:24,\u0022Amount\u0022:13,\u0022Balance\u0022:1003},{\u0022Id\u0022:25,\u0022Amount\u0022:10,\u0022Balance\u0022:1007},{\u0022Id\u0022:26,\u0022Amount\u0022:11,\u0022Balance\u0022:1006},{\u0022Id\u0022:27,\u0022Amount\u0022:12,\u0022Balance\u0022:1005},{\u0022Id\u0022:28,\u0022Amount\u0022:13,\u0022Balance\u0022:1004},{\u0022Id\u0022:29,\u0022Amount\u0022:10,\u0022Balance\u0022:1008},{\u0022Id\u0022:30,\u0022Amount\u0022:11,\u0022Balance\u0022:1007},{\u0022Id\u0022:31,\u0022Amount\u0022:12,\u0022Balance\u0022:1006},{\u0022Id\u0022:32,\u0022Amount\u0022:13,\u0022Balance\u0022:1005},{\u0022Id\u0022:33,\u0022Amount\u0022:10,\u0022Balance\u0022:1009},{\u0022Id\u0022:34,\u0022Amount\u0022:11,\u0022Balance\u0022:1008},{\u0022Id\u0022:35,\u0022Amount\u0022:12,\u0022Balance\u0022:1007},{\u0022Id\u0022:36,\u0022Amount\u0022:13,\u0022Balance\u0022:1006},{\u0022Id\u0022:37,\u0022Amount\u0022:10,\u0022Balance\u0022:1010},{\u0022Id\u0022:38,\u0022Amount\u0022:11,\u0022Balance\u0022:1009},{\u0022Id\u0022:39,\u0022Amount\u0022:12,\u0022Balance\u0022:1008},{\u0022Id\u0022:40,\u0022Amount\u0022:13,\u0022Balance\u0022:1007},{\u0022Id\u0022:41,\u0022Amount\u0022:10,\u0022Balance\u0022:1011},{\u0022Id\u0022:42,\u0022Amount\u0022:11,\u0022Balance\u0022:1010},{\u0022Id\u0022:43,\u0022Amount\u0022:12,\u0022Balance\u0022:1009},{\u0022Id\u0022:44,\u0022Amount\u0022:13,\u0022Balance\u0022:1008},{\u0022Id\u0022:45,\u0022Amount\u0022:10,\u0022Balance\u0022:1012},{\u0022Id\u0022:46,\u0022Amount\u0022:11,\u0022Balance\u0022:1011},{\u0022Id\u0022:47,\u0022Amount\u0022:12,\u0022Balance\u0022:1010},{\u0022Id\u0022:48,\u0022Amount\u0022:13,\u0022Balance\u0022:1009}]}",
+          "ElapsedMs": 1.1031,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0710372+00:00",
+          "Kind": "tool",
+          "Name": "update_customer",
+          "Input": "{\u0022customerId\u0022:1,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "ElapsedMs": 1.5958,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0723052+00:00",
+          "Kind": "tool",
+          "Name": "verify_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 1.2632,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0739146+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 6,
+      "Flow": "Conventional application/AI flow",
+      "WallClockMs": 8.6831,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 6.898899999999999,
+      "ModelCalls": 0,
+      "ToolCalls": 7,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 36,
+      "EstimatedToolOutputTokens": 712,
+      "EstimatedContextLoadTokens": 932,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.0758308+00:00",
+          "Kind": "tool",
+          "Name": "describe_schema",
+          "Input": "{}",
+          "Output": "Customer(Id, CustomerKey, FirstName, LastName, FullName) -\u003E CustomerBankingRelationship(Id, CustomerId) -\u003E Contract(Id, CustomerBankingRelationshipId, ContractType, Amount) -\u003E Transaction(Id, ContractId, Amount, Balance). Customer 1 is the benchmark target.",
+          "ElapsedMs": 0.0009,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.076719+00:00",
+          "Kind": "tool",
+          "Name": "find_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022customer\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark\u0022}]}",
+          "ElapsedMs": 0.8849,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0775598+00:00",
+          "Kind": "tool",
+          "Name": "list_relationships",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022relationships\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1},{\u0022Id\u0022:2},{\u0022Id\u0022:3},{\u0022Id\u0022:4}]}",
+          "ElapsedMs": 0.8356,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0785143+00:00",
+          "Kind": "tool",
+          "Name": "list_contracts",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022contracts\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:1002},{\u0022Id\u0022:3,\u0022Amount\u0022:1003},{\u0022Id\u0022:4,\u0022Amount\u0022:1004},{\u0022Id\u0022:5,\u0022Amount\u0022:1005},{\u0022Id\u0022:6,\u0022Amount\u0022:1006},{\u0022Id\u0022:7,\u0022Amount\u0022:1007},{\u0022Id\u0022:8,\u0022Amount\u0022:1008},{\u0022Id\u0022:9,\u0022Amount\u0022:1009},{\u0022Id\u0022:10,\u0022Amount\u0022:1010},{\u0022Id\u0022:11,\u0022Amount\u0022:1011},{\u0022Id\u0022:12,\u0022Amount\u0022:1012}]}",
+          "ElapsedMs": 0.9497,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0795998+00:00",
+          "Kind": "tool",
+          "Name": "list_transactions",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022transactions\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:10,\u0022Balance\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:11,\u0022Balance\u0022:1000},{\u0022Id\u0022:3,\u0022Amount\u0022:12,\u0022Balance\u0022:999},{\u0022Id\u0022:4,\u0022Amount\u0022:13,\u0022Balance\u0022:998},{\u0022Id\u0022:5,\u0022Amount\u0022:10,\u0022Balance\u0022:1002},{\u0022Id\u0022:6,\u0022Amount\u0022:11,\u0022Balance\u0022:1001},{\u0022Id\u0022:7,\u0022Amount\u0022:12,\u0022Balance\u0022:1000},{\u0022Id\u0022:8,\u0022Amount\u0022:13,\u0022Balance\u0022:999},{\u0022Id\u0022:9,\u0022Amount\u0022:10,\u0022Balance\u0022:1003},{\u0022Id\u0022:10,\u0022Amount\u0022:11,\u0022Balance\u0022:1002},{\u0022Id\u0022:11,\u0022Amount\u0022:12,\u0022Balance\u0022:1001},{\u0022Id\u0022:12,\u0022Amount\u0022:13,\u0022Balance\u0022:1000},{\u0022Id\u0022:13,\u0022Amount\u0022:10,\u0022Balance\u0022:1004},{\u0022Id\u0022:14,\u0022Amount\u0022:11,\u0022Balance\u0022:1003},{\u0022Id\u0022:15,\u0022Amount\u0022:12,\u0022Balance\u0022:1002},{\u0022Id\u0022:16,\u0022Amount\u0022:13,\u0022Balance\u0022:1001},{\u0022Id\u0022:17,\u0022Amount\u0022:10,\u0022Balance\u0022:1005},{\u0022Id\u0022:18,\u0022Amount\u0022:11,\u0022Balance\u0022:1004},{\u0022Id\u0022:19,\u0022Amount\u0022:12,\u0022Balance\u0022:1003},{\u0022Id\u0022:20,\u0022Amount\u0022:13,\u0022Balance\u0022:1002},{\u0022Id\u0022:21,\u0022Amount\u0022:10,\u0022Balance\u0022:1006},{\u0022Id\u0022:22,\u0022Amount\u0022:11,\u0022Balance\u0022:1005},{\u0022Id\u0022:23,\u0022Amount\u0022:12,\u0022Balance\u0022:1004},{\u0022Id\u0022:24,\u0022Amount\u0022:13,\u0022Balance\u0022:1003},{\u0022Id\u0022:25,\u0022Amount\u0022:10,\u0022Balance\u0022:1007},{\u0022Id\u0022:26,\u0022Amount\u0022:11,\u0022Balance\u0022:1006},{\u0022Id\u0022:27,\u0022Amount\u0022:12,\u0022Balance\u0022:1005},{\u0022Id\u0022:28,\u0022Amount\u0022:13,\u0022Balance\u0022:1004},{\u0022Id\u0022:29,\u0022Amount\u0022:10,\u0022Balance\u0022:1008},{\u0022Id\u0022:30,\u0022Amount\u0022:11,\u0022Balance\u0022:1007},{\u0022Id\u0022:31,\u0022Amount\u0022:12,\u0022Balance\u0022:1006},{\u0022Id\u0022:32,\u0022Amount\u0022:13,\u0022Balance\u0022:1005},{\u0022Id\u0022:33,\u0022Amount\u0022:10,\u0022Balance\u0022:1009},{\u0022Id\u0022:34,\u0022Amount\u0022:11,\u0022Balance\u0022:1008},{\u0022Id\u0022:35,\u0022Amount\u0022:12,\u0022Balance\u0022:1007},{\u0022Id\u0022:36,\u0022Amount\u0022:13,\u0022Balance\u0022:1006},{\u0022Id\u0022:37,\u0022Amount\u0022:10,\u0022Balance\u0022:1010},{\u0022Id\u0022:38,\u0022Amount\u0022:11,\u0022Balance\u0022:1009},{\u0022Id\u0022:39,\u0022Amount\u0022:12,\u0022Balance\u0022:1008},{\u0022Id\u0022:40,\u0022Amount\u0022:13,\u0022Balance\u0022:1007},{\u0022Id\u0022:41,\u0022Amount\u0022:10,\u0022Balance\u0022:1011},{\u0022Id\u0022:42,\u0022Amount\u0022:11,\u0022Balance\u0022:1010},{\u0022Id\u0022:43,\u0022Amount\u0022:12,\u0022Balance\u0022:1009},{\u0022Id\u0022:44,\u0022Amount\u0022:13,\u0022Balance\u0022:1008},{\u0022Id\u0022:45,\u0022Amount\u0022:10,\u0022Balance\u0022:1012},{\u0022Id\u0022:46,\u0022Amount\u0022:11,\u0022Balance\u0022:1011},{\u0022Id\u0022:47,\u0022Amount\u0022:12,\u0022Balance\u0022:1010},{\u0022Id\u0022:48,\u0022Amount\u0022:13,\u0022Balance\u0022:1009}]}",
+          "ElapsedMs": 1.0807,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0814264+00:00",
+          "Kind": "tool",
+          "Name": "update_customer",
+          "Input": "{\u0022customerId\u0022:1,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "ElapsedMs": 1.8169,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0827623+00:00",
+          "Kind": "tool",
+          "Name": "verify_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 1.3302,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0844938+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 7,
+      "Flow": "Conventional application/AI flow",
+      "WallClockMs": 8.6765,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 6.891500000000001,
+      "ModelCalls": 0,
+      "ToolCalls": 7,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 36,
+      "EstimatedToolOutputTokens": 712,
+      "EstimatedContextLoadTokens": 932,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.0860889+00:00",
+          "Kind": "tool",
+          "Name": "describe_schema",
+          "Input": "{}",
+          "Output": "Customer(Id, CustomerKey, FirstName, LastName, FullName) -\u003E CustomerBankingRelationship(Id, CustomerId) -\u003E Contract(Id, CustomerBankingRelationshipId, ContractType, Amount) -\u003E Transaction(Id, ContractId, Amount, Balance). Customer 1 is the benchmark target.",
+          "ElapsedMs": 0.0011,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0869278+00:00",
+          "Kind": "tool",
+          "Name": "find_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022customer\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark\u0022}]}",
+          "ElapsedMs": 0.8357,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0877875+00:00",
+          "Kind": "tool",
+          "Name": "list_relationships",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022relationships\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1},{\u0022Id\u0022:2},{\u0022Id\u0022:3},{\u0022Id\u0022:4}]}",
+          "ElapsedMs": 0.8556,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0887412+00:00",
+          "Kind": "tool",
+          "Name": "list_contracts",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022contracts\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:1002},{\u0022Id\u0022:3,\u0022Amount\u0022:1003},{\u0022Id\u0022:4,\u0022Amount\u0022:1004},{\u0022Id\u0022:5,\u0022Amount\u0022:1005},{\u0022Id\u0022:6,\u0022Amount\u0022:1006},{\u0022Id\u0022:7,\u0022Amount\u0022:1007},{\u0022Id\u0022:8,\u0022Amount\u0022:1008},{\u0022Id\u0022:9,\u0022Amount\u0022:1009},{\u0022Id\u0022:10,\u0022Amount\u0022:1010},{\u0022Id\u0022:11,\u0022Amount\u0022:1011},{\u0022Id\u0022:12,\u0022Amount\u0022:1012}]}",
+          "ElapsedMs": 0.9495,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0898436+00:00",
+          "Kind": "tool",
+          "Name": "list_transactions",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022transactions\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:10,\u0022Balance\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:11,\u0022Balance\u0022:1000},{\u0022Id\u0022:3,\u0022Amount\u0022:12,\u0022Balance\u0022:999},{\u0022Id\u0022:4,\u0022Amount\u0022:13,\u0022Balance\u0022:998},{\u0022Id\u0022:5,\u0022Amount\u0022:10,\u0022Balance\u0022:1002},{\u0022Id\u0022:6,\u0022Amount\u0022:11,\u0022Balance\u0022:1001},{\u0022Id\u0022:7,\u0022Amount\u0022:12,\u0022Balance\u0022:1000},{\u0022Id\u0022:8,\u0022Amount\u0022:13,\u0022Balance\u0022:999},{\u0022Id\u0022:9,\u0022Amount\u0022:10,\u0022Balance\u0022:1003},{\u0022Id\u0022:10,\u0022Amount\u0022:11,\u0022Balance\u0022:1002},{\u0022Id\u0022:11,\u0022Amount\u0022:12,\u0022Balance\u0022:1001},{\u0022Id\u0022:12,\u0022Amount\u0022:13,\u0022Balance\u0022:1000},{\u0022Id\u0022:13,\u0022Amount\u0022:10,\u0022Balance\u0022:1004},{\u0022Id\u0022:14,\u0022Amount\u0022:11,\u0022Balance\u0022:1003},{\u0022Id\u0022:15,\u0022Amount\u0022:12,\u0022Balance\u0022:1002},{\u0022Id\u0022:16,\u0022Amount\u0022:13,\u0022Balance\u0022:1001},{\u0022Id\u0022:17,\u0022Amount\u0022:10,\u0022Balance\u0022:1005},{\u0022Id\u0022:18,\u0022Amount\u0022:11,\u0022Balance\u0022:1004},{\u0022Id\u0022:19,\u0022Amount\u0022:12,\u0022Balance\u0022:1003},{\u0022Id\u0022:20,\u0022Amount\u0022:13,\u0022Balance\u0022:1002},{\u0022Id\u0022:21,\u0022Amount\u0022:10,\u0022Balance\u0022:1006},{\u0022Id\u0022:22,\u0022Amount\u0022:11,\u0022Balance\u0022:1005},{\u0022Id\u0022:23,\u0022Amount\u0022:12,\u0022Balance\u0022:1004},{\u0022Id\u0022:24,\u0022Amount\u0022:13,\u0022Balance\u0022:1003},{\u0022Id\u0022:25,\u0022Amount\u0022:10,\u0022Balance\u0022:1007},{\u0022Id\u0022:26,\u0022Amount\u0022:11,\u0022Balance\u0022:1006},{\u0022Id\u0022:27,\u0022Amount\u0022:12,\u0022Balance\u0022:1005},{\u0022Id\u0022:28,\u0022Amount\u0022:13,\u0022Balance\u0022:1004},{\u0022Id\u0022:29,\u0022Amount\u0022:10,\u0022Balance\u0022:1008},{\u0022Id\u0022:30,\u0022Amount\u0022:11,\u0022Balance\u0022:1007},{\u0022Id\u0022:31,\u0022Amount\u0022:12,\u0022Balance\u0022:1006},{\u0022Id\u0022:32,\u0022Amount\u0022:13,\u0022Balance\u0022:1005},{\u0022Id\u0022:33,\u0022Amount\u0022:10,\u0022Balance\u0022:1009},{\u0022Id\u0022:34,\u0022Amount\u0022:11,\u0022Balance\u0022:1008},{\u0022Id\u0022:35,\u0022Amount\u0022:12,\u0022Balance\u0022:1007},{\u0022Id\u0022:36,\u0022Amount\u0022:13,\u0022Balance\u0022:1006},{\u0022Id\u0022:37,\u0022Amount\u0022:10,\u0022Balance\u0022:1010},{\u0022Id\u0022:38,\u0022Amount\u0022:11,\u0022Balance\u0022:1009},{\u0022Id\u0022:39,\u0022Amount\u0022:12,\u0022Balance\u0022:1008},{\u0022Id\u0022:40,\u0022Amount\u0022:13,\u0022Balance\u0022:1007},{\u0022Id\u0022:41,\u0022Amount\u0022:10,\u0022Balance\u0022:1011},{\u0022Id\u0022:42,\u0022Amount\u0022:11,\u0022Balance\u0022:1010},{\u0022Id\u0022:43,\u0022Amount\u0022:12,\u0022Balance\u0022:1009},{\u0022Id\u0022:44,\u0022Amount\u0022:13,\u0022Balance\u0022:1008},{\u0022Id\u0022:45,\u0022Amount\u0022:10,\u0022Balance\u0022:1012},{\u0022Id\u0022:46,\u0022Amount\u0022:11,\u0022Balance\u0022:1011},{\u0022Id\u0022:47,\u0022Amount\u0022:12,\u0022Balance\u0022:1010},{\u0022Id\u0022:48,\u0022Amount\u0022:13,\u0022Balance\u0022:1009}]}",
+          "ElapsedMs": 1.0981,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0916489+00:00",
+          "Kind": "tool",
+          "Name": "update_customer",
+          "Input": "{\u0022customerId\u0022:1,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "ElapsedMs": 1.7972,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0930083+00:00",
+          "Kind": "tool",
+          "Name": "verify_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 1.3543,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0947451+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 8,
+      "Flow": "Conventional application/AI flow",
+      "WallClockMs": 8.4756,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 6.7761,
+      "ModelCalls": 0,
+      "ToolCalls": 7,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 36,
+      "EstimatedToolOutputTokens": 712,
+      "EstimatedContextLoadTokens": 932,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.0966453+00:00",
+          "Kind": "tool",
+          "Name": "describe_schema",
+          "Input": "{}",
+          "Output": "Customer(Id, CustomerKey, FirstName, LastName, FullName) -\u003E CustomerBankingRelationship(Id, CustomerId) -\u003E Contract(Id, CustomerBankingRelationshipId, ContractType, Amount) -\u003E Transaction(Id, ContractId, Amount, Balance). Customer 1 is the benchmark target.",
+          "ElapsedMs": 0.0011,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0974611+00:00",
+          "Kind": "tool",
+          "Name": "find_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022customer\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark\u0022}]}",
+          "ElapsedMs": 0.8124,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0982244+00:00",
+          "Kind": "tool",
+          "Name": "list_relationships",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022relationships\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1},{\u0022Id\u0022:2},{\u0022Id\u0022:3},{\u0022Id\u0022:4}]}",
+          "ElapsedMs": 0.7595,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.0992556+00:00",
+          "Kind": "tool",
+          "Name": "list_contracts",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022contracts\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:1002},{\u0022Id\u0022:3,\u0022Amount\u0022:1003},{\u0022Id\u0022:4,\u0022Amount\u0022:1004},{\u0022Id\u0022:5,\u0022Amount\u0022:1005},{\u0022Id\u0022:6,\u0022Amount\u0022:1006},{\u0022Id\u0022:7,\u0022Amount\u0022:1007},{\u0022Id\u0022:8,\u0022Amount\u0022:1008},{\u0022Id\u0022:9,\u0022Amount\u0022:1009},{\u0022Id\u0022:10,\u0022Amount\u0022:1010},{\u0022Id\u0022:11,\u0022Amount\u0022:1011},{\u0022Id\u0022:12,\u0022Amount\u0022:1012}]}",
+          "ElapsedMs": 1.0273,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1003349+00:00",
+          "Kind": "tool",
+          "Name": "list_transactions",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022transactions\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:10,\u0022Balance\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:11,\u0022Balance\u0022:1000},{\u0022Id\u0022:3,\u0022Amount\u0022:12,\u0022Balance\u0022:999},{\u0022Id\u0022:4,\u0022Amount\u0022:13,\u0022Balance\u0022:998},{\u0022Id\u0022:5,\u0022Amount\u0022:10,\u0022Balance\u0022:1002},{\u0022Id\u0022:6,\u0022Amount\u0022:11,\u0022Balance\u0022:1001},{\u0022Id\u0022:7,\u0022Amount\u0022:12,\u0022Balance\u0022:1000},{\u0022Id\u0022:8,\u0022Amount\u0022:13,\u0022Balance\u0022:999},{\u0022Id\u0022:9,\u0022Amount\u0022:10,\u0022Balance\u0022:1003},{\u0022Id\u0022:10,\u0022Amount\u0022:11,\u0022Balance\u0022:1002},{\u0022Id\u0022:11,\u0022Amount\u0022:12,\u0022Balance\u0022:1001},{\u0022Id\u0022:12,\u0022Amount\u0022:13,\u0022Balance\u0022:1000},{\u0022Id\u0022:13,\u0022Amount\u0022:10,\u0022Balance\u0022:1004},{\u0022Id\u0022:14,\u0022Amount\u0022:11,\u0022Balance\u0022:1003},{\u0022Id\u0022:15,\u0022Amount\u0022:12,\u0022Balance\u0022:1002},{\u0022Id\u0022:16,\u0022Amount\u0022:13,\u0022Balance\u0022:1001},{\u0022Id\u0022:17,\u0022Amount\u0022:10,\u0022Balance\u0022:1005},{\u0022Id\u0022:18,\u0022Amount\u0022:11,\u0022Balance\u0022:1004},{\u0022Id\u0022:19,\u0022Amount\u0022:12,\u0022Balance\u0022:1003},{\u0022Id\u0022:20,\u0022Amount\u0022:13,\u0022Balance\u0022:1002},{\u0022Id\u0022:21,\u0022Amount\u0022:10,\u0022Balance\u0022:1006},{\u0022Id\u0022:22,\u0022Amount\u0022:11,\u0022Balance\u0022:1005},{\u0022Id\u0022:23,\u0022Amount\u0022:12,\u0022Balance\u0022:1004},{\u0022Id\u0022:24,\u0022Amount\u0022:13,\u0022Balance\u0022:1003},{\u0022Id\u0022:25,\u0022Amount\u0022:10,\u0022Balance\u0022:1007},{\u0022Id\u0022:26,\u0022Amount\u0022:11,\u0022Balance\u0022:1006},{\u0022Id\u0022:27,\u0022Amount\u0022:12,\u0022Balance\u0022:1005},{\u0022Id\u0022:28,\u0022Amount\u0022:13,\u0022Balance\u0022:1004},{\u0022Id\u0022:29,\u0022Amount\u0022:10,\u0022Balance\u0022:1008},{\u0022Id\u0022:30,\u0022Amount\u0022:11,\u0022Balance\u0022:1007},{\u0022Id\u0022:31,\u0022Amount\u0022:12,\u0022Balance\u0022:1006},{\u0022Id\u0022:32,\u0022Amount\u0022:13,\u0022Balance\u0022:1005},{\u0022Id\u0022:33,\u0022Amount\u0022:10,\u0022Balance\u0022:1009},{\u0022Id\u0022:34,\u0022Amount\u0022:11,\u0022Balance\u0022:1008},{\u0022Id\u0022:35,\u0022Amount\u0022:12,\u0022Balance\u0022:1007},{\u0022Id\u0022:36,\u0022Amount\u0022:13,\u0022Balance\u0022:1006},{\u0022Id\u0022:37,\u0022Amount\u0022:10,\u0022Balance\u0022:1010},{\u0022Id\u0022:38,\u0022Amount\u0022:11,\u0022Balance\u0022:1009},{\u0022Id\u0022:39,\u0022Amount\u0022:12,\u0022Balance\u0022:1008},{\u0022Id\u0022:40,\u0022Amount\u0022:13,\u0022Balance\u0022:1007},{\u0022Id\u0022:41,\u0022Amount\u0022:10,\u0022Balance\u0022:1011},{\u0022Id\u0022:42,\u0022Amount\u0022:11,\u0022Balance\u0022:1010},{\u0022Id\u0022:43,\u0022Amount\u0022:12,\u0022Balance\u0022:1009},{\u0022Id\u0022:44,\u0022Amount\u0022:13,\u0022Balance\u0022:1008},{\u0022Id\u0022:45,\u0022Amount\u0022:10,\u0022Balance\u0022:1012},{\u0022Id\u0022:46,\u0022Amount\u0022:11,\u0022Balance\u0022:1011},{\u0022Id\u0022:47,\u0022Amount\u0022:12,\u0022Balance\u0022:1010},{\u0022Id\u0022:48,\u0022Amount\u0022:13,\u0022Balance\u0022:1009}]}",
+          "ElapsedMs": 1.0752,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1020404+00:00",
+          "Kind": "tool",
+          "Name": "update_customer",
+          "Input": "{\u0022customerId\u0022:1,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "ElapsedMs": 1.697,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1034494+00:00",
+          "Kind": "tool",
+          "Name": "verify_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 1.4036,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1051006+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 9,
+      "Flow": "Conventional application/AI flow",
+      "WallClockMs": 8.6202,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 6.7692,
+      "ModelCalls": 0,
+      "ToolCalls": 7,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 36,
+      "EstimatedToolOutputTokens": 712,
+      "EstimatedContextLoadTokens": 932,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.1069791+00:00",
+          "Kind": "tool",
+          "Name": "describe_schema",
+          "Input": "{}",
+          "Output": "Customer(Id, CustomerKey, FirstName, LastName, FullName) -\u003E CustomerBankingRelationship(Id, CustomerId) -\u003E Contract(Id, CustomerBankingRelationshipId, ContractType, Amount) -\u003E Transaction(Id, ContractId, Amount, Balance). Customer 1 is the benchmark target.",
+          "ElapsedMs": 0.0009,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1079302+00:00",
+          "Kind": "tool",
+          "Name": "find_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022customer\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark\u0022}]}",
+          "ElapsedMs": 0.947,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1087734+00:00",
+          "Kind": "tool",
+          "Name": "list_relationships",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022relationships\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1},{\u0022Id\u0022:2},{\u0022Id\u0022:3},{\u0022Id\u0022:4}]}",
+          "ElapsedMs": 0.8375,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1096942+00:00",
+          "Kind": "tool",
+          "Name": "list_contracts",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022contracts\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:1002},{\u0022Id\u0022:3,\u0022Amount\u0022:1003},{\u0022Id\u0022:4,\u0022Amount\u0022:1004},{\u0022Id\u0022:5,\u0022Amount\u0022:1005},{\u0022Id\u0022:6,\u0022Amount\u0022:1006},{\u0022Id\u0022:7,\u0022Amount\u0022:1007},{\u0022Id\u0022:8,\u0022Amount\u0022:1008},{\u0022Id\u0022:9,\u0022Amount\u0022:1009},{\u0022Id\u0022:10,\u0022Amount\u0022:1010},{\u0022Id\u0022:11,\u0022Amount\u0022:1011},{\u0022Id\u0022:12,\u0022Amount\u0022:1012}]}",
+          "ElapsedMs": 0.9167,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1107917+00:00",
+          "Kind": "tool",
+          "Name": "list_transactions",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022transactions\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:10,\u0022Balance\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:11,\u0022Balance\u0022:1000},{\u0022Id\u0022:3,\u0022Amount\u0022:12,\u0022Balance\u0022:999},{\u0022Id\u0022:4,\u0022Amount\u0022:13,\u0022Balance\u0022:998},{\u0022Id\u0022:5,\u0022Amount\u0022:10,\u0022Balance\u0022:1002},{\u0022Id\u0022:6,\u0022Amount\u0022:11,\u0022Balance\u0022:1001},{\u0022Id\u0022:7,\u0022Amount\u0022:12,\u0022Balance\u0022:1000},{\u0022Id\u0022:8,\u0022Amount\u0022:13,\u0022Balance\u0022:999},{\u0022Id\u0022:9,\u0022Amount\u0022:10,\u0022Balance\u0022:1003},{\u0022Id\u0022:10,\u0022Amount\u0022:11,\u0022Balance\u0022:1002},{\u0022Id\u0022:11,\u0022Amount\u0022:12,\u0022Balance\u0022:1001},{\u0022Id\u0022:12,\u0022Amount\u0022:13,\u0022Balance\u0022:1000},{\u0022Id\u0022:13,\u0022Amount\u0022:10,\u0022Balance\u0022:1004},{\u0022Id\u0022:14,\u0022Amount\u0022:11,\u0022Balance\u0022:1003},{\u0022Id\u0022:15,\u0022Amount\u0022:12,\u0022Balance\u0022:1002},{\u0022Id\u0022:16,\u0022Amount\u0022:13,\u0022Balance\u0022:1001},{\u0022Id\u0022:17,\u0022Amount\u0022:10,\u0022Balance\u0022:1005},{\u0022Id\u0022:18,\u0022Amount\u0022:11,\u0022Balance\u0022:1004},{\u0022Id\u0022:19,\u0022Amount\u0022:12,\u0022Balance\u0022:1003},{\u0022Id\u0022:20,\u0022Amount\u0022:13,\u0022Balance\u0022:1002},{\u0022Id\u0022:21,\u0022Amount\u0022:10,\u0022Balance\u0022:1006},{\u0022Id\u0022:22,\u0022Amount\u0022:11,\u0022Balance\u0022:1005},{\u0022Id\u0022:23,\u0022Amount\u0022:12,\u0022Balance\u0022:1004},{\u0022Id\u0022:24,\u0022Amount\u0022:13,\u0022Balance\u0022:1003},{\u0022Id\u0022:25,\u0022Amount\u0022:10,\u0022Balance\u0022:1007},{\u0022Id\u0022:26,\u0022Amount\u0022:11,\u0022Balance\u0022:1006},{\u0022Id\u0022:27,\u0022Amount\u0022:12,\u0022Balance\u0022:1005},{\u0022Id\u0022:28,\u0022Amount\u0022:13,\u0022Balance\u0022:1004},{\u0022Id\u0022:29,\u0022Amount\u0022:10,\u0022Balance\u0022:1008},{\u0022Id\u0022:30,\u0022Amount\u0022:11,\u0022Balance\u0022:1007},{\u0022Id\u0022:31,\u0022Amount\u0022:12,\u0022Balance\u0022:1006},{\u0022Id\u0022:32,\u0022Amount\u0022:13,\u0022Balance\u0022:1005},{\u0022Id\u0022:33,\u0022Amount\u0022:10,\u0022Balance\u0022:1009},{\u0022Id\u0022:34,\u0022Amount\u0022:11,\u0022Balance\u0022:1008},{\u0022Id\u0022:35,\u0022Amount\u0022:12,\u0022Balance\u0022:1007},{\u0022Id\u0022:36,\u0022Amount\u0022:13,\u0022Balance\u0022:1006},{\u0022Id\u0022:37,\u0022Amount\u0022:10,\u0022Balance\u0022:1010},{\u0022Id\u0022:38,\u0022Amount\u0022:11,\u0022Balance\u0022:1009},{\u0022Id\u0022:39,\u0022Amount\u0022:12,\u0022Balance\u0022:1008},{\u0022Id\u0022:40,\u0022Amount\u0022:13,\u0022Balance\u0022:1007},{\u0022Id\u0022:41,\u0022Amount\u0022:10,\u0022Balance\u0022:1011},{\u0022Id\u0022:42,\u0022Amount\u0022:11,\u0022Balance\u0022:1010},{\u0022Id\u0022:43,\u0022Amount\u0022:12,\u0022Balance\u0022:1009},{\u0022Id\u0022:44,\u0022Amount\u0022:13,\u0022Balance\u0022:1008},{\u0022Id\u0022:45,\u0022Amount\u0022:10,\u0022Balance\u0022:1012},{\u0022Id\u0022:46,\u0022Amount\u0022:11,\u0022Balance\u0022:1011},{\u0022Id\u0022:47,\u0022Amount\u0022:12,\u0022Balance\u0022:1010},{\u0022Id\u0022:48,\u0022Amount\u0022:13,\u0022Balance\u0022:1009}]}",
+          "ElapsedMs": 1.0929,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1125328+00:00",
+          "Kind": "tool",
+          "Name": "update_customer",
+          "Input": "{\u0022customerId\u0022:1,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "ElapsedMs": 1.7328,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1137795+00:00",
+          "Kind": "tool",
+          "Name": "verify_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 1.2414,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1155785+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 10,
+      "Flow": "Conventional application/AI flow",
+      "WallClockMs": 8.7417,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 6.682799999999999,
+      "ModelCalls": 0,
+      "ToolCalls": 7,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 36,
+      "EstimatedToolOutputTokens": 712,
+      "EstimatedContextLoadTokens": 932,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.1175889+00:00",
+          "Kind": "tool",
+          "Name": "describe_schema",
+          "Input": "{}",
+          "Output": "Customer(Id, CustomerKey, FirstName, LastName, FullName) -\u003E CustomerBankingRelationship(Id, CustomerId) -\u003E Contract(Id, CustomerBankingRelationshipId, ContractType, Amount) -\u003E Transaction(Id, ContractId, Amount, Balance). Customer 1 is the benchmark target.",
+          "ElapsedMs": 0.001,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1184799+00:00",
+          "Kind": "tool",
+          "Name": "find_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022customer\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark\u0022}]}",
+          "ElapsedMs": 0.8872,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1192443+00:00",
+          "Kind": "tool",
+          "Name": "list_relationships",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022relationships\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1},{\u0022Id\u0022:2},{\u0022Id\u0022:3},{\u0022Id\u0022:4}]}",
+          "ElapsedMs": 0.7594,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1201378+00:00",
+          "Kind": "tool",
+          "Name": "list_contracts",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022contracts\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:1002},{\u0022Id\u0022:3,\u0022Amount\u0022:1003},{\u0022Id\u0022:4,\u0022Amount\u0022:1004},{\u0022Id\u0022:5,\u0022Amount\u0022:1005},{\u0022Id\u0022:6,\u0022Amount\u0022:1006},{\u0022Id\u0022:7,\u0022Amount\u0022:1007},{\u0022Id\u0022:8,\u0022Amount\u0022:1008},{\u0022Id\u0022:9,\u0022Amount\u0022:1009},{\u0022Id\u0022:10,\u0022Amount\u0022:1010},{\u0022Id\u0022:11,\u0022Amount\u0022:1011},{\u0022Id\u0022:12,\u0022Amount\u0022:1012}]}",
+          "ElapsedMs": 0.8893,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1212973+00:00",
+          "Kind": "tool",
+          "Name": "list_transactions",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022kind\u0022:\u0022transactions\u0022,\u0022rows\u0022:[{\u0022Id\u0022:1,\u0022Amount\u0022:10,\u0022Balance\u0022:1001},{\u0022Id\u0022:2,\u0022Amount\u0022:11,\u0022Balance\u0022:1000},{\u0022Id\u0022:3,\u0022Amount\u0022:12,\u0022Balance\u0022:999},{\u0022Id\u0022:4,\u0022Amount\u0022:13,\u0022Balance\u0022:998},{\u0022Id\u0022:5,\u0022Amount\u0022:10,\u0022Balance\u0022:1002},{\u0022Id\u0022:6,\u0022Amount\u0022:11,\u0022Balance\u0022:1001},{\u0022Id\u0022:7,\u0022Amount\u0022:12,\u0022Balance\u0022:1000},{\u0022Id\u0022:8,\u0022Amount\u0022:13,\u0022Balance\u0022:999},{\u0022Id\u0022:9,\u0022Amount\u0022:10,\u0022Balance\u0022:1003},{\u0022Id\u0022:10,\u0022Amount\u0022:11,\u0022Balance\u0022:1002},{\u0022Id\u0022:11,\u0022Amount\u0022:12,\u0022Balance\u0022:1001},{\u0022Id\u0022:12,\u0022Amount\u0022:13,\u0022Balance\u0022:1000},{\u0022Id\u0022:13,\u0022Amount\u0022:10,\u0022Balance\u0022:1004},{\u0022Id\u0022:14,\u0022Amount\u0022:11,\u0022Balance\u0022:1003},{\u0022Id\u0022:15,\u0022Amount\u0022:12,\u0022Balance\u0022:1002},{\u0022Id\u0022:16,\u0022Amount\u0022:13,\u0022Balance\u0022:1001},{\u0022Id\u0022:17,\u0022Amount\u0022:10,\u0022Balance\u0022:1005},{\u0022Id\u0022:18,\u0022Amount\u0022:11,\u0022Balance\u0022:1004},{\u0022Id\u0022:19,\u0022Amount\u0022:12,\u0022Balance\u0022:1003},{\u0022Id\u0022:20,\u0022Amount\u0022:13,\u0022Balance\u0022:1002},{\u0022Id\u0022:21,\u0022Amount\u0022:10,\u0022Balance\u0022:1006},{\u0022Id\u0022:22,\u0022Amount\u0022:11,\u0022Balance\u0022:1005},{\u0022Id\u0022:23,\u0022Amount\u0022:12,\u0022Balance\u0022:1004},{\u0022Id\u0022:24,\u0022Amount\u0022:13,\u0022Balance\u0022:1003},{\u0022Id\u0022:25,\u0022Amount\u0022:10,\u0022Balance\u0022:1007},{\u0022Id\u0022:26,\u0022Amount\u0022:11,\u0022Balance\u0022:1006},{\u0022Id\u0022:27,\u0022Amount\u0022:12,\u0022Balance\u0022:1005},{\u0022Id\u0022:28,\u0022Amount\u0022:13,\u0022Balance\u0022:1004},{\u0022Id\u0022:29,\u0022Amount\u0022:10,\u0022Balance\u0022:1008},{\u0022Id\u0022:30,\u0022Amount\u0022:11,\u0022Balance\u0022:1007},{\u0022Id\u0022:31,\u0022Amount\u0022:12,\u0022Balance\u0022:1006},{\u0022Id\u0022:32,\u0022Amount\u0022:13,\u0022Balance\u0022:1005},{\u0022Id\u0022:33,\u0022Amount\u0022:10,\u0022Balance\u0022:1009},{\u0022Id\u0022:34,\u0022Amount\u0022:11,\u0022Balance\u0022:1008},{\u0022Id\u0022:35,\u0022Amount\u0022:12,\u0022Balance\u0022:1007},{\u0022Id\u0022:36,\u0022Amount\u0022:13,\u0022Balance\u0022:1006},{\u0022Id\u0022:37,\u0022Amount\u0022:10,\u0022Balance\u0022:1010},{\u0022Id\u0022:38,\u0022Amount\u0022:11,\u0022Balance\u0022:1009},{\u0022Id\u0022:39,\u0022Amount\u0022:12,\u0022Balance\u0022:1008},{\u0022Id\u0022:40,\u0022Amount\u0022:13,\u0022Balance\u0022:1007},{\u0022Id\u0022:41,\u0022Amount\u0022:10,\u0022Balance\u0022:1011},{\u0022Id\u0022:42,\u0022Amount\u0022:11,\u0022Balance\u0022:1010},{\u0022Id\u0022:43,\u0022Amount\u0022:12,\u0022Balance\u0022:1009},{\u0022Id\u0022:44,\u0022Amount\u0022:13,\u0022Balance\u0022:1008},{\u0022Id\u0022:45,\u0022Amount\u0022:10,\u0022Balance\u0022:1012},{\u0022Id\u0022:46,\u0022Amount\u0022:11,\u0022Balance\u0022:1011},{\u0022Id\u0022:47,\u0022Amount\u0022:12,\u0022Balance\u0022:1010},{\u0022Id\u0022:48,\u0022Amount\u0022:13,\u0022Balance\u0022:1009}]}",
+          "ElapsedMs": 1.1552,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1229695+00:00",
+          "Kind": "tool",
+          "Name": "update_customer",
+          "Input": "{\u0022customerId\u0022:1,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "ElapsedMs": 1.6632,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1243205+00:00",
+          "Kind": "tool",
+          "Name": "verify_customer",
+          "Input": "{\u0022customerId\u0022:1}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 1.3275,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.1263086+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 1,
+      "Flow": "Foundgine semantic flow",
+      "WallClockMs": 24.7368,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 22.2432,
+      "ModelCalls": 0,
+      "ToolCalls": 4,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 19,
+      "EstimatedToolOutputTokens": 112,
+      "EstimatedContextLoadTokens": 315,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.4742191+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_capability",
+          "Input": "{}",
+          "Output": "Capability: Customer graph review. Allowed semantic path: Customer -\u003E CustomerBankingRelationship -\u003E Contract -\u003E Transaction. Allowed mutation: Customer.FullName. Provider details are intentionally hidden from the agent.",
+          "ElapsedMs": 0.0014,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.4813106+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_graph",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 7.0824,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.4893202+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_update_customer",
+          "Input": "{\u0022customerKey\u0022:null,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022data\u0022:{\u0022updateCustomer\u0022:{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022firstName\u0022:\u0022Customer1\u0022,\u0022lastName\u0022:\u0022Benchmark\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}}}",
+          "ElapsedMs": 7.9451,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.4965513+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_verify",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 7.2143,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.4989157+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 2,
+      "Flow": "Foundgine semantic flow",
+      "WallClockMs": 23.1089,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 20.7982,
+      "ModelCalls": 0,
+      "ToolCalls": 4,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 19,
+      "EstimatedToolOutputTokens": 112,
+      "EstimatedContextLoadTokens": 315,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.5007505+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_capability",
+          "Input": "{}",
+          "Output": "Capability: Customer graph review. Allowed semantic path: Customer -\u003E CustomerBankingRelationship -\u003E Contract -\u003E Transaction. Allowed mutation: Customer.FullName. Provider details are intentionally hidden from the agent.",
+          "ElapsedMs": 0.0013,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5080795+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_graph",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 7.3214,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5149595+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_update_customer",
+          "Input": "{\u0022customerKey\u0022:null,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022data\u0022:{\u0022updateCustomer\u0022:{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022firstName\u0022:\u0022Customer1\u0022,\u0022lastName\u0022:\u0022Benchmark\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}}}",
+          "ElapsedMs": 6.811,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.521643+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_verify",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 6.6645,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5238266+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 3,
+      "Flow": "Foundgine semantic flow",
+      "WallClockMs": 22.2962,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 19.8676,
+      "ModelCalls": 0,
+      "ToolCalls": 4,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 19,
+      "EstimatedToolOutputTokens": 112,
+      "EstimatedContextLoadTokens": 315,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.5262621+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_capability",
+          "Input": "{}",
+          "Output": "Capability: Customer graph review. Allowed semantic path: Customer -\u003E CustomerBankingRelationship -\u003E Contract -\u003E Transaction. Allowed mutation: Customer.FullName. Provider details are intentionally hidden from the agent.",
+          "ElapsedMs": 0.0016,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5328423+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_graph",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 6.5719,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5396787+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_update_customer",
+          "Input": "{\u0022customerKey\u0022:null,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022data\u0022:{\u0022updateCustomer\u0022:{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022firstName\u0022:\u0022Customer1\u0022,\u0022lastName\u0022:\u0022Benchmark\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}}}",
+          "ElapsedMs": 6.7775,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5462088+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_verify",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 6.5166,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5485216+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 4,
+      "Flow": "Foundgine semantic flow",
+      "WallClockMs": 23.0023,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 20.463300000000004,
+      "ModelCalls": 0,
+      "ToolCalls": 4,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 19,
+      "EstimatedToolOutputTokens": 112,
+      "EstimatedContextLoadTokens": 315,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.5503464+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_capability",
+          "Input": "{}",
+          "Output": "Capability: Customer graph review. Allowed semantic path: Customer -\u003E CustomerBankingRelationship -\u003E Contract -\u003E Transaction. Allowed mutation: Customer.FullName. Provider details are intentionally hidden from the agent.",
+          "ElapsedMs": 0.0021,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5571561+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_graph",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 6.8029,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5643116+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_update_customer",
+          "Input": "{\u0022customerKey\u0022:null,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022data\u0022:{\u0022updateCustomer\u0022:{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022firstName\u0022:\u0022Customer1\u0022,\u0022lastName\u0022:\u0022Benchmark\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}}}",
+          "ElapsedMs": 7.1074,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5708758+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_verify",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 6.5509,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5733049+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 5,
+      "Flow": "Foundgine semantic flow",
+      "WallClockMs": 22.4939,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 20.199399999999997,
+      "ModelCalls": 0,
+      "ToolCalls": 4,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 19,
+      "EstimatedToolOutputTokens": 112,
+      "EstimatedContextLoadTokens": 315,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.5752698+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_capability",
+          "Input": "{}",
+          "Output": "Capability: Customer graph review. Allowed semantic path: Customer -\u003E CustomerBankingRelationship -\u003E Contract -\u003E Transaction. Allowed mutation: Customer.FullName. Provider details are intentionally hidden from the agent.",
+          "ElapsedMs": 0.0015,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5819779+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_graph",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 6.7014,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5891335+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_update_customer",
+          "Input": "{\u0022customerKey\u0022:null,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022data\u0022:{\u0022updateCustomer\u0022:{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022firstName\u0022:\u0022Customer1\u0022,\u0022lastName\u0022:\u0022Benchmark\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}}}",
+          "ElapsedMs": 7.1057,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5955387+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_verify",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 6.3908,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.5977265+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 6,
+      "Flow": "Foundgine semantic flow",
+      "WallClockMs": 22.1842,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 19.9607,
+      "ModelCalls": 0,
+      "ToolCalls": 4,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 19,
+      "EstimatedToolOutputTokens": 112,
+      "EstimatedContextLoadTokens": 315,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.599838+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_capability",
+          "Input": "{}",
+          "Output": "Capability: Customer graph review. Allowed semantic path: Customer -\u003E CustomerBankingRelationship -\u003E Contract -\u003E Transaction. Allowed mutation: Customer.FullName. Provider details are intentionally hidden from the agent.",
+          "ElapsedMs": 0.0013,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6061387+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_graph",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 6.294,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6131423+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_update_customer",
+          "Input": "{\u0022customerKey\u0022:null,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022data\u0022:{\u0022updateCustomer\u0022:{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022firstName\u0022:\u0022Customer1\u0022,\u0022lastName\u0022:\u0022Benchmark\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}}}",
+          "ElapsedMs": 6.9541,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6198703+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_verify",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 6.7113,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6219874+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 7,
+      "Flow": "Foundgine semantic flow",
+      "WallClockMs": 22.3213,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 20.094,
+      "ModelCalls": 0,
+      "ToolCalls": 4,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 19,
+      "EstimatedToolOutputTokens": 112,
+      "EstimatedContextLoadTokens": 315,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.6239555+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_capability",
+          "Input": "{}",
+          "Output": "Capability: Customer graph review. Allowed semantic path: Customer -\u003E CustomerBankingRelationship -\u003E Contract -\u003E Transaction. Allowed mutation: Customer.FullName. Provider details are intentionally hidden from the agent.",
+          "ElapsedMs": 0.0011,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6306132+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_graph",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 6.6511,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6375298+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_update_customer",
+          "Input": "{\u0022customerKey\u0022:null,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022data\u0022:{\u0022updateCustomer\u0022:{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022firstName\u0022:\u0022Customer1\u0022,\u0022lastName\u0022:\u0022Benchmark\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}}}",
+          "ElapsedMs": 6.8688,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6441162+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_verify",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 6.573,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6462399+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 8,
+      "Flow": "Foundgine semantic flow",
+      "WallClockMs": 23.8209,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 21.17,
+      "ModelCalls": 0,
+      "ToolCalls": 4,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 19,
+      "EstimatedToolOutputTokens": 112,
+      "EstimatedContextLoadTokens": 315,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.6481454+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_capability",
+          "Input": "{}",
+          "Output": "Capability: Customer graph review. Allowed semantic path: Customer -\u003E CustomerBankingRelationship -\u003E Contract -\u003E Transaction. Allowed mutation: Customer.FullName. Provider details are intentionally hidden from the agent.",
+          "ElapsedMs": 0.0013,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6550722+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_graph",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 6.9203,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6629662+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_update_customer",
+          "Input": "{\u0022customerKey\u0022:null,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022data\u0022:{\u0022updateCustomer\u0022:{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022firstName\u0022:\u0022Customer1\u0022,\u0022lastName\u0022:\u0022Benchmark\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}}}",
+          "ElapsedMs": 7.8468,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6693819+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_verify",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 6.4016,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6719267+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 9,
+      "Flow": "Foundgine semantic flow",
+      "WallClockMs": 26.799,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 23.8459,
+      "ModelCalls": 0,
+      "ToolCalls": 4,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 19,
+      "EstimatedToolOutputTokens": 112,
+      "EstimatedContextLoadTokens": 315,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.6745472+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_capability",
+          "Input": "{}",
+          "Output": "Capability: Customer graph review. Allowed semantic path: Customer -\u003E CustomerBankingRelationship -\u003E Contract -\u003E Transaction. Allowed mutation: Customer.FullName. Provider details are intentionally hidden from the agent.",
+          "ElapsedMs": 0.0014,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6818335+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_graph",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 7.2793,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6903601+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_update_customer",
+          "Input": "{\u0022customerKey\u0022:null,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022data\u0022:{\u0022updateCustomer\u0022:{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022firstName\u0022:\u0022Customer1\u0022,\u0022lastName\u0022:\u0022Benchmark\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}}}",
+          "ElapsedMs": 8.4813,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.6984576+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_verify",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 8.0839,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.701307+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    },
+    {
+      "Run": 10,
+      "Flow": "Foundgine semantic flow",
+      "WallClockMs": 27.159,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 24.708199999999998,
+      "ModelCalls": 0,
+      "ToolCalls": 4,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 19,
+      "EstimatedToolOutputTokens": 112,
+      "EstimatedContextLoadTokens": 315,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": [
+        {
+          "Timestamp": "2026-08-16T10:33:47.7040589+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_capability",
+          "Input": "{}",
+          "Output": "Capability: Customer graph review. Allowed semantic path: Customer -\u003E CustomerBankingRelationship -\u003E Contract -\u003E Transaction. Allowed mutation: Customer.FullName. Provider details are intentionally hidden from the agent.",
+          "ElapsedMs": 0.0018,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.7121953+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_graph",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 8.128,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.7216218+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_update_customer",
+          "Input": "{\u0022customerKey\u0022:null,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}",
+          "Output": "{\u0022data\u0022:{\u0022updateCustomer\u0022:{\u0022id\u0022:1,\u0022customerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022firstName\u0022:\u0022Customer1\u0022,\u0022lastName\u0022:\u0022Benchmark\u0022,\u0022fullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022}}}",
+          "ElapsedMs": 9.3613,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.7288542+00:00",
+          "Kind": "tool",
+          "Name": "foundgine_verify",
+          "Input": "{}",
+          "Output": "{\u0022data\u0022:{\u0022customer\u0022:[]}}",
+          "ElapsedMs": 7.2171,
+          "Usage": null
+        },
+        {
+          "Timestamp": "2026-08-16T10:33:47.7311805+00:00",
+          "Kind": "final",
+          "Name": "final.state",
+          "Input": "{}",
+          "Output": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+          "ElapsedMs": 0,
+          "Usage": null
+        }
+      ]
+    }
+  ],
+  "Comparison": {
+    "Conventional": {
+      "WallClockMs": 8.67402,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 6.867169999999999,
+      "ModelCalls": 0,
+      "ToolCalls": 7,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 36,
+      "EstimatedToolOutputTokens": 712,
+      "EstimatedContextLoadTokens": 932
+    },
+    "Foundgine": {
+      "WallClockMs": 23.79225,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 21.335050000000003,
+      "ModelCalls": 0,
+      "ToolCalls": 4,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 19,
+      "EstimatedToolOutputTokens": 112,
+      "EstimatedContextLoadTokens": 315
+    },
+    "InputTokenSavingPercent": 0,
+    "TotalTokenSavingPercent": 0,
+    "ToolCallSavingPercent": 42.857142857142854,
+    "ModelCallSavingPercent": 0,
+    "WallClockChangePercent": 174.29323427891563,
+    "EstimatedContextLoadSavingPercent": 66.20171673819742,
+    "HasProviderTokenData": false,
+    "SameFinalState": true
+  }
+}

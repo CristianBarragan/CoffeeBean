@@ -82,14 +82,14 @@ internal static class SemanticQuerySqlWriter
                     foreach (var value in values)
                     {
                         var name = "p" + nextParameter++;
-                        parameters.Add(new SqlParameterBinding(name, value));
+                        parameters.Add(new SqlParameterBinding(name, value, ClrType: fieldMetadata.ClrType));
                         refs.Add("@" + name);
                     }
                     return $"{reference} IN ({string.Join(", ", refs)})";
                 }
 
                 var parameter = "p" + nextParameter++;
-                parameters.Add(new SqlParameterBinding(parameter, field.Value));
+                parameters.Add(new SqlParameterBinding(parameter, field.Value, ClrType: fieldMetadata.ClrType));
                 return reference + (field.Operator == SemanticFilterOperator.Neq ? " <> " : " = ") + "@" + parameter;
             }
 

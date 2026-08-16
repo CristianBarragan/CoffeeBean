@@ -649,18 +649,34 @@ public sealed class HotChocolateMutationAdapter
                 ?? throw new InvalidOperationException(
                     $"Mutation filter field '{pair.Key}' is not defined on '{entity.Name}'.");
 
+            var metadataEntity = _metadata.GetEntity(entity.Id);
+            var metadataField = metadataEntity.EffectiveFields.FirstOrDefault(x => x.Id == semanticField.Id)
+                ?? throw new InvalidOperationException(
+                    $"Filter field '{pair.Key}' is not mapped in metadata for '{entity.Name}'.");
+
             if (pair.Value is IReadOnlyDictionary<string, object?> operators)
             {
                 foreach (var op in operators)
                 {
+                    var filterOperator = ParseFilterOperator(op.Key);
+                    var filterValue = op.Value is System.Collections.IEnumerable list &&
+                                      op.Value is not string &&
+                                      op.Key.Equals("in", StringComparison.OrdinalIgnoreCase)
+                        ? list.Cast<object?>()
+                            .Select((item, index) => CoerceMutationValue(
+                                metadataField,
+                                item,
+                                $"{entity.Name}.{pair.Key}.{op.Key}[{index}]"))
+                            .ToArray()
+                        : CoerceMutationValue(
+                            metadataField,
+                            op.Value,
+                            $"{entity.Name}.{pair.Key}.{op.Key}");
+
                     expressions.Add(new SemanticFieldFilter(
                         semanticField.Id,
-                        ParseFilterOperator(op.Key),
-                        op.Value is System.Collections.IEnumerable list &&
-                        op.Value is not string &&
-                        op.Key.Equals("in", StringComparison.OrdinalIgnoreCase)
-                            ? list.Cast<object?>().ToArray()
-                            : op.Value));
+                        filterOperator,
+                        filterValue));
                 }
             }
             else
@@ -668,7 +684,7 @@ public sealed class HotChocolateMutationAdapter
                 expressions.Add(new SemanticFieldFilter(
                     semanticField.Id,
                     SemanticFilterOperator.Eq,
-                    pair.Value));
+                    CoerceMutationValue(metadataField, pair.Value, $"{entity.Name}.{pair.Key}")));
             }
         }
 

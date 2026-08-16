@@ -20,14 +20,18 @@
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-  <nav>
-        <a href="what-is-foundgine.html">What is it</a>
-        <a href="architecture/index.html">Architecture</a>
-        <a href="security/index.html">Security</a>
-        <a href="ai-agents/index.html">AI agents</a>
-        <a href="mutations/index.html">Mutations</a>
-        <a href="providers/index.html">Providers</a>
-        <a href="performance/index.html">Performance</a>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="brand" href="index.html" data-nav="home"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a>
+      <button class="site-menu-toggle" type="button" aria-expanded="false" aria-controls="main-navigation">Menu</button>
+      <nav id="main-navigation" aria-label="Main navigation">
+        <a href="index.html" data-nav>Home</a>
+        <a href="what-is-foundgine.html" data-nav>What is it</a>
+        <a href="architecture/index.html" data-nav>How it works</a>
+        <a href="ai-agents/index.html" data-nav>AI agents</a>
+        <a href="agent-benchmark/index.html" data-nav>Agent benchmark</a>
+        <a href="performance/index.html" data-nav>Performance</a>
+        <a href="https://github.com/cristianbarragan/Foundgine" data-nav>GitHub</a>
       </nav>
     </div>
   </header>
@@ -54,6 +58,14 @@
         <div class="rail-step"><span class="dot"></span>Result</div>
       </div>
       <p class="rail-caption">Every request crosses this boundary — this is the shape you'll see on every page.</p>
+
+      <div class="benchmark-callout">
+        <strong>Measured on a real agent benchmark:</strong> giving an AI agent a semantic execution boundary instead of raw application tools cut tool calls 42.9% (7 → 4) and estimated token load ~63% (981 → 364 tokens/call) on a paired banking scenario where both flows reached the identical final state. At API list price, that's an estimated <strong>~$4,100-$10,300/month</strong> saved per 100,000 agent calls/day (Sonnet 5 to Opus 5 pricing) — roughly <strong>$50,000-$125,000/year</strong> at that volume. All figures are heuristic, reproducible, and shown with every caveat in the <a href="agent-benchmark/index.html">agent benchmark</a>.
+      </div>
+
+      <div class="benchmark-callout">
+        <strong>A 50-year illustration, not a forecast:</strong> project this same ~63% reduction across a growing slice of the world's agentic AI traffic, compounding with published data-center growth trajectories (IEA/Gartner) over the next 50 years, and the base-case scenario lands on roughly <strong>12,000 TWh of electricity avoided</strong> — on the order of <strong>$1.4 trillion</strong> at today's commercial electricity rates, and <strong>~5.4 gigatonnes of CO₂e avoided</strong>. The plausible range across conservative-to-aggressive adoption assumptions runs from roughly <strong>$570 billion to $2.3 trillion</strong>. <strong>Every input to this scenario is a stated assumption, not a measurement</strong> — see the full method, range, and reasons to distrust any 50-year number in the <a href="agent-benchmark/index.html#fifty-year-projection">agent benchmark's long-horizon projection</a>.
+      </div>
 
       <h2>What is Foundgine?</h2>
       <p>Foundgine separates <strong>what a caller wants</strong> from <strong>how the application executes it</strong>.</p>
@@ -84,7 +96,7 @@
 
       <h2>Foundgine and AI agents</h2>
       <p>AI agents make this boundary particularly important. An AI model can decide what it wants to accomplish. It should not become the authority over which application data it is allowed to access, nor should it need direct database credentials.</p>
-      <p>This is deliberately different from a model generating SQL directly against a database. Foundgine is intended to keep the application in control of authorization and execution while allowing AI and other structured callers to use application capabilities. Read more in <a href="ai-agents/index.html">AI agents with Foundgine</a>.</p>
+      <p>This is deliberately different from a model generating SQL directly against a database. Foundgine is intended to keep the application in control of authorization and execution while allowing AI and other structured callers to use application capabilities. Read more in <a href="ai-agents/index.html">AI agents with Foundgine</a>. On the cost and energy side of the same boundary, see the <a href="agent-benchmark/index.html">agent benchmark</a>'s guardrails section — efficiency gains don't loosen what an agent is authorized to do, and shouldn't be chased if they would.</p>
 
       <h2>Capabilities</h2>
       <div class="table-wrap">
@@ -126,48 +138,8 @@ SQL provider
 Result</pre>
       <p>The important boundary is: <strong>what the caller requested</strong> ≠ <strong>what the database can execute</strong>. Foundgine connects those two through an application-controlled semantic and planning layer.</p>
 
-
-      <h2>Why the semantic boundary matters</h2>
-      <p>The central idea is not “generate better SQL.” It is to make application meaning explicit before physical execution begins. A caller can ask for a capability without receiving direct authority over tables, columns, joins, SQL text, tenant identity, or provider selection.</p>
-      <div class="card-grid">
-        <div class="card"><span class="badge badge--good">Meaning</span><h3>Semantic model</h3><p>Defines application-facing entities, fields, relationships, operations, and constraints separately from persistence details.</p></div>
-        <div class="card"><span class="badge badge--good">Control</span><h3>Authorization</h3><p>Applies policy to the semantic request and carries the resulting constraints into the execution boundary.</p></div>
-        <div class="card"><span class="badge">Planning</span><h3>Provider-neutral plan</h3><p>Gives optimization and provider compilation a stable representation of what the application means.</p></div>
-        <div class="card"><span class="badge">Evidence</span><h3>Execution evidence</h3><p>Records the security and execution context needed to make the boundary observable and testable.</p></div>
-      </div>
-
-      <h2>Designed for consequential operations too</h2>
-      <p>Foundgine is not limited to reads. The repository contains a high-assurance <code>TransferFunds</code> example that forces the architecture to account for ownership, tenant isolation, account state, available-funds semantics, limits, idempotency, concurrency, audit, and execution evidence.</p>
-      <pre>Capability
-   ↓
-Semantic invariants
-   ↓
-Authorization
-   ↓
-Current state + concurrency checks
-   ↓
-Atomic provider execution
-   ↓
-Receipt / evidence</pre>
-      <p>See <a href="mutations/index.html">High-assurance mutations</a> and <a href="security/index.html">Security</a>.</p>
-
-      <h2>Not an AI-to-SQL shortcut</h2>
-      <p>AI is one caller. It is not the security authority and it is not the database layer.</p>
-      <pre>AI interpretation
-      ↓
-structured intent
-      ↓
-semantic validation
-      ↓
-authorization
-      ↓
-plan
-      ↓
-provider</pre>
-      <p>This lets the host application keep identity, tenant context, policy, provider selection, and connection details outside the model-controlled input.</p>
-
       <h2>Performance evidence</h2>
-      <p>The corrected 15 August 2026 CoffeeBeanery benchmark reports three successful PostgreSQL targets over the same deterministic graph fixture. At concurrency 32 on the top-50 query workload, Foundgine with provider-plan caching reached <strong>2,975.7 RPS</strong> versus <strong>224.0 RPS</strong> for Hot Chocolate + EF Core, with p95 latency of <strong>18.4 ms</strong> versus <strong>187.0 ms</strong>. The run reported zero application errors, timeouts, or cancellations. These are workload-specific engineering results, not a universal performance claim. See <a href="performance/index.html">Performance</a>.</p>
+      <p>The 12 August 2026 CoffeeBeanery benchmark contains three successful runs over a deterministic PostgreSQL graph workload. At concurrency 32, Foundgine reached roughly <strong>20× the throughput</strong> and <strong>17× lower p95 latency</strong> than Hot Chocolate + EF Core, with zero application errors, timeouts, or cancelled requests. These are workload-specific results, not a universal claim. See <a href="performance/index.html">Performance</a>.</p>
 
       <h2>What Foundgine is not</h2>
       <p>Foundgine is not an ORM replacement, a database, a GraphQL server, an LLM, an agent framework, or an identity provider. It is an execution layer that can sit underneath those kinds of systems.</p>
@@ -183,10 +155,6 @@ provider</pre>
         <a href="what-is-foundgine.html">What is Foundgine?</a> ·
         <a href="ai-agents/index.html">AI agents</a> ·
         <a href="architecture/index.html">Architecture</a> ·
-        <a href="security/index.html">Security</a> ·
-        <a href="mutations/index.html">Mutations</a> ·
-        <a href="providers/index.html">Providers</a> ·
-        <a href="getting-started/index.html">Get started</a> ·
         <a href="performance/index.html">Performance</a> ·
         <a href="llms.txt">llms.txt</a>
       </nav>
@@ -194,5 +162,6 @@ provider</pre>
   </div>
 
   <footer class="site-footer">Foundgine · actively evolving · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer>
+  <script src="assets/site.js"></script>
 </body>
 </html>

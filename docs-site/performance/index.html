@@ -18,14 +18,18 @@
   <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-  <nav>
-        <a href="../what-is-foundgine.html">What is it</a>
-        <a href="../architecture/index.html">Architecture</a>
-        <a href="../security/index.html">Security</a>
-        <a href="../ai-agents/index.html">AI agents</a>
-        <a href="../mutations/index.html">Mutations</a>
-        <a href="../providers/index.html">Providers</a>
-        <a href="../performance/index.html">Performance</a>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="brand" href="../index.html" data-nav="home"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a>
+      <button class="site-menu-toggle" type="button" aria-expanded="false" aria-controls="main-navigation">Menu</button>
+      <nav id="main-navigation" aria-label="Main navigation">
+        <a href="../index.html" data-nav>Home</a>
+        <a href="../what-is-foundgine.html" data-nav>What is it</a>
+        <a href="../architecture/index.html" data-nav>How it works</a>
+        <a href="../ai-agents/index.html" data-nav>AI agents</a>
+      <a href="../agent-benchmark/index.html" data-nav>Agent benchmark</a>
+        <a href="../performance/index.html" data-nav>Performance</a>
+        <a href="https://github.com/cristianbarragan/Foundgine" data-nav>GitHub</a>
       </nav>
     </div>
   </header>
@@ -35,7 +39,7 @@
       <nav class="breadcrumbs"><a href="../index.html">Foundgine</a> / Performance</nav>
       <span class="eyebrow">Performance research</span>
       <h1>Foundgine Performance</h1>
-      <p class="subtitle">CoffeeBeanery PostgreSQL graph benchmark — corrected 15 August 2026 report.</p>
+      <p class="subtitle">CoffeeBeanery PostgreSQL graph benchmark — 12 August 2026.</p>
 
       <div class="rail" role="img" aria-label="Pipeline: Intent, Semantic Model, Authorization, Execution Plan, Provider is where this benchmark measures, Result">
         <div class="rail-step"><span class="dot"></span>Intent</div>
@@ -52,7 +56,7 @@
       </div>
       <p class="rail-caption">This benchmark measures the Provider stage against PostgreSQL.</p>
 
-      <p>The corrected report compares Hot Chocolate + EF Core, Foundgine without provider-plan caching, and Foundgine with provider-plan caching against the same deterministic PostgreSQL graph workload. The report explicitly retracts an earlier 15 August table that had the comparison columns transposed.</p>
+      <p>Three independent successful runs were performed against a deterministic PostgreSQL graph workload.</p>
 
       <h3 id="workload">Workload</h3>
       <pre>Customer
@@ -75,21 +79,22 @@
       <p>At concurrency 32:</p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Concurrency 32</th><th>RPS</th><th>p50</th><th>p95</th><th>p99</th></tr></thead>
+          <thead><tr><th>Implementation</th><th>Average RPS</th><th>Average p95</th></tr></thead>
           <tbody>
-            <tr><td>Hot Chocolate + EF Core</td><td>224.0</td><td>141.8 ms</td><td>187.0 ms</td><td>216.4 ms</td></tr>
-            <tr><td>Foundgine — no cache</td><td>2,352.2</td><td>12.5 ms</td><td>25.2 ms</td><td>34.2 ms</td></tr>
-            <tr><td>Foundgine — provider-plan cache</td><td>2,975.7</td><td>9.9 ms</td><td>18.4 ms</td><td>23.0 ms</td></tr>
+            <tr><td>Hot Chocolate + EF Core</td><td>139.4</td><td>338.4 ms</td></tr>
+            <tr><td>Foundgine — no cache</td><td>2,781.0</td><td>20.3 ms</td></tr>
+            <tr><td>Foundgine — provider-plan cache</td><td>2,838.9</td><td>19.9 ms</td></tr>
           </tbody>
         </table>
       </div>
-      <p>At concurrency 32, the cached Foundgine query path delivered roughly <strong>13.3×</strong> the HTTP request throughput of Hot Chocolate + EF Core, with p95 latency about <strong>10× lower</strong>. The uncached path was roughly <strong>10.5×</strong> the throughput.</p>
-      <p>The cache is a secondary effect: the no-cache path is already substantially ahead on this workload.</p>
-
-      <h2 id="batched-mutations">Batched mutations</h2>
-      <p>The corrected report also measures batch sizes 1, 10, and 50. At concurrency 32, logical mutation throughput was:</p>
-      <div class="table-wrap"><table><thead><tr><th>Batch</th><th>Hot Chocolate</th><th>Foundgine no cache</th><th>Foundgine cache</th></tr></thead><tbody><tr><td>1</td><td>715.6/s</td><td>781.4/s</td><td>778.8/s</td></tr><tr><td>10</td><td>3,656/s</td><td>5,793/s</td><td>5,954/s</td></tr><tr><td>50</td><td>4,550/s</td><td>12,990/s</td><td>13,155/s</td></tr></tbody></table></div>
-      <p>The largest mutation difference appears at larger batch sizes, where Foundgine's PostgreSQL batched mutation path can represent many logical operations in fewer physical statements.</p>
+      <p>That is approximately:</p>
+      <ul>
+        <li>20.0× the throughput without the cache</li>
+        <li>20.4× with the cache</li>
+        <li>16.7× lower p95 latency without the cache</li>
+        <li>17.0× lower p95 latency with the cache</li>
+      </ul>
+      <p>The large query advantage is therefore not dependent on provider-plan caching.</p>
 
       <h2 id="reliability">Reliability</h2>
       <p>The three successful runs reported:</p>
@@ -112,7 +117,7 @@
       <p>The appropriate claim is:</p>
       <blockquote><strong>Foundgine demonstrates a substantial performance advantage for this relationship-heavy graph query workload.</strong></blockquote>
 
-      <p><a href="https://github.com/cristianbarragan/Foundgine/blob/main/docs/benchmarks/2026-08-15-performance-results.md">Full benchmark source data</a> is kept in the repository alongside this page.</p>
+      <p><a href="https://github.com/cristianbarragan/Foundgine/blob/main/BENCHMARK-RESULTS-2026-08-12-CLEAN.md">Full benchmark source data</a> is kept in the repository alongside this page.</p>
 
       <nav class="sitenav">
         <a href="../index.html">Home</a> ·
@@ -127,7 +132,6 @@
       <ol>
         <li><a href="#query-result">Query result</a></li>
         <li><a href="#reliability">Reliability</a></li>
-        <li><a href="#batched-mutations">Batched mutations</a></li>
         <li><a href="#mutations">Mutation results</a></li>
         <li><a href="#what-this-proves">What this proves</a></li>
         <li><a href="#what-this-does-not-prove">What this doesn't prove</a></li>
@@ -136,6 +140,7 @@
   </div>
 
   <footer class="site-footer">Foundgine · actively evolving · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer>
+  <script src="../assets/site.js"></script>
   <script src="../assets/toc.js"></script>
 </body>
 </html>
