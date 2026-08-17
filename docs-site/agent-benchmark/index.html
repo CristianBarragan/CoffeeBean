@@ -25,7 +25,7 @@
 <span class="eyebrow">End-to-end evidence · Run 4 · 17 August 2026</span>
 <h1>Less agent work. Less estimated energy. A benchmark you can inspect.</h1>
 <p class="subtitle">Run 4 compares the same customer-exposure business process across 16 workload/concurrency cells. The measured signal is agent-side context and execution behaviour. Cost, energy and CO₂ are transparent derived scenarios—not direct electricity or emissions measurements.</p>
-
+ 
 <div class="benchmark-hero">
 <h2>What changed?</h2>
 <div class="matrix-kpis" id="headline-kpis"></div>
@@ -36,7 +36,7 @@
 </div>
 <p class="matrix-note">The benchmark estimates context load with <code>max(chars / 4, words × 1.3)</code>. It does not claim to measure provider billing, GPU power draw, or physical emissions.</p>
 </div>
-
+ 
 <h2>Explore the 4 × 4 benchmark matrix</h2>
 <p>Choose a metric and click any cell. The matrix compares the same workload and concurrency between the conventional application/tool path and Foundgine.</p>
 <div class="matrix-controls">
@@ -54,13 +54,18 @@
 <p class="matrix-note">Changing these assumptions recalculates the modeled cost, energy and CO₂ figures. The measured benchmark values do not change.</p>
 <div class="matrix-legend"><span><span class="matrix-dot conventional"></span>Conventional</span><span><span class="matrix-dot foundgine"></span>Foundgine</span><span id="matrix-status"></span></div>
 <div class="heatmap-wrap"><table class="heatmap"><thead><tr><th>Workload \ Concurrency</th><th>C8</th><th>C16</th><th>C32</th><th>C64</th></tr></thead><tbody id="heatmap-body"></tbody></table></div>
-
+ 
 <div class="chart-grid">
  <div class="chart-card"><h3 id="selected-title">Selected cell</h3><div id="selected-chart"></div></div>
  <div class="chart-card"><h3>Selected impact</h3><div id="selected-impact"></div></div>
 </div>
 <div class="table-wrap" style="margin-top:20px"><div id="detail-table"></div></div>
-
+ 
+<h2>Long-run projection</h2>
+<p>These extrapolate the modeled per-year savings from the selected cells out to longer horizons, holding <strong>flows/day</strong> and the assumptions above constant. Linear extrapolation, not a forecast&mdash;real workloads and prices will change.</p>
+<div class="matrix-kpis" id="projection-kpis" style="grid-template-columns:repeat(4,minmax(0,1fr))"></div>
+<div class="table-wrap"><table class="impact-table"><thead><tr><th>Horizon</th><th>Context tokens avoided</th><th>Modeled energy saved</th><th>Modeled CO&#8322; avoided</th><th>Modeled cost saved</th></tr></thead><tbody id="projection-body"></tbody></table></div>
+ 
 <h2>What the benchmark actually measured</h2>
 <div class="table-wrap"><table><thead><tr><th>Dimension</th><th>Run 4</th></tr></thead><tbody>
 <tr><td>Workloads</td><td>10 / 100 / 1,000 / 10,000 customers</td></tr>
@@ -71,15 +76,15 @@
 <tr><td>RPS</td><td>Foundgine was higher in all 16 cells; measured ratio ranged from ~3.8× to ~33×</td></tr>
 <tr><td>Failures</td><td>0 recorded failures in the published Run 4 samples</td></tr>
 </tbody></table></div>
-
+ 
 <h2>The important distinction: measured vs modeled</h2>
 <p class="disclaimer"><strong>Measured:</strong> tool calls, estimated context-load tokens, latency, RPS, success/failure counts.<br><strong>Modeled:</strong> dollar cost, energy and CO₂. These use explicit assumptions shown above. Energy is expressed as <em>energy</em> (Wh/kWh), not instantaneous power (W), because the benchmark does not measure electrical power draw.</p>
 <p>The environmental argument is therefore intentionally conservative in wording: <strong>reducing the amount of model context can reduce the compute work that needs to be performed; the magnitude of the energy and CO₂ effect depends on the model, hardware, serving stack, utilization and electricity mix.</strong></p>
-
+ 
 <h2>Methodology</h2>
 <p>The benchmark uses the same customer-exposure-review business task across both paths. The fixture contains 4 relationships, 12 contracts and 48 transactions per customer, with an exposure threshold of $48,000. Each cell is warmed up five times and then measured for 30 runs.</p>
 <p>The benchmark is an end-to-end replay harness. Provider-reported model tokens are not available in replay mode, so the context figure is explicitly labeled as an estimate. The full raw Run 4 artifacts are published under <code>assets/agent-benchmark/run4/</code>.</p>
-
+ 
 <p><a href="../benchmarks/agent-end-to-end-token-method.html">Read the token measurement method</a> · <a href="../benchmarks/2026-08-17-agent-concurrency-results.html">Read the benchmark notes</a></p>
 </main></div>
 <footer class="site-footer">Foundgine · end-to-end agent benchmark · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer>
@@ -89,12 +94,14 @@ const data=await fetch('../assets/agent-benchmark/benchmark-matrix.json',{cache:
 const A=data.aggregate||[], assumptions=data.assumptions||{}; const $=id=>document.getElementById(id);
 const batches=[...new Set(A.map(r=>+r.batch))].sort((a,b)=>a-b), concs=[...new Set(A.map(r=>+r.concurrency))].sort((a,b)=>a-b);
 const pct=(n,d)=>d?((1-n/d)*100):0, fmt=(n,d=1)=>Number(n||0).toLocaleString(undefined,{maximumFractionDigits:d}), money=n=>'$'+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
-function val(r,key){const t=+r.estimatedContextTokens||0, calls=+$('calls-day').value||100000, price=+$('token-price').value||0, wh=+$('energy-token').value||0, carbon=+$('carbon').value||0; return {...r,energy:(t/1000)*calls*365*wh/1000,cost:(t/1e6)*calls*365*price,co2:(t/1000)*calls*365*wh/1000*carbon/1000};}
+function short(n){n=Number(n||0);const sign=n<0?'-':'';const abs=Math.abs(n);const units=[[1e12,'T'],[1e9,'B'],[1e6,'M'],[1e3,'K']];for(const [v,s] of units){if(abs>=v)return sign+(abs/v).toLocaleString(undefined,{maximumFractionDigits:2})+s;}return sign+abs.toLocaleString(undefined,{maximumFractionDigits:0});}
+function shortMoney(n){return '$'+short(n);}
+function shortMass(kg){kg=Number(kg||0);const sign=kg<0?'-':'';const abs=Math.abs(kg);return abs>=1000?sign+(abs/1000).toLocaleString(undefined,{maximumFractionDigits:2})+' t CO\u2082e':sign+abs.toLocaleString(undefined,{maximumFractionDigits:0})+' kg CO\u2082e';}
+function val(r){if(!r)return null;const t=+r.estimatedContextTokens||0, calls=+$('calls-day').value||0, price=+$('token-price').value||0, wh=+$('energy-token').value||0, carbon=+$('carbon').value||0; return {...r,energy:(t/1000)*calls*365*wh/1000,cost:(t/1e6)*calls*365*price,co2:(t/1000)*calls*365*wh/1000*carbon/1000};}
 function pair(b,c){const rows=A.filter(r=>+r.batch===b&&+r.concurrency===c); return {c:val(rows.find(r=>r.implementation==='Conventional')),f:val(rows.find(r=>r.implementation==='Foundgine'))};}
 function metric(p){const m=$('metric').value;if(!p.c||!p.f)return {label:'—',good:false}; if(m==='tokens')return {label:fmt(p.f.estimatedContextTokens/p.c.estimatedContextTokens*100,1)+'% of baseline',detail:fmt(pct(p.f.estimatedContextTokens,p.c.estimatedContextTokens),1)+'% lower',good:true}; if(m==='energy')return {label:fmt(p.f.energy/p.c.energy*100,1)+'% of baseline',detail:fmt(pct(p.f.energy,p.c.energy),1)+'% lower',good:true}; if(m==='co2')return {label:fmt(p.f.co2/p.c.co2*100,1)+'% of baseline',detail:fmt(pct(p.f.co2,p.c.co2),1)+'% lower',good:true}; if(m==='cost')return {label:fmt(p.f.cost/p.c.cost*100,1)+'% of baseline',detail:fmt(pct(p.f.cost,p.c.cost),1)+'% lower',good:true}; if(m==='rps')return {label:fmt(p.f.avgRps/p.c.avgRps,1)+'×',detail:fmt(p.f.avgRps/p.c.avgRps,1)+'× RPS',good:p.f.avgRps>p.c.avgRps}; return {label:fmt(pct(p.f.avgWallMs,p.c.avgWallMs),1)+'% lower',detail:fmt(p.f.avgWallMs,1)+' vs '+fmt(p.c.avgWallMs,1)+' ms',good:p.f.avgWallMs<p.c.avgWallMs};}
 function render(){
  const selectedB=$('batch').value==='all'?null:+$('batch').value, selectedC=$('concurrency').value==='all'?null:+$('concurrency').value, focus=$('implementation').value;
- const rows=A.filter(r=>(selectedB===null||+r.batch===selectedB)&&(selectedC===null||+r.concurrency===selectedC)&&(focus==='all'||r.implementation===focus));
  const allPairs=[]; batches.forEach(b=>concs.forEach(c=>{const p=pair(b,c);if(p.c&&p.f)allPairs.push({b,c,p})}));
  const visible=allPairs.filter(x=>(selectedB===null||x.b===selectedB)&&(selectedC===null||x.c===selectedC));
  const avg=(impl,k)=>{const xs=visible.map(x=>x.p[impl][k]);return xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:0};
@@ -107,7 +114,16 @@ function render(){
  $('heatmap-body').innerHTML=batches.map(b=>`<tr><th>${b.toLocaleString()} customers</th>${concs.map(c=>{const x=allPairs.find(q=>q.b===b&&q.c===c);const m=metric(x.p);const hidden=(selectedB!==null&&b!==selectedB)||(selectedC!==null&&c!==selectedC);return `<td style="opacity:${hidden?.35:1}"><button class="heat-cell ${m.good?'good':'neutral'}" data-b="${b}" data-c="${c}" type="button"><span class="cell-label">C${c}</span><strong>${m.label}</strong><small>${m.detail}</small></button></td>`}).join('')}</tr>`).join('');
  document.querySelectorAll('.heat-cell').forEach(btn=>btn.onclick=()=>showCell(+btn.dataset.b,+btn.dataset.c));
  const first=visible[0]||allPairs[0]; if(first)showCell(first.b,first.c);
- $('detail-table').innerHTML=`<table class="impact-table"><thead><tr><th>Workload</th><th>Concurrency</th><th>Implementation</th><th>RPS</th><th>Avg wall</th><th>Context tokens</th><th>Modeled kWh/yr</th><th>Modeled CO₂ kg/yr</th><th>Modeled USD/yr</th></tr></thead><tbody>${visible.flatMap(x=>['c','f'].map(k=>{const r=x.p[k];return `<tr><td>${x.b.toLocaleString()}</td><td>C${x.c}</td><td><span class="matrix-badge ${k==='c'?'conventional':'foundgine'}">${k==='c'?'Conventional':'Foundgine'}</span></td><td>${fmt(r.avgRps,1)}</td><td>${fmt(r.avgWallMs,1)} ms</td><td>${fmt(r.estimatedContextTokens,0)}</td><td>${fmt(r.energy,0)}</td><td>${fmt(r.co2,0)}</td><td>${money(r.cost)}</td></tr>`})).join('')}</tbody></table>`;
+ const focusKeys=focus==='all'?['c','f']:(focus==='Conventional'?['c']:['f']);
+ $('detail-table').innerHTML=`<table class="impact-table"><thead><tr><th>Workload</th><th>Concurrency</th><th>Implementation</th><th>RPS</th><th>Avg wall</th><th>Context tokens</th><th>Modeled kWh/yr</th><th>Modeled CO₂ kg/yr</th><th>Modeled USD/yr</th></tr></thead><tbody>${visible.flatMap(x=>focusKeys.map(k=>{const r=x.p[k];return `<tr><td>${x.b.toLocaleString()}</td><td>C${x.c}</td><td><span class="matrix-badge ${k==='c'?'conventional':'foundgine'}">${k==='c'?'Conventional':'Foundgine'}</span></td><td>${fmt(r.avgRps,1)}</td><td>${fmt(r.avgWallMs,1)} ms</td><td>${fmt(r.estimatedContextTokens,0)}</td><td>${fmt(r.energy,0)}</td><td>${fmt(r.co2,0)}</td><td>${money(r.cost)}</td></tr>`})).join('')}</tbody></table>`;
+ renderProjection(avg('c','energy')-avg('f','energy'),avg('c','cost')-avg('f','cost'),avg('c','co2')-avg('f','co2'),ct-ft,+$('calls-day').value||0);
+}
+function renderProjection(dEnergyPerYear,dCostPerYear,dCo2PerYear,dTokensPerFlow,callsPerDay){
+ const years=[1,10,20,50];
+ const rows=years.map(y=>({y,tokens:dTokensPerFlow*callsPerDay*365*y,energy:dEnergyPerYear*y,co2:dCo2PerYear*y,cost:dCostPerYear*y}));
+ $('projection-body').innerHTML=rows.map(r=>`<tr><td>${r.y} year${r.y>1?'s':''}</td><td>${short(r.tokens)} tokens</td><td>${short(r.energy)} kWh</td><td>${shortMass(r.co2)}</td><td>${shortMoney(r.cost)}</td></tr>`).join('');
+ const fifty=rows[rows.length-1];
+ $('projection-kpis').innerHTML=`<div class="matrix-kpi"><small>50-yr tokens avoided</small><strong>${short(fifty.tokens)}</strong><small>at current flows/day</small></div><div class="matrix-kpi"><small>50-yr energy saved</small><strong>${short(fifty.energy)} kWh</strong><small>modeled, not measured</small></div><div class="matrix-kpi"><small>50-yr CO₂ avoided</small><strong>${shortMass(fifty.co2)}</strong><small>modeled, not measured</small></div><div class="matrix-kpi"><small>50-yr cost saved</small><strong>${shortMoney(fifty.cost)}</strong><small>modeled, not measured</small></div>`;
 }
 function showCell(b,c){const p=pair(b,c); if(!p.c||!p.f)return; const t=+p.c.estimatedContextTokens,f=+p.f.estimatedContextTokens; $('selected-title').textContent=`${b.toLocaleString()} customers · concurrency ${c}`; $('selected-chart').innerHTML=`<div class="bar-row"><span>Conventional</span><div class="bar-track"><div class="bar-fill conventional" style="width:100%"></div></div><strong>${fmt(p.c.avgRps,1)} RPS</strong></div><div class="bar-row"><span>Foundgine</span><div class="bar-track"><div class="bar-fill foundgine" style="width:${Math.min(100,p.f.avgRps/p.c.avgRps*100)}%"></div></div><strong>${fmt(p.f.avgRps,1)} RPS</strong></div><div class="bar-row"><span>Tokens</span><div class="bar-track"><div class="bar-fill conventional" style="width:100%"></div></div><strong>${fmt(t,0)}</strong></div><div class="bar-row"><span>Tokens F</span><div class="bar-track"><div class="bar-fill foundgine" style="width:${f/t*100}%"></div></div><strong>${fmt(f,0)}</strong></div>`; $('selected-impact').innerHTML=`<p><strong>${fmt(pct(f,t),1)}% fewer estimated context tokens</strong></p><p>${fmt(pct(p.f.energy,p.c.energy),1)}% lower modeled energy · ${fmt(pct(p.f.co2,p.c.co2),1)}% lower modeled CO₂ · ${fmt(pct(p.f.cost,p.c.cost),1)}% lower modeled cost.</p><p><strong>${fmt(p.f.avgRps/p.c.avgRps,1)}×</strong> RPS and <strong>${fmt(p.f.avgWallMs,1)} ms</strong> vs <strong>${fmt(p.c.avgWallMs,1)} ms</strong> average wall time.</p>`;}
 batches.forEach(x=>$('batch').insertAdjacentHTML('beforeend',`<option value="${x}">${x.toLocaleString()} customers</option>`));concs.forEach(x=>$('concurrency').insertAdjacentHTML('beforeend',`<option value="${x}">C${x}</option>`));
