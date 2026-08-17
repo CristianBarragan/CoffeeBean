@@ -12,7 +12,7 @@ services:
       - -c
       - shared_buffers=256MB
     ports:
-      - "55432:5432"
+      - "${POSTGRES_HOST_PORT:-55432}:5432"
     volumes:
       - benchmark-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -39,7 +39,6 @@ services:
         COFFEEBEANERY_RELATIONSHIPS_PER_CUSTOMER: "4"
         COFFEEBEANERY_CONTRACTS_PER_RELATIONSHIP: "3"
         COFFEEBEANERY_TRANSACTIONS_PER_CONTRACT: "4"
-
       restart: "no"
 
   hotchocolate:

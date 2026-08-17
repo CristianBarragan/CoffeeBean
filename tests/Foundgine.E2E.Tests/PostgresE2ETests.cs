@@ -32,6 +32,186 @@ public sealed class PostgresE2ETests
 {
     private const string ConnectionEnvironmentVariable = "FOUNDGINE_POSTGRES_CONNECTION_STRING";
 
+
+    internal static MetadataRegistry BuildMetadata()
+    {
+        var registry = new MetadataRegistry();
+
+        registry.Register(new EntityMetadata(
+            ComplexSemanticMutationE2ETests.Customer,
+            "Customer",
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"),
+                new ColumnMetadata(new ColumnId(2), "Name"),
+                new ColumnMetadata(new ColumnId(3), "Status"),
+                new ColumnMetadata(new ColumnId(4), "Notes")
+            ],
+            Fields:
+            [
+                new FieldMetadata(new FieldId(1), "Id", typeof(long),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Customer, new ColumnId(1))),
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Customer, new ColumnId(2))),
+                new FieldMetadata(new FieldId(3), "Status", typeof(string),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Customer, new ColumnId(3))),
+                new FieldMetadata(new FieldId(8), "Notes", typeof(string),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Customer, new ColumnId(4)))
+            ],
+            PrimaryKey: new ColumnReference(ComplexSemanticMutationE2ETests.Customer, new ColumnId(1))));
+
+        registry.Register(new EntityMetadata(
+            ComplexSemanticMutationE2ETests.Profile,
+            "Profile",
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"),
+                new ColumnMetadata(new ColumnId(2), "CustomerId"),
+                new ColumnMetadata(new ColumnId(3), "Name")
+            ],
+            Fields:
+            [
+                new FieldMetadata(new FieldId(1), "Id", typeof(long),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Profile, new ColumnId(1))),
+                new FieldMetadata(new FieldId(4), "CustomerId", typeof(long),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Profile, new ColumnId(2))),
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Profile, new ColumnId(3)))
+            ],
+            PrimaryKey: new ColumnReference(ComplexSemanticMutationE2ETests.Profile, new ColumnId(1))));
+
+        registry.Register(new EntityMetadata(
+            ComplexSemanticMutationE2ETests.Account,
+            "Account",
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"),
+                new ColumnMetadata(new ColumnId(2), "CustomerId"),
+                new ColumnMetadata(new ColumnId(3), "Name"),
+                new ColumnMetadata(new ColumnId(4), "Status")
+            ],
+            Fields:
+            [
+                new FieldMetadata(new FieldId(1), "Id", typeof(long),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Account, new ColumnId(1))),
+                new FieldMetadata(new FieldId(4), "CustomerId", typeof(long),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Account, new ColumnId(2))),
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Account, new ColumnId(3))),
+                new FieldMetadata(new FieldId(3), "Status", typeof(string),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Account, new ColumnId(4)))
+            ],
+            PrimaryKey: new ColumnReference(ComplexSemanticMutationE2ETests.Account, new ColumnId(1))));
+
+        registry.Register(new EntityMetadata(
+            ComplexSemanticMutationE2ETests.Order,
+            "Order",
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"),
+                new ColumnMetadata(new ColumnId(2), "AccountId"),
+                new ColumnMetadata(new ColumnId(3), "Status")
+            ],
+            Fields:
+            [
+                new FieldMetadata(new FieldId(1), "Id", typeof(long),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Order, new ColumnId(1))),
+                new FieldMetadata(new FieldId(5), "AccountId", typeof(long),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Order, new ColumnId(2))),
+                new FieldMetadata(new FieldId(3), "Status", typeof(string),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Order, new ColumnId(3)))
+            ],
+            PrimaryKey: new ColumnReference(ComplexSemanticMutationE2ETests.Order, new ColumnId(1))));
+
+        registry.Register(new EntityMetadata(
+            ComplexSemanticMutationE2ETests.Payment,
+            "Payment",
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"),
+                new ColumnMetadata(new ColumnId(2), "OrderId"),
+                new ColumnMetadata(new ColumnId(3), "Amount"),
+                new ColumnMetadata(new ColumnId(4), "Status")
+            ],
+            Fields:
+            [
+                new FieldMetadata(new FieldId(1), "Id", typeof(long),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Payment, new ColumnId(1))),
+                new FieldMetadata(new FieldId(6), "OrderId", typeof(long),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Payment, new ColumnId(2))),
+                new FieldMetadata(new FieldId(7), "Amount", typeof(decimal),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Payment, new ColumnId(3))),
+                new FieldMetadata(new FieldId(3), "Status", typeof(string),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Payment, new ColumnId(4)))
+            ],
+            PrimaryKey: new ColumnReference(ComplexSemanticMutationE2ETests.Payment, new ColumnId(1))));
+
+        registry.Register(new EntityMetadata(
+            ComplexSemanticMutationE2ETests.Audit,
+            "Audit",
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"),
+                new ColumnMetadata(new ColumnId(2), "CustomerId"),
+                new ColumnMetadata(new ColumnId(3), "Kind")
+            ],
+            Fields:
+            [
+                new FieldMetadata(new FieldId(1), "Id", typeof(long),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Audit, new ColumnId(1))),
+                new FieldMetadata(new FieldId(4), "CustomerId", typeof(long),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Audit, new ColumnId(2))),
+                new FieldMetadata(new FieldId(9), "Kind", typeof(string),
+                    new ColumnReference(ComplexSemanticMutationE2ETests.Audit, new ColumnId(3)))
+            ],
+            PrimaryKey: new ColumnReference(ComplexSemanticMutationE2ETests.Audit, new ColumnId(1))));
+
+        registry.Register(new RelationshipMetadata(
+            ComplexSemanticMutationE2ETests.CustomerProfiles,
+            ComplexSemanticMutationE2ETests.Customer,
+            ComplexSemanticMutationE2ETests.Profile,
+            "Profiles",
+            new ColumnReference(ComplexSemanticMutationE2ETests.Customer, new ColumnId(1)),
+            new ColumnReference(ComplexSemanticMutationE2ETests.Profile, new ColumnId(2))));
+
+        registry.Register(new RelationshipMetadata(
+            ComplexSemanticMutationE2ETests.CustomerAccounts,
+            ComplexSemanticMutationE2ETests.Customer,
+            ComplexSemanticMutationE2ETests.Account,
+            "Accounts",
+            new ColumnReference(ComplexSemanticMutationE2ETests.Customer, new ColumnId(1)),
+            new ColumnReference(ComplexSemanticMutationE2ETests.Account, new ColumnId(2))));
+
+        registry.Register(new RelationshipMetadata(
+            ComplexSemanticMutationE2ETests.AccountOrders,
+            ComplexSemanticMutationE2ETests.Account,
+            ComplexSemanticMutationE2ETests.Order,
+            "Orders",
+            new ColumnReference(ComplexSemanticMutationE2ETests.Account, new ColumnId(1)),
+            new ColumnReference(ComplexSemanticMutationE2ETests.Order, new ColumnId(2))));
+
+        registry.Register(new RelationshipMetadata(
+            ComplexSemanticMutationE2ETests.OrderPayments,
+            ComplexSemanticMutationE2ETests.Order,
+            ComplexSemanticMutationE2ETests.Payment,
+            "Payments",
+            new ColumnReference(ComplexSemanticMutationE2ETests.Order, new ColumnId(1)),
+            new ColumnReference(ComplexSemanticMutationE2ETests.Payment, new ColumnId(2))));
+
+        registry.Register(new RelationshipMetadata(
+            ComplexSemanticMutationE2ETests.CustomerAudits,
+            ComplexSemanticMutationE2ETests.Customer,
+            ComplexSemanticMutationE2ETests.Audit,
+            "Audits",
+            new ColumnReference(ComplexSemanticMutationE2ETests.Customer, new ColumnId(1)),
+            new ColumnReference(ComplexSemanticMutationE2ETests.Audit, new ColumnId(2))));
+
+        registry.Register(new RelationshipMetadata(
+            ComplexSemanticMutationE2ETests.AuditCustomer,
+            ComplexSemanticMutationE2ETests.Audit,
+            ComplexSemanticMutationE2ETests.Customer,
+            "Customer",
+            new ColumnReference(ComplexSemanticMutationE2ETests.Audit, new ColumnId(2)),
+            new ColumnReference(ComplexSemanticMutationE2ETests.Customer, new ColumnId(1))));
+
+        return registry;
+    }
+
+
     [PostgreSqlFact]
     public async Task PostgresE2E_runs_complete_semantic_to_postgresql17_pipeline_and_rolls_back()
     {
@@ -39,8 +219,7 @@ public sealed class PostgresE2ETests
 
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
-        await using var isolation = await BeginIsolatedSchemaAsync(connection);
-        await PrepareDatabaseAsync(connection);
+        await SetSearchPathAsync(connection, "fg_mutation");
 
         var metadata = BuildMetadata();
         var semanticPlan = new SemanticMutationPlanner().Plan(
@@ -123,8 +302,6 @@ public sealed class PostgresE2ETests
 
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
-        await using var isolation = await BeginIsolatedSchemaAsync(connection);
-        await PrepareDatabaseAsync(connection);
 
         var metadata = BuildMetadata();
         var graph = BuildMeasurementGraph(batchSize, depth);
@@ -221,146 +398,13 @@ public sealed class PostgresE2ETests
         return new SemanticMutationOperationGraph(operations);
     }
 
-    private static async Task<IsolatedSchema> BeginIsolatedSchemaAsync(NpgsqlConnection connection)
+    private static async Task SetSearchPathAsync(NpgsqlConnection connection, string schema)
     {
-        var schema = "fg_measure_" + Guid.NewGuid().ToString("N");
-        await using var command = new NpgsqlCommand($"CREATE SCHEMA \"{schema}\"; SET search_path TO \"{schema}\";", connection);
-        await command.ExecuteNonQueryAsync();
-        return new IsolatedSchema(connection, schema);
-    }
-
-    private sealed class IsolatedSchema : IAsyncDisposable
-    {
-        private readonly NpgsqlConnection _connection;
-        private readonly string _schema;
-        public IsolatedSchema(NpgsqlConnection connection, string schema) { _connection = connection; _schema = schema; }
-        public async ValueTask DisposeAsync()
-        {
-            await using var command = new NpgsqlCommand($"DROP SCHEMA IF EXISTS \"{_schema}\" CASCADE; SET search_path TO public;", _connection);
-            await command.ExecuteNonQueryAsync();
-        }
-    }
-
-    internal static async Task PrepareDatabaseAsync(NpgsqlConnection connection)
-    {
-        const string sql = """
-            DROP TABLE IF EXISTS "Payment" CASCADE;
-            DROP TABLE IF EXISTS "Order" CASCADE;
-            DROP TABLE IF EXISTS "Audit" CASCADE;
-            DROP TABLE IF EXISTS "Profile" CASCADE;
-            DROP TABLE IF EXISTS "Account" CASCADE;
-            DROP TABLE IF EXISTS "Customer" CASCADE;
-
-            CREATE TABLE "Customer" (
-                "Id" bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "Name" text NOT NULL,
-                "Status" text NOT NULL,
-                "Notes" text
-            );
-            CREATE TABLE "Profile" (
-                "Id" bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "CustomerId" bigint NOT NULL REFERENCES "Customer"("Id"),
-                "Name" text NOT NULL
-            );
-            CREATE TABLE "Account" (
-                "Id" bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "CustomerId" bigint NOT NULL REFERENCES "Customer"("Id"),
-                "Name" text NOT NULL,
-                "Status" text NOT NULL,
-                CONSTRAINT "UX_Account_CustomerId" UNIQUE ("CustomerId")
-            );
-            CREATE TABLE "Order" (
-                "Id" bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "AccountId" bigint NOT NULL REFERENCES "Account"("Id"),
-                "Status" text NOT NULL
-            );
-            CREATE TABLE "Payment" (
-                "Id" bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "OrderId" bigint NOT NULL REFERENCES "Order"("Id"),
-                "Amount" numeric NOT NULL,
-                "Status" text NOT NULL,
-                CONSTRAINT "UX_Payment_OrderId" UNIQUE ("OrderId")
-            );
-            CREATE TABLE "Audit" (
-                "Id" bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "CustomerId" bigint NOT NULL REFERENCES "Customer"("Id"),
-                "Kind" text NOT NULL
-            );
-
-            CREATE INDEX "IX_Profile_CustomerId" ON "Profile"("CustomerId");
-            CREATE INDEX "IX_Order_AccountId" ON "Order"("AccountId");
-            CREATE INDEX "IX_Audit_CustomerId" ON "Audit"("CustomerId");
-            """;
-
-        await using var command = new NpgsqlCommand(sql, connection);
+        await using var command = new NpgsqlCommand(
+            $"SET search_path TO \"{schema}\";",
+            connection);
         await command.ExecuteNonQueryAsync();
     }
-
-    internal static MetadataRegistry BuildMetadata()
-    {
-        var customer = ComplexSemanticMutationE2ETests.BuildSemanticModel();
-        var registry = new MetadataRegistry();
-
-        RegisterEntity(registry, new EntityId(700), "Customer", [
-            (1, "Id", typeof(long)), (2, "Name", typeof(string)),
-            (3, "Status", typeof(string)), (8, "Notes", typeof(string))]);
-        RegisterEntity(registry, new EntityId(701), "Profile", [
-            (1, "Id", typeof(long)), (4, "CustomerId", typeof(long)), (2, "Name", typeof(string))]);
-        RegisterEntity(registry, new EntityId(702), "Account", [
-            (1, "Id", typeof(long)), (4, "CustomerId", typeof(long)),
-            (2, "Name", typeof(string)), (3, "Status", typeof(string))]);
-        RegisterEntity(registry, new EntityId(703), "Order", [
-            (1, "Id", typeof(long)), (5, "AccountId", typeof(long)), (3, "Status", typeof(string))]);
-        RegisterEntity(registry, new EntityId(704), "Payment", [
-            (1, "Id", typeof(long)), (6, "OrderId", typeof(long)),
-            (7, "Amount", typeof(decimal)), (3, "Status", typeof(string))]);
-        RegisterEntity(registry, new EntityId(705), "Audit", [
-            (1, "Id", typeof(long)), (4, "CustomerId", typeof(long)), (9, "Kind", typeof(string))]);
-
-        RegisterRelationship(registry, 1, 700, 701, "profiles", 1, 4);
-        RegisterRelationship(registry, 2, 700, 702, "accounts", 1, 4);
-        RegisterRelationship(registry, 3, 702, 703, "orders", 1, 5);
-        RegisterRelationship(registry, 4, 703, 704, "payments", 1, 6);
-        RegisterRelationship(registry, 5, 700, 705, "audits", 1, 4);
-        RegisterRelationship(registry, 6, 705, 700, "customer", 4, 1);
-
-        _ = customer; // Keep semantic and relational metadata construction visibly paired.
-        return registry;
-    }
-
-    private static void RegisterEntity(
-        MetadataRegistry registry,
-        EntityId id,
-        string name,
-        IReadOnlyList<(ushort Field, string Name, Type Type)> fields)
-    {
-        var columns = fields.Select(f => new ColumnMetadata(new ColumnId(f.Field), f.Name)).ToArray();
-        var fieldMetadata = fields.Select(f => new FieldMetadata(
-            new FieldId(f.Field), f.Name, f.Type,
-            new ColumnReference(id, new ColumnId(f.Field)))).ToArray();
-        registry.Register(new EntityMetadata(
-            id,
-            name,
-            columns,
-            Fields: fieldMetadata,
-            PrimaryKey: new ColumnReference(id, new ColumnId(1))));
-    }
-
-    private static void RegisterRelationship(
-        MetadataRegistry registry,
-        ushort id,
-        ushort source,
-        ushort target,
-        string name,
-        ushort sourceColumn,
-        ushort targetColumn) =>
-        registry.Register(new RelationshipMetadata(
-            new RelationshipId(id),
-            new EntityId(source),
-            new EntityId(target),
-            name,
-            new ColumnReference(new EntityId(source), new ColumnId(sourceColumn)),
-            new ColumnReference(new EntityId(target), new ColumnId(targetColumn))));
 
     private static async Task<PlanStats> ExplainAnalyzeAsync(
         NpgsqlConnection connection,

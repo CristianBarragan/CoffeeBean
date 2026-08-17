@@ -44,6 +44,7 @@ try {
     }
 }
 finally {
-    Write-Host "Stopping PostgreSQL 17..."
-    docker compose -f $composeFile down --volumes --remove-orphans
+    Write-Host "Leaving PostgreSQL 17 running. Database/schema lifecycle is owned by PostgreSQL init scripts."
+    Write-Host "To deliberately recreate the database from init state, run:"
+    Write-Host "  docker compose -f $composeFile down --volumes --remove-orphans"
 }

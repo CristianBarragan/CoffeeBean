@@ -15,8 +15,9 @@ else
 fi
 
 cleanup() {
-  echo "Stopping PostgreSQL 17..."
-  compose down --volumes --remove-orphans >/dev/null 2>&1 || true
+  echo "Leaving PostgreSQL 17 running. Database/schema lifecycle is owned by PostgreSQL init scripts."
+  echo "To deliberately recreate the database from init state:"
+  echo "  docker compose -f $COMPOSE_FILE down --volumes --remove-orphans"
 }
 trap cleanup EXIT INT TERM
 

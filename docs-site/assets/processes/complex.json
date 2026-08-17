@@ -1,0 +1,321 @@
+{
+  "title": "Complex: review customer exposure across relationships",
+  "summary": "A business process that crosses customer \u2192 banking relationship \u2192 contract \u2192 transaction, applies authorization, filters active contracts and aggregates transaction exposure.",
+  "question": "For this customer, review active contractual exposure over the last 90 days and return contracts with transaction totals.",
+  "fixture": "Customer \u2192 CustomerBankingRelationship \u2192 Contract \u2192 Transaction",
+  "steps": [
+    {
+      "number": 1,
+      "name": "Intent",
+      "boundary": "Business request \u2192 structured intent",
+      "why": "A complex operation is still one semantic request. The caller specifies the outcome, relationships, filters and projection \u2014 not SQL statements.",
+      "input": {
+        "operation": "query",
+        "resource": "customerExposureReview",
+        "arguments": {
+          "customerId": "customer-104",
+          "days": 90
+        },
+        "select": [
+          "customerId",
+          "customerName",
+          "contracts.id",
+          "contracts.status",
+          "contracts.transactions.total"
+        ]
+      },
+      "output": {
+        "intent": {
+          "root": "Customer",
+          "relationships": [
+            "bankingRelationships",
+            "bankingRelationships.contracts",
+            "bankingRelationships.contracts.transactions"
+          ],
+          "filters": [
+            {
+              "path": "Customer.Id",
+              "op": "eq",
+              "value": "customer-104"
+            },
+            {
+              "path": "Contract.Status",
+              "op": "eq",
+              "value": "active"
+            },
+            {
+              "path": "Transaction.PostedAt",
+              "op": "gte",
+              "value": "now-90d"
+            }
+          ],
+          "aggregate": {
+            "path": "transactions.amount",
+            "function": "sum"
+          }
+        }
+      }
+    },
+    {
+      "number": 2,
+      "name": "Semantic resolution",
+      "boundary": "Intent \u2192 connected semantic graph",
+      "why": "Foundgine resolves each relationship and field against the application model instead of asking the caller to understand the storage graph.",
+      "input": {
+        "root": "Customer",
+        "traversal": [
+          "bankingRelationships",
+          "contracts",
+          "transactions"
+        ],
+        "fields": [
+          "Id",
+          "Name",
+          "Contract.Id",
+          "Contract.Status",
+          "Transaction.Amount",
+          "Transaction.PostedAt"
+        ]
+      },
+      "output": {
+        "graph": {
+          "Customer": "CustomerBankingRelationship",
+          "CustomerBankingRelationship": "Contract",
+          "Contract": "Transaction"
+        },
+        "resolvedFields": [
+          "Customer.Id",
+          "Customer.Name",
+          "Contract.Id",
+          "Contract.Status",
+          "Transaction.Amount",
+          "Transaction.PostedAt"
+        ]
+      }
+    },
+    {
+      "number": 3,
+      "name": "Validation",
+      "boundary": "Graph + operations \u2192 valid plan inputs",
+      "why": "Foundgine validates that the traversal, fields, aggregate and predicates can be represented before authorization and planning.",
+      "input": {
+        "traversalDepth": 3,
+        "aggregate": "SUM(Transaction.Amount)",
+        "predicates": 3
+      },
+      "output": {
+        "valid": true,
+        "aggregateValid": true,
+        "dependencies": [
+          "Customer",
+          "CustomerBankingRelationship",
+          "Contract",
+          "Transaction"
+        ]
+      }
+    },
+    {
+      "number": 4,
+      "name": "Authorization",
+      "boundary": "Business identity \u2192 permitted slice",
+      "why": "The authorization boundary can inject constraints into a multi-hop request. The tenant constraint is not something the caller gets to remove.",
+      "input": {
+        "subject": {
+          "id": "review-agent-42",
+          "tenantId": "tenant-7"
+        },
+        "customerId": "customer-104",
+        "requestedPaths": [
+          "Customer",
+          "CustomerBankingRelationship",
+          "Contract",
+          "Transaction"
+        ]
+      },
+      "output": {
+        "decision": "allow",
+        "constraints": [
+          {
+            "path": "Customer.TenantId",
+            "op": "eq",
+            "value": "tenant-7"
+          },
+          {
+            "path": "Contract.TenantId",
+            "op": "eq",
+            "value": "tenant-7"
+          }
+        ],
+        "deniedFields": [
+          "Customer.InternalRiskScore"
+        ]
+      }
+    },
+    {
+      "number": 5,
+      "name": "Execution plan",
+      "boundary": "Authorized graph \u2192 logical plan DAG",
+      "why": "The planner turns the relationship traversal, predicates, authorization constraints and aggregate into a provider-independent execution shape.",
+      "input": {
+        "root": "Customer",
+        "joins": [
+          "Customer\u2192Relationship",
+          "Relationship\u2192Contract",
+          "Contract\u2192Transaction"
+        ],
+        "filters": [
+          "Customer.Id = customer-104",
+          "Contract.Status = active",
+          "Transaction.PostedAt >= now-90d"
+        ],
+        "aggregate": "SUM(Transaction.Amount)"
+      },
+      "output": {
+        "plan": {
+          "root": "Customer",
+          "joins": [
+            "CustomerBankingRelationship",
+            "Contract",
+            "Transaction"
+          ],
+          "filters": [
+            "customer id",
+            "active contract",
+            "last 90 days",
+            "tenant"
+          ],
+          "groupBy": [
+            "Customer.Id",
+            "Contract.Id"
+          ],
+          "aggregate": "SUM(Transaction.Amount)"
+        }
+      }
+    },
+    {
+      "number": 6,
+      "name": "Rewrite / optimize",
+      "boundary": "Logical plan \u2192 constrained optimized plan",
+      "why": "The planner can push filters toward the relevant relationship, reduce unnecessary columns and choose an execution shape without changing the semantic result.",
+      "input": {
+        "plan": {
+          "filters": [
+            "customer id",
+            "active contract",
+            "last 90 days",
+            "tenant"
+          ],
+          "projection": [
+            "Customer.Id",
+            "Customer.Name",
+            "Contract.Id",
+            "Contract.Status",
+            "SUM(Transaction.Amount)"
+          ]
+        }
+      },
+      "output": {
+        "optimizedPlan": {
+          "filterPushdown": true,
+          "selectedColumns": [
+            "Customer.Id",
+            "Customer.Name",
+            "Contract.Id",
+            "Contract.Status",
+            "Transaction.Amount"
+          ],
+          "authorizationPreserved": true
+        }
+      }
+    },
+    {
+      "number": 7,
+      "name": "Provider compilation",
+      "boundary": "Logical plan \u2192 PostgreSQL",
+      "why": "The PostgreSQL provider turns the complete plan into parameterized database work. This is the first stage coupled to a physical provider.",
+      "input": {
+        "provider": "PostgreSQL",
+        "logicalOperations": [
+          "relationship traversal",
+          "authorization predicates",
+          "date filter",
+          "group by",
+          "sum"
+        ]
+      },
+      "output": {
+        "command": {
+          "kind": "parameterized SQL",
+          "parameters": {
+            "customer_id": "customer-104",
+            "days": 90,
+            "tenant_id": "tenant-7"
+          }
+        }
+      }
+    },
+    {
+      "number": 8,
+      "name": "Execute",
+      "boundary": "PostgreSQL \u2192 aggregate rows",
+      "why": "PostgreSQL evaluates the relationship traversal and aggregate under the compiled constraints.",
+      "input": {
+        "parameters": {
+          "customer_id": "customer-104",
+          "days": 90,
+          "tenant_id": "tenant-7"
+        }
+      },
+      "output": {
+        "rows": [
+          {
+            "contractId": "contract-88",
+            "status": "active",
+            "transactionTotal": 184250.5
+          },
+          {
+            "contractId": "contract-91",
+            "status": "active",
+            "transactionTotal": 42100.0
+          }
+        ]
+      }
+    },
+    {
+      "number": 9,
+      "name": "Result + evidence",
+      "boundary": "Execution \u2192 business result",
+      "why": "The caller receives the business-shaped result rather than database-shaped intermediate rows, with evidence showing the authorization and provider boundary.",
+      "input": {
+        "rows": 2,
+        "aggregate": "SUM(Transaction.Amount)",
+        "authorized": true
+      },
+      "output": {
+        "data": {
+          "customerId": "customer-104",
+          "contracts": [
+            {
+              "id": "contract-88",
+              "status": "active",
+              "transactionTotal": 184250.5
+            },
+            {
+              "id": "contract-91",
+              "status": "active",
+              "transactionTotal": 42100.0
+            }
+          ]
+        },
+        "evidence": {
+          "authorized": true,
+          "authorizationConstraints": [
+            "tenant-7"
+          ],
+          "provider": "PostgreSQL",
+          "relationshipsTraversed": 3
+        }
+      }
+    }
+  ]
+}

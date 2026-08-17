@@ -1,0 +1,21 @@
+
+============================================
+ Foundgine Agent End-to-End Performance Run
+============================================
+Mode:                    replay
+Customer tiers:          10, 100, 1000, 10000
+Concurrency:             8, 16, 32, 64
+Runs per tier:           30, 30, 30, 30
+Warmups per flow:        5
+Relationships/customer:  4
+Contracts/relationship:  3
+Transactions/contract:   4
+Reports:                 C:\Foundgine\benchmarks\AgentEndToEnd\Run2\artifacts
+
+Restoring benchmark projects...
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+Removing benchmark containers and PostgreSQL volume...
+Removing benchmark containers and PostgreSQL volume...

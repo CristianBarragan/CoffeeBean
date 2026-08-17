@@ -1,0 +1,48 @@
+﻿{
+    "run":  "Run3",
+    "publishedUtc":  "2026-08-17T18:31:30.4641028Z",
+    "source":  "C:\\Foundgine\\benchmarks\\AgentEndToEnd\\Run3\\artifacts",
+    "destination":  "C:\\Foundgine\\docs-site\\assets\\agent-benchmark\\run3",
+    "files":  [
+                  {
+                      "path":  "00010-customers\\concurrency-008\\agent-benchmark.json",
+                      "bytes":  48585,
+                      "lastWriteUtc":  "2026-08-17T12:58:30.8996966Z"
+                  },
+                  {
+                      "path":  "00010-customers\\concurrency-008\\agent-benchmark.md",
+                      "bytes":  3876,
+                      "lastWriteUtc":  "2026-08-17T12:58:30.8996966Z"
+                  },
+                  {
+                      "path":  "00100-customers\\concurrency-064\\agent-benchmark.json",
+                      "bytes":  49088,
+                      "lastWriteUtc":  "2026-08-17T12:59:14.5828150Z"
+                  },
+                  {
+                      "path":  "00100-customers\\concurrency-064\\agent-benchmark.md",
+                      "bytes":  3889,
+                      "lastWriteUtc":  "2026-08-17T12:59:14.5828150Z"
+                  },
+                  {
+                      "path":  "01000-customers\\concurrency-064\\agent-benchmark.json",
+                      "bytes":  49135,
+                      "lastWriteUtc":  "2026-08-17T13:00:03.2946028Z"
+                  },
+                  {
+                      "path":  "01000-customers\\concurrency-064\\agent-benchmark.md",
+                      "bytes":  3889,
+                      "lastWriteUtc":  "2026-08-17T13:00:03.2946028Z"
+                  },
+                  {
+                      "path":  "10000-customers\\concurrency-064\\agent-benchmark.json",
+                      "bytes":  49133,
+                      "lastWriteUtc":  "2026-08-17T13:24:41.7170668Z"
+                  },
+                  {
+                      "path":  "10000-customers\\concurrency-064\\agent-benchmark.md",
+                      "bytes":  3892,
+                      "lastWriteUtc":  "2026-08-17T13:24:41.7240521Z"
+                  }
+              ]
+}

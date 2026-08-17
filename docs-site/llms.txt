@@ -13,14 +13,9 @@ Foundgine is not an ORM replacement, a database, a GraphQL server, an LLM, an ag
 - [What is Foundgine?](https://cristianbarragan.github.io/Foundgine/what-is-foundgine.html): The problem Foundgine solves, the semantic-vs-persistence model distinction, and where Foundgine fits relative to REST/GraphQL/automation/AI-agent callers.
 - [AI agents with Foundgine](https://cristianbarragan.github.io/Foundgine/ai-agents/): Why AI agents should not generate SQL directly or hold database credentials, the intended agent → structured intent → Foundgine → PostgreSQL boundary, and required security scenarios (field authorization, tenant isolation, prompt injection).
 - [Architecture](https://cristianbarragan.github.io/Foundgine/architecture/): The core execution pipeline (intent, semantic model, resolution, authorization, plan, rewrite/optimize, provider compilation, execution, evidence) and how multiple callers share one execution model.
-- [Performance](https://cristianbarragan.github.io/Foundgine/performance/): CoffeeBeanery PostgreSQL graph benchmark (12 August 2026) — Foundgine vs Hot Chocolate + EF Core, throughput and p95 latency, explicitly scoped to a relationship-heavy query workload.
+- [Performance](https://cristianbarragan.github.io/Foundgine/performance/): CoffeeBeanery PostgreSQL graph benchmark (12 August 2026) — Foundgine query throughput and p95 latency, explicitly scoped to a relationship-heavy graph workload.
 
 ## Optional
 
 - [Full documentation, single file](https://cristianbarragan.github.io/Foundgine/llms-full.md): All pages above concatenated for full-context ingestion.
 - [Repository](https://github.com/cristianbarragan/Foundgine): Source, development setup, and benchmark source data.
-
-
-## End-to-end agent benchmark
-
-The repository contains an end-to-end benchmark comparing a conventional application/AI tool flow with a Foundgine semantic flow against the same PostgreSQL fixture. It measures provider-reported input/output/total tokens, cached input tokens, model calls, tool calls, wall-clock time, model time, tool time and final-state equivalence. See `benchmarks/AgentEndToEnd` and the website page `/agent-benchmark/`.

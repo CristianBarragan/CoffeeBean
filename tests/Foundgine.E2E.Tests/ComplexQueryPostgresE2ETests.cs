@@ -22,9 +22,8 @@ namespace Foundgine.E2E.Tests;
 ///
 /// The query exercises nested selections, two-hop traversal, AND/OR composition,
 /// Some/None/All relationship quantifiers, Count aggregation, IN/NEQ/GTE filters,
-/// ordering and a parameterized limit. EXPLAIN ANALYZE is run separately in a
-/// rollback-only transaction so the first read measurement gate can be collected
-/// without changing the compiler.
+/// ordering and a parameterized limit. EXPLAIN ANALYZE is run inside the test transaction, which is rolled back at
+/// the end so the measurement gate cannot leave fixture data behind.
 /// </summary>
 public sealed class ComplexQueryPostgresE2ETests
 {
@@ -43,12 +42,12 @@ public sealed class ComplexQueryPostgresE2ETests
 
         await using var connection = new NpgsqlConnection(cs);
         await connection.OpenAsync();
-        await using var isolation = await BeginIsolatedSchemaAsync(connection);
-        await PrepareDatabaseAsync(connection);
+        await SetSearchPathAsync(connection, "fg_query");
 
         var model = BuildModel();
         var metadata = BuildMetadata();
-        await SeedAsync(connection);
+        await using var transaction = await connection.BeginTransactionAsync();
+        var baseline = await SeedAsync(connection, transaction);
 
         var request = BuildComplexRequest(limit: 50);
         var plan = Compile(model, metadata, request);
@@ -61,13 +60,12 @@ public sealed class ComplexQueryPostgresE2ETests
         Assert.Contains("INNER JOIN", plan.CommandText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("ORDER BY", plan.CommandText, StringComparison.OrdinalIgnoreCase);
 
-        var stats = await ExplainAnalyzeAsync(connection, plan, limit: 50);
+        var stats = await ExplainAnalyzeAsync(connection, transaction, plan, limit: 50);
         PrintStats("complex", 50, 3, stats);
         Assert.True(stats.PlanningTimeMs >= 0);
         Assert.True(stats.ExecutionTimeMs >= 0);
         Assert.NotEmpty(stats.JoinStrategies);
 
-        await using var transaction = await connection.BeginTransactionAsync();
         var provider = new SqlExecutionProvider(connection, transaction);
         var result = await provider.ExecuteAsync(plan, PaginationExecutionContext.Create(50));
 
@@ -83,9 +81,9 @@ public sealed class ComplexQueryPostgresE2ETests
         });
 
         var customerIds = result.Rows.Select(r => Convert.ToInt64(r.Values["__fg_0_Id"])).Distinct().ToArray();
-        Assert.Contains(1L, customerIds);
-        Assert.DoesNotContain(2L, customerIds); // blocked/closed account path fails semantic predicates.
-        Assert.Contains(3L, customerIds);
+        Assert.Contains(baseline.Customer1Id, customerIds);
+        Assert.DoesNotContain(baseline.Customer2Id, customerIds); // blocked/closed account path fails semantic predicates.
+        Assert.Contains(baseline.Customer3Id, customerIds);
 
         await transaction.RollbackAsync();
     }
@@ -100,26 +98,35 @@ public sealed class ComplexQueryPostgresE2ETests
         int depth)
     {
         var cs = Environment.GetEnvironmentVariable(ConnectionEnvironmentVariable);
-
+        
         await using var connection = new NpgsqlConnection(cs);
         await connection.OpenAsync();
-        await using var isolation = await BeginIsolatedSchemaAsync(connection);
-        await PrepareDatabaseAsync(connection);
-        await SeedScaledAsync(connection, datasetSize);
+        await using var transaction = await connection.BeginTransactionAsync(CancellationToken.None);
 
-        var model = BuildModel();
-        var metadata = BuildMetadata();
-        var request = BuildComplexRequest(limit: Math.Max(datasetSize, 50), depth);
-        var plan = Compile(model, metadata, request);
-        var stats = await ExplainAnalyzeAsync(connection, plan, Math.Max(datasetSize, 50));
+        try
+        {
+            await SeedScaledAsync(connection, transaction, datasetSize);
 
-        PrintStats("matrix", datasetSize, depth, stats);
-        PrintNodeEvidence(stats);
+            var model = BuildModel();
+            var metadata = BuildMetadata();
+            var request = BuildComplexRequest(limit: Math.Max(datasetSize, 50), depth);
+            var plan = Compile(model, metadata, request);
+            var stats = await ExplainAnalyzeAsync(connection, transaction, plan, Math.Max(datasetSize, 50));
 
-        Assert.True(stats.PlanningTimeMs >= 0);
-        Assert.True(stats.ExecutionTimeMs >= 0);
-        Assert.True(stats.RootActualRows >= 0);
-        Assert.True(stats.RootPlanRows >= 0);
+            PrintStats("matrix", datasetSize, depth, stats);
+            PrintNodeEvidence(stats);
+
+            Assert.True(stats.PlanningTimeMs >= 0);
+            Assert.True(stats.ExecutionTimeMs >= 0);
+            Assert.True(stats.RootActualRows >= 0);
+            Assert.True(stats.RootPlanRows >= 0);
+            await transaction.RollbackAsync(CancellationToken.None);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
     }
 
     internal static SemanticRequest BuildComplexRequest(int limit, int depth = 3)
@@ -252,100 +259,124 @@ public sealed class ComplexQueryPostgresE2ETests
         return registry;
     }
 
-    private static async Task<IsolatedSchema> BeginIsolatedSchemaAsync(NpgsqlConnection connection)
+    private static async Task<QueryBaseline> SeedAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction) =>
+        await SeedScaledAsync(connection, transaction, 10);
+
+    private static async Task<QueryBaseline> SeedScaledAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        int customers)
     {
-        var schema = "fg_read_" + Guid.NewGuid().ToString("N");
-        await using var command = new NpgsqlCommand($"CREATE SCHEMA \"{schema}\"; SET search_path TO \"{schema}\";", connection);
-        await command.ExecuteNonQueryAsync();
-        return new IsolatedSchema(connection, schema);
-    }
+        long customer1Id = 0, customer2Id = 0, customer3Id = 0;
 
-    private sealed class IsolatedSchema : IAsyncDisposable
-    {
-        private readonly NpgsqlConnection _connection;
-        private readonly string _schema;
-        public IsolatedSchema(NpgsqlConnection connection, string schema) { _connection = connection; _schema = schema; }
-        public async ValueTask DisposeAsync()
-        {
-            await using var command = new NpgsqlCommand($"DROP SCHEMA IF EXISTS \"{_schema}\" CASCADE; SET search_path TO public;", _connection);
-            await command.ExecuteNonQueryAsync();
-        }
-    }
-
-    internal static async Task PrepareDatabaseAsync(NpgsqlConnection connection)
-    {
-        const string sql = """
-            DROP TABLE IF EXISTS "Transaction" CASCADE;
-            DROP TABLE IF EXISTS "Account" CASCADE;
-            DROP TABLE IF EXISTS "Customer" CASCADE;
-            CREATE TABLE "Customer" ("Id" bigint PRIMARY KEY, "Name" text NOT NULL);
-            CREATE TABLE "Account" ("Id" bigint PRIMARY KEY, "CustomerId" bigint NOT NULL REFERENCES "Customer"("Id"), "Balance" numeric NOT NULL, "Status" text NOT NULL);
-            CREATE TABLE "Transaction" ("Id" bigint PRIMARY KEY, "AccountId" bigint NOT NULL REFERENCES "Account"("Id"), "Amount" numeric NOT NULL, "TransactionDate" timestamp NOT NULL);
-            CREATE INDEX "IX_Account_CustomerId" ON "Account"("CustomerId");
-            CREATE INDEX "IX_Account_Status" ON "Account"("Status");
-            CREATE INDEX "IX_Transaction_AccountId" ON "Transaction"("AccountId");
-            CREATE INDEX "IX_Transaction_Amount" ON "Transaction"("Amount");
-            """;
-        await using var command = new NpgsqlCommand(sql, connection);
-        await command.ExecuteNonQueryAsync();
-    }
-
-    internal static async Task SeedAsync(NpgsqlConnection connection) => await SeedScaledAsync(connection, 10);
-
-    internal static async Task SeedScaledAsync(NpgsqlConnection connection, int customers)
-    {
-        await using var transaction = await connection.BeginTransactionAsync();
-        await using var command = new NpgsqlCommand("", connection, transaction);
-
-        // Npgsql prepares commands by default. PostgreSQL does not allow a
-        // prepared statement to contain multiple SQL commands separated by
-        // semicolons, so keep each seed operation as its own command while
-        // retaining the single transaction for atomic fixture setup.
         for (var i = 1; i <= customers; i++)
         {
-            command.Parameters.Clear();
-            command.CommandText = "INSERT INTO \"Customer\"(\"Id\",\"Name\") VALUES ($1,$2);";
-            command.Parameters.AddWithValue(i);
-            command.Parameters.AddWithValue(i switch { 1 => "Alice", 2 => "Bob", 3 => "Carol", _ => $"Customer-{i}" });
-            await command.ExecuteNonQueryAsync();
+            var customerId = await InsertCustomerAsync(
+                connection,
+                transaction,
+                i switch { 1 => "Alice", 2 => "Bob", 3 => "Carol", _ => $"Customer-{i}" });
 
-            command.Parameters.Clear();
-            command.CommandText = "INSERT INTO \"Account\"(\"Id\",\"CustomerId\",\"Balance\",\"Status\") VALUES ($1,$2,$3,$4);";
-            command.Parameters.AddWithValue(i * 10L);
-            command.Parameters.AddWithValue(i);
-            command.Parameters.AddWithValue(i == 2 ? 50m : 250m);
-            command.Parameters.AddWithValue(i == 2 ? "Closed" : "Active");
-            await command.ExecuteNonQueryAsync();
+            var firstAccountId = await InsertAccountAsync(
+                connection, transaction, customerId,
+                i == 2 ? 50m : 250m,
+                i == 2 ? "Closed" : "Active");
 
-            command.Parameters.Clear();
-            command.CommandText = "INSERT INTO \"Account\"(\"Id\",\"CustomerId\",\"Balance\",\"Status\") VALUES ($1,$2,$3,$4);";
-            command.Parameters.AddWithValue(i * 10L + 1);
-            command.Parameters.AddWithValue(i);
-            command.Parameters.AddWithValue(i == 2 ? 25m : 80m);
-            command.Parameters.AddWithValue(i == 2 ? "Blocked" : "Active");
-            await command.ExecuteNonQueryAsync();
+            var secondAccountId = await InsertAccountAsync(
+                connection, transaction, customerId,
+                i == 2 ? 25m : 80m,
+                i == 2 ? "Blocked" : "Active");
 
-            command.Parameters.Clear();
-            command.CommandText = "INSERT INTO \"Transaction\"(\"Id\",\"AccountId\",\"Amount\",\"TransactionDate\") VALUES ($1,$2,$3,'2026-01-01');";
-            command.Parameters.AddWithValue(i * 100L);
-            command.Parameters.AddWithValue(i * 10L);
-            command.Parameters.AddWithValue(i == 2 ? 20m : 300m);
-            await command.ExecuteNonQueryAsync();
+            await InsertTransactionAsync(
+                connection, transaction, firstAccountId,
+                i == 2 ? 20m : 300m,
+                new DateTime(2026, 1, 1));
 
-            command.Parameters.Clear();
-            command.CommandText = "INSERT INTO \"Transaction\"(\"Id\",\"AccountId\",\"Amount\",\"TransactionDate\") VALUES ($1,$2,$3,'2026-01-02');";
-            command.Parameters.AddWithValue(i * 100L + 1);
-            command.Parameters.AddWithValue(i * 10L + 1);
-            command.Parameters.AddWithValue(i == 2 ? 30m : 125m);
-            await command.ExecuteNonQueryAsync();
+            await InsertTransactionAsync(
+                connection, transaction, secondAccountId,
+                i == 2 ? 30m : 125m,
+                new DateTime(2026, 1, 2));
+
+            if (i == 1) customer1Id = customerId;
+            else if (i == 2) customer2Id = customerId;
+            else if (i == 3) customer3Id = customerId;
         }
 
-        await transaction.CommitAsync();
+        return new QueryBaseline(customer1Id, customer2Id, customer3Id);
     }
 
-    private static async Task<PlanStats> ExplainAnalyzeAsync(NpgsqlConnection connection, SqlPlan plan, int limit)
+    private static async Task<long> InsertCustomerAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        string name)
     {
-        await using var transaction = await connection.BeginTransactionAsync();
+        const string sql = """
+            INSERT INTO "Customer" ("Name")
+            VALUES (@name)
+            RETURNING "Id";
+            """;
+
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("name", name);
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
+    }
+
+    private static async Task<long> InsertAccountAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        long customerId,
+        decimal balance,
+        string status)
+    {
+        const string sql = """
+            INSERT INTO "Account" ("CustomerId", "Balance", "Status")
+            VALUES (@customerId, @balance, @status)
+            RETURNING "Id";
+            """;
+
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("customerId", customerId);
+        command.Parameters.AddWithValue("balance", balance);
+        command.Parameters.AddWithValue("status", status);
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
+    }
+
+    private static async Task<long> InsertTransactionAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        long accountId,
+        decimal amount,
+        DateTime transactionDate)
+    {
+        const string sql = """
+            INSERT INTO "Transaction" ("AccountId", "Amount", "TransactionDate")
+            VALUES (@accountId, @amount, @transactionDate)
+            RETURNING "Id";
+            """;
+
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("accountId", accountId);
+        command.Parameters.AddWithValue("amount", amount);
+        command.Parameters.AddWithValue("transactionDate", transactionDate);
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
+    }
+
+    private sealed record QueryBaseline(
+        long Customer1Id,
+        long Customer2Id,
+        long Customer3Id);
+
+    private static async Task SetSearchPathAsync(NpgsqlConnection connection, string schema)
+    {
+        await using var command = new NpgsqlCommand(
+            $"SET search_path TO \"{schema}\";",
+            connection);
+        await command.ExecuteNonQueryAsync();
+    }
+
+    private static async Task<PlanStats> ExplainAnalyzeAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, SqlPlan plan, int limit)
+    {
         try
         {
             await using var command = new NpgsqlCommand(
@@ -353,14 +384,15 @@ public sealed class ComplexQueryPostgresE2ETests
                 connection, transaction);
             foreach (var binding in plan.EffectiveParameters)
             {
-                object value = binding.ContextPath is not null && binding.ContextPath == ExecutionContextKeys.PaginationLimit
+                object value = binding.ContextPath is not null &&
+                               binding.ContextPath == ExecutionContextKeys.PaginationLimit
                     ? limit
                     : binding.Value ?? DBNull.Value;
                 command.Parameters.AddWithValue(binding.Name, value);
             }
 
             var raw = Convert.ToString(await command.ExecuteScalarAsync())
-                ?? throw new InvalidOperationException("PostgreSQL returned no EXPLAIN JSON.");
+                      ?? throw new InvalidOperationException("PostgreSQL returned no EXPLAIN JSON.");
             using var json = JsonDocument.Parse(raw);
             var root = json.RootElement[0];
             var stats = new PlanStats
@@ -373,10 +405,11 @@ public sealed class ComplexQueryPostgresE2ETests
                 stats.WalBytes = bytes.GetInt64();
             return stats;
         }
-        finally
+        catch (Exception)
         {
-            await transaction.RollbackAsync();
+            // ignored
         }
+        return new PlanStats();
     }
 
     private static void Walk(JsonElement node, PlanStats stats)

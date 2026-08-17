@@ -293,27 +293,16 @@ public sealed class PostgresCorrelationContractTests
 
         await using var connection = new Npgsql.NpgsqlConnection(connectionString);
         await connection.OpenAsync();
-        await using (var setup = connection.CreateCommand())
+        await using var transaction = await connection.BeginTransactionAsync();
+        await using (var searchPath = new Npgsql.NpgsqlCommand(
+            "SET LOCAL search_path TO fg_correlation;", connection, transaction))
         {
-            setup.CommandText = """
-                DROP TABLE IF EXISTS "Account";
-                DROP TABLE IF EXISTS "Customer";
-                CREATE TEMP TABLE "Customer" (
-                    "Id" bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                    "Name" text NOT NULL UNIQUE
-                );
-                CREATE TEMP TABLE "Account" (
-                    "Id" bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                    "CustomerId" bigint NOT NULL,
-                    "Name" text NOT NULL
-                );
-                """;
-            await setup.ExecuteNonQueryAsync();
+            await searchPath.ExecuteNonQueryAsync();
         }
 
         // Reverse each physical result group. The dependency itself must still
         // have been resolved from the source group's explicit correlation key.
-        await using var command = connection.CreateCommand();
+        await using var command = new Npgsql.NpgsqlCommand("", connection, transaction);
         command.CommandText = compiled.CommandText.Replace(
             "ORDER BY __grp, CASE WHEN __row ? '__fg_corr' THEN ((__row ->> '__fg_corr')::bigint) END",
             "ORDER BY __grp, CASE WHEN __row ? '__fg_corr' THEN ((__row ->> '__fg_corr')::bigint) END DESC",
@@ -354,7 +343,7 @@ public sealed class PostgresCorrelationContractTests
         Assert.Equal(customers[1].Id, accounts[1].CustomerId);
         Assert.Equal(customers[2].Id, accounts[2].CustomerId);
 
-        await using var verify = connection.CreateCommand();
+        await using var verify = new Npgsql.NpgsqlCommand("", connection, transaction);
         verify.CommandText = "SELECT c.\"Name\", a.\"Name\", a.\"CustomerId\" FROM \"Customer\" c JOIN \"Account\" a ON a.\"CustomerId\" = c.\"Id\" ORDER BY c.\"Name\";";
         await using var verifyReader = await verify.ExecuteReaderAsync();
         Assert.True(await verifyReader.ReadAsync());
@@ -363,6 +352,7 @@ public sealed class PostgresCorrelationContractTests
         Assert.True(await verifyReader.ReadAsync());
         Assert.Equal("Bob", verifyReader.GetString(0));
         Assert.Equal("Bob Primary", verifyReader.GetString(1));
+        await transaction.RollbackAsync();
     }
 
     [PostgreSqlFact]
@@ -417,11 +407,11 @@ public sealed class PostgresCorrelationContractTests
 
         await using var connection = new Npgsql.NpgsqlConnection(connectionString);
         await connection.OpenAsync();
-
-        await using (var setup = connection.CreateCommand())
+        await using var transaction = await connection.BeginTransactionAsync();
+        await using (var searchPath = new Npgsql.NpgsqlCommand(
+            "SET LOCAL search_path TO fg_correlation;", connection, transaction))
         {
-            setup.CommandText = "DROP TABLE IF EXISTS \"Customer\"; CREATE TEMP TABLE \"Customer\" (\"Id\" bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, \"Name\" text NOT NULL);";
-            await setup.ExecuteNonQueryAsync();
+            await searchPath.ExecuteNonQueryAsync();
         }
 
         // Execute the real compiler-generated top-level statement. Only the
@@ -431,7 +421,7 @@ public sealed class PostgresCorrelationContractTests
         const string descendingOrder = "ORDER BY __grp, CASE WHEN __row ? '__fg_corr' THEN ((__row ->> '__fg_corr')::bigint) END DESC";
         Assert.Contains(ascendingOrder, compiled.CommandText, StringComparison.Ordinal);
 
-        await using var command = connection.CreateCommand();
+        await using var command = new Npgsql.NpgsqlCommand("", connection, transaction);
         command.CommandText = compiled.CommandText.Replace(ascendingOrder, descendingOrder, StringComparison.Ordinal);
         foreach (var binding in compiled.Parameters)
         {
@@ -470,7 +460,7 @@ public sealed class PostgresCorrelationContractTests
         Assert.Equal(2, byCorrelation[2].Corr);
         Assert.NotEqual(byCorrelation[1].Id, byCorrelation[2].Id);
 
-        await using var verify = connection.CreateCommand();
+        await using var verify = new Npgsql.NpgsqlCommand("", connection, transaction);
         verify.CommandText = "SELECT COUNT(*), COUNT(DISTINCT \"Id\") FROM \"Customer\";";
         await using var verifyReader = await verify.ExecuteReaderAsync();
         Assert.True(await verifyReader.ReadAsync());
