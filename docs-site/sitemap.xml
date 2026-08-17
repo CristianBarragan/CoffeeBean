@@ -27,5 +27,12 @@
     <loc>https://cristianbarragan.github.io/Foundgine/agent-benchmark/run-2/</loc>
     <lastmod>2026-08-17</lastmod>
   </url>
-  <url><loc>https://cristianbarragan.github.io/Foundgine/how-it-works/</loc></url>
+  <url>
+    <loc>https://cristianbarragan.github.io/Foundgine/benchmarks/agent-end-to-end-token-method.html</loc>
+    <lastmod>2026-08-17</lastmod>
+  </url>
+  <url>
+    <loc>https://cristianbarragan.github.io/Foundgine/benchmarks/2026-08-17-agent-concurrency-results.html</loc>
+    <lastmod>2026-08-17</lastmod>
+  </url>
 </urlset>
