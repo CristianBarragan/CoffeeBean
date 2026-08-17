@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI Agents + .NET + PostgreSQL | Safe Database Access with Foundgine</title>
+  <meta name="description" content="How Foundgine gives AI agents safe, authorized access to PostgreSQL through structured intent instead of agent-generated SQL and direct database credentials.">
+  <link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/ai-agents/">
+  <meta property="og:title" content="AI Agents + .NET + PostgreSQL | Safe Database Access with Foundgine">
+  <meta property="og:description" content="An authorization and planning boundary between AI agents and PostgreSQL.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://cristianbarragan.github.io/Foundgine/ai-agents/">
+  <meta name="twitter:card" content="summary">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header class="site-header"><div class="site-header-inner"><a class="brand" href="../index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a><nav><a href="../what-is-foundgine.html">What is it</a><a href="../ai-agents/index.html">AI agents</a><a href="../architecture/index.html">Architecture</a><a href="../how-it-works/index.html">How it works</a><a href="../agent-benchmark/index.html">Agent benchmark</a></nav></div></header>
+
+  <div class="page has-toc">
+    <main class="article">
+      <nav class="breadcrumbs"><a href="../index.html">Foundgine</a> / AI agents</nav>
+      <span class="eyebrow">AI / database security</span>
+      <h1>AI Agents with Foundgine</h1>
+      <p class="subtitle">Safe AI access to application data.</p>
+
+      <p>The purpose of the Foundgine AI integration is not to make the model responsible for database access. The intended boundary is:</p>
+      <div class="rail" role="img" aria-label="Pipeline: AI Agent, Tool or structured intent, Foundgine, Authorization and planning, Provider, PostgreSQL">
+        <div class="rail-step"><span class="dot"></span>AI Agent</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Structured intent</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Foundgine</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step is-current"><span class="dot"></span>Authorization + planning</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Provider</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>PostgreSQL</div>
+      </div>
+
+      <h2 id="anti-pattern">The anti-pattern</h2>
+      <p>Avoid:</p>
+      <pre>LLM
+ ↓
+generated SQL
+ ↓
+database credentials
+ ↓
+PostgreSQL</pre>
+      <p>The model should not be the authority over database schema access, tenant isolation, or application authorization.</p>
+
+      <h2 id="the-pattern">The Foundgine pattern</h2>
+      <pre>LLM
+ │
+ │ "Find customers with balances over $10k"
+ ▼
+Agent tool
+ │
+ │ structured request
+ ▼
+Foundgine
+ ├── semantic resolution
+ ├── validation
+ ├── authorization
+ ├── relationship traversal
+ ├── planning
+ └── provider execution
+        │
+        ▼
+    PostgreSQL</pre>
+
+      <h2 id="e2e">End-to-end proof target</h2>
+      <p>The first E2E scenario should prove the complete chain:</p>
+      <ol>
+        <li>An AI agent receives a natural-language task.</li>
+        <li>The model selects a Foundgine capability.</li>
+        <li>The capability produces structured intent.</li>
+        <li>Foundgine resolves the semantic model.</li>
+        <li>Authorization is evaluated.</li>
+        <li>An execution plan is produced.</li>
+        <li>PostgreSQL executes the plan.</li>
+        <li>The result returns to the agent.</li>
+        <li>Evidence is available for inspection.</li>
+      </ol>
+
+      <h2 id="status">What this page describes vs. what exists today</h2>
+      <blockquote>
+        <p>Steps 3–7 above — structured intent, semantic resolution, authorization, planning, and provider execution — are the same core pipeline documented in <a href="../architecture/index.html">Architecture</a>; that pipeline is not specific to AI agents.</p>
+        <p>What's specific to this page, and still a proof target rather than a shipped guarantee, is the full chain end to end for an AI agent caller: steps 1–2 and 8–9, the four security scenarios below, and the deployment progression from a local process through containerized and cloud infrastructure. Treat everything on this page as the architecture Foundgine is being built toward for AI-agent callers, and check the repository's releases for current implementation status before depending on it.</p>
+      </blockquote>
+
+      <h2 id="security-scenarios">Security scenarios</h2>
+      <p>The E2E suite should include at least:</p>
+
+      <h3>Allowed field</h3>
+      <div class="scenario scenario--allow">
+        <span class="scenario-badge">Authorized</span>
+        <pre>Agent → customer.name
+→ authorized
+→ SQL
+→ result</pre>
+      </div>
+
+      <h3>Forbidden field</h3>
+      <div class="scenario scenario--deny">
+        <span class="scenario-badge">Denied</span>
+        <pre>Agent → customer.internalRiskScore
+→ denied
+→ no database execution</pre>
+      </div>
+
+      <h3>Tenant isolation</h3>
+      <div class="scenario scenario--deny">
+        <span class="scenario-badge">Denied</span>
+        <pre>Agent → another tenant's customer
+→ authorization predicate prevents access</pre>
+      </div>
+
+      <h3>Prompt injection</h3>
+      <p>A malicious value in application data must not become an instruction that changes the agent's authorization or Foundgine execution boundary.</p>
+
+      <h2 id="deployment">Deployment progression</h2>
+      <p>Build the E2E in this order:</p>
+      <pre>1. Agent process
+2. Foundgine
+3. PostgreSQL
+4. Deterministic E2E
+5. HTTP boundary
+6. Docker
+7. Kubernetes
+8. Terraform
+9. CI/CD</pre>
+      <p>The local deterministic test should prove the architecture before infrastructure is introduced.</p>
+
+      <nav class="sitenav">
+        <a href="../index.html">Home</a> ·
+        <a href="../what-is-foundgine.html">What is Foundgine?</a> ·
+        <a href="../architecture/index.html">Architecture</a> ·
+        <a href="../how-it-works/index.html">How it works</a>
+      </nav>
+    </main>
+
+    <aside class="toc">
+      <div class="toc-label">On this page</div>
+      <ol>
+        <li><a href="#anti-pattern">The anti-pattern</a></li>
+        <li><a href="#the-pattern">The Foundgine pattern</a></li>
+        <li><a href="#e2e">End-to-end proof target</a></li>
+        <li><a href="#status">Status: implemented vs. proof target</a></li>
+        <li><a href="#security-scenarios">Security scenarios</a></li>
+        <li><a href="#deployment">Deployment progression</a></li>
+      </ol>
+    </aside>
+  </div>
+
+  <footer class="site-footer">Foundgine · actively evolving · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer>
+  <script src="../assets/toc.js"></script>
+</body>
+</html>
