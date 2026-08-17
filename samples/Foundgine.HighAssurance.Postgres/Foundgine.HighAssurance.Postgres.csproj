@@ -6,7 +6,7 @@
     <RootNamespace>Foundgine.HighAssurance.Postgres</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../samples/Foundgine.HighAssurance.Banking/Foundgine.HighAssurance.Banking.csproj" />
+    <ProjectReference Include="../Foundgine.HighAssurance.Banking/Foundgine.HighAssurance.Banking.csproj" />
     <ProjectReference Include="../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
   </ItemGroup>
   <ItemGroup>

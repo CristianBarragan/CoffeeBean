@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "scenario": "customer-exposure-review-query-mutation-query-mutation",
+  "generatedFrom": "Run 2 replay artifact: 10 customers, concurrency 64, 30 measured runs, 5 warmups",
+  "status": "measured replay evidence; not provider billing or packet capture",
+  "comparison": {
+    "conventional": {
+      "toolCalls": 9.0,
+      "agentToolRoundTrips": 9.0,
+      "agentToolPayloadBytes": 3437.0515625,
+      "estimatedContextLoadTokens": 1166.140625
+    },
+    "foundgine": {
+      "toolCalls": 6.0,
+      "agentToolRoundTrips": 6.0,
+      "agentToolPayloadBytes": 2165.844270833333,
+      "estimatedContextLoadTokens": 857.6067708333334
+    },
+    "savingsPercent": {
+      "agentToolRoundTrips": 33.3333333333,
+      "agentToolPayloadBytes": 36.999,
+      "estimatedContextLoadTokens": 26.543
+    }
+  },
+  "capabilityDifference": {
+    "conventional": "fixed, narrow application tools",
+    "foundgine": "dynamic semantic capability resolving graph, authorization and execution",
+    "interpretation": "comparison is at business-outcome level; it is not a claim that the tool contracts are identical"
+  },
+  "nextValidation": {
+    "liveProviderTokens": true,
+    "endToEndAgentLatency": true,
+    "independentWorkloadRepetitions": true,
+    "successParity": true
+  }
+}

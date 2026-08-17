@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true)][ValidateSet('Run1','Run2','Run3','Run4')][string]$Run,
+    [Parameter(Mandatory=$true)][ValidateSet('Run1','Run2','Run3','Run4','Run5')][string]$Run,
     [string]$ReportRoot,
     [string]$DestinationRoot
 )
@@ -21,6 +21,7 @@ $source = if ([string]::IsNullOrWhiteSpace($ReportRoot)) {
         'Run2' { Join-Path $BenchmarkRoot 'Run2\artifacts' }
         'Run3' { Join-Path $BenchmarkRoot 'Run3\artifacts' }
         'Run4' { Join-Path $BenchmarkRoot 'Run4\artifacts' }
+        'Run5' { Join-Path $BenchmarkRoot 'Run5\artifacts' }
     }
 } else { (Resolve-Path $ReportRoot).Path }
 if (-not (Test-Path -LiteralPath $source -PathType Container)) {
@@ -29,7 +30,7 @@ if (-not (Test-Path -LiteralPath $source -PathType Container)) {
 $destination = Join-Path $DestinationRoot $Run.ToLowerInvariant()
 New-Item -ItemType Directory -Force -Path $destination | Out-Null
 $files = Get-ChildItem -LiteralPath $source -Recurse -File | Where-Object {
-    $_.Name -in @('agent-benchmark.json','agent-benchmark.md','docker-metrics.csv','docker-metrics-summary.json','expected-state.json','run4-metadata.json','run4-summary.json')
+    $_.Name -in @('agent-benchmark.json','agent-benchmark.md','docker-metrics.csv','docker-metrics-summary.json','expected-state.json','run4-metadata.json','run4-summary.json','run5-metadata.json','run5-summary.json')
 }
 if ($files.Count -eq 0) {
     throw "No publishable benchmark artifacts found under: $source"

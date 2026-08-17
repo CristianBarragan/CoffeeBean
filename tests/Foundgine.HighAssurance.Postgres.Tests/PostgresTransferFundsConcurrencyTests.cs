@@ -1,5 +1,6 @@
 using Foundgine.HighAssurance.Banking;
 using Foundgine.HighAssurance.Postgres;
+using Foundgine.HighAssurance.Postgres.Execution;
 using Npgsql;
 using Xunit;
 
@@ -21,7 +22,7 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var destination = Guid.NewGuid();
         await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 0m);
 
-        var service = new PostgresTransferFundsService(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId);
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
         var command = new TransferFundsCommand(source, destination, 100m, "same-key-concurrency");
 
         var tasks = Enumerable.Range(0, 8)
@@ -52,7 +53,7 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var b = Guid.NewGuid();
         await SeedAsync(dataSource, tenant, actor, a, b, sourceBalance: 1000m, destinationBalance: 1000m);
 
-        var service = new PostgresTransferFundsService(dataSource, static (id, x, y) => id == x.OwnerId && id == y.OwnerId);
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, static (id, x, y) => id == x.OwnerId && id == y.OwnerId));
         var first = service.ExecuteAsync(actor, tenant, new TransferFundsCommand(a, b, 100m, "a-to-b"));
         var second = service.ExecuteAsync(actor, tenant, new TransferFundsCommand(b, a, 200m, "b-to-a"));
 
@@ -79,7 +80,7 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var destination = Guid.NewGuid();
         await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 1000m, destinationTenant: otherTenant);
 
-        var service = new PostgresTransferFundsService(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId);
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteAsync(
             actor, tenant, new TransferFundsCommand(source, destination, 100m, "tenant-escape")));
 
@@ -102,7 +103,7 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var destination = Guid.NewGuid();
         await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 1000m, destinationFrozen: true);
 
-        var service = new PostgresTransferFundsService(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId);
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteAsync(
             actor, tenant, new TransferFundsCommand(source, destination, 100m, "frozen-destination")));
 
@@ -126,7 +127,7 @@ public sealed class PostgresTransferFundsConcurrencyTests
         await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 1000m);
 
         var authorize = false;
-        var service = new PostgresTransferFundsService(dataSource, (_, _, _) => authorize);
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, (_, _, _) => authorize));
 
         await Assert.ThrowsAsync<Foundgine.Semantics.Authorization.SemanticAuthorizationException>(() => service.ExecuteAsync(
             actor, tenant, new TransferFundsCommand(source, destination, 100m, "authorization-recheck")));
@@ -154,7 +155,7 @@ public sealed class PostgresTransferFundsConcurrencyTests
         await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 0m,
             pendingTransactions: 400m, regulatoryHold: 300m);
 
-        var service = new PostgresTransferFundsService(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId);
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteAsync(
             actor, tenant, new TransferFundsCommand(source, destination, 301m, "available-funds")));
 

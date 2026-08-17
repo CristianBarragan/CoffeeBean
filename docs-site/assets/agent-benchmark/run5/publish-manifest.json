@@ -1,0 +1,89 @@
+{
+  "run": "Run5",
+  "publishedUtc": "2026-08-19T06:01:28.7075395Z",
+  "source": "C:\\Foundgine\\benchmarks\\AgentEndToEnd\\Run5\\artifacts",
+  "destination": "C:\\Foundgine\\docs-site\\assets\\agent-benchmark\\run5",
+  "files": [
+    {
+      "path": "00010-customers\\concurrency-008\\run5-metadata.json",
+      "bytes": 25700,
+      "lastWriteUtc": "2026-08-19T05:57:28.2330431Z"
+    },
+    {
+      "path": "00010-customers\\concurrency-016\\run5-metadata.json",
+      "bytes": 26015,
+      "lastWriteUtc": "2026-08-19T05:57:34.2706825Z"
+    },
+    {
+      "path": "00010-customers\\concurrency-032\\run5-metadata.json",
+      "bytes": 26555,
+      "lastWriteUtc": "2026-08-19T05:57:43.2237132Z"
+    },
+    {
+      "path": "00010-customers\\concurrency-064\\run5-metadata.json",
+      "bytes": 26718,
+      "lastWriteUtc": "2026-08-19T05:58:01.3499898Z"
+    },
+    {
+      "path": "00100-customers\\concurrency-008\\run5-metadata.json",
+      "bytes": 25819,
+      "lastWriteUtc": "2026-08-19T05:58:25.0528909Z"
+    },
+    {
+      "path": "00100-customers\\concurrency-016\\run5-metadata.json",
+      "bytes": 26139,
+      "lastWriteUtc": "2026-08-19T05:58:32.0764195Z"
+    },
+    {
+      "path": "00100-customers\\concurrency-032\\run5-metadata.json",
+      "bytes": 26334,
+      "lastWriteUtc": "2026-08-19T05:58:47.9699182Z"
+    },
+    {
+      "path": "00100-customers\\concurrency-064\\run5-metadata.json",
+      "bytes": 26778,
+      "lastWriteUtc": "2026-08-19T05:59:06.4937268Z"
+    },
+    {
+      "path": "01000-customers\\concurrency-008\\run5-metadata.json",
+      "bytes": 25840,
+      "lastWriteUtc": "2026-08-19T05:59:29.7874702Z"
+    },
+    {
+      "path": "01000-customers\\concurrency-016\\run5-metadata.json",
+      "bytes": 26071,
+      "lastWriteUtc": "2026-08-19T05:59:38.6274782Z"
+    },
+    {
+      "path": "01000-customers\\concurrency-032\\run5-metadata.json",
+      "bytes": 26342,
+      "lastWriteUtc": "2026-08-19T05:59:49.0026533Z"
+    },
+    {
+      "path": "01000-customers\\concurrency-064\\run5-metadata.json",
+      "bytes": 26990,
+      "lastWriteUtc": "2026-08-19T06:00:04.6965665Z"
+    },
+    {
+      "path": "10000-customers\\concurrency-008\\run5-metadata.json",
+      "bytes": 25742,
+      "lastWriteUtc": "2026-08-19T06:00:38.1612967Z"
+    },
+    {
+      "path": "10000-customers\\concurrency-016\\run5-metadata.json",
+      "bytes": 26132,
+      "lastWriteUtc": "2026-08-19T06:00:44.8655982Z"
+    },
+    {
+      "path": "10000-customers\\concurrency-032\\run5-metadata.json",
+      "bytes": 26443,
+      "lastWriteUtc": "2026-08-19T06:00:55.1406137Z"
+    },
+    {
+      "path": "10000-customers\\concurrency-064\\run5-metadata.json",
+      "bytes": 26902,
+      "lastWriteUtc": "2026-08-19T06:01:11.6663517Z"
+    }
+  ],
+  "notes": "Run 5 metadata enriched with fixed-vs-dynamic capability disclosure and EF Core explicit PostgreSQL locking disclosure."
+}

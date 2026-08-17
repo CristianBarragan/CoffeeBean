@@ -1,0 +1,250 @@
+{
+  "title": "Simple: find customers with accounts over $10,000",
+  "summary": "A compact read path: one customer-to-account relationship, one filter, one result projection.",
+  "question": "Find customers with accounts over $10,000.",
+  "fixture": "Customer \u2192 Account",
+  "steps": [
+    {
+      "number": 1,
+      "name": "Intent",
+      "boundary": "Caller \u2192 Foundgine",
+      "why": "The caller describes the business request without generating SQL or choosing a database table.",
+      "input": {
+        "operation": "query",
+        "resource": "customer",
+        "select": [
+          "id",
+          "name"
+        ],
+        "where": {
+          "accounts": {
+            "balance": {
+              "gt": 10000
+            }
+          }
+        }
+      },
+      "output": {
+        "intent": {
+          "resource": "customer",
+          "select": [
+            "id",
+            "name"
+          ],
+          "filter": {
+            "relation": "accounts",
+            "field": "balance",
+            "operator": "gt",
+            "value": 10000
+          }
+        }
+      }
+    },
+    {
+      "number": 2,
+      "name": "Semantic resolution",
+      "boundary": "Intent \u2192 Semantic Model",
+      "why": "Foundgine resolves customer, accounts, balance and the relationship from the application's semantic model.",
+      "input": {
+        "resource": "customer",
+        "relations": [
+          "accounts"
+        ],
+        "fields": [
+          "id",
+          "name"
+        ],
+        "relatedFields": [
+          "accounts.balance"
+        ]
+      },
+      "output": {
+        "resolvedModel": {
+          "root": "Customer",
+          "relationship": "Customer.Accounts",
+          "fields": [
+            "Customer.Id",
+            "Customer.Name",
+            "Account.Balance"
+          ]
+        }
+      }
+    },
+    {
+      "number": 3,
+      "name": "Validation",
+      "boundary": "Semantic Model \u2192 Valid request",
+      "why": "The requested fields, relationship and predicate must be valid before planning continues.",
+      "input": {
+        "requestedFields": [
+          "Customer.Id",
+          "Customer.Name"
+        ],
+        "predicate": "Account.Balance > 10000"
+      },
+      "output": {
+        "valid": true,
+        "dependencies": [
+          "Customer",
+          "Account"
+        ],
+        "predicateValid": true
+      }
+    },
+    {
+      "number": 4,
+      "name": "Authorization",
+      "boundary": "Valid request \u2192 Authorized request",
+      "why": "Authorization can constrain what the caller may read and which predicates must be preserved.",
+      "input": {
+        "subject": {
+          "id": "agent-42",
+          "tenantId": "tenant-7"
+        },
+        "requested": {
+          "resource": "Customer",
+          "fields": [
+            "Id",
+            "Name",
+            "Accounts.Balance"
+          ]
+        }
+      },
+      "output": {
+        "decision": "allow",
+        "constraints": [
+          {
+            "field": "Customer.TenantId",
+            "operator": "eq",
+            "value": "tenant-7"
+          }
+        ]
+      }
+    },
+    {
+      "number": 5,
+      "name": "Execution plan",
+      "boundary": "Authorized intent \u2192 Provider-independent plan",
+      "why": "The semantic request becomes a logical plan that still does not depend on PostgreSQL syntax.",
+      "input": {
+        "root": "Customer",
+        "join": {
+          "from": "Customer",
+          "to": "Account",
+          "type": "exists"
+        },
+        "filters": [
+          "Account.Balance > 10000",
+          "Customer.TenantId = tenant-7"
+        ],
+        "projection": [
+          "Customer.Id",
+          "Customer.Name"
+        ]
+      },
+      "output": {
+        "plan": {
+          "scan": "Customer",
+          "relationshipFilter": "Account.Balance > 10000",
+          "authorization": "Customer.TenantId = tenant-7",
+          "projection": [
+            "Id",
+            "Name"
+          ]
+        }
+      }
+    },
+    {
+      "number": 6,
+      "name": "Rewrite / optimize",
+      "boundary": "Plan \u2192 optimized plan",
+      "why": "Equivalent operations can be simplified before the provider sees them, while authorization constraints remain part of the plan.",
+      "input": {
+        "plan": "Customer scan + related Account predicate + tenant constraint"
+      },
+      "output": {
+        "optimizedPlan": {
+          "strategy": "relationship existence",
+          "authorizationPreserved": true,
+          "projection": [
+            "Customer.Id",
+            "Customer.Name"
+          ]
+        }
+      }
+    },
+    {
+      "number": 7,
+      "name": "Provider compilation",
+      "boundary": "Logical plan \u2192 PostgreSQL command",
+      "why": "Only here does the provider translate the logical plan into database-specific execution.",
+      "input": {
+        "provider": "PostgreSQL",
+        "plan": {
+          "root": "Customer",
+          "relationshipFilter": "Account.Balance > 10000"
+        }
+      },
+      "output": {
+        "command": {
+          "kind": "parameterized SQL",
+          "parameters": {
+            "balance_0": 10000,
+            "tenant_0": "tenant-7"
+          }
+        }
+      }
+    },
+    {
+      "number": 8,
+      "name": "Execute",
+      "boundary": "Provider \u2192 PostgreSQL \u2192 rows",
+      "why": "The provider executes the parameterized command. The caller never needs database credentials or generated SQL.",
+      "input": {
+        "parameters": {
+          "balance_0": 10000,
+          "tenant_0": "tenant-7"
+        }
+      },
+      "output": {
+        "rows": [
+          {
+            "id": 101,
+            "name": "Acme Foods"
+          },
+          {
+            "id": 204,
+            "name": "Northstar Coffee"
+          }
+        ]
+      }
+    },
+    {
+      "number": 9,
+      "name": "Result + evidence",
+      "boundary": "Rows \u2192 caller",
+      "why": "The result is returned together with execution evidence that can make the boundary observable.",
+      "input": {
+        "rows": 2,
+        "authorization": "allow"
+      },
+      "output": {
+        "data": [
+          {
+            "id": 101,
+            "name": "Acme Foods"
+          },
+          {
+            "id": 204,
+            "name": "Northstar Coffee"
+          }
+        ],
+        "evidence": {
+          "authorized": true,
+          "provider": "PostgreSQL",
+          "rowCount": 2
+        }
+      }
+    }
+  ]
+}

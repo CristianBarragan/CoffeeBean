@@ -1,0 +1,37 @@
+{
+  "run": "Run5",
+  "date": "2026-08-19",
+  "fixtureCustomers": 10,
+  "concurrency": 64,
+  "runs": 30,
+  "warmups": 5,
+  "batchSize": 64,
+  "comparisonModel": "Fixed EF Core single-transfer endpoint vs dynamic Foundgine batch endpoint",
+  "efCore": {
+    "throughputOpsPerSecond": 980.1,
+    "avgWallMs": 45.3,
+    "p50Ms": 36.3,
+    "p95Ms": 118.9,
+    "p99Ms": 126.8,
+    "failed": 0,
+    "endpoint": "fixed single-transfer MCP tool",
+    "locking": "explicit PostgreSQL advisory idempotency lock + deterministic SELECT ... FOR UPDATE"
+  },
+  "foundgine": {
+    "throughputOpsPerSecond": 10731.0,
+    "avgBatchWallMs": 180.5,
+    "effectiveAmortizedOperationMs": 2.82,
+    "p50BatchMs": 129.5,
+    "p95BatchMs": 401.9,
+    "p99BatchMs": 520.7,
+    "failed": 0,
+    "batchSize": 64,
+    "endpoint": "dynamic semantic batch capability",
+    "transport": "typed PostgreSQL UNNEST arrays"
+  },
+  "throughputDeltaPercent": 994.8,
+  "throughputMultiplier": 10.95,
+  "interpretation": "The result measures the benefit of a dynamic endpoint that can accept many logical mutations and lower them into one set-based PostgreSQL execution. It is not a single-operation latency comparison.",
+  "capabilityDisclosure": "EF Core is a fixed, operation-specific single-transfer endpoint. Foundgine is a dynamic capability endpoint that accepts an array of commands and batches execution.",
+  "efCoreDisclosure": "The EF baseline is not vanilla out-of-the-box EF Core. EF Core does not expose a portable first-class FOR UPDATE row-lock API, so the benchmark adds raw PostgreSQL FOR UPDATE reads and the same transaction-scoped advisory idempotency lock used by the high-assurance PostgreSQL path."
+}
