@@ -32,7 +32,6 @@ At concurrency 32:
 
 | Implementation | Average RPS | Average p95 |
 |---|---:|---:|
-| Hot Chocolate + EF Core | 139.4 | 338.4 ms |
 | Foundgine — no cache | 2,781.0 | 20.3 ms |
 | Foundgine — provider-plan cache | 2,838.9 | 19.9 ms |
 
@@ -72,7 +71,7 @@ The results consistently show substantially higher query throughput and lower p9
 This is not a universal benchmark of every:
 
 - EF Core workload
-- Hot Chocolate workload
+- PostgreSQL graph query workload
 - PostgreSQL schema
 - query shape
 - mutation workload
@@ -82,4 +81,4 @@ Results depend on the workload, schema, provider versions, host, fixture, and im
 
 The appropriate claim is:
 
-> **Foundgine demonstrates a substantial performance advantage for this relationship-heavy graph query workload.**
+> **Foundgine demonstrates strong query performance for this relationship-heavy graph workload, with provider-plan caching measured separately.**

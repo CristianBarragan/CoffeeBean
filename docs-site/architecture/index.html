@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>How Foundgine Works | Semantic Execution Pipeline</title>
-  <meta name="description" content="Explore the Foundgine pipeline phase by phase: Caller, Intent, Semantic Model, Authorization, Execution Plan, Provider and Result, with interactive payload examples.">
+  <title>Foundgine Architecture | Semantic Models, Authorization and Execution Planning</title>
+  <meta name="description" content="The Foundgine execution pipeline: semantic model, resolution, authorization, planning, rewriting and optimization, provider compilation, and execution evidence.">
   <link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/architecture/">
-  <meta property="og:title" content="How Foundgine Works | Semantic Execution Pipeline">
-  <meta property="og:description" content="Follow two concrete requests through the Foundgine semantic execution pipeline, phase by phase.">
+  <meta property="og:title" content="Foundgine Architecture | Semantic Models, Authorization and Execution Planning">
+  <meta property="og:description" content="How multiple callers share one provider-independent execution model.">
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://cristianbarragan.github.io/Foundgine/architecture/">
   <meta name="twitter:card" content="summary">
@@ -18,118 +18,59 @@
   <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="site-header-inner">
-      <a class="brand" href="../index.html" data-nav="home"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a>
-      <button class="site-menu-toggle" type="button" aria-expanded="false" aria-controls="main-navigation">Menu</button>
-      <nav id="main-navigation" aria-label="Main navigation">
-        <a href="../index.html" data-nav>Home</a>
-        <a href="../what-is-foundgine.html" data-nav>What is it</a>
-        <a href="index.html" data-nav>How it works</a>
-        <a href="../ai-agents/index.html" data-nav>AI agents</a>
-      <a href="../agent-benchmark/index.html" data-nav>Agent benchmark</a>
-        <a href="../performance/index.html" data-nav>Performance</a>
-        <a href="https://github.com/cristianbarragan/Foundgine" data-nav>GitHub</a>
-      </nav>
-    </div>
-  </header>
+  <header class="site-header"><div class="site-header-inner"><a class="brand" href="../index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a><nav><a href="../what-is-foundgine.html">What is it</a><a href="../ai-agents/index.html">AI agents</a><a href="../architecture/index.html">Architecture</a><a href="../how-it-works/index.html">How it works</a><a href="../agent-benchmark/index.html">Agent benchmark</a></nav></div></header>
 
   <div class="page has-toc">
     <main class="article">
-      <nav class="breadcrumbs"><a href="../index.html">Foundgine</a> / How it works</nav>
-      <span class="eyebrow">Interactive architecture</span>
-      <h1>Follow one request through Foundgine</h1>
-      <p class="subtitle">The easiest way to understand Foundgine is to watch the payload change at each boundary.</p>
+      <nav class="breadcrumbs"><a href="../index.html">Foundgine</a> / Architecture</nav>
+      <span class="eyebrow">Technical research</span>
+      <h1>Foundgine Architecture</h1>
 
-      <p>Foundgine separates <strong>what a caller asks for</strong> from <strong>what the provider executes</strong>. Select a sample, then click any phase in the flow. Each sample has its own flow labels, while the seven semantic boundaries stay consistent. The payload on the left is the input to that boundary; the payload on the right is what the next boundary receives.</p>
-
-      <div class="pipeline-demo" data-pipeline="../assets/pipeline-data.json" data-flow="json-read" aria-live="polite">
-        <div class="sample-switcher" data-sample-switcher role="tablist" aria-label="Example requests"></div>
-
-        <div class="pipeline-intro">
-          <span class="eyebrow" data-sample-eyebrow>Loading example…</span>
-          <h3 data-sample-title>Loading pipeline</h3>
-          <p data-sample-description>Loading the example payloads.</p>
-        </div>
-
-        <div class="pipeline-flow-wrap" aria-label="Interactive execution pipeline">
-          <div class="pipeline-flow" data-flow></div>
-        </div>
-        <div class="pipeline-progress" aria-hidden="true"><span data-progress></span></div>
-
-        <section class="pipeline-detail" data-detail aria-labelledby="pipeline-step-title">
-          <div class="pipeline-detail-head">
-            <div>
-              <span class="eyebrow pipeline-kicker" data-step-kicker>Phase</span>
-              <h3 id="pipeline-step-title" data-step-title>Loading…</h3>
-              <p data-step-body></p>
-            </div>
-          </div>
-          <div class="payload-grid">
-            <div class="payload-panel">
-              <span class="payload-label" data-input-label>Input</span>
-              <pre><code data-input>{}</code></pre>
-            </div>
-            <div class="payload-panel">
-              <span class="payload-label" data-output-label>Output</span>
-              <pre><code data-output>{}</code></pre>
-            </div>
-          </div>
-          <div class="pipeline-controls">
-            <button type="button" data-prev disabled>← Previous phase</button>
-            <button type="button" data-next>Next phase →</button>
-          </div>
-        </section>
-      </div>
-
-      <h2 id="pipeline">The seven boundaries</h2>
-      <p>The flow deliberately stays small. Each phase has one job and hands a more constrained representation to the next phase.</p>
-
-      <div class="rail" role="img" aria-label="Pipeline: Caller, Intent, Semantic Model, Authorization, Execution Plan, Provider, Result">
-        <div class="rail-step"><span class="dot"></span>Caller</div>
-        <div class="rail-connector"></div>
+      <h2 id="pipeline">Core execution pipeline</h2>
+      <div class="rail" role="img" aria-label="Pipeline: Intent, Semantic Model, Resolution, Authorization, Plan, Rewrite and Optimize, Provider Compilation, Execution, Result and Evidence">
         <div class="rail-step"><span class="dot"></span>Intent</div>
         <div class="rail-connector"></div>
         <div class="rail-step"><span class="dot"></span>Semantic Model</div>
         <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Resolution</div>
+        <div class="rail-connector"></div>
         <div class="rail-step"><span class="dot"></span>Authorization</div>
         <div class="rail-connector"></div>
-        <div class="rail-step"><span class="dot"></span>Execution Plan</div>
+        <div class="rail-step is-current"><span class="dot"></span>Plan</div>
         <div class="rail-connector"></div>
-        <div class="rail-step"><span class="dot"></span>Provider</div>
+        <div class="rail-step"><span class="dot"></span>Rewrite / Optimize</div>
         <div class="rail-connector"></div>
-        <div class="rail-step"><span class="dot"></span>Result</div>
+        <div class="rail-step"><span class="dot"></span>Provider Compilation</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Execution</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Result + Evidence</div>
       </div>
 
-      <p class="rail-caption">The first example is grounded in the repository's JSON read E2E. The AI-agent example is an architectural flow showing how an agent can use the same boundary without receiving database authority.</p>
+      <h2 id="separation">Separation of concerns</h2>
 
-      <h2 id="separation">Why the boundaries matter</h2>
-      <h3>Caller → Intent</h3>
-      <p>Different interfaces can describe the same operation without owning database semantics. JSON, GraphQL, REST or an AI tool can all become structured intent.</p>
+      <h3>Semantic model</h3>
+      <p>Defines the application-facing capabilities.</p>
 
-      <h3>Intent → Semantic Model</h3>
-      <p>The application decides what concepts exist and which relationships are meaningful. A semantic field does not have to be a physical column.</p>
+      <h3>Intent</h3>
+      <p>Describes what the caller wants without binding it directly to a physical provider.</p>
 
-      <h3>Semantic Model → Authorization</h3>
-      <p>Authorization is applied to the semantic operation, before physical execution. This gives the application a single place to preserve field visibility, relationship visibility and security constraints.</p>
+      <h3>Authorization</h3>
+      <p>Determines which parts of the requested operation are permitted and can contribute predicates or constraints to the execution plan.</p>
 
-      <h3>Authorization → Execution Plan</h3>
-      <p>The plan carries the authorized operation forward in a provider-neutral form. It is the boundary where planning, validation, rewriting and optimization can happen without giving the caller provider control.</p>
+      <h3>Planner</h3>
+      <p>Builds a provider-independent representation of the requested operation.</p>
 
-      <h3>Execution Plan → Provider</h3>
-      <p>A provider translates the plan into physical execution. For SQL, that means parameterized SQL; another provider can implement the same semantic operation differently.</p>
+      <h3>Rewriting and optimization</h3>
+      <p>Transforms the plan while preserving semantics and authorization constraints.</p>
 
-      <h3>Provider → Result</h3>
-      <p>The provider returns execution data through the same boundary. The caller receives the business result rather than gaining authority over the underlying storage engine.</p>
+      <h3>Provider</h3>
+      <p>Compiles and executes the plan against a concrete backend.</p>
 
-      <h2 id="plan">Why the intermediate plan matters</h2>
-      <p>The execution plan is the architectural boundary between semantic intent and physical execution. It gives the runtime a place to preserve authorization constraints, validate dependencies, rewrite operations, optimize safely, reason about provider capabilities and produce execution evidence.</p>
-      <p>That distinction is important: a caller can request a business operation without deciding whether the provider should use a join, a predicate pushdown, a batched mutation or another physical strategy.</p>
-
-      <h2 id="multiple-callers">One execution model, multiple callers</h2>
+      <h2 id="multiple-callers">Multiple callers, one execution model</h2>
       <div class="converge">
         <div class="converge-row">
-          <span class="converge-chip">REST / API</span>
+          <span class="converge-chip">REST/API</span>
           <span class="converge-chip">GraphQL</span>
           <span class="converge-chip">JSON</span>
           <span class="converge-chip">AI Agent</span>
@@ -138,7 +79,7 @@
         <div class="converge-arrow">↓</div>
         <div class="converge-chip" style="font-family:var(--font-mono);">Semantic Intent</div>
         <div class="converge-arrow">↓</div>
-        <div class="converge-core">Foundgine</div>
+        <div class="converge-core">Foundgine Planner</div>
         <div class="converge-arrow">↓</div>
         <div class="converge-row">
           <span class="converge-chip">SQL</span>
@@ -146,30 +87,41 @@
           <span class="converge-chip">Future providers</span>
         </div>
       </div>
-      <p>The point is not that every caller uses the same syntax. The point is that they converge on the same semantic execution boundary.</p>
+      <p>The goal is to avoid implementing separate execution semantics for every interface.</p>
+
+      <h2 id="why-plan-matters">Why the intermediate plan matters</h2>
+      <p>The plan is the architectural boundary between semantic intent and physical execution. It gives the runtime a place to:</p>
+      <ul>
+        <li>preserve authorization constraints</li>
+        <li>validate dependencies</li>
+        <li>rewrite operations</li>
+        <li>estimate cost</li>
+        <li>reason about provider capabilities</li>
+        <li>optimize execution</li>
+        <li>produce execution evidence</li>
+      </ul>
+      <p>This is the core mechanism that allows multiple input surfaces and providers to share execution semantics.</p>
 
       <nav class="sitenav">
         <a href="../index.html">Home</a> ·
         <a href="../what-is-foundgine.html">What is Foundgine?</a> ·
         <a href="../ai-agents/index.html">AI agents</a> ·
-        <a href="../performance/index.html">Performance</a>
+        <a href="../how-it-works/index.html">How it works</a>
       </nav>
     </main>
 
     <aside class="toc">
       <div class="toc-label">On this page</div>
       <ol>
-        <li><a href="#pipeline">The seven boundaries</a></li>
-        <li><a href="#separation">Why the boundaries matter</a></li>
-        <li><a href="#plan">Why the plan matters</a></li>
+        <li><a href="#pipeline">Core execution pipeline</a></li>
+        <li><a href="#separation">Separation of concerns</a></li>
         <li><a href="#multiple-callers">Multiple callers</a></li>
+        <li><a href="#why-plan-matters">Why the plan matters</a></li>
       </ol>
     </aside>
   </div>
 
   <footer class="site-footer">Foundgine · actively evolving · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer>
-  <script src="../assets/site.js"></script>
-  <script src="../assets/pipeline.js"></script>
   <script src="../assets/toc.js"></script>
 </body>
 </html>

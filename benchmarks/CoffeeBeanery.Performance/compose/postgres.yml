@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: benchmark
       POSTGRES_PASSWORD: benchmark
     ports:
-      - "55432:5432"
+      - "${POSTGRES_HOST_PORT:-55432}:5432"
     volumes:
       - benchmark-postgres-data:/var/lib/postgresql/data
     healthcheck:

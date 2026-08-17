@@ -10,15 +10,57 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6cf9388c-52f8-420a-b3c9-322a1d5366df" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.github/workflows/badge.svg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.github/workflows/build.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.github/workflows/codeql.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Foundgine/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Foundgine/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Foundgine.Sql/Mutation/PostgresBatchedMutationCompiler.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/Foundgine.Sql/Mutation/PostgresBatchedMutationCompiler.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/Foundgine.E2E.Tests/ComplexQueryPostgresE2ETests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Foundgine.E2E.Tests/ComplexQueryPostgresE2ETests.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/Foundgine.E2E.Tests/QueryMutationQueryMutationIntegrationE2ETests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Foundgine.E2E.Tests/QueryMutationQueryMutationIntegrationE2ETests.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/Foundgine.HighAssurance.Postgres.Tests/PostgresTransferFundsTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Foundgine.HighAssurance.Postgres.Tests/PostgresTransferFundsTests.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/Foundgine.Semantics.Tests/Security/Warrants/SecurityWarrantTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Foundgine.Semantics.Tests/Security/Warrants/SecurityWarrantTests.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/CONCURRENCY-RESILIENCE.md" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/CONCURRENCY-RESILIENCE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run1/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run1/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run1/run-agent-benchmark.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run1/run-agent-benchmark.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/artifacts/00010-customers/concurrency-008/agent-benchmark-console.log" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/artifacts/00010-customers/concurrency-008/agent-benchmark-console.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/artifacts/00010-customers/concurrency-008/agent-benchmark.json" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/artifacts/00010-customers/concurrency-008/agent-benchmark.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/artifacts/00010-customers/concurrency-008/agent-benchmark.md" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/artifacts/00010-customers/concurrency-008/agent-benchmark.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/artifacts/00010-customers/concurrency-008/expected-state.json" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/artifacts/00010-customers/concurrency-008/expected-state.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/run-agent-end-to-end.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run2/run-agent-end-to-end.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run3/run-agent-benchmark.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run3/run-agent-benchmark.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run4/Runner/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run4/Runner/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run4/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run4/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run4/run-run4.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/Run4/run-run4.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/run-agent-benchmark.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/run-agent-benchmark.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/run-all-agent-benchmarks.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/AgentEndToEnd/run-all-agent-benchmarks.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/Migrations/20260817090959_Initial.Designer.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/Migrations/20260817090959_Initial.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/Migrations/BankingEntityContextModelSnapshot.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/compose/postgres.yml" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/compose/postgres.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/docker-compose.benchmark.yml" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/docker-compose.benchmark.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/pipelines/mutation.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/pipelines/mutation.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/pipelines/query.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/pipelines/query.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/pipelines/update.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/pipelines/update.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/run-benchmark.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/run-benchmark.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/run-benchmarks.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/run-benchmarks.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/run-query.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/run-query.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/validate-compose.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/CoffeeBeanery.Performance/validate-compose.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/agent-benchmark/detail.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/agent-benchmark/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/docs-site/agent-benchmark/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/agent-benchmark/index.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/ai-agents/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/docs-site/ai-agents/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/architecture/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/docs-site/architecture/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/assets/agent-benchmark-data.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/assets/agent-benchmark.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/assets/agent-benchmark.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/assets/agent-benchmark.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/assets/pipeline-data.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/assets/pipeline.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/assets/site.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/assets/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/docs-site/assets/style.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/docs-site/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/llms-full.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs-site/llms-full.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/llms.txt" beforeDir="false" afterPath="$PROJECT_DIR$/docs-site/llms.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/performance/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/docs-site/performance/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/sitemap.xml" beforeDir="false" afterPath="$PROJECT_DIR$/docs-site/sitemap.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs-site/what-is-foundgine.html" beforeDir="false" afterPath="$PROJECT_DIR$/docs-site/what-is-foundgine.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/POSTGRES-E2E.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/POSTGRES-E2E.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,7 +76,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
-    &quot;git-widget-placeholder&quot;: &quot;Add-security-warrant&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;load-tests&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;
   }
 }</component>

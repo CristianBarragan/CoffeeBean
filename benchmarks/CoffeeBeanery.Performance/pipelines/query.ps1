@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $BenchmarkRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path

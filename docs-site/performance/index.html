@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Foundgine PostgreSQL Performance Benchmark | Foundgine</title>
-  <meta name="description" content="CoffeeBeanery benchmark results: Foundgine vs Hot Chocolate + EF Core on a relationship-heavy PostgreSQL graph query workload, with throughput, p95 latency, and reliability data.">
+  <meta name="description" content="CoffeeBeanery benchmark results for Foundgine on a relationship-heavy PostgreSQL graph query workload, with throughput, p95 latency, and reliability data.">
   <link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/performance/">
   <meta property="og:title" content="Foundgine PostgreSQL Performance Benchmark | Foundgine">
-  <meta property="og:description" content="Query throughput and p95 latency for Foundgine vs Hot Chocolate + EF Core on a PostgreSQL graph workload.">
+  <meta property="og:description" content="Query throughput and p95 latency for Foundgine on a PostgreSQL graph workload.">
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://cristianbarragan.github.io/Foundgine/performance/">
   <meta name="twitter:card" content="summary">
@@ -18,21 +18,7 @@
   <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="site-header-inner">
-      <a class="brand" href="../index.html" data-nav="home"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a>
-      <button class="site-menu-toggle" type="button" aria-expanded="false" aria-controls="main-navigation">Menu</button>
-      <nav id="main-navigation" aria-label="Main navigation">
-        <a href="../index.html" data-nav>Home</a>
-        <a href="../what-is-foundgine.html" data-nav>What is it</a>
-        <a href="../architecture/index.html" data-nav>How it works</a>
-        <a href="../ai-agents/index.html" data-nav>AI agents</a>
-      <a href="../agent-benchmark/index.html" data-nav>Agent benchmark</a>
-        <a href="../performance/index.html" data-nav>Performance</a>
-        <a href="https://github.com/cristianbarragan/Foundgine" data-nav>GitHub</a>
-      </nav>
-    </div>
-  </header>
+  <header class="site-header"><div class="site-header-inner"><a class="brand" href="../index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a><nav><a href="../what-is-foundgine.html">What is it</a><a href="../ai-agents/index.html">AI agents</a><a href="../architecture/index.html">Architecture</a><a href="../how-it-works/index.html">How it works</a><a href="../agent-benchmark/index.html">Agent benchmark</a></nav></div></header>
 
   <div class="page has-toc">
     <main class="article">
@@ -81,20 +67,12 @@
         <table>
           <thead><tr><th>Implementation</th><th>Average RPS</th><th>Average p95</th></tr></thead>
           <tbody>
-            <tr><td>Hot Chocolate + EF Core</td><td>139.4</td><td>338.4 ms</td></tr>
             <tr><td>Foundgine — no cache</td><td>2,781.0</td><td>20.3 ms</td></tr>
             <tr><td>Foundgine — provider-plan cache</td><td>2,838.9</td><td>19.9 ms</td></tr>
           </tbody>
         </table>
       </div>
-      <p>That is approximately:</p>
-      <ul>
-        <li>20.0× the throughput without the cache</li>
-        <li>20.4× with the cache</li>
-        <li>16.7× lower p95 latency without the cache</li>
-        <li>17.0× lower p95 latency with the cache</li>
-      </ul>
-      <p>The large query advantage is therefore not dependent on provider-plan caching.</p>
+      <p>The two Foundgine configurations are shown independently so the effect of provider-plan caching can be evaluated without introducing an unrelated implementation comparison.</p>
 
       <h2 id="reliability">Reliability</h2>
       <p>The three successful runs reported:</p>
@@ -113,9 +91,9 @@
       <p>The results consistently show substantially higher query throughput and lower p95 latency in this controlled workload.</p>
 
       <h2 id="what-this-does-not-prove">What this does not prove</h2>
-      <p>This is not a universal benchmark of every EF Core workload, Hot Chocolate workload, PostgreSQL schema, query shape, mutation workload, or hardware configuration. Results depend on the workload, schema, provider versions, host, fixture, and implementation versions.</p>
+      <p>This is not a universal benchmark of every PostgreSQL schema, query shape, mutation workload, or hardware configuration. Results depend on the workload, schema, provider version, host, fixture, and implementation version.</p>
       <p>The appropriate claim is:</p>
-      <blockquote><strong>Foundgine demonstrates a substantial performance advantage for this relationship-heavy graph query workload.</strong></blockquote>
+      <blockquote><strong>Foundgine demonstrates strong query performance for this relationship-heavy graph workload, with provider-plan caching measured separately.</strong></blockquote>
 
       <p><a href="https://github.com/cristianbarragan/Foundgine/blob/main/BENCHMARK-RESULTS-2026-08-12-CLEAN.md">Full benchmark source data</a> is kept in the repository alongside this page.</p>
 
@@ -140,7 +118,6 @@
   </div>
 
   <footer class="site-footer">Foundgine · actively evolving · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer>
-  <script src="../assets/site.js"></script>
   <script src="../assets/toc.js"></script>
 </body>
 </html>

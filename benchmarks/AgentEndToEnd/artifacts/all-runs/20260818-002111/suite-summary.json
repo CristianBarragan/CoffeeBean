@@ -1,0 +1,15 @@
+﻿{
+    "timestampUtc":  "2026-08-17T13:25:37",
+    "mode":  "replay",
+    "warmups":  5,
+    "runs":  30,
+    "customerCounts":  "10,100,1000,10000",
+    "concurrency":  "8,16,32,64",
+    "publish":  false,
+    "results":  {
+                    "Run1":  true,
+                    "Run2":  true,
+                    "Run3":  true,
+                    "Run4":  false
+                }
+}

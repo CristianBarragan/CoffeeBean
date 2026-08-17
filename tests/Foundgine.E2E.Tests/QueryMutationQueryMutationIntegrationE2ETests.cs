@@ -46,17 +46,18 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
 
         await using var connection = new NpgsqlConnection(cs);
         await connection.OpenAsync();
-        await using var isolation = await BeginIsolatedSchemaAsync(connection);
-        await PrepareUnifiedDatabaseAsync(connection);
+        await SetSearchPathAsync(connection, "fg_stateful");
+        await SetSearchPathAsync(connection, "fg_stateful");
 
         var mutationMetadata = PostgresE2ETests.BuildMetadata();
-        var queryMetadata = ComplexQueryPostgresE2ETests.BuildMetadata();
+        var queryMetadata = PostgresE2ETests.BuildMetadata();
         var metadata = MergeMetadata(mutationMetadata, queryMetadata);
 
-        // Seed the read side using the same physical schema the mutation side uses.
-        await SeedQueryBaselineAsync(connection);
-
         await using var transaction = await connection.BeginTransactionAsync();
+        // Seed only test data. The schema itself is initialized once by PostgreSQL.
+        // PostgreSQL generates every identity and the returned IDs are the only
+        // IDs used by this test.
+        var baseline = await SeedQueryBaselineAsync(connection, transaction);
         try
         {
             // -----------------------------------------------------------------
@@ -80,8 +81,8 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
                 .Distinct()
                 .ToHashSet();
 
-            Assert.Contains(1L, baselineCustomerIds);
-            Assert.Contains(3L, baselineCustomerIds);
+            Assert.Contains(baseline.Customer1Id, baselineCustomerIds);
+            Assert.Contains(baseline.Customer3Id, baselineCustomerIds);
 
             // -----------------------------------------------------------------
             // PASS 2 — MUTATION
@@ -199,18 +200,17 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
 
         await using var connection = new NpgsqlConnection(cs);
         await connection.OpenAsync();
-        await using var isolation = await BeginIsolatedSchemaAsync(connection);
-        await PrepareUnifiedDatabaseAsync(connection);
+        await SetSearchPathAsync(connection, "fg_stateful");
 
         var mutationMetadata = PostgresE2ETests.BuildMetadata();
-        var queryMetadata = ComplexQueryPostgresE2ETests.BuildMetadata();
+        var queryMetadata = PostgresE2ETests.BuildMetadata();
         var metadata = MergeMetadata(mutationMetadata, queryMetadata);
-
-        await SeedQueryBaselineAsync(connection);
 
         await using var transaction = await connection.BeginTransactionAsync();
         try
         {
+            await SeedQueryBaselineAsync(connection, transaction);
+            
             var mutationProvider = new PostgresBatchedMutationExecutionProvider(
                 connection, metadata, transaction);
 
@@ -319,133 +319,102 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
         return merged;
     }
 
-    private static async Task<IsolatedSchema> BeginIsolatedSchemaAsync(NpgsqlConnection connection)
+    private static async Task<QueryBaseline> SeedQueryBaselineAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction)
     {
-        var schema = "fg_e2e_" + Guid.NewGuid().ToString("N");
-        await using (var create = new NpgsqlCommand($"CREATE SCHEMA \"{schema}\"; SET search_path TO \"{schema}\";", connection))
-            await create.ExecuteNonQueryAsync();
-        return new IsolatedSchema(connection, schema);
+        var customer1Id = await InsertCustomerAsync(connection, transaction, "Alice", "Active");
+        var customer2Id = await InsertCustomerAsync(connection, transaction, "Bob", "Active");
+        var customer3Id = await InsertCustomerAsync(connection, transaction, "Carol", "Active");
+
+        var account1Id = await InsertAccountAsync(
+            connection, transaction, customer1Id, "Seed", 150m, "Active");
+        var account2Id = await InsertAccountAsync(
+            connection, transaction, customer2Id, "Seed", 25m, "Blocked");
+        var account3Id = await InsertAccountAsync(
+            connection, transaction, customer3Id, "Seed", 150m, "Active");
+
+        await InsertTransactionAsync(
+            connection, transaction, account1Id, 300m, new DateTime(2026, 1, 1));
+        await InsertTransactionAsync(
+            connection, transaction, account2Id, 30m, new DateTime(2026, 1, 2));
+        await InsertTransactionAsync(
+            connection, transaction, account3Id, 300m, new DateTime(2026, 1, 1));
+
+        return new QueryBaseline(customer1Id, customer2Id, customer3Id);
     }
 
-    private sealed class IsolatedSchema : IAsyncDisposable
-    {
-        private readonly NpgsqlConnection _connection;
-        private readonly string _schema;
-        public IsolatedSchema(NpgsqlConnection connection, string schema)
-        {
-            _connection = connection;
-            _schema = schema;
-        }
-        public async ValueTask DisposeAsync()
-        {
-            await using var command = new NpgsqlCommand($"DROP SCHEMA IF EXISTS \"{_schema}\" CASCADE; SET search_path TO public;", _connection);
-            await command.ExecuteNonQueryAsync();
-        }
-    }
-
-    private static async Task PrepareUnifiedDatabaseAsync(NpgsqlConnection connection)
+    private static async Task<long> InsertCustomerAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        string name,
+        string status)
     {
         const string sql = """
-            DROP TABLE IF EXISTS "Transaction" CASCADE;
-            DROP TABLE IF EXISTS "Payment" CASCADE;
-            DROP TABLE IF EXISTS "Order" CASCADE;
-            DROP TABLE IF EXISTS "Audit" CASCADE;
-            DROP TABLE IF EXISTS "Profile" CASCADE;
-            DROP TABLE IF EXISTS "Account" CASCADE;
-            DROP TABLE IF EXISTS "Customer" CASCADE;
-
-            CREATE TABLE "Customer" (
-                "Id" bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "Name" text NOT NULL,
-                "Status" text NOT NULL,
-                "Notes" text
-            );
-            CREATE TABLE "Profile" (
-                "Id" bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "CustomerId" bigint NOT NULL REFERENCES "Customer"("Id"),
-                "Name" text NOT NULL
-            );
-            CREATE TABLE "Account" (
-                "Id" bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "CustomerId" bigint NOT NULL REFERENCES "Customer"("Id"),
-                "Name" text NOT NULL DEFAULT 'Seed',
-                "Status" text NOT NULL,
-                "Balance" numeric NOT NULL DEFAULT 150
-            );
-            CREATE TABLE "Order" (
-                "Id" bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "AccountId" bigint NOT NULL REFERENCES "Account"("Id"),
-                "Status" text NOT NULL
-            );
-            CREATE TABLE "Payment" (
-                "Id" bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "OrderId" bigint NOT NULL REFERENCES "Order"("Id"),
-                "Amount" numeric NOT NULL,
-                "Status" text NOT NULL
-            );
-            CREATE TABLE "Audit" (
-                "Id" bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "CustomerId" bigint NOT NULL REFERENCES "Customer"("Id"),
-                "Kind" text NOT NULL
-            );
-            CREATE TABLE "Transaction" (
-                "Id" bigint PRIMARY KEY,
-                "AccountId" bigint NOT NULL REFERENCES "Account"("Id"),
-                "Amount" numeric NOT NULL,
-                "TransactionDate" timestamp NOT NULL
-            );
-
-            CREATE UNIQUE INDEX "UX_Account_CustomerId" ON "Account"("CustomerId");
-            CREATE UNIQUE INDEX "UX_Payment_OrderId" ON "Payment"("OrderId");
-            CREATE INDEX "IX_Profile_CustomerId" ON "Profile"("CustomerId");
-            CREATE INDEX "IX_Order_AccountId" ON "Order"("AccountId");
-            CREATE INDEX "IX_Audit_CustomerId" ON "Audit"("CustomerId");
-            CREATE INDEX "IX_Transaction_AccountId" ON "Transaction"("AccountId");
-            CREATE INDEX "IX_Transaction_Amount" ON "Transaction"("Amount");
+            INSERT INTO "Customer" ("Name", "Status")
+            VALUES (@name, @status)
+            RETURNING "Id";
             """;
 
-        await using var command = new NpgsqlCommand(sql, connection);
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("name", name);
+        command.Parameters.AddWithValue("status", status);
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
+    }
+
+    private static async Task<long> InsertAccountAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        long customerId,
+        string name,
+        decimal balance,
+        string status)
+    {
+        const string sql = """
+            INSERT INTO "Account" ("CustomerId", "Name", "Balance", "Status")
+            VALUES (@customerId, @name, @balance, @status)
+            RETURNING "Id";
+            """;
+
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("customerId", customerId);
+        command.Parameters.AddWithValue("name", name);
+        command.Parameters.AddWithValue("balance", balance);
+        command.Parameters.AddWithValue("status", status);
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
+    }
+
+    private static async Task<long> InsertTransactionAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        long accountId,
+        decimal amount,
+        DateTime transactionDate)
+    {
+        const string sql = """
+            INSERT INTO "Transaction" ("AccountId", "Amount", "TransactionDate")
+            VALUES (@accountId, @amount, @transactionDate)
+            RETURNING "Id";
+            """;
+
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("accountId", accountId);
+        command.Parameters.AddWithValue("amount", amount);
+        command.Parameters.AddWithValue("transactionDate", transactionDate);
+        return Convert.ToInt64(await command.ExecuteScalarAsync());
+    }
+
+    private static async Task SetSearchPathAsync(NpgsqlConnection connection, string schema)
+    {
+        await using var command = new NpgsqlCommand(
+            $"SET search_path TO \"{schema}\";",
+            connection);
         await command.ExecuteNonQueryAsync();
     }
 
-    private static async Task SeedQueryBaselineAsync(NpgsqlConnection connection)
-    {
-        // NOTE: exactly one Account per baseline Customer. PrepareUnifiedDatabaseAsync
-        // declares "UX_Account_CustomerId" as a *fully* unique index (required as the
-        // ON CONFLICT("CustomerId") arbiter for mutation #1's Account Upsert — Postgres
-        // requires a real unique index/constraint to accept that clause). The original
-        // version of this seed inserted two Account rows per customer, which is legal
-        // under the *non-unique* per-customer index used by the standalone
-        // ComplexQueryPostgresE2ETests, but violates the unique index this
-        // merged schema actually declares. That mismatch meant this seed step would
-        // throw a unique-constraint violation the moment it ran against real
-        // PostgreSQL — a bug that the silent `if (no connection string) return;` skip
-        // pattern (see the [PostgreSqlFact] fix above) could hide indefinitely, since
-        // the test always no-ops without a live database.
-        //
-        // Customer 2 still ends up excluded from the complex query below: instead of
-        // failing the "no Closed account" (None) predicate via a second account, its
-        // single Blocked account now fails the "no Blocked account" (All) predicate
-        // instead. The net query result is unchanged for the customers this test
-        // actually asserts on (1 and 3 remain visible; 2 remains excluded).
-        const string sql = """
-            INSERT INTO "Customer"("Id","Name","Status") VALUES
-                (1,'Alice','Active'),
-                (2,'Bob','Active'),
-                (3,'Carol','Active');
+    private sealed record QueryBaseline(
+        long Customer1Id,
+        long Customer2Id,
+        long Customer3Id);
 
-            INSERT INTO "Account"("Id","CustomerId","Name","Balance","Status") VALUES
-                (10,1,'Seed',150,'Active'),
-                (20,2,'Seed',25,'Blocked'),
-                (30,3,'Seed',150,'Active');
-
-            INSERT INTO "Transaction"("Id","AccountId","Amount","TransactionDate") VALUES
-                (100,10,300,'2026-01-01'),
-                (200,20,30,'2026-01-02'),
-                (300,30,300,'2026-01-01');
-            """;
-
-        await using var command = new NpgsqlCommand(sql, connection);
-        await command.ExecuteNonQueryAsync();
-    }
 }
