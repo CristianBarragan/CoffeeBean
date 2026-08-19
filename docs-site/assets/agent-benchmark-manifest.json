@@ -1,9 +1,0 @@
-{
-  "description": "Published Foundgine agent end-to-end benchmark artifacts. Run-specific directories are consolidated under docs-site/assets/agent-benchmark/.",
-  "runs": [
-    "agent-benchmark/run1",
-    "agent-benchmark/run2",
-    "agent-benchmark/run3",
-    "agent-benchmark/run4"
-  ]
-}

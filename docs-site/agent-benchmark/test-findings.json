@@ -1,0 +1,374 @@
+{
+  "source": "Run 4 aggregate benchmark",
+  "generatedUtc": "2026-08-17T18:31:30.8959864Z",
+  "tests": [
+    {
+      "test": "10000-c64",
+      "customers": 10000,
+      "concurrency": 64,
+      "finding": {
+        "contextReductionPct": 87.4,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 5.7,
+        "avgWallReductionPct": 86.7,
+        "conventional": {
+          "rps": 1015.7807527916968,
+          "avgWallMs": 60.21620757812503,
+          "tokens": 1627.84375,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 5788.97307538179,
+          "avgWallMs": 8.036669036458328,
+          "tokens": 205.71484375,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "10000-c32",
+      "customers": 10000,
+      "concurrency": 32,
+      "finding": {
+        "contextReductionPct": 87.3,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 6.07,
+        "avgWallReductionPct": 87.7,
+        "conventional": {
+          "rps": 878.940232687761,
+          "avgWallMs": 34.06024052083334,
+          "tokens": 1622.3125,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 5333.738517246283,
+          "avgWallMs": 4.173287031249999,
+          "tokens": 205.6796875,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "10000-c16",
+      "customers": 10000,
+      "concurrency": 16,
+      "finding": {
+        "contextReductionPct": 87.3,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 6.06,
+        "avgWallReductionPct": 93.4,
+        "conventional": {
+          "rps": 571.2977269185984,
+          "avgWallMs": 56.66808854166664,
+          "tokens": 1615.40625,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 3463.7404628291765,
+          "avgWallMs": 3.7233540624999995,
+          "tokens": 205.609375,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "10000-c8",
+      "customers": 10000,
+      "concurrency": 8,
+      "finding": {
+        "contextReductionPct": 87.2,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 32.99,
+        "avgWallReductionPct": 97.1,
+        "conventional": {
+          "rps": 50.0236308780461,
+          "avgWallMs": 146.31549916666668,
+          "tokens": 1610.84375,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 1650.2299930645863,
+          "avgWallMs": 4.212754375000002,
+          "tokens": 205.5,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "1000-c64",
+      "customers": 1000,
+      "concurrency": 64,
+      "finding": {
+        "contextReductionPct": 87.4,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 5.73,
+        "avgWallReductionPct": 87.3,
+        "conventional": {
+          "rps": 1005.7698503474726,
+          "avgWallMs": 59.83326651041664,
+          "tokens": 1627.84375,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 5766.702538292849,
+          "avgWallMs": 7.600796875000001,
+          "tokens": 205.71484375,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "1000-c32",
+      "customers": 1000,
+      "concurrency": 32,
+      "finding": {
+        "contextReductionPct": 87.3,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 6.16,
+        "avgWallReductionPct": 88.3,
+        "conventional": {
+          "rps": 825.9689098261783,
+          "avgWallMs": 37.343438177083335,
+          "tokens": 1622.3125,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 5086.50093802724,
+          "avgWallMs": 4.372615260416666,
+          "tokens": 205.6796875,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "1000-c16",
+      "customers": 1000,
+      "concurrency": 16,
+      "finding": {
+        "contextReductionPct": 87.3,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 5.96,
+        "avgWallReductionPct": 83.9,
+        "conventional": {
+          "rps": 457.541141416428,
+          "avgWallMs": 31.407307812500004,
+          "tokens": 1615.40625,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 2725.728034136029,
+          "avgWallMs": 5.065998854166669,
+          "tokens": 205.609375,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "1000-c8",
+      "customers": 1000,
+      "concurrency": 8,
+      "finding": {
+        "contextReductionPct": 87.2,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 4.56,
+        "avgWallReductionPct": 81.0,
+        "conventional": {
+          "rps": 344.49087208939267,
+          "avgWallMs": 22.964404375000004,
+          "tokens": 1610.84375,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 1570.9385776094107,
+          "avgWallMs": 4.366034375000001,
+          "tokens": 205.5,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "100-c64",
+      "customers": 100,
+      "concurrency": 64,
+      "finding": {
+        "contextReductionPct": 87.4,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 6.72,
+        "avgWallReductionPct": 88.8,
+        "conventional": {
+          "rps": 935.9602630662873,
+          "avgWallMs": 62.764838151041666,
+          "tokens": 1627.84375,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 6285.398231159399,
+          "avgWallMs": 7.0485678385416675,
+          "tokens": 205.71484375,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "100-c32",
+      "customers": 100,
+      "concurrency": 32,
+      "finding": {
+        "contextReductionPct": 87.3,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 5.23,
+        "avgWallReductionPct": 85.5,
+        "conventional": {
+          "rps": 908.4986715136522,
+          "avgWallMs": 32.45944432291667,
+          "tokens": 1622.3125,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 4748.17681412172,
+          "avgWallMs": 4.722482499999998,
+          "tokens": 205.6796875,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "100-c16",
+      "customers": 100,
+      "concurrency": 16,
+      "finding": {
+        "contextReductionPct": 87.3,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 4.78,
+        "avgWallReductionPct": 81.7,
+        "conventional": {
+          "rps": 570.9868931913018,
+          "avgWallMs": 25.5979459375,
+          "tokens": 1615.40625,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 2728.466989252622,
+          "avgWallMs": 4.688388541666666,
+          "tokens": 205.609375,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "100-c8",
+      "customers": 100,
+      "concurrency": 8,
+      "finding": {
+        "contextReductionPct": 87.2,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 3.81,
+        "avgWallReductionPct": 77.6,
+        "conventional": {
+          "rps": 421.1243245938529,
+          "avgWallMs": 19.160592916666662,
+          "tokens": 1610.84375,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 1604.7270134094244,
+          "avgWallMs": 4.293421666666668,
+          "tokens": 205.5,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "10-c64",
+      "customers": 10,
+      "concurrency": 64,
+      "finding": {
+        "contextReductionPct": 87.3,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 5.5,
+        "avgWallReductionPct": 85.9,
+        "conventional": {
+          "rps": 1084.0594423459095,
+          "avgWallMs": 54.68608750000002,
+          "tokens": 1612.07421875,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 5964.735780430062,
+          "avgWallMs": 7.7059397916666645,
+          "tokens": 205.5234375,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "10-c32",
+      "customers": 10,
+      "concurrency": 32,
+      "finding": {
+        "contextReductionPct": 87.2,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 5.36,
+        "avgWallReductionPct": 86.4,
+        "conventional": {
+          "rps": 963.7256032014214,
+          "avgWallMs": 31.091476562499995,
+          "tokens": 1611.6015625,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 5162.4196303301915,
+          "avgWallMs": 4.235391197916667,
+          "tokens": 205.5234375,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "10-c16",
+      "customers": 10,
+      "concurrency": 16,
+      "finding": {
+        "contextReductionPct": 87.2,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 4.13,
+        "avgWallReductionPct": 77.5,
+        "conventional": {
+          "rps": 667.9353458598273,
+          "avgWallMs": 21.81748177083334,
+          "tokens": 1611.328125,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 2761.7042812859995,
+          "avgWallMs": 4.910784791666667,
+          "tokens": 205.515625,
+          "toolCalls": 1
+        }
+      }
+    },
+    {
+      "test": "10-c8",
+      "customers": 10,
+      "concurrency": 8,
+      "finding": {
+        "contextReductionPct": 87.2,
+        "toolCallReductionPct": 71.4,
+        "rpsMultiplier": 3.91,
+        "avgWallReductionPct": 79.5,
+        "conventional": {
+          "rps": 438.3501922996411,
+          "avgWallMs": 19.790148958333326,
+          "tokens": 1610.84375,
+          "toolCalls": 3.5
+        },
+        "foundgine": {
+          "rps": 1712.4308474145203,
+          "avgWallMs": 4.066163333333333,
+          "tokens": 205.5,
+          "toolCalls": 1
+        }
+      }
+    }
+  ]
+}
