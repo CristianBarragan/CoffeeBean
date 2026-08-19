@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>What Is Foundgine? | Semantic Execution for .NET</title>
+  <meta name="description" content="Foundgine is a semantic execution platform for .NET that turns structured intent into authorized execution plans, separating what a caller wants from how the application executes it.">
+  <link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/what-is-foundgine.html">
+  <meta property="og:title" content="What Is Foundgine? | Semantic Execution for .NET">
+  <meta property="og:description" content="A semantic boundary between application callers and the data and operations they are allowed to execute.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://cristianbarragan.github.io/Foundgine/what-is-foundgine.html">
+  <meta name="twitter:card" content="summary">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="site-header"><div class="site-header-inner"><a class="brand" href="index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a><nav><a href="what-is-foundgine.html">What is it</a><a href="ai-agents/index.html">AI agents</a><a href="architecture/index.html">Architecture</a><a href="how-it-works/index.html">How it works</a><a href="agent-benchmark/index.html">Agent benchmark</a></nav></div></header>
+
+  <div class="page has-toc">
+    <main class="article">
+      <nav class="breadcrumbs"><a href="index.html">Foundgine</a> / What is Foundgine?</nav>
+      <span class="eyebrow">Product discovery</span>
+      <h1>What Is Foundgine?</h1>
+      <p class="subtitle">A semantic execution platform for .NET that turns structured intent into authorized execution plans.</p>
+
+      <h2 id="the-problem">The problem</h2>
+      <p>Applications increasingly have multiple callers: APIs, GraphQL, automation, internal services, AI agents.</p>
+      <p>Each caller can otherwise grow its own rules for validation, authorization, query construction, and data access — that makes the application harder to reason about and creates multiple execution paths.</p>
+
+      <h2 id="the-model">The Foundgine model</h2>
+      <p>Foundgine introduces a semantic boundary:</p>
+      <div class="rail" role="img" aria-label="Pipeline: Caller, Intent, Semantic Model, Authorization, Execution Plan, Provider, Result">
+        <div class="rail-step"><span class="dot"></span>Caller</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Intent</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step is-current"><span class="dot"></span>Semantic Model</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Authorization</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Execution Plan</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Provider</div>
+        <div class="rail-connector"></div>
+        <div class="rail-step"><span class="dot"></span>Result</div>
+      </div>
+      <p>The caller expresses an operation. The application defines the semantic capabilities and authorization rules. Foundgine builds the execution plan and the provider performs it.</p>
+
+      <h2 id="why-semantic">Why semantic execution?</h2>
+      <p>A persistence model describes how data is <em>stored</em>. A semantic model describes what an application is willing to <em>expose and operate on</em>. Those models do not have to be identical.</p>
+      <p>For example, a persistence model might contain:</p>
+      <pre>Customer
+ ├── Id
+ ├── TenantId
+ ├── Name
+ ├── InternalRiskScore
+ └── Accounts</pre>
+      <p>An application-facing semantic model might expose:</p>
+      <pre>Customer
+ ├── id
+ ├── name
+ └── accounts
+      └── balance</pre>
+      <p>The semantic surface can therefore be smaller, safer, and more purposeful than the physical model.</p>
+
+      <h2 id="why-ai">Why this matters for AI</h2>
+      <p>An AI agent is good at producing intent. It should not be trusted with unrestricted database authority. A safer architecture is:</p>
+      <pre>AI
+ ↓
+structured intent
+ ↓
+Foundgine
+ ├── resolve
+ ├── validate
+ ├── authorize
+ ├── plan
+ └── execute
+ ↓
+database</pre>
+      <p>The application remains the authority over what the agent can do.</p>
+
+      <h2 id="core-concepts">Core concepts</h2>
+      <p>Foundgine's public mental model can remain simple:</p>
+      <blockquote><strong>Model → Request → Authorize → Plan → Execute → Result</strong></blockquote>
+      <p>The deeper architecture adds metadata, expression trees, relationship traversal, rewriting, optimization, cost estimation, provider capabilities, and execution evidence.</p>
+
+      <h2 id="where-it-fits">Where Foundgine fits</h2>
+      <p>Foundgine can sit underneath interfaces rather than replacing them:</p>
+      <div class="converge">
+        <div class="converge-row">
+          <span class="converge-chip">REST/API</span>
+          <span class="converge-chip">GraphQL</span>
+          <span class="converge-chip">Automation</span>
+          <span class="converge-chip">AI Agent</span>
+        </div>
+        <div class="converge-arrow">↓</div>
+        <div class="converge-core">Foundgine</div>
+        <div class="converge-arrow">↓</div>
+        <div class="converge-row">
+          <span class="converge-chip">SQL</span>
+          <span class="converge-chip">InMemory</span>
+          <span class="converge-chip">…</span>
+        </div>
+      </div>
+      <p>This lets the interface and the execution model evolve independently.</p>
+
+      <nav class="sitenav">
+        <a href="index.html">Home</a> ·
+        <a href="ai-agents/index.html">AI agents</a> ·
+        <a href="architecture/index.html">Architecture</a> ·
+        <a href="how-it-works/index.html">How it works</a>
+      </nav>
+    </main>
+
+    <aside class="toc">
+      <div class="toc-label">On this page</div>
+      <ol>
+        <li><a href="#the-problem">The problem</a></li>
+        <li><a href="#the-model">The Foundgine model</a></li>
+        <li><a href="#why-semantic">Why semantic execution?</a></li>
+        <li><a href="#why-ai">Why this matters for AI</a></li>
+        <li><a href="#core-concepts">Core concepts</a></li>
+        <li><a href="#where-it-fits">Where Foundgine fits</a></li>
+      </ol>
+    </aside>
+  </div>
+
+  <footer class="site-footer">Foundgine · actively evolving · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer>
+  <script src="assets/toc.js"></script>
+</body>
+</html>
