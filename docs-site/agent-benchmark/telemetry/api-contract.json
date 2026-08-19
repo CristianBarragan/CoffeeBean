@@ -1,0 +1,7 @@
+{
+  "endpoint": "/api/benchmark-impact?test={workload}-c{concurrency}",
+  "method": "GET",
+  "live_status": ["live", "unavailable"],
+  "sources": ["provider-usage", "scaphandre", "electricity-maps"],
+  "fields": ["inputTokens", "outputTokens", "powerW", "energyWh", "carbonIntensityGPerKwh", "co2G", "costUsd", "capturedAt"]
+}

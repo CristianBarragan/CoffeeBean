@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
-
 Sitemap: https://cristianbarragan.github.io/Foundgine/sitemap.xml
