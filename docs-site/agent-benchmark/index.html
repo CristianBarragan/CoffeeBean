@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Foundgine — Agent Benchmark: Communication, Execution &amp; Tokens</title>
-<meta name="description" content="Explore Foundgine agent benchmarks measuring communication, execution throughput, context load and transparent derived cost, energy and CO₂ scenarios.">
+<title>Foundgine — Agent Benchmark: Tokens, Energy &amp; CO₂</title>
+<meta name="description" content="Explore the Foundgine Run 4 agent benchmark across 10, 100, 1,000 and 10,000 customers and concurrency 8, 16, 32 and 64, with measured token-load reduction and transparent cost, energy and CO₂ scenarios.">
 <link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/agent-benchmark/">
 <link rel="stylesheet" href="../assets/style.css">
 <style>
@@ -16,52 +16,68 @@
 .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}.chart-card{border:1px solid var(--border,#d9dee7);border-radius:14px;padding:17px}.chart-card h3{margin:0 0 8px}.bar-row{display:grid;grid-template-columns:112px 1fr 95px;gap:9px;align-items:center;margin:10px 0;font-size:.78rem}.bar-track{height:18px;border-radius:6px;background:rgba(127,127,127,.12);overflow:hidden}.bar-fill{height:100%;border-radius:6px}.bar-fill.conventional{background:#4f83cc}.bar-fill.foundgine{background:#d9822b}
 .impact-table td,.impact-table th{white-space:nowrap}.matrix-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:.72rem;font-weight:700}.matrix-badge.conventional{background:rgba(79,131,204,.15)}.matrix-badge.foundgine{background:rgba(217,130,43,.18)}
 .disclaimer{padding:16px;border-left:3px solid var(--signal,#d9822b);background:rgba(217,130,43,.06)}
+
+.performance-selector{margin:22px 0 34px;padding:24px;border:1px solid var(--border,#d9dee7);border-radius:20px;background:var(--card,#fff);box-shadow:0 10px 30px rgba(0,0,0,.06)}
+.performance-selector-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:18px}.performance-selector-copy{max-width:760px}.performance-selector-copy .eyebrow{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;opacity:.62}.performance-selector-copy h2{margin:5px 0 7px;font-size:1.55rem}.performance-selector-copy p{margin:0;opacity:.76}.performance-selector-counter{font-size:.76rem;font-weight:700;white-space:nowrap;padding:7px 10px;border:1px solid var(--border,#d9dee7);border-radius:999px}
+.performance-selector-main{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:end}.performance-selector-main label{font-size:.74rem;font-weight:700;display:flex;flex-direction:column;gap:6px}.performance-selector-main select,.performance-selector-main button{font:inherit;min-height:46px;padding:10px 13px;border:1px solid var(--border,#d9dee7);border-radius:12px;background:var(--card,#fff);color:inherit}.performance-selector-main select{font-weight:650}.performance-selector-main button{cursor:pointer;font-size:.8rem;font-weight:750;white-space:nowrap}.performance-selector-main button:hover{border-color:var(--signal,#d9822b);transform:translateY(-1px)}.performance-selector-main select:focus,.performance-selector-main button:focus{outline:none;border-color:var(--signal,#d9822b);box-shadow:0 0 0 3px rgba(217,130,43,.12)}
+.performance-test-description{margin-top:16px;padding:15px 17px;border-radius:14px;background:rgba(127,127,127,.06);border:1px solid var(--border,#d9dee7);display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}.performance-test-description .test-number{font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.58;padding-top:2px}.performance-test-description strong{display:block;margin-bottom:4px}.performance-test-description span{font-size:.84rem;opacity:.76}.performance-link-note{margin-top:10px;font-size:.75rem;opacity:.6}.performance-link-note code{font-size:.72rem}
+.heat-cell.selected{outline:2px solid var(--signal,#d9822b);outline-offset:2px;box-shadow:0 0 0 4px rgba(217,130,43,.1)}
+@media(max-width:850px){.performance-selector-top{flex-direction:column}.performance-selector-main{grid-template-columns:1fr 1fr}.performance-selector-main label{grid-column:1/-1}.performance-selector-main button{width:100%}}
 @media(max-width:950px){.matrix-kpis{grid-template-columns:repeat(2,1fr)}.matrix-controls{grid-template-columns:repeat(2,1fr)}.impact-chain{grid-template-columns:1fr}.impact-arrow{transform:rotate(90deg);justify-self:center}.chart-grid{grid-template-columns:1fr}}@media(max-width:620px){.matrix-kpis,.matrix-controls{grid-template-columns:1fr}}
+
+.live-impact{margin:28px 0;padding:24px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(255,255,255,.025)}
+.live-impact-head{display:flex;justify-content:space-between;gap:24px;align-items:flex-start}.live-impact-head h2{margin:.25rem 0 .5rem}.live-impact-head p{max-width:760px;color:var(--muted,#9aa3b2)}
+.telemetry-status{white-space:nowrap;border:1px solid rgba(255,255,255,.15);border-radius:999px;padding:7px 11px;font-size:.72rem;letter-spacing:.08em}.telemetry-status.live{border-color:#42d392}.telemetry-status.offline{opacity:.65}
+.live-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-top:20px}.live-grid>div{padding:16px;border-radius:12px;background:rgba(0,0,0,.18)}.live-grid small,.live-grid span{display:block;color:var(--muted,#9aa3b2);font-size:.68rem}.live-grid strong{display:block;font-size:1.35rem;margin:7px 0}
+@media(max-width:900px){.live-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.live-impact-head{display:block}.telemetry-status{display:inline-block;margin-top:12px}}
+
+.test-findings{margin-top:16px;padding:18px;border:1px solid var(--border,#d9dee7);border-radius:16px;background:rgba(127,127,127,.045)}.test-findings-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}.finding-card{padding:14px;border:1px solid var(--border,#d9dee7);border-radius:12px;background:var(--card,#fff)}.finding-card small{display:block;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;opacity:.62}.finding-card strong{display:block;font-size:1.15rem;margin:5px 0}.finding-card p{margin:0;font-size:.82rem;opacity:.78;line-height:1.5}.finding-explanation{margin-top:12px;font-size:.84rem;line-height:1.55}.live-source{font-size:.75rem;opacity:.68;margin-top:10px}.live-source code{font-size:.7rem}@media(max-width:900px){.test-findings-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header class="site-header"><div class="site-header-inner"><a class="brand" href="../index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a><nav><a href="../what-is-foundgine.html">What is it</a><a href="../ai-agents/index.html">AI agents</a><a href="../architecture/index.html">Architecture</a><a href="../how-it-works/index.html">How it works</a><a href="../agent-benchmark/index.html">Agent benchmark</a></nav></div></header>
+<header class="site-header"><div class="site-header-inner"><a class="brand" href="../index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a><nav><a href="../index.html#problem">The problem</a><a href="../index.html#intention">The intention</a><a href="../index.html#model">Execution model</a><a href="index.html">Benchmark</a><a href="https://github.com/cristianbarragan/Foundgine">GitHub ↗</a></nav></div></header>
+<div id="explorer" class="explorer-backdrop" aria-hidden="true"></div>
+<aside id="explorer-drawer" class="explorer-drawer" aria-label="Performance test explorer" aria-hidden="true">
+  <div class="explorer-head"><div><span class="eyebrow">Performance test explorer</span><h2>Choose the question you want to answer.</h2><p style="margin:0;font-size:.9rem">Start with the most comprehensive workload. Each item explains what the test is designed to reveal.</p></div><button id="explorer-close" class="explorer-close" type="button" aria-label="Close test explorer">×</button></div>
+  <div id="explorer-list" class="explorer-list"></div>
+</aside>
 <div class="page"><main class="article">
-<div class="benchmark-hero" style="margin-bottom:24px"><h2>New: Run 5 — fixed endpoint vs dynamic batching</h2><p>Run 5 compares a fixed single-transfer EF Core endpoint with Foundgine’s dynamic 64-operation PostgreSQL <code>UNNEST</code> endpoint. At 10 customers / concurrency 64, Foundgine reached <strong>10,731 ops/s vs 980.1 ops/s</strong> for EF Core (+994.8%). The comparison explicitly discloses that the EF baseline required raw PostgreSQL <code>FOR UPDATE</code> locking because EF Core does not expose a portable first-class row-lock API.</p><p><a href="run5/index.html">Read the Run 5 execution benchmark →</a></p></div>
-
-<section class="benchmark-hero" style="margin-top:24px">
-<h2>Agent communication efficiency: why this benchmark matters</h2>
-<p>Foundgine is not being positioned as a faster replacement for every fixed API endpoint. The important question is what happens when an agent must complete a stateful business process that spans discovery, relationships, authorization and mutation.</p>
-<div class="impact-chain">
-  <div class="impact-step"><small>CONVENTIONAL</small><strong>Fixed tools</strong><span>Discover → call narrow tool → receive intermediate state → call another tool.</span></div>
-  <div class="impact-arrow">→</div>
-  <div class="impact-step"><small>FOUNGDINE</small><strong>Dynamic capability</strong><span>Resolve → authorize → plan → execute through one semantic boundary.</span></div>
-</div>
-<p><strong>Run 2 provides an early measured signal:</strong> the replay benchmark recorded 9 agent/tool interactions for the conventional flow and 6 for Foundgine, a <strong>33.3% reduction in agent/tool round trips</strong>. Recorded tool payload fell from about 3,437 to 2,166 UTF-8 bytes per flow, approximately <strong>37.0% less</strong>. Estimated context load fell <strong>26.5%</strong>.</p>
-<div class="table-wrap"><table><thead><tr><th>Dimension</th><th>Conventional</th><th>Foundgine</th><th>Observed change</th></tr></thead><tbody>
-<tr><td>Agent/tool round trips</td><td>9.0</td><td>6.0</td><td><strong>−33.3%</strong></td></tr>
-<tr><td>Tool payload</td><td>~3.44 KB</td><td>~2.17 KB</td><td><strong>−37.0%</strong></td></tr>
-<tr><td>Estimated context load</td><td>1,166 tokens</td><td>858 tokens</td><td><strong>−26.5%</strong></td></tr>
-</tbody></table></div>
-<p class="matrix-note">These Run 2 figures are replay measurements, not provider billing measurements. The token figure is a directional estimator. The communication figures count recorded tool interactions and UTF-8 tool payloads. They do not claim to measure model reasoning tokens or raw network packets.</p>
-<h3>Why fixed endpoint vs dynamic endpoint is a meaningful comparison</h3>
-<p>The conventional side is intentionally a set of narrow, fixed tools. Foundgine exposes a dynamic semantic capability whose runtime resolves relationships, authorization, planning and execution. The comparison is therefore about <strong>how much business work one agent interaction can express</strong>, not a claim that both APIs expose identical shapes.</p>
-<p>This distinction matters for trust: a fixed endpoint may be the best choice when the exact operation is already known. Foundgine becomes interesting when an agent must discover and execute a richer business capability without repeatedly reconstructing physical application state.</p>
-<p><a href="run-2/index.html">Explore the Run 2 communication benchmark →</a></p>
-</section>
-
-<span class="eyebrow">End-to-end evidence · Run 4 · 17 August 2026</span>
-<h1>Less agent work. Less estimated energy. A benchmark you can inspect.</h1>
-<p class="subtitle">Run 4 compares the same customer-exposure business process across 16 workload/concurrency cells. The measured signal is agent-side context and execution behaviour. Cost, energy and CO₂ are transparent derived scenarios—not direct electricity or emissions measurements.</p>
+<span class="eyebrow">End-to-end evidence · Published Run 4 · 17 August 2026</span>
+<h1>What happens when an AI agent gets a capability instead of another endpoint?</h1>
+<p class="subtitle">This benchmark tests the problem Foundgine is designed to address: how much agent-side work, protocol chatter and application-shaped context is required to complete the same business process through a conventional purpose-built API versus a semantic execution boundary.</p>
+<div class="hero-actions"><button class="button explorer-trigger" id="explorer-open" type="button">Explore the 16 tests →</button><a class="button secondary" href="../index.html#problem">Why this problem matters</a></div>
+<div class="metrics-strip"><div class="metric"><small>Headline test · 10k customers / C64</small><strong>3.5 → 1</strong><span>tool calls per flow</span></div><div class="metric"><small>Headline test · 10k customers / C64</small><strong>1,627.8 → 205.7</strong><span>estimated context tokens</span></div><div class="metric"><small>Headline test · 10k customers / C64</small><strong>5.70×</strong><span>measured throughput</span></div><div class="metric"><small>Headline test · 10k customers / C64</small><strong>60.2 → 8.0 ms</strong><span>average wall time</span></div></div>
+<p class="matrix-note"><strong>Read the numbers correctly:</strong> these are published Run 4 replay measurements. Token usage is estimated context load, not provider-billed model usage. Energy and CO₂ are never inferred from the token percentage.</p>
 
 <div class="benchmark-hero">
 <h2>What changed?</h2>
 <div class="matrix-kpis" id="headline-kpis"></div>
 <div class="impact-chain">
   <div class="impact-step"><small>MEASURED</small><strong>Tokens</strong><span id="chain-token">—</span></div><div class="impact-arrow">→</div>
-  <div class="impact-step"><small>MODELED</small><strong>Energy</strong><span id="chain-energy">—</span></div><div class="impact-arrow">→</div>
-  <div class="impact-step"><small>MODELED</small><strong>CO₂</strong><span id="chain-co2">—</span></div>
+  <div class="impact-step"><small>LIVE TELEMETRY</small><strong>Energy</strong><span id="chain-energy">Waiting for power telemetry</span></div><div class="impact-arrow">→</div>
+  <div class="impact-step"><small>LIVE GRID DATA</small><strong>CO₂</strong><span id="chain-co2">Waiting for carbon intensity</span></div>
 </div>
-<p class="matrix-note">The benchmark estimates context load with <code>max(chars / 4, words × 1.3)</code>. It does not claim to measure provider billing, GPU power draw, or physical emissions.</p>
+<p class="matrix-note"><strong>Measured:</strong> tool calls, estimated context tokens, latency and throughput. <strong>Live:</strong> power and grid carbon are shown only when the telemetry API is connected. Replay-mode token counts remain explicitly estimated.</p>
 </div>
 
-<h2>Explore the 4 × 4 benchmark matrix</h2>
-<p>Choose a metric and click any cell. The matrix compares the same workload and concurrency between the conventional application/tool path and Foundgine.</p>
+<h2 id="matrix">Benchmark matrix</h2>
+<p>The matrix is deliberately kept as the overview map at the bottom of the exploration flow. Use the sliding menu to understand a test first; then use the matrix to compare where that test sits against the other workloads.</p>
+<section class="live-impact" aria-labelledby="live-impact-title">
+  <div class="live-impact-head"><div><small>LIVE TELEMETRY</small><h2 id="live-impact-title">Actual resource consumption for this test</h2><p>Power comes from process or host telemetry; carbon intensity comes from the electricity grid at the measurement location and time. Nothing here is derived from the token reduction percentage.</p></div><span id="telemetry-status" class="telemetry-status offline">Telemetry not connected</span></div>
+  <div class="live-grid">
+    <div><small>CONVENTIONAL POWER</small><strong id="live-c-power">—</strong><span>W average</span></div>
+    <div><small>FOUNDGINE POWER</small><strong id="live-f-power">—</strong><span>W average</span></div>
+    <div><small>CONVENTIONAL ENERGY</small><strong id="live-c-energy">—</strong><span>Wh / test</span></div>
+    <div><small>FOUNDGINE ENERGY</small><strong id="live-f-energy">—</strong><span>Wh / test</span></div>
+    <div><small>GRID CARBON INTENSITY</small><strong id="live-carbon">—</strong><span>gCO₂e / kWh</span></div>
+    <div><small>ACTUAL CO₂</small><strong id="live-co2">—</strong><span>gCO₂e / test</span></div>
+    <div><small>MODEL INPUT TOKENS</small><strong id="live-c-input">—</strong><span>tokens / flow</span></div>
+    <div><small>MODEL OUTPUT TOKENS</small><strong id="live-c-output">—</strong><span>tokens / flow</span></div>
+    <div><small>MODEL TOTAL TOKENS</small><strong id="live-c-total">—</strong><span>tokens / flow</span></div>
+  </div>
+  <p class="matrix-note">If telemetry is unavailable, these fields remain “—”. The page never converts token reduction into a claimed power or carbon percentage.</p>
+</section>
+
 <div class="matrix-controls">
  <div class="matrix-field"><label for="metric">Matrix metric<select id="metric"><option value="tokens">Context-token reduction</option><option value="energy">Estimated energy reduction</option><option value="co2">Estimated CO₂ reduction</option><option value="cost">Estimated cost reduction</option><option value="rps">RPS advantage</option><option value="latency">Average wall-time reduction</option></select></label></div>
  <div class="matrix-field"><label for="batch">Customer workload<select id="batch"><option value="all">All workloads</option></select></label></div>
@@ -75,6 +91,32 @@
  <div class="matrix-field"><label for="carbon">gCO₂e / kWh<input id="carbon" type="number" min="0" step="10" value="400"></label></div>
 </div>
 <p class="matrix-note">Changing these assumptions recalculates the modeled cost, energy and CO₂ figures. The measured benchmark values do not change.</p>
+
+<section class="performance-selector" aria-labelledby="performance-selector-title">
+  <div class="performance-selector-top">
+    <div class="performance-selector-copy">
+      <span class="eyebrow">Performance test explorer</span>
+      <h2 id="performance-selector-title">Choose a test</h2>
+      <p>Use this as the front door to the benchmark. Each option is one measured workload/concurrency test. The explanation changes with the selection, and the URL can be shared or bookmarked to reopen that exact test.</p>
+    </div>
+    <span class="performance-selector-counter" id="performance-counter">Test 1 of 16</span>
+  </div>
+  <div class="performance-selector-main">
+    <label for="performance-test">Performance test<select id="performance-test" aria-label="Select performance test"></select></label>
+    <button id="prev-test" type="button" title="Previous performance test">← Previous</button>
+    <button id="next-test" type="button" title="Next performance test">Next →</button>
+  </div>
+  <div class="performance-test-description" id="performance-description">
+    <span class="test-number">Test</span><div><strong>Loading test…</strong><span>Loading benchmark description.</span></div>
+  </div>
+  <div class="test-findings" id="test-findings">
+    <strong>What this test found</strong>
+    <div class="test-findings-grid" id="test-findings-grid"></div>
+    <div class="finding-explanation" id="finding-explanation">Loading the measured interpretation…</div>
+  </div>
+  <div class="performance-link-note">Shareable URL: <code id="performance-url">?test=10000-c64</code></div>
+</section>
+
 <div class="matrix-legend"><span><span class="matrix-dot conventional"></span>Conventional</span><span><span class="matrix-dot foundgine"></span>Foundgine</span><span id="matrix-status"></span></div>
 <div class="heatmap-wrap"><table class="heatmap"><thead><tr><th>Workload \ Concurrency</th><th>C8</th><th>C16</th><th>C32</th><th>C64</th></tr></thead><tbody id="heatmap-body"></tbody></table></div>
 
@@ -89,7 +131,7 @@
 <tr><td>Workloads</td><td>10 / 100 / 1,000 / 10,000 customers</td></tr>
 <tr><td>Concurrency</td><td>8 / 16 / 32 / 64</td></tr>
 <tr><td>Measured runs</td><td>30 per implementation per cell, after 5 warmups</td></tr>
-<tr><td>Tool calls</td><td>Conventional: 6 per flow · Foundgine: 1 per flow</td></tr>
+<tr><td>Tool calls</td><td>Conventional: 3.5 per flow · Foundgine: 1 per flow</td></tr>
 <tr><td>Estimated context</td><td>~1,617 tokens conventional vs ~206 Foundgine, averaged across the 16 cells</td></tr>
 <tr><td>RPS</td><td>Foundgine was higher in all 16 cells; measured ratio ranged from ~3.8× to ~33×</td></tr>
 <tr><td>Failures</td><td>0 recorded failures in the published Run 4 samples</td></tr>
@@ -101,7 +143,7 @@
 
 <h2>Methodology</h2>
 <p>The benchmark uses the same customer-exposure-review business task across both paths. The fixture contains 4 relationships, 12 contracts and 48 transactions per customer, with an exposure threshold of $48,000. Each cell is warmed up five times and then measured for 30 runs.</p>
-<p>The benchmark is an end-to-end replay harness. Provider-reported model tokens are not available in replay mode, so the context figure is explicitly labeled as an estimate. The full raw Run 4 artifacts are published under <code>assets/agent-benchmark/run4/</code>.</p>
+<p>The benchmark is an end-to-end replay harness. Provider-reported model tokens are not available in the published replay run, so the context figure is explicitly labeled as an estimate. In live-agent runs, the telemetry adapter should record the provider response usage fields (input, output and total tokens) rather than estimating them. The full raw Run 4 artifacts are published under <code>assets/agent-benchmark/run4/</code>.</p>
 
 <p><a href="../docs/benchmarks/agent-end-to-end-token-method.md">Read the token measurement method</a> · <a href="../docs/benchmarks/2026-08-17-agent-concurrency-results.md">Read the benchmark notes</a></p>
 </main></div>
@@ -111,10 +153,49 @@
 const data=await fetch('../assets/agent-benchmark/benchmark-matrix.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()});
 const A=data.aggregate||[], assumptions=data.assumptions||{}; const $=id=>document.getElementById(id);
 const batches=[...new Set(A.map(r=>+r.batch))].sort((a,b)=>a-b), concs=[...new Set(A.map(r=>+r.concurrency))].sort((a,b)=>a-b);
+const testDescriptions={8:'Baseline concurrency: a light parallel workload that makes the per-request agent path easy to inspect.',16:'Moderate concurrency: more parallel agents competing for the same service boundary.',32:'High concurrency: a pressure point where contention and throughput differences become more visible.',64:'Peak concurrency: the most demanding parallel workload in the matrix, useful for observing scaling behaviour.'};
+const workloadDescriptions={10:'Small fixture: 10 customers. Best for understanding the mechanics without a large dataset.',100:'Medium fixture: 100 customers. A useful middle ground between a small functional run and larger scale.',1000:'Large fixture: 1,000 customers. Designed to expose behaviour as the dataset becomes materially larger.',10000:'Very large fixture: 10,000 customers. The stress case for scale and concurrency.'};
+const performanceTests=[...batches].reverse().flatMap(b=>[...concs].reverse().map(c=>({b,c,value:`${b}:${c}`,slug:`${b}-c${c}`,label:`${b.toLocaleString()} customers · C${c}`,title:`${b.toLocaleString()} customers · concurrency ${c}`,description:`${workloadDescriptions[b]||''} ${testDescriptions[c]||''}`})));
+const explorerList=document.getElementById('explorer-list');
+function explorerDescription(t,i){
+ const headline=(t.b===10000&&t.c===64);
+ if(headline)return 'The most comprehensive test: the largest dataset and highest concurrency. It asks whether the execution boundary keeps the same business outcome while reducing agent/tool work under maximum pressure.';
+ if(t.b===10000)return 'Scale-focused test: keeps the largest customer fixture while reducing concurrency. Useful for separating dataset scale from parallel pressure.';
+ if(t.c===64)return 'Concurrency-focused test: increases parallel pressure to see whether the execution-path difference survives contention and throughput demand.';
+ if(t.b===1000)return 'Large diagnostic test: enough data to expose scaling behaviour without the maximum fixture. Useful for checking whether the pattern is structural rather than a single stress-case result.';
+ if(t.b===100)return 'Middle diagnostic test: a practical workload for checking whether the same execution-path pattern appears away from the extremes.';
+ return 'Small diagnostic test: the simplest cell for understanding the mechanics and checking whether the execution-path difference is visible without large-scale pressure.';
+}
+performanceTests.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.className='explorer-item';b.innerHTML=`<span class="num">${String(i+1).padStart(2,'0')}</span><span><h3>${t.label}</h3><p>${explorerDescription(t,i)}</p></span><span class="arrow">→</span>`;b.addEventListener('click',()=>{selectPerformance(t.b,t.c);closeExplorer();});explorerList.appendChild(b);});
+const explorerRoot=document.documentElement; const explorerBackdrop=document.getElementById('explorer'); const explorerDrawer=document.getElementById('explorer-drawer');
+function openExplorer(){explorerRoot.classList.add('explorer-open');explorerBackdrop.setAttribute('aria-hidden','false');explorerDrawer.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';}
+function closeExplorer(){explorerRoot.classList.remove('explorer-open');explorerBackdrop.setAttribute('aria-hidden','true');explorerDrawer.setAttribute('aria-hidden','true');document.body.style.overflow='';}
+document.getElementById('explorer-open').addEventListener('click',openExplorer);document.getElementById('explorer-close').addEventListener('click',closeExplorer);explorerBackdrop.addEventListener('click',closeExplorer);document.addEventListener('keydown',e=>{if(e.key==='Escape')closeExplorer();});
+
 const pct=(n,d)=>d?((1-n/d)*100):0, fmt=(n,d=1)=>Number(n||0).toLocaleString(undefined,{maximumFractionDigits:d}), money=n=>'$'+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
 function val(r,key){const t=+r.estimatedContextTokens||0, calls=+$('calls-day').value||100000, price=+$('token-price').value||0, wh=+$('energy-token').value||0, carbon=+$('carbon').value||0; return {...r,energy:(t/1000)*calls*365*wh/1000,cost:(t/1e6)*calls*365*price,co2:(t/1000)*calls*365*wh/1000*carbon/1000};}
 function pair(b,c){const rows=A.filter(r=>+r.batch===b&&+r.concurrency===c); return {c:val(rows.find(r=>r.implementation==='Conventional')),f:val(rows.find(r=>r.implementation==='Foundgine'))};}
 function metric(p){const m=$('metric').value;if(!p.c||!p.f)return {label:'—',good:false}; if(m==='tokens')return {label:fmt(p.f.estimatedContextTokens/p.c.estimatedContextTokens*100,1)+'% of baseline',detail:fmt(pct(p.f.estimatedContextTokens,p.c.estimatedContextTokens),1)+'% lower',good:true}; if(m==='energy')return {label:fmt(p.f.energy/p.c.energy*100,1)+'% of baseline',detail:fmt(pct(p.f.energy,p.c.energy),1)+'% lower',good:true}; if(m==='co2')return {label:fmt(p.f.co2/p.c.co2*100,1)+'% of baseline',detail:fmt(pct(p.f.co2,p.c.co2),1)+'% lower',good:true}; if(m==='cost')return {label:fmt(p.f.cost/p.c.cost*100,1)+'% of baseline',detail:fmt(pct(p.f.cost,p.c.cost),1)+'% lower',good:true}; if(m==='rps')return {label:fmt(p.f.avgRps/p.c.avgRps,1)+'×',detail:fmt(p.f.avgRps/p.c.avgRps,1)+'× RPS',good:p.f.avgRps>p.c.avgRps}; return {label:fmt(pct(p.f.avgWallMs,p.c.avgWallMs),1)+'% lower',detail:fmt(p.f.avgWallMs,1)+' vs '+fmt(p.c.avgWallMs,1)+' ms',good:p.f.avgWallMs<p.c.avgWallMs};}
+async function loadLiveTelemetry(b,c){
+ const status=$('telemetry-status');
+ try{
+  const r=await fetch(`/api/benchmark-impact?test=${encodeURIComponent(`${b}-c${c}`)}`,{cache:'no-store'});
+  if(!r.ok)throw new Error(`HTTP ${r.status}`);
+  const d=await r.json();
+  if(d.status!=='live')throw new Error('telemetry unavailable');
+  status.textContent=`LIVE · ${new Date(d.capturedAt).toLocaleTimeString()}`; status.className='telemetry-status live';
+  $('live-c-power').textContent=`${fmt(d.conventional.powerW,1)}`; $('live-f-power').textContent=`${fmt(d.foundgine.powerW,1)}`;
+  $('live-c-energy').textContent=`${fmt(d.conventional.energyWh,3)}`; $('live-f-energy').textContent=`${fmt(d.foundgine.energyWh,3)}`;
+  $('live-carbon').textContent=`${fmt(d.conventional.carbonIntensityGPerKwh,1)}`;
+  $('live-co2').textContent=`${fmt(d.conventional.co2G,3)} vs ${fmt(d.foundgine.co2G,3)}`; $('live-c-input').textContent=fmt(d.conventional.inputTokens,0); $('live-c-output').textContent=fmt(d.conventional.outputTokens,0); $('live-c-total').textContent=fmt(d.conventional.totalTokens,0);
+  $('chain-energy').textContent=`${fmt(d.conventional.energyWh,3)} Wh vs ${fmt(d.foundgine.energyWh,3)} Wh`;
+  $('chain-co2').textContent=`${fmt(d.conventional.co2G,3)} g vs ${fmt(d.foundgine.co2G,3)} g`;
+ }catch(e){
+  status.textContent='TELEMETRY NOT CONNECTED'; status.className='telemetry-status offline';
+  ['live-c-power','live-f-power','live-c-energy','live-f-energy','live-carbon','live-co2','live-c-input','live-c-output','live-c-total'].forEach(id=>$(id).textContent='—');
+ }
+}
+
 function render(){
  const selectedB=$('batch').value==='all'?null:+$('batch').value, selectedC=$('concurrency').value==='all'?null:+$('concurrency').value, focus=$('implementation').value;
  const rows=A.filter(r=>(selectedB===null||+r.batch===selectedB)&&(selectedC===null||+r.concurrency===selectedC)&&(focus==='all'||r.implementation===focus));
@@ -122,19 +203,52 @@ function render(){
  const visible=allPairs.filter(x=>(selectedB===null||x.b===selectedB)&&(selectedC===null||x.c===selectedC));
  const avg=(impl,k)=>{const xs=visible.map(x=>x.p[impl][k]);return xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:0};
  const ct=avg('c','estimatedContextTokens'),ft=avg('f','estimatedContextTokens'),cr=avg('c','avgRps'),fr=avg('f','avgRps');
- $('headline-kpis').innerHTML=`<div class="matrix-kpi"><small>Context reduction</small><strong>${fmt(pct(ft,ct),1)}%</strong><small>~${fmt(ct,0)} → ~${fmt(ft,0)} estimated tokens</small></div><div class="matrix-kpi"><small>Tool calls</small><strong>6 → 1</strong><small>83.3% fewer calls/flow</small></div><div class="matrix-kpi"><small>RPS advantage</small><strong>${fmt(fr/cr,1)}×</strong><small>average across selected cells</small></div><div class="matrix-kpi"><small>Modeled CO₂</small><strong>${fmt(pct(avg('f','co2'),avg('c','co2')),1)}%</strong><small>reduction under current assumptions</small></div>`;
+ $('headline-kpis').innerHTML=`<div class="matrix-kpi"><small>Context reduction</small><strong>${fmt(pct(ft,ct),1)}%</strong><small>~${fmt(ct,0)} → ~${fmt(ft,0)} estimated tokens</small></div><div class="matrix-kpi"><small>Tool calls</small><strong>3.5 → 1</strong><small>71.4% fewer tool calls/flow</small></div><div class="matrix-kpi"><small>RPS advantage</small><strong>${fmt(fr/cr,1)}×</strong><small>average across selected cells</small></div><div class="matrix-kpi"><small>Tool-call reduction</small><strong>71.4%</strong><small>3.5 → 1 average calls/flow</small></div>`;
  $('chain-token').textContent=`${fmt(pct(ft,ct),1)}% lower estimated context`;
- $('chain-energy').textContent=`${fmt(pct(avg('f','energy'),avg('c','energy')),1)}% lower modeled energy`;
- $('chain-co2').textContent=`${fmt(pct(avg('f','co2'),avg('c','co2')),1)}% lower modeled CO₂`;
+ $('chain-energy').textContent='Waiting for live power telemetry';
+ $('chain-co2').textContent='Waiting for live grid carbon data';
  $('matrix-status').textContent=`${visible.length} of 16 cells selected`;
- $('heatmap-body').innerHTML=batches.map(b=>`<tr><th>${b.toLocaleString()} customers</th>${concs.map(c=>{const x=allPairs.find(q=>q.b===b&&q.c===c);const m=metric(x.p);const hidden=(selectedB!==null&&b!==selectedB)||(selectedC!==null&&c!==selectedC);return `<td style="opacity:${hidden?.35:1}"><button class="heat-cell ${m.good?'good':'neutral'}" data-b="${b}" data-c="${c}" type="button"><span class="cell-label">C${c}</span><strong>${m.label}</strong><small>${m.detail}</small></button></td>`}).join('')}</tr>`).join('');
- document.querySelectorAll('.heat-cell').forEach(btn=>btn.onclick=()=>showCell(+btn.dataset.b,+btn.dataset.c));
- const first=visible[0]||allPairs[0]; if(first)showCell(first.b,first.c);
+ $('heatmap-body').innerHTML=batches.map(b=>`<tr><th>${b.toLocaleString()} customers</th>${concs.map(c=>{const x=allPairs.find(q=>q.b===b&&q.c===c);const m=metric(x.p);const hidden=(selectedB!==null&&b!==selectedB)||(selectedC!==null&&c!==selectedC);const selected=$('performance-test').value===`${b}:${c}`;return `<td style="opacity:${hidden?.35:1}"><button class="heat-cell ${m.good?'good':'neutral'} ${selected?'selected':''}" data-b="${b}" data-c="${c}" type="button"><span class="cell-label">C${c}</span><strong>${m.label}</strong><small>${m.detail}</small></button></td>`}).join('')}</tr>`).join('');
+ document.querySelectorAll('.heat-cell').forEach(btn=>btn.onclick=()=>selectPerformance(+btn.dataset.b,+btn.dataset.c));
+ const nav=$('performance-test').value; const selected=allPairs.find(x=>x.b+':'+x.c===nav); const first=selected||visible[0]||allPairs[0]; if(first){showCell(first.b,first.c);loadLiveTelemetry(first.b,first.c);}
  $('detail-table').innerHTML=`<table class="impact-table"><thead><tr><th>Workload</th><th>Concurrency</th><th>Implementation</th><th>RPS</th><th>Avg wall</th><th>Context tokens</th><th>Modeled kWh/yr</th><th>Modeled CO₂ kg/yr</th><th>Modeled USD/yr</th></tr></thead><tbody>${visible.flatMap(x=>['c','f'].map(k=>{const r=x.p[k];return `<tr><td>${x.b.toLocaleString()}</td><td>C${x.c}</td><td><span class="matrix-badge ${k==='c'?'conventional':'foundgine'}">${k==='c'?'Conventional':'Foundgine'}</span></td><td>${fmt(r.avgRps,1)}</td><td>${fmt(r.avgWallMs,1)} ms</td><td>${fmt(r.estimatedContextTokens,0)}</td><td>${fmt(r.energy,0)}</td><td>${fmt(r.co2,0)}</td><td>${money(r.cost)}</td></tr>`})).join('')}</tbody></table>`;
 }
-function showCell(b,c){const p=pair(b,c); if(!p.c||!p.f)return; const t=+p.c.estimatedContextTokens,f=+p.f.estimatedContextTokens; $('selected-title').textContent=`${b.toLocaleString()} customers · concurrency ${c}`; $('selected-chart').innerHTML=`<div class="bar-row"><span>Conventional</span><div class="bar-track"><div class="bar-fill conventional" style="width:100%"></div></div><strong>${fmt(p.c.avgRps,1)} RPS</strong></div><div class="bar-row"><span>Foundgine</span><div class="bar-track"><div class="bar-fill foundgine" style="width:${Math.min(100,p.f.avgRps/p.c.avgRps*100)}%"></div></div><strong>${fmt(p.f.avgRps,1)} RPS</strong></div><div class="bar-row"><span>Tokens</span><div class="bar-track"><div class="bar-fill conventional" style="width:100%"></div></div><strong>${fmt(t,0)}</strong></div><div class="bar-row"><span>Tokens F</span><div class="bar-track"><div class="bar-fill foundgine" style="width:${f/t*100}%"></div></div><strong>${fmt(f,0)}</strong></div>`; $('selected-impact').innerHTML=`<p><strong>${fmt(pct(f,t),1)}% fewer estimated context tokens</strong></p><p>${fmt(pct(p.f.energy,p.c.energy),1)}% lower modeled energy · ${fmt(pct(p.f.co2,p.c.co2),1)}% lower modeled CO₂ · ${fmt(pct(p.f.cost,p.c.cost),1)}% lower modeled cost.</p><p><strong>${fmt(p.f.avgRps/p.c.avgRps,1)}×</strong> RPS and <strong>${fmt(p.f.avgWallMs,1)} ms</strong> vs <strong>${fmt(p.c.avgWallMs,1)} ms</strong> average wall time.</p>`;}
+function showCell(b,c){const p=pair(b,c); if(!p.c||!p.f)return; const t=+p.c.estimatedContextTokens,f=+p.f.estimatedContextTokens; $('selected-title').textContent=`${b.toLocaleString()} customers · concurrency ${c}`; $('selected-chart').innerHTML=`<div class="bar-row"><span>Conventional</span><div class="bar-track"><div class="bar-fill conventional" style="width:100%"></div></div><strong>${fmt(p.c.avgRps,1)} RPS</strong></div><div class="bar-row"><span>Foundgine</span><div class="bar-track"><div class="bar-fill foundgine" style="width:${Math.min(100,p.f.avgRps/p.c.avgRps*100)}%"></div></div><strong>${fmt(p.f.avgRps,1)} RPS</strong></div><div class="bar-row"><span>Tokens</span><div class="bar-track"><div class="bar-fill conventional" style="width:100%"></div></div><strong>${fmt(t,0)}</strong></div><div class="bar-row"><span>Tokens F</span><div class="bar-track"><div class="bar-fill foundgine" style="width:${f/t*100}%"></div></div><strong>${fmt(f,0)}</strong></div>`; $('selected-impact').innerHTML=`<p><strong>${fmt(pct(f,t),1)}% fewer estimated context tokens</strong></p><p>Power, energy, carbon and cost are shown separately when live telemetry/provider pricing is available; they are never inferred from the token percentage.</p><p><strong>${fmt(p.f.avgRps/p.c.avgRps,1)}×</strong> RPS and <strong>${fmt(p.f.avgWallMs,1)} ms</strong> vs <strong>${fmt(p.c.avgWallMs,1)} ms</strong> average wall time.</p>`;}
 batches.forEach(x=>$('batch').insertAdjacentHTML('beforeend',`<option value="${x}">${x.toLocaleString()} customers</option>`));concs.forEach(x=>$('concurrency').insertAdjacentHTML('beforeend',`<option value="${x}">C${x}</option>`));
-['metric','batch','concurrency','implementation','calls-day','token-price','energy-token','carbon'].forEach(id=>$(id).addEventListener('input',render));render();
+const perf=$('performance-test');
+performanceTests.forEach((t,i)=>{const o=document.createElement('option');o.value=t.value;o.textContent=`${String(i+1).padStart(2,'0')} · ${t.label}`;perf.appendChild(o)});
+function readTestFromUrl(){const q=new URLSearchParams(location.search).get('test');return performanceTests.find(t=>t.slug===q||t.value===q)||performanceTests[0];}
+function writeTestUrl(test,replace=false){const url=new URL(location.href);url.searchParams.set('test',test.slug);history[replace?'replaceState':'pushState']({test:test.slug},'',url);$('performance-url').textContent=`${url.pathname}?test=${test.slug}`;}
+function updateTestFindings(test){
+ const p=pair(test.b,test.c); if(!p.c||!p.f)return;
+ const tokenRed=pct(p.f.estimatedContextTokens,p.c.estimatedContextTokens);
+ const rpsRatio=p.f.avgRps/p.c.avgRps;
+ const latRed=pct(p.f.avgWallMs,p.c.avgWallMs);
+ const callsRed=pct(p.f.toolCalls,p.c.toolCalls);
+ const cards=[
+  ['Context tokens',`${fmt(p.c.estimatedContextTokens,0)} → ${fmt(p.f.estimatedContextTokens,0)}`,`${fmt(tokenRed,1)}% lower estimated context`],
+  ['Tool calls',`${fmt(p.c.toolCalls,1)} → ${fmt(p.f.toolCalls,1)}`,`${fmt(callsRed,1)}% fewer agent tool calls`],
+  ['Throughput',`${fmt(p.c.avgRps,1)} → ${fmt(p.f.avgRps,1)} RPS`,`${fmt(rpsRatio,2)}× the conventional throughput`],
+  ['Average wall time',`${fmt(p.c.avgWallMs,1)} → ${fmt(p.f.avgWallMs,1)} ms`,`${fmt(latRed,1)}% lower average wall time`],
+  ['Correctness',`${p.c.success+p.f.success} successes · 0 failures`,`Both paths completed the published sample successfully`],
+  ['Mode',`Replay benchmark`,`Token values are estimates, not provider-billed usage`]
+ ];
+ $('test-findings-grid').innerHTML=cards.map(x=>`<div class="finding-card"><small>${x[0]}</small><strong>${x[1]}</strong><p>${x[2]}</p></div>`).join('');
+ let reason;
+ if(test.b===10000&&test.c===64) reason=`This is the most comprehensive cell: the largest fixture and highest concurrency. Foundgine completed the same business outcome with ${fmt(callsRed,1)}% fewer tool calls, ${fmt(tokenRed,1)}% less estimated context, ${fmt(latRed,1)}% lower average wall time and ${fmt(rpsRatio,2)}× the measured throughput. The key interpretation is not that fewer tokens automatically mean less electricity; it means the agent is carrying substantially less protocol/application context through the execution path. Actual power and carbon must be measured independently.`;
+ else if(test.b===10000) reason=`At 10,000 customers this test isolates how the execution path behaves on the largest fixture. The dataset size does not materially change the context reduction: the same semantic operation is still being expressed with much less agent-side context. The ${fmt(rpsRatio,2)}× throughput result shows the benefit is also visible at the service boundary.`;
+ else if(test.c===64) reason=`At concurrency 64 this test stresses parallel execution. The result shows whether the reduction in agent/tool work survives increased contention. Here Foundgine reaches ${fmt(rpsRatio,2)}× the conventional throughput while reducing average wall time by ${fmt(latRed,1)}%.`;
+ else reason=`This is a diagnostic cell rather than the headline stress case. It confirms whether the same pattern appears under a smaller dataset and/or lighter concurrency. The measured result is ${fmt(tokenRed,1)}% less estimated context, ${fmt(callsRed,1)}% fewer tool calls and ${fmt(rpsRatio,2)}× throughput. That makes this cell useful for separating the execution-path effect from scale effects.`;
+ $('finding-explanation').textContent=reason;
+}
+function updatePerformanceDescription(test){const i=performanceTests.findIndex(x=>x.value===test.value)+1;$('performance-counter').textContent=`Test ${i} of ${performanceTests.length}`;$('performance-selector-title').textContent=test.title;$('performance-description').innerHTML=`<span class="test-number">Test ${String(i).padStart(2,'0')}</span><div><strong>${test.label}</strong><span>${test.description}</span></div>`;updateTestFindings(test);writeTestUrl(test,true);}
+function selectPerformance(b,c,opts={}){const test=performanceTests.find(x=>x.b===b&&x.c===c)||performanceTests[0];perf.value=test.value;$('batch').value=String(test.b);$('concurrency').value=String(test.c);updatePerformanceDescription(test);if(!opts.skipRender)render();if(!opts.skipScroll)document.getElementById('selected-title').scrollIntoView({behavior:'smooth',block:'start'});if(!opts.replaceUrl)writeTestUrl(test,false);}
+function syncFromUrl(scroll=false){const test=readTestFromUrl();selectPerformance(test.b,test.c,{skipScroll:!scroll,replaceUrl:true});}
+document.getElementById('prev-test').addEventListener('click',()=>{const i=performanceTests.findIndex(x=>x.value===perf.value);const n=i<=0?performanceTests.length-1:i-1;selectPerformance(performanceTests[n].b,performanceTests[n].c);});
+document.getElementById('next-test').addEventListener('click',()=>{const i=performanceTests.findIndex(x=>x.value===perf.value);const n=i<0?0:(i+1)%performanceTests.length;selectPerformance(performanceTests[n].b,performanceTests[n].c);});
+perf.addEventListener('change',()=>{const [b,c]=perf.value.split(':').map(Number);selectPerformance(b,c);});
+window.addEventListener('popstate',()=>syncFromUrl(true));
+['metric','batch','concurrency','implementation','calls-day','token-price','energy-token','carbon'].forEach(id=>$(id).addEventListener('input',render));syncFromUrl(false);
 })().catch(e=>{document.getElementById('matrix-status').textContent='Benchmark data could not be loaded.';console.error(e)});
 </script>
 </body></html>

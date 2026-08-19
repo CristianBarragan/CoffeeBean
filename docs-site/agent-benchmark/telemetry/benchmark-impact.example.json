@@ -1,0 +1,7 @@
+{
+  "status": "live",
+  "capturedAt": "2026-08-19T00:00:00Z",
+  "test": "10000-c64",
+  "conventional": {"powerW": 42.1,"energyWh": 0.117,"inputTokens": 1620,"outputTokens": 208,"totalTokens": 1828,"carbonIntensityGPerKwh": 102.4,"co2G": 0.0120},
+  "foundgine": {"powerW": 35.7,"energyWh": 0.099,"inputTokens": 210,"outputTokens": 205,"totalTokens": 415,"carbonIntensityGPerKwh": 102.4,"co2G": 0.0101}
+}
