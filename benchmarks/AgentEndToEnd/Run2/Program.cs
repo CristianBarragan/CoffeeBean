@@ -66,6 +66,8 @@ foreach (var flow in Enum.GetValues<FlowKind>())
         var avgWall = batch.Average(x => x.WallClockMs);
         var maxWall = batch.Max(x => x.WallClockMs);
         var avgToolCalls = batch.Average(x => x.ToolCalls);
+        var avgPayloadBytes = batch.Average(x => x.AgentToolPayloadBytes);
+        var avgRoundTrips = batch.Average(x => x.AgentToolRoundTrips);
         var avgEstimatedInput = batch.Average(x => x.EstimatedToolInputTokens);
         var avgEstimatedOutput = batch.Average(x => x.EstimatedToolOutputTokens);
         var avgEstimatedContext = batch.Average(x => x.EstimatedContextLoadTokens);
@@ -111,6 +113,8 @@ Console.WriteLine($"Estimated tokens/run — Conventional: input={comparison.Con
 Console.WriteLine($"Estimated tokens/run — Foundgine:    input={comparison.Foundgine.EstimatedToolInputTokens:F0}, output={comparison.Foundgine.EstimatedToolOutputTokens:F0}, context={comparison.Foundgine.EstimatedContextLoadTokens:F0}");
 Console.WriteLine($"Provider input-token saving: {(comparison.HasProviderTokenData ? $"{comparison.ProviderInputTokenSavingPercent:F1}%" : "N/A — replay mode")}");
 Console.WriteLine($"Provider total-token saving: {(comparison.HasProviderTokenData ? $"{comparison.ProviderTotalTokenSavingPercent:F1}%" : "N/A — replay mode")}");
+Console.WriteLine($"Agent/tool round-trip saving: {comparison.AgentToolRoundTripSavingPercent:F1}%");
+Console.WriteLine($"Agent/tool payload saving: {comparison.AgentToolPayloadSavingPercent:F1}%");
 Console.WriteLine($"Tool-call saving: {comparison.ToolCallSavingPercent:F1}%");
 Console.WriteLine($"Expected final state verified: {comparison.ExpectedFinalStateVerified}");
 Console.WriteLine($"Verification failures: {comparison.Verification.Count(x => !x.IsMatch)}");
@@ -309,6 +313,8 @@ public sealed class TraceCollector
     private readonly List<TraceEvent> _events = [];
     private long _estimatedToolInputTokens;
     private long _estimatedToolOutputTokens;
+    private long _agentToolPayloadBytes;
+    private long _agentToolRoundTrips;
     private long _providerInputTokens;
     private long _providerOutputTokens;
     private long _providerTotalTokens;
@@ -339,6 +345,8 @@ public sealed class TraceCollector
         _toolTimeMs += elapsedMs;
         _estimatedToolInputTokens += TokenEstimator.Estimate(input);
         _estimatedToolOutputTokens += TokenEstimator.Estimate(output);
+        _agentToolPayloadBytes += Encoding.UTF8.GetByteCount(input) + Encoding.UTF8.GetByteCount(output);
+        _agentToolRoundTrips++;
         _events.Add(new TraceEvent(DateTimeOffset.UtcNow, "tool", name, input, output, elapsedMs, null));
     }
 
@@ -352,6 +360,8 @@ public sealed class TraceCollector
             _events.Count(e => e.Kind == "model"), _events.Count(e => e.Kind == "tool"),
             _providerInputTokens, _providerOutputTokens, _providerTotalTokens, _cachedInputTokens,
             _estimatedToolInputTokens, _estimatedToolOutputTokens, estimatedContext,
+            _agentToolPayloadBytes,
+            _agentToolRoundTrips,
             _events.LastOrDefault(e => e.Name == "final.state")?.Output,
             includeTrace ? _events : null, Success, ErrorType, ErrorMessage, peakActiveHttpRequests, httpRequests, httpRetries);
     }
@@ -363,6 +373,7 @@ public sealed record RunResult(
     int Run, string Flow, int CustomerId, double WallClockMs, double ModelTimeMs, double ToolTimeMs,
     int ModelCalls, int ToolCalls, long ProviderInputTokens, long ProviderOutputTokens, long ProviderTotalTokens,
     long CachedInputTokens, long EstimatedToolInputTokens, long EstimatedToolOutputTokens, long EstimatedContextLoadTokens,
+    long AgentToolPayloadBytes, long AgentToolRoundTrips,
     string? FinalState, IReadOnlyList<TraceEvent>? Trace, bool Success, string? ErrorType, string? ErrorMessage,
     long PeakActiveHttpRequests, long HttpRequests, long HttpRetries);
 
@@ -790,7 +801,7 @@ public static class ExpectedStateVerifier
 
 public sealed record Comparison(
     Summary Conventional, Summary Foundgine,
-    double EstimatedContextLoadSavingPercent, double ToolCallSavingPercent, double ModelCallSavingPercent,
+    double EstimatedContextLoadSavingPercent, double ToolCallSavingPercent, double AgentToolPayloadSavingPercent, double AgentToolRoundTripSavingPercent, double ModelCallSavingPercent,
     double ProviderInputTokenSavingPercent, double ProviderTotalTokenSavingPercent, bool HasProviderTokenData,
     bool ExpectedFinalStateVerified, IReadOnlyList<ExpectedStateVerification> Verification)
 {
@@ -800,10 +811,12 @@ public sealed record Comparison(
         var foundgine = Summary.From(results.Where(x => x.Flow == "Foundgine").ToArray());
         var estimated = Saving(conventional.EstimatedContextLoadTokens, foundgine.EstimatedContextLoadTokens);
         var tool = Saving(conventional.ToolCalls, foundgine.ToolCalls);
+        var payload = Saving(conventional.AgentToolPayloadBytes, foundgine.AgentToolPayloadBytes);
+        var roundTrips = Saving(conventional.AgentToolRoundTrips, foundgine.AgentToolRoundTrips);
         var model = Saving(conventional.ModelCalls, foundgine.ModelCalls);
         var hasProvider = conventional.ProviderTotalTokens > 0 || foundgine.ProviderTotalTokens > 0;
         var verification = results.Select(x => ExpectedStateVerifier.Verify(x, expectedStates)).ToArray();
-        return new(conventional, foundgine, estimated, tool, model, Saving(conventional.ProviderInputTokens, foundgine.ProviderInputTokens),
+        return new(conventional, foundgine, estimated, tool, payload, roundTrips, model, Saving(conventional.ProviderInputTokens, foundgine.ProviderInputTokens),
             Saving(conventional.ProviderTotalTokens, foundgine.ProviderTotalTokens), hasProvider, verification.All(x => x.IsMatch), verification);
     }
     static double Saving(double baseline, double optimized) => baseline == 0 ? 0 : (baseline - optimized) / baseline * 100.0;
@@ -811,6 +824,7 @@ public sealed record Comparison(
 
 public sealed record Summary(
     double WallClockMs, double ModelTimeMs, double ToolTimeMs, double ModelCalls, double ToolCalls,
+    double AgentToolPayloadBytes, double AgentToolRoundTrips,
     double ProviderInputTokens, double ProviderOutputTokens, double ProviderTotalTokens, double CachedInputTokens,
     double EstimatedToolInputTokens, double EstimatedToolOutputTokens, double EstimatedContextLoadTokens,
     double SuccessRate, double P50WallClockMs, double P95WallClockMs, double P99WallClockMs, double PeakActiveHttpRequests, double HttpRetries)
@@ -849,6 +863,8 @@ public sealed record BenchmarkReport(
         sb.AppendLine($"Concurrency: `{Concurrency}`; runs: `{Runs}` measured / `{Warmups}` warmups; fixture customer `{CustomerId}`"); sb.AppendLine();
         sb.AppendLine("## Headline"); sb.AppendLine();
         sb.AppendLine($"- Estimated context-load saving: **{Comparison.EstimatedContextLoadSavingPercent:F1}%**");
+        sb.AppendLine($"- Agent/tool round-trip saving: **{Comparison.AgentToolRoundTripSavingPercent:F1}%**");
+        sb.AppendLine($"- Agent/tool payload saving: **{Comparison.AgentToolPayloadSavingPercent:F1}%**");
         sb.AppendLine($"- Tool-call saving: **{Comparison.ToolCallSavingPercent:F1}%**");
         sb.AppendLine($"- Model-call saving: **{Comparison.ModelCallSavingPercent:F1}%**");
         sb.AppendLine($"- Provider-reported input-token saving: **{(Comparison.HasProviderTokenData ? Comparison.ProviderInputTokenSavingPercent.ToString("F1") + "%" : "N/A — replay mode")}**");
@@ -862,7 +878,7 @@ public sealed record BenchmarkReport(
         sb.AppendLine("| Metric | Conventional | Foundgine |"); sb.AppendLine("|---|---:|---:|");
         Add(sb, "Wall clock (ms)", c.WallClockMs, f.WallClockMs); Add(sb, "Model time (ms)", c.ModelTimeMs, f.ModelTimeMs); Add(sb, "Tool time (ms)", c.ToolTimeMs, f.ToolTimeMs);
         Add(sb, "Success rate (%)", c.SuccessRate, f.SuccessRate); Add(sb, "p50 wall (ms)", c.P50WallClockMs, f.P50WallClockMs); Add(sb, "p95 wall (ms)", c.P95WallClockMs, f.P95WallClockMs); Add(sb, "p99 wall (ms)", c.P99WallClockMs, f.P99WallClockMs); Add(sb, "Peak active HTTP requests", c.PeakActiveHttpRequests, f.PeakActiveHttpRequests); Add(sb, "HTTP retries", c.HttpRetries, f.HttpRetries);
-        Add(sb, "Model calls", c.ModelCalls, f.ModelCalls); Add(sb, "Tool calls", c.ToolCalls, f.ToolCalls);
+        Add(sb, "Model calls", c.ModelCalls, f.ModelCalls); Add(sb, "Tool calls", c.ToolCalls, f.ToolCalls); Add(sb, "Agent/tool round trips", c.AgentToolRoundTrips, f.AgentToolRoundTrips); Add(sb, "Agent/tool payload bytes", c.AgentToolPayloadBytes, f.AgentToolPayloadBytes);
         Add(sb, "Estimated tool-input tokens", c.EstimatedToolInputTokens, f.EstimatedToolInputTokens); Add(sb, "Estimated tool-output tokens", c.EstimatedToolOutputTokens, f.EstimatedToolOutputTokens); Add(sb, "Estimated context-load tokens", c.EstimatedContextLoadTokens, f.EstimatedContextLoadTokens);
         Add(sb, "Provider input tokens", c.ProviderInputTokens, f.ProviderInputTokens); Add(sb, "Provider output tokens", c.ProviderOutputTokens, f.ProviderOutputTokens); Add(sb, "Provider total tokens", c.ProviderTotalTokens, f.ProviderTotalTokens); Add(sb, "Cached input tokens", c.CachedInputTokens, f.CachedInputTokens);
         sb.AppendLine(); sb.AppendLine("## Expected-state verification"); sb.AppendLine();

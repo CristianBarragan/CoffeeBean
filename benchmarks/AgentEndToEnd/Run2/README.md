@@ -141,3 +141,38 @@ CoffeeBeanery.Database projects before using `--no-restore`. No pre-existing
 
 The benchmark uses the local `docker-compose.yml` in this directory and does
 not depend on the CoffeeBeanery benchmark compose file.
+
+
+## Agent communication efficiency
+
+This benchmark is also intended to answer a different question from database throughput:
+
+> Can a semantic capability reduce the amount of agent-to-tool communication required to complete the same stateful business process?
+
+The important comparison is **not** "a generic endpoint versus a generic endpoint." The conventional side is a set of narrow, fixed tools that expose physical application concepts. The Foundgine side exposes a dynamic semantic capability that can resolve the required graph, authorization, planning and mutation as one higher-level operation.
+
+We therefore report three separate communication metrics:
+
+- **Agent/tool round trips** — one measured tool invocation and its response. In replay mode this is the exact number of recorded tool interactions; in live mode it is the recorded tool-call count, not a claim about model-provider network calls.
+- **Agent/tool payload bytes** — UTF-8 bytes of tool inputs plus outputs. This measures application/tool communication, not model token billing.
+- **Estimated context-load tokens** — the existing directional token estimate. Provider-reported usage is authoritative when live mode supplies it.
+
+A reduction in all three is evidence that the semantic boundary is doing more work per interaction. It should not be interpreted as proof that every workload will have the same savings.
+
+### Why fixed endpoint vs dynamic endpoint matters
+
+The fixed endpoint is intentionally constrained to a predetermined operation shape. Foundgine's endpoint is dynamic: the request can describe a higher-level capability and the runtime resolves the graph, authorization and execution plan.
+
+That capability difference is the reason this benchmark is useful. If both sides were reduced to the same fixed operation, we would be measuring transport/runtime overhead rather than the value of a semantic execution boundary.
+
+The benchmark must therefore report **capability parity at the business-outcome level**, not pretend that the two tool contracts are structurally identical.
+
+### Trust and reproducibility
+
+The benchmark should not hide the trade-off:
+
+- A conventional fixed endpoint can be extremely efficient when its exact operation is already known.
+- Foundgine is valuable when the agent needs to discover and execute a richer business capability without reconstructing physical application state across multiple tool calls.
+- The communication benchmark measures this orchestration advantage separately from database execution throughput.
+
+The published benchmark should always show the exact tool contracts, fixture, workload, warmups, measured runs, concurrency, and whether token numbers are estimated or provider-reported.

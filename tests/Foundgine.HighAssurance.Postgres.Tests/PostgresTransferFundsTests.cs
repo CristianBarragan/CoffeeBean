@@ -1,5 +1,6 @@
 using Foundgine.HighAssurance.Banking;
 using Foundgine.HighAssurance.Postgres;
+using Foundgine.HighAssurance.Postgres.Execution;
 using Npgsql;
 using Xunit;
 
@@ -33,7 +34,7 @@ public sealed class PostgresTransferFundsTests
         var destination = Guid.NewGuid();
         await SeedAsync(dataSource, tenant, actor, source, destination);
 
-        var service = new PostgresTransferFundsService(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId);
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
         var command = new TransferFundsCommand(source, destination, 10_000m, Guid.NewGuid().ToString("N"));
 
         var receipt = await service.ExecuteAsync(actor, tenant, command);
@@ -62,7 +63,7 @@ public sealed class PostgresTransferFundsTests
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
         await SeedAsync(dataSource, tenant, actor, source, destination);
-        var service = new PostgresTransferFundsService(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId);
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
         var command = new TransferFundsCommand(source, destination, 5m, "replay-test-key");
 
         var first = await service.ExecuteAsync(actor, tenant, command);
@@ -91,7 +92,7 @@ public sealed class PostgresTransferFundsTests
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
         await SeedAsync(dataSource, tenant, actor, source, destination, dailyLimit: 1m);
-        var service = new PostgresTransferFundsService(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId);
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteAsync(
             actor, tenant, new TransferFundsCommand(source, destination, 10m, Guid.NewGuid().ToString("N"))));

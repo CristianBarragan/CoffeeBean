@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Foundgine — Agent Benchmark: Tokens, Energy &amp; CO₂</title>
-<meta name="description" content="Explore the Foundgine Run 4 agent benchmark across 10, 100, 1,000 and 10,000 customers and concurrency 8, 16, 32 and 64, with measured token-load reduction and transparent cost, energy and CO₂ scenarios.">
+<title>Foundgine — Agent Benchmark: Communication, Execution &amp; Tokens</title>
+<meta name="description" content="Explore Foundgine agent benchmarks measuring communication, execution throughput, context load and transparent derived cost, energy and CO₂ scenarios.">
 <link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/agent-benchmark/">
 <link rel="stylesheet" href="../assets/style.css">
 <style>
@@ -22,6 +22,29 @@
 <body>
 <header class="site-header"><div class="site-header-inner"><a class="brand" href="../index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a><nav><a href="../what-is-foundgine.html">What is it</a><a href="../ai-agents/index.html">AI agents</a><a href="../architecture/index.html">Architecture</a><a href="../how-it-works/index.html">How it works</a><a href="../agent-benchmark/index.html">Agent benchmark</a></nav></div></header>
 <div class="page"><main class="article">
+<div class="benchmark-hero" style="margin-bottom:24px"><h2>New: Run 5 — fixed endpoint vs dynamic batching</h2><p>Run 5 compares a fixed single-transfer EF Core endpoint with Foundgine’s dynamic 64-operation PostgreSQL <code>UNNEST</code> endpoint. At 10 customers / concurrency 64, Foundgine reached <strong>10,731 ops/s vs 980.1 ops/s</strong> for EF Core (+994.8%). The comparison explicitly discloses that the EF baseline required raw PostgreSQL <code>FOR UPDATE</code> locking because EF Core does not expose a portable first-class row-lock API.</p><p><a href="run5/index.html">Read the Run 5 execution benchmark →</a></p></div>
+
+<section class="benchmark-hero" style="margin-top:24px">
+<h2>Agent communication efficiency: why this benchmark matters</h2>
+<p>Foundgine is not being positioned as a faster replacement for every fixed API endpoint. The important question is what happens when an agent must complete a stateful business process that spans discovery, relationships, authorization and mutation.</p>
+<div class="impact-chain">
+  <div class="impact-step"><small>CONVENTIONAL</small><strong>Fixed tools</strong><span>Discover → call narrow tool → receive intermediate state → call another tool.</span></div>
+  <div class="impact-arrow">→</div>
+  <div class="impact-step"><small>FOUNGDINE</small><strong>Dynamic capability</strong><span>Resolve → authorize → plan → execute through one semantic boundary.</span></div>
+</div>
+<p><strong>Run 2 provides an early measured signal:</strong> the replay benchmark recorded 9 agent/tool interactions for the conventional flow and 6 for Foundgine, a <strong>33.3% reduction in agent/tool round trips</strong>. Recorded tool payload fell from about 3,437 to 2,166 UTF-8 bytes per flow, approximately <strong>37.0% less</strong>. Estimated context load fell <strong>26.5%</strong>.</p>
+<div class="table-wrap"><table><thead><tr><th>Dimension</th><th>Conventional</th><th>Foundgine</th><th>Observed change</th></tr></thead><tbody>
+<tr><td>Agent/tool round trips</td><td>9.0</td><td>6.0</td><td><strong>−33.3%</strong></td></tr>
+<tr><td>Tool payload</td><td>~3.44 KB</td><td>~2.17 KB</td><td><strong>−37.0%</strong></td></tr>
+<tr><td>Estimated context load</td><td>1,166 tokens</td><td>858 tokens</td><td><strong>−26.5%</strong></td></tr>
+</tbody></table></div>
+<p class="matrix-note">These Run 2 figures are replay measurements, not provider billing measurements. The token figure is a directional estimator. The communication figures count recorded tool interactions and UTF-8 tool payloads. They do not claim to measure model reasoning tokens or raw network packets.</p>
+<h3>Why fixed endpoint vs dynamic endpoint is a meaningful comparison</h3>
+<p>The conventional side is intentionally a set of narrow, fixed tools. Foundgine exposes a dynamic semantic capability whose runtime resolves relationships, authorization, planning and execution. The comparison is therefore about <strong>how much business work one agent interaction can express</strong>, not a claim that both APIs expose identical shapes.</p>
+<p>This distinction matters for trust: a fixed endpoint may be the best choice when the exact operation is already known. Foundgine becomes interesting when an agent must discover and execute a richer business capability without repeatedly reconstructing physical application state.</p>
+<p><a href="run-2/index.html">Explore the Run 2 communication benchmark →</a></p>
+</section>
+
 <span class="eyebrow">End-to-end evidence · Run 4 · 17 August 2026</span>
 <h1>Less agent work. Less estimated energy. A benchmark you can inspect.</h1>
 <p class="subtitle">Run 4 compares the same customer-exposure business process across 16 workload/concurrency cells. The measured signal is agent-side context and execution behaviour. Cost, energy and CO₂ are transparent derived scenarios—not direct electricity or emissions measurements.</p>

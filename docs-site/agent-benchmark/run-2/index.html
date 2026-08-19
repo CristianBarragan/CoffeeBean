@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Foundgine — Agent Benchmark Run 2: Correctness, Crash Forensics &amp; Cost</title>
+<title>Foundgine — Agent Benchmark Run 2: Agent Communication Efficiency &amp; Correctness</title>
 <meta name="description" content="Run 2 of the Foundgine agent end-to-end benchmark: a per-flow correctness verifier, root cause of the concurrency-64 crash, and illustrative token, dollar-cost and energy estimates.">
 <link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/agent-benchmark/run-2/">
 <link rel="stylesheet" href="../../assets/style.css">
@@ -22,6 +22,17 @@
 <h2>Process</h2>
 <p>10 customers, replay mode, 5 warmups and 30 measured runs per tier, at concurrency 8 → 16 → 32 → 64. Same fixture as Run 1: 4 relationships, 12 contracts, 48 transactions, $48,240.00 exposure per customer. The scenario resets every customer to a known baseline before every single run, executes query → mutation → query → mutation, and compares the resulting database row against an explicit per-customer expected state.</p>
 <p>What changed from Run 1: the verifier used to report one pooled <code>Verification failures: N</code> count across both flows, which made it impossible to tell whether Foundgine or the conventional baseline caused a given failure. Run 2's report tags every verification record with its flow, so pass/fail can be split out per implementation.</p>
+
+<h2>Agent communication efficiency</h2>
+<p>This run also measures a separate question: <strong>how much agent/tool communication is required to complete the same business outcome?</strong> At 10 customers / concurrency 64, the replay trace recorded 9 conventional tool interactions versus 6 Foundgine interactions.</p>
+<table><thead><tr><th>Communication metric</th><th>Conventional</th><th>Foundgine</th><th>Change</th></tr></thead><tbody>
+<tr><td>Agent/tool round trips</td><td>9.0</td><td>6.0</td><td><strong>−33.3%</strong></td></tr>
+<tr><td>Tool payload</td><td>~3.44 KB</td><td>~2.17 KB</td><td><strong>−37.0%</strong></td></tr>
+<tr><td>Estimated context load</td><td>1,166 tokens</td><td>858 tokens</td><td><strong>−26.5%</strong></td></tr>
+</tbody></table>
+<p>These are replay measurements. Round trips mean recorded tool invocation/response pairs; payload is UTF-8 bytes of tool input plus output; token figures are directional estimates unless live provider usage is available.</p>
+<div class="disclaimer"><strong>Why fixed endpoint vs dynamic endpoint?</strong> The conventional side is deliberately a set of narrow fixed tools. Foundgine exposes a dynamic semantic capability that can resolve the required graph, authorization and execution plan. The point of the test is therefore not to claim identical APIs; it is to measure whether a richer semantic boundary lets an agent express more business work with fewer interactions and less intermediate state.</div>
+<p><strong>Trust boundary:</strong> a fixed endpoint can be the right choice when its exact operation is already known. Foundgine's value proposition is strongest when the agent must discover and execute a multi-step business capability. This communication benchmark should be read together with the database throughput benchmark, not as a replacement for it.</p>
 
 <h2>Results — correctness, split by flow</h2>
 <p>Conventional and Foundgine choreography use the same GraphQL API and provider underneath; the only difference is how many round trips the agent needs to reach the same final state. Foundgine reduced that from <strong>9 tool calls/flow to 6</strong> (33.3%) and estimated context-load tokens from <strong>~1,165 to ~856 per flow</strong> (~26.5%) — consistent across every tier.</p>
