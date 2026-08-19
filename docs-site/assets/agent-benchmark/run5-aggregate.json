@@ -29,9 +29,9 @@
       "success": 15360.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3250.0,
-      "estimatedOutputTokens": 15102.0,
-      "estimatedContextTokens": 18352.0
+      "estimatedInputTokens": 50.78125,
+      "estimatedOutputTokens": 235.96875,
+      "estimatedContextTokens": 286.75
     },
     {
       "customers": 10,
@@ -61,9 +61,9 @@
       "success": 30720.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3251.0,
-      "estimatedOutputTokens": 15102.0,
-      "estimatedContextTokens": 18353.0
+      "estimatedInputTokens": 50.796875,
+      "estimatedOutputTokens": 235.96875,
+      "estimatedContextTokens": 286.765625
     },
     {
       "customers": 10,
@@ -93,9 +93,9 @@
       "success": 61440.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3251.5,
-      "estimatedOutputTokens": 15102.0,
-      "estimatedContextTokens": 18353.5
+      "estimatedInputTokens": 50.8046875,
+      "estimatedOutputTokens": 235.96875,
+      "estimatedContextTokens": 286.7734375
     },
     {
       "customers": 10,
@@ -125,9 +125,9 @@
       "success": 122880.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3251.5,
-      "estimatedOutputTokens": 9293.2546875,
-      "estimatedContextTokens": 12544.7546875
+      "estimatedInputTokens": 50.8046875,
+      "estimatedOutputTokens": 145.2071044921875,
+      "estimatedContextTokens": 196.0117919921875
     },
     {
       "customers": 100,
@@ -157,9 +157,9 @@
       "success": 15360.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3250.0,
-      "estimatedOutputTokens": 15102.0,
-      "estimatedContextTokens": 18352.0
+      "estimatedInputTokens": 50.78125,
+      "estimatedOutputTokens": 235.96875,
+      "estimatedContextTokens": 286.75
     },
     {
       "customers": 100,
@@ -189,9 +189,9 @@
       "success": 30720.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3257.0,
-      "estimatedOutputTokens": 15102.0,
-      "estimatedContextTokens": 18359.0
+      "estimatedInputTokens": 50.890625,
+      "estimatedOutputTokens": 235.96875,
+      "estimatedContextTokens": 286.859375
     },
     {
       "customers": 100,
@@ -221,9 +221,9 @@
       "success": 61440.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3261.5,
-      "estimatedOutputTokens": 15102.0,
-      "estimatedContextTokens": 18363.5
+      "estimatedInputTokens": 50.9609375,
+      "estimatedOutputTokens": 235.96875,
+      "estimatedContextTokens": 286.9296875
     },
     {
       "customers": 100,
@@ -253,9 +253,9 @@
       "success": 122880.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3263.75,
-      "estimatedOutputTokens": 9097.278125,
-      "estimatedContextTokens": 12361.028125
+      "estimatedInputTokens": 50.99609375,
+      "estimatedOutputTokens": 142.144970703125,
+      "estimatedContextTokens": 193.141064453125
     },
     {
       "customers": 1000,
@@ -285,9 +285,9 @@
       "success": 15360.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3250.0,
-      "estimatedOutputTokens": 15102.0,
-      "estimatedContextTokens": 18352.0
+      "estimatedInputTokens": 50.78125,
+      "estimatedOutputTokens": 235.96875,
+      "estimatedContextTokens": 286.75
     },
     {
       "customers": 1000,
@@ -317,9 +317,9 @@
       "success": 30720.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3257.0,
-      "estimatedOutputTokens": 15102.0,
-      "estimatedContextTokens": 18359.0
+      "estimatedInputTokens": 50.890625,
+      "estimatedOutputTokens": 235.96875,
+      "estimatedContextTokens": 286.859375
     },
     {
       "customers": 1000,
@@ -349,9 +349,9 @@
       "success": 61440.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3261.5,
-      "estimatedOutputTokens": 15102.0,
-      "estimatedContextTokens": 18363.5
+      "estimatedInputTokens": 50.9609375,
+      "estimatedOutputTokens": 235.96875,
+      "estimatedContextTokens": 286.9296875
     },
     {
       "customers": 1000,
@@ -381,9 +381,9 @@
       "success": 122880.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3263.75,
-      "estimatedOutputTokens": 9011.0484375,
-      "estimatedContextTokens": 12274.7984375
+      "estimatedInputTokens": 50.99609375,
+      "estimatedOutputTokens": 140.7976318359375,
+      "estimatedContextTokens": 191.7937255859375
     },
     {
       "customers": 10000,
@@ -413,9 +413,9 @@
       "success": 15360.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3250.0,
-      "estimatedOutputTokens": 15102.0,
-      "estimatedContextTokens": 18352.0
+      "estimatedInputTokens": 50.78125,
+      "estimatedOutputTokens": 235.96875,
+      "estimatedContextTokens": 286.75
     },
     {
       "customers": 10000,
@@ -445,9 +445,9 @@
       "success": 30720.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3257.0,
-      "estimatedOutputTokens": 15102.0,
-      "estimatedContextTokens": 18359.0
+      "estimatedInputTokens": 50.890625,
+      "estimatedOutputTokens": 235.96875,
+      "estimatedContextTokens": 286.859375
     },
     {
       "customers": 10000,
@@ -477,9 +477,9 @@
       "success": 61440.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3261.5,
-      "estimatedOutputTokens": 15102.0,
-      "estimatedContextTokens": 18363.5
+      "estimatedInputTokens": 50.9609375,
+      "estimatedOutputTokens": 235.96875,
+      "estimatedContextTokens": 286.9296875
     },
     {
       "customers": 10000,
@@ -509,9 +509,9 @@
       "success": 122880.0,
       "failed": 0.0,
       "toolCalls": 1.0,
-      "estimatedInputTokens": 3263.75,
-      "estimatedOutputTokens": 9089.4390625,
-      "estimatedContextTokens": 12353.1890625
+      "estimatedInputTokens": 50.99609375,
+      "estimatedOutputTokens": 142.0224853515625,
+      "estimatedContextTokens": 193.0185791015625
     }
   ]
 }

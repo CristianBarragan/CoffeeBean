@@ -39,11 +39,23 @@ foreach ($file in $metadataFiles) {
     $doc = Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json
     $customers = [int]$doc.customers
     $concurrency = [int]$doc.concurrency
+    $batchSize = [int]$doc.batchSize
     foreach ($sample in @($doc.samples)) {
+        $impl = Get-CanonicalImplementation $sample.implementation
+        # EstimatedInputTokens/EstimatedOutputTokens are measured per MCP
+        # call. For EF Core one call == one transfer, so per-call ==
+        # per-transfer. For Foundgine, one call batches $batchSize transfers
+        # into a single UNNEST request, so the raw per-call token count must
+        # be divided by batchSize to land on the same per-transfer unit as
+        # EF Core (and as rps, which the runner already scales by
+        # batchSize). Without this, Foundgine's token cost looks
+        # ~batchSize times larger than it really is per business
+        # transaction.
+        $divisor = if ($impl -eq 'MCP + Foundgine Postgres') { $batchSize } else { 1 }
         $raw += [pscustomobject]@{
             customers      = $customers
             concurrency    = $concurrency
-            implementation = Get-CanonicalImplementation $sample.implementation
+            implementation = $impl
             rps            = [double]$sample.Rps
             avgWallMs      = [double]$sample.AvgWallMs
             p50Ms          = [double]$sample.P50Ms
@@ -54,8 +66,8 @@ foreach ($file in $metadataFiles) {
             success        = [double]$sample.Success
             failed         = [double]$sample.Failed
             toolCalls      = [double]$sample.ToolCalls
-            estimatedInputTokens  = [double]$sample.EstimatedInputTokens
-            estimatedOutputTokens = [double]$sample.EstimatedOutputTokens
+            estimatedInputTokens  = [double]$sample.EstimatedInputTokens / $divisor
+            estimatedOutputTokens = [double]$sample.EstimatedOutputTokens / $divisor
         }
     }
 }
