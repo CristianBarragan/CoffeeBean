@@ -4,7 +4,7 @@
     {
       "customers": 10,
       "concurrency": 8,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 588.1877858833662,
       "avgWallMs": 12.577009583333334,
       "p50Ms": 12.392705,
@@ -14,7 +14,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.0,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.75
     },
     {
       "customers": 10,
@@ -29,12 +30,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.75,
-      "estimatedOutputTokens": 262.25
+      "estimatedOutputTokens": 262.25,
+      "estimatedContextTokens": 357.0
     },
     {
       "customers": 10,
       "concurrency": 16,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 745.8275276312402,
       "avgWallMs": 16.559419375,
       "p50Ms": 15.957206666666666,
@@ -44,7 +46,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.015625,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.765625
     },
     {
       "customers": 10,
@@ -59,12 +62,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.765625,
-      "estimatedOutputTokens": 262.25
+      "estimatedOutputTokens": 262.25,
+      "estimatedContextTokens": 357.015625
     },
     {
       "customers": 10,
       "concurrency": 32,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 1112.9256824482939,
       "avgWallMs": 19.516597708333332,
       "p50Ms": 19.617325,
@@ -74,7 +78,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.0234375,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.7734375
     },
     {
       "customers": 10,
@@ -89,12 +94,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.7734375,
-      "estimatedOutputTokens": 262.25
+      "estimatedOutputTokens": 262.25,
+      "estimatedContextTokens": 357.0234375
     },
     {
       "customers": 10,
       "concurrency": 64,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 1081.3670637451442,
       "avgWallMs": 70.36066213541667,
       "p50Ms": 85.07658833333335,
@@ -104,7 +110,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.0234375,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.7734375
     },
     {
       "customers": 10,
@@ -119,12 +126,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.7734375,
-      "estimatedOutputTokens": 234.54817708333334
+      "estimatedOutputTokens": 234.54817708333334,
+      "estimatedContextTokens": 329.32161458333337
     },
     {
       "customers": 100,
       "concurrency": 8,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 606.5467262222078,
       "avgWallMs": 12.938905,
       "p50Ms": 12.914088333333334,
@@ -134,7 +142,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.0,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.75
     },
     {
       "customers": 100,
@@ -149,12 +158,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.75,
-      "estimatedOutputTokens": 262.25
+      "estimatedOutputTokens": 262.25,
+      "estimatedContextTokens": 357.0
     },
     {
       "customers": 100,
       "concurrency": 16,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 891.0135787414079,
       "avgWallMs": 15.205127708333332,
       "p50Ms": 15.179748333333333,
@@ -164,7 +174,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.109375,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.859375
     },
     {
       "customers": 100,
@@ -179,12 +190,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.859375,
-      "estimatedOutputTokens": 262.25
+      "estimatedOutputTokens": 262.25,
+      "estimatedContextTokens": 357.109375
     },
     {
       "customers": 100,
       "concurrency": 32,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 1462.3312162122722,
       "avgWallMs": 19.458416354166665,
       "p50Ms": 19.754011666666667,
@@ -194,7 +206,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.1796875,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.9296875
     },
     {
       "customers": 100,
@@ -209,12 +222,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.9296875,
-      "estimatedOutputTokens": 262.25
+      "estimatedOutputTokens": 262.25,
+      "estimatedContextTokens": 357.1796875
     },
     {
       "customers": 100,
       "concurrency": 64,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 1764.8891294050368,
       "avgWallMs": 31.275275208333333,
       "p50Ms": 31.771448333333332,
@@ -224,7 +238,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.21484375,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.96484375
     },
     {
       "customers": 100,
@@ -239,12 +254,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.96484375,
-      "estimatedOutputTokens": 242.41549479166667
+      "estimatedOutputTokens": 242.41549479166667,
+      "estimatedContextTokens": 337.3803385416667
     },
     {
       "customers": 1000,
       "concurrency": 8,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 572.0944565627223,
       "avgWallMs": 14.025175416666666,
       "p50Ms": 14.187308333333334,
@@ -254,7 +270,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.0,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.75
     },
     {
       "customers": 1000,
@@ -269,12 +286,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.75,
-      "estimatedOutputTokens": 262.25
+      "estimatedOutputTokens": 262.25,
+      "estimatedContextTokens": 357.0
     },
     {
       "customers": 1000,
       "concurrency": 16,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 908.6902462913104,
       "avgWallMs": 16.617484583333333,
       "p50Ms": 17.87266,
@@ -284,7 +302,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.109375,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.859375
     },
     {
       "customers": 1000,
@@ -299,12 +318,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.859375,
-      "estimatedOutputTokens": 262.25
+      "estimatedOutputTokens": 262.25,
+      "estimatedContextTokens": 357.109375
     },
     {
       "customers": 1000,
       "concurrency": 32,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 1398.586885945788,
       "avgWallMs": 21.594947083333334,
       "p50Ms": 21.506845,
@@ -314,7 +334,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.1796875,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.9296875
     },
     {
       "customers": 1000,
@@ -329,12 +350,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.9296875,
-      "estimatedOutputTokens": 262.25
+      "estimatedOutputTokens": 262.25,
+      "estimatedContextTokens": 357.1796875
     },
     {
       "customers": 1000,
       "concurrency": 64,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 1811.2518015853327,
       "avgWallMs": 36.23914890625,
       "p50Ms": 36.404705,
@@ -344,7 +366,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.21484375,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.96484375
     },
     {
       "customers": 1000,
@@ -359,12 +382,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.96484375,
-      "estimatedOutputTokens": 243.74518229166668
+      "estimatedOutputTokens": 243.74518229166668,
+      "estimatedContextTokens": 338.71002604166665
     },
     {
       "customers": 10000,
       "concurrency": 8,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 613.8597863500194,
       "avgWallMs": 11.73512125,
       "p50Ms": 11.570653333333334,
@@ -374,7 +398,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.0,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.75
     },
     {
       "customers": 10000,
@@ -389,12 +414,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.75,
-      "estimatedOutputTokens": 262.25
+      "estimatedOutputTokens": 262.25,
+      "estimatedContextTokens": 357.0
     },
     {
       "customers": 10000,
       "concurrency": 16,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 877.3535751355429,
       "avgWallMs": 15.457472916666667,
       "p50Ms": 15.3975,
@@ -404,7 +430,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.109375,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.859375
     },
     {
       "customers": 10000,
@@ -419,12 +446,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.859375,
-      "estimatedOutputTokens": 262.25
+      "estimatedOutputTokens": 262.25,
+      "estimatedContextTokens": 357.109375
     },
     {
       "customers": 10000,
       "concurrency": 32,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 1614.0736539735822,
       "avgWallMs": 16.988709375,
       "p50Ms": 16.98915,
@@ -434,7 +462,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.1796875,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.9296875
     },
     {
       "customers": 10000,
@@ -449,12 +478,13 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.9296875,
-      "estimatedOutputTokens": 262.25
+      "estimatedOutputTokens": 262.25,
+      "estimatedContextTokens": 357.1796875
     },
     {
       "customers": 10000,
       "concurrency": 64,
-      "implementation": "WebApi + EF Core",
+      "implementation": "MCP + EF Core",
       "rps": 1854.6131297524844,
       "avgWallMs": 29.63835125,
       "p50Ms": 30.038738333333335,
@@ -464,7 +494,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 63.21484375,
-      "estimatedOutputTokens": 19.75
+      "estimatedOutputTokens": 19.75,
+      "estimatedContextTokens": 82.96484375
     },
     {
       "customers": 10000,
@@ -479,7 +510,8 @@
       "failed": 0.0,
       "toolCalls": 1.0,
       "estimatedInputTokens": 94.96484375,
-      "estimatedOutputTokens": 242.08307291666668
+      "estimatedOutputTokens": 242.08307291666668,
+      "estimatedContextTokens": 337.04791666666665
     }
   ]
 }
