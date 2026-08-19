@@ -10,7 +10,12 @@
       "why": "This is the control experiment. If the semantic boundary cannot reduce the number of application interactions or context carried between them, the later scalability and efficiency tests have little to build on.",
       "finding": "The semantic flow reduced tool calls from 7 to 4 and estimated context load from 932 to 534 tokens (42.7% lower), while reaching the same final state. The trade-off was higher wall-clock time: 12.69 ms conventional versus 24.25 ms Foundgine (+91.1%). The early result therefore supports an agent-work reduction, not a latency claim.",
       "meaning": "Foundgine was already changing the shape of the agent interaction before optimization: fewer application-level steps and less estimated context, but with execution overhead that later runs needed to investigate.",
-      "metrics": {"toolCalls":"7 → 4","context":"932 → 534 est. tokens","wall":"12.69 → 24.25 ms","sameState":"True"}
+      "metrics": {
+        "toolCalls": "7 → 4",
+        "context": "932 → 534 est. tokens",
+        "wall": "12.69 → 24.25 ms",
+        "sameState": "True"
+      }
     },
     {
       "id": "2",
@@ -22,7 +27,12 @@
       "why": "A capability that looks efficient on a tiny fixture is not enough. Agents eventually operate against larger datasets and multiple simultaneous requests, so the benchmark needs to separate agent-work reduction from backend scaling behaviour.",
       "finding": "The conventional path used 9 tool calls versus 6 for Foundgine, a one-third reduction, and estimated context load was about 26.5% lower. The published cells reported 100% request success. Latency was mixed: for example, at 10,000 customers/C64 the conventional path averaged 98.3 ms versus 131.2 ms for Foundgine. The run therefore shows that agent-work compression persisted, while execution speed remained workload-dependent.",
       "meaning": "Run 2 established an important distinction: fewer agent interactions do not automatically mean lower end-to-end latency. The benchmark needs to measure both dimensions independently.",
-      "metrics": {"toolCalls":"9 → 6","context":"~26.5% lower estimated context","success":"100% published success","example":"10k/C64: 98.3 → 131.2 ms"}
+      "metrics": {
+        "toolCalls": "9 → 6",
+        "context": "~26.5% lower estimated context",
+        "success": "100% published success",
+        "example": "10k/C64: 98.3 → 131.2 ms"
+      }
     },
     {
       "id": "3",
@@ -34,7 +44,12 @@
       "why": "If the value of semantic execution is partly about reducing orchestration work, the effect should become visible when the workflow has more steps to coordinate. This run isolates that efficiency question from the later graph-performance benchmark.",
       "finding": "The conventional flow used 56 tool calls versus 32 for Foundgine (42.9% fewer), and estimated context load fell from 7,568 to 4,364 tokens (42.3% lower). Average wall-clock time was almost flat: 14.64 ms versus 15.16 ms (+3.6%). Both flows reached the same final state.",
       "meaning": "Run 3 is where the efficiency story becomes more compelling: the amount of agent-side work falls materially without the large latency penalty seen in Run 1.",
-      "metrics": {"toolCalls":"56 → 32","context":"7,568 → 4,364 est. tokens","wall":"14.64 → 15.16 ms","sameState":"True"}
+      "metrics": {
+        "toolCalls": "56 → 32",
+        "context": "7,568 → 4,364 est. tokens",
+        "wall": "14.64 → 15.16 ms",
+        "sameState": "True"
+      }
     },
     {
       "id": "4",
@@ -46,19 +61,31 @@
       "why": "This is the main performance experiment. It tests whether Foundgine's semantic execution boundary can reduce agent-side work while also improving the database/application execution path for a relationship-heavy graph workload.",
       "finding": "Across the published 16-cell matrix, Foundgine used 1 tool call per flow versus 3.5 on average for the conventional path, and estimated context load averaged about 205.6 versus 1,617.2 tokens (87.3% lower). Foundgine recorded higher RPS in every published cell, with the advantage ranging from roughly 3.8× to 33×. Average wall time was about 5.2 ms versus 44.8 ms across the published samples. All published samples recorded zero failures.",
       "meaning": "Run 4 provides the strongest evidence for Foundgine's graph-query execution model. The result is not evidence that every workload will be faster; it is evidence that this deterministic relationship-heavy graph workload benefits substantially from the execution architecture being tested.",
-      "metrics": {"toolCalls":"3.5 → 1 avg.","context":"1,617.2 → 205.6 est. tokens avg.","rps":"~3.8× to ~33× higher","wall":"44.8 → 5.2 ms avg.","failures":"0"}
+      "metrics": {
+        "toolCalls": "3.5 → 1 avg.",
+        "context": "1,617.2 → 205.6 est. tokens avg.",
+        "rps": "~3.8× to ~33× higher",
+        "wall": "44.8 → 5.2 ms avg.",
+        "failures": "0"
+      }
     },
     {
       "id": "5",
-      "title": "Test the capability boundary: high-assurance TransferFunds versus a hardcoded API endpoint",
+      "title": "Test the capability boundary: high-assurance TransferFunds through the same MCP protocol",
       "short": "High-Assurance Postgres / TransferFunds",
       "date": "18 August 2026",
       "status": "published",
-      "story": "Run 5 asks a different architectural question. The operation is a high-assurance TransferFunds capability with tenant isolation, ownership, authorization revalidation, frozen-account checks, available-funds and daily-limit checks, idempotency, audit evidence and an atomic transaction. The conventional path exposes a purpose-built Web API + EF Core endpoint; the Foundgine path exposes the same capability through MCP + Foundgine High-Assurance Postgres.",
+      "story": "Run 5 asks a different architectural question. The operation is a high-assurance TransferFunds capability with tenant isolation, ownership, authorization revalidation, frozen-account checks, available-funds and daily-limit checks, idempotency, audit evidence and an atomic transaction. Both paths expose the same capability through MCP. The conventional path uses a purpose-built MCP tool backed by EF Core; the Foundgine path uses MCP + Foundgine High-Assurance Postgres. MCP is the common agent-facing protocol — the experiment changes what happens behind MCP.",
       "why": "This is the test of whether semantic execution is useful beyond graph reads. The interesting comparison is not 'which endpoint is faster?' but whether an agent can consume a business capability without every capability becoming another handcrafted endpoint and orchestration contract.",
-      "finding": "The result is deliberately mixed. At concurrency 8–32, Foundgine was generally faster in the published samples, reaching about 1.10–1.22× the conventional RPS and lower average wall time. At concurrency 64, the Foundgine path hit a clear scalability cliff: at 10,000 customers/C64 it averaged about 659 RPS versus 1,855 RPS for the Web API path, with 68.3 ms versus 29.6 ms average wall time. Both paths used one tool call per flow and recorded zero failures in the published cells.",
+      "finding": "The result is deliberately mixed. At concurrency 8–32, Foundgine was generally faster in the published samples, reaching about 1.10–1.22× the conventional RPS and lower average wall time. At concurrency 64, the Foundgine path hit a clear scalability cliff: at 10,000 customers/C64 it averaged about 659 RPS versus 1,855 RPS for the conventional MCP + EF Core path, with 68.3 ms versus 29.6 ms average wall time. Both paths used one tool call per flow and recorded zero failures in the published cells.",
       "meaning": "Run 5 is not a victory lap. It is useful because it exposes the boundary: semantic execution can carry a richer high-assurance capability without increasing the agent tool-call count, but the current Foundgine/Postgres mutation path still has a concurrency problem at C64 that needs engineering work.",
-      "metrics": {"toolCalls":"1 → 1","c8to32":"Foundgine ~1.01–1.22× RPS","c64":"10k/C64: 659 vs 1,855 RPS","wallC64":"68.3 vs 29.6 ms","failures":"0 published"}
+      "metrics": {
+        "toolCalls": "1 → 1",
+        "c8to32": "Foundgine ~1.01–1.22× RPS",
+        "c64": "10k/C64: 659 vs 1,855 RPS",
+        "wallC64": "68.3 vs 29.6 ms",
+        "failures": "0 published"
+      }
     }
   ]
 }
