@@ -123,10 +123,6 @@ AI → generate SQL → database
 
 Foundgine is intended to keep the application in control of authorization and execution while allowing AI and other structured callers to use application capabilities.
 
-## Website
-
-# [Foundgine.io](https://cristianbarragan.github.io/Foundgine/docs-site/index.html)
-
 ## Capabilities
 
 | Capability | Purpose |
@@ -202,7 +198,13 @@ The benchmark also reports zero application errors, zero request timeouts, and z
 
 These results are workload-specific evidence, not a universal claim that Foundgine is faster than every EF Core or GraphQL workload.
 
-See [`docs-site/performance/index.md`](docs-site/performance/index.md).
+See [`docs-site/performance/index.md`](docs-site/performance/index.md) for the full query benchmark methodology and caveats.
+
+### Agent benchmark
+
+A separate suite measures the AI-agent path specifically: how an agent calling Foundgine through MCP compares to an agent calling a conventional EF Core path directly, across workload size and concurrency. It covers tool-call count, throughput, wall time, and estimated per-transaction token/context load.
+
+See [`docs-site/agent-benchmark/index.html`](docs-site/agent-benchmark/index.html) for the interactive workload/concurrency matrix and the per-run write-ups.
 
 ## What Foundgine is not
 
@@ -239,7 +241,7 @@ The published site (built from `docs-site/`) is available at https://cristianbar
 
 Repository development setup, tests, benchmarks, deployment templates, and contribution guidance should remain separate from the first-time user experience.
 
-[`BENCHMARK-RESULTS-2026-08-12-CLEAN.md`](BENCHMARK-RESULTS-2026-08-12-CLEAN.md) is the source data behind [`docs-site/performance/index.md`](docs-site/performance/index.md); it's kept at the repo root as development/benchmark evidence rather than published-site content.
+Source data for the published benchmarks lives under [`benchmarks/`](benchmarks/): the query benchmark in [`benchmarks/CoffeeBeanery.Performance/`](benchmarks/CoffeeBeanery.Performance/), and the agent-path benchmark in [`benchmarks/AgentEndToEnd/`](benchmarks/AgentEndToEnd/), each with the runner and raw per-run artifacts that the corresponding `docs-site/` page is built from.
 
 ## Security
 
@@ -247,16 +249,7 @@ Foundgine's authorization and execution boundaries are intended to reduce unsafe
 
 ## Status
 
-Foundgine is actively evolving. Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
+Foundgine is actively evolving (current version: 0.4.0). Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
 
-### M18.9 — Projection Pruning
-
-Foundgine's planner includes a conservative projection-pruning rule that removes redundant duplicate fields without changing requested field order. Fields required by filters and ordering are tracked explicitly, and every accepted rewrite continues through semantic-equivalence and security-preservation proofs.
-
-The current semantic model intentionally does not remove unique requested fields because output and working projections are not yet represented separately. That stronger dead-field optimization is reserved for a future projection-dependency milestone.
-
-
-### M18.11 — Join Ordering / Multi-Relationship Planning
-
-Adds conservative cardinality- and selectivity-aware traversal ordering metadata for sibling relationship plans. Logical child order remains unchanged; providers may use `TraversalOrder` for physical planning subject to semantic and security conformance.
+Detailed, dated engineering notes for each milestone are kept in [`CHANGELOG.md`](CHANGELOG.md).
 
