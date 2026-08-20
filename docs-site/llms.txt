@@ -1,6 +1,6 @@
-# Foundgine 0.3.0
+# Foundgine 0.4.0
 
-Current release: 0.3.0. The current repository has passed restore, build, and full automated tests. PostgreSQL E2E and benchmark workflows are separate environment-dependent evidence.
+Current release: 0.4.0. The current repository has passed restore, build, and full automated tests. PostgreSQL E2E and benchmark workflows are separate environment-dependent evidence.
 
 # Foundgine
 

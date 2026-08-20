@@ -1,8 +1,11 @@
 [CmdletBinding()]
 param([string]$Destination)
 $ErrorActionPreference='Stop'
-foreach($run in @('Run1','Run2','Run3','Run4')) {
+foreach($run in @('Run1','Run2','Run3','Run4','Run5','Run5SameClient')) {
     $script=Join-Path $PSScriptRoot "$run\publish-report.ps1"
+    if (-not (Test-Path -LiteralPath $script)) {
+        throw "Publish script not found for $run: $script"
+    }
     try {
         & $script -Destination $Destination
         if (-not $?) { throw "Publish script returned failure for $run." }

@@ -123,6 +123,10 @@ AI → generate SQL → database
 
 Foundgine is intended to keep the application in control of authorization and execution while allowing AI and other structured callers to use application capabilities.
 
+## Website
+
+# [Foundgine.io](https://cristianbarragan.github.io/Foundgine/docs-site/index.html)
+
 ## Capabilities
 
 | Capability | Purpose |

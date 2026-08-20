@@ -4,6 +4,8 @@
     "agent-benchmark/run1",
     "agent-benchmark/run2",
     "agent-benchmark/run3",
-    "agent-benchmark/run4"
+    "agent-benchmark/run4",
+    "agent-benchmark/run5",
+    "agent-benchmark/run5-same-client"
   ]
 }

@@ -1,0 +1,25 @@
+{
+  "run": "Run5SameClient",
+  "publishedUtc": "2026-08-20T00:00:00Z",
+  "source": "benchmarks/AgentEndToEnd/Run5SameClient/artifacts",
+  "destination": "docs-site/assets/agent-benchmark/run5-same-client",
+  "note": "Same HttpClient + manual JSON-RPC MCP transport as the original Run 5 client. Only the logical operation presented to each endpoint changes: batchSize individual transfer_funds calls (conventional) versus one transfer_funds_batch call (Foundgine).",
+  "files": [
+    "00010-customers/concurrency-008/run5-same-client-metadata.json",
+    "00010-customers/concurrency-016/run5-same-client-metadata.json",
+    "00010-customers/concurrency-032/run5-same-client-metadata.json",
+    "00010-customers/concurrency-064/run5-same-client-metadata.json",
+    "00100-customers/concurrency-008/run5-same-client-metadata.json",
+    "00100-customers/concurrency-016/run5-same-client-metadata.json",
+    "00100-customers/concurrency-032/run5-same-client-metadata.json",
+    "00100-customers/concurrency-064/run5-same-client-metadata.json",
+    "01000-customers/concurrency-008/run5-same-client-metadata.json",
+    "01000-customers/concurrency-016/run5-same-client-metadata.json",
+    "01000-customers/concurrency-032/run5-same-client-metadata.json",
+    "01000-customers/concurrency-064/run5-same-client-metadata.json",
+    "10000-customers/concurrency-008/run5-same-client-metadata.json",
+    "10000-customers/concurrency-016/run5-same-client-metadata.json",
+    "10000-customers/concurrency-032/run5-same-client-metadata.json",
+    "10000-customers/concurrency-064/run5-same-client-metadata.json"
+  ]
+}

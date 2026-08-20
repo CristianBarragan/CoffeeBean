@@ -1,6 +1,6 @@
-# Current status — Foundgine 0.3.0
+# Current status — Foundgine 0.4.0
 
-Foundgine 0.3.0 is the current shipped release. The repository has crossed the build-validation gate: restore, compilation, and the full automated test suite have been run successfully for the current source tree.
+Foundgine 0.4.0 is the current shipped release. The repository has crossed the build-validation gate: restore, compilation, and the full automated test suite have been run successfully for the current source tree.
 
 ## Proven by the active tests
 

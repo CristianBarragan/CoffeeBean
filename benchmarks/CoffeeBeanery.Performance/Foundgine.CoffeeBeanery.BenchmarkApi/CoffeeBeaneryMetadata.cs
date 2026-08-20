@@ -42,10 +42,11 @@ internal static class CoffeeBeaneryMetadata
             contract,
             "Contract",
             "Lending",
-            [(1, "Id"), (2, "ContractKey"), (3, "Amount"), (4, "CustomerBankingRelationshipId")],
+            [(1, "Id"), (2, "ContractKey"), (3, "ContractType"), (4, "Amount"), (5, "CustomerBankingRelationshipId")],
             [
                 (1, "Id", typeof(int)), (2, "ContractKey", typeof(Guid)),
-                (3, "Amount", typeof(decimal?)), (4, "CustomerBankingRelationshipId", typeof(int?))
+                (3, "ContractType", typeof(int?)), (4, "Amount", typeof(decimal?)),
+                (5, "CustomerBankingRelationshipId", typeof(int?))
             ]));
 
         registry.Register(Entity(
