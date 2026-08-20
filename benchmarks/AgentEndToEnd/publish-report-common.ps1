@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true)][ValidateSet('Run1','Run2','Run3','Run4','Run5')][string]$Run,
+    [Parameter(Mandatory=$true)][ValidateSet('Run1','Run2','Run3','Run4','Run5','Run5SameClient')][string]$Run,
     [string]$ReportRoot,
     [string]$DestinationRoot
 )
@@ -22,15 +22,20 @@ $source = if ([string]::IsNullOrWhiteSpace($ReportRoot)) {
         'Run3' { Join-Path $BenchmarkRoot 'Run3\artifacts' }
         'Run4' { Join-Path $BenchmarkRoot 'Run4\artifacts' }
         'Run5' { Join-Path $BenchmarkRoot 'Run5\artifacts' }
+        'Run5SameClient' { Join-Path $BenchmarkRoot 'Run5SameClient\artifacts' }
     }
 } else { (Resolve-Path $ReportRoot).Path }
 if (-not (Test-Path -LiteralPath $source -PathType Container)) {
     throw "Benchmark report directory not found: $source"
 }
-$destination = Join-Path $DestinationRoot $Run.ToLowerInvariant()
+# Run5SameClient publishes under the hyphenated "run5-same-client" slug to
+# match the site's existing assets/manifest (assets/agent-benchmark-manifest.json)
+# and the run-5b page, rather than the default lowercased run name.
+$slug = if ($Run -eq 'Run5SameClient') { 'run5-same-client' } else { $Run.ToLowerInvariant() }
+$destination = Join-Path $DestinationRoot $slug
 New-Item -ItemType Directory -Force -Path $destination | Out-Null
 $files = Get-ChildItem -LiteralPath $source -Recurse -File | Where-Object {
-    $_.Name -in @('agent-benchmark.json','agent-benchmark.md','docker-metrics.csv','docker-metrics-summary.json','expected-state.json','run4-metadata.json','run4-summary.json','run5-metadata.json','run5-summary.json')
+    $_.Name -in @('agent-benchmark.json','agent-benchmark.md','docker-metrics.csv','docker-metrics-summary.json','expected-state.json','run4-metadata.json','run4-summary.json','run5-metadata.json','run5-summary.json','run5-same-client-metadata.json','run5-same-client-summary.json')
 }
 if ($files.Count -eq 0) {
     throw "No publishable benchmark artifacts found under: $source"

@@ -1,6 +1,6 @@
-# Foundgine 0.3.0
+# Foundgine 0.4.0
 
-Current shipped release: **0.3.0**. The repository has passed restore, build, and full automated tests for the current release. PostgreSQL E2E and benchmark workflows remain separate environment-dependent evidence.
+Current shipped release: **0.4.0**. The repository has passed restore, build, and full automated tests for the current release. PostgreSQL E2E and benchmark workflows remain separate environment-dependent evidence.
 
 # Foundgine — Full Documentation
 
@@ -210,7 +210,7 @@ The first E2E scenario should prove the complete chain:
 
 Steps 3–7 above — structured intent, semantic resolution, authorization, planning, and provider execution — are the same core pipeline documented in the Architecture section; that pipeline is not specific to AI agents.
 
-The semantic lifecycle itself is shipped and tested in 0.3.0. A general autonomous-agent runtime that owns model selection, orchestration, deployment infrastructure, and autonomous end-to-end behavior is not a current core guarantee.
+The semantic lifecycle itself is shipped and tested in 0.4.0. A general autonomous-agent runtime that owns model selection, orchestration, deployment infrastructure, and autonomous end-to-end behavior is not a current core guarantee.
 
 ## Security scenarios
 

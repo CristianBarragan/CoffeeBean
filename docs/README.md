@@ -1,6 +1,6 @@
 # Documentation
 
-These documents describe the current Foundgine 0.3.0 release. Historical phase and milestone material is kept under `docs/history`.
+These documents describe the current Foundgine 0.4.0 release. Historical phase and milestone material is kept under `docs/history`.
 
 Use these pages in this order.
 
@@ -12,7 +12,7 @@ Use these pages in this order.
 4. [Testing](TESTING.md)
 5. [PostgreSQL E2E](POSTGRES-E2E.md)
 6. [Current status](CURRENT-STATUS.md)
-7. [Release 0.3.0](RELEASE-0.3.0.md)
+7. [Release 0.4.0](RELEASE-0.4.0.md)
 
 ## Understand the product
 
@@ -47,6 +47,8 @@ Use these pages in this order.
 ## History
 
 Historical design notes and old stage material are under [history](history/README.md).
+
+- [Release 0.3.0](RELEASE-0.3.0.md)
 
 When current code and historical notes disagree, use the code and current tests as the source of truth.
 

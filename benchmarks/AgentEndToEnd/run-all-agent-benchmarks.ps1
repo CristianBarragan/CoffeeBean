@@ -15,6 +15,9 @@ param(
     [switch]$SkipRun2,
     [switch]$SkipRun3,
     [switch]$SkipRun4,
+    [switch]$SkipRun5,
+    [switch]$SkipRun5SameClient,
+    [switch]$SkipGuardRail,
 
     [switch]$Publish,
     [switch]$ContinueOnError,
@@ -34,6 +37,8 @@ $Run1 = Join-Path $Root "Run1"
 $Run2 = Join-Path $Root "Run2"
 $Run3 = Join-Path $Root "Run3"
 $Run4 = Join-Path $Root "Run4"
+$Run5 = Join-Path $Root "Run5"
+$Run5SameClient = Join-Path $Root "Run5SameClient"
 
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $SuiteLogDir = Join-Path $Root "artifacts\all-runs\$Timestamp"
@@ -120,6 +125,53 @@ function Invoke-BenchmarkScript {
 
 Write-Section "Foundgine Agent End-to-End Benchmark Suite"
 
+Write-Section "GUARD RAIL - 1 customer / 1 concurrency / 1 warmup / 1 measured run"
+
+if (-not $SkipGuardRail) {
+    Write-Host "The full benchmark suite will NOT start until this smoke suite passes." -ForegroundColor Yellow
+    Write-Host "Customers: 1 | Concurrency: 1 | Warmups: 1 | Measured: 1" -ForegroundColor Yellow
+
+    $guardResults = [ordered]@{}
+    $guardArgsBase = @(
+        "-CustomerCounts", "1",
+        "-Concurrency", "1",
+        "-Runs", "1",
+        "-Warmups", "1"
+    )
+
+    # Run the same wrappers used by the full suite. This catches compile,
+    # container startup, GraphQL/MCP protocol, database, execution and report
+    # failures before spending time on the large performance matrix.
+    if (-not $SkipRun1) {
+        $guardResults.Run1 = Invoke-BenchmarkScript -Name "GuardRail-Run1" -WorkingDirectory $Run1 -Script "run-agent-benchmark.ps1" -Arguments (@("-Mode", $Mode) + $guardArgsBase)
+    }
+    if (-not $SkipRun2) {
+        $guardResults.Run2 = Invoke-BenchmarkScript -Name "GuardRail-Run2" -WorkingDirectory $Run2 -Script "run-agent-benchmark.ps1" -Arguments (@("-Mode", $Mode) + $guardArgsBase)
+    }
+    if (-not $SkipRun3) {
+        $guardResults.Run3 = Invoke-BenchmarkScript -Name "GuardRail-Run3" -WorkingDirectory $Run3 -Script "run-agent-benchmark.ps1" -Arguments (@("-Mode", $Mode) + $guardArgsBase)
+    }
+    if (-not $SkipRun4) {
+        $guardResults.Run4 = Invoke-BenchmarkScript -Name "GuardRail-Run4" -WorkingDirectory $Run4 -Script "run-agent-benchmark.ps1" -Arguments (@("-Mode", "both") + $guardArgsBase)
+    }
+    if (-not $SkipRun5) {
+        $guardResults.Run5 = Invoke-BenchmarkScript -Name "GuardRail-Run5" -WorkingDirectory $Run5 -Script "run-agent-benchmark.ps1" -Arguments $guardArgsBase
+    }
+    if (-not $SkipRun5SameClient) {
+        $guardResults.Run5SameClient = Invoke-BenchmarkScript -Name "GuardRail-Run5SameClient" -WorkingDirectory $Run5SameClient -Script "run-agent-benchmark.ps1" -Arguments $guardArgsBase
+    }
+
+    if (($guardResults.Values | Where-Object { $_ -eq $false }).Count -gt 0) {
+        throw "Benchmark guard rail FAILED. Full performance matrix was not started."
+    }
+
+    Write-Host "GUARD RAIL PASSED - starting full benchmark matrix." -ForegroundColor Green
+}
+else {
+    Write-Host "WARNING: benchmark guard rail skipped by -SkipGuardRail." -ForegroundColor Yellow
+}
+
+
 Write-Host "Root:            $Root"
 Write-Host "Mode:            $Mode"
 Write-Host "Warmups:         $Warmups"
@@ -136,6 +188,31 @@ Write-Host "Suite logs:      $SuiteLogDir"
 # Each Run owns its own compose project, fixture, ports, startup/readiness,
 # telemetry, and cleanup. Runs execute sequentially so their containers and
 # PostgreSQL volumes cannot interfere with each other.
+#
+# Also remove stale benchmark build output before starting. Older merged
+# workspaces contained nested bin/obj trees; if those are left around they can
+# be picked up by a parent benchmark project and produce duplicate type and
+# generated-attribute errors unrelated to the real project being run.
+function Remove-StaleBenchmarkBuildOutput {
+    $roots = @(
+        $Root,
+        (Join-Path $Root '..\CoffeeBeanery.Performance')
+    )
+
+    foreach ($path in $roots) {
+        if (-not (Test-Path $path)) { continue }
+
+        Get-ChildItem -LiteralPath $path -Recurse -Directory -Force |
+            Where-Object { $_.Name -in @('bin', 'obj') } |
+            Sort-Object FullName -Descending |
+            ForEach-Object {
+                Write-Host "[clean] Removing $($_.FullName)" -ForegroundColor DarkGray
+                Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
+            }
+    }
+}
+
+Remove-StaleBenchmarkBuildOutput
 
 $results = [ordered]@{}
 
@@ -238,6 +315,46 @@ if (-not $SkipRun4) {
     $results.Run4 = Invoke-BenchmarkScript `
         -Name "Run4" `
         -WorkingDirectory $Run4 `
+        -Script "run-agent-benchmark.ps1" `
+        -Arguments $args
+}
+
+# ---------------------------------------------------------------------------
+# Run 5
+# ---------------------------------------------------------------------------
+if (-not $SkipRun5) {
+    Write-Section "RUN 5 - High-assurance TransferFunds: MCP + EF Core vs Foundgine"
+
+    $args = @(
+        "-CustomerCounts", $CustomerCounts,
+        "-Concurrency", $Concurrency,
+        "-Runs", $Runs.ToString(),
+        "-Warmups", $Warmups.ToString()
+    )
+
+    $results.Run5 = Invoke-BenchmarkScript `
+        -Name "Run5" `
+        -WorkingDirectory $Run5 `
+        -Script "run-agent-benchmark.ps1" `
+        -Arguments $args
+}
+
+# ---------------------------------------------------------------------------
+# Run 5 Same Client
+# ---------------------------------------------------------------------------
+if (-not $SkipRun5SameClient) {
+    Write-Section "RUN 5 Same Client - identical Run 5 client path"
+
+    $args = @(
+        "-CustomerCounts", $CustomerCounts,
+        "-Concurrency", $Concurrency,
+        "-Runs", $Runs.ToString(),
+        "-Warmups", $Warmups.ToString()
+    )
+
+    $results.Run5SameClient = Invoke-BenchmarkScript `
+        -Name "Run5SameClient" `
+        -WorkingDirectory $Run5SameClient `
         -Script "run-agent-benchmark.ps1" `
         -Arguments $args
 }
