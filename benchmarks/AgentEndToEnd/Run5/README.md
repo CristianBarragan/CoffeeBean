@@ -1,76 +1,58 @@
-# Run 5 Same Client
+# Run 5 — High-Assurance TransferFunds: EF Core vs Foundgine, fastest path each
 
-This benchmark is **rebased directly on the working Run 5 client**.
+Run 5 reuses the Run 4 execution harness shape: fresh PostgreSQL per fixture tier, deterministic fixture seeding, warmups, repeated concurrent batches, latency percentiles, RPS, Docker lifecycle, per-run JSON metadata, and `publish-report.ps1` through the shared report publisher.
 
-## What changed
 
-Nothing about the MCP transport/client implementation was replaced with `ModelContextProtocol.Client`.
+## What this benchmark is actually comparing
 
-The exact Run 5 client is reused:
+This is intentionally a **fixed endpoint vs dynamic endpoint** comparison, not a claim that the two sides have identical endpoint capabilities. EF Core exposes a pre-written single-transfer `transfer_funds` MCP tool. Foundgine exposes a dynamic semantic capability that can accept an array of transfer commands and lower them into one set-based PostgreSQL execution. The capability difference is the point of the benchmark: it measures whether a dynamic execution engine can batch logical work without requiring a separate hand-written batch endpoint for every operation.
 
-- one shared `HttpClient`
-- `SocketsHttpHandler`
-- Streamable HTTP `/mcp`
-- manual JSON-RPC `tools/call`
-- `MCP-Protocol-Version: 2025-06-18`
-- the same retry, framing, and response validation code
+## EF Core locking disclosure
 
-The only experimental change is the **logical operation presented to each endpoint**.
+EF Core does not expose a portable first-class `FOR UPDATE` row-lock API through its normal LINQ abstraction. The high-assurance EF benchmark was therefore explicitly modified to use PostgreSQL raw SQL `SELECT ... FOR UPDATE` reads in deterministic account order, plus the same transaction-scoped advisory idempotency lock used by the PostgreSQL implementation. EF Core still performs the tracked state transition and `SaveChangesAsync()`. The baseline should therefore be described as **EF Core + explicit PostgreSQL locking**, not vanilla out-of-the-box EF Core. This keeps the concurrency contract comparable rather than giving EF Core a weaker locking model.
 
-### Conventional
+## Compared implementations
 
-The client sends 8 identical `transfer_funds` MCP calls for one logical task.
+Both sides are served over MCP so the comparison isolates the *execution/persistence stack*, not the transport. Each side is measured at **its own fastest available path** — this is not a single-transfer-vs-single-transfer comparison, it is best-vs-best.
 
-### Foundgine
+- **MCP + EF Core Postgres** (`MCP.EfCore`, port `4411`) — the `transfer_funds` tool invokes `Foundgine.HighAssurance.EfCore.EfTransferFundsService` against the same `banking` schema and same domain `TransferFundsCommand`, authorization rule and invariants. It uses EF Core change tracking for the mutation while retaining the explicit advisory lock and raw `FOR UPDATE` locking reads. EF Core has no batch tool, so this is measured one transfer per MCP call — its fastest available path.
+- **MCP + Foundgine Postgres, UNNEST batch** (`MCP.Foundgine`, port `4412`) — the `transfer_funds_batch` tool invokes `Foundgine.HighAssurance.Postgres.PostgresTransferFundsService` with an array of transfer commands per MCP call. Foundgine acquires transaction-scoped advisory locks for the batch, locks the union of involved accounts in deterministic order, validates the locked snapshot, and executes the state transition/idempotency/audit work in one PostgreSQL statement using `unnest(...)` over typed arrays. This is Foundgine's fastest available path, so it is what's compared — not the single-transfer `transfer_funds` tool.
 
-The same client sends 1 `transfer_funds_batch` MCP call containing the same 8 logical transfers.
+The runner reports throughput as **operations/second** on both sides (EF Core: 1 op per MCP call; Foundgine: `RUN5_BATCH_SIZE` ops per MCP call, default `64`), and also reports an *amortized* per-operation latency for the Foundgine batch (batch wall time ÷ batch size) alongside EF Core's true per-operation latency, since a raw batch-latency vs single-call-latency comparison would not be apples-to-apples.
 
-Therefore:
+## Default matrix
 
-```text
-                    SAME CLIENT
-                         |
-              +----------+----------+
-              |                     |
-          EF Core               Foundgine
-              |                     |
-        8 MCP calls             1 MCP call
-              |                     |
-          8 transfers            8 transfers
-```
+- customers/account pairs: `10,100,1000,10000`
+- concurrency: `8,16,32,64`
+- runs per tier: `30`
+- warmups: `5`
+- transfer amount: `1`
+- actor: deterministic authorized owner
+- tenant: `1`
+- unique idempotency key per operation
+- Foundgine batch size: `64` (`RUN5_BATCH_SIZE`)
 
-## Why this version exists
-
-Previous `Run5SameClient` attempts introduced `ModelContextProtocol.Client.McpClient`. Those attempts failed during MCP initialization because the SDK's discovery/handshake behavior is not identical to the proven Run 5 manual transport.
-
-This benchmark deliberately does **not** introduce a new MCP client implementation. It reuses the known-good Run 5 client code so the experiment isolates the execution capability rather than client compatibility.
-
-## Smoke test
+## Run
 
 ```powershell
-.\run-run5-same-client.ps1 -CustomerCounts 10 -Concurrency 8 -RunsPerTier 5 -Warmups 2
+.\run-agent-benchmark.ps1 -CustomerCounts 10,100,1000,10000 -Concurrency 8,16,32,64 -Runs 30 -Warmups 5 -Publish
 ```
 
-The script still accepts the original Run 5 matrix arguments.
+Reports are written under `artifacts/<tier>/concurrency-<n>/` and published using the same shared `publish-report-common.ps1` path used by Run 4.
 
-## Measurements
+## Published result snapshot — 10 customers / concurrency 64
 
-Each task contains the same number of logical transfers. The runner records:
+The latest 30-run snapshot reports:
 
-- logical operations
-- MCP/tool calls
-- request bytes
-- response bytes
-- total task payload
-- wall-clock latency
-- p50/p95/p99
-- logical operations/sec
-- success/failure
+| Metric | MCP + EF Core | MCP + Foundgine UNNEST batch |
+|---|---:|---:|
+| Average throughput | 980.1 ops/s | **10,731.0 ops/s** |
+| Throughput delta | — | **+994.8% / 10.95×** |
+| Average wall | 45.3 ms / transfer | 180.5 ms / 64-operation batch |
+| Effective amortized operation latency | 45.3 ms | **~2.82 ms** |
+| p50 | 36.3 ms | 129.5 ms / batch |
+| p95 | 118.9 ms | 401.9 ms / batch |
+| p99 | 126.8 ms | 520.7 ms / batch |
+| Failed | 0 | 0 |
 
-The report is written as `run5-same-client-metadata.json`.
-
-## Important interpretation
-
-This test does **not** claim that batching is free. It measures the effect of giving the same client a semantic batch capability at the MCP boundary.
-
-It is complementary to the original Run 5 throughput benchmark.
+The batch latency and single-transfer latency are deliberately kept separate: Foundgine's one MCP request carries 64 logical operations. The throughput comparison is the primary cross-model metric; the amortized latency is a derived per-operation view.

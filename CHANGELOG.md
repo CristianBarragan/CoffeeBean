@@ -2,6 +2,12 @@
 
 All notable changes to this repository are documented here. This file starts at 0.4.0 — no changelog was kept for earlier versions, so 0.1.0–0.3.0 are not reconstructed here.
 
+## [Unreleased]
+
+### Added
+- **M18.9 — Projection Pruning.** The planner includes a conservative projection-pruning rule that removes redundant duplicate fields without changing requested field order. Fields required by filters and ordering are tracked explicitly, and every accepted rewrite continues through semantic-equivalence and security-preservation proofs. The current semantic model intentionally does not remove unique requested fields, because output and working projections are not yet represented separately — that stronger dead-field optimization is reserved for a future projection-dependency milestone.
+- **M18.11 — Join Ordering / Multi-Relationship Planning.** Adds conservative cardinality- and selectivity-aware traversal ordering metadata for sibling relationship plans. Logical child order remains unchanged; providers may use `TraversalOrder` for physical planning subject to semantic and security conformance.
+
 ## [0.4.0]
 
 ### Added
