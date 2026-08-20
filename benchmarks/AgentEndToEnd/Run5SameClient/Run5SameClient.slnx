@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Database/Database.csproj" />
+  <Project Path="EfCore/Foundgine.HighAssurance.EfCore.csproj" />
+  <Project Path="WebApi/Foundgine.HighAssurance.TransferFunds.WebApi.csproj" />
+  <Project Path="MCP.Foundgine/MCP.Foundgine.csproj" />
+  <Project Path="Runner/Runner.csproj" />
+</Solution>
