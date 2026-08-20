@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Security.Cryptography;
 
+
 // Run5SameClient is deliberately rebased on the WORKING Run5 client.
 // Do not introduce ModelContextProtocol.Client here: Run5 already has a
 // proven MCP-over-HTTP client that works against both servers. The experiment
@@ -86,7 +87,7 @@ if (!string.IsNullOrWhiteSpace(reportDirectory))
         conventional = "batchSize individual transfer_funds MCP calls",
         foundgine = "one transfer_funds_batch MCP call containing batchSize logical transfers",
         correctness = "Each task contains the same number of logical transfers; final-state correctness must be verified separately by the fixture/DB contract.",
-        samples = conventional.Runs.Concat(foundgine.Runs).SelectMany(x => x.Samples.Select(r => new
+        samples = new[] { conventional, foundgine }.SelectMany(x => x.Runs.Select(r => new
         {
             implementation = x.Name,
             r.Run,
