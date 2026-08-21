@@ -103,10 +103,17 @@ public sealed class MemorySecurityWarrantDelegationTrustStateStore : ISecurityWa
 
     private static string Fingerprint(DelegationIssuerTrust trust)
     {
-        var keys = trust.SigningKeyIds.OrderBy(x => x, StringComparer.Ordinal);
-        var states = trust.KeyStates.OrderBy(x => x.Key, StringComparer.Ordinal)
+        var keys = trust.SigningKeyIds
+            .OrderBy(x => x, StringComparer.Ordinal);
+
+        var states = trust.KeyStates
+            .OrderBy(x => x.Key, StringComparer.Ordinal)
             .Select(x => x.Key + "=" + x.Value);
-        var tenants = (trust.AllowedTenants ?? []).OrderBy(x => x, StringComparer.Ordinal);
+
+        var tenants = trust.AllowedTenants?
+                          .OrderBy(x => x, StringComparer.Ordinal)
+                      ?? Enumerable.Empty<string>();
+
         var canonical = string.Join("\n", [
             trust.Issuer,
             trust.CanDelegate ? "1" : "0",
@@ -115,7 +122,9 @@ public sealed class MemorySecurityWarrantDelegationTrustStateStore : ISecurityWa
             string.Join("\u001f", states),
             string.Join("\u001f", tenants)
         ]);
-        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
+
+        return Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
     }
 }
 

@@ -20,8 +20,12 @@ public sealed class AuthorizationRecoveryWitnessSetReconfigurationSecurityTests
             witnesses.Add(new AuthorizationRecoveryQuorumWitness($"witness-{index}", primary, () => reachable[index]));
         }
 
-        return (primary, new ReconfigurableAuthorizationRecoveryQuorumAnchor(primary, witnesses), reachable, witnesses);
+        return (primary, new ReconfigurableAuthorizationRecoveryQuorumAnchor(primary, witnesses, 0, new FingerprintAuthorizationRecoveryReconfigurationProposerAuthorizer(new Dictionary<string, string> { ["operator-1"] = "fp-1", ["control-plane-1"] = "fp-1", ["control-plane-2"] = "fp-1" })), reachable, witnesses);
     }
+
+    private static AuthorizationRecoveryReconfigurationProposerCredential Proposer(
+        long version, IReadOnlyList<AuthorizationRecoveryQuorumWitness> witnesses, string id = "operator-1", string fingerprint = "fp-1") =>
+        new(id, fingerprint, version, AuthorizationRecoveryReconfigurationLedger.ComputeMembershipDigest(witnesses));
 
     [Fact]
     public async Task Reconfiguration_with_current_majority_reachable_is_accepted_and_advances_config_version()
@@ -33,7 +37,7 @@ public sealed class AuthorizationRecoveryWitnessSetReconfigurationSecurityTests
             new AuthorizationRecoveryQuorumWitness("witness-new-1", primary),
         };
 
-        var result = await quorum.TryReconfigureAsync(0, replacement);
+        var result = await quorum.TryReconfigureAsync(0, replacement, Proposer(0, replacement));
 
         Assert.True(result.Reconfigured);
         Assert.Equal(AuthorizationRecoveryReconfigurationOutcome.Reconfigured, result.Outcome);
@@ -52,7 +56,7 @@ public sealed class AuthorizationRecoveryWitnessSetReconfigurationSecurityTests
         reachable[2] = false;
         var replacement = new[] { new AuthorizationRecoveryQuorumWitness("attacker-controlled", primary) };
 
-        var result = await quorum.TryReconfigureAsync(0, replacement);
+        var result = await quorum.TryReconfigureAsync(0, replacement, Proposer(0, replacement));
 
         Assert.False(result.Reconfigured);
         Assert.Equal(AuthorizationRecoveryReconfigurationOutcome.NoQuorum, result.Outcome);
@@ -63,10 +67,10 @@ public sealed class AuthorizationRecoveryWitnessSetReconfigurationSecurityTests
     public async Task Stale_expected_config_version_is_refused()
     {
         var (primary, quorum, _, _) = MakeCluster();
-        await quorum.TryReconfigureAsync(0, new[] { new AuthorizationRecoveryQuorumWitness("witness-new", primary) });
+        await quorum.TryReconfigureAsync(0, new[] { new AuthorizationRecoveryQuorumWitness("witness-new", primary) }, Proposer(0, new[] { new AuthorizationRecoveryQuorumWitness("witness-new", primary) }));
 
         // Caller is still working from the pre-reconfiguration version.
-        var result = await quorum.TryReconfigureAsync(0, new[] { new AuthorizationRecoveryQuorumWitness("attacker", primary) });
+        var result = await quorum.TryReconfigureAsync(0, new[] { new AuthorizationRecoveryQuorumWitness("attacker", primary) }, Proposer(0, new[] { new AuthorizationRecoveryQuorumWitness("attacker", primary) }));
 
         Assert.False(result.Reconfigured);
         Assert.Equal(AuthorizationRecoveryReconfigurationOutcome.StaleConfigVersion, result.Outcome);
@@ -82,7 +86,7 @@ public sealed class AuthorizationRecoveryWitnessSetReconfigurationSecurityTests
             new AuthorizationRecoveryQuorumWitness("witness-new-0", primary),
             new AuthorizationRecoveryQuorumWitness("witness-new-1", primary),
         };
-        await quorum.TryReconfigureAsync(0, newWitnesses);
+        await quorum.TryReconfigureAsync(0, newWitnesses, Proposer(0, newWitnesses));
 
         // All three OLD witnesses are still fully reachable and agree with each other — but they
         // are no longer the configuration in force, so they must not be able to authorize anything.
@@ -101,7 +105,7 @@ public sealed class AuthorizationRecoveryWitnessSetReconfigurationSecurityTests
         var (primary, quorum, _, _) = MakeCluster();
 
         var tasks = Enumerable.Range(0, 16).Select(async i =>
-            await quorum.TryReconfigureAsync(0, new[] { new AuthorizationRecoveryQuorumWitness($"candidate-{i}", primary) }));
+            await quorum.TryReconfigureAsync(0, new[] { new AuthorizationRecoveryQuorumWitness($"candidate-{i}", primary) }, Proposer(0, new[] { new AuthorizationRecoveryQuorumWitness($"candidate-{i}", primary) })));
 
         var results = await Task.WhenAll(tasks);
 
@@ -115,7 +119,7 @@ public sealed class AuthorizationRecoveryWitnessSetReconfigurationSecurityTests
     {
         var (_, quorum, _, _) = MakeCluster();
 
-        var result = await quorum.TryReconfigureAsync(0, Array.Empty<AuthorizationRecoveryQuorumWitness>());
+        var result = await quorum.TryReconfigureAsync(0, Array.Empty<AuthorizationRecoveryQuorumWitness>(), Proposer(0, Array.Empty<AuthorizationRecoveryQuorumWitness>()));
 
         Assert.False(result.Reconfigured);
         Assert.Equal(AuthorizationRecoveryReconfigurationOutcome.InvalidMembership, result.Outcome);
@@ -132,7 +136,7 @@ public sealed class AuthorizationRecoveryWitnessSetReconfigurationSecurityTests
             new AuthorizationRecoveryQuorumWitness("dup", primary),
         };
 
-        var result = await quorum.TryReconfigureAsync(0, replacement);
+        var result = await quorum.TryReconfigureAsync(0, replacement, Proposer(0, replacement));
 
         Assert.False(result.Reconfigured);
         Assert.Equal(AuthorizationRecoveryReconfigurationOutcome.InvalidMembership, result.Outcome);
@@ -144,7 +148,7 @@ public sealed class AuthorizationRecoveryWitnessSetReconfigurationSecurityTests
         var primary = new InMemoryAuthorizationRecoveryForkAnchor();
 
         Assert.Throws<ArgumentException>(() =>
-            new ReconfigurableAuthorizationRecoveryQuorumAnchor(primary, Array.Empty<AuthorizationRecoveryQuorumWitness>()));
+            new ReconfigurableAuthorizationRecoveryQuorumAnchor(primary, Array.Empty<AuthorizationRecoveryQuorumWitness>(), 0, new FingerprintAuthorizationRecoveryReconfigurationProposerAuthorizer(new Dictionary<string, string> { ["operator-1"] = "fp-1" })));
     }
 
     [Fact]
@@ -157,7 +161,7 @@ public sealed class AuthorizationRecoveryWitnessSetReconfigurationSecurityTests
             new AuthorizationRecoveryQuorumWitness("witness-new-1", primary),
             new AuthorizationRecoveryQuorumWitness("witness-new-2", primary),
         };
-        await quorum.TryReconfigureAsync(0, newWitnesses);
+        await quorum.TryReconfigureAsync(0, newWitnesses, Proposer(0, newWitnesses));
 
         var advance = await quorum.TryAdvanceAsync(0, Genesis, 1, DigestA, "instance-A");
         Assert.True(advance.Advanced);

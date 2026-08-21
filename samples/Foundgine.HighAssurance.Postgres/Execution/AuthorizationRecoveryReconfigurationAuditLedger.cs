@@ -120,6 +120,23 @@ public sealed class AuthorizationRecoveryReconfigurationLedger
         }
     }
 
+    /// <summary>Reconstructs an in-memory ledger from already verified durable records.</summary>
+    public static AuthorizationRecoveryReconfigurationLedger Restore(
+        IReadOnlyList<AuthorizationRecoveryReconfigurationAuditRecord> records)
+    {
+        var verification = VerifyChain(records);
+        if (!verification.Verified)
+            throw new AuthorizationRecoveryReconciliationException(
+                $"Cannot restore an invalid reconfiguration ledger: {verification.Reason}");
+
+        var ledger = new AuthorizationRecoveryReconfigurationLedger();
+        lock (ledger._gate)
+        {
+            ledger._records.AddRange(records);
+        }
+        return ledger;
+    }
+
     /// <summary>Verifies the ledger's own current records. Equivalent to <c>VerifyChain(Records)</c>.</summary>
     public AuthorizationRecoveryLedgerVerificationResult VerifyChain() => VerifyChain(Records);
 
@@ -162,8 +179,11 @@ public sealed class AuthorizationRecoveryReconfigurationLedger
     /// callback and backing anchor are runtime-local behavior, not part of the durable audit record.
     /// </summary>
     public static string ComputeMembershipDigest(IReadOnlyList<AuthorizationRecoveryQuorumWitness> membership)
+        => ComputeMembershipDigest(membership.Select(static w => w.WitnessId).ToArray());
+
+    public static string ComputeMembershipDigest(IReadOnlyList<string> witnessIds)
     {
-        var ids = membership.Select(static w => w.WitnessId).OrderBy(static id => id, StringComparer.Ordinal);
+        var ids = witnessIds.OrderBy(static id => id, StringComparer.Ordinal);
         var joined = string.Join('|', ids);
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(joined))).ToLowerInvariant();
     }
