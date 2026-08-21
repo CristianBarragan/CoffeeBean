@@ -46,6 +46,7 @@ public sealed class SemanticPlanOptimizer : IPlanOptimizer
         ArgumentNullException.ThrowIfNull(after);
 
         var securityProof = SecurityPreservationProof.Create(before, after);
+        var obligationProof = SecurityObligationProof.Create(rule, before, after);
         var semanticProof = SemanticEquivalenceProof.Create(before, after);
         return new PlanRewriteRuleResult(
             rule.Name,
@@ -55,6 +56,7 @@ public sealed class SemanticPlanOptimizer : IPlanOptimizer
             rule.SecurityObligations,
             rule.CostImpact,
             securityProof,
+            obligationProof,
             semanticProof);
     }
 }

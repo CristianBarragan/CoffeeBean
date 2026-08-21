@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Foundgine.Planning.Tests;
 
-public sealed class PlanRewriteRuleContractTests
+public sealed partial class PlanRewriteRuleContractTests
 {
     private static SemanticPlan Plan(AuthorizationPredicate? authorization)
         => new(new SemanticPlanNode(
@@ -97,5 +97,45 @@ public sealed class PlanRewriteRuleContractTests
         {
             Root = plan.Root with { Fields = [new FieldId(99)] }
         };
+    }
+}
+
+// M3 proof-carrying optimizer contract coverage.
+namespace Foundgine.Planning.Tests;
+
+public sealed partial class PlanRewriteRuleContractTests
+{
+    [Fact]
+    public void Rule_application_carries_security_obligation_proof()
+    {
+        var before = SecurityInvariantPlanRequirements.Attach(Plan(null));
+        var rule = new ProjectionPruningRule();
+        var after = rule.Apply(before);
+
+        var result = SemanticPlanOptimizer.ApplyRule(rule, before, after);
+
+        Assert.True(result.SecurityObligationProof.IsSatisfied);
+        Assert.Contains("visibility.field", result.SecurityObligationProof.Preserved);
+        Assert.Contains("authorization.required", result.SecurityObligationProof.Preserved);
+    }
+
+    [Fact]
+    public void Unknown_security_obligation_is_rejected_fail_closed()
+    {
+        var rule = new UnknownObligationRule();
+        var plan = SecurityInvariantPlanRequirements.Attach(Plan(null));
+
+        Assert.Throws<InvalidOperationException>(() =>
+            SemanticPlanOptimizer.ApplyRule(rule, plan, plan));
+    }
+
+    private sealed class UnknownObligationRule : IPlanRewriteRule
+    {
+        public string Name => "test.unknown-obligation";
+        public IReadOnlyList<string> Preconditions => [];
+        public IReadOnlyList<string> SecurityObligations => ["security.this-does-not-exist"];
+        public double CostImpact => 0d;
+        public bool CanApply(SemanticPlan plan) => true;
+        public SemanticPlan Apply(SemanticPlan plan) => plan;
     }
 }

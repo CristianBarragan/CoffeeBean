@@ -43,7 +43,9 @@ public static class SecurityWarrantCanonicalizer
             expiresAt = warrant.ExpiresAt.ToUniversalTime().ToString("O"),
             nonce = warrant.Nonce,
             keyId = warrant.KeyId,
-            parentId = warrant.ParentId
+            parentId = warrant.ParentId,
+            parentDigest = warrant.ParentDigest,
+            delegationPath = warrant.DelegationPath
         };
 
         return JsonSerializer.Serialize(payload, new JsonSerializerOptions

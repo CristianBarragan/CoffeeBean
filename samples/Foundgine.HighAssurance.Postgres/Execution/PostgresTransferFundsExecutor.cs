@@ -1,6 +1,7 @@
 using Foundgine.HighAssurance.Banking;
 using Foundgine.Semantics.Authorization;
 using Npgsql;
+using System.Data;
 
 namespace Foundgine.HighAssurance.Postgres.Execution;
 
@@ -8,17 +9,59 @@ namespace Foundgine.HighAssurance.Postgres.Execution;
 /// PostgreSQL execution adapter for the high-assurance TransferFunds mutation.
 /// Supports both single-transfer execution and one-transaction array batching.
 /// </summary>
+public enum PostgresTransferFundsFaultPoint
+{
+    AfterMutationBeforeCommit,
+    BeforeAuthorizationCommitCheck,
+    AfterBatchMutationBeforeCommit,
+    BeforeBatchAuthorizationCommitCheck
+}
+
 public sealed class PostgresTransferFundsExecutor
 {
     private readonly NpgsqlDataSource _dataSource;
-    private readonly Func<Guid, BankAccount, BankAccount, bool> _authorize;
+    private readonly Func<Guid, BankAccount, BankAccount, AuthorizationDecision> _authorize;
+    private readonly Action<PostgresTransferFundsFaultPoint>? _faultInjector;
+    private readonly PostgresAuthorizationContextStore? _authorizationContextStore;
 
+    /// <summary>
+    /// Compatibility constructor for boolean authorization callbacks. The callback is
+    /// still re-evaluated at the commit gate, while the returned evidence uses a
+    /// deterministic compatibility fingerprint.
+    /// </summary>
     public PostgresTransferFundsExecutor(
         NpgsqlDataSource dataSource,
-        Func<Guid, BankAccount, BankAccount, bool> authorize)
+        Func<Guid, BankAccount, BankAccount, bool> authorize,
+        Action<PostgresTransferFundsFaultPoint>? faultInjector = null,
+        PostgresAuthorizationContextStore? authorizationContextStore = null)
+        : this(
+            dataSource,
+            (actorId, source, destination) =>
+                AuthorizationDecision.FromBoolean(
+                    authorize(actorId, source, destination),
+                    actorId,
+                    source,
+                    destination),
+            faultInjector,
+            authorizationContextStore)
+    {
+    }
+
+    /// <summary>
+    /// Strong authorization contract. The decision carries explicit versioned
+    /// authorization evidence which is re-evaluated and compared immediately
+    /// before commit.
+    /// </summary>
+    public PostgresTransferFundsExecutor(
+        NpgsqlDataSource dataSource,
+        Func<Guid, BankAccount, BankAccount, AuthorizationDecision> authorize,
+        Action<PostgresTransferFundsFaultPoint>? faultInjector = null,
+        PostgresAuthorizationContextStore? authorizationContextStore = null)
     {
         _dataSource = dataSource ?? throw new ArgumentNullException(nameof(dataSource));
         _authorize = authorize ?? throw new ArgumentNullException(nameof(authorize));
+        _faultInjector = faultInjector;
+        _authorizationContextStore = authorizationContextStore;
     }
 
     public async Task<PostgresTransferFundsExecutionResult> ExecuteAsync(
@@ -28,7 +71,7 @@ public sealed class PostgresTransferFundsExecutor
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
         try
         {
             await AdvisoryLockAsync(connection, transaction, command.IdempotencyKey, cancellationToken);
@@ -42,19 +85,37 @@ public sealed class PostgresTransferFundsExecutor
 
             var accounts = await LoadAccountsForUpdateAsync(connection, transaction,
                 [command.SourceAccountId, command.DestinationAccountId], cancellationToken);
-            var source = accounts[command.SourceAccountId];
-            var destination = accounts[command.DestinationAccountId];
+            if (!accounts.TryGetValue(command.SourceAccountId, out var source))
+                throw new InvalidOperationException("Source account does not exist at execution time.");
+            if (!accounts.TryGetValue(command.DestinationAccountId, out var destination))
+                throw new InvalidOperationException("Destination account does not exist at execution time.");
             ValidateExecution(tenantId, source, destination, command.Amount);
-            if (!_authorize(actorId, source, destination))
-                throw new SemanticAuthorizationException("Transfer capability is not authorized for this actor and account pair.");
+            var authorizationContext = await LoadAuthorizationContextForUpdateAsync(
+                connection, transaction, actorId, tenantId, cancellationToken);
+            var authorization = _authorize(actorId, source, destination);
+            EnsureAuthorized(authorization);
+            var executionBinding = AuthorizationExecutionBinding.Create(actorId, tenantId, command, authorization);
+            EnsureAuthorizationEvidenceMatches(
+                authorization,
+                _authorize(actorId, source, destination));
+            executionBinding.ValidateAgainst(actorId, tenantId, command, authorization);
+            EnsureAuthorizationEvidenceMatchesStore(authorization, authorizationContext, _authorizationContextStore is not null);
 
             var transferId = Guid.NewGuid();
             var sourceBalance = source.Balance - command.Amount;
             var destinationBalance = destination.Balance + command.Amount;
             await ApplyMutationCteAsync(connection, transaction, source, destination, command, actorId, tenantId,
                 transferId, sourceBalance, destinationBalance, cancellationToken);
+            _faultInjector?.Invoke(PostgresTransferFundsFaultPoint.AfterMutationBeforeCommit);
+            _faultInjector?.Invoke(PostgresTransferFundsFaultPoint.BeforeAuthorizationCommitCheck);
+            var commitAuthorization = _authorize(actorId, source, destination);
+            EnsureAuthorizationEvidenceMatches(authorization, commitAuthorization);
+            executionBinding.ValidateAgainst(actorId, tenantId, command, commitAuthorization);
+            var currentAuthorizationContext = await LoadAuthorizationContextForUpdateAsync(
+                connection, transaction, actorId, tenantId, cancellationToken);
+            EnsureAuthorizationEvidenceMatchesStore(authorization, currentAuthorizationContext, _authorizationContextStore is not null);
             await transaction.CommitAsync(cancellationToken);
-            return new(transferId, sourceBalance, destinationBalance, false);
+            return new(transferId, sourceBalance, destinationBalance, false, authorization.Version, authorization.Fingerprint);
         }
         catch
         {
@@ -76,7 +137,7 @@ public sealed class PostgresTransferFundsExecutor
             throw new InvalidOperationException("A transfer batch cannot contain duplicate idempotency keys.");
 
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
         try
         {
             var prepared = await PrepareBatchAsync(connection, transaction, commands, cancellationToken);
@@ -102,9 +163,12 @@ public sealed class PostgresTransferFundsExecutor
                 return results;
             }
 
+            var authorizationContext = await LoadAuthorizationContextForUpdateAsync(
+                connection, transaction, actorId, tenantId, cancellationToken);
             var outgoing = new Dictionary<Guid, decimal>();
             var incoming = new Dictionary<Guid, decimal>();
             var transferIds = new Guid[newIndexes.Count];
+            var authorizations = new AuthorizationDecision[newIndexes.Count];
 
             for (var j = 0; j < newIndexes.Count; j++)
             {
@@ -113,8 +177,14 @@ public sealed class PostgresTransferFundsExecutor
                 var source = prepared.Accounts[command.SourceAccountId];
                 var destination = prepared.Accounts[command.DestinationAccountId];
                 ValidateExecution(tenantId, source, destination, command.Amount);
-                if (!_authorize(actorId, source, destination))
-                    throw new SemanticAuthorizationException("Transfer capability is not authorized for this actor and account pair.");
+
+                var authorization = _authorize(actorId, source, destination);
+                EnsureAuthorized(authorization);
+                EnsureAuthorizationEvidenceMatches(
+                    authorization,
+                    _authorize(actorId, source, destination));
+                EnsureAuthorizationEvidenceMatchesStore(authorization, authorizationContext, _authorizationContextStore is not null);
+                authorizations[j] = authorization;
 
                 outgoing[command.SourceAccountId] = outgoing.GetValueOrDefault(command.SourceAccountId) + command.Amount;
                 incoming[command.DestinationAccountId] = incoming.GetValueOrDefault(command.DestinationAccountId) + command.Amount;
@@ -155,13 +225,37 @@ public sealed class PostgresTransferFundsExecutor
                 destinationBalances[j] = destination.Balance - outgoing.GetValueOrDefault(destination.Id) + incoming.GetValueOrDefault(destination.Id);
             }
 
-            await ApplyBatchMutationCteAsync(connection, transaction, actorId, tenantId,
-                sources, destinations, amounts, keys, transferIdArray, sourceBalances, destinationBalances, cancellationToken);
-
             for (var j = 0; j < newIndexes.Count; j++)
             {
                 var index = newIndexes[j];
-                results[index] = new(transferIds[j], sourceBalances[j], destinationBalances[j], false);
+                var command = commands[index];
+                var source = prepared.Accounts[command.SourceAccountId];
+                var destination = prepared.Accounts[command.DestinationAccountId];
+                var rechecked = _authorize(actorId, source, destination);
+                EnsureAuthorizationEvidenceMatches(authorizations[j], rechecked);
+                AuthorizationExecutionBinding.Create(actorId, tenantId, command, authorizations[j])
+                    .ValidateAgainst(actorId, tenantId, command, rechecked);
+            }
+
+            await ApplyBatchMutationCteAsync(connection, transaction, actorId, tenantId,
+                sources, destinations, amounts, keys, transferIdArray, sourceBalances, destinationBalances, cancellationToken);
+            _faultInjector?.Invoke(PostgresTransferFundsFaultPoint.AfterBatchMutationBeforeCommit);
+            _faultInjector?.Invoke(PostgresTransferFundsFaultPoint.BeforeBatchAuthorizationCommitCheck);
+
+            var currentAuthorizationContext = await LoadAuthorizationContextForUpdateAsync(
+                connection, transaction, actorId, tenantId, cancellationToken);
+            for (var j = 0; j < newIndexes.Count; j++)
+            {
+                var index = newIndexes[j];
+                var command = commands[index];
+                var source = prepared.Accounts[command.SourceAccountId];
+                var destination = prepared.Accounts[command.DestinationAccountId];
+                var commitAuthorization = _authorize(actorId, source, destination);
+                EnsureAuthorizationEvidenceMatches(authorizations[j], commitAuthorization);
+                AuthorizationExecutionBinding.Create(actorId, tenantId, command, authorizations[j])
+                    .ValidateAgainst(actorId, tenantId, command, commitAuthorization);
+                EnsureAuthorizationEvidenceMatchesStore(authorizations[j], currentAuthorizationContext, _authorizationContextStore is not null);
+                results[index] = new(transferIds[j], sourceBalances[j], destinationBalances[j], false, authorizations[j].Version, authorizations[j].Fingerprint);
             }
 
             await transaction.CommitAsync(cancellationToken);
@@ -327,6 +421,82 @@ public sealed class PostgresTransferFundsExecutor
             throw new InvalidOperationException("PostgreSQL batch mutation did not update any account rows.");
     }
 
+    private async Task<AuthorizationContextRow?> LoadAuthorizationContextForUpdateAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid actorId,
+        int tenantId,
+        CancellationToken cancellationToken)
+    {
+        if (_authorizationContextStore is null)
+            return null;
+
+        var context = await _authorizationContextStore.LoadForUpdateAsync(
+            connection, transaction, actorId, tenantId, cancellationToken);
+        if (context is null)
+            throw new InvalidOperationException(
+                "Authoritative authorization context does not exist; authorization is fail-closed.");
+        return context;
+    }
+
+    private static void EnsureAuthorizationEvidenceMatchesStore(
+        AuthorizationDecision decision,
+        AuthorizationContextRow? context,
+        bool authoritativeStoreConfigured)
+    {
+        if (context is null)
+        {
+            if (authoritativeStoreConfigured)
+                throw new InvalidOperationException(
+                    "Authoritative authorization context is missing; authorization fails closed.");
+            return;
+        }
+
+        if (!context.Allowed)
+            throw new SemanticAuthorizationException(
+                "Authoritative authorization context is not allowed for this actor and tenant.");
+
+        if (decision.Version != context.Version ||
+            !string.Equals(decision.Fingerprint, context.Fingerprint, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Authorization decision does not match the authoritative PostgreSQL authorization context.");
+        }
+    }
+
+    private static void EnsureAuthorized(AuthorizationDecision decision)
+    {
+        ArgumentNullException.ThrowIfNull(decision);
+        if (!decision.Allowed)
+            throw new SemanticAuthorizationException(
+                "Transfer capability is not authorized for this actor and account pair.");
+    }
+
+    private static void EnsureAuthorizationEvidenceMatches(
+        AuthorizationDecision expected,
+        AuthorizationDecision current)
+    {
+        ArgumentNullException.ThrowIfNull(expected);
+        ArgumentNullException.ThrowIfNull(current);
+        if (expected.Version < 0 || current.Version < 0 ||
+            string.IsNullOrWhiteSpace(expected.Fingerprint) ||
+            string.IsNullOrWhiteSpace(current.Fingerprint))
+        {
+            throw new InvalidOperationException("Authorization evidence is invalid.");
+        }
+
+        if (!current.Allowed)
+            throw new SemanticAuthorizationException(
+                "Transfer authorization was revoked before commit.");
+
+        if (expected.Version != current.Version ||
+            !string.Equals(expected.Fingerprint, current.Fingerprint, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Authorization context changed during transfer execution; the authorization evidence is stale.");
+        }
+    }
+
     private static void ValidateShape(TransferFundsCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -416,4 +586,10 @@ public sealed class PostgresTransferFundsExecutor
     private sealed record IdempotencyRow(Guid ActorId, int TenantId, Guid SourceAccountId, Guid DestinationAccountId, decimal Amount, Guid TransferId, decimal SourceBalance, decimal DestinationBalance);
 }
 
-public sealed record PostgresTransferFundsExecutionResult(Guid TransferId, decimal SourceBalance, decimal DestinationBalance, bool Replay);
+public sealed record PostgresTransferFundsExecutionResult(
+    Guid TransferId,
+    decimal SourceBalance,
+    decimal DestinationBalance,
+    bool Replay,
+    long AuthorizationVersion = 0,
+    string? AuthorizationFingerprint = null);

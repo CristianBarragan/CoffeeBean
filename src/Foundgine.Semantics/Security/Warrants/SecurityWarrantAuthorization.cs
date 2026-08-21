@@ -44,6 +44,8 @@ public static class SecurityWarrantAuthorization
 /// <summary>Mechanically enforces non-escalating warrant delegation.</summary>
 public static class SecurityWarrantAttenuator
 {
+    public const int MaxDelegationDepth = 32;
+
     public static SecurityWarrant Attenuate(
         SecurityWarrant parent,
         SecurityWarrant child,
@@ -53,18 +55,29 @@ public static class SecurityWarrantAttenuator
         ArgumentNullException.ThrowIfNull(child);
         if (!parent.IsTimeValid(now))
             throw new InvalidOperationException("Cannot attenuate an expired or not-yet-valid parent warrant.");
-        if (!StringComparer.Ordinal.Equals(child.ParentId, parent.Id))
+        if (child.ParentId is null || !StringComparer.Ordinal.Equals(child.ParentId, parent.Id))
             throw new InvalidOperationException("Child warrant must identify its parent warrant.");
+        if (!StringComparer.Ordinal.Equals(child.ParentDigest, parent.Digest))
+            throw new InvalidOperationException("Child warrant must bind cryptographically to its parent digest.");
         if (!StringComparer.Ordinal.Equals(child.Issuer, parent.Subject))
             throw new InvalidOperationException("Delegated issuer must be the parent subject.");
         if (!StringComparer.Ordinal.Equals(child.Audience, parent.Audience))
             throw new InvalidOperationException("Delegation cannot broaden the audience.");
-        if (!StringComparer.Ordinal.Equals(child.Subject, parent.Subject))
-            throw new InvalidOperationException("Delegation cannot change the authorized subject.");
+        if (child.Subject.Length == 0)
+            throw new InvalidOperationException("Delegated subject is required.");
         if (child.IssuedAt < parent.IssuedAt)
             throw new InvalidOperationException("Child warrant cannot predate parent issuance.");
         if (child.ExpiresAt > parent.ExpiresAt)
             throw new InvalidOperationException("Child warrant cannot extend parent expiry.");
+        if (child.DelegationDepth != parent.DelegationDepth + 1)
+            throw new InvalidOperationException("Delegation depth must increase exactly one level.");
+        if (child.DelegationDepth > MaxDelegationDepth)
+            throw new InvalidOperationException("Maximum delegation depth exceeded.");
+        if (!SequenceEqual(child.DelegationPath.Take(parent.DelegationDepth), parent.DelegationPath) ||
+            child.DelegationPath.LastOrDefault() != parent.Digest)
+            throw new InvalidOperationException("Child delegation path does not match the parent chain.");
+        if (child.DelegationPath.Distinct(StringComparer.Ordinal).Count() != child.DelegationPath.Count)
+            throw new InvalidOperationException("Delegation cycle detected.");
         if (!child.Constraints.IsAtMostAsPowerfulAs(parent.Constraints))
             throw new InvalidOperationException("Child warrant constraints broaden parent authority.");
 
@@ -81,5 +94,8 @@ public static class SecurityWarrantAttenuator
         }
 
         return child;
+
+        static bool SequenceEqual(IEnumerable<string> left, IEnumerable<string> right) =>
+            left.SequenceEqual(right, StringComparer.Ordinal);
     }
 }

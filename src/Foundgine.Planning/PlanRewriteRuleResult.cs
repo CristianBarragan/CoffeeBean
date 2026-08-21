@@ -9,7 +9,11 @@ public sealed record PlanRewriteRuleResult(
     IReadOnlyList<string> SecurityObligations,
     double CostImpact,
     SecurityPreservationProof SecurityProof,
+    SecurityObligationProof SecurityObligationProof,
     SemanticEquivalenceProof SemanticProof)
 {
-    public bool IsSatisfied => SecurityProof.IsSatisfied && SemanticProof.IsSatisfied;
+    public bool IsSatisfied =>
+        SecurityProof.IsSatisfied &&
+        SecurityObligationProof.IsSatisfied &&
+        SemanticProof.IsSatisfied;
 }

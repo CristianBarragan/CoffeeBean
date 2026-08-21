@@ -2,6 +2,7 @@ using Foundgine.Execution;
 using Foundgine.Execution.Mutation;
 using Foundgine.Semantics.Mutation;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using Foundgine.Semantics.Security.Execution;
 
 namespace Foundgine;
 
@@ -15,7 +16,9 @@ public interface IFoundgineMutations
         CancellationToken cancellationToken = default);
 }
 
-public sealed record SemanticMutationRequest(SemanticMutationOperationGraph Graph);
+public sealed record SemanticMutationRequest(
+    SemanticMutationOperationGraph Graph,
+    SecurityExecutionContext? Security = null);
 
 public sealed record MutationDryRunResult(
     string PlanFingerprint,

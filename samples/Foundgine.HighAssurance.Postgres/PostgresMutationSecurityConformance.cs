@@ -15,7 +15,8 @@ public sealed record PostgresMutationSecurityConformance(
     bool SerializesIdempotencyKeys,
     bool PersistsIdempotencyInsideTransaction,
     bool PersistsAuditInsideTransaction,
-    bool EmitsExecutionReceipt)
+    bool EmitsExecutionReceipt,
+    bool UsesExplicitReadCommittedIsolation = true)
 {
     public bool IsSatisfied =>
         RequiredInvariants.All(x => x is not null) &&
@@ -37,6 +38,7 @@ public sealed record PostgresMutationSecurityConformance(
         if (!PersistsIdempotencyInsideTransaction) missing.Add("mutation.idempotency");
         if (!PersistsAuditInsideTransaction) missing.Add("evidence.audit");
         if (!EmitsExecutionReceipt) missing.Add("evidence.execution-receipt");
+        if (!UsesExplicitReadCommittedIsolation) missing.Add("mutation.transaction.read-committed-isolation");
         return missing;
     }
 
@@ -53,10 +55,12 @@ public sealed record PostgresMutationSecurityConformance(
             "tenant.isolation",
             "authorization.runtime",
             "mutation.atomic",
+            "mutation.atomic.row-locking",
             "mutation.idempotency",
             "mutation.replay-protection",
             "evidence.audit",
-            "evidence.execution-receipt"
+            "evidence.execution-receipt",
+            "mutation.transaction.read-committed-isolation"
         ],
         UsesSingleTransaction: true,
         LocksMutationRowsDeterministically: true,
@@ -64,7 +68,8 @@ public sealed record PostgresMutationSecurityConformance(
         SerializesIdempotencyKeys: true,
         PersistsIdempotencyInsideTransaction: true,
         PersistsAuditInsideTransaction: true,
-        EmitsExecutionReceipt: true);
+        EmitsExecutionReceipt: true,
+        UsesExplicitReadCommittedIsolation: true);
 }
 
 /// <summary>

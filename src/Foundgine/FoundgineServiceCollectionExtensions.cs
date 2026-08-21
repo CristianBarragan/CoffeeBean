@@ -52,7 +52,13 @@ public static class FoundgineServiceCollectionExtensions
 
         if (options.MutationSchema is not null && options.MutationProvider is not null)
             services.AddSingleton<IFoundgineMutations>(_ => new FoundgineMutationEngine(
-                options.MutationSchema, options.AuthorizationPolicy, options.MutationProvider));
+                options.MutationSchema,
+                options.AuthorizationPolicy,
+                options.MutationProvider,
+                options.Model,
+                options.WarrantKeyResolver,
+                options.ExpectedWarrantIssuer,
+                options.WarrantReplayStore));
 
         return services;
     }

@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Text.Json;
 using Foundgine.Execution;
 using Foundgine.Intent.Json;
+using Foundgine.Semantics.Security.Execution;
 using ModelContextProtocol.Server;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
@@ -20,15 +21,18 @@ public sealed class FoundgineMcpTools
     private readonly IFoundgine _foundgine;
     private readonly JsonReadIntentAdapter _adapter;
     private readonly Func<ExecutionContext> _contextFactory;
+    private readonly Func<SecurityExecutionContext?> _securityContextFactory;
 
     public FoundgineMcpTools(
         IFoundgine foundgine,
         JsonReadIntentAdapter? adapter = null,
-        Func<ExecutionContext>? contextFactory = null)
+        Func<ExecutionContext>? contextFactory = null,
+        Func<SecurityExecutionContext?>? securityContextFactory = null)
     {
         _foundgine = foundgine ?? throw new ArgumentNullException(nameof(foundgine));
         _adapter = adapter ?? new JsonReadIntentAdapter();
         _contextFactory = contextFactory ?? (() => new ExecutionContext());
+        _securityContextFactory = securityContextFactory ?? (() => null);
     }
 
     /// <summary>
@@ -37,8 +41,16 @@ public sealed class FoundgineMcpTools
     /// </summary>
     [McpServerTool(Name = "foundgine_capabilities")]
     [Description("Discover the Foundgine semantic capability contract available to the current caller. Discovery is descriptive; authorization is re-evaluated during execution.")]
-    public string DescribeCapabilities() =>
-        JsonSerializer.Serialize(_foundgine.DescribeCapabilityContract(), JsonOptions);
+    public string DescribeCapabilities()
+    {
+        var security = _securityContextFactory()
+            ?? throw new UnauthorizedAccessException(
+                "MCP capability discovery requires a host-supplied SecurityExecutionContext. The MCP caller cannot supply identity, tenant, audience, or warrant context.");
+
+        return JsonSerializer.Serialize(
+            _foundgine.DescribeCapabilityContract(security),
+            JsonOptions);
+    }
 
     /// <summary>
     /// Executes provider-neutral read intent through the Foundgine pipeline.
@@ -54,6 +66,10 @@ public sealed class FoundgineMcpTools
             throw new ArgumentException("Intent JSON is required.", nameof(intentJson));
 
         var intent = _adapter.Parse(intentJson);
+        var security = _securityContextFactory()
+            ?? throw new UnauthorizedAccessException(
+                "MCP execution requires a host-supplied SecurityExecutionContext. The MCP caller cannot supply identity, tenant, audience, or warrant context in the intent payload.");
+        intent = intent with { Security = security };
         var result = await _foundgine.ExecuteAsync(
             intent,
             _contextFactory(),

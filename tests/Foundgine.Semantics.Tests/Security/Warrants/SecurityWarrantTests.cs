@@ -148,6 +148,57 @@ public sealed class SecurityWarrantTests
     }
 
     [Fact]
+    public void Delegated_subject_can_change_but_issuer_must_be_parent_subject()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var parent = Create(now);
+        var child = parent with
+        {
+            Id = "child", Subject = "agent-b", ParentId = parent.Id, Issuer = parent.Subject,
+            ParentDigest = parent.Digest, DelegationPath = [parent.Digest], Signature = [],
+            ExpiresAt = parent.ExpiresAt.AddMinutes(-1)
+        };
+        Assert.Same(child, SecurityWarrantAttenuator.Attenuate(parent, child, now));
+    }
+
+    [Fact]
+    public void Parent_digest_substitution_is_rejected()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var parent = Create(now);
+        var other = Create(now) with { Id = "other" };
+        var child = parent with { Id = "child", ParentId = parent.Id, Issuer = parent.Subject, ParentDigest = other.Digest, DelegationPath = [other.Digest], Signature = [] };
+        Assert.Throws<InvalidOperationException>(() => SecurityWarrantAttenuator.Attenuate(parent, child, now));
+    }
+
+    [Fact]
+    public void Delegation_path_substitution_is_rejected()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var parent = Create(now);
+        var child = parent with { Id = "child", ParentId = parent.Id, Issuer = parent.Subject, ParentDigest = parent.Digest, DelegationPath = ["forged-parent"], Signature = [] };
+        Assert.Throws<InvalidOperationException>(() => SecurityWarrantAttenuator.Attenuate(parent, child, now));
+    }
+
+    [Fact]
+    public void Delegation_cycle_is_rejected()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var parent = Create(now);
+        var child = parent with { Id = "child", ParentId = parent.Id, Issuer = parent.Subject, ParentDigest = parent.Digest, DelegationPath = [parent.Digest, parent.Digest], Signature = [] };
+        Assert.Throws<InvalidOperationException>(() => SecurityWarrantAttenuator.Attenuate(parent, child, now));
+    }
+
+    [Fact]
+    public void Delegation_depth_cannot_skip_levels()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var parent = Create(now);
+        var child = parent with { Id = "child", ParentId = parent.Id, Issuer = parent.Subject, ParentDigest = parent.Digest, DelegationPath = [], Signature = [] };
+        Assert.Throws<InvalidOperationException>(() => SecurityWarrantAttenuator.Attenuate(parent, child, now));
+    }
+
+    [Fact]
     public void Valid_child_can_only_attenuate_parent()
     {
         var now = DateTimeOffset.UtcNow;
@@ -156,6 +207,7 @@ public sealed class SecurityWarrantTests
         {
             Id = "child", ParentId = parent.Id, Issuer = parent.Subject,
             ExpiresAt = parent.ExpiresAt.AddMinutes(-1), Signature = [],
+            ParentDigest = parent.Digest, DelegationPath = [parent.Digest],
             Constraints = new SecurityWarrantConstraints(allowedTenants: ["tenant-1"], maxResults: 20)
         };
         Assert.Same(child, SecurityWarrantAttenuator.Attenuate(parent, child, now));
@@ -200,7 +252,7 @@ public sealed class SecurityWarrantTests
     {
         var now = DateTimeOffset.UtcNow;
         var parent = Create(now) with { Constraints = new SecurityWarrantConstraints(allowedTenants: ["tenant-1"], resourceScopes: ["customer/*"], maxResults: 100) };
-        var child = parent with { Id = "child", ParentId = parent.Id, Issuer = parent.Subject, ExpiresAt = parent.ExpiresAt.AddMinutes(-1), Signature = [] };
+        var child = parent with { Id = "child", ParentId = parent.Id, Issuer = parent.Subject, ExpiresAt = parent.ExpiresAt.AddMinutes(-1), Signature = [], ParentDigest = parent.Digest, DelegationPath = [parent.Digest] };
         Assert.Throws<InvalidOperationException>(() => SecurityWarrantAttenuator.Attenuate(parent, mutate(parent, child), now));
     }
 
@@ -212,5 +264,93 @@ public sealed class SecurityWarrantTests
     private sealed class EmptyResolver : ISecurityWarrantKeyResolver
     {
         public RSA Resolve(string keyId) => throw new InvalidOperationException("Unknown key");
+    }
+}
+
+public sealed class SecurityWarrantDelegationTrustSecurityTests
+{
+    private sealed class Resolver(params DelegationIssuerTrust[] trusts) : ISecurityWarrantDelegationTrustResolver
+    {
+        public DelegationIssuerTrust? Resolve(string issuer) => trusts.FirstOrDefault(x => StringComparer.Ordinal.Equals(x.Issuer, issuer));
+    }
+
+    private static SecurityWarrant Create(string id, string issuer, string subject, string keyId = "issuer-key", DateTimeOffset? now = null)
+    {
+        var t = now ?? DateTimeOffset.UtcNow;
+        return new SecurityWarrant(
+            id, issuer, subject, "api", [new CapabilityGrant("Customer.read", "read", ["customer/*"])],
+            new SecurityWarrantConstraints(allowedTenants: ["tenant-a"], allowedOperations: ["read"]),
+            t.AddMinutes(-1), t.AddMinutes(10), $"nonce-{id}", keyId, null, []) { };
+    }
+
+    private static SecurityWarrant Child(SecurityWarrant parent, string subject = "service-b", string keyId = "child-key") =>
+        parent with
+        {
+            Id = "child", Issuer = parent.Subject, Subject = subject, KeyId = keyId,
+            ParentId = parent.Id, ParentDigest = parent.Digest, DelegationPath = [parent.Digest],
+            Signature = [], ExpiresAt = parent.ExpiresAt.AddMinutes(-1)
+        };
+
+    [Fact]
+    public void Non_delegating_issuer_is_rejected()
+    {
+        var now = DateTimeOffset.UtcNow; var parent = Create("p", "root", "service-a"); var child = Child(parent);
+        var trust = new Resolver(new DelegationIssuerTrust("service-a", new HashSet<string>(["child-key"]), false));
+        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationTrust.VerifyIssuer(parent, child, trust, now, "tenant-a"));
+    }
+
+    [Fact]
+    public void Unknown_issuer_is_rejected()
+    {
+        var now = DateTimeOffset.UtcNow; var parent = Create("p", "root", "service-a"); var child = Child(parent);
+        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationTrust.VerifyIssuer(parent, child, new Resolver(), now, "tenant-a"));
+    }
+
+    [Fact]
+    public void Key_substitution_is_rejected()
+    {
+        var now = DateTimeOffset.UtcNow; var parent = Create("p", "root", "service-a"); var child = Child(parent, keyId: "forged-key");
+        var trust = new Resolver(new DelegationIssuerTrust("service-a", new HashSet<string>(["child-key"]), true));
+        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationTrust.VerifyIssuer(parent, child, trust, now, "tenant-a"));
+    }
+
+    [Fact]
+    public void Execute_only_issuer_cannot_delegate()
+    {
+        var now = DateTimeOffset.UtcNow; var parent = Create("p", "root", "service-a"); var child = Child(parent);
+        var trust = new Resolver(new DelegationIssuerTrust("service-a", new HashSet<string>(["child-key"]), false));
+        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationTrust.VerifyIssuer(parent, child, trust, now));
+    }
+
+    [Fact]
+    public void Trusted_issuer_with_active_delegation_key_is_accepted()
+    {
+        var now = DateTimeOffset.UtcNow; var parent = Create("p", "root", "service-a"); var child = Child(parent);
+        var trust = new Resolver(new DelegationIssuerTrust("service-a", new HashSet<string>(["child-key"]), true));
+        SecurityWarrantDelegationTrust.VerifyIssuer(parent, child, trust, now, "tenant-a");
+    }
+
+    [Fact]
+    public void Audience_scope_is_enforced()
+    {
+        var now = DateTimeOffset.UtcNow; var parent = Create("p", "root", "service-a"); var child = Child(parent) with { Audience = "other-api" };
+        var trust = new Resolver(new DelegationIssuerTrust("service-a", new HashSet<string>(["child-key"]), true, "api"));
+        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationTrust.VerifyIssuer(parent, child, trust, now));
+    }
+
+    [Fact]
+    public void Tenant_scope_is_enforced()
+    {
+        var now = DateTimeOffset.UtcNow; var parent = Create("p", "root", "service-a"); var child = Child(parent);
+        var trust = new Resolver(new DelegationIssuerTrust("service-a", new HashSet<string>(["child-key"]), true, AllowedTenants: new HashSet<string>(["tenant-b"])));
+        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationTrust.VerifyIssuer(parent, child, trust, now, "tenant-a"));
+    }
+
+    [Fact]
+    public void Issuer_must_be_parent_subject()
+    {
+        var now = DateTimeOffset.UtcNow; var parent = Create("p", "root", "service-a"); var child = Child(parent) with { Issuer = "service-c" };
+        var trust = new Resolver(new DelegationIssuerTrust("service-c", new HashSet<string>(["child-key"]), true));
+        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationTrust.VerifyIssuer(parent, child, trust, now));
     }
 }

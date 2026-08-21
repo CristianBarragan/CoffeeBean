@@ -19,7 +19,8 @@ public sealed record ExecutionEvidence(
     string? AuthorizationFingerprint = null,
     string? WarrantId = null,
     string? WarrantDigest = null,
-    string? SecurityInvariantDigest = null);
+    string? SecurityInvariantDigest = null,
+    long? AuthorizationVersion = null);
 
 public static class ExecutionEvidenceFactory
 {

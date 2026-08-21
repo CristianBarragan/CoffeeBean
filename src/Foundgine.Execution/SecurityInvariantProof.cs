@@ -67,7 +67,8 @@ public static class SecurityInvariantProofGate
 
         var required = ir.RequiredSecurityInvariants;
         if (required.Count == 0)
-            return plan;
+            throw new InvalidOperationException(
+                "ExecutionIR contains no security obligations. An executable provider plan must carry a non-empty security proof.");
 
         if (compiler is not ISecurityInvariantProviderCompiler securityCompiler)
         {
@@ -86,6 +87,24 @@ public static class SecurityInvariantProofGate
             required,
             securityCompiler.PreservedSecurityInvariants);
         proof.EnsureSatisfied();
+
+        // A declared preservation profile is the provider capability baseline.
+        // If the provider also supplies an executable conformance evaluator,
+        // certify the concrete compiled plan before attaching the proof.
+        if (compiler is IProviderSecurityConformanceEvaluator evaluator)
+        {
+            var conformance = evaluator.Evaluate(ir, plan);
+            conformance.EnsureSatisfied();
+
+            var missing = required
+                .Except(conformance.Satisfied, StringComparer.Ordinal)
+                .OrderBy(x => x, StringComparer.Ordinal)
+                .ToArray();
+            if (missing.Length > 0)
+                throw new InvalidOperationException(
+                    $"Provider '{plan.Provider}' executable conformance did not satisfy required invariants: {string.Join(", ", missing)}.");
+        }
+
         return plan with { SecurityProof = proof };
     }
 }

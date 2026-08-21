@@ -227,3 +227,106 @@ public sealed class PostgresTransferFundsConcurrencyTests
 
     private sealed record State(decimal SourceBalance, decimal DestinationBalance, long IdempotencyCount, long AuditCount);
 }
+
+    [PostgresFact]
+    public async Task Same_idempotency_key_fault_rollback_allows_waiting_request_to_execute_once()
+    {
+        await using var dataSource = NpgsqlDataSource.Create(_connectionString!);
+        await PrepareAsync(dataSource);
+
+        var tenant = 106;
+        var actor = Guid.NewGuid();
+        var source = Guid.NewGuid();
+        var destination = Guid.NewGuid();
+        await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 0m);
+
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var inject = true;
+        var firstExecutor = new PostgresTransferFundsExecutor(
+            dataSource,
+            static (id, a, b) => id == a.OwnerId && id == b.OwnerId,
+            point =>
+            {
+                if (point != PostgresTransferFundsFaultPoint.AfterMutationBeforeCommit || !inject) return;
+                inject = false;
+                entered.TrySetResult();
+                release.Task.GetAwaiter().GetResult();
+                throw new InvalidOperationException("Injected concurrency fault before commit.");
+            });
+        var waitingExecutor = new PostgresTransferFundsExecutor(
+            dataSource,
+            static (id, a, b) => id == a.OwnerId && id == b.OwnerId);
+        var first = new PostgresTransferFundsService(firstExecutor);
+        var waiting = new PostgresTransferFundsService(waitingExecutor);
+        var command = new TransferFundsCommand(source, destination, 100m, "fault-concurrency-same-key");
+
+        var failed = first.ExecuteAsync(actor, tenant, command);
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var replayCandidate = waiting.ExecuteAsync(actor, tenant, command);
+        await Task.Delay(250);
+        Assert.False(replayCandidate.IsCompleted, "The second request should remain blocked by the first transaction's advisory lock.");
+
+        release.TrySetResult();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => failed);
+        var receipt = await replayCandidate.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.False(receipt.Replay);
+        var state = await ReadStateAsync(dataSource, source, destination);
+        Assert.Equal(900m, state.SourceBalance);
+        Assert.Equal(100m, state.DestinationBalance);
+        Assert.Equal(1, state.IdempotencyCount);
+        Assert.Equal(1, state.AuditCount);
+    }
+
+    [PostgresFact]
+    public async Task Opposing_transfer_waits_through_fault_then_commits_without_partial_state()
+    {
+        await using var dataSource = NpgsqlDataSource.Create(_connectionString!);
+        await PrepareAsync(dataSource);
+
+        var tenant = 107;
+        var actor = Guid.NewGuid();
+        var a = Guid.NewGuid();
+        var b = Guid.NewGuid();
+        await SeedAsync(dataSource, tenant, actor, a, b, sourceBalance: 1000m, destinationBalance: 1000m);
+
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var inject = true;
+        var firstExecutor = new PostgresTransferFundsExecutor(
+            dataSource,
+            static (id, x, y) => id == x.OwnerId && id == y.OwnerId,
+            point =>
+            {
+                if (point != PostgresTransferFundsFaultPoint.AfterMutationBeforeCommit || !inject) return;
+                inject = false;
+                entered.TrySetResult();
+                release.Task.GetAwaiter().GetResult();
+                throw new InvalidOperationException("Injected opposing-transfer fault before commit.");
+            });
+        var secondExecutor = new PostgresTransferFundsExecutor(
+            dataSource,
+            static (id, x, y) => id == x.OwnerId && id == y.OwnerId);
+        var first = new PostgresTransferFundsService(firstExecutor);
+        var second = new PostgresTransferFundsService(secondExecutor);
+
+        var failed = first.ExecuteAsync(actor, tenant, new TransferFundsCommand(a, b, 100m, "fault-a-to-b"));
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var waiting = second.ExecuteAsync(actor, tenant, new TransferFundsCommand(b, a, 200m, "wait-b-to-a"));
+
+        await Task.Delay(250);
+        Assert.False(waiting.IsCompleted, "The opposing transfer should wait for the locked account rows.");
+
+        release.TrySetResult();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => failed);
+        var receipt = await waiting.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.False(receipt.Replay);
+        var state = await ReadStateAsync(dataSource, a, b);
+        Assert.Equal(1200m, state.SourceBalance);
+        Assert.Equal(800m, state.DestinationBalance);
+        Assert.Equal(1, state.IdempotencyCount);
+        Assert.Equal(1, state.AuditCount);
+    }

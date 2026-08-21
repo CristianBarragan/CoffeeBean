@@ -33,6 +33,7 @@ public static class SecurityInvariantIds
     public const string ParameterizedValues = "execution.parameterized-values";
     public const string PlanCacheContextIsolation = "planning.cache-context-isolation";
     public const string AtomicMutation = "mutation.atomic";
+    public const string MutationRowLocking = "mutation.atomic.row-locking";
     public const string Idempotency = "mutation.idempotency";
     public const string ReplayProtection = "mutation.replay-protection";
     public const string AuditRequired = "evidence.audit";
@@ -79,6 +80,10 @@ public static class SecurityInvariantRegistry
             [SecurityInvariantIds.AtomicMutation] = new(
                 SecurityInvariantIds.AtomicMutation, "Atomic mutation",
                 "A capability requiring atomic mutation must preserve its state transition as one transactionally consistent operation.",
+                SecurityInvariantPhase.Execution, true),
+            [SecurityInvariantIds.MutationRowLocking] = new(
+                SecurityInvariantIds.MutationRowLocking, "Mutation row locking",
+                "Protected mutations must lock all affected state deterministically before applying the state transition.",
                 SecurityInvariantPhase.Execution, true),
             [SecurityInvariantIds.Idempotency] = new(
                 SecurityInvariantIds.Idempotency, "Idempotency",
