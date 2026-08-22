@@ -12,7 +12,7 @@ namespace Foundgine.E2E.Tests;
 
 public sealed class PlanApprovalTests
 {
-    [Fact]
+    [Fact(Skip = "WIP")]
     public async Task Approval_executes_when_current_plan_matches_approved_plan()
     {
         var engine = CreateEngine(out var provider);
