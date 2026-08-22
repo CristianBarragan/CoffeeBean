@@ -89,7 +89,7 @@ Foundgine is designed to centralize the semantic execution model so that differe
 
 Foundgine treats security requirements as part of the semantic execution contract. Required security invariants are propagated into plans and checked against provider capabilities before execution. This prevents a provider from silently executing a capability whose security guarantees it cannot preserve.
 
-The security progression currently includes M17.3 security invariants, M17.4 plan-level proof, M17.5 SQL conformance, M17.6 high-assurance mutation conformance, and M17.7 cross-provider conformance.
+The security progression currently includes security invariant registration, plan-level invariant proof, SQL provider conformance, high-assurance mutation conformance, and cross-provider conformance.
 
 ## Foundgine and AI agents
 
@@ -253,19 +253,19 @@ Foundgine's authorization and execution boundaries are intended to reduce unsafe
 
 ## Status
 
-Foundgine is actively evolving (current version: 0.4.0). Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
+Foundgine is actively evolving (current version: 0.5.0). Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
 
-Detailed, dated engineering notes for each milestone are kept in [`CHANGELOG.md`](CHANGELOG.md).
+Detailed, dated engineering notes for each release are kept in [`CHANGELOG.md`](CHANGELOG.md).
 
 
-## M5.10 Security
+## High-assurance mutation security details
 
 Mutation cancellation is propagated to the provider execution boundary and cannot commit after a cancellation check fails.
 
-### M5.18 — Authorization Context Lifecycle Security
+### Authorization context lifecycle security
 
 The PostgreSQL high-assurance authorization context is now lifecycle-safe. Actor/tenant identity is immutable, versions are strictly monotonic, deleted identities retain a version tombstone, and missing configured authorization context fails closed. Lifecycle writes use the same row-lock serialization boundary as mutation authorization reads.
 
-### M5.20 — Authorization Context Cryptographic Integrity
+### Authorization context cryptographic integrity
 
-Persisted PostgreSQL authorization evidence is cryptographically bound to its complete canonical security payload with an externally held HMAC-SHA256 key. M5.21 adds an authorized external key lifecycle with active/verification-only/retired states, monotonic rotation provenance, atomic immutable ring snapshots, and safe retirement checks against persisted evidence. Unknown keys, algorithm mismatches, altered actor/tenant/state/version/fingerprint values, and tampered lifecycle tombstones fail closed. Key rotation is supported through a verification key ring while cryptographic material remains outside the database and cache identity.
+Persisted PostgreSQL authorization evidence is cryptographically bound to its complete canonical security payload with an externally held HMAC-SHA256 key, backed by an authorized external key lifecycle with active/verification-only/retired states, monotonic rotation provenance, atomic immutable ring snapshots, and safe retirement checks against persisted evidence. Unknown keys, algorithm mismatches, altered actor/tenant/state/version/fingerprint values, and tampered lifecycle tombstones fail closed. Key rotation is supported through a verification key ring while cryptographic material remains outside the database and cache identity.

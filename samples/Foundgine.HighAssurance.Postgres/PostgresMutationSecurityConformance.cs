@@ -16,7 +16,9 @@ public sealed record PostgresMutationSecurityConformance(
     bool PersistsIdempotencyInsideTransaction,
     bool PersistsAuditInsideTransaction,
     bool EmitsExecutionReceipt,
-    bool UsesExplicitReadCommittedIsolation = true)
+    bool UsesExplicitReadCommittedIsolation = true,
+    bool EnforcesOwnership = false,
+    bool EnforcesDailyLimit = false)
 {
     public bool IsSatisfied =>
         RequiredInvariants.All(x => x is not null) &&
@@ -26,7 +28,10 @@ public sealed record PostgresMutationSecurityConformance(
         SerializesIdempotencyKeys &&
         PersistsIdempotencyInsideTransaction &&
         PersistsAuditInsideTransaction &&
-        EmitsExecutionReceipt;
+        EmitsExecutionReceipt &&
+        UsesExplicitReadCommittedIsolation &&
+        EnforcesOwnership &&
+        EnforcesDailyLimit;
 
     public IReadOnlyList<string> MissingRequirements()
     {
@@ -39,6 +44,8 @@ public sealed record PostgresMutationSecurityConformance(
         if (!PersistsAuditInsideTransaction) missing.Add("evidence.audit");
         if (!EmitsExecutionReceipt) missing.Add("evidence.execution-receipt");
         if (!UsesExplicitReadCommittedIsolation) missing.Add("mutation.transaction.read-committed-isolation");
+        if (!EnforcesOwnership) missing.Add("authorization.ownership");
+        if (!EnforcesDailyLimit) missing.Add("mutation.daily-limit");
         return missing;
     }
 
@@ -54,6 +61,8 @@ public sealed record PostgresMutationSecurityConformance(
         [
             "tenant.isolation",
             "authorization.runtime",
+            "authorization.ownership",
+            "mutation.daily-limit",
             "mutation.atomic",
             "mutation.atomic.row-locking",
             "mutation.idempotency",
@@ -69,7 +78,9 @@ public sealed record PostgresMutationSecurityConformance(
         PersistsIdempotencyInsideTransaction: true,
         PersistsAuditInsideTransaction: true,
         EmitsExecutionReceipt: true,
-        UsesExplicitReadCommittedIsolation: true);
+        UsesExplicitReadCommittedIsolation: true,
+        EnforcesOwnership: true,
+        EnforcesDailyLimit: true);
 }
 
 /// <summary>

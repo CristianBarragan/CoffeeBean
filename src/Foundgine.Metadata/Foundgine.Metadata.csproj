@@ -6,6 +6,7 @@
     <RootNamespace>Foundgine.Metadata</RootNamespace>
     <AssemblyName>Foundgine.Metadata</AssemblyName>
     <IsPackable>true</IsPackable>
+    <PackageReleaseNotes>0.5.0: Packaging/documentation cleanup only; no metadata-model runtime capability change. 0.3.0: Metadata and semantic modeling became part of the validated semantic execution release surface. AOT metadata support builds on this package.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="README.md" />

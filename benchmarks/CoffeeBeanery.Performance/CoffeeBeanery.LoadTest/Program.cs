@@ -69,6 +69,10 @@ if (batchSizes.Length == 0)
     throw new InvalidOperationException("BENCHMARK_BATCH_SIZES must contain at least one positive integer.");
 
 var dockerMetricsContainer = Environment.GetEnvironmentVariable("BENCHMARK_DOCKER_CONTAINER");
+var failOnErrors = string.Equals(
+    Environment.GetEnvironmentVariable("BENCHMARK_FAIL_ON_ERRORS"),
+    "true",
+    StringComparison.OrdinalIgnoreCase);
 
 var reportDirectory =
     Environment.GetEnvironmentVariable("BENCHMARK_REPORT_DIRECTORY") ?? "/reports";
@@ -303,6 +307,18 @@ Console.WriteLine("==============================================");
 Console.WriteLine($"JSON report: {jsonPath}");
 Console.WriteLine($"CSV report:  {csvPath}");
 Console.WriteLine($"Markdown:    {mdPath}");
+
+if (failOnErrors)
+{
+    var failedResults = results.Count(r => !r.Successful);
+
+    if (failedResults > 0)
+    {
+        Console.Error.WriteLine(
+            $"BENCHMARK FAILED: {failedResults} measurement(s) reported errors or timeouts.");
+        Environment.ExitCode = 1;
+    }
+}
 
 static async Task WaitForTargetsAsync(
     IReadOnlyList<Target> targets,

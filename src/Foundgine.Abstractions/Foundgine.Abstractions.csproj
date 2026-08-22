@@ -6,6 +6,7 @@
     <RootNamespace>Foundgine.Abstractions</RootNamespace>
     <AssemblyName>Foundgine.Abstractions</AssemblyName>
     <IsPackable>true</IsPackable>
+    <PackageReleaseNotes>0.5.0: Packaging/documentation cleanup only; no abstraction-contract runtime capability change. 0.3.0: Provider-independent contracts and identifiers formed the foundation of the validated semantic execution surface.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="README.md" />

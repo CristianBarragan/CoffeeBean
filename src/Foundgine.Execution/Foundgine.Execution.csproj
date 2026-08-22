@@ -6,6 +6,7 @@
     <RootNamespace>Foundgine.Execution</RootNamespace>
     <AssemblyName>Foundgine.Execution</AssemblyName>
     <IsPackable>true</IsPackable>
+    <PackageReleaseNotes>0.5.0: Packaging/documentation cleanup only; no execution-boundary runtime capability change. 0.3.0: Provider-independent execution planning, execution receipts, and plan-bound approval became part of the validated release surface.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="README.md" />

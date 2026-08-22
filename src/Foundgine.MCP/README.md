@@ -37,6 +37,6 @@ The MCP layer does not authorize or execute mutations itself. It delegates to `I
 
 Capability discovery is now part of the security boundary. A host-supplied `SecurityExecutionContext` is required. Foundgine verifies the warrant before returning the capability contract and filters the contract to capabilities granted by that warrant. Discovery never consumes replay state; execution still verifies authorization and consumes the warrant according to the execution policy.
 
-## M5.2 hostile-agent boundary
+## Hostile-agent boundary
 
 MCP payloads are treated as hostile input. Security/provider control properties are rejected by the JSON boundary, structural complexity is bounded before planning, and host-owned `SecurityExecutionContext` remains the sole source of subject, tenant, audience, resource scope, and warrant authority.

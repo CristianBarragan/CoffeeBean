@@ -1,3 +1,4 @@
+using Foundgine.Authorization;
 using Npgsql;
 
 namespace Foundgine.HighAssurance.Postgres.Execution;

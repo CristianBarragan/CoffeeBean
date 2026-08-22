@@ -1,6 +1,6 @@
-# Current status — Foundgine 0.4.0
+# Current status — Foundgine 0.5.0
 
-Foundgine 0.4.0 is the current shipped release. The repository has crossed the build-validation gate: restore, compilation, and the full automated test suite have been run successfully for the current source tree.
+Foundgine 0.5.0 is the current shipped release. The repository has crossed the build-validation gate: restore, compilation, and the full automated test suite have been run successfully for the current source tree.
 
 ## Proven by the active tests
 
@@ -71,7 +71,4 @@ Use this order when information conflicts:
 
 1. current source code;
 2. active tests;
-3. current documentation;
-4. historical notes under `docs/history`.
-
-Historical stage notes explain how the project changed. They are not the current design.
+3. current documentation.

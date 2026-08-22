@@ -233,7 +233,7 @@ jobs:
   # ============================================================
   integration-tests:
     needs:
-      - unit-tests
+      - build-pack
     name: Integration Tests — PostgreSQL 17
     runs-on: ubuntu-latest
 
@@ -310,15 +310,122 @@ jobs:
 
 
   # ============================================================
+  # Authorization penetration tests
+  # ============================================================
+  security-penetration:
+    name: Security Penetration Test — Authorization
+    needs:
+      - build-pack
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore Foundgine.sln
+
+      - name: Build
+        run: dotnet build Foundgine.sln --no-restore --configuration Release
+
+      - name: Start PostgreSQL 17
+        run: |
+          docker compose \
+            -f docker-compose.postgres.yml \
+            up -d --wait postgres
+
+      - name: Run authorization penetration tests
+        run: |
+          set -euo pipefail
+          export FOUNDGINE_POSTGRES_CONNECTION='Host=localhost;Port=55432;Database=foundgine_e2e;Username=foundgine;Password=foundgine'
+
+          dotnet test \
+            tests/Foundgine.Authorization.Tests/Foundgine.Authorization.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --filter 'FullyQualifiedName~TransferFundsPenetrationTests' \
+            --logger 'console;verbosity=normal'
+
+      - name: PostgreSQL diagnostics on failure
+        if: failure()
+        run: |
+          docker compose \
+            -f docker-compose.postgres.yml \
+            logs --no-color postgres
+
+      - name: Stop PostgreSQL
+        if: always()
+        run: |
+          docker compose \
+            -f docker-compose.postgres.yml \
+            down \
+            --volumes \
+            --remove-orphans
+
+
+  # ============================================================
+  # Adversarial semantic-input penetration tests
+  # Runs independently from the PostgreSQL integration suite so hostile
+  # model input is a first-class security gate rather than a side effect
+  # of the general E2E job.
+  # ============================================================
+  security-adversarial:
+    name: Security Penetration Test — Adversarial Intent
+    needs:
+      - build-pack
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore Foundgine.sln
+
+      - name: Build
+        run: dotnet build Foundgine.sln --no-restore --configuration Release
+
+      - name: Run hostile model corpus
+        run: |
+          set -euo pipefail
+
+          dotnet test \
+            tests/Foundgine.E2E.Tests/Foundgine.E2E.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --filter 'FullyQualifiedName~ModelProviderReplayTests.Hostile_model_corpus_is_replayed_through_the_real_engine' \
+            --logger 'console;verbosity=normal'
+
+      - name: Run adversarial engine tests
+        run: |
+          set -euo pipefail
+
+          dotnet test \
+            tests/Foundgine.E2E.Tests/Foundgine.E2E.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --filter 'FullyQualifiedName~BlackBoxAdversarialEngineTests' \
+            --logger 'console;verbosity=normal'
+
+
+  # ============================================================
   # Benchmark projects — outside Foundgine.sln, so verify them
   # independently rather than treating solution build as coverage.
   # ============================================================
   benchmark-build:
-    name: Benchmark Build
+    name: Performance Smoke — 1 Customer
     needs:
       - build-pack
-      - unit-tests
-      - integration-tests
     runs-on: ubuntu-latest
 
     steps:
@@ -366,6 +473,83 @@ jobs:
             dotnet build "$project"               --no-restore               --configuration Release
           done
 
+      # ----------------------------------------------------------
+      # Real performance smoke test
+      # ----------------------------------------------------------
+      # This is intentionally tiny. It proves the benchmark stack can actually
+      # seed a database, start the APIs, execute real benchmark traffic and
+      # finish successfully. The full benchmark matrix remains outside CI.
+      - name: Run performance smoke test
+        shell: bash
+        env:
+          COFFEEBEANERY_CUSTOMERS: "1"
+          COFFEEBEANERY_RELATIONSHIPS_PER_CUSTOMER: "4"
+          COFFEEBEANERY_CONTRACTS_PER_RELATIONSHIP: "3"
+          COFFEEBEANERY_TRANSACTIONS_PER_CONTRACT: "4"
+          BENCHMARK_WARMUP_SECONDS: "1"
+          BENCHMARK_DURATION_SECONDS: "1"
+          BENCHMARK_REQUEST_TIMEOUT_SECONDS: "5"
+          BENCHMARK_READINESS_TIMEOUT_SECONDS: "120"
+          BENCHMARK_RESET_TIMEOUT_SECONDS: "30"
+          BENCHMARK_CONCURRENCY: "1"
+          BENCHMARK_BATCH_SIZES: "1"
+          BENCHMARK_FAIL_ON_ERRORS: "true"
+        run: |
+          set -euo pipefail
+
+          COMPOSE=benchmarks/CoffeeBeanery.Performance/docker-compose.benchmark.yml
+          PROJECT=foundgine-performance-smoke
+
+          cleanup() {
+            docker compose -p "$PROJECT" -f "$COMPOSE" down -v --remove-orphans || true
+          }
+          trap cleanup EXIT
+
+          echo "Starting PostgreSQL and benchmark APIs..."
+          docker compose -p "$PROJECT" -f "$COMPOSE" up -d --build postgres database hotchocolate foundgine-warm
+
+          echo "Waiting for benchmark services..."
+          docker compose -p "$PROJECT" -f "$COMPOSE" up --wait hotchocolate foundgine-warm
+
+          run_target() {
+            local name="$1"
+            local url="$2"
+            local safe_name
+            safe_name="$(echo "$name" | tr '[:upper:] ' '[:lower:]-' | tr -cd '[:alnum:]-')"
+
+            echo
+            echo "========================================"
+            echo "Performance smoke: $name"
+            echo "========================================"
+
+            docker compose -p "$PROJECT" -f "$COMPOSE" run --rm \
+              -e BENCHMARK_TARGET_NAME="$name" \
+              -e BENCHMARK_TARGET_URL="$url" \
+              -e BENCHMARK_WARMUP_SECONDS="$BENCHMARK_WARMUP_SECONDS" \
+              -e BENCHMARK_DURATION_SECONDS="$BENCHMARK_DURATION_SECONDS" \
+              -e BENCHMARK_REQUEST_TIMEOUT_SECONDS="$BENCHMARK_REQUEST_TIMEOUT_SECONDS" \
+              -e BENCHMARK_READINESS_TIMEOUT_SECONDS="$BENCHMARK_READINESS_TIMEOUT_SECONDS" \
+              -e BENCHMARK_RESET_TIMEOUT_SECONDS="$BENCHMARK_RESET_TIMEOUT_SECONDS" \
+              -e BENCHMARK_CONCURRENCY="$BENCHMARK_CONCURRENCY" \
+              -e BENCHMARK_BATCH_SIZES="$BENCHMARK_BATCH_SIZES" \
+              -e BENCHMARK_FAIL_ON_ERRORS="$BENCHMARK_FAIL_ON_ERRORS" \
+              -e BENCHMARK_REPORT_DIRECTORY=/reports \
+              loader
+          }
+
+          run_target "Hot Chocolate + EF Core" "http://hotchocolate:4300/graphql"
+          run_target "Foundgine - provider-plan cache" "http://foundgine-warm:4302/graphql/warm"
+
+          echo
+          echo "========================================"
+          echo "Performance smoke test passed."
+          echo "Customers: 1"
+          echo "Concurrency: 1"
+          echo "Batch size: 1"
+          echo "Warm-up: 1s"
+          echo "Measurement: 1s"
+          echo "========================================"
+
 
   # ============================================================
   # Publish to NuGet.org
@@ -381,6 +565,8 @@ jobs:
       - build-pack
       - unit-tests
       - integration-tests
+      - security-penetration
+      - security-adversarial
       - benchmark-build
 
     runs-on: ubuntu-latest

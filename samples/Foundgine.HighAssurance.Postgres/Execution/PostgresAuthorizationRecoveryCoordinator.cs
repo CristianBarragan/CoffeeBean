@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Foundgine.Authorization;
 using Npgsql;
 
 namespace Foundgine.HighAssurance.Postgres.Execution;
