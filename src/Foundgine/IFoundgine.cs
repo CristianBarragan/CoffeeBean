@@ -2,6 +2,7 @@ using Foundgine.Execution;
 using Foundgine.Semantics;
 using Foundgine.Semantics.Authorization;
 using Foundgine.Semantics.Capabilities;
+using Foundgine.Semantics.Security.Execution;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine;
@@ -20,6 +21,12 @@ public interface IFoundgine
 
     /// <summary>Returns the canonical machine-readable semantic capability contract.</summary>
     SemanticCapabilityContract DescribeCapabilityContract();
+
+    /// <summary>
+    /// Returns the capability contract visible to a verified warrant-backed caller.
+    /// Discovery never consumes replay state; execution still re-authorizes.
+    /// </summary>
+    SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security);
 
     /// <summary>Returns the semantic compatibility versions used by this engine.</summary>
     SemanticVersionSet DescribeVersionSet();

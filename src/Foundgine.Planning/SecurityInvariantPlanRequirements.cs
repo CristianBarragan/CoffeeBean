@@ -9,7 +9,16 @@ namespace Foundgine.Planning;
 /// </summary>
 public static class SecurityInvariantPlanRequirements
 {
-    public static SemanticPlan Attach(SemanticPlan plan)
+    public static SemanticPlan Attach(SemanticPlan plan) => Attach(plan, null);
+
+    /// <summary>
+    /// Attaches the plan obligations plus the invariants declared by the
+    /// capability/security contract. The supplied capability invariants are
+    /// additive: plan shape may require more guarantees, never fewer.
+    /// </summary>
+    public static SemanticPlan Attach(
+        SemanticPlan plan,
+        IEnumerable<string>? capabilityInvariants)
     {
         ArgumentNullException.ThrowIfNull(plan);
 
@@ -17,7 +26,22 @@ public static class SecurityInvariantPlanRequirements
             plan.RequiredSecurityInvariants ?? [],
             StringComparer.Ordinal);
 
+        if (capabilityInvariants is not null)
+        {
+            foreach (var id in capabilityInvariants)
+            {
+                if (!SecurityInvariantRegistry.Contains(id))
+                    throw new InvalidOperationException(
+                        $"Unknown capability security invariant '{id}'.");
+                ids.Add(id);
+            }
+        }
+
         Collect(plan.Root, ids);
+
+        if (ids.Count == 0)
+            throw new InvalidOperationException(
+                "A semantic plan cannot become executable without a security contract.");
 
         return plan with
         {

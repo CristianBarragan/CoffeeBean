@@ -1,5 +1,6 @@
 using Foundgine.Abstractions;
 using Foundgine.Semantics.Query;
+using Foundgine.Semantics.Security.Execution;
 
 namespace Foundgine.Semantics.Intent;
 
@@ -15,7 +16,8 @@ public sealed record ReadIntent(
     IReadOnlyList<ReadOrder>? Order = null,
     int? Limit = null,
     int? Offset = null,
-    string? After = null);
+    string? After = null,
+    SecurityExecutionContext? Security = null);
 
 public sealed record ReadSelection(
     string? Field = null,

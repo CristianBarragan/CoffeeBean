@@ -1,5 +1,6 @@
 using Foundgine.Abstractions;
 using Foundgine.Planning.Mutation;
+using Foundgine.Semantics.Authorization;
 using Xunit;
 
 namespace Foundgine.Planning.Tests;
@@ -148,7 +149,7 @@ public sealed class MutationAuthorizationTests
         public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId) => _relationships[relationshipId];
     }
 
-    private sealed class DenyFieldWritePolicy : Foundgine.Semantics.Authorization.AllowAllSemanticAuthorizationPolicy
+    private sealed class DenyFieldWritePolicy : AllowAllSemanticAuthorizationPolicy
     {
         public override bool CanWriteField(EntityId entityId, FieldId fieldId) =>
             fieldId != new FieldId(2);

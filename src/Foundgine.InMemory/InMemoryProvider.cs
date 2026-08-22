@@ -1,5 +1,6 @@
 using Foundgine.Abstractions;
 using Foundgine.Execution;
+using Foundgine.Execution.Security;
 using Foundgine.Metadata;
 using Foundgine.Planning;
 using Foundgine.Semantics.Query;
@@ -53,7 +54,7 @@ public sealed class InMemoryExecutionProvider : IExecutionProvider
         _compiler.ExecuteAsync(plan, context, cancellationToken);
 }
 
-public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
+public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
 {
     private readonly IMetadataProvider? _metadata;
     private readonly InMemoryDataSet? _data;
@@ -74,6 +75,30 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
     {
         _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
         _data = data ?? throw new ArgumentNullException(nameof(data));
+    }
+
+    public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(ir);
+        ArgumentNullException.ThrowIfNull(plan);
+        if (plan is not InMemoryPlan memoryPlan)
+            throw new ArgumentException("Expected an InMemoryPlan.", nameof(plan));
+
+        var required = ir.RequiredSecurityInvariants
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToArray();
+        var satisfied = required.Intersect(PreservedSecurityInvariants, StringComparer.Ordinal).ToArray();
+        var violations = required.Except(satisfied, StringComparer.Ordinal)
+            .Select(x => $"Invariant '{x}' is not certified by the in-memory execution plan.")
+            .ToArray();
+
+        // The concrete plan must carry the same IR that was certified.
+        if (!ReferenceEquals(memoryPlan.IR, ir))
+            violations = violations.Append("The certified InMemoryPlan does not reference the supplied ExecutionIR.").ToArray();
+
+        return new ProviderSecurityConformanceResult(
+            memoryPlan.Provider, required, satisfied, violations);
     }
 
     /// <summary>Compatibility bridge for callers holding a semantic plan.

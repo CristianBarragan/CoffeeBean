@@ -33,3 +33,5 @@ public sealed class McpBoundaryTests
         Assert.DoesNotContain(references, x => x!.Contains("EntityFramework", StringComparison.Ordinal));
     }
 }
+
+// M5 contract: MCP security identity is host-supplied, never taken from tool JSON.

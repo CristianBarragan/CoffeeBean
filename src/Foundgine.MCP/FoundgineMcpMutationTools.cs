@@ -3,6 +3,7 @@ using System.Text.Json;
 using Foundgine.Abstractions;
 using Foundgine.Semantics.Mutation;
 using Foundgine.Semantics.Query;
+using Foundgine.Semantics.Security.Execution;
 using ModelContextProtocol.Server;
 
 namespace Foundgine.MCP;
@@ -12,16 +13,22 @@ public sealed class FoundgineMcpMutationTools
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly IFoundgineMutations? _mutations;
+    private readonly Func<SecurityExecutionContext?> _securityContextFactory;
 
-    public FoundgineMcpMutationTools(IFoundgineMutations? mutations = null) =>
+    public FoundgineMcpMutationTools(
+        IFoundgineMutations? mutations = null,
+        Func<SecurityExecutionContext?>? securityContextFactory = null)
+    {
         _mutations = mutations;
+        _securityContextFactory = securityContextFactory ?? (() => null);
+    }
 
     [McpServerTool(Name = "foundgine_mutation_dry_run")]
     [Description("Validate and authorize a Foundgine mutation without executing it. Returns the exact semantic plan fingerprint and declared effects.")]
     public string DryRun(string mutationJson)
     {
         var mutations = RequireMutations();
-        var request = MutationJsonAdapter.Parse(mutationJson);
+        var request = WithHostSecurity(MutationJsonAdapter.Parse(mutationJson));
         return JsonSerializer.Serialize(mutations.DryRun(request), JsonOptions);
     }
 
@@ -30,8 +37,10 @@ public sealed class FoundgineMcpMutationTools
     public string Approve(string mutationJson, string approvedBy)
     {
         var mutations = RequireMutations();
-        var request = MutationJsonAdapter.Parse(mutationJson);
-        return JsonSerializer.Serialize(mutations.Approve(request, approvedBy), JsonOptions);
+        _ = approvedBy;
+        var request = WithHostSecurity(MutationJsonAdapter.Parse(mutationJson));
+        var security = request.Security ?? throw new UnauthorizedAccessException("MCP mutation approval requires a host-supplied SecurityExecutionContext.");
+        return JsonSerializer.Serialize(mutations.Approve(request, security.Subject), JsonOptions);
     }
 
     [McpServerTool(Name = "foundgine_mutation_execute_approved")]
@@ -40,9 +49,20 @@ public sealed class FoundgineMcpMutationTools
     {
         var approval = JsonSerializer.Deserialize<MutationPlanApproval>(approvalJson, JsonOptions)
             ?? throw new ArgumentException("Approval JSON is invalid.", nameof(approvalJson));
+        var security = _securityContextFactory()
+            ?? throw new UnauthorizedAccessException("MCP mutation execution requires a host-supplied SecurityExecutionContext.");
+        approval = approval with { Request = approval.Request with { Security = security } };
         var result = await RequireMutations().ExecuteApprovedAsync(approval, cancellationToken: cancellationToken);
         return JsonSerializer.Serialize(result, JsonOptions);
     }
+    private SemanticMutationRequest WithHostSecurity(SemanticMutationRequest request) =>
+        request with
+        {
+            Security = _securityContextFactory()
+                ?? throw new UnauthorizedAccessException(
+                    "MCP mutation execution requires a host-supplied SecurityExecutionContext. The MCP caller cannot supply identity, tenant, audience, or warrant context in the mutation payload.")
+        };
+
     private IFoundgineMutations RequireMutations() => _mutations ??
         throw new InvalidOperationException("Foundgine mutation execution is not configured. Configure FoundgineOptions.MutationSchema and MutationProvider.");
 }

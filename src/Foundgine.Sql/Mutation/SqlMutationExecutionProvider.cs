@@ -49,6 +49,23 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
         return ExecuteBatch(_compiler.Compile(ir), context);
     }
 
+    public MutationBatchResult ExecuteBatch(
+        ExecutionMutationIR ir,
+        ExecutionContext context,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(ir);
+        ArgumentNullException.ThrowIfNull(context);
+
+        if (_compiler is null)
+            throw new InvalidOperationException(
+                "Executing mutation IR requires metadata. Construct SqlMutationExecutionProvider " +
+                "with an IMetadataProvider.");
+
+        return ExecuteBatch(_compiler.Compile(ir), context, cancellationToken);
+    }
+
     public MutationResult Execute(ProviderMutationPlan plan, ExecutionContext context)
     {
         ArgumentNullException.ThrowIfNull(plan);
@@ -122,6 +139,77 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
         return new MutationResult(
             affectedRows,
             returned.Count == 0 ? null : returned);
+    }
+
+    public MutationBatchResult ExecuteBatch(
+        ProviderMutationBatchPlan plan,
+        ExecutionContext context,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(context);
+
+        if (plan is not SqlMutationBatchPlan sqlBatch)
+            throw new ArgumentException(
+                "The SQL mutation provider requires a SqlMutationBatchPlan.",
+                nameof(plan));
+
+        if (_connection.State != ConnectionState.Open)
+            _connection.Open();
+
+        var transaction = _transaction;
+        var ownsTransaction = false;
+        if (transaction is null)
+        {
+            transaction = _connection.BeginTransaction();
+            ownsTransaction = true;
+        }
+
+        var results = new List<MutationResult>(sqlBatch.Operations.Count);
+
+        try
+        {
+            for (var operationIndex = 0; operationIndex < sqlBatch.Operations.Count; operationIndex++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var sqlPlan = sqlBatch.Operations[operationIndex];
+                using var command = _connection.CreateCommand();
+                command.Transaction = transaction;
+                command.CommandText = sqlPlan.CommandText;
+                foreach (var binding in sqlPlan.Parameters)
+                {
+                    var parameter = command.CreateParameter();
+                    parameter.ParameterName = "@" + binding.Name;
+                    parameter.Value = ResolveValue(binding, results) ?? DBNull.Value;
+                    ApplyClrType(parameter, binding.ClrType);
+                    command.Parameters.Add(parameter);
+                }
+
+                using var cancellationRegistration = cancellationToken.Register(static state => ((DbCommand)state!).Cancel(), command);
+                var result = ExecuteCommand(command, sqlPlan);
+                cancellationToken.ThrowIfCancellationRequested();
+                results.Add(result);
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            if (ownsTransaction)
+                transaction.Commit();
+            return new MutationBatchResult(results);
+        }
+        catch
+        {
+            if (ownsTransaction)
+            {
+                try { transaction.Rollback(); } catch { }
+            }
+            throw;
+        }
+        finally
+        {
+            if (ownsTransaction)
+                transaction.Dispose();
+        }
     }
 
     public MutationBatchResult ExecuteBatch(

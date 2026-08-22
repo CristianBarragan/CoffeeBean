@@ -6,6 +6,9 @@ namespace Foundgine.Execution;
 /// </summary>
 public abstract record ProviderPlan(string Provider)
 {
-    /// <summary>Security preservation attestation for this compiled plan.</summary>
-    public SecurityInvariantProof? SecurityProof { get; init; }
+    /// <summary>
+    /// Security execution certificate. It is intentionally internal so callers
+    /// cannot transplant or forge a certificate by assigning it directly.
+    /// </summary>
+    public SecurityInvariantProof? SecurityProof { get; internal set; }
 }

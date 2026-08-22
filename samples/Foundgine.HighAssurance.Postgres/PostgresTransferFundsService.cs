@@ -70,13 +70,13 @@ public sealed class PostgresTransferFundsService
         var intent = ExecutionEvidenceFactory.Hash($"{TransferFundsService.CapabilityId}|v{TransferFundsService.CapabilityVersion}|{actorId}|{tenantId}|{command.SourceAccountId}|{command.DestinationAccountId}|{command.Amount}|{command.IdempotencyKey}");
         var plan = ExecutionEvidenceFactory.Hash("transferFunds|postgres-plan-v3-cte|advisory-idempotency-lock|row-locks|tenant-isolation|execution-authorization|frozen-state|available-funds|daily-limit|atomic-state-idempotency-audit");
         var authorization = ExecutionEvidenceFactory.Hash($"actor:{actorId}|tenant:{tenantId}|source:{command.SourceAccountId}|destination:{command.DestinationAccountId}");
-        var evidence = new ExecutionEvidence("postgres", plan, [], 1, 0, IntentFingerprint: intent, AuthorizationFingerprint: authorization);
+        var evidence = new ExecutionEvidence("postgres", plan, [], 1, 0, IntentFingerprint: intent, AuthorizationFingerprint: result.AuthorizationFingerprint ?? authorization, AuthorizationVersion: result.AuthorizationVersion);
         var resultFingerprint = ExecutionEvidenceFactory.Hash($"{result.TransferId}|{command.Amount}|{result.SourceBalance}|{result.DestinationBalance}|{result.Replay}");
         var execution = ExecutionReceiptFactory.Create(
             Guid.NewGuid().ToString("N"), evidence, resultFingerprint, [],
             result.Replay ? ["transferFunds.replay"] : ["transferFunds.debit", "transferFunds.credit", "transferFunds.idempotency", "transferFunds.audit"],
             now, DateTimeOffset.UtcNow, 1, TransferFundsService.CapabilityVersion, 1, PlanVersion, "banking-semantic-model-v1");
-        var securityProof = SecurityInvariantProof.Create(
+        var securityProof = SecurityInvariantAttestation.Create(
             "postgres-high-assurance",
             PostgresMutationSecurityConformance.TransferFunds.RequiredInvariants,
             PostgresMutationSecurityConformance.TransferFunds.RequiredInvariants);

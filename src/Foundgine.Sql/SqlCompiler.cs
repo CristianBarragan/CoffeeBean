@@ -1,6 +1,7 @@
 using System.Text;
 using Foundgine.Metadata;
 using Foundgine.Execution;
+using Foundgine.Execution.Security;
 using Foundgine.Abstractions;
 using Foundgine.Planning;
 using Foundgine.Semantics.Query;
@@ -14,7 +15,7 @@ namespace Foundgine.Sql;
 /// Compiles the provider-independent Execution IR into SQL, including
 /// filtering, ordering, aggregation, and cursor pagination.
 /// </summary>
-public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
+public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
 {
     private readonly IMetadataProvider _metadata;
 
@@ -34,6 +35,21 @@ public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProvi
     /// <summary>Compatibility bridge for existing callers that still hold a semantic plan.
     /// The semantic plan is lowered immediately into provider-neutral Execution IR;
     /// no provider-specific information is introduced at this boundary.</summary>
+    public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(ir);
+        ArgumentNullException.ThrowIfNull(plan);
+        if (plan is not SqlPlan sqlPlan)
+            throw new ArgumentException("Expected a SqlPlan.", nameof(plan));
+
+        var result = SqlSecurityConformance.Verify(ir, sqlPlan);
+        return new ProviderSecurityConformanceResult(
+            sqlPlan.Provider,
+            result.Required,
+            result.Satisfied,
+            result.Violations);
+    }
+
     public SqlPlan Compile(SemanticPlan plan) => Compile(ExecutionIRCompiler.Compile(plan));
 
     public SqlPlan Compile(ExecutionIR ir)
