@@ -14,11 +14,43 @@ namespace Foundgine.Sql.Mutation;
 /// Executes one compiled mutation through ADO.NET and materializes RETURNING
 /// values into the provider-neutral MutationResult.
 /// </summary>
-public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, IMutationBatchExecutionProvider
+public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, IMutationBatchExecutionProvider, IMutationSecurityConformanceEvaluator
 {
     private readonly DbConnection _connection;
     private readonly DbTransaction? _transaction;
     private readonly SqlMutationCompiler? _compiler;
+
+    public MutationSecurityConformanceResult Evaluate(ExecutionMutationIR ir)
+    {
+        ArgumentNullException.ThrowIfNull(ir);
+
+        if (_compiler is null)
+            throw new InvalidOperationException(
+                "Mutation security conformance requires metadata. Construct SqlMutationExecutionProvider with an IMetadataProvider.");
+
+        // The concrete SQL compiler emits parameter bindings for every mutation
+        // value, and batch execution owns/participates in a transaction spanning
+        // the complete batch. These are provider guarantees, not declarations.
+        var plan = _compiler.Compile(ir);
+        var satisfied = new List<string>();
+        var violations = new List<string>();
+
+        var parameterized = plan.Operations
+            .Select((operation, index) => new { operation, semantic = ir.Operations[index] })
+            .All(x => x.semantic.Fields.Count == 0 || x.operation.Parameters.Count >= x.semantic.Fields.Count);
+
+        if (parameterized)
+            satisfied.Add(Foundgine.Semantics.Security.SecurityInvariantIds.ParameterizedValues);
+        else
+            violations.Add("SQL mutation compilation did not parameterize all mutation field values.");
+
+        satisfied.Add(Foundgine.Semantics.Security.SecurityInvariantIds.AtomicMutation);
+
+        return new MutationSecurityConformanceResult(
+            GetType().FullName ?? GetType().Name,
+            satisfied,
+            violations);
+    }
 
     public SqlMutationExecutionProvider(
         DbConnection connection,

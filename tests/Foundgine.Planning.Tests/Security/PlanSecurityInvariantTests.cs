@@ -57,7 +57,7 @@ public sealed class PlanSecurityInvariantTests
         Assert.Contains(SecurityInvariantIds.ParameterizedValues, exception.Message, StringComparison.Ordinal);
     }
 
-    [Fact(Skip = "WIP")]
+    [Fact]
     public void Provider_proof_is_attached_when_all_required_invariants_are_preserved()
     {
         var node = new SemanticPlanNode(
@@ -101,7 +101,7 @@ public sealed class PlanSecurityInvariantTests
         public ProviderPlan Compile(ExecutionIR ir) => new TestPlan();
     }
 
-    private sealed class FullInvariantCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
+    private sealed class FullInvariantCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
         [

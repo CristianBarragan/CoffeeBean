@@ -133,7 +133,7 @@ public sealed class SecurityAdversarialContractTests
         Assert.Contains("security.tenant-bypass", exception.Message, StringComparison.Ordinal);
     }
 
-    [Fact(Skip = "WIP")]
+    [Fact]
     public void Proofless_provider_plan_is_rejected_at_execution_boundary()
     {
         var ir = new ExecutionIR(
@@ -145,7 +145,7 @@ public sealed class SecurityAdversarialContractTests
         Assert.Contains("no security proof", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact(Skip = "WIP")]
+    [Fact]
     public void Unsatisfied_provider_plan_is_rejected_at_execution_boundary()
     {
         var proof = SecurityInvariantProof.Create(

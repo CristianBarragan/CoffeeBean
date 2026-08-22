@@ -43,7 +43,7 @@ public sealed class AuthorizationCapabilityTests
         public override bool CanWriteField(EntityId entityId, FieldId fieldId) => false;
     }
 
-    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
+    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();

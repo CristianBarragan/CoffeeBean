@@ -93,9 +93,10 @@ public sealed class InMemoryAuthorizationRecoveryControlPlaneFailoverAuthority
 }
 
 /// <summary>
-/// Failover coordinator. It first proves that the successor's recovered ledger exactly matches
-/// the last anchored head, then performs an epoch CAS. No new audit authority can be created
-/// until the successor owns the next epoch.
+/// Failover coordinator. A failover attempt carries the exact authoritative epoch/head it
+/// observed. It first proves that the successor's recovered ledger exactly matches that
+/// anchored head, then performs an epoch CAS. This prevents a losing concurrent successor
+/// from rereading the winner's new epoch and opening a second failover in the same race.
 /// </summary>
 public sealed class AuthorizationRecoveryControlPlaneFailoverCoordinator
 {
@@ -113,22 +114,37 @@ public sealed class AuthorizationRecoveryControlPlaneFailoverCoordinator
     public async ValueTask<AuthorizationRecoveryControlPlaneEpoch> FailoverAsync(
         AuthorizationRecoveryProposerCredentialAuditLedger recoveredLedger,
         string successorId,
+        long expectedEpoch,
+        long expectedSequence,
+        string expectedDigest,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(recoveredLedger);
         if (string.IsNullOrWhiteSpace(successorId)) throw new ArgumentException("Successor ID is required.", nameof(successorId));
+        if (expectedEpoch <= 0) throw new ArgumentOutOfRangeException(nameof(expectedEpoch));
+        if (expectedSequence < 0) throw new ArgumentOutOfRangeException(nameof(expectedSequence));
+        if (string.IsNullOrWhiteSpace(expectedDigest)) throw new ArgumentException("Expected digest is required.", nameof(expectedDigest));
 
+        // The observed authority state is part of the failover attempt. A caller must
+        // carry the state it actually observed into the linearization point; rereading
+        // here would allow a losing successor to observe the winner's new epoch and
+        // immediately perform a second failover.
         var current = await _authority.ReadAsync(cancellationToken);
+        if (current.Epoch != expectedEpoch ||
+            current.Sequence != expectedSequence ||
+            !string.Equals(current.Digest, expectedDigest, StringComparison.OrdinalIgnoreCase))
+            throw new AuthorizationRecoveryControlPlaneFailoverException(
+                "The authoritative control-plane state changed before this failover attempt was committed.");
         if (current.Role != AuthorizationRecoveryControlPlaneRole.Active)
             throw new AuthorizationRecoveryControlPlaneFailoverException("The current control plane is not active.");
 
         await recoveredLedger.VerifyAgainstAnchorAsync(_anchor, cancellationToken);
         var head = recoveredLedger.HeadState;
-        if (head.Sequence != current.Sequence || !string.Equals(head.Digest, current.Digest, StringComparison.OrdinalIgnoreCase))
-            throw new AuthorizationRecoveryControlPlaneFailoverException("Recovered history does not match the active control-plane epoch head.");
+        if (head.Sequence != expectedSequence || !string.Equals(head.Digest, expectedDigest, StringComparison.OrdinalIgnoreCase))
+            throw new AuthorizationRecoveryControlPlaneFailoverException("Recovered history does not match the failover attempt's anchored head.");
 
         var activated = await _authority.TryActivateSuccessorAsync(
-            current.Epoch, current.Sequence, current.Digest, successorId, cancellationToken);
+            expectedEpoch, expectedSequence, expectedDigest, successorId, cancellationToken);
         if (!activated)
             throw new AuthorizationRecoveryControlPlaneFailoverException("Control-plane failover lost the epoch race or the authoritative state changed.");
 

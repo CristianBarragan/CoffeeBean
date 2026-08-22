@@ -16,7 +16,7 @@ namespace Foundgine.E2E.Tests;
 /// orchestrate resolution, authorization, planning, or provider compilation.</summary>
 public sealed class PublicApiTests
 {
-    [Fact(Skip = "WIP")]
+    [Fact]
     public async Task Public_facade_executes_the_core_pipeline_through_di()
     {
         var model = Banking.BankingSemanticModel.Build();
@@ -43,7 +43,7 @@ public sealed class PublicApiTests
         Assert.Equal("Alice", result.Rows[0].Values["Name"]);
     }
 
-    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
+    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();

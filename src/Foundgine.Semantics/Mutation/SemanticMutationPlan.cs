@@ -12,7 +12,11 @@ namespace Foundgine.Semantics.Mutation;
 /// </summary>
 public sealed record SemanticMutationPlan(
     IReadOnlyList<SemanticMutationOperationPlan> Operations,
-    IReadOnlyList<SemanticMutationDependencyPlan> Dependencies);
+    IReadOnlyList<SemanticMutationDependencyPlan> Dependencies)
+{
+    /// <summary>Security invariants required to execute this exact semantic mutation plan.</summary>
+    public IReadOnlyList<string> RequiredSecurityInvariants { get; init; } = [];
+}
 
 public sealed record SemanticMutationOperationPlan(
     string OperationId,

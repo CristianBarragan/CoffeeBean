@@ -106,7 +106,9 @@ public sealed class SemanticMutationExecutionLowerer
             return new MutationDependency(source, target, d.SourceField, targetColumn.Value);
         }).ToArray();
 
-        return ExecutionMutationIR.From(new MutationBatchPlan(operations, dependencies));
+        return ExecutionMutationIR.From(
+            new MutationBatchPlan(operations, dependencies),
+            plan.RequiredSecurityInvariants);
     }
 
     private static void Validate(

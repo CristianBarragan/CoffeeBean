@@ -1,5 +1,6 @@
 using Foundgine.Abstractions;
 using Foundgine.Semantics.Authorization;
+using Foundgine.Semantics.Mutation;
 using Foundgine.Semantics.Query;
 
 namespace Foundgine.Planning.Mutation;
@@ -25,6 +26,63 @@ public sealed class MutationAuthorizer
         ArgumentNullException.ThrowIfNull(plan);
         foreach (var operation in plan.Operations)
             Authorize(operation);
+        return plan;
+    }
+
+
+    /// <summary>
+    /// Authorizes the canonical semantic mutation plan directly. The authorized
+    /// semantic representation is therefore the same representation that is
+    /// subsequently lowered for execution; no independently reconstructed batch
+    /// can become the execution source of truth.
+    /// </summary>
+    public SemanticMutationPlan Authorize(SemanticMutationPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+
+        foreach (var operation in plan.Operations)
+        {
+            var entity = _schema.GetEntity(operation.Entity);
+            RequireAllowed(
+                _policy.GetEntityAccess(entity.Id, AuthorizationOperation.Write),
+                $"write entity '{entity.Name}'");
+
+            foreach (var field in operation.Fields)
+            {
+                if (!entity.Fields.ContainsKey(field.Field))
+                    throw new InvalidOperationException(
+                        $"Mutation field '{field.Field.Value}' is not registered on '{entity.Name}'.");
+
+                RequireAllowed(
+                    _policy.GetFieldAccess(entity.Id, field.Field, AuthorizationOperation.Write),
+                    $"write field '{entity.Name}.{field.Field.Value}'");
+            }
+
+            foreach (var field in operation.ConflictFields)
+            {
+                if (!entity.Fields.ContainsKey(field))
+                    throw new InvalidOperationException(
+                        $"Conflict field '{field.Value}' is not registered on '{entity.Name}'.");
+
+                RequireAllowed(
+                    _policy.GetFieldAccess(entity.Id, field, AuthorizationOperation.Write),
+                    $"write conflict field '{entity.Name}.{field.Value}'");
+            }
+
+            foreach (var field in operation.ReturnFields)
+            {
+                if (!entity.Fields.ContainsKey(field))
+                    throw new InvalidOperationException(
+                        $"Return field '{field.Value}' is not registered on '{entity.Name}'.");
+
+                RequireAllowed(
+                    _policy.GetFieldAccess(entity.Id, field, AuthorizationOperation.Read),
+                    $"read return field '{entity.Name}.{field.Value}'");
+            }
+
+            ValidateFilter(operation.Filter, entity);
+        }
+
         return plan;
     }
 

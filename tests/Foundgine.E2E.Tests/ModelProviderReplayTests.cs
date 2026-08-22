@@ -22,7 +22,7 @@ namespace Foundgine.E2E.Tests;
 /// </summary>
 public sealed class ModelProviderReplayTests
 {
-    [Fact(Skip = "WIP")]
+    [Fact]
     public async Task Hostile_model_corpus_is_replayed_through_the_real_engine()
     {
         var cases = LoadCases();
@@ -64,7 +64,7 @@ public sealed class ModelProviderReplayTests
         Assert.True(compiler.Count > 0);
     }
 
-    [Fact(Skip = "WIP")]
+    [Fact]
     public async Task Same_model_output_is_safe_under_two_runtime_tenants()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -185,7 +185,7 @@ public sealed class ModelProviderReplayTests
                 : null;
     }
 
-    private sealed class CountingSqlCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
+    private sealed class CountingSqlCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
