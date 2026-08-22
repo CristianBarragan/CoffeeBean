@@ -5,6 +5,7 @@ using Foundgine.Abstractions;
 using Foundgine.Execution;
 using Foundgine.Execution.Mutation;
 using Foundgine.Planning.Mutation;
+using Foundgine.Semantics;
 using Foundgine.Semantics.Authorization;
 using Foundgine.Semantics.Capabilities;
 using Foundgine.Semantics.Security;

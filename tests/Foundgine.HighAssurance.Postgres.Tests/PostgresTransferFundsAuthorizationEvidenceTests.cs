@@ -49,8 +49,8 @@ public sealed class PostgresTransferFundsAuthorizationEvidenceTests
                 new TransferFundsCommand(source, destination, 100m, "authorization-evidence-stale")));
 
         var state = await ReadStateAsync(dataSource, source, destination);
-        Assert.Equal(1000m, state.SourceBalance);
-        Assert.Equal(1000m, state.DestinationBalance);
+        Assert.Equal(1000m, state.Source);
+        Assert.Equal(1000m, state.Destination);
         Assert.Equal(0, state.IdempotencyCount);
         Assert.Equal(0, state.AuditCount);
     }
@@ -93,8 +93,8 @@ public sealed class PostgresTransferFundsAuthorizationEvidenceTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => transferTask);
 
         var state = await ReadStateAsync(dataSource, source, destination);
-        Assert.Equal(1000m, state.SourceBalance);
-        Assert.Equal(1000m, state.DestinationBalance);
+        Assert.Equal(1000m, state.Source);
+        Assert.Equal(1000m, state.Destination);
         Assert.Equal(0, state.IdempotencyCount);
         Assert.Equal(0, state.AuditCount);
     }

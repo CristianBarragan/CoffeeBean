@@ -58,15 +58,15 @@ public sealed class AuthorizationRecoveryControlPlaneFailoverSecurityTests
         await ledger.AppendAndAnchorAsync(anchor, "writer", "operator", "fp", 1, AuthorizationRecoveryReconfigurationProposerCredentialState.Active, DateTimeOffset.UnixEpoch);
         var authority = new InMemoryAuthorizationRecoveryControlPlaneFailoverAuthority("primary", 1, ledger.HeadState.Digest);
 
-        var attempts = Enumerable.Range(0, 32).Select(async i =>
+        var attempts = Enumerable.Range(0, 32).Select(i => Task.Run(async () =>
         {
             var coordinator = new AuthorizationRecoveryControlPlaneFailoverCoordinator(authority, anchor);
             try { return await coordinator.FailoverAsync(ledger, $"secondary-{i}"); }
             catch (AuthorizationRecoveryControlPlaneFailoverException) { return null; }
-        });
+        }));
 
         var results = await Task.WhenAll(attempts);
-        Assert.Single(results.Where(x => x is not null));
+        Assert.Single(results, x => x is not null);
         var final = await authority.ReadAsync();
         Assert.Equal(2, final.Epoch);
         Assert.Equal(1, final.Sequence);

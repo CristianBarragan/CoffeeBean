@@ -113,8 +113,11 @@ public sealed class SecurityWarrantTests
     public void Child_adds_capability_is_rejected() => AssertDelegationFails((p, c) => c with { Grants = [.. p.Grants, new CapabilityGrant("Customer.delete", "delete", ["customer/*"])] });
     [Fact]
     public void Child_changes_resource_scope_is_rejected() => AssertDelegationFails((p, c) => c with { Grants = [new CapabilityGrant("Customer.read", "read", ["*"])] });
-    [Fact]
-    public void Child_changes_subject_is_rejected() => AssertDelegationFails((p, c) => c with { Subject = "another-agent" });
+    // A child changing Subject is intentionally NOT an attenuation violation — see
+    // Delegated_subject_can_change_but_issuer_must_be_parent_subject below, which
+    // asserts that delegating to a new subject succeeds as long as the child's
+    // Issuer equals the parent's Subject. There is deliberately no
+    // "Child_changes_subject_is_rejected" test.
 
     [Fact]
     public void Same_warrant_same_nonce_can_only_be_consumed_once()

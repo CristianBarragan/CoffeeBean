@@ -1,5 +1,6 @@
 using Foundgine.Abstractions;
 using Foundgine.Execution;
+using Foundgine.Execution.Security;
 using Foundgine.Planning;
 using Foundgine.Semantics;
 using Foundgine.Semantics.Security;
@@ -133,6 +134,19 @@ public sealed class PlanCacheTests
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
         public int Count { get; private set; }
+
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
+
+            new(
+
+                plan.Provider,
+
+                ir.RequiredSecurityInvariants,
+
+                ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
+
+                Array.Empty<string>());
+
 
         public ProviderPlan Compile(ExecutionIR ir)
         {

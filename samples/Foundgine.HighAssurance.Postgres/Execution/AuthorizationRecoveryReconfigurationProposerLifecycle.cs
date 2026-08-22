@@ -144,8 +144,23 @@ public sealed class AuthorizationRecoveryReconfigurationProposerCredentialLifecy
         CancellationToken cancellationToken = default)
     {
         if (credential is null || string.IsNullOrWhiteSpace(credential.ProposerId)) return null;
-        Entry entry;
-        lock (_gate) if (!_entries.TryGetValue(credential.ProposerId, out entry!)) return null;
+        Entry? entry;
+        lock (_gate) _entries.TryGetValue(credential.ProposerId, out entry);
+
+        if (entry is null)
+        {
+            if (_store is null) return null;
+            var durable = await _store.ReadAsync(credential.ProposerId, cancellationToken);
+            if (durable is null) return null;
+            lock (_gate)
+            {
+                if (!_entries.TryGetValue(credential.ProposerId, out entry))
+                {
+                    entry = new Entry { Fingerprint = durable.CredentialFingerprint, Sequence = durable.CredentialSequence, State = durable.State };
+                    _entries.Add(credential.ProposerId, entry);
+                }
+            }
+        }
 
         await entry.Gate.WaitAsync(cancellationToken);
         try
@@ -232,9 +247,32 @@ public sealed class AuthorizationRecoveryReconfigurationProposerCredentialLifecy
     private Entry GetEntry(string proposerId)
     {
         lock (_gate)
-            return _entries.TryGetValue(proposerId, out var entry)
-                ? entry
-                : throw new KeyNotFoundException($"Unknown proposer '{proposerId}'.");
+        {
+            if (_entries.TryGetValue(proposerId, out var cached))
+                return cached;
+        }
+
+        // Not seen by this instance yet: another instance sharing the same durable
+        // store may have registered/rotated/revoked this proposer. Resolve from the
+        // store rather than failing closed on a purely local cache miss.
+        if (_store is not null)
+        {
+            var durable = _store.ReadAsync(proposerId).GetAwaiter().GetResult();
+            if (durable is not null)
+            {
+                lock (_gate)
+                {
+                    if (!_entries.TryGetValue(proposerId, out var entry))
+                    {
+                        entry = new Entry { Fingerprint = durable.CredentialFingerprint, Sequence = durable.CredentialSequence, State = durable.State };
+                        _entries.Add(proposerId, entry);
+                    }
+                    return entry;
+                }
+            }
+        }
+
+        throw new KeyNotFoundException($"Unknown proposer '{proposerId}'.");
     }
 
     private static AuthorizationRecoveryReconfigurationProposerCredentialLifecycleSnapshot Snapshot(string proposerId, Entry entry) =>

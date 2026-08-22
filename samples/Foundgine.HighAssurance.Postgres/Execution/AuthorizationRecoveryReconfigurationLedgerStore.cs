@@ -38,7 +38,7 @@ public sealed class InMemoryAuthorizationRecoveryReconfigurationLedgerStore
         {
             return ValueTask.FromResult(new AuthorizationRecoveryReconfigurationLedgerSnapshot(
                 _records.ToArray(),
-                _memberships.ToDictionary(k => k.Key, v => v.Value.ToArray())));
+                _memberships.ToDictionary(k => k.Key, v => (IReadOnlyList<string>)v.Value.ToArray())));
         }
     }
 

@@ -122,8 +122,7 @@ public sealed class SecurityWarrantRevocationSecurityTests
         "root", "issuer", "agent-a", "foundgine",
         [new CapabilityGrant("Customer.read", "read", ["customer/*"])],
         new SecurityWarrantConstraints(allowedTenants: ["tenant-1"], maxResults: 100),
-        now.AddMinutes(-1), now.AddHours(1), "nonce-root", "key-1", null, []) with
-    { };
+        now.AddMinutes(-1), now.AddHours(1), "nonce-root", "key-1", null, []);
 
     private static SecurityWarrant Child(SecurityWarrant parent, string id, string subject) => parent with
     {

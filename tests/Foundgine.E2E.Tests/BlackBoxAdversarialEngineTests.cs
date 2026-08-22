@@ -7,6 +7,7 @@ using Foundgine.Planning;
 using Foundgine.Semantics.Authorization;
 using Foundgine.Sql;
 using Foundgine.E2E.Tests.Banking;
+using Foundgine.Execution.Security;
 using Microsoft.Data.Sqlite;
 using Npgsql;
 using Xunit;
@@ -235,6 +236,19 @@ public sealed class BlackBoxAdversarialEngineTests
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
         public int Count { get; private set; }
 
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
+
+            new(
+
+                plan.Provider,
+
+                ir.RequiredSecurityInvariants,
+
+                ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
+
+                Array.Empty<string>());
+
+
         public ProviderPlan Compile(ExecutionIR ir)
         {
             Count++;
@@ -253,6 +267,19 @@ public sealed class BlackBoxAdversarialEngineTests
 
         public int Count { get; private set; }
         public SqlPlan? LastPlan { get; private set; }
+
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
+
+            new(
+
+                plan.Provider,
+
+                ir.RequiredSecurityInvariants,
+
+                ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
+
+                Array.Empty<string>());
+
 
         public ProviderPlan Compile(ExecutionIR ir)
         {

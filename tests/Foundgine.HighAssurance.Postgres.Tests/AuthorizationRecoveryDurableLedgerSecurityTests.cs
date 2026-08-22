@@ -1,3 +1,4 @@
+using Foundgine.HighAssurance.Postgres.Execution;
 using Xunit;
 
 namespace Foundgine.HighAssurance.Postgres.Tests;

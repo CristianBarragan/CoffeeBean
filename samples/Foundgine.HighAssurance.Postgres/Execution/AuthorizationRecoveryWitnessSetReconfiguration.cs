@@ -104,8 +104,10 @@ public sealed class ReconfigurableAuthorizationRecoveryQuorumAnchor : IAuthoriza
     private readonly IAuthorizationRecoveryForkAnchor _primary;
     private readonly IAuthorizationRecoveryReconfigurationProposerAuthorizer _proposerAuthorizer;
     private readonly object _configGate = new();
-    private readonly AuthorizationRecoveryReconfigurationLedger _ledger = new();
+    private readonly SemaphoreSlim _reconfigurationGate = new(1, 1);
+    private AuthorizationRecoveryReconfigurationLedger _ledger = new();
     private AuthorizationRecoveryWitnessConfiguration _config;
+    private IAuthorizationRecoveryReconfigurationLedgerStore? _ledgerStore;
 
     public ReconfigurableAuthorizationRecoveryQuorumAnchor(
         IAuthorizationRecoveryForkAnchor primary,
@@ -180,7 +182,9 @@ public sealed class ReconfigurableAuthorizationRecoveryQuorumAnchor : IAuthoriza
     }
 
     /// <summary>
-    /// Attempts to replace the witness membership. Requires <paramref name="expectedConfigVersion"/>
+    /// Attempts to replace the witness membership. Requires <paramref>
+    ///     <name>expectedConfigVersion</name>
+    /// </paramref>
     /// to still be current and requires a reachable majority of the CURRENT (pre-change) witnesses
     /// before the swap — a minority can neither push through a reconfiguration nor race one under
     /// partition. Exactly one concurrent attempt can win; the rest observe

@@ -119,7 +119,7 @@ public sealed class AuthorizationRecoveryControlPlaneCrossInstanceCommitAtomicit
         var store = Create();
         var historical = Publication("key-v1", KeyV1, 42);
         var decisions = new ConcurrentBag<AuthorizationRecoveryCrossInstanceDecision>();
-        var prepareResults = new ConcurrentBag<AuthorizationRecoveryCrossInstanceResult>();
+        var prepareResults = new ConcurrentBag<AuthorizationRecoveryAtomicCommitResult>();
         var barrier = new Barrier(32);
 
         Parallel.For(0, 32, _ =>
@@ -149,7 +149,7 @@ public sealed class AuthorizationRecoveryControlPlaneCrossInstanceCommitAtomicit
                 observed.Publication.Sequence,
                 observed.Revision));
 
-        var commitResults = new ConcurrentBag<AuthorizationRecoveryCrossInstanceResult>();
+        var commitResults = new ConcurrentBag<AuthorizationRecoveryAtomicCommitResult>();
 
         Parallel.ForEach(decisions, decision =>
         {

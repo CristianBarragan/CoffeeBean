@@ -5,6 +5,7 @@ using Foundgine.Semantics.Mutation;
 using Foundgine.Semantics.Security.Execution;
 using Foundgine.Semantics.Security.Warrants;
 using Xunit;
+using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine.MCP.Tests;
 

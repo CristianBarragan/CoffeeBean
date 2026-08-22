@@ -76,7 +76,7 @@ public sealed class PostgresTransferFundsService
             Guid.NewGuid().ToString("N"), evidence, resultFingerprint, [],
             result.Replay ? ["transferFunds.replay"] : ["transferFunds.debit", "transferFunds.credit", "transferFunds.idempotency", "transferFunds.audit"],
             now, DateTimeOffset.UtcNow, 1, TransferFundsService.CapabilityVersion, 1, PlanVersion, "banking-semantic-model-v1");
-        var securityProof = SecurityInvariantProof.Create(
+        var securityProof = SecurityInvariantAttestation.Create(
             "postgres-high-assurance",
             PostgresMutationSecurityConformance.TransferFunds.RequiredInvariants,
             PostgresMutationSecurityConformance.TransferFunds.RequiredInvariants);

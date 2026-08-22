@@ -82,7 +82,11 @@ public sealed class AuthorizationExecutionBindingSecurityTests
     [Fact]
     public void Denied_evidence_cannot_be_bound()
     {
-        Assert.Throws<InvalidOperationException>(() =>
+        // A denied AuthorizationDecision is rejected by Create() itself -- before
+        // ValidateAgainst is ever reached -- with UnauthorizedAccessException,
+        // a more precise type than the generic InvalidOperationException the
+        // other tests above expect from ValidateAgainst's tamper/mismatch checks.
+        Assert.Throws<UnauthorizedAccessException>(() =>
             AuthorizationExecutionBinding.Create(Actor, 7, Command(), new AuthorizationDecision(false, 7, "fp-7"))
                 .ValidateAgainst(Actor, 7, Command(), new AuthorizationDecision(false, 7, "fp-7")));
     }

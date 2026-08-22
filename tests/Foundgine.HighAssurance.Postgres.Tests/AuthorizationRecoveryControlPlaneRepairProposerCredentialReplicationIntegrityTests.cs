@@ -7,7 +7,8 @@ namespace Foundgine.Tests;
 
 public sealed class AuthorizationRecoveryControlPlaneRepairProposerCredentialReplicationIntegrityTests
 {
-    private static readonly byte[] ReplicationKey = SHA256.HashData("m5.72-replication-key"u8.ToArray());
+    private static readonly byte[] ReplicationKey = SHA256.HashData("m5.74-replication-key-v1"u8.ToArray());
+    private static readonly byte[] RotationKey = SHA256.HashData("m5.74-replication-key-v2"u8.ToArray());
 
     private static AuthorizationRecoveryRepairProposerCredentialDurableLifecycle State(
         long sequence,
@@ -17,8 +18,12 @@ public sealed class AuthorizationRecoveryControlPlaneRepairProposerCredentialRep
         new("operator-a", credentialId, fingerprint, sequence, state);
 
     private static AuthorizationRecoveryControlPlaneRepairProposerCredentialReplicationIntegrity Pair(
-        string instance = "instance-b", long epoch = 7) =>
-        new(instance, epoch, ReplicationKey);
+        string instance = "instance-b", long epoch = 7)
+    {
+        var target = new AuthorizationRecoveryControlPlaneRepairProposerCredentialReplicationIntegrity(instance, epoch, ReplicationKey);
+        target.TrustSourceInstance("instance-a", ReplicationKey);
+        return target;
+    }
 
     [Fact]
     public void Tampered_envelope_is_rejected()
@@ -71,7 +76,7 @@ public sealed class AuthorizationRecoveryControlPlaneRepairProposerCredentialRep
         var canonical = string.Join("|", sameSequenceDifferentState.ProposerId, sameSequenceDifferentState.CredentialId,
             sameSequenceDifferentState.CredentialFingerprint, sameSequenceDifferentState.CredentialSequence.ToString(),
             sameSequenceDifferentState.State.ToString(), sameSequenceDifferentState.AuthorityEpoch.ToString(),
-            sameSequenceDifferentState.SourceInstanceId, sameSequenceDifferentState.PreviousSequence.ToString(),
+            sameSequenceDifferentState.SourceInstanceId, sameSequenceDifferentState.SourceKeyId, sameSequenceDifferentState.PreviousSequence.ToString(),
             sameSequenceDifferentState.PreviousDigest, sameSequenceDifferentState.StateDigest);
         var resigned = sameSequenceDifferentState with { IntegrityProof = Convert.ToHexString(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(canonical))) };
         Assert.Equal(AuthorizationRecoveryRepairProposerCredentialReplicationApplyResult.DivergentState, target.Apply(resigned));
@@ -105,8 +110,27 @@ public sealed class AuthorizationRecoveryControlPlaneRepairProposerCredentialRep
     public void Wrong_replication_key_is_rejected()
     {
         var source = new AuthorizationRecoveryControlPlaneRepairProposerCredentialReplicationIntegrity("instance-a", 7, ReplicationKey);
-        var target = new AuthorizationRecoveryControlPlaneRepairProposerCredentialReplicationIntegrity("instance-b", 7, SHA256.HashData("wrong-key"u8.ToArray()));
+        var target = new AuthorizationRecoveryControlPlaneRepairProposerCredentialReplicationIntegrity("instance-b", 7, SHA256.HashData("wrong-target-key"u8.ToArray()));
+        target.TrustSourceInstance("instance-a", SHA256.HashData("wrong-key"u8.ToArray()));
         Assert.Equal(AuthorizationRecoveryRepairProposerCredentialReplicationApplyResult.InvalidIntegrity, target.Apply(source.CreateEnvelope(State(1))));
+    }
+
+    [Fact]
+    public void Untrusted_source_is_rejected_before_integrity_is_evaluated()
+    {
+        var source = new AuthorizationRecoveryControlPlaneRepairProposerCredentialReplicationIntegrity("instance-a", 7, ReplicationKey);
+        var target = new AuthorizationRecoveryControlPlaneRepairProposerCredentialReplicationIntegrity("instance-b", 7, ReplicationKey);
+        Assert.Equal(AuthorizationRecoveryRepairProposerCredentialReplicationApplyResult.UntrustedSource, target.Apply(source.CreateEnvelope(State(1))));
+    }
+
+    [Fact]
+    public void Source_identity_spoofing_is_rejected_even_when_attacker_reuses_a_trusted_source_key()
+    {
+        var source = new AuthorizationRecoveryControlPlaneRepairProposerCredentialReplicationIntegrity("instance-a", 7, ReplicationKey);
+        var target = Pair();
+        var envelope = source.CreateEnvelope(State(1));
+        var spoofed = envelope with { SourceInstanceId = "instance-c" };
+        Assert.Equal(AuthorizationRecoveryRepairProposerCredentialReplicationApplyResult.UntrustedSource, target.Apply(spoofed));
     }
 
     [Fact]
@@ -143,10 +167,66 @@ public sealed class AuthorizationRecoveryControlPlaneRepairProposerCredentialRep
         using var hmac = new HMACSHA256(ReplicationKey);
         var canonical = string.Join("|", forgedNewEpoch.ProposerId, forgedNewEpoch.CredentialId,
             forgedNewEpoch.CredentialFingerprint, forgedNewEpoch.CredentialSequence.ToString(),
-            forgedNewEpoch.State.ToString(), forgedNewEpoch.AuthorityEpoch.ToString(), forgedNewEpoch.SourceInstanceId,
+            forgedNewEpoch.State.ToString(), forgedNewEpoch.AuthorityEpoch.ToString(), forgedNewEpoch.SourceInstanceId, forgedNewEpoch.SourceKeyId,
             forgedNewEpoch.PreviousSequence.ToString(), forgedNewEpoch.PreviousDigest, forgedNewEpoch.StateDigest);
         forgedNewEpoch = forgedNewEpoch with { IntegrityProof = Convert.ToHexString(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(canonical))) };
 
         Assert.Equal(AuthorizationRecoveryRepairProposerCredentialReplicationApplyResult.DivergentState, target.Apply(forgedNewEpoch));
     }
+    [Fact]
+    public void Trusted_source_key_rotation_accepts_in_flight_old_key_and_new_key()
+    {
+        var source = new AuthorizationRecoveryControlPlaneRepairProposerCredentialReplicationIntegrity("instance-a", 7, ReplicationKey);
+        var target = Pair();
+        var first = source.CreateEnvelope(State(1));
+        Assert.Equal(AuthorizationRecoveryRepairProposerCredentialReplicationApplyResult.Applied, target.Apply(first));
+
+        Assert.Equal(AuthorizationRecoverySourceTrustKeyLifecycleResult.Activated,
+            target.RotateTrustedSourceKey("instance-a", "source-key-v1", "source-key-v2", 2, RotationKey));
+
+        var oldKeyMessage = source.CreateEnvelope(State(2), first.StateDigest);
+        Assert.Equal(AuthorizationRecoveryRepairProposerCredentialReplicationApplyResult.Applied, target.Apply(oldKeyMessage));
+
+        Assert.Equal(AuthorizationRecoverySourceTrustKeyLifecycleResult.Activated,
+            source.RotateLocalSourceKey("source-key-v1", "source-key-v2", 2, RotationKey));
+        var newKeyMessage = source.CreateEnvelope(State(3), oldKeyMessage.StateDigest);
+        Assert.Equal(AuthorizationRecoveryRepairProposerCredentialReplicationApplyResult.Applied, target.Apply(newKeyMessage));
+    }
+
+    [Fact]
+    public void Revoked_source_key_is_rejected_even_when_message_integrity_is_valid()
+    {
+        var source = new AuthorizationRecoveryControlPlaneRepairProposerCredentialReplicationIntegrity("instance-a", 7, ReplicationKey);
+        var target = Pair();
+        var first = source.CreateEnvelope(State(1));
+        Assert.Equal(AuthorizationRecoveryRepairProposerCredentialReplicationApplyResult.Applied, target.Apply(first));
+
+        Assert.Equal(AuthorizationRecoverySourceTrustKeyLifecycleResult.Activated,
+            target.RotateTrustedSourceKey("instance-a", "source-key-v1", "source-key-v2", 2, RotationKey));
+        Assert.Equal(AuthorizationRecoverySourceTrustKeyLifecycleResult.Revoked,
+            target.RevokeTrustedSourceKey("instance-a", "source-key-v1"));
+
+        var replay = source.CreateEnvelope(State(2), first.StateDigest);
+        Assert.Equal(AuthorizationRecoveryRepairProposerCredentialReplicationApplyResult.RevokedSourceKey, target.Apply(replay));
+    }
+
+    [Fact]
+    public void Unknown_source_key_is_rejected()
+    {
+        var source = new AuthorizationRecoveryControlPlaneRepairProposerCredentialReplicationIntegrity("instance-a", 7, ReplicationKey);
+        var target = Pair();
+        var envelope = source.CreateEnvelope(State(1)) with { SourceKeyId = "source-key-unknown" };
+        Assert.Equal(AuthorizationRecoveryRepairProposerCredentialReplicationApplyResult.UnknownSourceKey, target.Apply(envelope));
+    }
+
+    [Fact]
+    public void Stale_trusted_source_rotation_is_rejected()
+    {
+        var target = Pair();
+        Assert.Equal(AuthorizationRecoverySourceTrustKeyLifecycleResult.Activated,
+            target.RotateTrustedSourceKey("instance-a", "source-key-v1", "source-key-v2", 2, RotationKey));
+        Assert.Equal(AuthorizationRecoverySourceTrustKeyLifecycleResult.StaleRotation,
+            target.RotateTrustedSourceKey("instance-a", "source-key-v1", "source-key-v3", 3, RotationKey));
+    }
+
 }

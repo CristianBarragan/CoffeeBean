@@ -139,13 +139,13 @@ public sealed class McpMaliciousIntentSecurityTests
     {
         public SecurityExecutionContext? ReceivedSecurity { get; private set; }
 
-        public Foundgine.Semantics.Capabilities.SemanticAuthorizationCapabilities DescribeCapabilities() => throw new NotImplementedException();
+        public Foundgine.Semantics.Authorization.SemanticAuthorizationCapabilities DescribeCapabilities() => throw new NotImplementedException();
         public Foundgine.Semantics.Capabilities.SemanticCapabilityContract DescribeCapabilityContract() => throw new NotImplementedException();
         public Foundgine.Semantics.Capabilities.SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security) => throw new NotImplementedException();
-        public Foundgine.Semantics.Capabilities.SemanticVersionSet DescribeVersionSet() => throw new NotImplementedException();
-        public Foundgine.Execution.DryRunResult DryRun(Foundgine.Semantics.SemanticRequest request) => throw new NotImplementedException();
-        public Foundgine.Execution.PlanApproval ApprovePlan(Foundgine.Semantics.SemanticRequest request, string approvedBy) => throw new NotImplementedException();
-        public Task<Foundgine.Execution.ExecutionResult> ExecuteApprovedAsync(Foundgine.Execution.PlanApproval approval, Foundgine.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Foundgine.Semantics.SemanticVersionSet DescribeVersionSet() => throw new NotImplementedException();
+        public Foundgine.DryRunResult DryRun(Foundgine.Semantics.SemanticRequest request) => throw new NotImplementedException();
+        public Foundgine.PlanApproval ApprovePlan(Foundgine.Semantics.SemanticRequest request, string approvedBy) => throw new NotImplementedException();
+        public Task<Foundgine.Execution.ExecutionResult> ExecuteApprovedAsync(Foundgine.PlanApproval approval, Foundgine.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<Foundgine.Execution.ExecutionResult> ExecuteAsync(Foundgine.Semantics.Intent.ReadIntent intent, Foundgine.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default)
         {
             ReceivedSecurity = intent.Security;

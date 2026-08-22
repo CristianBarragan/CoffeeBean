@@ -38,6 +38,7 @@ public static class SecurityInvariantIds
     public const string ReplayProtection = "mutation.replay-protection";
     public const string AuditRequired = "evidence.audit";
     public const string ExecutionEvidenceRequired = "evidence.execution-receipt";
+    public const string TransactionReadCommittedIsolation = "mutation.transaction.read-committed-isolation";
 }
 
 /// <summary>
@@ -100,7 +101,11 @@ public static class SecurityInvariantRegistry
             [SecurityInvariantIds.ExecutionEvidenceRequired] = new(
                 SecurityInvariantIds.ExecutionEvidenceRequired, "Execution evidence required",
                 "Protected execution must produce an evidence-bearing execution receipt.",
-                SecurityInvariantPhase.Evidence, true)
+                SecurityInvariantPhase.Evidence, true),
+            [SecurityInvariantIds.TransactionReadCommittedIsolation] = new(
+                SecurityInvariantIds.TransactionReadCommittedIsolation, "Transaction read-committed isolation",
+                "A protected mutation's transaction must run under an explicit read-committed (or stronger) isolation level rather than an unspecified default.",
+                SecurityInvariantPhase.Execution, true)
         };
 
     public static IReadOnlyCollection<SecurityInvariant> AllInvariants => All.Values.ToList().AsReadOnly();

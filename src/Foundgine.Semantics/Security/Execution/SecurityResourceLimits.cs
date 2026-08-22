@@ -110,7 +110,7 @@ public static class SecurityResourceLimitValidator
         return count;
     }
 
-    internal static void ValidateFilter(SemanticFilterExpression filter, SecurityResourceLimits limits) => _ = CountFilter(filter, 1, limits);
+    public static void ValidateFilter(SemanticFilterExpression filter, SecurityResourceLimits limits) => _ = CountFilter(filter, 1, limits);
 
     private static int CountFilter(
         SemanticFilterExpression filter,

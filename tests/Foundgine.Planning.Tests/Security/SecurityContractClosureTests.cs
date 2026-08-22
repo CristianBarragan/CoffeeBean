@@ -42,8 +42,11 @@ public sealed class SecurityContractClosureTests
     {
         var plan = new UnprovedPlan();
 
+        var ir = new ExecutionIR(
+            new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [], null, null, []),
+            [SecurityInvariantIds.AuthorizationRequired]);
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            SecurityInvariantExecutionGate.EnsureExecutable(plan));
+            SecurityInvariantExecutionGate.EnsureExecutable(plan, ir));
 
         Assert.Contains("no security proof", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -57,8 +60,11 @@ public sealed class SecurityContractClosureTests
             []);
         var plan = new UnprovedPlan { SecurityProof = proof };
 
+        var ir = new ExecutionIR(
+            new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [], null, null, []),
+            [SecurityInvariantIds.AuthorizationRequired]);
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            SecurityInvariantExecutionGate.EnsureExecutable(plan));
+            SecurityInvariantExecutionGate.EnsureExecutable(plan, ir));
 
         Assert.Contains(SecurityInvariantIds.AuthorizationRequired, exception.Message, StringComparison.Ordinal);
     }

@@ -65,7 +65,7 @@ public sealed class SecurityWarrantDelegationStateMachineSecurityTests
     }
 
     [Fact]
-    public void Concurrent_revocation_and_key_rotation_have_one_linearizable_winner()
+    public async Task Concurrent_revocation_and_key_rotation_have_one_linearizable_winner()
     {
         var warrant = Create();
         var machine = new SecurityWarrantDelegationStateMachine();
@@ -76,7 +76,7 @@ public sealed class SecurityWarrantDelegationStateMachineSecurityTests
         var revoke = Task.Run(() => { gate.SignalAndWait(); try { machine.Revoke(warrant); } catch (Exception e) { errors.Add(e); } });
         var rotate = Task.Run(() => { gate.SignalAndWait(); try { machine.RotateKey(warrant, "key-v2"); } catch (Exception e) { errors.Add(e); } });
         gate.SignalAndWait();
-        Task.WaitAll(revoke, rotate);
+        await Task.WhenAll(revoke, rotate);
 
         var state = machine.Read(warrant);
         Assert.True(state.Sequence is 2 or 3);

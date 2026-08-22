@@ -83,7 +83,14 @@ public sealed class AuthorizationRecoveryControlPlanePublicationIntegrityTests
     public void Canonicalization_binds_field_boundaries()
     {
         var a = Create();
-        var b = a with { ActiveControlPlaneId = "secondary1", HeadDigest = "digest-A" };
-        Assert.NotEqual(a.Tag, b.Tag);
+
+        // Shift the owner/sequence boundary in a way that would collide under
+        // naive (non-length-prefixed) concatenation: "secondary" + "42" vs
+        // "secondary4" + "2" both flatten to "secondary42" without the
+        // length-prefix that Canonicalize adds per field.
+        var bTag = AuthorizationRecoveryControlPlanePublicationIntegrity.ComputeTag(
+            a.Epoch, "secondary4", 2, a.HeadDigest, a.IntegrityKeyId, Key);
+
+        Assert.NotEqual(a.Tag, bTag);
     }
 }

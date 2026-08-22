@@ -41,7 +41,7 @@ public sealed class McpCapabilityDiscoverySecurityTests
 
     private sealed class StubFoundgine : Foundgine.IFoundgine
     {
-        public Foundgine.Semantics.Capabilities.SemanticAuthorizationCapabilities DescribeCapabilities() => throw new NotImplementedException();
+        public Foundgine.Semantics.Authorization.SemanticAuthorizationCapabilities DescribeCapabilities() => throw new NotImplementedException();
         public Foundgine.Semantics.Capabilities.SemanticCapabilityContract DescribeCapabilityContract() => Contract();
         public Foundgine.Semantics.Capabilities.SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security) =>
             Contract() with
@@ -50,18 +50,18 @@ public sealed class McpCapabilityDiscoverySecurityTests
                     .Where(c => SecurityWarrantAuthorization.Allows(security.Warrant, security.Subject, security.Audience, c.Id, c.Operation, security.Tenant, security.ResourceScope))
                     .ToArray()
             };
-        public Foundgine.Semantics.Capabilities.SemanticVersionSet DescribeVersionSet() => throw new NotImplementedException();
-        public Foundgine.Execution.DryRunResult DryRun(Foundgine.Semantics.SemanticRequest request) => throw new NotImplementedException();
-        public Foundgine.Execution.PlanApproval ApprovePlan(Foundgine.Semantics.SemanticRequest request, string approvedBy) => throw new NotImplementedException();
-        public Task<Foundgine.Execution.ExecutionResult> ExecuteApprovedAsync(Foundgine.Execution.PlanApproval approval, Foundgine.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Foundgine.Semantics.SemanticVersionSet DescribeVersionSet() => throw new NotImplementedException();
+        public Foundgine.DryRunResult DryRun(Foundgine.Semantics.SemanticRequest request) => throw new NotImplementedException();
+        public Foundgine.PlanApproval ApprovePlan(Foundgine.Semantics.SemanticRequest request, string approvedBy) => throw new NotImplementedException();
+        public Task<Foundgine.Execution.ExecutionResult> ExecuteApprovedAsync(Foundgine.PlanApproval approval, Foundgine.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<Foundgine.Execution.ExecutionResult> ExecuteAsync(Foundgine.Semantics.SemanticRequest request, Foundgine.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<Foundgine.Execution.ExecutionResult> ExecuteAsync(Foundgine.Semantics.Intent.ReadIntent intent, Foundgine.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
         private static Foundgine.Semantics.Capabilities.SemanticCapabilityContract Contract() =>
             new(1,
             [
-                new("orders.read", "Read Orders", new Foundgine.Abstractions.EntityId(1), Foundgine.Semantics.Authorization.AuthorizationDecision.Allow, [], [], [], [], []) { Operation = "read" },
-                new("customers.read", "Read Customers", new Foundgine.Abstractions.EntityId(2), Foundgine.Semantics.Authorization.AuthorizationDecision.Allow, [], [], [], [], []) { Operation = "read" }
+                new("orders.read", "Read Orders", new Foundgine.Abstractions.EntityId(1), Foundgine.Abstractions.AuthorizationDecision.Allowed, [], [], [], [], []) { Operation = "read" },
+                new("customers.read", "Read Customers", new Foundgine.Abstractions.EntityId(2), Foundgine.Abstractions.AuthorizationDecision.Allowed, [], [], [], [], []) { Operation = "read" }
             ]);
     }
 }

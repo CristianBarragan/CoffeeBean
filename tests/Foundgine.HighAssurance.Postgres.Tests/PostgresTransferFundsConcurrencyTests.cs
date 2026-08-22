@@ -22,7 +22,8 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var destination = Guid.NewGuid();
         await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 0m);
 
-        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource,
+            static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
         var command = new TransferFundsCommand(source, destination, 100m, "same-key-concurrency");
 
         var tasks = Enumerable.Range(0, 8)
@@ -53,7 +54,8 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var b = Guid.NewGuid();
         await SeedAsync(dataSource, tenant, actor, a, b, sourceBalance: 1000m, destinationBalance: 1000m);
 
-        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, static (id, x, y) => id == x.OwnerId && id == y.OwnerId));
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource,
+            static (id, x, y) => id == x.OwnerId && id == y.OwnerId));
         var first = service.ExecuteAsync(actor, tenant, new TransferFundsCommand(a, b, 100m, "a-to-b"));
         var second = service.ExecuteAsync(actor, tenant, new TransferFundsCommand(b, a, 200m, "b-to-a"));
 
@@ -78,9 +80,11 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var actor = Guid.NewGuid();
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
-        await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 1000m, destinationTenant: otherTenant);
+        await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 1000m,
+            destinationTenant: otherTenant);
 
-        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource,
+            static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteAsync(
             actor, tenant, new TransferFundsCommand(source, destination, 100m, "tenant-escape")));
 
@@ -101,9 +105,11 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var actor = Guid.NewGuid();
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
-        await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 1000m, destinationFrozen: true);
+        await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 1000m,
+            destinationFrozen: true);
 
-        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource,
+            static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteAsync(
             actor, tenant, new TransferFundsCommand(source, destination, 100m, "frozen-destination")));
 
@@ -124,13 +130,16 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var actor = Guid.NewGuid();
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
-        await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 1000m);
+        await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m,
+            destinationBalance: 1000m);
 
         var authorize = false;
-        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, (_, _, _) => authorize));
+        var service =
+            new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, (_, _, _) => authorize));
 
-        await Assert.ThrowsAsync<Foundgine.Semantics.Authorization.SemanticAuthorizationException>(() => service.ExecuteAsync(
-            actor, tenant, new TransferFundsCommand(source, destination, 100m, "authorization-recheck")));
+        await Assert.ThrowsAsync<Foundgine.Semantics.Authorization.SemanticAuthorizationException>(() =>
+            service.ExecuteAsync(
+                actor, tenant, new TransferFundsCommand(source, destination, 100m, "authorization-recheck")));
 
         authorize = true;
         var receipt = await service.ExecuteAsync(actor, tenant,
@@ -155,7 +164,8 @@ public sealed class PostgresTransferFundsConcurrencyTests
         await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 0m,
             pendingTransactions: 400m, regulatoryHold: 300m);
 
-        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
+        var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource,
+            static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteAsync(
             actor, tenant, new TransferFundsCommand(source, destination, 301m, "available-funds")));
 
@@ -171,7 +181,9 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var sql = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "schema.sql"));
         await using var command = dataSource.CreateCommand(sql);
         await command.ExecuteNonQueryAsync();
-        await using var clear = dataSource.CreateCommand("TRUNCATE banking.transfer_audit, banking.transfer_idempotency, banking.bank_account;");
+        await using var clear =
+            dataSource.CreateCommand(
+                "TRUNCATE banking.transfer_audit, banking.transfer_idempotency, banking.bank_account;");
         await clear.ExecuteNonQueryAsync();
     }
 
@@ -189,10 +201,10 @@ public sealed class PostgresTransferFundsConcurrencyTests
         decimal regulatoryHold = 0m)
     {
         const string sql = """
-            INSERT INTO banking.bank_account(id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold, daily_transferred, daily_limit, is_frozen)
-            VALUES (@source, @tenant, @actor, @sourceBalance, @pending, @hold, 0, 1000000, false),
-                   (@destination, @destinationTenant, @actor, @destinationBalance, 0, 0, 0, 1000000, @frozen);
-            """;
+                           INSERT INTO banking.bank_account(id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold, daily_transferred, daily_limit, is_frozen)
+                           VALUES (@source, @tenant, @actor, @sourceBalance, @pending, @hold, 0, 1000000, false),
+                                  (@destination, @destinationTenant, @actor, @destinationBalance, 0, 0, 0, 1000000, @frozen);
+                           """;
         await using var command = dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("source", source);
         command.Parameters.AddWithValue("destination", destination);
@@ -211,12 +223,12 @@ public sealed class PostgresTransferFundsConcurrencyTests
     {
         await using var connection = await dataSource.OpenConnectionAsync();
         const string sql = """
-            SELECT
-              (SELECT balance FROM banking.bank_account WHERE id = @source),
-              (SELECT balance FROM banking.bank_account WHERE id = @destination),
-              (SELECT count(*) FROM banking.transfer_idempotency),
-              (SELECT count(*) FROM banking.transfer_audit);
-            """;
+                           SELECT
+                             (SELECT balance FROM banking.bank_account WHERE id = @source),
+                             (SELECT balance FROM banking.bank_account WHERE id = @destination),
+                             (SELECT count(*) FROM banking.transfer_idempotency),
+                             (SELECT count(*) FROM banking.transfer_audit);
+                           """;
         await using var command = new NpgsqlCommand(sql, connection);
         command.Parameters.AddWithValue("source", source);
         command.Parameters.AddWithValue("destination", destination);
@@ -225,8 +237,11 @@ public sealed class PostgresTransferFundsConcurrencyTests
         return new State(reader.GetDecimal(0), reader.GetDecimal(1), reader.GetInt64(2), reader.GetInt64(3));
     }
 
-    private sealed record State(decimal SourceBalance, decimal DestinationBalance, long IdempotencyCount, long AuditCount);
-}
+    private sealed record State(
+        decimal SourceBalance,
+        decimal DestinationBalance,
+        long IdempotencyCount,
+        long AuditCount);
 
     [PostgresFact]
     public async Task Same_idempotency_key_fault_rollback_allows_waiting_request_to_execute_once()
@@ -266,7 +281,8 @@ public sealed class PostgresTransferFundsConcurrencyTests
 
         var replayCandidate = waiting.ExecuteAsync(actor, tenant, command);
         await Task.Delay(250);
-        Assert.False(replayCandidate.IsCompleted, "The second request should remain blocked by the first transaction's advisory lock.");
+        Assert.False(replayCandidate.IsCompleted,
+            "The second request should remain blocked by the first transaction's advisory lock.");
 
         release.TrySetResult();
         await Assert.ThrowsAsync<InvalidOperationException>(() => failed);
@@ -330,3 +346,4 @@ public sealed class PostgresTransferFundsConcurrencyTests
         Assert.Equal(1, state.IdempotencyCount);
         Assert.Equal(1, state.AuditCount);
     }
+}

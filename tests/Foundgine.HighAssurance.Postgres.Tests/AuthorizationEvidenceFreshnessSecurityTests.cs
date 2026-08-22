@@ -29,8 +29,11 @@ public sealed class AuthorizationEvidenceFreshnessSecurityTests
         var validator = new AuthorizationEvidenceFreshnessValidator(
             AuthorizationEvidenceFreshnessPolicy.Default, () => Now);
 
+        // issued -6min/expires -1min keeps the lifetime at exactly the 5-minute
+        // policy bound (so that check doesn't fire first) while the evidence is
+        // still genuinely past its expiry, which is what this test targets.
         var ex = Assert.Throws<InvalidOperationException>(() =>
-            validator.Validate(Claims(Now.AddMinutes(-10), Now.AddMinutes(-1))));
+            validator.Validate(Claims(Now.AddMinutes(-6), Now.AddMinutes(-1))));
 
         Assert.Contains("expired", ex.Message, StringComparison.OrdinalIgnoreCase);
     }

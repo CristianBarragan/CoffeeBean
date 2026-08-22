@@ -46,12 +46,15 @@ public sealed class FingerprintAuthorizationRecoveryReconfigurationProposerAutho
         if (credential.ExpectedConfigVersion != expectedConfigVersion ||
             !string.Equals(credential.ProposedMembershipDigest, proposedMembershipDigest, StringComparison.OrdinalIgnoreCase))
             return false;
-        if (!_expectedFingerprints.TryGetValue(credential.ProposerId, out var expected))
+        if (!_expectedFingerprints.ContainsKey(credential.ProposerId))
             return false;
         var snapshot = _lifecycle.GetSnapshot(credential.ProposerId);
+        // Compare against the lifecycle's current fingerprint, not the fingerprint the
+        // proposer was registered with: Rotate() updates the lifecycle but never the
+        // original _expectedFingerprints map, so that map is only a proposer allow-list.
         return snapshot.State == AuthorizationRecoveryReconfigurationProposerCredentialState.Active &&
                snapshot.CredentialSequence == credential.CredentialSequence &&
-               FixedEquals(expected, credential.CredentialFingerprint);
+               FixedEquals(snapshot.CredentialFingerprint, credential.CredentialFingerprint);
     }
 
 

@@ -1,19 +1,44 @@
+using Foundgine.Execution.Security;
 using Foundgine.Semantics.Security;
 
 namespace Foundgine.Execution;
 
 /// <summary>
-/// Provider-facing attestation that the compiled plan preserves every security
-/// invariant required by the semantic plan. This is a contract proof, not a
-/// claim that the provider can make arbitrary business policy correct.
+/// Immutable security execution certificate bound to one exact provider plan
+/// and one exact Execution IR fingerprint. Normal callers cannot construct or
+/// attach this type; only the security certification gate can issue it.
 /// </summary>
-public sealed record SecurityInvariantProof(
-    string Provider,
-    IReadOnlyList<string> Required,
-    IReadOnlyList<string> Preserved,
-    IReadOnlyList<string> Missing)
+public sealed class SecurityInvariantProof
 {
+    private readonly ProviderPlan? _boundPlan;
+
+    private SecurityInvariantProof(
+        ProviderPlan? boundPlan,
+        string executionIrFingerprint,
+        string provider,
+        IReadOnlyList<string> required,
+        IReadOnlyList<string> preserved,
+        IReadOnlyList<string> missing)
+    {
+        _boundPlan = boundPlan;
+        ExecutionIrFingerprint = executionIrFingerprint;
+        Provider = provider;
+        Required = required;
+        Preserved = preserved;
+        Missing = missing;
+    }
+
+    public string Provider { get; }
+    public IReadOnlyList<string> Required { get; }
+    public IReadOnlyList<string> Preserved { get; }
+    public IReadOnlyList<string> Missing { get; }
+    public string ExecutionIrFingerprint { get; }
     public bool IsSatisfied => Missing.Count == 0;
+
+    internal bool IsBoundTo(ProviderPlan plan, ExecutionIR ir) =>
+        _boundPlan is not null &&
+        ReferenceEquals(_boundPlan, plan) &&
+        string.Equals(ExecutionIrFingerprint, ExecutionIRFingerprint.Create(ir), StringComparison.Ordinal);
 
     public void EnsureSatisfied()
     {
@@ -22,11 +47,34 @@ public sealed record SecurityInvariantProof(
                 $"Provider '{Provider}' cannot satisfy required security invariants: {string.Join(", ", Missing)}.");
     }
 
-    public static SecurityInvariantProof Create(
+    // Test/diagnostic-only unbound evidence. It can never cross the execution
+    // boundary because IsBoundTo deliberately rejects certificates without an
+    // exact plan + IR binding. It is internal so application callers cannot
+    // manufacture executable security certificates.
+    internal static SecurityInvariantProof Create(
         string provider,
         IEnumerable<string> required,
         IEnumerable<string> preserved)
     {
+        ArgumentNullException.ThrowIfNull(required);
+        ArgumentNullException.ThrowIfNull(preserved);
+        var requiredSet = required.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        var preservedSet = preserved.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        var missing = requiredSet.Except(preservedSet, StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        return new SecurityInvariantProof(null, string.Empty, provider, requiredSet, preservedSet, missing);
+    }
+
+    internal static SecurityInvariantProof Create(
+        ProviderPlan plan,
+        ExecutionIR ir,
+        IEnumerable<string> required,
+        IEnumerable<string> preserved)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(ir);
+        ArgumentNullException.ThrowIfNull(required);
+        ArgumentNullException.ThrowIfNull(preserved);
+
         var requiredSet = required
             .Distinct(StringComparer.Ordinal)
             .OrderBy(x => x, StringComparer.Ordinal)
@@ -40,14 +88,20 @@ public sealed record SecurityInvariantProof(
             .OrderBy(x => x, StringComparer.Ordinal)
             .ToArray();
 
-        return new SecurityInvariantProof(provider, requiredSet, preservedSet, missing);
+        return new SecurityInvariantProof(
+            plan,
+            ExecutionIRFingerprint.Create(ir),
+            plan.Provider,
+            requiredSet,
+            preservedSet,
+            missing);
     }
 }
 
 /// <summary>
-/// Optional provider contract used by the execution gate. A provider declares
-/// which canonical invariants its compiler preserves; the engine still checks
-/// that every invariant required by the current plan is covered.
+/// Provider declaration of capabilities. A declaration is not sufficient
+/// evidence for security-critical provider invariants; those require a
+/// concrete evaluator over the compiled provider plan.
 /// </summary>
 public interface ISecurityInvariantProviderCompiler
 {
@@ -56,6 +110,24 @@ public interface ISecurityInvariantProviderCompiler
 
 public static class SecurityInvariantProofGate
 {
+    private static readonly IReadOnlySet<string> ConcreteEvaluationRequired =
+        new HashSet<string>(StringComparer.Ordinal)
+        {
+            SecurityInvariantIds.AuthorizationRequired,
+            SecurityInvariantIds.RuntimeAuthorization,
+            SecurityInvariantIds.TenantIsolation,
+            SecurityInvariantIds.FieldVisibility,
+            SecurityInvariantIds.RelationshipVisibility,
+            SecurityInvariantIds.ParameterizedValues,
+            SecurityInvariantIds.PlanCacheContextIsolation,
+            SecurityInvariantIds.AtomicMutation,
+            SecurityInvariantIds.MutationRowLocking,
+            SecurityInvariantIds.Idempotency,
+            SecurityInvariantIds.ReplayProtection,
+            SecurityInvariantIds.AuditRequired,
+            SecurityInvariantIds.ExecutionEvidenceRequired
+        };
+
     public static ProviderPlan AttachAndValidate(
         ProviderPlan plan,
         ExecutionIR ir,
@@ -68,7 +140,7 @@ public static class SecurityInvariantProofGate
         var required = ir.RequiredSecurityInvariants;
         if (required.Count == 0)
             throw new InvalidOperationException(
-                "ExecutionIR contains no security obligations. An executable provider plan must carry a non-empty security proof.");
+                "ExecutionIR contains no security obligations. An executable provider plan must carry a non-empty security certificate.");
 
         if (compiler is not ISecurityInvariantProviderCompiler securityCompiler)
         {
@@ -82,15 +154,21 @@ public static class SecurityInvariantProofGate
                 throw new InvalidOperationException($"Unknown required security invariant '{id}'.");
         }
 
-        var proof = SecurityInvariantProof.Create(
-            plan.Provider,
-            required,
-            securityCompiler.PreservedSecurityInvariants);
-        proof.EnsureSatisfied();
+        var requiredConcreteEvaluation = required
+            .Where(ConcreteEvaluationRequired.Contains)
+            .ToArray();
 
-        // A declared preservation profile is the provider capability baseline.
-        // If the provider also supplies an executable conformance evaluator,
-        // certify the concrete compiled plan before attaching the proof.
+        if (requiredConcreteEvaluation.Length > 0 && compiler is not IProviderSecurityConformanceEvaluator)
+        {
+            throw new InvalidOperationException(
+                $"Provider compiler '{compiler.GetType().Name}' has no concrete security conformance evaluator for security-critical invariants: {string.Join(", ", requiredConcreteEvaluation)}.");
+        }
+
+        IReadOnlyCollection<string> preserved = securityCompiler.PreservedSecurityInvariants;
+
+        // The provider profile is a capability declaration only. When an
+        // executable evaluator exists, its concrete result is the authority
+        // used to issue the execution certificate.
         if (compiler is IProviderSecurityConformanceEvaluator evaluator)
         {
             var conformance = evaluator.Evaluate(ir, plan);
@@ -103,8 +181,38 @@ public static class SecurityInvariantProofGate
             if (missing.Length > 0)
                 throw new InvalidOperationException(
                     $"Provider '{plan.Provider}' executable conformance did not satisfy required invariants: {string.Join(", ", missing)}.");
+
+            preserved = conformance.Satisfied;
+        }
+        else
+        {
+            var missing = required
+                .Except(preserved, StringComparer.Ordinal)
+                .OrderBy(x => x, StringComparer.Ordinal)
+                .ToArray();
+            if (missing.Length > 0)
+                throw new InvalidOperationException(
+                    $"Provider '{plan.Provider}' declared preservation does not satisfy required invariants: {string.Join(", ", missing)}.");
         }
 
-        return plan with { SecurityProof = proof };
+        // Bind the certificate to the exact returned ProviderPlan object. Do not
+        // use `with { SecurityProof = proof }` after issuing the certificate: a
+        // record clone would detach the certificate from the object it certifies.
+        var certifiedPlan = plan with { SecurityProof = null };
+        var proof = SecurityInvariantProof.Create(certifiedPlan, ir, required, preserved);
+        proof.EnsureSatisfied();
+        certifiedPlan.SecurityProof = proof;
+        return certifiedPlan;
+    }
+}
+
+internal static class ExecutionIRFingerprint
+{
+    public static string Create(ExecutionIR ir)
+    {
+        ArgumentNullException.ThrowIfNull(ir);
+        var json = System.Text.Json.JsonSerializer.Serialize(ir);
+        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+        return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
     }
 }

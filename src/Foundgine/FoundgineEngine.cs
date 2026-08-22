@@ -203,6 +203,7 @@ public sealed class FoundgineEngine : IFoundgine
             plan,
             providerPlan,
             executionContext,
+            executionIr,
             cancellationToken,
             approval);
     }
@@ -244,6 +245,7 @@ public sealed class FoundgineEngine : IFoundgine
             plan,
             providerPlan,
             executionContext,
+            executionIr,
             cancellationToken);
     }
     private string BuildProviderPlanCacheKey(
@@ -294,7 +296,12 @@ public sealed class FoundgineEngine : IFoundgine
                 $"No security capability contract exists for root entity '{operation.Root.EntityId}' and its semantic composition.");
 
         var requestedFields = operation.Root.TraverseDepthFirst()
-            .SelectMany(node => node.Fields.Select(field => field.Value))
+            .SelectMany(node => node.Fields
+                .Select(fieldId => _model.TryGet(node.EntityId, out var entity)
+                    ? entity.Fields.FirstOrDefault(f => f.Id == fieldId)?.Name
+                    : null))
+            .Where(name => name is not null)
+            .Cast<string>()
             .ToArray();
 
         var composition = SecurityCapabilityComposition.Validate(
@@ -360,10 +367,11 @@ public sealed class FoundgineEngine : IFoundgine
         SemanticPlan plan,
         ProviderPlan providerPlan,
         ExecutionContext context,
+        ExecutionIR executionIr,
         CancellationToken cancellationToken,
         PlanApproval? approval = null)
     {
-        SecurityInvariantExecutionGate.EnsureExecutable(providerPlan);
+        SecurityInvariantExecutionGate.EnsureExecutable(providerPlan, executionIr);
 
         context.EnsureWithinDeadline();
         var startedAt = DateTimeOffset.UtcNow;

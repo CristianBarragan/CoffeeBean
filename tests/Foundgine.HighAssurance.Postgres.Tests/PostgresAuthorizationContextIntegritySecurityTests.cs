@@ -151,7 +151,7 @@ public sealed class PostgresAuthorizationContextIntegritySecurityTests
     }
 
     [PostgresFact]
-    public async Task Canonical_payload_prevents_delimiter_ambiguity()
+    public void Canonical_payload_prevents_delimiter_ambiguity()
     {
         var key = new AuthorizationContextIntegrityKey("test", SHA256.HashData(Encoding.UTF8.GetBytes("canonical-key")));
         var ring = new AuthorizationContextIntegrityKeyRing(key);

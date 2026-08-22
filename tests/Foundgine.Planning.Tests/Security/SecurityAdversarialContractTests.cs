@@ -81,9 +81,10 @@ public sealed class SecurityAdversarialContractTests
             ExecutionOperation.Scan,
             new EntityId(1),
             [new FieldId(2)],
-            authorization,
             null,
-            []));
+            null,
+            [],
+            Authorization: authorization));
 
         var weakenedAuthorization = AuthorizationPredicate.Constant("true");
         var after = before with
@@ -127,7 +128,7 @@ public sealed class SecurityAdversarialContractTests
             matrix.Register(new ProviderSecurityConformanceProfile(
                 "attacker-provider",
                 ["security.tenant-bypass"],
-                []));
+                [])));
 
         Assert.Contains("security.tenant-bypass", exception.Message, StringComparison.Ordinal);
     }
@@ -135,8 +136,11 @@ public sealed class SecurityAdversarialContractTests
     [Fact]
     public void Proofless_provider_plan_is_rejected_at_execution_boundary()
     {
+        var ir = new ExecutionIR(
+            new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [], null, null, []),
+            [SecurityInvariantIds.AuthorizationRequired]);
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            SecurityInvariantExecutionGate.EnsureExecutable(new UnprovedPlan()));
+            SecurityInvariantExecutionGate.EnsureExecutable(new UnprovedPlan(), ir));
 
         Assert.Contains("no security proof", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -150,8 +154,11 @@ public sealed class SecurityAdversarialContractTests
             []);
         var plan = new UnprovedPlan { SecurityProof = proof };
 
+        var ir = new ExecutionIR(
+            new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [], null, null, []),
+            [SecurityInvariantIds.TenantIsolation]);
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            SecurityInvariantExecutionGate.EnsureExecutable(plan));
+            SecurityInvariantExecutionGate.EnsureExecutable(plan, ir));
 
         Assert.Contains(SecurityInvariantIds.TenantIsolation, exception.Message, StringComparison.Ordinal);
     }
@@ -163,7 +170,7 @@ public sealed class SecurityAdversarialContractTests
             "Customer.read",
             "Read Customer",
             new EntityId(1),
-            Foundgine.Semantics.Authorization.AuthorizationDecision.Allowed,
+            Foundgine.Abstractions.AuthorizationDecision.Allowed,
             [], [], [], ["Name"], [])
         {
             RequiredSecurityInvariants = ["security.attacker-added"]

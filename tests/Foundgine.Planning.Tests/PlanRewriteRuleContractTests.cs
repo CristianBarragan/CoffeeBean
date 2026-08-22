@@ -101,8 +101,6 @@ public sealed partial class PlanRewriteRuleContractTests
 }
 
 // M3 proof-carrying optimizer contract coverage.
-namespace Foundgine.Planning.Tests;
-
 public sealed partial class PlanRewriteRuleContractTests
 {
     [Fact]

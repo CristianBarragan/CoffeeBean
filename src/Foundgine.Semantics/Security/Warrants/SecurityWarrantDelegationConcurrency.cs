@@ -65,6 +65,12 @@ public sealed class MemorySecurityWarrantDelegationConcurrencyStore
 
         SecurityWarrantDelegationChainValidator.Validate([parent, child], child.IssuedAt);
 
+        // Chain validation only proves shape/identity/ancestry. It does not prove the
+        // child stays within the parent's authority, so the existing non-escalation
+        // rules (constraints, grants, expiry, ...) must still be enforced here before
+        // a child slot is ever reserved.
+        SecurityWarrantAttenuator.Attenuate(parent, child, child.IssuedAt);
+
         var parentKey = Key(parent);
         if (!StringComparer.Ordinal.Equals(expected.ParentWarrantId, parent.Id) ||
             !StringComparer.Ordinal.Equals(expected.ParentWarrantDigest, parent.Digest))

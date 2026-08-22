@@ -1,6 +1,7 @@
 using Foundgine.Semantics.Capabilities;
 using Foundgine.Semantics.Security;
 using Foundgine.Semantics.Security.Warrants;
+using Xunit;
 
 namespace Foundgine.Semantics.Tests.Security;
 
@@ -46,7 +47,7 @@ public sealed class SecurityCapabilityCompositionTests
             new CapabilityGrant("Order.read", "read", ["order/*"])
         ]);
 
-        var customer = Capability("Customer.read", "read") with
+        var customer = Capability("Customer.read", "read", fields: []) with
         {
             RequiredSecurityInvariants = [SecurityInvariantIds.AuthorizationRequired]
         };
@@ -79,16 +80,22 @@ public sealed class SecurityCapabilityCompositionTests
         Assert.Contains("field", result.FailureReason!, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static SemanticCapability Capability(string id, string operation) => new(
-        id,
-        id,
-        new Foundgine.Abstractions.EntityId(1),
-        Foundgine.Abstractions.AuthorizationDecision.Allowed,
-        [], [], [], ["Id", "Name"], [])
+    private static SemanticCapability Capability(string id, string operation, IReadOnlyList<string>? fields = null)
     {
-        Operation = operation,
-        RequiredSecurityInvariants = [SecurityInvariantIds.AuthorizationRequired]
-    };
+        var effectiveFields = fields ?? ["Id", "Name"];
+        return new(
+            id,
+            id,
+            new Foundgine.Abstractions.EntityId(1),
+            Foundgine.Abstractions.AuthorizationDecision.Allowed,
+            [], [], [], effectiveFields, [])
+        {
+            Operation = operation,
+            RequiredSecurityInvariants = effectiveFields.Count > 0
+                ? [SecurityInvariantIds.AuthorizationRequired, SecurityInvariantIds.FieldVisibility]
+                : [SecurityInvariantIds.AuthorizationRequired]
+        };
+    }
 
     private static SecurityWarrant Warrant(IReadOnlyList<CapabilityGrant> grants) => new(
         "warrant", "issuer", "agent", "foundgine", grants,

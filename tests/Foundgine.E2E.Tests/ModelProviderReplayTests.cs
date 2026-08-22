@@ -6,6 +6,7 @@ using Foundgine.Intent.Json;
 using Foundgine.Semantics.Authorization;
 using Foundgine.Sql;
 using Foundgine.E2E.Tests.Banking;
+using Foundgine.Execution.Security;
 using Foundgine.Semantics.Security;
 using Microsoft.Data.Sqlite;
 using Npgsql;
@@ -192,6 +193,13 @@ public sealed class ModelProviderReplayTests
         private readonly SqlCompiler _inner;
         public CountingSqlCompiler(Foundgine.Metadata.IMetadataProvider metadata) => _inner = new SqlCompiler(metadata);
         public int Count { get; private set; }
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
+            new(
+                plan.Provider,
+                ir.RequiredSecurityInvariants,
+                ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
+                Array.Empty<string>());
+
         public ProviderPlan Compile(ExecutionIR ir) { Count++; return _inner.Compile(ir); }
     }
 }

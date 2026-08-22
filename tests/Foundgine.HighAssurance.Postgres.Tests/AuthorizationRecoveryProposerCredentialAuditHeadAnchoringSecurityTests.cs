@@ -53,7 +53,7 @@ public sealed class AuthorizationRecoveryProposerCredentialAuditHeadAnchoringSec
         var anchor = new InMemoryAuthorizationRecoveryProposerCredentialAuditHeadAnchor();
         var tasks = Enumerable.Range(0, 32).Select(i => anchor.TryAdvanceAsync(0, AuthorizationRecoveryProposerCredentialAuditHeadAnchorState.GenesisDigest, 1, i.ToString("x").PadLeft(64, '0'), $"writer-{i}").AsTask());
         var results = await Task.WhenAll(tasks);
-        Assert.Single(results.Where(x => x));
+        Assert.Single(results, x => x);
         var state = await anchor.ReadAsync();
         Assert.Equal(1, state.Sequence);
     }

@@ -14,9 +14,19 @@ public sealed record ProviderSecurityConformanceResult(
 
     public void EnsureSatisfied()
     {
-        if (!IsSatisfied)
-            throw new InvalidOperationException(
-                $"Provider '{Provider}' security conformance failed: {string.Join("; ", Violations)}");
+        if (IsSatisfied)
+            return;
+
+        var missing = Required
+            .Except(Satisfied, StringComparer.Ordinal)
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToArray();
+        var reasons = Violations
+            .Concat(missing.Select(x => $"required invariant '{x}' was not satisfied"))
+            .ToArray();
+
+        throw new InvalidOperationException(
+            $"Provider '{Provider}' security conformance failed: {string.Join("; ", reasons)}");
     }
 }
 
