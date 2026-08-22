@@ -32,7 +32,7 @@ public sealed record TransferExecutionReceipt(
     Guid DestinationAccountId,
     decimal Amount,
     bool Replay,
-    SecurityInvariantProof? SecurityProof = null);
+    SecurityInvariantAttestation? SecurityProof = null);
 
 public sealed record AuditEntry(
     Guid TransferId,

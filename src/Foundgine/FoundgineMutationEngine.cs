@@ -5,7 +5,12 @@ using Foundgine.Abstractions;
 using Foundgine.Execution;
 using Foundgine.Execution.Mutation;
 using Foundgine.Planning.Mutation;
+using Foundgine.Semantics;
 using Foundgine.Semantics.Authorization;
+using Foundgine.Semantics.Capabilities;
+using Foundgine.Semantics.Security;
+using Foundgine.Semantics.Security.Execution;
+using Foundgine.Semantics.Security.Warrants;
 using Foundgine.Semantics.Mutation;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
@@ -16,20 +21,39 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
     private readonly IMutationSchema _schema;
     private readonly ISemanticAuthorizationPolicy _policy;
     private readonly IMutationBatchExecutionProvider _provider;
+    private readonly SemanticCapabilityContract _securityContract;
+    private readonly ISecurityWarrantKeyResolver? _warrantKeyResolver;
+    private readonly string? _expectedWarrantIssuer;
+    private readonly ISecurityWarrantReplayStore? _warrantReplayStore;
+    private readonly SecurityResourceLimits _securityResourceLimits;
 
     public FoundgineMutationEngine(
         IMutationSchema schema,
         ISemanticAuthorizationPolicy policy,
-        IMutationBatchExecutionProvider provider)
+        IMutationBatchExecutionProvider provider,
+        SemanticModel? model = null,
+        ISecurityWarrantKeyResolver? warrantKeyResolver = null,
+        string? expectedWarrantIssuer = null,
+        ISecurityWarrantReplayStore? warrantReplayStore = null,
+        SecurityResourceLimits? securityResourceLimits = null)
     {
         _schema = schema ?? throw new ArgumentNullException(nameof(schema));
         _policy = policy ?? throw new ArgumentNullException(nameof(policy));
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+        _securityContract = model is null
+            ? new SemanticCapabilityContract(1, [])
+            : SemanticCapabilityContractDiscovery.Describe(model, policy);
+        SecurityInvariantContractValidator.EnsureContractValid(_securityContract);
+        _warrantKeyResolver = warrantKeyResolver;
+        _expectedWarrantIssuer = expectedWarrantIssuer;
+        _warrantReplayStore = warrantReplayStore;
+        _securityResourceLimits = securityResourceLimits ?? new SecurityResourceLimits();
+        _securityResourceLimits.Validate();
     }
 
     public MutationDryRunResult DryRun(SemanticMutationRequest request)
     {
-        var plan = AuthorizeAndPlan(request);
+        var plan = AuthorizeAndPlan(request, consumeReplay: false);
         return Describe(plan);
     }
 
@@ -54,15 +78,19 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
         ArgumentNullException.ThrowIfNull(approval);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var plan = AuthorizeAndPlan(approval.Request);
+        var plan = AuthorizeAndPlan(approval.Request, consumeReplay: true);
         var fingerprint = Fingerprint(plan);
         if (!string.Equals(fingerprint, approval.PlanFingerprint, StringComparison.Ordinal))
             throw new InvalidOperationException(
                 "The approved mutation plan changed after approval. Re-run dry-run and obtain a new approval.");
 
         var ir = new SemanticMutationExecutionLowerer(_schema).Lower(plan);
+        var executionContext = context ?? new ExecutionContext();
+        executionContext.EnsureWithinDeadline();
         var started = DateTimeOffset.UtcNow;
-        var result = _provider.ExecuteBatch(ir, context ?? new ExecutionContext());
+        using var deadlineCts = executionContext.CreateDeadlineCancellationSource(cancellationToken);
+        var result = _provider.ExecuteBatch(ir, executionContext, deadlineCts.Token);
+        executionContext.EnsureWithinDeadline();
         var resultFingerprint = FingerprintResult(result);
         _ = started;
         return Task.FromResult(new MutationExecutionResult(
@@ -73,9 +101,63 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
             approval.ApprovedBy));
     }
 
-    private SemanticMutationPlan AuthorizeAndPlan(SemanticMutationRequest request)
+
+    private void ValidateWarrant(SemanticMutationRequest request, bool consumeReplay)
+    {
+        var security = request.Security;
+        if (security is null)
+            return;
+
+        if (_warrantKeyResolver is null)
+            throw new InvalidOperationException("A security warrant was supplied, but no warrant key resolver is configured.");
+
+        SecurityWarrantVerifier.Verify(
+            security.Warrant,
+            _warrantKeyResolver,
+            DateTimeOffset.UtcNow,
+            _expectedWarrantIssuer,
+            security.Audience);
+
+        foreach (var operation in request.Graph.Operations)
+        {
+            var capability = _securityContract.Capabilities.FirstOrDefault(c =>
+                c.TargetEntityId == operation.Entity &&
+                string.Equals(c.Operation, operation.Kind.ToString().ToLowerInvariant(), StringComparison.Ordinal));
+
+            if (capability is null)
+                throw new UnauthorizedAccessException(
+                    $"No security capability contract exists for entity '{operation.Entity}' and operation '{operation.Kind}'.");
+
+            if (!SecurityWarrantAuthorization.Allows(
+                    security.Warrant,
+                    security.Subject,
+                    security.Audience,
+                    capability.Id,
+                    capability.Operation,
+                    security.Tenant,
+                    security.ResourceScope))
+            {
+                throw new UnauthorizedAccessException(
+                    $"Security warrant does not authorize capability '{capability.Id}' for subject '{security.Subject}'.");
+            }
+        }
+
+        if (consumeReplay)
+        {
+            if (_warrantReplayStore is null)
+                throw new InvalidOperationException("Executing a warrant-backed mutation requires a warrant replay store.");
+
+            SecurityWarrantReplayGuard.Consume(
+                security.Warrant,
+                _warrantReplayStore,
+                DateTimeOffset.UtcNow);
+        }
+    }
+    private SemanticMutationPlan AuthorizeAndPlan(SemanticMutationRequest request, bool consumeReplay)
     {
         ArgumentNullException.ThrowIfNull(request);
+        MutationSecurityResourceLimitValidator.Validate(request, _securityResourceLimits);
+        ValidateWarrant(request, consumeReplay);
         var semanticPlan = new SemanticMutationPlanner().Plan(request.Graph);
         var batch = new MutationPlanner(_schema).Plan(request.Graph);
         var authorizedBatch = new MutationAuthorizer(_schema, _policy).Authorize(batch);

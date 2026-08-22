@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Text.Json;
 using Foundgine.Execution;
 using Foundgine.Intent.Json;
+using Foundgine.Semantics.Security.Execution;
 using Foundgine.Semantics.Authorization;
 using Microsoft.Extensions.AI;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
@@ -21,15 +22,18 @@ public sealed class FoundgineAiToolset
     private readonly IFoundgine _foundgine;
     private readonly JsonReadIntentAdapter _adapter;
     private readonly Func<ExecutionContext> _contextFactory;
+    private readonly Func<SecurityExecutionContext?> _securityContextFactory;
 
     public FoundgineAiToolset(
         IFoundgine foundgine,
         Func<ExecutionContext>? contextFactory = null,
-        JsonReadIntentAdapter? adapter = null)
+        JsonReadIntentAdapter? adapter = null,
+        Func<SecurityExecutionContext?>? securityContextFactory = null)
     {
         _foundgine = foundgine ?? throw new ArgumentNullException(nameof(foundgine));
         _contextFactory = contextFactory ?? (() => new ExecutionContext());
         _adapter = adapter ?? new JsonReadIntentAdapter();
+        _securityContextFactory = securityContextFactory ?? (() => null);
     }
 
     /// <summary>
@@ -50,8 +54,16 @@ public sealed class FoundgineAiToolset
     ];
 
     [Description("Returns the canonical semantic capability contract available to the current caller.")]
-    public string DescribeCapabilities() =>
-        JsonSerializer.Serialize(_foundgine.DescribeCapabilityContract(), JsonOptions);
+    public string DescribeCapabilities()
+    {
+        var security = _securityContextFactory()
+            ?? throw new UnauthorizedAccessException(
+                "AI capability discovery requires a host-supplied SecurityExecutionContext. The model cannot supply identity, tenant, audience, or warrant context.");
+
+        return JsonSerializer.Serialize(
+            _foundgine.DescribeCapabilityContract(security),
+            JsonOptions);
+    }
 
     [Description("Executes a Foundgine read intent represented as JSON and returns rows plus execution evidence.")]
     public async Task<string> ExecuteQueryAsync(
@@ -62,6 +74,10 @@ public sealed class FoundgineAiToolset
             throw new ArgumentException("Intent JSON is required.", nameof(intentJson));
 
         var intent = _adapter.Parse(intentJson);
+        var security = _securityContextFactory()
+            ?? throw new UnauthorizedAccessException(
+                "AI query execution requires a host-supplied SecurityExecutionContext. The model cannot supply identity, tenant, audience, or warrant context.");
+        intent = intent with { Security = security };
         var result = await _foundgine.ExecuteAsync(
             intent,
             _contextFactory(),

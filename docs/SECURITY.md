@@ -40,3 +40,15 @@ For AI-generated intent, capability discovery can provide the agent with the
 subset of the domain it can use. Application authentication, identity,
 claims/roles, rate limits, validation, approval controls, and policy management
 remain application-level concerns around the Foundgine boundary.
+
+## Authorization recovery control plane
+
+The `Foundgine.Authorization` namespace (implemented in
+`samples/Foundgine.HighAssurance.Postgres/Authorization/`) covers failure and
+recovery handling for the authorization control plane itself: publication key
+lifecycle and rotation, promotion/commit atomicity, cross-instance commit and
+journal consensus, repair-proposer credential authentication and replication,
+and transaction-journal integrity. See `docs/security/` (milestones M5.40
+through M5.73 and their changelogs) for the invariant-by-invariant history of
+this module, and `tests/Foundgine.HighAssurance.Postgres.Tests/` for the
+corresponding adversarial test coverage.

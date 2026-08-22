@@ -2,6 +2,23 @@
 
 All notable changes to this repository are documented here. This file starts at 0.4.0 — no changelog was kept for earlier versions, so 0.1.0–0.3.0 are not reconstructed here.
 
+## [Unreleased]
+
+### Added
+- **Authorization recovery control plane (M5.40–M5.78).** Adds the
+  `Foundgine.Authorization` module (`samples/Foundgine.HighAssurance.Postgres/Authorization/`)
+  covering the failure and recovery paths of the authorization control plane:
+  publication key lifecycle/rotation/retirement, promotion and commit
+  atomicity, cross-instance commit and journal consensus/reconciliation, repair
+  ordering and idempotency, and repair-proposer credential authentication,
+  lifecycle, and replication. Full per-milestone detail and changelogs are in
+  `docs/security/`; adversarial coverage lives in
+  `tests/Foundgine.HighAssurance.Postgres.Tests/`.
+- **M5.78 — Authority-term replication & recovery certificates.** Authority terms are now
+  installed through cryptographically signed direct-successor certificates with a chained
+  history digest, preventing forged, skipped, divergent, or replayed authority transitions
+  during replication and recovery.
+
 ## [0.4.0]
 
 ### Added
@@ -21,3 +38,27 @@ All notable changes to this repository are documented here. This file starts at 
 
 ### Changed
 - `VersionPrefix` bumped `0.1.0` → `0.4.0` in `Directory.Build.props`.
+
+## M5.79 — Authority-Term Certificate Quorum / Multi-Witness Validation
+
+- Added independent witness attestations over authority-term certificate digests.
+- Added strict-majority validation with configured witness identities.
+- Added duplicate, unknown-witness, wrong-key, minority, and certificate-tamper defenses.
+- Preserved the authoritative anchor as the sole mutation authority; witness quorum is corroboration only.
+
+## M5.81 — Witness Credential Lifecycle Replication & Crash Recovery Security
+
+- Added a durable-safe witness credential lifecycle journal with monotonic revisions and chained SHA-256 digests.
+- Added contiguous replication with idempotent duplicate handling and fail-closed gap/divergence detection.
+- Added crash-recovery packages that replay the complete lifecycle history without transporting credential secrets.
+- Added tamper, rollback, skipped-history, divergent-revision, and revoked-history recovery defenses.
+- Added adversarial witness lifecycle replication and recovery tests.
+
+## M5.80 — Witness Credential Lifecycle, Rotation & Revocation Security
+
+- Added lifecycle-managed witness credentials with monotonic credential generations.
+- Added compare-and-swap credential rotation and terminal revocation.
+- Added lifecycle-backed witness authentication.
+- Added revocation-aware in-flight credential leases.
+- Added fail-closed handling for unknown, stale and revoked credentials.
+- Added adversarial witness credential lifecycle security tests.

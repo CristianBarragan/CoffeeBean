@@ -100,6 +100,15 @@ public sealed record SecurityWarrant(
     string? ParentId,
     byte[] Signature)
 {
+    /// <summary>Cryptographic digest of the immediate parent warrant, when delegated.</summary>
+    public string? ParentDigest { get; init; }
+
+    /// <summary>Ordered ancestor digests. The immediate parent is the last entry.</summary>
+    public IReadOnlyList<string> DelegationPath { get; init; } = [];
+
+    /// <summary>Number of delegation edges represented by this warrant.</summary>
+    public int DelegationDepth => DelegationPath.Count;
+
     public string Digest => SecurityWarrantCanonicalizer.Digest(this);
 
     public bool IsTimeValid(DateTimeOffset now) => now >= IssuedAt && now < ExpiresAt;

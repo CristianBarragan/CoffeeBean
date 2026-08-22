@@ -257,3 +257,15 @@ Foundgine is actively evolving (current version: 0.4.0). Public API stability, p
 
 Detailed, dated engineering notes for each milestone are kept in [`CHANGELOG.md`](CHANGELOG.md).
 
+
+## M5.10 Security
+
+Mutation cancellation is propagated to the provider execution boundary and cannot commit after a cancellation check fails.
+
+### M5.18 — Authorization Context Lifecycle Security
+
+The PostgreSQL high-assurance authorization context is now lifecycle-safe. Actor/tenant identity is immutable, versions are strictly monotonic, deleted identities retain a version tombstone, and missing configured authorization context fails closed. Lifecycle writes use the same row-lock serialization boundary as mutation authorization reads.
+
+### M5.20 — Authorization Context Cryptographic Integrity
+
+Persisted PostgreSQL authorization evidence is cryptographically bound to its complete canonical security payload with an externally held HMAC-SHA256 key. M5.21 adds an authorized external key lifecycle with active/verification-only/retired states, monotonic rotation provenance, atomic immutable ring snapshots, and safe retirement checks against persisted evidence. Unknown keys, algorithm mismatches, altered actor/tenant/state/version/fingerprint values, and tampered lifecycle tombstones fail closed. Key rotation is supported through a verification key ring while cryptographic material remains outside the database and cache identity.

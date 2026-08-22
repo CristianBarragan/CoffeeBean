@@ -12,7 +12,7 @@ public sealed record ProviderSecurityConformanceProfile(
     IReadOnlyCollection<string> PreservedSecurityInvariants,
     IReadOnlyCollection<string> Notes)
 {
-    public SecurityInvariantProof Evaluate(IEnumerable<string> requiredInvariants)
+    public SecurityInvariantAttestation Evaluate(IEnumerable<string> requiredInvariants)
     {
         ArgumentNullException.ThrowIfNull(requiredInvariants);
 
@@ -22,7 +22,7 @@ public sealed record ProviderSecurityConformanceProfile(
                 throw new InvalidOperationException($"Unknown required security invariant '{invariant}'.");
         }
 
-        return SecurityInvariantProof.Create(
+        return SecurityInvariantAttestation.Create(
             Provider,
             requiredInvariants,
             PreservedSecurityInvariants);
@@ -62,10 +62,10 @@ public sealed class ProviderSecurityConformanceMatrix
             ? profile
             : throw new KeyNotFoundException($"Provider '{provider}' is not registered in the security conformance matrix.");
 
-    public SecurityInvariantProof Evaluate(string provider, IEnumerable<string> requiredInvariants) =>
+    public SecurityInvariantAttestation Evaluate(string provider, IEnumerable<string> requiredInvariants) =>
         Get(provider).Evaluate(requiredInvariants);
 
-    public SecurityInvariantProof EnsureSatisfied(string provider, IEnumerable<string> requiredInvariants)
+    public SecurityInvariantAttestation EnsureSatisfied(string provider, IEnumerable<string> requiredInvariants)
     {
         var proof = Evaluate(provider, requiredInvariants);
         proof.EnsureSatisfied();

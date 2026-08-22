@@ -13,6 +13,7 @@ public sealed class PostgresMutationSecurityConformanceTests
         Assert.Contains("tenant.isolation", contract.RequiredInvariants);
         Assert.Contains("authorization.runtime", contract.RequiredInvariants);
         Assert.Contains("mutation.atomic", contract.RequiredInvariants);
+        Assert.Contains("mutation.atomic.row-locking", contract.RequiredInvariants);
         Assert.Contains("mutation.idempotency", contract.RequiredInvariants);
         Assert.Contains("mutation.replay-protection", contract.RequiredInvariants);
         Assert.Contains("evidence.audit", contract.RequiredInvariants);
@@ -25,6 +26,34 @@ public sealed class PostgresMutationSecurityConformanceTests
     public void TransferFunds_contract_is_known_to_the_security_registry()
     {
         PostgresMutationSecurityConformanceGate.EnsureKnownInvariants();
+    }
+
+    [Theory]
+    [InlineData("UsesSingleTransaction")]
+    [InlineData("LocksMutationRowsDeterministically")]
+    [InlineData("RevalidatesAuthorizationAtExecution")]
+    [InlineData("SerializesIdempotencyKeys")]
+    [InlineData("PersistsIdempotencyInsideTransaction")]
+    [InlineData("PersistsAuditInsideTransaction")]
+    [InlineData("EmitsExecutionReceipt")]
+    public void Every_high_assurance_provider_obligation_fails_closed_when_removed(string obligation)
+    {
+        var contract = PostgresMutationSecurityConformance.TransferFunds;
+        contract = obligation switch
+        {
+            "UsesSingleTransaction" => contract with { UsesSingleTransaction = false },
+            "LocksMutationRowsDeterministically" => contract with { LocksMutationRowsDeterministically = false },
+            "RevalidatesAuthorizationAtExecution" => contract with { RevalidatesAuthorizationAtExecution = false },
+            "SerializesIdempotencyKeys" => contract with { SerializesIdempotencyKeys = false },
+            "PersistsIdempotencyInsideTransaction" => contract with { PersistsIdempotencyInsideTransaction = false },
+            "PersistsAuditInsideTransaction" => contract with { PersistsAuditInsideTransaction = false },
+            "EmitsExecutionReceipt" => contract with { EmitsExecutionReceipt = false },
+            _ => throw new ArgumentOutOfRangeException(nameof(obligation))
+        };
+
+        Assert.False(contract.IsSatisfied);
+        Assert.NotEmpty(contract.MissingRequirements());
+        Assert.Throws<InvalidOperationException>(contract.EnsureSatisfied);
     }
 
     [Fact]

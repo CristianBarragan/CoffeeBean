@@ -1,5 +1,6 @@
 using Foundgine.Execution;
 using Foundgine.Intent.Json;
+using Foundgine.Semantics.Security.Execution;
 using Microsoft.Extensions.DependencyInjection;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
@@ -14,7 +15,8 @@ public static class FoundgineMcpServiceCollectionExtensions
 {
     public static IServiceCollection AddFoundgineMcp(
         this IServiceCollection services,
-        Func<ExecutionContext>? contextFactory = null)
+        Func<ExecutionContext>? contextFactory = null,
+        Func<SecurityExecutionContext?>? securityContextFactory = null)
     {
         ArgumentNullException.ThrowIfNull(services);
 
@@ -24,6 +26,8 @@ public static class FoundgineMcpServiceCollectionExtensions
 
         if (contextFactory is not null)
             services.AddSingleton(contextFactory);
+        if (securityContextFactory is not null)
+            services.AddSingleton(securityContextFactory);
 
         return services;
     }

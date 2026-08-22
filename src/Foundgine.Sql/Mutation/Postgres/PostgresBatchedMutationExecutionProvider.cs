@@ -61,6 +61,21 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
     }
 
     public MutationBatchResult ExecuteBatch(
+        ExecutionMutationIR ir,
+        ExecutionContext context,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(ir);
+        ArgumentNullException.ThrowIfNull(context);
+
+        var batched = _compiler.TryCompile(ir);
+        return batched is not null
+            ? ExecuteBatchedPlan(batched, cancellationToken)
+            : _fallbackProvider.ExecuteBatch(_fallbackCompiler.Compile(ir), context, cancellationToken);
+    }
+
+    public MutationBatchResult ExecuteBatch(
         MutationBatchPlan plan,
         ExecutionContext context)
     {
@@ -76,6 +91,25 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
     /// <summary>
     /// Interface entry point for callers that already have a provider plan.
     /// </summary>
+    public MutationBatchResult ExecuteBatch(
+        ProviderMutationBatchPlan plan,
+        ExecutionContext context,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(context);
+
+        return plan switch
+        {
+            SqlBatchedMutationPlan batched => ExecuteBatchedPlan(batched, cancellationToken),
+            SqlMutationBatchPlan sequential => _fallbackProvider.ExecuteBatch(sequential, context, cancellationToken),
+            _ => throw new ArgumentException(
+                "The PostgreSQL batched mutation provider requires a SqlBatchedMutationPlan " +
+                "or SqlMutationBatchPlan.", nameof(plan))
+        };
+    }
+
     public MutationBatchResult ExecuteBatch(
         ProviderMutationBatchPlan plan,
         ExecutionContext context)
@@ -94,7 +128,7 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
         };
     }
 
-    private MutationBatchResult ExecuteBatchedPlan(SqlBatchedMutationPlan plan)
+    private MutationBatchResult ExecuteBatchedPlan(SqlBatchedMutationPlan plan, CancellationToken cancellationToken = default)
     {
         if (_connection.State != ConnectionState.Open)
             _connection.Open();
@@ -119,10 +153,12 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
         var returned = new Dictionary<FieldId, object?>?[plan.OperationCount];
         var affected = new int[plan.OperationCount];
 
+        using var cancellationRegistration = cancellationToken.Register(static state => ((DbCommand)state!).Cancel(), command);
         using var reader = command.ExecuteReader();
 
         while (reader.Read())
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var groupId = reader.GetInt32(0);
             var json = reader.GetString(1);
 
@@ -186,6 +222,7 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
             returned[operationIndex] = values.Count == 0 ? null : values;
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         for (var i = 0; i < plan.OperationCount; i++)
             results[i] = new MutationResult(affected[i], returned[i]);
 

@@ -1,5 +1,6 @@
 using Foundgine.Abstractions;
 using Foundgine.Semantics.Query;
+using Foundgine.Semantics.Security.Execution;
 
 namespace Foundgine.Semantics;
 
@@ -10,7 +11,8 @@ namespace Foundgine.Semantics;
 public sealed record SemanticRequest(
     EntityId Root,
     IReadOnlyList<SemanticSelection> Selections,
-    SemanticQueryOptions? Options = null);
+    SemanticQueryOptions? Options = null,
+    SecurityExecutionContext? Security = null);
 
 public sealed record SemanticSelection(
     FieldId? Field,

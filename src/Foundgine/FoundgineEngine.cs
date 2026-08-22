@@ -5,6 +5,9 @@ using Foundgine.Semantics.Authorization;
 using Foundgine.Semantics.Capabilities;
 using Foundgine.Semantics.IR;
 using Foundgine.Semantics.Resolution;
+using Foundgine.Semantics.Security;
+using Foundgine.Semantics.Security.Execution;
+using Foundgine.Semantics.Security.Warrants;
 using System.Text.Json;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
@@ -24,6 +27,11 @@ public sealed class FoundgineEngine : IFoundgine
     private readonly IExecutionProvider _provider;
     private readonly IProviderPlanCache _planCache;
     private readonly SemanticVersionSet _versions;
+    private readonly SemanticCapabilityContract _securityContract;
+    private readonly ISecurityWarrantKeyResolver? _warrantKeyResolver;
+    private readonly string? _expectedWarrantIssuer;
+    private readonly ISecurityWarrantReplayStore? _warrantReplayStore;
+    private readonly SecurityResourceLimits _securityResourceLimits;
     private readonly string _cacheNamespace = Guid.NewGuid().ToString("N");
 
     internal FoundgineEngine(
@@ -42,6 +50,13 @@ public sealed class FoundgineEngine : IFoundgine
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _planCache = options.PlanCache ?? new MemoryProviderPlanCache();
         _versions = SemanticVersionSet.For(_model);
+        _securityContract = SemanticCapabilityContractDiscovery.Describe(_model, _authorizationPolicy);
+        SecurityInvariantContractValidator.EnsureContractValid(_securityContract);
+        _warrantKeyResolver = options.WarrantKeyResolver;
+        _expectedWarrantIssuer = options.ExpectedWarrantIssuer;
+        _warrantReplayStore = options.WarrantReplayStore;
+        _securityResourceLimits = options.SecurityResourceLimits ?? new SecurityResourceLimits();
+        _securityResourceLimits.Validate();
     }
 
     /// <summary>
@@ -64,6 +79,9 @@ public sealed class FoundgineEngine : IFoundgine
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _planCache = planCache ?? new MemoryProviderPlanCache();
         _versions = SemanticVersionSet.For(_model);
+        _securityContract = SemanticCapabilityContractDiscovery.Describe(_model, _authorizationPolicy);
+        SecurityInvariantContractValidator.EnsureContractValid(_securityContract);
+        _securityResourceLimits = new SecurityResourceLimits();
     }
 
     public SemanticAuthorizationCapabilities DescribeCapabilities() =>
@@ -72,18 +90,53 @@ public sealed class FoundgineEngine : IFoundgine
     public SemanticCapabilityContract DescribeCapabilityContract() =>
         SemanticCapabilityContractDiscovery.Describe(_model, _authorizationPolicy);
 
+    public SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security)
+    {
+        ArgumentNullException.ThrowIfNull(security);
+        ValidateDiscoveryWarrant(security);
+
+        var contract = SemanticCapabilityContractDiscovery.Describe(_model, _authorizationPolicy);
+        var visible = contract.Capabilities
+            .Where(capability => SecurityWarrantAuthorization.Allows(
+                security.Warrant,
+                security.Subject,
+                security.Audience,
+                capability.Id,
+                capability.Operation,
+                security.Tenant,
+                security.ResourceScope))
+            .ToArray();
+
+        return contract with { Capabilities = visible };
+    }
+
+    private void ValidateDiscoveryWarrant(SecurityExecutionContext security)
+    {
+        if (_warrantKeyResolver is null)
+            throw new InvalidOperationException(
+                "Warrant-backed capability discovery requires a warrant key resolver.");
+
+        SecurityWarrantVerifier.Verify(
+            security.Warrant,
+            _warrantKeyResolver,
+            DateTimeOffset.UtcNow,
+            _expectedWarrantIssuer,
+            security.Audience);
+    }
+
     public SemanticVersionSet DescribeVersionSet() => _versions;
 
     public DryRunResult DryRun(
         SemanticRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
+        SecurityResourceLimitValidator.Validate(request, _securityResourceLimits);
 
         var graph = new SemanticRequestResolver(_model).Resolve(request);
         var semanticOperation = SemanticOperationCompiler.Compile(graph);
+        ValidateWarrant(request, semanticOperation, consumeReplay: false);
         var authorizedOperation = new SemanticAuthorizer(_authorizationPolicy).Authorize(semanticOperation);
-        var plan = SecurityInvariantPlanRequirements.Attach(
-            _planOptimizer.Optimize(_planner.Plan(authorizedOperation)).Plan);
+        var plan = BuildSecuredPlan(authorizedOperation);
         return new DryRunResult(PlanInspector.Inspect(plan));
     }
 
@@ -112,6 +165,7 @@ public sealed class FoundgineEngine : IFoundgine
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(approval);
+        SecurityResourceLimitValidator.Validate(approval.Request, _securityResourceLimits);
 
         if (!string.Equals(approval.SemanticModelVersion, _versions.SemanticModelVersion, StringComparison.Ordinal) ||
             approval.CapabilityContractVersion != _versions.CapabilityContractVersion ||
@@ -125,9 +179,9 @@ public sealed class FoundgineEngine : IFoundgine
 
         var graph = new SemanticRequestResolver(_model).Resolve(approval.Request);
         var semanticOperation = SemanticOperationCompiler.Compile(graph);
+        ValidateWarrant(approval.Request, semanticOperation, consumeReplay: true);
         var authorizedOperation = new SemanticAuthorizer(_authorizationPolicy).Authorize(semanticOperation);
-        var plan = SecurityInvariantPlanRequirements.Attach(
-            _planOptimizer.Optimize(_planner.Plan(authorizedOperation)).Plan);
+        var plan = BuildSecuredPlan(authorizedOperation);
         var currentFingerprint = SemanticPlanFingerprint.Create(plan);
 
         if (!string.Equals(currentFingerprint, approval.PlanFingerprint, StringComparison.Ordinal))
@@ -137,7 +191,7 @@ public sealed class FoundgineEngine : IFoundgine
         }
 
         var executionIr = ExecutionIRCompiler.Compile(plan);
-        var cacheKey = _cacheNamespace + ":" + SemanticPlanFingerprint.CreateShapeKey(plan);
+        var cacheKey = BuildProviderPlanCacheKey(plan, approval.Request.Security);
         var providerPlan = _planCache.GetOrAdd(
             cacheKey,
             () => SecurityInvariantProofGate.AttachAndValidate(
@@ -149,6 +203,7 @@ public sealed class FoundgineEngine : IFoundgine
             plan,
             providerPlan,
             executionContext,
+            executionIr,
             cancellationToken,
             approval);
     }
@@ -169,14 +224,15 @@ public sealed class FoundgineEngine : IFoundgine
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        SecurityResourceLimitValidator.Validate(request, _securityResourceLimits);
 
         var graph = new SemanticRequestResolver(_model).Resolve(request);
         var semanticOperation = SemanticOperationCompiler.Compile(graph);
+        ValidateWarrant(request, semanticOperation, consumeReplay: true);
         var authorizedOperation = new SemanticAuthorizer(_authorizationPolicy).Authorize(semanticOperation);
-        var plan = SecurityInvariantPlanRequirements.Attach(
-            _planOptimizer.Optimize(_planner.Plan(authorizedOperation)).Plan);
+        var plan = BuildSecuredPlan(authorizedOperation);
         var executionIr = ExecutionIRCompiler.Compile(plan);
-        var cacheKey = _cacheNamespace + ":" + SemanticPlanFingerprint.CreateShapeKey(plan);
+        var cacheKey = BuildProviderPlanCacheKey(plan, request.Security);
         var providerPlan = _planCache.GetOrAdd(
             cacheKey,
             () => SecurityInvariantProofGate.AttachAndValidate(
@@ -189,18 +245,139 @@ public sealed class FoundgineEngine : IFoundgine
             plan,
             providerPlan,
             executionContext,
+            executionIr,
             cancellationToken);
     }
+    private string BuildProviderPlanCacheKey(
+        SemanticPlan plan,
+        SecurityExecutionContext? security)
+    {
+        var shape = SemanticPlanFingerprint.CreateShapeKey(plan);
+
+        // Security-bearing requests are partitioned by the exact warrant digest.
+        // The compiled provider plan may be semantically identical across callers,
+        // but an authority-bearing cache entry must never become an authority
+        // confused cache artifact. This is deliberately conservative: warrant
+        // changes create a new cache partition rather than relying on inferred
+        // equivalence of grants/constraints.
+        return security is null
+            ? _cacheNamespace + ":" + shape
+            : _cacheNamespace + ":authority:" + security.AuthorityCachePartition + ":" + shape;
+    }
+
+    private void ValidateWarrant(SemanticRequest request, SemanticOperation operation, bool consumeReplay)
+    {
+        var security = request.Security;
+        if (security is null)
+            return;
+
+        if (_warrantKeyResolver is null)
+            throw new InvalidOperationException(
+                "A security warrant was supplied, but no warrant key resolver is configured.");
+
+        SecurityWarrantVerifier.Verify(
+            security.Warrant,
+            _warrantKeyResolver,
+            DateTimeOffset.UtcNow,
+            _expectedWarrantIssuer,
+            security.Audience);
+
+        var capabilities = operation.Root.TraverseDepthFirst()
+            .Select(node => _securityContract.Capabilities.FirstOrDefault(c =>
+                c.TargetEntityId == node.EntityId &&
+                string.Equals(c.Operation, "read", StringComparison.Ordinal)))
+            .Where(c => c is not null)
+            .Cast<SemanticCapability>()
+            .DistinctBy(c => c.Id, StringComparer.Ordinal)
+            .ToArray();
+
+        if (capabilities.Length == 0)
+            throw new InvalidOperationException(
+                $"No security capability contract exists for root entity '{operation.Root.EntityId}' and its semantic composition.");
+
+        var requestedFields = operation.Root.TraverseDepthFirst()
+            .SelectMany(node => node.Fields
+                .Select(fieldId => _model.TryGet(node.EntityId, out var entity)
+                    ? entity.Fields.FirstOrDefault(f => f.Id == fieldId)?.Name
+                    : null))
+            .Where(name => name is not null)
+            .Cast<string>()
+            .ToArray();
+
+        var composition = SecurityCapabilityComposition.Validate(
+            capabilities,
+            security.Warrant,
+            security.Subject,
+            security.Audience,
+            security.Tenant,
+            security.ResourceScope,
+            requestedFields,
+            request.Options?.Limit);
+
+        if (!composition.IsSatisfied)
+            throw new UnauthorizedAccessException(composition.FailureReason);
+
+        if (consumeReplay)
+        {
+            if (_warrantReplayStore is null)
+                throw new InvalidOperationException(
+                    "Executing a warrant-backed request requires a warrant replay store.");
+            SecurityWarrantReplayGuard.Consume(
+                security.Warrant,
+                _warrantReplayStore,
+                DateTimeOffset.UtcNow);
+        }
+    }
+
+    private SemanticPlan BuildSecuredPlan(SemanticOperation operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+
+        var planned = _planner.Plan(operation);
+        var optimized = _planOptimizer.Optimize(planned);
+        if (!optimized.SecurityProof.IsSatisfied)
+            throw new InvalidOperationException(
+                "The optimized semantic plan does not carry a satisfied security-preservation proof.");
+
+        var capability = _securityContract.Capabilities.FirstOrDefault(c =>
+            c.TargetEntityId == operation.Root.EntityId &&
+            string.Equals(c.Operation, "read", StringComparison.Ordinal));
+
+        if (capability is null)
+            throw new InvalidOperationException(
+                $"No security capability contract exists for root entity '{operation.Root.EntityId}' and operation 'read'.");
+
+        var plan = SecurityInvariantPlanRequirements.Attach(
+            optimized.Plan,
+            capability.EffectiveSecurityInvariants);
+        if (plan.EffectiveSecurityInvariants.Count == 0)
+            throw new InvalidOperationException(
+                "The semantic execution contract is empty; no executable plan may be produced.");
+
+        foreach (var id in plan.EffectiveSecurityInvariants)
+            if (!SecurityInvariantRegistry.Contains(id))
+                throw new InvalidOperationException(
+                    $"The semantic plan contains unknown security invariant '{id}'.");
+
+        return plan;
+    }
+
     private async Task<ExecutionResult> ExecuteAndEnrichEvidenceAsync(
         SemanticRequest request,
         SemanticPlan plan,
         ProviderPlan providerPlan,
         ExecutionContext context,
+        ExecutionIR executionIr,
         CancellationToken cancellationToken,
         PlanApproval? approval = null)
     {
+        SecurityInvariantExecutionGate.EnsureExecutable(providerPlan, executionIr);
+
+        context.EnsureWithinDeadline();
         var startedAt = DateTimeOffset.UtcNow;
-        var result = await _provider.ExecuteAsync(providerPlan, context, cancellationToken);
+        using var deadlineCts = context.CreateDeadlineCancellationSource(cancellationToken);
+        var result = await _provider.ExecuteAsync(providerPlan, context, deadlineCts.Token);
+        context.EnsureWithinDeadline();
         var completedAt = DateTimeOffset.UtcNow;
         if (result.Evidence is null)
             return result;
