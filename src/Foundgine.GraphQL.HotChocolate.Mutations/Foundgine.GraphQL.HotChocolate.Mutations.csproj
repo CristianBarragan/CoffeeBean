@@ -6,6 +6,7 @@
     <RootNamespace>Foundgine.GraphQL.HotChocolate</RootNamespace>
     <AssemblyName>Foundgine.GraphQL.HotChocolate.Mutations</AssemblyName>
     <IsPackable>true</IsPackable>
+    <PackageReleaseNotes>0.5.0: Packaging/documentation cleanup only; no mutation adapter runtime capability change. 0.3.0: GraphQL mutation integration became part of the validated semantic execution surface.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="README.md" />

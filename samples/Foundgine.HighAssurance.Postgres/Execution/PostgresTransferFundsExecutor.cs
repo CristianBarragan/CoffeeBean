@@ -89,7 +89,7 @@ public sealed class PostgresTransferFundsExecutor
                 throw new InvalidOperationException("Source account does not exist at execution time.");
             if (!accounts.TryGetValue(command.DestinationAccountId, out var destination))
                 throw new InvalidOperationException("Destination account does not exist at execution time.");
-            ValidateExecution(tenantId, source, destination, command.Amount);
+            ValidateExecution(actorId, tenantId, source, destination, command.Amount);
             var authorizationContext = await LoadAuthorizationContextForUpdateAsync(
                 connection, transaction, actorId, tenantId, cancellationToken);
             var authorization = _authorize(actorId, source, destination);
@@ -170,13 +170,31 @@ public sealed class PostgresTransferFundsExecutor
             var transferIds = new Guid[newIndexes.Count];
             var authorizations = new AuthorizationDecision[newIndexes.Count];
 
+            var batchOutgoing = new Dictionary<Guid, decimal>();
+            for (var j = 0; j < newIndexes.Count; j++)
+            {
+                var command = commands[newIndexes[j]];
+                batchOutgoing.TryGetValue(command.SourceAccountId, out var current);
+                batchOutgoing[command.SourceAccountId] = current + command.Amount;
+            }
+
+            foreach (var (accountId, batchAmount) in batchOutgoing)
+            {
+                var source = prepared.Accounts[accountId];
+                if (source.DailyTransferred + batchAmount > source.DailyLimit)
+                    throw new InvalidOperationException("Transfer batch exceeds the source account daily limit.");
+                var available = source.Balance - source.PendingTransactions - source.RegulatoryHold;
+                if (available < batchAmount)
+                    throw new InvalidOperationException("Transfer batch exceeds the source account available funds.");
+            }
+
             for (var j = 0; j < newIndexes.Count; j++)
             {
                 var index = newIndexes[j];
                 var command = commands[index];
                 var source = prepared.Accounts[command.SourceAccountId];
                 var destination = prepared.Accounts[command.DestinationAccountId];
-                ValidateExecution(tenantId, source, destination, command.Amount);
+                ValidateExecution(actorId, tenantId, source, destination, command.Amount);
 
                 var authorization = _authorize(actorId, source, destination);
                 EnsureAuthorized(authorization);
@@ -505,12 +523,19 @@ public sealed class PostgresTransferFundsExecutor
         if (command.SourceAccountId == command.DestinationAccountId) throw new InvalidOperationException("Source and destination accounts must differ.");
     }
 
-    private static void ValidateExecution(int tenantId, BankAccount source, BankAccount destination, decimal amount)
+    private static void ValidateExecution(Guid actorId, int tenantId, BankAccount source, BankAccount destination, decimal amount)
     {
-        if (source.TenantId != tenantId || destination.TenantId != tenantId) throw new InvalidOperationException("Tenant boundary violation.");
-        if (source.IsFrozen || destination.IsFrozen) throw new InvalidOperationException("Frozen accounts cannot participate in transfers.");
+        if (source.TenantId != tenantId || destination.TenantId != tenantId)
+            throw new InvalidOperationException("Tenant boundary violation.");
+        if (source.OwnerId != actorId || destination.OwnerId != actorId)
+            throw new SemanticAuthorizationException("Transfer capability requires ownership of both accounts.");
+        if (source.IsFrozen || destination.IsFrozen)
+            throw new InvalidOperationException("Frozen accounts cannot participate in transfers.");
+        if (source.DailyTransferred + amount > source.DailyLimit)
+            throw new InvalidOperationException("Transfer exceeds the source account daily limit.");
         var available = source.Balance - source.PendingTransactions - source.RegulatoryHold;
-        if (available < amount) throw new InvalidOperationException("Insufficient available funds.");
+        if (available < amount)
+            throw new InvalidOperationException("Insufficient available funds.");
     }
 
     private static async Task AdvisoryLockAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, string key, CancellationToken ct)

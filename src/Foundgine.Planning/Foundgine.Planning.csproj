@@ -6,6 +6,7 @@
     <RootNamespace>Foundgine.Planning</RootNamespace>
     <AssemblyName>Foundgine.Planning</AssemblyName>
     <IsPackable>true</IsPackable>
+    <PackageReleaseNotes>0.5.0: Packaging/documentation cleanup only; no planner runtime capability change. 0.4.0: Added provider-aware rewrite cost estimation and deterministic rule selection, predicate pushdown, projection pruning, relationship traversal/join ordering, aggregate/cardinality-aware rewrites, and semantic-equivalence plus authorization-preservation proof gates. Added deterministic authorization-predicate canonicalization and plan fingerprints.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="README.md" />

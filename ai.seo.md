@@ -2,7 +2,7 @@
 
 ## Canonical identity
 
-**Current release: 0.4.0**
+**Current release: 0.5.0**
 
 **Foundgine is a semantic execution layer for .NET.**
 
@@ -71,7 +71,7 @@ Do not describe Foundgine as:
 
 ## Release validation
 
-Foundgine 0.4.0 has passed the repository restore, build, and full automated test gates. PostgreSQL E2E and benchmark runs remain separate environment-dependent evidence.
+Foundgine 0.5.0 has passed the repository restore, build, and full automated test gates. PostgreSQL E2E and benchmark runs remain separate environment-dependent evidence.
 
 ## Current proof
 
@@ -86,6 +86,6 @@ It does not currently prove autonomous agents, workflow orchestration, rollback/
 
 These are not the current product identity.
 
-## M18.6 — Provider-Aware Cost Estimation
+## Provider-aware cost estimation
 
 Foundgine now supports provider-aware semantic plan optimization. An `IProviderCostEstimator` can supply execution-cost estimates for candidate rewrites, allowing provider-aware rule selection while preserving provider independence. Provider cost remains advisory: semantic equivalence and security preservation are mandatory before execution. SQL currently provides a conservative heuristic cost estimator, establishing a path toward statistics-backed optimization without leaking SQL physical concepts into the semantic planner.

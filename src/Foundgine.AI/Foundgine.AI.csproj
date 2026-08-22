@@ -6,6 +6,7 @@
     <RootNamespace>Foundgine.AI</RootNamespace>
     <AssemblyName>Foundgine.AI</AssemblyName>
     <IsPackable>true</IsPackable>
+    <PackageReleaseNotes>0.5.0: Packaging/documentation cleanup only; no AI adapter runtime capability change. Provides Microsoft.Extensions.AI integration for Foundgine semantic execution.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>

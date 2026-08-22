@@ -45,4 +45,4 @@ Behavioral claims should be backed by active tests. Performance claims should id
 
 ## Historical reconciliation
 
-The Phase 13/14 audit and build-gate documents are retained under `docs/history/reconciliation`. They record the pre-validation state and should not be read as the current build status.
+The Phase 13/14 audit and build-gate documents that recorded the pre-validation state are no longer present in this repository (see `docs/README.md` for the current documentation index). They should not be assumed to describe the current build status.

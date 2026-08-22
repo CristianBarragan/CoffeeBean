@@ -12,6 +12,7 @@
     </Description>
 
     <IsPackable>true</IsPackable>
+    <PackageReleaseNotes>0.5.0: Packaging/documentation cleanup only; no AOT runtime capability change. 0.3.0: AOT metadata generation became part of the validated release surface; this package bundles the required metadata runtime and generator assets.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Include custom package assets -->

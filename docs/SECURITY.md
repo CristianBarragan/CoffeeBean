@@ -44,11 +44,14 @@ remain application-level concerns around the Foundgine boundary.
 ## Authorization recovery control plane
 
 The `Foundgine.Authorization` namespace (implemented in
-`samples/Foundgine.HighAssurance.Postgres/Authorization/`) covers failure and
-recovery handling for the authorization control plane itself: publication key
-lifecycle and rotation, promotion/commit atomicity, cross-instance commit and
-journal consensus, repair-proposer credential authentication and replication,
-and transaction-journal integrity. See `docs/security/` (milestones M5.40
-through M5.73 and their changelogs) for the invariant-by-invariant history of
-this module, and `tests/Foundgine.HighAssurance.Postgres.Tests/` for the
-corresponding adversarial test coverage.
+`src/Foundgine.Authorization/Recovery/`, a provider-agnostic library) covers
+failure and recovery handling for the authorization control plane itself:
+publication key lifecycle and rotation, promotion/commit atomicity,
+cross-instance commit and journal consensus, repair-proposer credential
+authentication and replication, and transaction-journal integrity. See
+`docs/security/CHANGELOG.md` for the invariant-by-invariant history of this
+module, and `tests/Foundgine.Authorization.Tests/` for the
+corresponding adversarial test coverage. The PostgreSQL-specific wiring
+(`PostgresAuthorizationContextStore`, `PostgresAuthorizationRecoveryCoordinator`,
+`PostgresAuthorizationSecurityUnitOfWork`, and the transfer-funds executor)
+remains in `samples/Foundgine.HighAssurance.Postgres/`.

@@ -60,8 +60,6 @@ Provider
 Result
 ```
 
-For the layer-by-layer setup, see [Layer setup](LAYER-SETUP.md).
-
 ## Run PostgreSQL 17
 
 Start the test database:
@@ -116,8 +114,7 @@ docker compose -f docker-compose.postgres.yml down --volumes --remove-orphans
 
 ## Where to read next
 
-1. [Layer setup](LAYER-SETUP.md)
-2. [Architecture](ARCHITECTURE.md)
-3. [Testing](TESTING.md)
-4. [PostgreSQL E2E](POSTGRES-E2E.md)
-5. [Current status](CURRENT-STATUS.md)
+1. [Architecture](ARCHITECTURE.md)
+2. [Testing](TESTING.md)
+3. [PostgreSQL E2E](POSTGRES-E2E.md)
+4. [Current status](CURRENT-STATUS.md)

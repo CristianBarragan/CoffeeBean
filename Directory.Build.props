@@ -7,7 +7,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
     <!-- Common NuGet metadata. Individual packages override PackageId/Description. -->
-    <VersionPrefix>0.4.0</VersionPrefix>
+    <VersionPrefix>0.5.0</VersionPrefix>
     <Authors>Foundgine</Authors>
     <Company>Foundgine</Company>
     <Copyright>Copyright © 2026 Foundgine</Copyright>

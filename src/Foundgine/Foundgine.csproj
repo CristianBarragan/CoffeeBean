@@ -6,6 +6,7 @@
     <RootNamespace>Foundgine</RootNamespace>
     <AssemblyName>Foundgine</AssemblyName>
     <IsPackable>true</IsPackable>
+    <PackageReleaseNotes>0.5.0: Packaging/documentation cleanup only; no core facade runtime capability change. 0.3.0: Foundgine's semantic execution architecture became a validated release surface covering intent, semantics, planning, authorization-aware execution, deterministic fingerprints, and provider integration.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="README.md" />

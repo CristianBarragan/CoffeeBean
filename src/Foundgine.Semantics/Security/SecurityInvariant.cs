@@ -27,6 +27,7 @@ public static class SecurityInvariantIds
 {
     public const string AuthorizationRequired = "authorization.required";
     public const string RuntimeAuthorization = "authorization.runtime";
+    public const string AuthorizationOwnership = "authorization.ownership";
     public const string TenantIsolation = "tenant.isolation";
     public const string FieldVisibility = "visibility.field";
     public const string RelationshipVisibility = "visibility.relationship";
@@ -39,6 +40,7 @@ public static class SecurityInvariantIds
     public const string AuditRequired = "evidence.audit";
     public const string ExecutionEvidenceRequired = "evidence.execution-receipt";
     public const string TransactionReadCommittedIsolation = "mutation.transaction.read-committed-isolation";
+    public const string MutationDailyLimit = "mutation.daily-limit";
 }
 
 /// <summary>
@@ -57,6 +59,10 @@ public static class SecurityInvariantRegistry
             [SecurityInvariantIds.RuntimeAuthorization] = new(
                 SecurityInvariantIds.RuntimeAuthorization, "Runtime authorization",
                 "Authorization must be evaluated against current execution context rather than trusted model-supplied authority.",
+                SecurityInvariantPhase.Execution, true),
+            [SecurityInvariantIds.AuthorizationOwnership] = new(
+                SecurityInvariantIds.AuthorizationOwnership, "Authorization ownership",
+                "A consequential account mutation must not operate on accounts the acting principal does not own, even if an upstream authorization dependency incorrectly permits the request.",
                 SecurityInvariantPhase.Execution, true),
             [SecurityInvariantIds.TenantIsolation] = new(
                 SecurityInvariantIds.TenantIsolation, "Tenant isolation",
@@ -102,6 +108,10 @@ public static class SecurityInvariantRegistry
                 SecurityInvariantIds.ExecutionEvidenceRequired, "Execution evidence required",
                 "Protected execution must produce an evidence-bearing execution receipt.",
                 SecurityInvariantPhase.Evidence, true),
+            [SecurityInvariantIds.MutationDailyLimit] = new(
+                SecurityInvariantIds.MutationDailyLimit, "Mutation daily limit",
+                "A consequential transfer must not increase an account's daily transferred amount beyond its configured daily limit, including when multiple transfers share one batch.",
+                SecurityInvariantPhase.Execution, true),
             [SecurityInvariantIds.TransactionReadCommittedIsolation] = new(
                 SecurityInvariantIds.TransactionReadCommittedIsolation, "Transaction read-committed isolation",
                 "A protected mutation's transaction must run under an explicit read-committed (or stronger) isolation level rather than an unspecified default.",

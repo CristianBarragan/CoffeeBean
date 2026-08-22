@@ -1,12 +1,12 @@
 # Foundgine.HighAssurance.Postgres
 
-Real PostgreSQL execution for the M16 `TransferFunds` capability.
+Real PostgreSQL execution for the `TransferFunds` capability.
 
 This project intentionally keeps the business semantic contract in `Foundgine.HighAssurance.Banking` and adds only the provider boundary: transaction, row locking, idempotency serialization, database mutation, audit persistence, and execution evidence.
 
 Set `FOUNDGINE_POSTGRES_CONNECTION` when running the integration tests.
 
-## M5.17 authorization evidence atomicity
+## Authorization evidence atomicity
 
 The high-assurance transfer executor can bind authorization evidence to a PostgreSQL transaction with `PostgresAuthorizationContextStore`.
 

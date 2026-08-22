@@ -94,38 +94,36 @@ Capability discovery is descriptive. It does not grant permission.
 
 The active tests cover semantic modelling, resolution, authorization, provider-independent query and mutation planning, SQL/SQLite execution, a small InMemory provider, AOT metadata, JSON input, GraphQL adapters, relationships, aggregates, pagination, and PostgreSQL integration.
 
-Historical material is under `docs/history`.
-
 When documentation and code disagree, current code and active tests win.
 
-## M17.5 — SQL Provider Security Conformance
+## SQL provider security conformance
 
-M17.5 adds provider-specific structural conformance for compiled SQL plans. Required security invariants are checked against concrete SQL-plan evidence: authorization predicates, runtime authorization parameterization, parameter bindings, explicit field projections, relationship execution shape, and plan-cache context isolation. Mutation guarantees such as atomicity and idempotency remain the responsibility of the high-assurance mutation provider contract and are not inferred from ordinary query SQL.
+Foundgine adds provider-specific structural conformance for compiled SQL plans. Required security invariants are checked against concrete SQL-plan evidence: authorization predicates, runtime authorization parameterization, parameter bindings, explicit field projections, relationship execution shape, and plan-cache context isolation. Mutation guarantees such as atomicity and idempotency remain the responsibility of the high-assurance mutation provider contract and are not inferred from ordinary query SQL.
 
 
-## M17.7 — Cross-Provider Security Conformance
+## Cross-provider security conformance
 
-M17.7 makes provider security differences explicit through a provider-neutral conformance matrix. Providers declare the security invariants they can preserve; a capability can execute only when its required invariants are a subset of the selected provider's preserved invariants. Generic SQL is deliberately not allowed to claim high-assurance mutation guarantees, while the PostgreSQL TransferFunds provider carries the stronger atomicity, idempotency, replay-protection, audit, and execution-evidence contract established by M16.5/M16.6. Unknown providers and unknown invariants fail closed.
+Foundgine makes provider security differences explicit through a provider-neutral conformance matrix. Providers declare the security invariants they can preserve; a capability can execute only when its required invariants are a subset of the selected provider's preserved invariants. Generic SQL is deliberately not allowed to claim high-assurance mutation guarantees, while the PostgreSQL TransferFunds provider carries the stronger atomicity, idempotency, replay-protection, audit, and execution-evidence contract established for high-assurance mutations. Unknown providers and unknown invariants fail closed.
 
-## M18.6 — Provider-Aware Cost Estimation
+## Provider-aware cost estimation
 
 Foundgine supports an optional provider-aware rewrite cost boundary through `IProviderCostEstimator`. Providers can estimate execution cost for candidate semantic plans and influence deterministic rewrite selection. Provider cost is advisory and cannot bypass semantic-equivalence or security-preservation proofs. The first implementation is `Foundgine.Sql.SqlCostEstimator`, a conservative heuristic model based on semantic plan shape, projections, traversals, filters, ordering, pagination, and child nodes. It is not presented as a replacement for database-native statistics or query optimization.
 
-## M18.9 — Projection Pruning
+## Projection pruning
 
 Foundgine now includes the conservative `projection.pruning` rewrite rule. It removes redundant duplicate projection fields while preserving field order and all unique requested fields. `ProjectionPruningRequirements` identifies fields required by output projection, root filters, and root ordering.
 
-The current semantic plan does not distinguish requested output fields from internal working fields, so M18.9 deliberately does not remove unique fields. Full dead-field pruning requires an explicit requested-vs-working projection representation.
+The current semantic plan does not distinguish requested output fields from internal working fields, so this rule deliberately does not remove unique fields. Full dead-field pruning requires an explicit requested-vs-working projection representation.
 
 The rewrite remains subject to semantic-equivalence and security-preservation proofs and participates in the existing provider-aware cost-selection framework.
 
 
-## M18.11 — Join Ordering / Multi-Relationship Planning
+## Join ordering / multi-relationship planning
 
 Foundgine can assign deterministic `TraversalOrder` metadata to sibling relationship traversals when cardinality is known. The rule uses conservative selectivity signals and never changes logical child order, authorization, filters, pagination, or relationship identity. `TraversalOrder` is physical metadata: excluded from semantic equivalence and included in execution plan fingerprints. Providers may use it for safe physical traversal planning.
 
 
-## M18.13 Aggregate Relationship Filter Pushdown
+## Aggregate relationship filter pushdown
 
 The planner recognizes COUNT-existence plus SOME relationship predicates and can represent the equivalent filtered COUNT. The transformation is bounded to proven count-existence cases and remains subject to semantic-equivalence, security-preservation, provider-capability, and cost checks.
 
