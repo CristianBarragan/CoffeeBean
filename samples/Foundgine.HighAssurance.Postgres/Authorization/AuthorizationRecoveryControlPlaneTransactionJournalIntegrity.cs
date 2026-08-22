@@ -235,8 +235,21 @@ public sealed class AuthorizationRecoveryControlPlaneTransactionJournal
     {
         lock (_gate)
         {
-            if (!AuthorizationRecoveryControlPlaneTransactionJournalIntegrity.VerifyEntry(entry, _authenticationKey))
+            // Check the authentication tag first: it is computed only over the
+            // entry's Digest field, so it still verifies correctly even when
+            // other content (e.g. TargetFingerprint, JournalSequence) has been
+            // tampered with independently of Digest. That lets us distinguish
+            // "the tag/key itself is wrong" (RejectedAuthentication) from
+            // "the content no longer matches its own digest" (RejectedDigest)
+            // instead of collapsing both into one result.
+            if (!AuthorizationRecoveryControlPlaneTransactionJournalIntegrity.VerifyAuthenticationTag(entry, _authenticationKey))
                 return AuthorizationRecoveryTransactionJournalResult.RejectedAuthentication;
+
+            if (!string.Equals(
+                    entry.Digest,
+                    AuthorizationRecoveryControlPlaneTransactionJournalIntegrity.ComputeDigest(entry),
+                    StringComparison.Ordinal))
+                return AuthorizationRecoveryTransactionJournalResult.RejectedDigest;
 
             if (entry.JournalSequence < 1 || entry.JournalSequence > _entries.Count)
                 return AuthorizationRecoveryTransactionJournalResult.RejectedSequence;

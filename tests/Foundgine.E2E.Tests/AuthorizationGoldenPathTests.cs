@@ -38,7 +38,7 @@ public sealed class AuthorizationGoldenPathTests
         Assert.Null(compiler.IR);
     }
 
-    [Fact(Skip = "WIP")]
+    [Fact]
     public async Task Conditional_authorization_survives_semantic_pipeline()
     {
         var policy = new TenantPolicy();
@@ -48,6 +48,8 @@ public sealed class AuthorizationGoldenPathTests
             new FoundgineOptions { Model = Banking.BankingSemanticModel.Build(), AuthorizationPolicy = policy },
             compiler,
             provider);
+
+        var entityChecksBeforeExecution = policy.EntityChecks;
 
         var request = new SemanticRequest(
             Banking.BankingSemanticModel.Customer,
@@ -61,7 +63,7 @@ public sealed class AuthorizationGoldenPathTests
         Assert.Equal(AuthorizationPredicateKind.Equal, compiler.IR.Root.Authorization!.Kind);
         Assert.NotNull(provider.Context);
         Assert.Equal(7, provider.Context!.EffectiveValues["user.TenantId"]);
-        Assert.Equal(1, policy.EntityChecks);
+        Assert.Equal(entityChecksBeforeExecution + 1, policy.EntityChecks);
     }
 
     private sealed class TenantPolicy : AllowAllSemanticAuthorizationPolicy
@@ -86,7 +88,7 @@ public sealed class AuthorizationGoldenPathTests
                 : null;
     }
 
-    private sealed class CapturingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
+    private sealed class CapturingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();

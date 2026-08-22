@@ -36,6 +36,14 @@ public static class SecurityCapabilityComposition
         foreach (var capability in components)
         {
             SecurityInvariantContractValidator.EnsureValid(capability);
+
+            // The composed resourceScope describes the request as a whole, not
+            // any single component: components may legitimately have different,
+            // narrower grant scopes (e.g. "customer/*" vs "order/*"). Requiring
+            // each component's own grant to match the composed-level scope would
+            // reject valid compositions across independently-scoped capabilities.
+            // The composed scope is still enforced once, holistically, against
+            // the warrant's Constraints below.
             if (!SecurityWarrantAuthorization.Allows(
                     warrant,
                     subject,
@@ -45,7 +53,8 @@ public static class SecurityCapabilityComposition
                     tenant,
                     resourceScope,
                     requestedResults,
-                    requestedAmount))
+                    requestedAmount,
+                    requireResourceScopeMatch: false))
             {
                 return SecurityCapabilityCompositionResult.Rejected(
                     $"Capability composition is not authorized because '{capability.Id}' is not independently authorized.");

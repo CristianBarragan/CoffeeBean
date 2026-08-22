@@ -16,7 +16,8 @@ public static class SecurityWarrantAuthorization
         string? tenant,
         string? resourceScope,
         long? requestedResults = null,
-        decimal? requestedAmount = null)
+        decimal? requestedAmount = null,
+        bool requireResourceScopeMatch = true)
     {
         ArgumentNullException.ThrowIfNull(warrant);
         if (!StringComparer.Ordinal.Equals(warrant.Subject, subject) ||
@@ -24,17 +25,30 @@ public static class SecurityWarrantAuthorization
             !warrant.IsTimeValid(DateTimeOffset.UtcNow))
             return false;
 
+        // requireResourceScopeMatch is false only for per-component checks made
+        // while validating a capability composition (see
+        // SecurityCapabilityComposition.Validate). A composed operation's single
+        // resourceScope value describes the composed request as a whole and has
+        // no reason to equal any one component's own (necessarily narrower and
+        // possibly differently-typed) grant scope; that per-component grant-scope
+        // match would otherwise reject compositions over independently-scoped
+        // capabilities even when every component is genuinely granted. The
+        // composed resourceScope is still checked once, holistically, against
+        // the warrant's Constraints by the caller.
         var grant = warrant.Grants.Any(g =>
             StringComparer.Ordinal.Equals(g.Capability, capability) &&
             StringComparer.Ordinal.Equals(g.Operation, operation) &&
-            (g.ResourceScopes.Count == 0 || resourceScope is not null && g.ResourceScopes.Contains(resourceScope, StringComparer.Ordinal)));
+            (!requireResourceScopeMatch ||
+             g.ResourceScopes.Count == 0 ||
+             (resourceScope is not null && g.ResourceScopes.Contains(resourceScope, StringComparer.Ordinal))));
         if (!grant)
             return false;
 
         var c = warrant.Constraints;
         if (tenant is not null && c.AllowedTenants.Count > 0 && !c.AllowedTenants.Contains(tenant, StringComparer.Ordinal)) return false;
         if (c.AllowedOperations.Count > 0 && !c.AllowedOperations.Contains(operation, StringComparer.Ordinal)) return false;
-        if (resourceScope is not null && c.ResourceScopes.Count > 0 && !c.ResourceScopes.Contains(resourceScope, StringComparer.Ordinal)) return false;
+        if (requireResourceScopeMatch &&
+            resourceScope is not null && c.ResourceScopes.Count > 0 && !c.ResourceScopes.Contains(resourceScope, StringComparer.Ordinal)) return false;
         if (requestedResults is not null && c.MaxResults is not null && requestedResults > c.MaxResults) return false;
         if (requestedAmount is not null && c.MaxAmount is not null && requestedAmount > c.MaxAmount) return false;
         return true;

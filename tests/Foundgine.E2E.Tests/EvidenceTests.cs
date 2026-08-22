@@ -90,7 +90,7 @@ public sealed class EvidenceTests
         Assert.Equal(first.Evidence!.PlanFingerprint, second.Evidence!.PlanFingerprint);
     }
 
-    [Fact(Skip = "WIP")]
+    [Fact]
     public async Task Public_engine_enriches_provider_evidence_with_intent_and_authorization_fingerprints()
     {
         var compiler = new CapturingEvidenceCompiler();
@@ -120,7 +120,7 @@ public sealed class EvidenceTests
         Assert.False(string.IsNullOrWhiteSpace(result.Receipt.ResultFingerprint));
     }
 
-    private sealed class CapturingEvidenceCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
+    private sealed class CapturingEvidenceCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();

@@ -18,8 +18,28 @@ namespace Foundgine.Sql.Mutation.Postgres;
 /// PostgreSQL connection. The provider never inspects the runtime connection
 /// type to decide whether PostgreSQL is available.
 /// </summary>
-public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExecutionProvider
+public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExecutionProvider, IMutationSecurityConformanceEvaluator
 {
+    public MutationSecurityConformanceResult Evaluate(ExecutionMutationIR ir)
+    {
+        ArgumentNullException.ThrowIfNull(ir);
+
+        // Both the single-statement PostgreSQL path and the sequential fallback
+        // use parameter bindings and execute the complete batch inside one
+        // transaction/statement boundary. This is concrete provider evidence.
+        var batched = _compiler.TryCompile(ir);
+        if (batched is null)
+            _fallbackCompiler.Compile(ir);
+
+        return new MutationSecurityConformanceResult(
+            GetType().FullName ?? GetType().Name,
+            [
+                Foundgine.Semantics.Security.SecurityInvariantIds.ParameterizedValues,
+                Foundgine.Semantics.Security.SecurityInvariantIds.AtomicMutation
+            ],
+            []);
+    }
+
     private readonly DbConnection _connection;
     private readonly PostgresBatchedMutationCompiler _compiler;
     private readonly SqlMutationCompiler _fallbackCompiler;

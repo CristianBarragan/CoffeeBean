@@ -12,7 +12,7 @@ namespace Foundgine.E2E.Tests;
 
 public sealed class PlanApprovalTests
 {
-    [Fact(Skip = "WIP")]
+    [Fact]
     public async Task Approval_executes_when_current_plan_matches_approved_plan()
     {
         var engine = CreateEngine(out var provider);
@@ -68,7 +68,7 @@ public sealed class PlanApprovalTests
         Banking.BankingSemanticModel.Customer,
         [new SemanticSelection(new FieldId(2), null, [])]);
 
-    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
+    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();

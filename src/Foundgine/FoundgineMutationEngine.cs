@@ -53,7 +53,7 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
 
     public MutationDryRunResult DryRun(SemanticMutationRequest request)
     {
-        var plan = AuthorizeAndPlan(request, consumeReplay: false);
+        var plan = AuthorizeAndPlan(request);
         return Describe(plan);
     }
 
@@ -78,7 +78,11 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
         ArgumentNullException.ThrowIfNull(approval);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var plan = AuthorizeAndPlan(approval.Request, consumeReplay: true);
+        // Replay consumption is deliberately deferred until the exact approved
+        // semantic plan, lowered IR, security contract and execution context have
+        // all been validated. A failed approval fingerprint or security check must
+        // not burn a warrant that was never executable.
+        var plan = AuthorizeAndPlan(approval.Request);
         var fingerprint = Fingerprint(plan);
         if (!string.Equals(fingerprint, approval.PlanFingerprint, StringComparison.Ordinal))
             throw new InvalidOperationException(
@@ -87,8 +91,20 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
         var ir = new SemanticMutationExecutionLowerer(_schema).Lower(plan);
         var executionContext = context ?? new ExecutionContext();
         executionContext.EnsureWithinDeadline();
-        var started = DateTimeOffset.UtcNow;
         using var deadlineCts = executionContext.CreateDeadlineCancellationSource(cancellationToken);
+
+        var certificate = MutationExecutionSecurityGate.Certify(
+            ir,
+            _provider,
+            _provider.GetType().FullName ?? _provider.GetType().Name,
+            plan.RequiredSecurityInvariants.Where(IsEnginePreservedInvariant));
+
+        // The final security gate must pass before the replay identity is consumed.
+        // Replay is then committed immediately before the provider side effect.
+        MutationExecutionSecurityGate.EnsureExecutable(ir, _provider, certificate);
+        ConsumeWarrantReplay(approval.Request);
+
+        var started = DateTimeOffset.UtcNow;
         var result = _provider.ExecuteBatch(ir, executionContext, deadlineCts.Token);
         executionContext.EnsureWithinDeadline();
         var resultFingerprint = FingerprintResult(result);
@@ -102,7 +118,7 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
     }
 
 
-    private void ValidateWarrant(SemanticMutationRequest request, bool consumeReplay)
+    private void ValidateWarrant(SemanticMutationRequest request)
     {
         var security = request.Security;
         if (security is null)
@@ -142,33 +158,74 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
             }
         }
 
-        if (consumeReplay)
-        {
-            if (_warrantReplayStore is null)
-                throw new InvalidOperationException("Executing a warrant-backed mutation requires a warrant replay store.");
-
-            SecurityWarrantReplayGuard.Consume(
-                security.Warrant,
-                _warrantReplayStore,
-                DateTimeOffset.UtcNow);
-        }
     }
-    private SemanticMutationPlan AuthorizeAndPlan(SemanticMutationRequest request, bool consumeReplay)
+
+    private void ConsumeWarrantReplay(SemanticMutationRequest request)
+    {
+        var security = request.Security;
+        if (security is null)
+            return;
+
+        if (_warrantReplayStore is null)
+            throw new InvalidOperationException("Executing a warrant-backed mutation requires a warrant replay store.");
+
+        SecurityWarrantReplayGuard.Consume(
+            security.Warrant,
+            _warrantReplayStore,
+            DateTimeOffset.UtcNow);
+    }
+
+    private SemanticMutationPlan AuthorizeAndPlan(SemanticMutationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         MutationSecurityResourceLimitValidator.Validate(request, _securityResourceLimits);
-        ValidateWarrant(request, consumeReplay);
+        ValidateWarrant(request);
         var semanticPlan = new SemanticMutationPlanner().Plan(request.Graph);
-        var batch = new MutationPlanner(_schema).Plan(request.Graph);
-        var authorizedBatch = new MutationAuthorizer(_schema, _policy).Authorize(batch);
+        var authorizedPlan = new MutationAuthorizer(_schema, _policy).Authorize(semanticPlan);
+        var requiredSecurityInvariants = RequiredSecurityInvariantsFor(authorizedPlan);
 
-        // The semantic plan is retained as the canonical representation while the
-        // provider-neutral batch is used to validate schema and authorization.
-        // Reconstructing from the authorized batch is intentionally avoided: that
-        // would make physical mappings the semantic source of truth.
-        _ = authorizedBatch;
-        return semanticPlan;
+        // Authorization is applied to the exact semantic representation that is
+        // subsequently lowered into ExecutionMutationIR. No independently planned
+        // batch is discarded or allowed to become an alternate execution source.
+        return authorizedPlan with
+        {
+            RequiredSecurityInvariants = requiredSecurityInvariants
+        };
     }
+
+    private IReadOnlyList<string> RequiredSecurityInvariantsFor(SemanticMutationPlan plan)
+    {
+        var required = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var operation in plan.Operations)
+        {
+            var capability = _securityContract.Capabilities.FirstOrDefault(c =>
+                c.TargetEntityId == operation.Entity &&
+                string.Equals(c.Operation, operation.Kind.ToString().ToLowerInvariant(), StringComparison.Ordinal));
+
+            if (capability is null)
+                throw new InvalidOperationException(
+                    $"No security capability contract exists for entity '{operation.Entity}' and operation '{operation.Kind}'.");
+
+            foreach (var invariant in capability.EffectiveSecurityInvariants)
+                required.Add(invariant);
+        }
+
+        if (required.Count == 0)
+            throw new InvalidOperationException(
+                "A mutation execution cannot proceed without explicit security invariants.");
+
+        return required.OrderBy(x => x, StringComparer.Ordinal).ToArray();
+    }
+
+    private static bool IsEnginePreservedInvariant(string id) => id switch
+    {
+        SecurityInvariantIds.AuthorizationRequired => true,
+        SecurityInvariantIds.RuntimeAuthorization => true,
+        SecurityInvariantIds.FieldVisibility => true,
+        SecurityInvariantIds.RelationshipVisibility => true,
+        _ => false
+    };
 
     private MutationDryRunResult Describe(SemanticMutationPlan plan) =>
         new(
@@ -191,7 +248,8 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
         {
             version = "mutation-plan-v1",
             operations = plan.Operations,
-            dependencies = plan.Dependencies
+            dependencies = plan.Dependencies,
+            security = plan.RequiredSecurityInvariants
         });
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
     }

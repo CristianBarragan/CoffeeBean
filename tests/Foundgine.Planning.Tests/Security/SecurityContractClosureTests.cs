@@ -37,7 +37,7 @@ public sealed class SecurityContractClosureTests
         Assert.Contains("security.not-real", exception.Message, StringComparison.Ordinal);
     }
 
-    [Fact(Skip = "WIP")]
+    [Fact]
     public void Proofless_provider_plan_cannot_cross_execution_boundary()
     {
         var plan = new UnprovedPlan();
@@ -51,7 +51,7 @@ public sealed class SecurityContractClosureTests
         Assert.Contains("no security proof", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact(Skip = "WIP")]
+    [Fact]
     public void Unsatisfied_provider_proof_cannot_cross_execution_boundary()
     {
         var proof = SecurityInvariantProof.Create(

@@ -16,7 +16,7 @@ namespace Foundgine.E2E.Tests;
 /// </summary>
 public sealed class PlanCacheTests
 {
-    [Fact(Skip = "WIP")]
+    [Fact]
     public async Task Repeated_authorized_request_reuses_compiled_provider_plan()
     {
         var compiler = new CountingCompiler();
@@ -41,7 +41,7 @@ public sealed class PlanCacheTests
         Assert.Equal(1, compiler.Count);
     }
 
-    [Fact(Skip = "WIP")]
+    [Fact]
     public async Task Authorization_is_still_evaluated_before_cache_lookup()
     {
         var compiler = new CountingCompiler();
@@ -57,14 +57,16 @@ public sealed class PlanCacheTests
             new TestExecutionProvider());
 
         var request = CreateCustomerRequest();
+        var checksBeforeExecution = policy.EntityReadChecks;
+
         await engine.ExecuteAsync(request);
         await engine.ExecuteAsync(request);
 
-        Assert.Equal(2, policy.EntityReadChecks);
+        Assert.Equal(checksBeforeExecution + 2, policy.EntityReadChecks);
         Assert.Equal(1, compiler.Count);
     }
 
-    [Fact(Skip = "WIP")]
+    [Fact]
     public async Task Different_request_values_do_not_share_an_exact_plan_cache_entry()
     {
         var compiler = new CountingCompiler();
@@ -129,7 +131,7 @@ public sealed class PlanCacheTests
         }
     }
 
-    private sealed class CountingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
+    private sealed class CountingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();

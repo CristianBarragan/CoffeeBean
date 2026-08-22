@@ -398,10 +398,23 @@ public sealed class AuthorizationRecoveryControlPlaneRepairProposerCredentialLif
         string proposerId,
         string credentialId,
         string fingerprint,
+        long expectedPreviousSequence,
         CancellationToken cancellationToken = default)
     {
+        if (expectedPreviousSequence < 0)
+            throw new ArgumentOutOfRangeException(nameof(expectedPreviousSequence));
+
+        // Rotation is optimistic concurrency, not a read-and-then-rotate command.
+        // The sequence observed by the caller is part of the mutation intent.
+        // Without that fence, a losing concurrent caller can reread the winner's
+        // new sequence and legitimately perform a second rotation, turning one
+        // concurrent generation change into N sequential changes.
         var current = await _store.ReadAsync(proposerId, cancellationToken)
             ?? throw new KeyNotFoundException(proposerId);
+
+        if (current.CredentialSequence != expectedPreviousSequence)
+            throw new AuthorizationRecoveryRepairProposerCredentialLifecycleConflictException(
+                proposerId, expectedPreviousSequence, current.CredentialSequence);
         if (current.State is AuthorizationRecoveryRepairProposerCredentialState.Revoked
             or AuthorizationRecoveryRepairProposerCredentialState.Retired)
             throw new InvalidOperationException("Revoked or retired proposer credentials cannot be reactivated.");

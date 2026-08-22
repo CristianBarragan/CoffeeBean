@@ -45,7 +45,7 @@ public sealed class BlackBoxAdversarialEngineTests
         Assert.Contains("tenantId", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact(Skip = "WIP")]
+    [Fact]
     public async Task Hostile_filter_value_remains_a_parameter_and_cannot_change_authorization_scope()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -88,7 +88,7 @@ public sealed class BlackBoxAdversarialEngineTests
         Assert.Contains("' OR 1=1 --", compiler.LastPlan.EffectiveParameters.Select(x => x.Value?.ToString()));
     }
 
-    [Fact(Skip = "WIP")]
+    [Fact]
     public async Task Runtime_context_changes_results_without_recompiling_or_reusing_authorization_values()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -230,7 +230,7 @@ public sealed class BlackBoxAdversarialEngineTests
             entityId != BankingSemanticModel.Customer;
     }
 
-    private sealed class CountingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
+    private sealed class CountingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
@@ -256,7 +256,7 @@ public sealed class BlackBoxAdversarialEngineTests
         }
     }
 
-    private sealed class CountingSqlCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
+    private sealed class CountingSqlCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
