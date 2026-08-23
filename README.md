@@ -29,15 +29,13 @@ Foundgine has been independently analyzed by [UnofficialOS](https://www.unoffici
 
 Foundgine now includes explicit MCP discovery metadata in [`mcp.json`](mcp.json) and [`.well-known/mcp.json`](.well-known/mcp.json), matching the existing `Foundgine.MCP` implementation. The UnofficialOS page is currently in its scan cooldown period, so the repository should not claim a revised score until a subsequent independent scan confirms it.
 
-## Assessment:
+## Assessments
 
-[View Foundgine on UnofficialOS](https://www.unofficialos.com/tool/foundgine) · **Current listed score:** 90/100
+<a href="[https://aitop10.tools/](https://www.unofficialos.com/tool/foundgine)" target="_blank"><img width="181" height="50" alt="image" src="https://github.com/user-attachments/assets/50c36f89-ae92-489b-b502-45da52f787a3" />
 
-<a href="https://aitop10.tools/" target="_blank">AiTop10 Tools</a>
+<a href="https://aitop10.tools/" target="_blank"><img width="280" height="62" alt="image" src="https://github.com/user-attachments/assets/2b01013d-90a9-493c-af47-afdf4f3b5a40" />
 
 <a href="https://dofollow.tools" target="_blank"><img src="https://dofollow.tools/badge/badge_light.svg" alt="Featured on Dofollow.Tools" width="200" height="54" /></a>
-
-> UnofficialOS is an independent community directory and is not affiliated with, endorsed by, or sponsored by Cloudflare, Inc.
 
 **NuGet snapshot:** latest version **0.5.2**, targeting **.NET 9.0**, with **18 published packages** and **7,801 total downloads across the package set** based on the current NuGet results captured for this README. The **NuGet Downloads** badge above represents this package-ecosystem total, not just the `Foundgine` core package.
 
