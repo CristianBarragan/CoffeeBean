@@ -27,6 +27,8 @@ The same server metadata is available at [`.well-known/mcp.json`](.well-known/mc
 
 <a href="https://www.unofficialos.com/tool/foundgine" target="_blank"><img width="181" height="50" alt="image" src="https://github.com/user-attachments/assets/50c36f89-ae92-489b-b502-45da52f787a3" />
 
+<a href="https://similarlabs.com/p/foundgine-programmable-semantic-execution-platform" target="_blank"><img width="181" height="50" alt="image" src="https://similarlabs.com/_next/static/media/logo.b5015d3b.svg" />
+
 <a href="https://aitop10.tools/" target="_blank"><img width="280" height="62" alt="image" src="https://github.com/user-attachments/assets/2b01013d-90a9-493c-af47-afdf4f3b5a40" />
 
 <a href="https://dofollow.tools" target="_blank"><img src="https://dofollow.tools/badge/badge_light.svg" alt="Featured on Dofollow.Tools" width="200" height="54" /></a>
