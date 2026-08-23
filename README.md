@@ -29,8 +29,13 @@ Foundgine has been independently analyzed by [UnofficialOS](https://www.unoffici
 
 Foundgine now includes explicit MCP discovery metadata in [`mcp.json`](mcp.json) and [`.well-known/mcp.json`](.well-known/mcp.json), matching the existing `Foundgine.MCP` implementation. The UnofficialOS page is currently in its scan cooldown period, so the repository should not claim a revised score until a subsequent independent scan confirms it.
 
-**Assessment:** [View Foundgine on UnofficialOS](https://www.unofficialos.com/tool/foundgine) · **Current listed score:** 90/100 - 
+## Assessment:
+
+[View Foundgine on UnofficialOS](https://www.unofficialos.com/tool/foundgine) · **Current listed score:** 90/100
+
 <a href="https://aitop10.tools/" target="_blank">AiTop10 Tools</a>
+
+<a href="https://dofollow.tools" target="_blank"><img src="https://dofollow.tools/badge/badge_light.svg" alt="Featured on Dofollow.Tools" width="200" height="54" /></a>
 
 > UnofficialOS is an independent community directory and is not affiliated with, endorsed by, or sponsored by Cloudflare, Inc.
 
