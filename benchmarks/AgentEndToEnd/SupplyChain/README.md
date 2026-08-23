@@ -47,3 +47,13 @@ $env:SUPPLY_CHAIN_SEED="20260823"
 ```
 
 The runner starts PostgreSQL and the Foundgine MCP service, seeds the graph, executes a stochastic agent workload, and writes `reports/supply-chain-report.json` and `reports/supply-chain-report.md`.
+
+## Publish the report to the website
+
+After a successful run, publish the generated report into the website asset folder:
+
+```powershell
+./publish-supply-chain-report.ps1
+```
+
+This copies the JSON and Markdown report to `docs-site/assets/agent-benchmark/supply-chain/` and writes a publication manifest. The website page at `docs-site/agent-benchmark/supply-chain/index.html` reads the JSON directly and renders the latest published run.
