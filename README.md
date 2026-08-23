@@ -210,6 +210,75 @@ A separate suite measures the AI-agent path specifically: how an agent calling F
 
 See [`docs-site/agent-benchmark/index.html`](docs-site/agent-benchmark/index.html) for the interactive workload/concurrency matrix and the per-run write-ups.
 
+## The verification story
+
+Foundgine is designed to be evaluated as an execution system, not as a single benchmark number. The repository's verification path moves from deterministic behavior to real database execution, then to hostile inputs and performance, before the Supply Chain benchmark exercises the complete agent-facing boundary.
+
+```text
+                 Foundgine verification
+                         │
+        ┌────────────────┼────────────────┐
+        ▼                ▼                ▼
+   Unit tests       Integration       Security
+        │           PostgreSQL       penetration
+        │                │          + adversarial input
+        └────────────────┼────────────────┘
+                         ▼
+                Performance smoke
+                         │
+                         ▼
+             Supply Chain E2E story
+                         │
+          Agent → MCP → Foundgine → PostgreSQL
+```
+
+### The gates
+
+| Gate | Purpose | What passing means |
+|---|---|---|
+| **Unit tests** | Verify deterministic semantic, planning, authorization and runtime behavior | The core contracts remain correct without external infrastructure |
+| **Integration tests** | Exercise the real PostgreSQL provider | Provider execution preserves the tested semantics against a real database |
+| **Authorization penetration** | Attack high-assurance authorization paths | Unauthorized operations are rejected through the real execution path |
+| **Adversarial semantic-input tests** | Replay hostile model input and adversarial engine cases | Malicious or malformed intent remains inside the semantic security boundary |
+| **Performance smoke** | Run real benchmark traffic in Docker | The benchmark stack can seed, start, execute and finish without errors |
+| **Supply Chain E2E** | Exercise the complete agent-facing business workflow | Stateful capabilities, authorization, mutation integrity and replay protection work together |
+
+The CI release workflow makes the unit, PostgreSQL integration, authorization penetration, adversarial security and performance jobs prerequisites for package publication. The Supply Chain E2E is an additional product-level benchmark and is intentionally reported separately.
+
+### The complete story
+
+A caller starts with **intent**, not SQL. Foundgine resolves that intent against an application semantic model, applies authorization and validation, creates an execution plan, lowers the plan through ExecutionIR and sends the executable representation to a provider.
+
+The Supply Chain benchmark makes that architecture concrete:
+
+```text
+AI-agent-like workload
+        │
+        ▼
+       MCP
+        │  capability boundary
+        ▼
+    Foundgine
+        ├── semantic resolution
+        ├── authorization
+        ├── validation
+        ├── planning
+        ├── ExecutionIR
+        └── execution evidence
+        │
+        ▼
+     PostgreSQL
+        │
+        ▼
+  state + transaction result
+```
+
+The workload includes customers, orders, order items, products, suppliers, categories, inventory, warehouses, shipments and carriers. It mixes valid, invalid and unauthorized operations across customer, customer-service, warehouse, procurement and administrator identities. `PlaceOrder` is the high-assurance vertical slice: authorization, ownership, validation, server-side pricing, inventory checks, atomic mutation, idempotency/replay protection and execution evidence.
+
+This is the distinction Foundgine is trying to establish: **the agent can request a capability, but the agent does not become the authority that defines how the capability is authorized or executed.**
+
+For the complete Supply Chain scope and reproducible report, see [`benchmarks/AgentEndToEnd/SupplyChain/README.md`](benchmarks/AgentEndToEnd/SupplyChain/README.md) and the [interactive Supply Chain E2E report](docs-site/agent-benchmark/supply-chain/index.html).
+
 ## What Foundgine is not
 
 Foundgine is not:

@@ -124,6 +124,18 @@ The benchmark writes:
 - `artifacts/agent-benchmark/agent-benchmark.json`
 - `artifacts/agent-benchmark/agent-benchmark.md`
 
+
+## Supply Chain E2E
+
+A separate full-stack E2E fixture now exercises a supply-chain domain through an agent-like stochastic bot → MCP → Foundgine semantic model → authorization → planner → execution → Npgsql → PostgreSQL. It supports up to five identities, mixes allowed and denied operations, and includes a high-assurance `place_order` mutation with atomic inventory decrement and idempotency.
+
+```powershell
+cd benchmarks/AgentEndToEnd/SupplyChain
+./run-supply-chain.ps1
+```
+
+See `SupplyChain/README.md` for the actor matrix, schema, operation set and verification model.
+
 ## Experimental discipline
 
 For publishable evidence, run the same model, temperature, system prompt, user request, database fixture, model endpoint and network environment for both flows.

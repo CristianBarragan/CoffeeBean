@@ -31,11 +31,29 @@
 <div class="run-actions"><button class="button" id="open-run-menu" type="button">Explore the five runs →</button><a class="button secondary" href="#selected-run">Read the current finding ↓</a></div>
 </div>
 
+<section class="benchmark-evidence-frame" id="verification-story" style="margin-top:2rem">
+<div class="evidence-frame-head"><div><div class="run-label">The complete verification story</div><h2>From isolated contracts to a stateful agent-facing system</h2><p>The benchmark suite is only meaningful when the execution boundary is verified underneath it. Foundgine's story progresses from deterministic unit behavior, through real PostgreSQL execution and security attack paths, into performance, and finally into the Supply Chain application workflow.</p></div></div>
+<div class="run-intro-grid">
+<div class="run-intro-card"><strong>01 · Unit tests</strong><span>Semantic, planning, authorization, MCP, AOT, InMemory and other deterministic contracts.</span></div>
+<div class="run-intro-card"><strong>02 · PostgreSQL integration</strong><span>Real provider execution against PostgreSQL, including end-to-end state and transaction behavior.</span></div>
+<div class="run-intro-card"><strong>03 · Penetration</strong><span>Authorization attacks plus adversarial semantic-input and hostile-model replay coverage.</span></div>
+<div class="run-intro-card"><strong>04 · Performance</strong><span>A real Docker performance smoke gate plus larger reproducible CoffeeBeanery benchmark matrices.</span></div>
+<div class="run-intro-card"><strong>05 · Supply Chain E2E</strong><span>An agent-like workload crossing MCP, semantic execution, authorization, ExecutionIR and PostgreSQL.</span></div>
+<div class="run-intro-card"><strong>Release principle</strong><span>The CI release path requires the core verification gates before package publication; the Supply Chain E2E adds the application-level proof story.</span></div>
+</div>
+<div style="margin-top:1rem"><a class="button secondary" href="supply-chain/index.html">See the complete Supply Chain story →</a></div>
+</section>
+
 <div class="run-intro-grid">
 <div class="run-intro-card"><strong>01 · Start with agent work</strong><span>How many tool interactions and how much context does the agent need to complete the same business process?</span></div>
 <div class="run-intro-card"><strong>02–03 · Stress the workflow</strong><span>Does the reduction survive more customers, more concurrency and a larger amount of orchestration?</span></div>
 <div class="run-intro-card"><strong>04–05 · Change the boundary</strong><span>Does the execution architecture matter for graph queries and for a high-assurance business capability?</span></div>
 </div>
+
+<section class="benchmark-evidence-frame" id="supply-chain-e2e" style="margin-top:2rem">
+<div class="evidence-frame-head"><div><div class="run-label">Supply Chain E2E · New vertical</div><h2>Agent → MCP → Foundgine → PostgreSQL</h2><p>The application-level culmination: a stateful agent workload that brings semantic execution, authorization, high-assurance mutations, replay protection and PostgreSQL state integrity together.</p></div><a class="button" href="supply-chain/index.html">Open Supply Chain E2E →</a></div>
+<div class="run-intro-grid"><div class="run-intro-card"><strong>10 entities · 10 relationships</strong><span>Customer, orders, products, inventory, suppliers, warehouses, shipments and carriers.</span></div><div class="run-intro-card"><strong>Mixed workload</strong><span>Valid, invalid and unauthorized agent operations across customer, service, warehouse, procurement and admin identities.</span></div><div class="run-intro-card"><strong>Stateful evidence</strong><span>PlaceOrder covers authorization, ownership, validation, pricing, atomic mutation, idempotency and execution evidence.</span></div></div>
+</section>
 
 <div id="selected-run"></div>
 
