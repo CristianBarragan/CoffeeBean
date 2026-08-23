@@ -6,7 +6,7 @@
 # [Foundgine.io](https://cristianbarragan.github.io/Foundgine/docs-site/index.html)
 
 [![NuGet Version](https://img.shields.io/nuget/v/Foundgine?label=NuGet%20Version)](https://www.nuget.org/packages/Foundgine/)
-[![NuGet Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fcristianbarragan.github.io%2FFoundgine%2Fassets%2Ffoundgine-nuget-downloads.json&label=NuGet%20Downloads)](https://www.nuget.org/packages?q=Foundgine)
+[![NuGet Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fcristianbarragan.github.io%2FFoundgine%2Fdocs-site%2Fassets%2Ffoundgine-nuget-downloads.json&label=NuGet%20Downloads)](https://www.nuget.org/packages?q=Foundgine)
 [![Unit Tests](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=unit-tests&label=Unit%20Tests)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
 [![Integration Tests](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=integration-tests&label=Integration%20Tests)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
 [![Performance](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=benchmark-build&label=Performance)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
@@ -37,24 +37,25 @@ The same server metadata is available at [`.well-known/mcp.json`](.well-known/mc
 
 | Package | Downloads | Role |
 |---|---:|---|
-| [Foundgine](https://www.nuget.org/packages/Foundgine) | **481** | Semantic execution layer for .NET. Resolves structured intent into authorized, deterministic execution plans. |
-| [Foundgine.Abstractions](https://www.nuget.org/packages/Foundgine.Abstractions) | **1,039** | Provider-independent contracts and identifiers used by Foundgine. |
-| [Foundgine.Semantics](https://www.nuget.org/packages/Foundgine.Semantics) | **914** | Semantic intent, resolution, authorization and request model. |
-| [Foundgine.Planning](https://www.nuget.org/packages/Foundgine.Planning) | **721** | Provider-independent execution planning. |
-| [Foundgine.Metadata](https://www.nuget.org/packages/Foundgine.Metadata) | **613** | Semantic metadata model and runtime metadata registry. |
-| [Foundgine.Execution](https://www.nuget.org/packages/Foundgine.Execution) | **675** | Execution contracts, provider boundary and execution coordination. |
-| [Foundgine.Sql](https://www.nuget.org/packages/Foundgine.Sql) | **405** | SQL execution provider and PostgreSQL mutation/query compilation. |
-| [Foundgine.Aot](https://www.nuget.org/packages/Foundgine.Aot) | **404** | AOT metadata attributes and runtime support for generated metadata. |
-| [Foundgine.InMemory](https://www.nuget.org/packages/Foundgine.InMemory) | **426** | In-memory execution provider for testing and development. |
-| [Foundgine.Intent.Json](https://www.nuget.org/packages/Foundgine.Intent.Json) | **486** | JSON intent adapter for semantic requests. |
-| [Foundgine.AI](https://www.nuget.org/packages/Foundgine.AI) | **240** | AI tool integration using `Microsoft.Extensions.AI`. |
-| [Foundgine.MCP](https://www.nuget.org/packages/Foundgine.MCP) | **210** | MCP adapter for exposing semantic capabilities and provider-neutral intent. |
-| [Foundgine.GraphQL.HotChocolate](https://www.nuget.org/packages/Foundgine.GraphQL.HotChocolate) | **446** | Hot Chocolate adapter that converts GraphQL selections into Foundgine semantic requests. |
-| [Foundgine.Agent.OpenAI](https://www.nuget.org/packages/Foundgine.Agent.OpenAI) | **246** | OpenAI agent integration for Foundgine. |
-| [Foundgine.GraphQL.HotChocolate.Mutations](https://www.nuget.org/packages/Foundgine.GraphQL.HotChocolate.Mutations) | **378** | Hot Chocolate mutation adapter for Foundgine. |
-| [Foundgine.CoffeeBeanery.ProductComposite](https://www.nuget.org/packages/Foundgine.CoffeeBeanery.ProductComposite) | **117** | Product-composite integration package. |
-| [Foundgine.Authorization](https://www.nuget.org/packages/Foundgine.Authorization) | **0** | Provider-agnostic authorization recovery control plane with witness quorum, credential lifecycle, journal reconciliation and failover. |
-| [Foundgine.HighAssurance.Postgres](https://www.nuget.org/packages/Foundgine.HighAssurance.Postgres) | **0** | PostgreSQL high-assurance authorization and execution support. |
+| [Foundgine](https://www.nuget.org/packages/Foundgine) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-562-blue)](https://www.nuget.org/packages/Foundgine) | Semantic execution layer for .NET. Resolves structured intent into authorized, deterministic execution plans. |
+| [Foundgine.Abstractions](https://www.nuget.org/packages/Foundgine.Abstractions) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-1%2C137-blue)](https://www.nuget.org/packages/Foundgine.Abstractions) | Provider-independent contracts and identifiers used by Foundgine. |
+| [Foundgine.Semantics](https://www.nuget.org/packages/Foundgine.Semantics) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-1%2C010-blue)](https://www.nuget.org/packages/Foundgine.Semantics) | Semantic intent, resolution, authorization and request model. |
+| [Foundgine.Planning](https://www.nuget.org/packages/Foundgine.Planning) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-811-blue)](https://www.nuget.org/packages/Foundgine.Planning) | Provider-independent execution planning. |
+| [Foundgine.Metadata](https://www.nuget.org/packages/Foundgine.Metadata) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-688-blue)](https://www.nuget.org/packages/Foundgine.Metadata) | Semantic metadata model and runtime metadata registry. |
+| [Foundgine.Execution](https://www.nuget.org/packages/Foundgine.Execution) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-765-blue)](https://www.nuget.org/packages/Foundgine.Execution) | Execution contracts, provider boundary and execution coordination. |
+| [Foundgine.Sql](https://www.nuget.org/packages/Foundgine.Sql) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-485-blue)](https://www.nuget.org/packages/Foundgine.Sql) | SQL execution provider and PostgreSQL mutation/query compilation. |
+| [Foundgine.Aot](https://www.nuget.org/packages/Foundgine.Aot) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-474-blue)](https://www.nuget.org/packages/Foundgine.Aot) | AOT metadata attributes and runtime support for generated metadata. |
+| [Foundgine.InMemory](https://www.nuget.org/packages/Foundgine.InMemory) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-497-blue)](https://www.nuget.org/packages/Foundgine.InMemory) | In-memory execution provider for testing and development. |
+| [Foundgine.Intent.Json](https://www.nuget.org/packages/Foundgine.Intent.Json) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-571-blue)](https://www.nuget.org/packages/Foundgine.Intent.Json) | JSON intent adapter for semantic requests. |
+| [Foundgine.AI](https://www.nuget.org/packages/Foundgine.AI) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-315-blue)](https://www.nuget.org/packages/Foundgine.AI) | AI tool integration using `Microsoft.Extensions.AI`. |
+| [Foundgine.MCP](https://www.nuget.org/packages/Foundgine.MCP) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-282-blue)](https://www.nuget.org/packages/Foundgine.MCP) | MCP adapter for exposing semantic capabilities and provider-neutral intent. |
+| [Foundgine.GraphQL.HotChocolate](https://www.nuget.org/packages/Foundgine.GraphQL.HotChocolate) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-522-blue)](https://www.nuget.org/packages/Foundgine.GraphQL.HotChocolate) | Hot Chocolate adapter that converts GraphQL selections into Foundgine semantic requests. |
+| [Foundgine.Agent.OpenAI](https://www.nuget.org/packages/Foundgine.Agent.OpenAI) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-318-blue)](https://www.nuget.org/packages/Foundgine.Agent.OpenAI) | OpenAI agent integration for Foundgine. |
+| [Foundgine.GraphQL.HotChocolate.Mutations](https://www.nuget.org/packages/Foundgine.GraphQL.HotChocolate.Mutations) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-450-blue)](https://www.nuget.org/packages/Foundgine.GraphQL.HotChocolate.Mutations) | Hot Chocolate mutation adapter for Foundgine. |
+| [Foundgine.CoffeeBeanery.ProductComposite](https://www.nuget.org/packages/Foundgine.CoffeeBeanery.ProductComposite) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-186-blue)](https://www.nuget.org/packages/Foundgine.CoffeeBeanery.ProductComposite) | Product-composite integration package. |
+| [Foundgine.Authorization](https://www.nuget.org/packages/Foundgine.Authorization) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-30-blue)](https://www.nuget.org/packages/Foundgine.Authorization) | Provider-agnostic authorization recovery control plane with witness quorum, credential lifecycle, journal reconciliation and failover. |
+| [Foundgine.HighAssurance.Postgres](https://www.nuget.org/packages/Foundgine.HighAssurance.Postgres) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-29-blue)](https://www.nuget.org/packages/Foundgine.HighAssurance.Postgres) | PostgreSQL high-assurance authorization and execution support. |
+
 
 ### Why the package ecosystem matters
 
