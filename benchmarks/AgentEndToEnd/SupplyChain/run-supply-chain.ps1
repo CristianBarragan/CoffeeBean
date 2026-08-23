@@ -1,0 +1,102 @@
+$ErrorActionPreference = "Stop"
+
+$root = $PSScriptRoot
+$compose = Join-Path $root "docker-compose.yml"
+
+$env:SUPPLY_CHAIN_CUSTOMERS = if ($env:SUPPLY_CHAIN_CUSTOMERS) { $env:SUPPLY_CHAIN_CUSTOMERS } else { "5" }
+$env:SUPPLY_CHAIN_STEPS = if ($env:SUPPLY_CHAIN_STEPS) { $env:SUPPLY_CHAIN_STEPS } else { "25" }
+$env:SUPPLY_CHAIN_SEED = if ($env:SUPPLY_CHAIN_SEED) { $env:SUPPLY_CHAIN_SEED } else { "20260823" }
+$env:SUPPLY_CHAIN_MCP_URL = if ($env:SUPPLY_CHAIN_MCP_URL) { $env:SUPPLY_CHAIN_MCP_URL } else { "http://localhost:4422/mcp" }
+$env:SUPPLY_CHAIN_REPORT_DIRECTORY = Join-Path $root "reports"
+
+Push-Location $root
+
+try {
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host " Foundgine Supply Chain E2E" -ForegroundColor Cyan
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Root:        $root"
+    Write-Host "Customers:   $env:SUPPLY_CHAIN_CUSTOMERS"
+    Write-Host "Steps:       $env:SUPPLY_CHAIN_STEPS"
+    Write-Host "Seed:        $env:SUPPLY_CHAIN_SEED"
+    Write-Host "MCP URL:     $env:SUPPLY_CHAIN_MCP_URL"
+    Write-Host ""
+
+    Write-Host "[1/6] Checking Docker..." -ForegroundColor Yellow
+    docker --version
+    docker compose version
+
+    Write-Host ""
+    Write-Host "[2/6] Stopping previous Supply Chain containers..." -ForegroundColor Yellow
+    docker compose -f $compose down -v --remove-orphans
+    if ($LASTEXITCODE -ne 0) { throw "Failed to stop previous Supply Chain containers (exit code $LASTEXITCODE)." }
+
+    Write-Host ""
+    Write-Host "[3/6] Building and starting PostgreSQL + Foundgine MCP..." -ForegroundColor Yellow
+    docker compose -f $compose up -d --build postgres mcp-foundgine
+    if ($LASTEXITCODE -ne 0) { throw "Docker Compose failed to build/start Supply Chain services (exit code $LASTEXITCODE)." }
+
+    Write-Host ""
+    Write-Host "[4/6] Current container state..." -ForegroundColor Yellow
+    docker compose -f $compose ps
+
+    Write-Host ""
+    Write-Host "[5/6] Seeding PostgreSQL..." -ForegroundColor Yellow
+
+    $env:SupplyChainConnectionString = "Host=localhost;Port=4429;Database=foundgine_supply_chain;Username=benchmark;Password=benchmark"
+
+    dotnet restore .\Database\Database.csproj
+    if ($LASTEXITCODE -ne 0) { throw "Database restore failed with exit code $LASTEXITCODE." }
+
+    dotnet run `
+        --project Database/Database.csproj `
+        -c Release `
+        --no-restore
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Database seeding failed with exit code $LASTEXITCODE."
+    }
+
+    Write-Host ""
+    Write-Host "[6/6] Starting AI agent..." -ForegroundColor Yellow
+
+    dotnet restore .\Agent\Agent.csproj
+    if ($LASTEXITCODE -ne 0) { throw "Agent restore failed with exit code $LASTEXITCODE." }
+
+    dotnet run `
+        --project Agent/Agent.csproj `
+        -c Release `
+        --no-restore
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Agent failed with exit code $LASTEXITCODE."
+    }
+
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Green
+    Write-Host " Supply Chain E2E PASSED" -ForegroundColor Green
+    Write-Host "========================================" -ForegroundColor Green
+}
+catch {
+    Write-Host ""
+    Write-Host "========================================" -ForegroundColor Red
+    Write-Host " Supply Chain E2E FAILED" -ForegroundColor Red
+    Write-Host "========================================" -ForegroundColor Red
+    Write-Host ""
+    Write-Host $_ -ForegroundColor Red
+
+    Write-Host ""
+    Write-Host "Container state:" -ForegroundColor Yellow
+    docker compose -f $compose ps -a
+
+    Write-Host ""
+    Write-Host "Recent logs:" -ForegroundColor Yellow
+    docker compose -f $compose logs --tail 100
+
+    exit 1
+}
+finally {
+    Pop-Location
+}
