@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "name": "Foundgine",
+  "description": "Foundgine semantic execution layer and MCP adapter for exposing authorized, provider-neutral application capabilities to AI agents.",
+  "version": "0.5.0",
+  "protocol": {
+    "name": "Model Context Protocol",
+    "transport": "Streamable HTTP",
+    "endpointPath": "/mcp"
+  },
+  "server": {
+    "package": "Foundgine.MCP",
+    "language": "C#",
+    "framework": ".NET 9"
+  },
+  "tools": [
+    {
+      "name": "foundgine_capabilities",
+      "purpose": "Discover the semantic capability contract available to the current caller."
+    },
+    {
+      "name": "foundgine_query",
+      "purpose": "Execute provider-neutral read intent through the Foundgine planning and execution pipeline."
+    },
+    {
+      "name": "foundgine_mutation_dry_run",
+      "purpose": "Validate and authorize a mutation without executing it."
+    },
+    {
+      "name": "foundgine_mutation_approve",
+      "purpose": "Create an approval bound to an authorized mutation plan."
+    },
+    {
+      "name": "foundgine_mutation_execute_approved",
+      "purpose": "Execute an approved mutation after authorization and plan-fingerprint revalidation."
+    }
+  ],
+  "security": {
+    "identitySource": "host",
+    "authorization": "host-supplied SecurityExecutionContext",
+    "tenantContext": "host-supplied",
+    "clientSuppliedAuthorizationContext": false
+  },
+  "source": {
+    "repository": "https://github.com/CristianBarragan/Foundgine",
+    "mcpProject": "src/Foundgine.MCP"
+  }
+}
