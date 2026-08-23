@@ -17,6 +17,22 @@
 
 Foundgine is distributed as a coordinated set of NuGet packages rather than a single monolithic library. This gives users a clear path from provider-independent contracts and semantics through planning and execution to SQL, AI, MCP, GraphQL, AOT, and high-assurance authorization components.
 
+### MCP discovery
+
+Foundgine includes a first-class MCP adapter in `src/Foundgine.MCP`. The repository-level [`mcp.json`](mcp.json) describes the MCP integration and its exposed tools for automated ecosystem discovery. Hosts expose the MCP Streamable HTTP transport at `/mcp`; identity, tenant context, and authorization remain host-owned and are supplied through `SecurityExecutionContext`.
+
+The same server metadata is available at [`.well-known/mcp.json`](.well-known/mcp.json) for discovery-oriented tooling.
+
+### Independent security assessment
+
+Foundgine has been independently analyzed by [UnofficialOS](https://www.unofficialos.com/), an independent community directory for AI-agent and MCP tooling. Its **AST Security Audit & Verification** currently lists Foundgine at **90/100**, with full marks for Edge Sandbox Safety, Open-Source License Compliance, Documentation & Quickstart Quality, and Repository Hygiene & Provenance. The assessment records the remaining points under Ecosystem & MCP Alignment because MCP implementation evidence was not detected by that scan.
+
+Foundgine now includes explicit MCP discovery metadata in [`mcp.json`](mcp.json) and [`.well-known/mcp.json`](.well-known/mcp.json), matching the existing `Foundgine.MCP` implementation. The UnofficialOS page is currently in its scan cooldown period, so the repository should not claim a revised score until a subsequent independent scan confirms it.
+
+**Assessment:** [View Foundgine on UnofficialOS](https://www.unofficialos.com/tool/foundgine) · **Current listed score:** 90/100
+
+> UnofficialOS is an independent community directory and is not affiliated with, endorsed by, or sponsored by Cloudflare, Inc.
+
 **NuGet snapshot:** latest version **0.5.2**, targeting **.NET 9.0**, with **18 published packages** and **7,801 total downloads across the package set** based on the current NuGet results captured for this README. The **NuGet Downloads** badge above represents this package-ecosystem total, not just the `Foundgine` core package.
 
 | Package | Downloads | Role |
