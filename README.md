@@ -5,6 +5,79 @@
 
 # [Foundgine.io](https://cristianbarragan.github.io/Foundgine/docs-site/index.html)
 
+[![NuGet Version](https://img.shields.io/nuget/v/Foundgine?label=NuGet%20Version)](https://www.nuget.org/packages/Foundgine/)
+[![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-7%2C801-blue)](https://www.nuget.org/packages?q=Foundgine)
+[![Unit Tests](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=unit-tests&label=Unit%20Tests)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
+[![Integration Tests](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=integration-tests&label=Integration%20Tests)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
+[![Performance](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=benchmark-build&label=Performance)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
+[![Security Audit](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=security-penetration&label=Security%20Audit)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
+
+
+## NuGet package ecosystem
+
+Foundgine is distributed as a coordinated set of NuGet packages rather than a single monolithic library. This gives users a clear path from provider-independent contracts and semantics through planning and execution to SQL, AI, MCP, GraphQL, AOT, and high-assurance authorization components.
+
+**NuGet snapshot:** latest version **0.5.2**, targeting **.NET 9.0**, with **18 published packages** and **7,801 total downloads across the package set** based on the current NuGet results captured for this README. The **NuGet Downloads** badge above represents this package-ecosystem total, not just the `Foundgine` core package.
+
+| Package | Downloads | Role |
+|---|---:|---|
+| [Foundgine](https://www.nuget.org/packages/Foundgine) | **481** | Semantic execution layer for .NET. Resolves structured intent into authorized, deterministic execution plans. |
+| [Foundgine.Abstractions](https://www.nuget.org/packages/Foundgine.Abstractions) | **1,039** | Provider-independent contracts and identifiers used by Foundgine. |
+| [Foundgine.Semantics](https://www.nuget.org/packages/Foundgine.Semantics) | **914** | Semantic intent, resolution, authorization and request model. |
+| [Foundgine.Planning](https://www.nuget.org/packages/Foundgine.Planning) | **721** | Provider-independent execution planning. |
+| [Foundgine.Metadata](https://www.nuget.org/packages/Foundgine.Metadata) | **613** | Semantic metadata model and runtime metadata registry. |
+| [Foundgine.Execution](https://www.nuget.org/packages/Foundgine.Execution) | **675** | Execution contracts, provider boundary and execution coordination. |
+| [Foundgine.Sql](https://www.nuget.org/packages/Foundgine.Sql) | **405** | SQL execution provider and PostgreSQL mutation/query compilation. |
+| [Foundgine.Aot](https://www.nuget.org/packages/Foundgine.Aot) | **404** | AOT metadata attributes and runtime support for generated metadata. |
+| [Foundgine.InMemory](https://www.nuget.org/packages/Foundgine.InMemory) | **426** | In-memory execution provider for testing and development. |
+| [Foundgine.Intent.Json](https://www.nuget.org/packages/Foundgine.Intent.Json) | **486** | JSON intent adapter for semantic requests. |
+| [Foundgine.AI](https://www.nuget.org/packages/Foundgine.AI) | **240** | AI tool integration using `Microsoft.Extensions.AI`. |
+| [Foundgine.MCP](https://www.nuget.org/packages/Foundgine.MCP) | **210** | MCP adapter for exposing semantic capabilities and provider-neutral intent. |
+| [Foundgine.GraphQL.HotChocolate](https://www.nuget.org/packages/Foundgine.GraphQL.HotChocolate) | **446** | Hot Chocolate adapter that converts GraphQL selections into Foundgine semantic requests. |
+| [Foundgine.Agent.OpenAI](https://www.nuget.org/packages/Foundgine.Agent.OpenAI) | **246** | OpenAI agent integration for Foundgine. |
+| [Foundgine.GraphQL.HotChocolate.Mutations](https://www.nuget.org/packages/Foundgine.GraphQL.HotChocolate.Mutations) | **378** | Hot Chocolate mutation adapter for Foundgine. |
+| [Foundgine.CoffeeBeanery.ProductComposite](https://www.nuget.org/packages/Foundgine.CoffeeBeanery.ProductComposite) | **117** | Product-composite integration package. |
+| [Foundgine.Authorization](https://www.nuget.org/packages/Foundgine.Authorization) | **0** | Provider-agnostic authorization recovery control plane with witness quorum, credential lifecycle, journal reconciliation and failover. |
+| [Foundgine.HighAssurance.Postgres](https://www.nuget.org/packages/Foundgine.HighAssurance.Postgres) | **0** | PostgreSQL high-assurance authorization and execution support. |
+
+### Why the package ecosystem matters
+
+The package set makes the architecture visible and independently consumable:
+
+```text
+                    Foundgine
+                       │
+        ┌──────────────┼──────────────┐
+        ▼              ▼              ▼
+   Abstractions     Semantics      Metadata
+        │              │              │
+        └──────────────┼──────────────┘
+                       ▼
+                    Planning
+                       │
+                       ▼
+                   Execution
+                  /    |     \
+                 /     |      \
+               SQL   InMemory   AOT
+                │
+                ▼
+            PostgreSQL
+
+        Intent / Interface adapters
+        ├── JSON
+        ├── MCP
+        ├── AI
+        ├── OpenAI Agent
+        └── GraphQL / Hot Chocolate
+
+        High-assurance controls
+        ├── Authorization
+        └── HighAssurance.Postgres
+```
+
+The download numbers are **NuGet-reported package downloads, not unique users or installations**. They are included as an adoption signal and should be interpreted together with the automated test/security gates, published benchmarks, documentation, and end-to-end examples.
+
 ## From intent to authorized execution.
 
 **Foundgine is a programmable semantic execution platform for .NET.**
@@ -91,7 +164,8 @@ Foundgine treats security requirements as part of the semantic execution contrac
 
 The security progression currently includes security invariant registration, plan-level invariant proof, SQL provider conformance, high-assurance mutation conformance, and cross-provider conformance.
 
-## Foundgine and AI agents
+
+# Foundgine and AI agents
 
 AI agents make this boundary particularly important.
 
