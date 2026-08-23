@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "label": "NuGet Downloads",
+  "message": "9,226",
+  "color": "blue",
+  "generatedAt": "2026-08-23T17:45:14.8922238Z",
+  "totalDownloads": 9226,
+  "packageCount": 19,
+  "packages": [
+    {
+      "id": "Foundgine",
+      "downloads": 562,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.Abstractions",
+      "downloads": 1137,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.Agent.OpenAI",
+      "downloads": 318,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.AI",
+      "downloads": 315,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.Aot",
+      "downloads": 474,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.Authorization",
+      "downloads": 30,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.CoffeeBeanery.Product",
+      "downloads": 94,
+      "version": "0.3.0"
+    },
+    {
+      "id": "Foundgine.CoffeeBeanery.ProductComposite",
+      "downloads": 186,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.Execution",
+      "downloads": 765,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.GraphQL.HotChocolate",
+      "downloads": 522,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.GraphQL.HotChocolate.Mutations",
+      "downloads": 450,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.HighAssurance.Postgres",
+      "downloads": 29,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.InMemory",
+      "downloads": 497,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.Intent.Json",
+      "downloads": 571,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.MCP",
+      "downloads": 282,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.Metadata",
+      "downloads": 688,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.Planning",
+      "downloads": 811,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.Semantics",
+      "downloads": 1010,
+      "version": "0.5.2"
+    },
+    {
+      "id": "Foundgine.Sql",
+      "downloads": 485,
+      "version": "0.5.2"
+    }
+  ]
+}
