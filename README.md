@@ -23,15 +23,9 @@ Foundgine includes a first-class MCP adapter in `src/Foundgine.MCP`. The reposit
 
 The same server metadata is available at [`.well-known/mcp.json`](.well-known/mcp.json) for discovery-oriented tooling.
 
-### Independent security assessment
+## Independent security assessments
 
-Foundgine has been independently analyzed by [UnofficialOS](https://www.unofficialos.com/), an independent community directory for AI-agent and MCP tooling. Its **AST Security Audit & Verification** currently lists Foundgine at **90/100**, with full marks for Edge Sandbox Safety, Open-Source License Compliance, Documentation & Quickstart Quality, and Repository Hygiene & Provenance. The assessment records the remaining points under Ecosystem & MCP Alignment because MCP implementation evidence was not detected by that scan.
-
-Foundgine now includes explicit MCP discovery metadata in [`mcp.json`](mcp.json) and [`.well-known/mcp.json`](.well-known/mcp.json), matching the existing `Foundgine.MCP` implementation. The UnofficialOS page is currently in its scan cooldown period, so the repository should not claim a revised score until a subsequent independent scan confirms it.
-
-## Assessments
-
-<a href="[https://aitop10.tools/](https://www.unofficialos.com/tool/foundgine)" target="_blank"><img width="181" height="50" alt="image" src="https://github.com/user-attachments/assets/50c36f89-ae92-489b-b502-45da52f787a3" />
+<a href="https://www.unofficialos.com/tool/foundgine" target="_blank"><img width="181" height="50" alt="image" src="https://github.com/user-attachments/assets/50c36f89-ae92-489b-b502-45da52f787a3" />
 
 <a href="https://aitop10.tools/" target="_blank"><img width="280" height="62" alt="image" src="https://github.com/user-attachments/assets/2b01013d-90a9-493c-af47-afdf4f3b5a40" />
 
