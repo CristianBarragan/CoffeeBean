@@ -20,28 +20,28 @@ A caller submits structured intent. Foundgine resolves that intent against an ap
 
 The result is a reusable execution boundary that can sit underneath multiple interfaces.
 
-```text
-                 Intent Sources
-
-     API       GraphQL       Automation       AI Agent
-       \          |              |              /
-        \         |              |             /
-         └────────┴──────────────┴─────────────┘
-                          │
-                          ▼
-                  ┌───────────────┐
-                  │   Foundgine   │
-                  │               │
-                  │ Semantic      │
-                  │ Authorization │
-                  │ Planning      │
-                  │ Execution     │
-                  └───────┬───────┘
-                          │
-              ┌───────────┼───────────┐
-              ▼           ▼           ▼
-             SQL       InMemory     Providers
-```
+                         Intent Sources
+                              │
+              ┌───────────────┼───────────────┐
+              │               │               │
+             API          GraphQL             MCP
+              │               │               │
+              │               │          AI Agents
+              │               │               │
+              └───────────────┼───────────────┘
+                              ▼
+                     ┌─────────────────┐
+                     │    Foundgine    │
+                     │                 │
+                     │ Semantic Model  │
+                     │ Authorization   │
+                     │ Planning        │
+                     │ Execution       │
+                     └────────┬────────┘
+                              │
+                    ┌─────────┼─────────┐
+                    ▼         ▼         ▼
+                   SQL     InMemory   Providers
 
 ## Why does Foundgine exist?
 
