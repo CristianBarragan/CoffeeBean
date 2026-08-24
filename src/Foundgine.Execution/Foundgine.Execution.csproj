@@ -2,6 +2,7 @@
   <PropertyGroup>
     <PackageId>Foundgine.Execution</PackageId>
     <Description>Execution contracts, provider boundary and execution coordination for Foundgine.</Description>
+    <PackageTags>execution-plan;authorization;execution-provider;semantic-execution;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>Foundgine.Execution</RootNamespace>
     <AssemblyName>Foundgine.Execution</AssemblyName>

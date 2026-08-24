@@ -1,6 +1,6 @@
-# Foundgine 0.4.0
+# Foundgine 0.5.0
 
-Current release: 0.4.0. The current repository has passed restore, build, and full automated tests. PostgreSQL E2E and benchmark workflows are separate environment-dependent evidence.
+Current release: 0.5.0. The current repository has passed restore, build, and full automated tests. PostgreSQL E2E and benchmark workflows are separate environment-dependent evidence.
 
 # Foundgine
 
@@ -10,12 +10,16 @@ Foundgine is not an ORM replacement, a database, a GraphQL server, an LLM, an ag
 
 ## Docs
 
+- [Foundgine](https://cristianbarragan.github.io/Foundgine/): The problem Foundgine solves and the intent → semantic model → authorization → plan → provider → result execution model.
 - [What is Foundgine?](https://cristianbarragan.github.io/Foundgine/what-is-foundgine.html): The problem Foundgine solves, the semantic-vs-persistence model distinction, and where Foundgine fits relative to REST/GraphQL/automation/AI-agent callers.
 - [AI agents with Foundgine](https://cristianbarragan.github.io/Foundgine/ai-agents/): Why AI agents should not generate SQL directly or hold database credentials, the intended agent → structured intent → Foundgine → PostgreSQL boundary, and required security scenarios (field authorization, tenant isolation, prompt injection).
 - [Architecture](https://cristianbarragan.github.io/Foundgine/architecture/): The core execution pipeline (intent, semantic model, resolution, authorization, plan, rewrite/optimize, provider compilation, execution, evidence) and how multiple callers share one execution model.
+- [How Foundgine executes a request](https://cristianbarragan.github.io/Foundgine/how-it-works/): Step-by-step walkthroughs of a simple and a relationship-heavy request through structured intent, authorization, planning, provider execution and result evidence.
+- [Agent Benchmark](https://cristianbarragan.github.io/Foundgine/agent-benchmark/): Five end-to-end experiments testing whether a semantic execution boundary reduces agent-side work while preserving correctness and application control — baseline, scalability, efficiency, execution-architecture comparison, and a high-assurance TransferFunds capability, plus a Supply Chain end-to-end report.
 - [Performance](https://cristianbarragan.github.io/Foundgine/performance/): CoffeeBeanery PostgreSQL graph benchmark (12 August 2026) — Foundgine query throughput and p95 latency, explicitly scoped to a relationship-heavy graph workload.
 
 ## Optional
 
 - [Full documentation, single file](https://cristianbarragan.github.io/Foundgine/llms-full.md): All pages above concatenated for full-context ingestion.
 - [Repository](https://github.com/cristianbarragan/Foundgine): Source, development setup, and benchmark source data.
+- [Repository-level AI context](https://raw.githubusercontent.com/cristianbarragan/Foundgine/main/llms.txt): Codebase-oriented llms.txt describing the project layout, package structure, and MCP server, for agents working with the source rather than the website.

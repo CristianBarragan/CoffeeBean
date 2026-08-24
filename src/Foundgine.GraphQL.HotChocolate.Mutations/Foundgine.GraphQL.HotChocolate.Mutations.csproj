@@ -2,6 +2,7 @@
   <PropertyGroup>
     <PackageId>Foundgine.GraphQL.HotChocolate.Mutations</PackageId>
     <Description>Hot Chocolate mutation adapter for Foundgine.</Description>
+    <PackageTags>graphql;hotchocolate;mutations;semantic-execution;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>Foundgine.GraphQL.HotChocolate</RootNamespace>
     <AssemblyName>Foundgine.GraphQL.HotChocolate.Mutations</AssemblyName>

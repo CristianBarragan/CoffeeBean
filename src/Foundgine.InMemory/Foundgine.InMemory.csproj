@@ -2,6 +2,7 @@
   <PropertyGroup>
     <PackageId>Foundgine.InMemory</PackageId>
     <Description>In-memory execution provider for Foundgine testing and development.</Description>
+    <PackageTags>in-memory;testing;execution-provider;semantic-execution;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>Foundgine.InMemory</RootNamespace>
     <AssemblyName>Foundgine.InMemory</AssemblyName>

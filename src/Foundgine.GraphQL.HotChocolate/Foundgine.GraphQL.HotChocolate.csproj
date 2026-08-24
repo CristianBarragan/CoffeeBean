@@ -2,6 +2,7 @@
   <PropertyGroup>
     <PackageId>Foundgine.GraphQL.HotChocolate</PackageId>
     <Description>Hot Chocolate adapter that converts GraphQL selections into Foundgine semantic requests.</Description>
+    <PackageTags>graphql;hotchocolate;semantic-execution;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>Foundgine.GraphQL.HotChocolate</RootNamespace>
     <AssemblyName>Foundgine.GraphQL.HotChocolate</AssemblyName>

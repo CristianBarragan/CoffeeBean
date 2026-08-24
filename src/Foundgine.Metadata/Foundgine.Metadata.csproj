@@ -2,6 +2,7 @@
   <PropertyGroup>
     <PackageId>Foundgine.Metadata</PackageId>
     <Description>Semantic metadata model and runtime metadata registry for Foundgine.</Description>
+    <PackageTags>metadata;semantic-model;schema;semantic-execution;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>Foundgine.Metadata</RootNamespace>
     <AssemblyName>Foundgine.Metadata</AssemblyName>

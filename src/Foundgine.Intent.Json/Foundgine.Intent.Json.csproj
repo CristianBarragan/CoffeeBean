@@ -2,6 +2,7 @@
   <PropertyGroup>
     <PackageId>Foundgine.Intent.Json</PackageId>
     <Description>JSON intent adapter for Foundgine semantic requests.</Description>
+    <PackageTags>json;intent;adapter;semantic-execution;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>Foundgine.Intent.Json</RootNamespace>
     <AssemblyName>Foundgine.Intent.Json</AssemblyName>

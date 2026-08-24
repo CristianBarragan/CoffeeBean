@@ -3,6 +3,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <PackageId>Foundgine.MCP</PackageId>
     <Description>MCP adapter for exposing Foundgine semantic capabilities and provider-neutral intent.</Description>
+    <PackageTags>mcp;model-context-protocol;ai;ai-agents;semantic-execution;dotnet</PackageTags>
     <RootNamespace>Foundgine.MCP</RootNamespace>
     <AssemblyName>Foundgine.MCP</AssemblyName>
     <IsPackable>true</IsPackable>

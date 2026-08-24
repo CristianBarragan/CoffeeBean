@@ -2,6 +2,7 @@
   <PropertyGroup>
     <PackageId>Foundgine.Planning</PackageId>
     <Description>Provider-independent execution planning for Foundgine.</Description>
+    <PackageTags>semantic-execution;query-planning;query-optimizer;predicate-pushdown;authorization;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>Foundgine.Planning</RootNamespace>
     <AssemblyName>Foundgine.Planning</AssemblyName>

@@ -1,6 +1,6 @@
-# Foundgine 0.4.0
+# Foundgine 0.5.0
 
-Foundgine 0.4.0 is the current shipped release.
+Foundgine 0.5.0 is the current shipped release.
 
 Foundgine is a **semantic execution layer for .NET**.
 
@@ -36,16 +36,20 @@ The core does not depend on GraphQL, Hot Chocolate, SQL, EF Core, OpenAI, MCP, o
 
 ## Projects
 
+- `Foundgine` — top-level facade package
 - `Foundgine.Abstractions` — shared contracts and IDs
 - `Foundgine.Metadata` — application and storage metadata
 - `Foundgine.Semantics` — meaning, requests, resolution, authorization
 - `Foundgine.Planning` — provider-independent plans
 - `Foundgine.Execution` — provider execution contracts and results
+- `Foundgine.Authorization` — authorization recovery control plane: witness quorum, credential lifecycle, journal reconciliation, failover
 - `Foundgine.Sql` — SQL provider
 - `Foundgine.InMemory` — small non-SQL provider
 - `Foundgine.Intent.Json` — JSON input
 - `Foundgine.GraphQL.HotChocolate` — GraphQL input
 - `Foundgine.GraphQL.HotChocolate.Mutations` — GraphQL mutations
+- `Foundgine.AI` — AI-facing intent and integration support
+- `Foundgine.MCP` — Model Context Protocol adapter, exposing authorized capabilities to AI agents
 - `Foundgine.Aot` — AOT contracts
 - `Foundgine.Aot.Generator` — generated metadata
 
@@ -67,3 +71,14 @@ Do not claim autonomous-agent execution, workflow orchestration, universal provi
 ## End-to-end agent benchmark
 
 The repository contains an end-to-end benchmark comparing a conventional application/AI tool flow with a Foundgine semantic flow against the same PostgreSQL fixture. It measures provider-reported input/output/total tokens, cached input tokens, model calls, tool calls, wall-clock time, model time, tool time and final-state equivalence. See `benchmarks/AgentEndToEnd` and the website page `/agent-benchmark/`.
+
+## MCP server discovery
+
+`Foundgine.MCP` exposes Foundgine capabilities to MCP-speaking agents over Streamable HTTP. Machine-readable server metadata — protocol, tools, and security model — is published at `.well-known/mcp.json`.
+
+## Further reading
+
+- `README.md` — full project overview, quick start, and status badges.
+- `ai.seo.md` — canonical AI/search identity reference: product category, what Foundgine is/is not, and terminology rules for AI systems describing this project.
+- `CHANGELOG.md` — release history.
+- `https://cristianbarragan.github.io/Foundgine/llms.txt` — the website-facing counterpart to this file, indexing the public documentation pages.

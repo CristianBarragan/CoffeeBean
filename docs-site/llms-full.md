@@ -355,6 +355,34 @@ This is the core mechanism that allows multiple input surfaces and providers to 
 
 ---
 
+## How Foundgine Executes a Request
+
+Two representative requests — a simple query with one relationship, and a relationship-heavy business process with four hops plus aggregation — are walked through every boundary the intent crosses, with representative payloads shown at each stage.
+
+The two requests share the same pipeline. Watching them side by side makes one point concrete: intent changes into an authorized execution plan, never directly into SQL. The example payloads are illustrative JSON shapes meant to make the architecture legible; they are explanatory, not a promise of a public wire format.
+
+What stays constant across both requests is the pipeline itself — the same semantic resolution, authorization, and planning stages handle a small lookup and a multi-hop operation without a separate code path for each.
+
+---
+
+## Agent Benchmark
+
+Five end-to-end experiments ask one question: what should the agent execution boundary do? The problem is not giving an agent an API — it is giving the agent useful capabilities without making the API itself the execution model. As agent-facing capabilities multiply, a conventional endpoint-per-operation approach accumulates bespoke tools, repeated orchestration, duplicated policy checks, and increasingly large interaction traces.
+
+Read the runs as a progression:
+
+1. **Run 1 — Baseline.** Establishes whether semantic execution reduces agent work at all, on a single deterministic customer.
+2. **Run 2 — Scalability.** Scales the same workflow across four customer tiers (10 to 10,000) and concurrency up to 64, to see whether agent-work reduction survives larger fixtures and separates from backend latency behavior.
+3. **Run 3 — Efficiency.** Measures what happens when the workflow itself, not just the data volume, becomes larger.
+4. **Run 4 — Execution architecture comparison.** Compares semantic MCP + Foundgine against a conventional GraphQL (Hot Chocolate) + EF Core agent path.
+5. **Run 5 / 5b — High-assurance capability boundary.** Tests a high-assurance `TransferFunds` mutation through the same MCP protocol, then (5b) isolates individual MCP calls versus one semantic batch call using the exact same client.
+
+The benchmark suite sits on top of a broader verification story: deterministic unit tests (semantic, planning, authorization, MCP, AOT, InMemory contracts), real PostgreSQL integration, penetration testing (authorization attacks, adversarial semantic input, hostile-model replay), performance gates, and a Supply Chain end-to-end report that carries an agent-like workload across MCP, semantic execution, authorization, ExecutionIR, and PostgreSQL. The CI release path requires the core verification gates before package publication; the Supply Chain E2E report adds the application-level proof on top of that.
+
+Each run is measured on tool-call count, estimated context load, latency, and result correctness (same final state as the conventional path) — reducing agent interaction and reducing end-to-end latency are treated as independent claims, not assumed to move together.
+
+---
+
 ## Foundgine Performance
 
 

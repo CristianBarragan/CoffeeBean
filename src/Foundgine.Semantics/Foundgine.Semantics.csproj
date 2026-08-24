@@ -2,6 +2,7 @@
   <PropertyGroup>
     <PackageId>Foundgine.Semantics</PackageId>
     <Description>Semantic intent, resolution, authorization and request model for Foundgine.</Description>
+    <PackageTags>semantic-model;authorization;request-model;semantic-execution;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>Foundgine.Semantics</RootNamespace>
     <AssemblyName>Foundgine.Semantics</AssemblyName>

@@ -2,6 +2,7 @@
   <PropertyGroup>
     <PackageId>Foundgine.Authorization</PackageId>
     <Description>Provider-agnostic authorization recovery control plane: witness quorum, credential lifecycle, journal reconciliation and failover for high-assurance authorization evidence.</Description>
+    <PackageTags>authorization;security;high-assurance;credential-lifecycle;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>Foundgine.Authorization</RootNamespace>
     <AssemblyName>Foundgine.Authorization</AssemblyName>

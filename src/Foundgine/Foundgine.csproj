@@ -2,6 +2,7 @@
   <PropertyGroup>
     <PackageId>Foundgine</PackageId>
     <Description>Semantic execution layer for .NET. Resolves structured intent into authorized, deterministic execution plans.</Description>
+    <PackageTags>semantic-execution;authorization;execution-plan;graphql;ai;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>Foundgine</RootNamespace>
     <AssemblyName>Foundgine</AssemblyName>
