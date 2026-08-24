@@ -12,6 +12,55 @@
 [![Performance](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=benchmark-build&label=Performance)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
 [![Security Audit](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=security-penetration&label=Security%20Audit)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
 
+## What is Foundgine?
+
+Foundgine separates **what a caller wants** from **how the application executes it**.
+
+A caller submits structured intent. Foundgine resolves that intent against an application-defined semantic model, validates the requested capabilities, applies authorization constraints, builds an execution plan, and sends the plan to a provider such as SQL or InMemory.
+
+The result is a reusable execution boundary that can sit underneath multiple interfaces.
+
+```text
+                 Intent Sources
+
+     API       GraphQL       Automation       AI Agent
+       \          |              |              /
+        \         |              |             /
+         └────────┴──────────────┴─────────────┘
+                          │
+                          ▼
+                  ┌───────────────┐
+                  │   Foundgine   │
+                  │               │
+                  │ Semantic      │
+                  │ Authorization │
+                  │ Planning      │
+                  │ Execution     │
+                  └───────┬───────┘
+                          │
+              ┌───────────┼───────────┐
+              ▼           ▼           ▼
+             SQL       InMemory     Providers
+```
+
+## Why does Foundgine exist?
+
+Modern applications increasingly have many callers:
+
+- web and mobile applications
+- APIs
+- GraphQL clients
+- internal services
+- automation
+- AI agents
+
+Without a common execution boundary, each interface can grow its own authorization, validation, query translation, and data-access path.
+
+Foundgine is designed to centralize the semantic execution model so that different callers can share the same application-defined capabilities and execution rules.
+
+### The key idea
+
+> **Callers describe what they want. Foundgine determines what is allowed, how it should execute, and which provider performs it.**
 
 ## NuGet package ecosystem
 
@@ -124,56 +173,6 @@ Provider
   ▼
 Result
 ```
-
-## What is Foundgine?
-
-Foundgine separates **what a caller wants** from **how the application executes it**.
-
-A caller submits structured intent. Foundgine resolves that intent against an application-defined semantic model, validates the requested capabilities, applies authorization constraints, builds an execution plan, and sends the plan to a provider such as SQL or InMemory.
-
-The result is a reusable execution boundary that can sit underneath multiple interfaces.
-
-```text
-                 Intent Sources
-
-     API       GraphQL       Automation       AI Agent
-       \          |              |              /
-        \         |              |             /
-         └────────┴──────────────┴─────────────┘
-                          │
-                          ▼
-                  ┌───────────────┐
-                  │   Foundgine   │
-                  │               │
-                  │ Semantic      │
-                  │ Authorization │
-                  │ Planning      │
-                  │ Execution     │
-                  └───────┬───────┘
-                          │
-              ┌───────────┼───────────┐
-              ▼           ▼           ▼
-             SQL       InMemory     Providers
-```
-
-## Why does Foundgine exist?
-
-Modern applications increasingly have many callers:
-
-- web and mobile applications
-- APIs
-- GraphQL clients
-- internal services
-- automation
-- AI agents
-
-Without a common execution boundary, each interface can grow its own authorization, validation, query translation, and data-access path.
-
-Foundgine is designed to centralize the semantic execution model so that different callers can share the same application-defined capabilities and execution rules.
-
-### The key idea
-
-> **Callers describe what they want. Foundgine determines what is allowed, how it should execute, and which provider performs it.**
 
 ## Security conformance
 
