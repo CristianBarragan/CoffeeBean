@@ -3,6 +3,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <PackageId>Foundgine.AI</PackageId>
     <Description>AI tool integration for Foundgine semantic execution using Microsoft.Extensions.AI.</Description>
+    <PackageTags>ai;llm;microsoft-extensions-ai;ai-tools;semantic-execution;dotnet</PackageTags>
     <RootNamespace>Foundgine.AI</RootNamespace>
     <AssemblyName>Foundgine.AI</AssemblyName>
     <IsPackable>true</IsPackable>

@@ -2,6 +2,7 @@
   <PropertyGroup>
     <PackageId>Foundgine.Sql</PackageId>
     <Description>SQL execution provider and PostgreSQL mutation/query compilation for Foundgine.</Description>
+    <PackageTags>sql;postgresql;execution-provider;semantic-execution;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>Foundgine.Sql</RootNamespace>
     <AssemblyName>Foundgine.Sql</AssemblyName>

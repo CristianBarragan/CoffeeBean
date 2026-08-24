@@ -2,6 +2,7 @@
   <PropertyGroup>
     <PackageId>Foundgine.Abstractions</PackageId>
     <Description>Provider-independent contracts and identifiers used by Foundgine.</Description>
+    <PackageTags>abstractions;contracts;semantic-execution;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>Foundgine.Abstractions</RootNamespace>
     <AssemblyName>Foundgine.Abstractions</AssemblyName>
