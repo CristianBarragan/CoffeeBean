@@ -13,7 +13,7 @@
 
     <PackageTags>aot;source-generator;metadata;native-aot;semantic-execution;dotnet</PackageTags>
     <IsPackable>true</IsPackable>
-    <PackageReleaseNotes>0.5.0: Packaging/documentation cleanup only; no AOT runtime capability change. 0.3.0: AOT metadata generation became part of the validated release surface; this package bundles the required metadata runtime and generator assets.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0. 0.5.0: Packaging/documentation cleanup only; no AOT runtime capability change. 0.3.0: AOT metadata generation became part of the validated release surface; this package bundles the required metadata runtime and generator assets.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Include custom package assets -->
@@ -29,6 +29,10 @@
     <ProjectReference
             Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
 
+    <!-- AOT field handles provide semantic fluent operations over the core semantic model. -->
+    <ProjectReference
+            Include="../Foundgine.Semantics/Foundgine.Semantics.csproj" />
+
     <!--
       Required runtime implementation.
 
@@ -38,6 +42,13 @@
     <ProjectReference
             Include="../Foundgine.Metadata/Foundgine.Metadata.csproj"
             ReferenceOutputAssembly="true"
+            PrivateAssets="all" />
+
+    <!-- Build the generator as part of the project graph. It is consumed only as an analyzer. -->
+    <ProjectReference
+            Include="../Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj"
+            OutputItemType="Analyzer"
+            ReferenceOutputAssembly="false"
             PrivateAssets="all" />
 
   </ItemGroup>
@@ -57,26 +68,11 @@
 
   </ItemGroup>
 
-  <!--
-    The generator targets netstandard2.0.
-
-    Build it through the project dependency rather than assuming
-    that the DLL already exists in an arbitrary output directory.
-  -->
-  <!--
-    The generator is a package asset, not an analyzer of Foundgine.Aot itself.
-    Building it here ensures direct `dotnet pack` also works after a clean.
-  -->
-  <Target Name="BuildFoundgineGeneratorForPackaging">
-    <MSBuild
-      Projects="$(MSBuildProjectDirectory)/../Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj"
-      Targets="Build"
-      Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0" />
-  </Target>
+  <!-- The generator is a project dependency, so a normal Build produces it before Pack. -->
 
   <Target
           Name="IncludeFoundginePackageContent"
-          DependsOnTargets="Build;BuildFoundgineGeneratorForPackaging">
+          DependsOnTargets="Build">
 
     <ItemGroup>
 

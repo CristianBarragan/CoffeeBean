@@ -7,7 +7,7 @@
     <RootNamespace>Foundgine.GraphQL.HotChocolate</RootNamespace>
     <AssemblyName>Foundgine.GraphQL.HotChocolate</AssemblyName>
     <IsPackable>true</IsPackable>
-    <PackageReleaseNotes>0.5.0: Packaging/documentation cleanup only; no GraphQL adapter runtime capability change. 0.3.0: Hot Chocolate GraphQL adapter became part of the validated release surface for translating GraphQL selections into Foundgine semantic requests.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0. 0.5.0: Packaging/documentation cleanup only; no GraphQL adapter runtime capability change. 0.3.0: Hot Chocolate GraphQL adapter became part of the validated release surface for translating GraphQL selections into Foundgine semantic requests.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="README.md" />

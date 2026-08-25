@@ -99,6 +99,36 @@ public sealed class Contract
     public int TenantId { get; init; }
 }
 
+
+[FoundgineModel(Id = 20)]
+public sealed class DecoupledCustomer
+{
+    public int Id { get; init; }
+
+    [FoundgineConnection(Id = 20, Name = "Orders")]
+    public object Orders => throw new NotSupportedException();
+}
+
+[FoundgineEntity("DecoupledCustomerERP", StorageName = "decoupled_customers", Id = 20)]
+public sealed class DecoupledCustomerERP
+{
+    [FoundgineField(Id = 1, StorageName = "customer_id", IsPrimaryKey = true)]
+    public int Id { get; init; }
+}
+
+[FoundgineEntity("DecoupledOrderERP", StorageName = "decoupled_orders", Id = 21)]
+public sealed class DecoupledOrderERP
+{
+    [FoundgineField(Id = 1, StorageName = "order_id", IsPrimaryKey = true)]
+    public int Id { get; init; }
+}
+
+[FoundgineModelEntityMap(typeof(DecoupledCustomer), typeof(DecoupledCustomerERP))]
+[FoundgineConnectionMap(typeof(DecoupledCustomer), nameof(DecoupledCustomer.Orders), typeof(DecoupledOrderERP))]
+internal static class DecoupledSchemaMap
+{
+}
+
 public sealed class GeneratedMetadataTests
 {
     [Fact]
@@ -216,6 +246,26 @@ public sealed class GeneratedMetadataTests
         Assert.Equal("TenantId", authorization.Predicate.Right.Name);
         Assert.Equal(AuthorizationPredicateKind.ResourceParameter, authorization.Predicate.Right.Left!.Kind);
         Assert.Equal("contract", authorization.Predicate.Right.Left.Name);
+    }
+
+    [Fact]
+    public void Explicit_model_entity_mapping_keeps_model_and_erp_types_distinct()
+    {
+        var model = GeneratedMetadata.Registry.GetModel(new ModelId(20));
+        Assert.Equal("DecoupledCustomer", model.Name);
+        Assert.Equal(new EntityId(20), model.Entity);
+
+        var entity = GeneratedMetadata.Registry.GetEntity(new EntityId(20));
+        Assert.Equal("DecoupledCustomerERP", entity.Name);
+    }
+
+    [Fact]
+    public void Explicit_connection_mapping_resolves_target_without_model_storage_reference()
+    {
+        var connection = GeneratedMetadata.Registry.GetConnection(new ConnectionId(20));
+        Assert.Equal(new ModelId(20), connection.Source);
+        Assert.Equal(new EntityId(21), connection.Target);
+        Assert.Equal("Orders", connection.Name);
     }
 
     [Fact]

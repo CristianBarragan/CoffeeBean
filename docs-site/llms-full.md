@@ -1,6 +1,6 @@
-# Foundgine 0.5.0
+# Foundgine 1.0.0
 
-Current shipped release: **0.5.0**. The repository has passed restore, build, and full automated tests for the current release. PostgreSQL E2E and benchmark workflows remain separate environment-dependent evidence.
+Current shipped release: **1.0.0** — a semver-stability milestone carrying forward the 0.5.0 release surface unchanged (no `src/` package changed). The 0.5.0 restore, build, and full automated test results still apply to the packages themselves. PostgreSQL E2E and benchmark workflows remain separate environment-dependent evidence.
 
 # Foundgine — Full Documentation
 
@@ -127,6 +127,62 @@ AI Agent ──────┤
 ```
 
 This lets the interface and the execution model evolve independently.
+
+---
+
+## Getting Started
+
+Run the `Foundgine.SupplyChain` sample end to end, then walk through it layer by layer — MCP boundary, application use cases, domain and AOT metadata, semantic model, and PostgreSQL execution. This follows GUIDE.md in the sample (`samples/Foundgine.SupplyChain/GUIDE.md`).
+
+### What you'll run
+
+The sample is a small supply-chain domain exposed to agents over MCP: customers, orders, order lines, products, suppliers, categories, inventory positions, warehouses, shipments and carriers.
+
+```text
+Agent / MCP client → Api → Application → Domain + Semantics → Foundgine Planning / Execution → Foundgine.Sql → PostgreSQL
+```
+
+It is deliberately separate from `benchmarks/AgentEndToEnd/SupplyChain`, which stays fixed as a benchmark workload while this sample evolves as the recommended reference architecture.
+
+### 1. Prerequisites
+
+.NET 9 SDK, Docker, and a clone of the Foundgine repository. The sample references the Foundgine `src/` projects directly rather than the published NuGet packages, so it builds against the exact source tree, including the current AOT source generator.
+
+### 2. Start PostgreSQL
+
+```powershell
+cd samples/Foundgine.SupplyChain
+docker compose up --build
+```
+
+PostgreSQL comes up on `localhost:4429`, the API container on `localhost:4422`.
+
+### 3. Run the API
+
+```powershell
+dotnet run --project samples/Foundgine.SupplyChain/Api/Foundgine.SupplyChain.Api.csproj
+```
+
+MCP endpoint: `http://localhost:4422/mcp`. Health: `http://localhost:4422/health`. Exposed MCP tools: `describe_capabilities`, `get_my_orders`, `get_order`, `get_shipment`, `list_products`, `list_customers`, `get_product`, `get_inventory`, `list_suppliers`, `update_inventory`, `create_shipment`, `update_shipment`, `place_order`, `cancel_order`.
+
+### 4. Walk the architecture layer by layer
+
+1. **API layer (`Api`)** — thin ASP.NET + MCP host; no SQL, business rules, or semantic definitions.
+2. **Application layer (`Application`)** — use-case boundary (`ISupplyChainQueries`/`ISupplyChainMutations`) with capability authorization in `SupplyChainApplication`.
+3. **Domain layer (`Domain`)** — two separate representations: `*ERP` storage records (`FoundgineEntity`/`FoundgineField`/`FoundgineRelationship`) and application models (`Customer`, `SalesOrder`, ...), linked only via explicit `FoundgineConnection` declarations.
+4. **AOT layer** — `Foundgine.Aot.Generator` compiles the AOT attributes into `Foundgine.Generated.GeneratedMetadata`, consumed via `SupplyChainSemanticModel.Metadata`.
+5. **Semantic layer (`Semantics`)** — stable semantic entity/relationship IDs used instead of raw table names.
+6. **Query repository (`Infrastructure/Queries`)** — builds semantic operations (`SemanticReadNode` → Planner → `SqlCompiler` → `SqlExecutionProvider`) rather than SQL strings.
+7. **Mutation repository (`Infrastructure/Mutations`)** — simple mutations via `SemanticMutationBuilder` → `MutationPlanner` → `SqlMutationCompiler`.
+8. **High-assurance mutations** — `place_order`/`cancel_order` keep explicit parameterized SQL for idempotency, advisory locks, `FOR UPDATE SKIP LOCKED`, and atomic multi-table invariants that are currently PostgreSQL-specific.
+9. **MCP layer** — `SupplyChainMcpTools` are protocol adapters only, delegating to `SupplyChainApplication`.
+10. **Testing layer (`Tests`)** — capability authorization → AOT metadata → semantic plans → SQL compilation → PostgreSQL integration → MCP contracts → full agent-facing E2E benchmark tests.
+
+The key dependency rule: API → Application → Semantic intent → Foundgine planning → Provider — never API → SQL repository → PostgreSQL directly.
+
+### 5. Next steps
+
+`TUTORIAL.md` in the sample builds the same project from an empty solution step by step; `GUIDE.md` is the source for this section; the How It Works and Agent Benchmark pages below show execution evidence and a dedicated Supply Chain report.
 
 ---
 

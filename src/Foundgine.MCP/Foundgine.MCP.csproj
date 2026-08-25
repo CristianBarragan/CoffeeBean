@@ -7,7 +7,7 @@
     <RootNamespace>Foundgine.MCP</RootNamespace>
     <AssemblyName>Foundgine.MCP</AssemblyName>
     <IsPackable>true</IsPackable>
-    <PackageReleaseNotes>0.5.0: Packaging/documentation cleanup only; no MCP adapter runtime capability change. 0.3.0: MCP became part of the validated release surface, including mutation-safe execution contracts.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0. 0.5.0: Packaging/documentation cleanup only; no MCP adapter runtime capability change. 0.3.0: MCP became part of the validated release surface, including mutation-safe execution contracts.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>

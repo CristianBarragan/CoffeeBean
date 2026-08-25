@@ -57,10 +57,52 @@ public sealed class FoundgineRelationshipAttribute : Attribute
 [AttributeUsage(AttributeTargets.Property, Inherited = false)]
 public sealed class FoundgineConnectionAttribute : Attribute
 {
+    /// <summary>Creates a semantic connection without coupling the model to a storage/entity type.
+    /// The target is supplied by <see cref="FoundgineConnectionMapAttribute"/> in the schema/infrastructure layer.</summary>
+    public FoundgineConnectionAttribute()
+    {
+    }
+
+    /// <summary>Legacy overload retained for compatibility. New code should use the parameterless
+    /// form and an explicit <see cref="FoundgineConnectionMapAttribute"/>.</summary>
     public FoundgineConnectionAttribute(Type target) => Target = target;
-    public Type Target { get; }
+
+    public Type? Target { get; }
     public ushort Id { get; init; }
     public string? Name { get; init; }
+}
+
+/// <summary>Explicitly maps a semantic model connection to a storage/entity type.
+/// This declaration belongs in the schema/infrastructure boundary so the model and
+/// storage entity do not need to reference one another.</summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+public sealed class FoundgineConnectionMapAttribute : Attribute
+{
+    public FoundgineConnectionMapAttribute(Type model, string connectionMember, Type entity)
+    {
+        Model = model;
+        ConnectionMember = connectionMember;
+        Entity = entity;
+    }
+
+    public Type Model { get; }
+    public string ConnectionMember { get; }
+    public Type Entity { get; }
+}
+
+/// <summary>Explicitly maps a semantic model to its persistence/entity representation.
+/// The mapping is kept outside both types so neither side depends on the other.</summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+public sealed class FoundgineModelEntityMapAttribute : Attribute
+{
+    public FoundgineModelEntityMapAttribute(Type model, Type entity)
+    {
+        Model = model;
+        Entity = entity;
+    }
+
+    public Type Model { get; }
+    public Type Entity { get; }
 }
 
 

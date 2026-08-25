@@ -7,7 +7,7 @@
     <RootNamespace>Foundgine.Sql</RootNamespace>
     <AssemblyName>Foundgine.Sql</AssemblyName>
     <IsPackable>true</IsPackable>
-    <PackageReleaseNotes>0.5.0: Packaging/documentation cleanup only; no SQL provider runtime capability change. 0.3.0: SQL execution and PostgreSQL query/mutation compilation became part of the validated execution surface.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0. 0.5.0: Packaging/documentation cleanup only; no SQL provider runtime capability change. 0.3.0: SQL execution and PostgreSQL query/mutation compilation became part of the validated execution surface.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="README.md" />

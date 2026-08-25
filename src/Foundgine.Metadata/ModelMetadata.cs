@@ -8,4 +8,5 @@ namespace Foundgine.Metadata;
 /// </summary>
 public sealed record ModelMetadata(
     ModelId Id,
-    string Name);
+    string Name,
+    EntityId? Entity = null);

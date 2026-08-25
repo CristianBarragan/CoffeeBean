@@ -2,6 +2,21 @@
 
 All notable changes to this repository are documented here. This file starts at 0.4.0 — no changelog was kept for earlier versions, so 0.1.0–0.3.0 are not reconstructed here.
 
+## [1.0.0]
+
+### Changed
+- **`VersionPrefix` bumped `0.5.0` → `1.0.0` in `Directory.Build.props`.** This is a semver-stability declaration, not a runtime capability change: no `src/` package's implementation changed in this release. It marks the public API surface documented in [RELEASE-0.5.0.md](docs/RELEASE-0.5.0.md) (carried forward unchanged) as the first release under a `1.x` stability commitment.
+
+### Added
+- `docs-site/getting-started/` — a hands-on "Getting started" tutorial page that runs the `Foundgine.SupplyChain` sample end to end and walks through its ten architectural layers (API → Application → Domain → AOT → Semantics → Query/Mutation repositories → high-assurance mutations → MCP → Testing), following the sample's `GUIDE.md`. Linked from the site nav, `sitemap.xml`, `llms.txt`, and `llms-full.md`.
+
+### Fixed
+- **`samples/Foundgine.SupplyChain/Domain/Foundgine.SupplyChain.Domain.csproj` was missing the `Foundgine.Aot.Generator` analyzer reference.** The project declares `[FoundgineModel]`/`[FoundgineEntity]`/`[FoundgineField]`-attributed types but only referenced `Foundgine.Aot` as a plain `ProjectReference`, which does not transitively add `Foundgine.Aot.Generator` as an analyzer to `Domain`'s own compilation. The generator therefore never ran for `Domain`, so `Foundgine.Generated.GeneratedMetadata` (consumed by `Semantics/SupplyChainSemanticModel.cs` and, downstream, `Infrastructure` and `Tests`) was never emitted, and the sample failed to compile with `CS0234` on `Foundgine.Generated`. Added the missing `<ProjectReference Include="../../../src/Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />` entry, matching the pattern already used correctly in `tests/Foundgine.Aot.Tests` and `tests/Foundgine.E2E.Tests`.
+- `docs-site/index.html` — the three "problem" callouts under the homepage hero (`Too many bespoke tools`, `Too much agent work`, `Execution rules get fragmented`) had no separator between the bold lead-in and the following sentence in the markup, so the two ran together as a single word (e.g. `toolsBusiness`) in contexts where the `.problem-grid strong`/`span` block-display CSS isn't applied. Added terminal punctuation and a space so the text reads correctly regardless of rendering context.
+
+### Known verification gap
+- The `Domain.csproj` fix above has not been verified with an actual `dotnet build`/`dotnet test` run in the environment that prepared this release (no .NET SDK available there). It should be verified in CI, or locally with `dotnet build samples/Foundgine.SupplyChain/Foundgine.SupplyChain.sln`, before this version is tagged and packages are published. No `src/` package code changed in this release, so the existing 0.5.0 restore/build/test evidence for the packages themselves still stands.
+
 ## [0.5.0]
 
 ### Changed
