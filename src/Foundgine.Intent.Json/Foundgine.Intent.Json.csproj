@@ -7,7 +7,7 @@
     <RootNamespace>Foundgine.Intent.Json</RootNamespace>
     <AssemblyName>Foundgine.Intent.Json</AssemblyName>
     <IsPackable>true</IsPackable>
-    <PackageReleaseNotes>0.5.0: Packaging/documentation cleanup only; no JSON intent adapter runtime capability change. 0.3.0: JSON became part of the validated adapter surface for provider-neutral semantic requests.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0. 0.5.0: Packaging/documentation cleanup only; no JSON intent adapter runtime capability change. 0.3.0: JSON became part of the validated adapter surface for provider-neutral semantic requests.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="README.md" />

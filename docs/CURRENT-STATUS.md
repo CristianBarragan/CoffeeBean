@@ -1,6 +1,6 @@
-# Current status — Foundgine 0.5.0
+# Current status — Foundgine 1.0.0
 
-Foundgine 0.5.0 is the current shipped release. The repository has crossed the build-validation gate: restore, compilation, and the full automated test suite have been run successfully for the current source tree.
+Foundgine 1.0.0 is the current shipped release. It is a semver-stability milestone: no `src/` package changed since 0.5.0, so the restore/compilation/test evidence below — run against that unchanged source — still applies. See [RELEASE-1.0.0.md](RELEASE-1.0.0.md) for what did change in this release (outside `src/`).
 
 ## Proven by the active tests
 

@@ -1,6 +1,6 @@
 # Documentation
 
-These documents describe the current Foundgine 0.5.0 release.
+These documents describe the current Foundgine 1.0.0 release.
 
 Use these pages in this order.
 
@@ -11,7 +11,7 @@ Use these pages in this order.
 3. [Testing](TESTING.md)
 4. [PostgreSQL E2E](POSTGRES-E2E.md)
 5. [Current status](CURRENT-STATUS.md)
-6. [Release 0.5.0](RELEASE-0.5.0.md)
+6. [Release 1.0.0](RELEASE-1.0.0.md)
 
 ## Understand the product
 
@@ -31,6 +31,7 @@ Use these pages in this order.
 ## Roadmap and history
 
 - [Roadmap](ROADMAP.md)
+- [Release 0.5.0](RELEASE-0.5.0.md)
 - [Release 0.4.0](RELEASE-0.4.0.md)
 - [Release 0.3.0](RELEASE-0.3.0.md)
 - [Security invariant history](security/CHANGELOG.md)

@@ -1,6 +1,6 @@
-# Foundgine 0.5.0
+# Foundgine 1.0.0
 
-Current release: 0.5.0. The current repository has passed restore, build, and full automated tests. PostgreSQL E2E and benchmark workflows are separate environment-dependent evidence.
+Current release: 1.0.0 — a semver-stability milestone carrying forward the 0.5.0 release surface unchanged (no `src/` package changed). The 0.5.0 restore, build, and full automated test results still apply to the packages themselves. PostgreSQL E2E and benchmark workflows are separate environment-dependent evidence.
 
 # Foundgine
 
@@ -12,6 +12,7 @@ Foundgine is not an ORM replacement, a database, a GraphQL server, an LLM, an ag
 
 - [Foundgine](https://cristianbarragan.github.io/Foundgine/): The problem Foundgine solves and the intent → semantic model → authorization → plan → provider → result execution model.
 - [What is Foundgine?](https://cristianbarragan.github.io/Foundgine/what-is-foundgine.html): The problem Foundgine solves, the semantic-vs-persistence model distinction, and where Foundgine fits relative to REST/GraphQL/automation/AI-agent callers.
+- [Getting Started](https://cristianbarragan.github.io/Foundgine/getting-started/): A hands-on tutorial that runs the Foundgine.SupplyChain sample end to end and walks through the API, Application, Domain, AOT, Semantics, Infrastructure, MCP and Testing layers, following the sample's GUIDE.md.
 - [AI agents with Foundgine](https://cristianbarragan.github.io/Foundgine/ai-agents/): Why AI agents should not generate SQL directly or hold database credentials, the intended agent → structured intent → Foundgine → PostgreSQL boundary, and required security scenarios (field authorization, tenant isolation, prompt injection).
 - [Architecture](https://cristianbarragan.github.io/Foundgine/architecture/): The core execution pipeline (intent, semantic model, resolution, authorization, plan, rewrite/optimize, provider compilation, execution, evidence) and how multiple callers share one execution model.
 - [How Foundgine executes a request](https://cristianbarragan.github.io/Foundgine/how-it-works/): Step-by-step walkthroughs of a simple and a relationship-heavy request through structured intent, authorization, planning, provider execution and result evidence.

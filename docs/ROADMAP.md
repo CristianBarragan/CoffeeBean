@@ -1,6 +1,6 @@
 # Roadmap
 
-Foundgine 0.5.0 is the current shipped release. The core semantic execution pipeline is validated by restore, build, and the full automated test suite. There are no pending/in-flight milestones below — the work described in this document is implemented and shipped (see [docs/README.md](README.md) for the documentation index and [RELEASE-0.5.0.md](RELEASE-0.5.0.md) for the release surface). The sections below are kept for design-rationale context; the "Near term" and "Later" sections at the end are the actual open/forward-looking items.
+Foundgine 1.0.0 is the current shipped release. The core semantic execution pipeline is validated by restore, build, and the full automated test suite. There are no pending/in-flight milestones below — the work described in this document is implemented and shipped (see [docs/README.md](README.md) for the documentation index and [RELEASE-1.0.0.md](RELEASE-1.0.0.md) for the release surface, which carries forward [RELEASE-0.5.0.md](RELEASE-0.5.0.md) unchanged). The sections below are kept for design-rationale context; the "Near term" and "Later" sections at the end are the actual open/forward-looking items.
 
 ## Semantic authorization and capability discovery (implemented)
 

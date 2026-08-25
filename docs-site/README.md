@@ -6,11 +6,12 @@ The site is organized around the product story:
 
 1. Problem / intention
 2. What Foundgine is
-3. How it works
-4. Architecture
-5. AI agents
-6. Agent benchmark explorer
-7. Performance evidence
+3. Getting started (hands-on Supply Chain sample tutorial, follows the sample's GUIDE.md)
+4. How it works
+5. Architecture
+6. AI agents
+7. Agent benchmark explorer
+8. Performance evidence
 
 Milestone/phase pages are not part of the public site structure.
 

@@ -412,7 +412,7 @@ Foundgine's authorization and execution boundaries are intended to reduce unsafe
 
 ## Status
 
-Foundgine is actively evolving (current version: 0.5.0). Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
+Foundgine is actively evolving (current version: 1.0.0). Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
 
 Detailed, dated engineering notes for each release are kept in [`CHANGELOG.md`](CHANGELOG.md).
 
