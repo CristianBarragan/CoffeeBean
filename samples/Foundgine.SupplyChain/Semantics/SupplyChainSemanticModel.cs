@@ -12,6 +12,7 @@ public static class SupplyChainSemanticModel
     /// application code never maintains numeric FieldId/EntityId values.
     /// </summary>
     public static MetadataRegistry Registry { get; } = GeneratedMetadata.Registry;
+
     public static IMetadataProvider Metadata => Registry;
 
     // Semantic model identities are derived from the named semantic surface.
