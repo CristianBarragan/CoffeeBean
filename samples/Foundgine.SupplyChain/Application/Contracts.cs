@@ -17,10 +17,7 @@ public interface ISupplyChainQueries
 public interface ISupplyChainMutations
 {
     Task<object> UpdateInventory(int warehouseId, int productId, int quantity, CancellationToken ct);
-
-    Task<object> CreateShipment(int orderId, int carrierId, int warehouseId, string trackingNumber,
-        CancellationToken ct);
-
+    Task<object> CreateShipment(int orderId, int carrierId, int warehouseId, string trackingNumber, CancellationToken ct);
     Task<object> UpdateShipment(int shipmentId, string status, CancellationToken ct);
     Task<object> PlaceOrder(string actor, int customerId, OrderLine[] lines, string key, CancellationToken ct);
     Task<object> CancelOrder(string actor, int customerId, int orderId, CancellationToken ct);

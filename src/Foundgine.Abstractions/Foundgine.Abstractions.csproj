@@ -7,7 +7,7 @@
     <RootNamespace>Foundgine.Abstractions</RootNamespace>
     <AssemblyName>Foundgine.Abstractions</AssemblyName>
     <IsPackable>true</IsPackable>
-    <PackageReleaseNotes>1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0. 0.5.0: Packaging/documentation cleanup only; no abstraction-contract runtime capability change. 0.3.0: Provider-independent contracts and identifiers formed the foundation of the validated semantic execution surface.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.1.0: Additive release with the host-owned security execution-context provider contract. GraphQL secure query execution is provided by Foundgine.GraphQL.HotChocolate.Execution. The Supply Chain reference sample is source-integrated against this release line. 1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0. 0.5.0: Packaging/documentation cleanup only; no abstraction-contract runtime capability change. 0.3.0: Provider-independent contracts and identifiers formed the foundation of the validated semantic execution surface.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="README.md" />

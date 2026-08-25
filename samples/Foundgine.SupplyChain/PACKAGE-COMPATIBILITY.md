@@ -1,17 +1,21 @@
-# Foundgine 0.5.2 package compatibility
+# Foundgine source compatibility
 
-This sample intentionally consumes the released Foundgine **0.5.2 NuGet packages**.
+The Supply Chain sample is a **source-integrated reference sample**.
 
-The Model/ERP mapping attributes introduced in the unreleased development source
-(`FoundgineModelEntityMapAttribute` and `FoundgineConnectionMapAttribute`) are not
-part of Foundgine 0.5.2, so they are **not used by this sample**.
+All Foundgine dependencies are wired to the repository's `src/` projects with `ProjectReference` entries. This is intentional: the sample must compile against the same implementation that is built and tested by `Foundgine.sln`.
 
-With 0.5.2, the AOT declarations that need to be combined by the generator live in
-the same compilation. The sample therefore keeps the model declarations and ERP
-entity declarations in the Domain project while keeping the two representations
-as separate CLR types. The model does not inherit from or reuse the ERP type; the
-only runtime relationship declaration is the released `FoundgineConnection(Type)`
-API.
+The sample does not use Foundgine `0.5.x` NuGet packages.
 
-When the newer Model/ERP mapping API is published, this sample can be moved to a
-separate Entity project without changing the public semantic model surface.
+Key source dependencies include:
+
+- `src/Foundgine.Abstractions`
+- `src/Foundgine.Aot`
+- `src/Foundgine.Aot.Generator`
+- `src/Foundgine.Metadata`
+- `src/Foundgine.Semantics`
+- `src/Foundgine.Planning`
+- `src/Foundgine.Execution`
+- `src/Foundgine.Sql`
+- `src/Foundgine.MCP`
+
+The current release line is **Foundgine 1.1.0**. When this sample is copied outside the repository, the source references should be replaced with `1.1.0` package references (or a later compatible release).

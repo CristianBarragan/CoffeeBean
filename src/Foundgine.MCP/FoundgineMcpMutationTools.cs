@@ -13,14 +13,35 @@ public sealed class FoundgineMcpMutationTools
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly IFoundgineMutations? _mutations;
-    private readonly Func<SecurityExecutionContext?> _securityContextFactory;
+    private readonly ISecurityExecutionContextProvider _securityContextProvider;
 
+    /// <param name="mutations">The Foundgine mutation execution engine.</param>
+    /// <param name="securityContextFactory">
+    /// Obsolete delegate form of <paramref name="securityContextProvider"/>, retained in this
+    /// parameter position for existing hosts calling positionally. Internally wrapped in a
+    /// <see cref="DelegateSecurityExecutionContextProvider"/>.
+    /// </param>
+    /// <param name="securityContextProvider">
+    /// Host-owned source of the caller's <see cref="SecurityExecutionContext"/>. Prefer this
+    /// over <paramref name="securityContextFactory"/> for new hosts; both may not be supplied
+    /// together.
+    /// </param>
     public FoundgineMcpMutationTools(
         IFoundgineMutations? mutations = null,
-        Func<SecurityExecutionContext?>? securityContextFactory = null)
+        Func<SecurityExecutionContext?>? securityContextFactory = null,
+        ISecurityExecutionContextProvider? securityContextProvider = null)
     {
         _mutations = mutations;
-        _securityContextFactory = securityContextFactory ?? (() => null);
+
+        if (securityContextProvider is not null && securityContextFactory is not null)
+            throw new ArgumentException(
+                $"Only one of {nameof(securityContextProvider)} or {nameof(securityContextFactory)} may be supplied.",
+                nameof(securityContextFactory));
+
+        _securityContextProvider = securityContextProvider
+            ?? (securityContextFactory is not null
+                ? new DelegateSecurityExecutionContextProvider(securityContextFactory)
+                : new DelegateSecurityExecutionContextProvider(() => null));
     }
 
     [McpServerTool(Name = "foundgine_mutation_dry_run")]
@@ -49,8 +70,8 @@ public sealed class FoundgineMcpMutationTools
     {
         var approval = JsonSerializer.Deserialize<MutationPlanApproval>(approvalJson, JsonOptions)
             ?? throw new ArgumentException("Approval JSON is invalid.", nameof(approvalJson));
-        var security = _securityContextFactory()
-            ?? throw new UnauthorizedAccessException("MCP mutation execution requires a host-supplied SecurityExecutionContext.");
+        var security = _securityContextProvider.RequireSecurityExecutionContext(
+            "MCP", "mutation execution");
         approval = approval with { Request = approval.Request with { Security = security } };
         var result = await RequireMutations().ExecuteApprovedAsync(approval, cancellationToken: cancellationToken);
         return JsonSerializer.Serialize(result, JsonOptions);
@@ -58,9 +79,8 @@ public sealed class FoundgineMcpMutationTools
     private SemanticMutationRequest WithHostSecurity(SemanticMutationRequest request) =>
         request with
         {
-            Security = _securityContextFactory()
-                ?? throw new UnauthorizedAccessException(
-                    "MCP mutation execution requires a host-supplied SecurityExecutionContext. The MCP caller cannot supply identity, tenant, audience, or warrant context in the mutation payload.")
+            Security = _securityContextProvider.RequireSecurityExecutionContext(
+                "MCP", "mutation execution")
         };
 
     private IFoundgineMutations RequireMutations() => _mutations ??

@@ -292,7 +292,7 @@ static async Task<string> PostMcpTool(HttpClient http, string url, string tool, 
                 _meta = new Dictionary<string, object?>
                 {
                     ["io.modelcontextprotocol/protocolVersion"] = "2026-07-28",
-                    ["io.modelcontextprotocol/clientInfo"] = new { name = "Foundgine-Run4-Runner", version = "1.0.0" },
+                    ["io.modelcontextprotocol/clientInfo"] = new { name = "Foundgine-Run4-Runner", version = "1.1.0" },
                     ["io.modelcontextprotocol/clientCapabilities"] = new Dictionary<string, object?>()
                 }
             }

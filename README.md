@@ -82,7 +82,7 @@ The same server metadata is available at [`.well-known/mcp.json`](.well-known/mc
 
 <a href="https://dofollow.tools" target="_blank"><img src="https://dofollow.tools/badge/badge_light.svg" alt="Featured on Dofollow.Tools" width="200" height="54" /></a>
 
-**NuGet snapshot:** latest version **0.5.2**, targeting **.NET 9.0**, with **18 published packages**. The **NuGet Downloads** badge above represents this package-ecosystem total, not just the `Foundgine` core package.
+**Release line:** **1.1.0**, targeting **.NET 9.0**. The repository is prepared for the 1.1.0 release; the last published NuGet snapshot recorded by this repository is **0.5.2** until the new packages are published. The **NuGet Downloads** badge above represents this package-ecosystem total, not just the `Foundgine` core package.
 
 | Package | Downloads | Role |
 |---|---:|---|
@@ -412,7 +412,7 @@ Foundgine's authorization and execution boundaries are intended to reduce unsafe
 
 ## Status
 
-Foundgine is actively evolving (current version: 1.0.0). Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
+Foundgine is actively evolving (current version: 1.1.0). Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
 
 Detailed, dated engineering notes for each release are kept in [`CHANGELOG.md`](CHANGELOG.md).
 

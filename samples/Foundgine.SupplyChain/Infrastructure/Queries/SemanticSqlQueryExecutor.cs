@@ -19,14 +19,9 @@ public sealed class SemanticSqlQueryExecutor
     private readonly IMetadataProvider _metadata;
 
     public SemanticSqlQueryExecutor(NpgsqlDataSource dataSource, Planner planner, IMetadataProvider metadata)
-    {
-        _dataSource = dataSource;
-        _planner = planner;
-        _metadata = metadata;
-    }
+    { _dataSource = dataSource; _planner = planner; _metadata = metadata; }
 
-    public async Task<(IReadOnlyList<ExecutionRow> Rows, string Fingerprint)> ExecuteAsync(SemanticOperation operation,
-        CancellationToken ct)
+    public async Task<(IReadOnlyList<ExecutionRow> Rows, string Fingerprint)> ExecuteAsync(SemanticOperation operation, CancellationToken ct)
     {
         var semanticPlan = _planner.Plan(operation);
         var sqlPlan = new SqlCompiler(_metadata).Compile(semanticPlan);
@@ -36,7 +31,5 @@ public sealed class SemanticSqlQueryExecutor
     }
 
     private static string Fingerprint(string sql, IEnumerable<SqlParameterBinding> parameters) =>
-        Convert.ToHexString(SHA256.HashData(
-                Encoding.UTF8.GetBytes(sql + "|" + string.Join(';', parameters.Select(x => $"{x.Name}:{x.Value}")))))
-            .ToLowerInvariant()[..24];
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(sql + "|" + string.Join(';', parameters.Select(x => $"{x.Name}:{x.Value}"))))).ToLowerInvariant()[..24];
 }

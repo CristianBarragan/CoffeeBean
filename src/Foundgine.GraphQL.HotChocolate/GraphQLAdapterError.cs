@@ -30,6 +30,7 @@ public static class GraphQLAdapterErrorCode
     public const string BadUserInput = "BAD_USER_INPUT";
     public const string GraphQLValidationFailed = "GRAPHQL_VALIDATION_FAILED";
     public const string AdapterError = "GRAPHQL_ADAPTER_ERROR";
+    public const string Unauthenticated = "UNAUTHENTICATED";
 }
 
 /// <summary>
@@ -39,6 +40,16 @@ public static class GraphQLAdapterErrors
 {
     public static GraphQLAdapterError FromException(Exception exception)
     {
+        // A missing/invalid security context is a distinct failure class from a
+        // malformed GraphQL request: it is never the caller's request that is
+        // wrong, so it must not be reported as BAD_USER_INPUT or a validation
+        // failure, both of which default to Category "BAD_REQUEST".
+        if (exception is UnauthorizedAccessException)
+            return new GraphQLAdapterError(
+                GraphQLAdapterErrorCode.Unauthenticated,
+                exception.Message,
+                Category: GraphQLAdapterErrorCode.Unauthenticated);
+
         var message = exception.Message;
         var code = message.Contains("variable", StringComparison.OrdinalIgnoreCase) ||
                    message.Contains("expects", StringComparison.OrdinalIgnoreCase) ||
