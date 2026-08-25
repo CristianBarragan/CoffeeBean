@@ -1,6 +1,6 @@
-# Current status — Foundgine 1.0.0
+# Current status — Foundgine 1.1.0
 
-Foundgine 1.0.0 is the current shipped release. It is a semver-stability milestone: no `src/` package changed since 0.5.0, so the restore/compilation/test evidence below — run against that unchanged source — still applies. See [RELEASE-1.0.0.md](RELEASE-1.0.0.md) for what did change in this release (outside `src/`).
+Foundgine 1.1.0 is the current release. It is an additive 1.x release. The GraphQL query executor and shared security execution-context provider are now part of the source tree. The Supply Chain getting-started sample is source-integrated against `src/`. See [RELEASE-1.1.0.md](RELEASE-1.1.0.md) for the release surface and verification status.
 
 ## Proven by the active tests
 

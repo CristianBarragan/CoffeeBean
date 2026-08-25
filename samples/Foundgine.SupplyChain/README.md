@@ -33,75 +33,37 @@ PostgreSQL
 | `Infrastructure` | PostgreSQL integration and Foundgine.Sql query/mutation adapters |
 | `Tests` | application, semantic and infrastructure tests |
 
-## Foundgine packages used
+## Foundgine source projects used
 
-The sample uses the relevant runtime surface together rather than introducing a parallel SQL abstraction:
+This sample is source-integrated. It uses `ProjectReference` entries into the repository `src/` tree rather than consuming an older Foundgine NuGet release. That keeps the sample aligned with the implementation being built and tested by `Foundgine.sln`.
 
-- `Foundgine`
+The main Foundgine projects used are:
+
 - `Foundgine.Abstractions`
 - `Foundgine.Aot`
+- `Foundgine.Aot.Generator`
 - `Foundgine.Metadata`
 - `Foundgine.Semantics`
 - `Foundgine.Planning`
 - `Foundgine.Execution`
 - `Foundgine.Sql`
 - `Foundgine.MCP`
-- `ModelContextProtocol.AspNetCore`
-- `Npgsql`
 
-The sample uses the released Foundgine 0.5.2 NuGet packages. The AOT generator runs from the package during compilation. Numeric `FieldId` values are runtime identities; application code should use the semantic API rather than constructing FieldId values manually.
+External dependencies remain `ModelContextProtocol.AspNetCore` and `Npgsql`.
 
-## AOT model-focused naming
+## Model / ERP separation
 
-Physical persistence entities are deliberately named `*ERP`, while Foundgine exposes model-focused semantic names such as:
+The application models and persistence entities are separate CLR contracts. The physical entities use the `ERP` suffix:
 
 ```text
-CustomerERP            → Customer
-SalesOrderERP          → SalesOrder
-SalesOrderLineERP  → SalesOrderLine
-CatalogProductERP  → CatalogProduct
-InventoryPositionERP → InventoryPosition
+Customer             → CustomerERP
+SalesOrder           → SalesOrderERP
+SalesOrderLine       → SalesOrderLineERP
+CatalogProduct       → CatalogProductERP
+InventoryPosition    → InventoryPositionERP
 ```
 
-This keeps storage terminology out of the application-facing semantic vocabulary while retaining explicit physical storage names such as `orders`, `order_items`, and `inventory`.
-
-## Dynamic SQL
-
-Repositories do not contain handwritten SELECT statements for normal queries. They construct Foundgine semantic operations:
-
-```text
-Repository
-   ↓
-SemanticOperation
-   ↓
-Planner
-   ↓
-Execution plan
-   ↓
-SqlCompiler
-   ↓
-SqlPlan
-   ↓
-SqlExecutionProvider
-   ↓
-PostgreSQL
-```
-
-Simple mutations use the same path through `MutationPlanner` and `SqlMutationCompiler`.
-
-The high-assurance `PlaceOrder` and `CancelOrder` workflows retain explicit transaction orchestration because they require PostgreSQL-specific advisory locks, `FOR UPDATE SKIP LOCKED`, idempotency, conditional inventory allocation and multi-table atomicity. This is deliberate: Foundgine handles semantic planning where the operation is expressible in its mutation IR, while the benchmark's strongest transaction invariants remain explicit at the database boundary.
-
-## Step-by-step guide
-
-If you are new to Foundgine, start here. This is a hands-on tutorial that walks from an empty solution through entities, models, explicit model/entity mapping, AOT generation, semantic queries, mutations, infrastructure, API and tests:
-
-**[Build the Supply Chain example from scratch — TUTORIAL.md](TUTORIAL.md)**
-
-For a shorter architecture walkthrough, see:
-
-**[Foundgine Supply Chain — Layer-by-Layer Guide](GUIDE.md)**
-
-The guide explains the solution from the MCP boundary through application contracts, AOT metadata, semantic operations, planning, SQL compilation, PostgreSQL execution, mutations, testing and future extension points.
+The model does not inherit from or reuse the ERP entity. Relationships and storage mappings are expressed through Foundgine metadata, while application code uses the generated semantic handles.
 
 ## Run
 
@@ -126,28 +88,20 @@ Health endpoint: `http://localhost:4422/health`
 
 ## Generated semantic API
 
-The application-facing query and mutation code does not construct numeric `FieldId` values. The source generator resolves model properties to their mapped ERP fields and emits named handles:
+The application-facing query and mutation code does not construct numeric `FieldId` values. The AOT source generator maps the model/entity declarations and emits `Foundgine.Generated.GeneratedSemanticModel` with named field handles:
 
 ```csharp
-SupplyChainSemanticFields.InventoryPosition.WarehouseId.Eq(warehouseId)
-SupplyChainSemanticFields.InventoryPosition.ProductId.Eq(productId)
-SupplyChainSemanticFields.InventoryPosition.QuantityOnHand.Set(quantity)
-SupplyChainSemanticFields.Shipment.Status.Set("In Transit")
+GeneratedSemanticModel.InventoryPosition.WarehouseId.Eq(warehouseId)
+GeneratedSemanticModel.InventoryPosition.ProductId.Eq(productId)
+GeneratedSemanticModel.InventoryPosition.QuantityOnHand.Set(quantity)
+GeneratedSemanticModel.Shipment.Status.Set("In Transit")
 ```
 
 The generated handles carry the compact IDs internally, but those IDs are not part of the developer-facing contract. The model-to-ERP mapping remains explicit and lives outside both model and ERP classes.
 
 
-## Foundgine dependencies
-
-This sample consumes Foundgine through its published NuGet packages rather than source-project references. The sample application projects remain project-to-project references; Foundgine is an external package dependency.
-
-The tutorial uses Foundgine `0.5.2`. See `TUTORIAL.md` for the complete package installation commands.
-
 ## Using the repository source
 
-This sample is intentionally wired to the Foundgine projects under `../../../src` instead of the published Foundgine NuGet packages.
+The sample is intentionally wired to the Foundgine projects under `../../../src` instead of published Foundgine NuGet packages. This makes the sample build against the exact source tree in this repository, including the AOT source generator and current runtime changes.
 
-This makes the sample build against the exact source tree in this repository, including the AOT source generator and current runtime changes.
-
-If you copy the sample outside this repository, change the `ProjectReference` entries back to the published NuGet packages or update the paths to your Foundgine source checkout.
+For the hands-on walkthrough, see [TUTORIAL.md](TUTORIAL.md). It is the current source-tree getting-started guide and no longer contains the obsolete `0.5.x` package-install instructions.

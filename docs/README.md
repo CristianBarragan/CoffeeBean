@@ -1,6 +1,6 @@
 # Documentation
 
-These documents describe the current Foundgine 1.0.0 release.
+These documents describe the current Foundgine 1.1.0 release.
 
 Use these pages in this order.
 
@@ -12,6 +12,7 @@ Use these pages in this order.
 4. [PostgreSQL E2E](POSTGRES-E2E.md)
 5. [Current status](CURRENT-STATUS.md)
 6. [Release 1.0.0](RELEASE-1.0.0.md)
+7. [Release 1.1.0](RELEASE-1.1.0.md)
 
 ## Understand the product
 

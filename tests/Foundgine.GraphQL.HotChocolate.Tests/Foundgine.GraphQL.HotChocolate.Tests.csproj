@@ -12,9 +12,11 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
+    <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate.Execution/Foundgine.GraphQL.HotChocolate.Execution.csproj" />
     <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" />
     <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj" />
     <ProjectReference Include="../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
     <ProjectReference Include="../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />
+    <ProjectReference Include="../../src/Foundgine/Foundgine.csproj" />
   </ItemGroup>
 </Project>

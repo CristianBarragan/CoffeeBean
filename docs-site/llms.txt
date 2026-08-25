@@ -1,6 +1,6 @@
-# Foundgine 1.0.0
+# Foundgine 1.1.0
 
-Current release: 1.0.0 — a semver-stability milestone carrying forward the 0.5.0 release surface unchanged (no `src/` package changed). The 0.5.0 restore, build, and full automated test results still apply to the packages themselves. PostgreSQL E2E and benchmark workflows are separate environment-dependent evidence.
+Current release: 1.1.0 — an additive 1.x release with a secure GraphQL query executor, shared host-owned security execution-context provider, and a source-integrated Supply Chain getting-started sample.
 
 # Foundgine
 

@@ -91,7 +91,7 @@ provider implementation
 Two intentionally different, unrelated CLR representations of the same business concepts:
 
 - **Storage records** — `*ERP` types decorated with `FoundgineEntity`/`FoundgineField`/`FoundgineRelationship`, carrying both semantic and physical names (e.g. `SalesOrder` stores as table `orders`).
-- **Application models** — `Customer`, `SalesOrder`, `SalesOrderLine`, `CatalogProduct`, `InventoryPosition` and friends, named for the business vocabulary. The model does not reference the ERP type; the only link is the explicit `FoundgineConnection` declaration.
+- **Application models** — `Customer`, `SalesOrder`, `SalesOrderLine`, `CatalogProduct`, `InventoryPosition` and friends, named for the business vocabulary. The model does not reference the ERP type. Model/entity mappings and connection targets live in the separate schema-bound `Domain/Mappings.cs` declarations.
 
 ### Layer 4 — AOT layer (generated metadata)
 

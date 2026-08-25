@@ -2,7 +2,7 @@
 
 ## Canonical identity
 
-**Current release: 1.0.0**
+**Current release: 1.1.0**
 
 **Foundgine is a semantic execution layer for .NET.**
 
@@ -71,7 +71,7 @@ Do not describe Foundgine as:
 
 ## Release validation
 
-Foundgine 1.0.0 carries forward the 0.5.0 release surface with no `src/` package changes, so the 0.5.0 restore, build, and full automated test gate results still apply to the packages themselves. 1.0.0 is a semver-stability declaration, not a re-validated build; see RELEASE-1.0.0.md for what changed outside `src/` in this release. PostgreSQL E2E and benchmark runs remain separate environment-dependent evidence.
+Foundgine 1.1.0 is an additive 1.x release with a secure GraphQL query executor, shared host-owned security execution-context provider, and a source-integrated Supply Chain getting-started sample. See RELEASE-1.1.0.md for the release surface and verification status. PostgreSQL E2E and benchmark runs remain separate environment-dependent evidence.
 
 ## Current proof
 

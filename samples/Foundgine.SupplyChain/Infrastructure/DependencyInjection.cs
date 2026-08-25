@@ -11,8 +11,7 @@ namespace Foundgine.SupplyChain.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddSupplyChainInfrastructure(this IServiceCollection services,
-        string connectionString)
+    public static IServiceCollection AddSupplyChainInfrastructure(this IServiceCollection services, string connectionString)
     {
         services.AddSingleton(NpgsqlDataSource.Create(connectionString));
         services.AddSingleton<IMetadataProvider>(_ => SupplyChainSemanticModel.Metadata);

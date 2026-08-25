@@ -1,4 +1,5 @@
 using Foundgine.Abstractions;
+using Foundgine.Aot;
 using Foundgine.Generated;
 using Foundgine.Semantics;
 using Foundgine.Planning;
@@ -27,8 +28,8 @@ public sealed class AotAndPlanningTests
     [Fact]
     public void Generated_semantic_surface_exposes_named_fields_without_numeric_ids()
     {
-        Assert.Equal("QuantityOnHand", SupplyChainSemanticFields.InventoryPosition.QuantityOnHand.Name);
-        Assert.Equal(SupplyChainSemanticModel.InventoryPosition, SupplyChainSemanticFields.InventoryPosition.Entity);
+        Assert.Equal("QuantityOnHand", GeneratedSemanticModel.InventoryPosition.QuantityOnHand.Name);
+        Assert.Equal(SupplyChainSemanticModel.InventoryPosition, GeneratedSemanticModel.InventoryPosition.Entity);
     }
 
     [Fact]
@@ -37,12 +38,12 @@ public sealed class AotAndPlanningTests
         var operation = new SemanticOperation(new SemanticReadNode(
             1,
             SupplyChainSemanticModel.CatalogProduct,
-            SupplyChainSemanticFields.CatalogProduct.All,
+            GeneratedSemanticModel.CatalogProduct.All,
             null,
             null,
             [],
             new SemanticQueryOptions(
-                SupplyChainSemanticFields.CatalogProduct.Id.Eq(42))));
+                GeneratedSemanticModel.CatalogProduct.Id.Eq(42))));
 
         var plan = new Planner().Plan(operation);
         var sql = new SqlCompiler(GeneratedMetadata.Registry).Compile(plan);

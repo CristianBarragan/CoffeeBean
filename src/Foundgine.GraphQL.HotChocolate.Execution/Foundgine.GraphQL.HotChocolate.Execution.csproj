@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Foundgine.GraphQL.HotChocolate.Execution</PackageId>
+    <Description>Secure query execution integration for the Foundgine Hot Chocolate adapter.</Description>
+    <PackageTags>graphql;hotchocolate;security;execution;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RootNamespace>Foundgine.GraphQL.HotChocolate</RootNamespace>
+    <AssemblyName>Foundgine.GraphQL.HotChocolate.Execution</AssemblyName>
+    <IsPackable>true</IsPackable>
+    <PackageReleaseNotes>1.1.0: Adds the secure FoundgineHotChocolateQueryExecutor as a separate execution package so the pure GraphQL adapter remains independent of Foundgine.Execution. Requires a host-supplied ISecurityExecutionContextProvider.</PackageReleaseNotes>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" />
+    <ProjectReference Include="../Foundgine.Execution/Foundgine.Execution.csproj" />
+  </ItemGroup>
+</Project>

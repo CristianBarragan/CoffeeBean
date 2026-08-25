@@ -12,21 +12,20 @@ public static class SupplyChainSemanticModel
     /// application code never maintains numeric FieldId/EntityId values.
     /// </summary>
     public static MetadataRegistry Registry { get; } = GeneratedMetadata.Registry;
-
     public static IMetadataProvider Metadata => Registry;
 
     // Semantic model identities are derived from the named semantic surface.
     // Application code does not maintain numeric EntityId values.
-    public static EntityId Customer => SupplyChainSemanticFields.Customer.Entity;
-    public static EntityId SalesOrder => SupplyChainSemanticFields.SalesOrder.Entity;
-    public static EntityId SalesOrderLine => SupplyChainSemanticFields.SalesOrderLine.Entity;
-    public static EntityId CatalogProduct => SupplyChainSemanticFields.CatalogProduct.Entity;
-    public static EntityId Supplier => SupplyChainSemanticFields.Supplier.Entity;
-    public static EntityId Category => SupplyChainSemanticFields.Category.Entity;
-    public static EntityId InventoryPosition => SupplyChainSemanticFields.InventoryPosition.Entity;
-    public static EntityId Warehouse => SupplyChainSemanticFields.Warehouse.Entity;
-    public static EntityId Shipment => SupplyChainSemanticFields.Shipment.Entity;
-    public static EntityId Carrier => SupplyChainSemanticFields.Carrier.Entity;
+    public static EntityId Customer => GeneratedSemanticModel.Customer.Entity;
+    public static EntityId SalesOrder => GeneratedSemanticModel.SalesOrder.Entity;
+    public static EntityId SalesOrderLine => GeneratedSemanticModel.SalesOrderLine.Entity;
+    public static EntityId CatalogProduct => GeneratedSemanticModel.CatalogProduct.Entity;
+    public static EntityId Supplier => GeneratedSemanticModel.Supplier.Entity;
+    public static EntityId Category => GeneratedSemanticModel.Category.Entity;
+    public static EntityId InventoryPosition => GeneratedSemanticModel.InventoryPosition.Entity;
+    public static EntityId Warehouse => GeneratedSemanticModel.Warehouse.Entity;
+    public static EntityId Shipment => GeneratedSemanticModel.Shipment.Entity;
+    public static EntityId Carrier => GeneratedSemanticModel.Carrier.Entity;
 
     private static RelationshipId Relationship(string entityName, string relationshipName) =>
         Registry.Relationships

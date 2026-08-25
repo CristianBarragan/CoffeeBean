@@ -1,6 +1,21 @@
 # Changelog
 
-All notable changes to this repository are documented here. This file starts at 0.4.0 — no changelog was kept for earlier versions, so 0.1.0–0.3.0 are not reconstructed here.
+## [1.1.0] - 2026-08-26
+
+### Added
+- Added the secure `FoundgineHotChocolateQueryExecutor` in the separate `Foundgine.GraphQL.HotChocolate.Execution` package so the pure GraphQL adapter remains independent of `Foundgine.Execution`.
+- Added the shared `ISecurityExecutionContextProvider` contract, delegate adapter, and fail-closed requirement helper under `Foundgine.Semantics.Security.Execution`.
+- Added GraphQL executor coverage for missing security context, trusted host context propagation, result shaping, and stable adapter errors.
+
+### Changed
+- Merged the GraphQL query-executor step into the 1.0.0 source tree and separated the execution integration from the pure GraphQL adapter after boundary verification.
+- Updated MCP to converge on the shared host-owned security execution-context provider while retaining its existing delegate compatibility path.
+- Updated the Supply Chain getting-started sample to use repository `src/` project references instead of obsolete 0.5.x NuGet package instructions.
+- Bumped the repository/package version to 1.1.0.
+
+### Verification
+- Static source/project-reference validation completed for the merged release tree.
+- Full `dotnet build` / `dotnet test` verification is performed as part of the release gate; the initial package validation exposed two contract/boundary test failures which were fixed before repackaging.
 
 ## [1.0.0]
 

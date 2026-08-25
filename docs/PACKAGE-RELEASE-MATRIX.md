@@ -2,6 +2,13 @@
 
 This matrix maps each packable Foundgine package to the release changes that are relevant to that package. The same information is embedded in each package's `PackageReleaseNotes` metadata so it is visible from NuGet package metadata.
 
+## 1.1.0
+- **Foundgine.GraphQL.HotChocolate** — 1.1.0: Keeps the GraphQL query adapter pure and independent of execution.
+- **Foundgine.GraphQL.HotChocolate.Execution** — 1.1.0: Adds the secure `FoundgineHotChocolateQueryExecutor` and host-owned security execution-context integration.
+- **Foundgine.MCP** — 1.1.0: Converges on the shared `ISecurityExecutionContextProvider` contract while retaining the compatibility delegate path.
+- **Foundgine.Semantics** — 1.1.0: Adds the shared host-owned security execution-context provider contract and helpers.
+- **Other Foundgine packages** — 1.1.0: Versioned with the release line; no unrelated breaking API changes are introduced.
+
 ## 1.0.0
 - **Foundgine.Planning** — 1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0.
 - **Foundgine.AI** — 1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0.

@@ -21,18 +21,40 @@ public sealed class FoundgineMcpTools
     private readonly IFoundgine _foundgine;
     private readonly JsonReadIntentAdapter _adapter;
     private readonly Func<ExecutionContext> _contextFactory;
-    private readonly Func<SecurityExecutionContext?> _securityContextFactory;
+    private readonly ISecurityExecutionContextProvider _securityContextProvider;
 
+    /// <param name="foundgine">The Foundgine execution engine.</param>
+    /// <param name="adapter">The JSON read-intent adapter. Defaults to a new instance.</param>
+    /// <param name="contextFactory">Supplies execution context values per call. Defaults to an empty context.</param>
+    /// <param name="securityContextProvider">
+    /// Host-owned source of the caller's <see cref="SecurityExecutionContext"/>. Prefer this
+    /// over <paramref name="securityContextFactory"/> for new hosts; both may not be supplied
+    /// together.
+    /// </param>
+    /// <param name="securityContextFactory">
+    /// Obsolete delegate form of <paramref name="securityContextProvider"/>, retained for
+    /// existing hosts. Internally wrapped in a <see cref="DelegateSecurityExecutionContextProvider"/>.
+    /// </param>
     public FoundgineMcpTools(
         IFoundgine foundgine,
         JsonReadIntentAdapter? adapter = null,
         Func<ExecutionContext>? contextFactory = null,
+        ISecurityExecutionContextProvider? securityContextProvider = null,
         Func<SecurityExecutionContext?>? securityContextFactory = null)
     {
         _foundgine = foundgine ?? throw new ArgumentNullException(nameof(foundgine));
         _adapter = adapter ?? new JsonReadIntentAdapter();
         _contextFactory = contextFactory ?? (() => new ExecutionContext());
-        _securityContextFactory = securityContextFactory ?? (() => null);
+
+        if (securityContextProvider is not null && securityContextFactory is not null)
+            throw new ArgumentException(
+                $"Only one of {nameof(securityContextProvider)} or {nameof(securityContextFactory)} may be supplied.",
+                nameof(securityContextFactory));
+
+        _securityContextProvider = securityContextProvider
+            ?? (securityContextFactory is not null
+                ? new DelegateSecurityExecutionContextProvider(securityContextFactory)
+                : new DelegateSecurityExecutionContextProvider(() => null));
     }
 
     /// <summary>
@@ -43,9 +65,8 @@ public sealed class FoundgineMcpTools
     [Description("Discover the Foundgine semantic capability contract available to the current caller. Discovery is descriptive; authorization is re-evaluated during execution.")]
     public string DescribeCapabilities()
     {
-        var security = _securityContextFactory()
-            ?? throw new UnauthorizedAccessException(
-                "MCP capability discovery requires a host-supplied SecurityExecutionContext. The MCP caller cannot supply identity, tenant, audience, or warrant context.");
+        var security = _securityContextProvider.RequireSecurityExecutionContext(
+            "MCP", "capability discovery");
 
         return JsonSerializer.Serialize(
             _foundgine.DescribeCapabilityContract(security),
@@ -66,9 +87,8 @@ public sealed class FoundgineMcpTools
             throw new ArgumentException("Intent JSON is required.", nameof(intentJson));
 
         var intent = _adapter.Parse(intentJson);
-        var security = _securityContextFactory()
-            ?? throw new UnauthorizedAccessException(
-                "MCP execution requires a host-supplied SecurityExecutionContext. The MCP caller cannot supply identity, tenant, audience, or warrant context in the intent payload.");
+        var security = _securityContextProvider.RequireSecurityExecutionContext(
+            "MCP", "execution");
         intent = intent with { Security = security };
         var result = await _foundgine.ExecuteAsync(
             intent,

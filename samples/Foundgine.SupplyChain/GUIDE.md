@@ -129,7 +129,7 @@ GetOrders(customerId)
        ↓
 SemanticReadNode(SalesOrder)
        ↓
-SupplyChainSemanticFields.SalesOrder.CustomerId.Eq(customerId)
+GeneratedSemanticModel.SalesOrder.CustomerId.Eq(customerId)
        ↓
 Foundgine Planner
        ↓
