@@ -122,9 +122,14 @@ public static class SupplyChainSemanticFields
         public static readonly SupplyChainSemanticField Id = Field("InventoryPositionERP", "Id");
         public static readonly SupplyChainSemanticField WarehouseId = Field("InventoryPositionERP", "WarehouseId");
         public static readonly SupplyChainSemanticField ProductId = Field("InventoryPositionERP", "ProductId");
-        public static readonly SupplyChainSemanticField QuantityOnHand = Field("InventoryPositionERP", "QuantityOnHand");
+
+        public static readonly SupplyChainSemanticField
+            QuantityOnHand = Field("InventoryPositionERP", "QuantityOnHand");
+
         public static readonly SupplyChainSemanticField ReorderLevel = Field("InventoryPositionERP", "ReorderLevel");
-        public static IReadOnlyList<FieldId> All { get; } = All(Id, WarehouseId, ProductId, QuantityOnHand, ReorderLevel);
+
+        public static IReadOnlyList<FieldId> All { get; } =
+            All(Id, WarehouseId, ProductId, QuantityOnHand, ReorderLevel);
     }
 
     public static class Warehouse
@@ -145,7 +150,9 @@ public static class SupplyChainSemanticFields
         public static readonly SupplyChainSemanticField WarehouseId = Field("ShipmentERP", "WarehouseId");
         public static readonly SupplyChainSemanticField TrackingNumber = Field("ShipmentERP", "TrackingNumber");
         public static readonly SupplyChainSemanticField Status = Field("ShipmentERP", "Status");
-        public static IReadOnlyList<FieldId> All { get; } = All(Id, OrderId, CarrierId, WarehouseId, TrackingNumber, Status);
+
+        public static IReadOnlyList<FieldId> All { get; } =
+            All(Id, OrderId, CarrierId, WarehouseId, TrackingNumber, Status);
     }
 
     public static class Carrier

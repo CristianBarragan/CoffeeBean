@@ -5,72 +5,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e0d392d-88c3-4bfa-af37-89099aaf0e9d" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../../.well-known/mcp.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../.well-known/mcp.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../CHANGELOG.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Directory.Build.props" beforeDir="false" afterPath="$PROJECT_DIR$/../../Directory.Build.props" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ai.seo.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../ai.seo.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/agent-benchmark/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/agent-benchmark/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/agent-benchmark/run-1/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/agent-benchmark/run-1/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/agent-benchmark/run-2/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/agent-benchmark/run-2/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/agent-benchmark/run-3/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/agent-benchmark/run-3/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/agent-benchmark/run-4/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/agent-benchmark/run-4/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/agent-benchmark/run-5/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/agent-benchmark/run-5/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/agent-benchmark/run-5b/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/agent-benchmark/run-5b/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/agent-benchmark/supply-chain/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/agent-benchmark/supply-chain/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/ai-agents/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/ai-agents/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/architecture/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/architecture/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/how-it-works/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/how-it-works/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/llms-full.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/llms-full.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/llms.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/llms.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/performance/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/performance/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/sitemap.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/sitemap.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs-site/what-is-foundgine.html" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs-site/what-is-foundgine.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs/CURRENT-STATUS.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs/CURRENT-STATUS.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs/PACKAGE-RELEASE-MATRIX.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs/PACKAGE-RELEASE-MATRIX.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../docs/ROADMAP.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../docs/ROADMAP.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../mcp.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../mcp.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Foundgine.SupplyChain/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Api/Foundgine.SupplyChain.Api.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Api/Foundgine.SupplyChain.Api.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Foundgine.SupplyChain/.idea/projectSettingsUpdater.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Foundgine.SupplyChain/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Foundgine.SupplyChain/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Api/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Api/Program.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Application/Authorization.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Application/Authorization.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Application/Contracts.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Application/Contracts.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Application/DependencyInjection.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Application/DependencyInjection.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Application/SupplyChainApplication.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Application/SupplyChainApplication.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Domain/Foundgine.SupplyChain.Domain.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Domain/Foundgine.SupplyChain.Domain.csproj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Domain/Models.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Domain/Models.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Domain/StorageModels.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Domain/StorageModels.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Infrastructure/DependencyInjection.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Infrastructure/DependencyInjection.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Infrastructure/Foundgine.SupplyChain.Infrastructure.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Infrastructure/Foundgine.SupplyChain.Infrastructure.csproj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Infrastructure/Mutations/SupplyChainMutationRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Infrastructure/Mutations/SupplyChainMutationRepository.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Infrastructure/Queries/SemanticSqlQueryExecutor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Infrastructure/Queries/SemanticSqlQueryExecutor.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Infrastructure/Queries/SupplyChainQueryRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Infrastructure/Queries/SupplyChainQueryRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Semantics/Foundgine.SupplyChain.Semantics.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Semantics/Foundgine.SupplyChain.Semantics.csproj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Semantics/SupplyChainSemanticFields.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Semantics/SupplyChainSemanticFields.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Semantics/SupplyChainSemanticModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Semantics/SupplyChainSemanticModel.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Tests/AotAndPlanningTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Tests/AotAndPlanningTests.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Tests/Foundgine.SupplyChain.Tests.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Tests/Foundgine.SupplyChain.Tests.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.AI/Foundgine.AI.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.AI/Foundgine.AI.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.Aot.Generator/FoundgineMetadataGenerator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.Aot.Generator/FoundgineMetadataGenerator.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.Aot/Foundgine.Aot.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.Aot/Foundgine.Aot.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.Authorization/Foundgine.Authorization.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.Authorization/Foundgine.Authorization.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.Execution/Foundgine.Execution.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.Execution/Foundgine.Execution.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.InMemory/Foundgine.InMemory.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.InMemory/Foundgine.InMemory.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.Intent.Json/Foundgine.Intent.Json.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.Intent.Json/Foundgine.Intent.Json.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.MCP/Foundgine.MCP.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.MCP/Foundgine.MCP.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.Planning/Foundgine.Planning.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.Planning/Foundgine.Planning.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.Semantics/GeneratedSemanticFieldExtensions.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine.Sql/Foundgine.Sql.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine.Sql/Foundgine.Sql.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../src/Foundgine/Foundgine.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../../src/Foundgine/Foundgine.csproj" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -80,10 +30,10 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "customColor": "",
-  "associatedIndex": 1
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 1
+}</component>
   <component name="ProjectId" id="3IOAq89qNfkpFaBRyjaU89AalzE" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -95,7 +45,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "Add-comprehensive-supply-chain-sample",
+    "git-widget-placeholder": "main",
     "nodejs_package_manager_path": "npm",
     "vue.rearranger.settings.migration": "true"
   }
@@ -136,7 +86,10 @@
       <method v="2" />
     </configuration>
     <configuration default="true" type="docker-deploy" factoryName="dockerfile" temporary="true">
-      <deployment type="dockerfile" />
+      <deployment type="dockerfile">
+        <settings />
+      </deployment>
+      <EXTENSION ID="com.jetbrains.rider.docker.debug" isFastModeEnabled="true" isSslEnabled="false" />
       <method v="2" />
     </configuration>
   </component>
@@ -148,6 +101,7 @@
       <option name="presentableId" value="Default" />
       <updated>1787625428780</updated>
       <workItem from="1787625429922" duration="248000" />
+      <workItem from="1787628591924" duration="159000" />
     </task>
     <servers />
   </component>
