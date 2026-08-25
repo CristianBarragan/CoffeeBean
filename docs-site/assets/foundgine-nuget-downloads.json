@@ -1,45 +1,45 @@
 {
   "schemaVersion": 1,
   "label": "NuGet Downloads",
-  "message": "10,275",
+  "message": "10,941",
   "color": "blue",
-  "generatedAt": "2026-08-25T07:11:30.2941301Z",
-  "totalDownloads": 10275,
+  "generatedAt": "2026-08-25T13:14:43.1871052Z",
+  "totalDownloads": 10941,
   "packageCount": 19,
   "packages": [
     {
       "id": "Foundgine",
-      "downloads": 627,
+      "downloads": 643,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.Abstractions",
-      "downloads": 1309,
+      "downloads": 1426,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.Agent.OpenAI",
-      "downloads": 343,
+      "downloads": 349,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.AI",
-      "downloads": 354,
+      "downloads": 359,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.Aot",
-      "downloads": 503,
+      "downloads": 506,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.Authorization",
-      "downloads": 41,
+      "downloads": 63,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.CoffeeBeanery.Product",
-      "downloads": 94,
+      "downloads": 95,
       "version": "0.3.0"
     },
     {
@@ -49,32 +49,32 @@
     },
     {
       "id": "Foundgine.Execution",
-      "downloads": 873,
+      "downloads": 927,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.GraphQL.HotChocolate",
-      "downloads": 552,
+      "downloads": 583,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.GraphQL.HotChocolate.Mutations",
-      "downloads": 474,
+      "downloads": 565,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.HighAssurance.Postgres",
-      "downloads": 40,
+      "downloads": 42,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.InMemory",
-      "downloads": 545,
+      "downloads": 552,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.Intent.Json",
-      "downloads": 632,
+      "downloads": 735,
       "version": "1.0.0"
     },
     {
@@ -84,22 +84,22 @@
     },
     {
       "id": "Foundgine.Metadata",
-      "downloads": 764,
+      "downloads": 807,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.Planning",
-      "downloads": 926,
+      "downloads": 987,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.Semantics",
-      "downloads": 1159,
+      "downloads": 1259,
       "version": "1.0.0"
     },
     {
       "id": "Foundgine.Sql",
-      "downloads": 516,
+      "downloads": 520,
       "version": "1.0.0"
     }
   ]
