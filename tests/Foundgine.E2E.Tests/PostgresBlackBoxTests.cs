@@ -34,8 +34,7 @@ public sealed class PostgresBlackBoxTests
  new FoundgineOptions
  {
  Model = BankingSemanticModel.Build(),
- AuthorizationPolicy = new TenantPolicy(),
- ExpectedWarrantIssuer = "test-issuer"
+ AuthorizationPolicy = new TenantPolicy()
  },
  new SqlCompiler(BankingRelationalMetadata.Build()),
  new SqlExecutionProvider(connection, transaction));
@@ -81,8 +80,7 @@ public sealed class PostgresBlackBoxTests
  new FoundgineOptions
  {
  Model = BankingSemanticModel.Build(),
- AuthorizationPolicy = new TenantPolicy(),
- ExpectedWarrantIssuer = "test-issuer"
+ AuthorizationPolicy = new TenantPolicy()
  },
  new SqlCompiler(BankingRelationalMetadata.Build()),
  new SqlExecutionProvider(connection, transaction));

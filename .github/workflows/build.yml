@@ -220,12 +220,17 @@ jobs:
 
       # E2E tests are deliberately excluded. They have their own PostgreSQL
       # integration gate below so unit and integration tests never overlap.
+      # The SupplyChain pentest suite is excluded for the same reason: it
+      # needs its own Postgres container (samples/Foundgine.SupplyChain.PenTest/
+      # docker-compose.yml, port 4431) and is gated behind
+      # FOUNDGINE_SUPPLYCHAIN_PENTEST so it skips cleanly here instead of
+      # burning its readiness-retry budget with no container present.
       - name: Run unit tests
         run: |
           dotnet test Foundgine.sln \
             --no-build \
             --configuration Release \
-            --filter "FullyQualifiedName!~Foundgine.E2E.Tests" \
+            --filter "FullyQualifiedName!~Foundgine.E2E.Tests&FullyQualifiedName!~Foundgine.SupplyChain.PenTest.Tests" \
             --logger "console;verbosity=normal"
 
   # ============================================================
@@ -363,6 +368,72 @@ jobs:
         run: |
           docker compose \
             -f docker-compose.postgres.yml \
+            down \
+            --volumes \
+            --remove-orphans
+
+
+  # ============================================================
+  # SupplyChain pentest suite (GraphQL + MCP transports)
+  # Gated behind FOUNDGINE_SUPPLYCHAIN_PENTEST so it never runs as part of
+  # unit-tests (see filter above). Runs against its own Postgres container
+  # (samples/Foundgine.SupplyChain.PenTest/docker-compose.yml, port 4431)
+  # started and seeded here, independent of the general E2E Postgres.
+  # ============================================================
+  security-penetration-supplychain:
+    name: Security Penetration Test — SupplyChain (GraphQL + MCP)
+    needs:
+      - build-pack
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore Foundgine.sln
+
+      - name: Build
+        run: dotnet build Foundgine.sln --no-restore --configuration Release
+
+      - name: Start SupplyChain pentest PostgreSQL and seed data
+        run: |
+          docker compose \
+            -f samples/Foundgine.SupplyChain.PenTest/docker-compose.yml \
+            up -d --wait postgres
+
+          docker compose \
+            -f samples/Foundgine.SupplyChain.PenTest/docker-compose.yml \
+            run --rm seed
+
+      - name: Run SupplyChain pentest suite
+        run: |
+          set -euo pipefail
+          export FOUNDGINE_SUPPLYCHAIN_PENTEST=1
+
+          dotnet test \
+            samples/Foundgine.SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --logger "console;verbosity=normal"
+
+      - name: PostgreSQL diagnostics on failure
+        if: failure()
+        run: |
+          docker compose \
+            -f samples/Foundgine.SupplyChain.PenTest/docker-compose.yml \
+            logs --no-color postgres seed
+
+      - name: Stop SupplyChain pentest PostgreSQL
+        if: always()
+        run: |
+          docker compose \
+            -f samples/Foundgine.SupplyChain.PenTest/docker-compose.yml \
             down \
             --volumes \
             --remove-orphans
@@ -618,8 +689,8 @@ jobs:
       - unit-tests
       - integration-tests
       - security-penetration
+      - security-penetration-supplychain
       - security-adversarial
-      - security-semantic-penetration
       - benchmark-build
 
     runs-on: ubuntu-latest

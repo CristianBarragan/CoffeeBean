@@ -49,8 +49,11 @@ public static class SecurityWarrantVerifier
             throw new InvalidOperationException("Security warrant expiry must be after issued-at.");
         if (!warrant.IsTimeValid(now))
             throw new InvalidOperationException("Security warrant is expired or not yet valid.");
-        if (string.IsNullOrWhiteSpace(expectedIssuer))
-            throw new InvalidOperationException("Security warrant verification requires an explicit trusted issuer.");
+        // Fail closed: an unconfigured expected issuer is a host misconfiguration,
+        // not an implicit "trust any issuer" decision. Callers that genuinely want
+        // to skip issuer trust must do so explicitly, not by leaving this null.
+        if (expectedIssuer is null)
+            throw new InvalidOperationException("Security warrant verification requires a configured expected issuer.");
         if (!StringComparer.Ordinal.Equals(warrant.Issuer, expectedIssuer))
             throw new InvalidOperationException("Security warrant issuer is not trusted.");
         if (expectedAudience is not null && !StringComparer.Ordinal.Equals(warrant.Audience, expectedAudience))

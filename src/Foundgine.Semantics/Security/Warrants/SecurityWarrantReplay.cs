@@ -2,13 +2,12 @@ using System.Collections.Concurrent;
 
 namespace Foundgine.Semantics.Security.Warrants;
 
-/// <summary>Single-use replay protection for a signed warrant nonce. Implementations must provide atomic consume semantics for their deployment scope.</summary>
+/// <summary>Single-use replay protection for a signed warrant nonce.</summary>
 public interface ISecurityWarrantReplayStore
 {
     bool TryConsume(string warrantId, string nonce);
 }
 
-/// <summary>Process-local replay protection. Do not use this implementation as the sole replay boundary across multiple application instances.</summary>
 public sealed class MemorySecurityWarrantReplayStore : ISecurityWarrantReplayStore
 {
     private readonly ConcurrentDictionary<string, byte> _used = new(StringComparer.Ordinal);

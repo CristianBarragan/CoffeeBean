@@ -29,8 +29,7 @@ public sealed class FoundgineEngine : IFoundgine
     private readonly SemanticVersionSet _versions;
     private readonly SemanticCapabilityContract _securityContract;
     private readonly ISecurityWarrantKeyResolver? _warrantKeyResolver;
-    private readonly string _expectedWarrantIssuer;
-    private readonly ISecurityWarrantDelegationTrustResolver? _warrantDelegationTrustResolver;
+    private readonly string? _expectedWarrantIssuer;
     private readonly ISecurityWarrantReplayStore? _warrantReplayStore;
     private readonly SecurityResourceLimits _securityResourceLimits;
     private readonly string _cacheNamespace = Guid.NewGuid().ToString("N");
@@ -54,8 +53,7 @@ public sealed class FoundgineEngine : IFoundgine
         _securityContract = SemanticCapabilityContractDiscovery.Describe(_model, _authorizationPolicy);
         SecurityInvariantContractValidator.EnsureContractValid(_securityContract);
         _warrantKeyResolver = options.WarrantKeyResolver;
-        _expectedWarrantIssuer = RequireExpectedIssuer(options.ExpectedWarrantIssuer);
-        _warrantDelegationTrustResolver = options.WarrantDelegationTrustResolver;
+        _expectedWarrantIssuer = options.ExpectedWarrantIssuer;
         _warrantReplayStore = options.WarrantReplayStore;
         _securityResourceLimits = options.SecurityResourceLimits ?? new SecurityResourceLimits();
         _securityResourceLimits.Validate();
@@ -71,8 +69,7 @@ public sealed class FoundgineEngine : IFoundgine
         IPlanner planner,
         IProviderPlanCompiler compiler,
         IExecutionProvider provider,
-        IProviderPlanCache? planCache = null,
-        string? expectedWarrantIssuer = null)
+        IProviderPlanCache? planCache = null)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _authorizationPolicy = authorizationPolicy ?? throw new ArgumentNullException(nameof(authorizationPolicy));
@@ -85,7 +82,6 @@ public sealed class FoundgineEngine : IFoundgine
         _securityContract = SemanticCapabilityContractDiscovery.Describe(_model, _authorizationPolicy);
         SecurityInvariantContractValidator.EnsureContractValid(_securityContract);
         _securityResourceLimits = new SecurityResourceLimits();
-        _expectedWarrantIssuer = RequireExpectedIssuer(expectedWarrantIssuer);
     }
 
     public SemanticAuthorizationCapabilities DescribeCapabilities() =>
@@ -120,15 +116,12 @@ public sealed class FoundgineEngine : IFoundgine
             throw new InvalidOperationException(
                 "Warrant-backed capability discovery requires a warrant key resolver.");
 
-        SecurityWarrantExecutionTrust.Verify(
+        SecurityWarrantVerifier.Verify(
             security.Warrant,
             _warrantKeyResolver,
-            _expectedWarrantIssuer,
-            security.Audience,
             DateTimeOffset.UtcNow,
-            security.DelegationChain,
-            _warrantDelegationTrustResolver,
-            security.Tenant);
+            _expectedWarrantIssuer,
+            security.Audience);
     }
 
     public SemanticVersionSet DescribeVersionSet() => _versions;
@@ -255,11 +248,6 @@ public sealed class FoundgineEngine : IFoundgine
             executionIr,
             cancellationToken);
     }
-    private static string RequireExpectedIssuer(string? issuer) =>
-        string.IsNullOrWhiteSpace(issuer)
-            ? throw new InvalidOperationException("Foundgine warrant execution requires FoundgineOptions.ExpectedWarrantIssuer.")
-            : issuer;
-
     private string BuildProviderPlanCacheKey(
         SemanticPlan plan,
         SecurityExecutionContext? security)
@@ -287,15 +275,12 @@ public sealed class FoundgineEngine : IFoundgine
             throw new InvalidOperationException(
                 "A security warrant was supplied, but no warrant key resolver is configured.");
 
-        SecurityWarrantExecutionTrust.Verify(
+        SecurityWarrantVerifier.Verify(
             security.Warrant,
             _warrantKeyResolver,
-            _expectedWarrantIssuer,
-            security.Audience,
             DateTimeOffset.UtcNow,
-            security.DelegationChain,
-            _warrantDelegationTrustResolver,
-            security.Tenant);
+            _expectedWarrantIssuer,
+            security.Audience);
 
         var capabilities = operation.Root.TraverseDepthFirst()
             .Select(node => _securityContract.Capabilities.FirstOrDefault(c =>

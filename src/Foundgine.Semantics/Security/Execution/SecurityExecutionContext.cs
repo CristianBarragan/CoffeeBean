@@ -12,30 +12,28 @@ public sealed record SecurityExecutionContext(
     string Subject,
     string Audience,
     string? Tenant = null,
-    string? ResourceScope = null,
-    IReadOnlyList<SecurityWarrant>? DelegationChain = null)
+    string? ResourceScope = null)
 {
     /// <summary>
     /// Stable authority partition used to prevent cross-warrant provider-plan cache reuse.
     /// The full warrant digest is intentional and includes nonce/signature, making the
     /// cache boundary conservative rather than attempting to infer authority equivalence.
     /// </summary>
-    /// <summary>
-    /// The exact warrant ancestry used for execution. A delegated warrant must be
-    /// accompanied by its complete root-to-leaf chain so ancestry cannot be inferred
-    /// from attacker-controlled metadata alone.
-    /// </summary>
-    public IReadOnlyList<SecurityWarrant> EffectiveDelegationChain =>
-        DelegationChain ?? [Warrant];
-
     public string AuthorityCachePartition =>
         string.Join(
-            "|",
-            Encode(Subject),
-            Encode(Audience),
-            Encode(Tenant ?? "-"),
-            Encode(ResourceScope ?? "-"),
-            Warrant.Digest);
+            '|',
+            Escape(Subject),
+            Escape(Audience),
+            Escape(Tenant ?? "-"),
+            Escape(ResourceScope ?? "-"),
+            Escape(Warrant.Digest));
 
-    private static string Encode(string value) => $"{value.Length}:{value}";
+    /// <summary>
+    /// Escapes the field delimiter and its own escape character so that field
+    /// boundaries in the joined partition string cannot be forged by a field's
+    /// own content (e.g. "agent|a" vs "agent" + "a|foundgine" would otherwise
+    /// alias to the same partition string).
+    /// </summary>
+    private static string Escape(string value) =>
+        value.Replace("\\", "\\\\").Replace("|", "\\|");
 }
