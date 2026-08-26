@@ -12,7 +12,7 @@
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="README.md" />
     <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
-    <PackageReference Include="HotChocolate.Language" Version="15.1.16" />
+    <PackageReference Include="HotChocolate.Language" Version="16.6.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Foundgine.Semantics/Foundgine.Semantics.csproj" />
