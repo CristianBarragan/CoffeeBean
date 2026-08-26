@@ -21,7 +21,7 @@
     <ProjectReference Include="../../src/Foundgine.InMemory/Foundgine.InMemory.csproj" />
     <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" />
     <ProjectReference Include="../../src/Foundgine.Intent.Json/Foundgine.Intent.Json.csproj" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
     <PackageReference Include="Npgsql" Version="9.0.4" />
   </ItemGroup>
   <ItemGroup>
