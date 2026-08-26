@@ -336,13 +336,13 @@ Run it from the repository root:
 dotnet run --project samples/Foundgine.SupplyChain/Api/Foundgine.SupplyChain.Api.csproj
 ```
 
-Set the connection string first:
+Set the connection string first (matching the sample's `docker-compose.yml`: port `4429`, database `foundgine_supply_chain`, user `benchmark`):
 
 ```powershell
-$env:SupplyChainConnectionString="Host=localhost;Port=55432;Database=foundgine_supply_chain;Username=foundgine;Password=foundgine"
+$env:SupplyChainConnectionString="Host=localhost;Port=4429;Database=foundgine_supply_chain;Username=benchmark;Password=benchmark"
 ```
 
-Or use the sample's Docker Compose environment:
+Or use the sample's Docker Compose environment, which starts both PostgreSQL *and* the API in containers — so if you use this, skip the `dotnet run` step above, since the API is already running on `localhost:4422`:
 
 ```powershell
 cd samples/Foundgine.SupplyChain

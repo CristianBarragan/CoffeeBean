@@ -42,7 +42,7 @@ The domain project contains two intentionally different concepts.
 
 ### Storage records
 
-`*Record` types describe physical storage-facing entities and are decorated with `FoundgineEntity`/`FoundgineField`/`FoundgineRelationship`.
+`*ERP` types describe physical storage-facing entities and are decorated with `FoundgineEntity`/`FoundgineField`/`FoundgineRelationship`.
 
 Examples:
 
