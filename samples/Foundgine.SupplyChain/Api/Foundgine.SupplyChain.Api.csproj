@@ -2,7 +2,7 @@
   <PropertyGroup><TargetFramework>net9.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.0.0" />
-    <PackageReference Include="Npgsql" Version="9.0.4" />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
     <ProjectReference Include="../Application/Foundgine.SupplyChain.Application.csproj" />
     <ProjectReference Include="../Infrastructure/Foundgine.SupplyChain.Infrastructure.csproj" />
     <ProjectReference Include="../../../src/Foundgine.MCP/Foundgine.MCP.csproj" />
