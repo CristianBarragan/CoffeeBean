@@ -27,7 +27,12 @@ public sealed class PublicApiTests
         var services = new ServiceCollection();
         services.AddSingleton<IProviderPlanCompiler>(compiler);
         services.AddSingleton<IExecutionProvider>(provider);
-        services.AddFoundgine(model, policy);
+        services.AddFoundgine(options =>
+        {
+            options.Model = model;
+            options.AuthorizationPolicy = policy;
+            options.ExpectedWarrantIssuer = "test-issuer";
+        });
 
         var engine = services.BuildServiceProvider().GetRequiredService<IFoundgine>();
 

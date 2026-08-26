@@ -18,7 +18,12 @@ var policy = new AllowAllSemanticAuthorizationPolicy();
 
 builder.Services.AddSingleton<IProviderPlanCompiler>(_ => new SqlCompiler(metadata));
 builder.Services.AddSingleton<IExecutionProvider>(_ => new PooledSqlExecutionProvider(cs));
-builder.Services.AddFoundgine(model, policy);
+builder.Services.AddFoundgine(options =>
+{
+    options.Model = model;
+    options.AuthorizationPolicy = policy;
+    options.ExpectedWarrantIssuer = "mcp-foundgine-benchmark";
+});
 builder.Services.AddFoundgineMcp(() => new ExecutionContext());
 builder.Services.AddMcpServer()
     .WithHttpTransport(o => o.Stateless = true)

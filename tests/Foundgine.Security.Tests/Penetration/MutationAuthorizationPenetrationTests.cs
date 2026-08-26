@@ -1,6 +1,7 @@
 using Foundgine.Abstractions;
 using Foundgine.Planning.Mutation;
 using Foundgine.Semantics.Authorization;
+using Foundgine.Semantics.Mutation;
 using Foundgine.Semantics.Query;
 using Xunit;
 
@@ -52,6 +53,69 @@ public sealed class MutationAuthorizationPenetrationTests
 
         Assert.Throws<SemanticAuthorizationException>(() =>
             new MutationAuthorizer(schema, new AllowOnlyFieldPolicy(new FieldId(1))).Authorize(plan));
+    }
+
+    // SEC-21: a batch cannot smuggle an unauthorized operation past authorization
+    // by pairing it with an authorized one. This exercises the exact semantic
+    // representation FoundgineMutationEngine authorizes as a whole before any
+    // lowering to execution IR occurs (see FoundgineMutationEngine.AuthorizeAndPlan),
+    // so a rejection here can never leave part of the batch already applied.
+    [Fact]
+    public void Batch_with_one_unauthorized_operation_rejects_the_entire_batch_when_unauthorized_op_is_last()
+    {
+        var entity = Entity(1, "Account", (1, 11), (2, 12));
+        var schema = new TestSchema(entity);
+        var policy = new AllowOnlyFieldPolicy(new FieldId(1));
+        var graph = new SemanticMutationOperationGraph([
+            SemanticMutationBuilder.Update(entity.Id, [new SemanticMutationField(new FieldId(1), "ok")]),
+            SemanticMutationBuilder.Update(entity.Id, [new SemanticMutationField(new FieldId(2), "attacker")])
+        ]);
+        var semanticPlan = new SemanticMutationPlanner().Plan(graph);
+
+        var exception = Assert.Throws<SemanticAuthorizationException>(() =>
+            new MutationAuthorizer(schema, policy).Authorize(semanticPlan));
+
+        Assert.Contains("field", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Batch_with_one_unauthorized_operation_rejects_the_entire_batch_when_unauthorized_op_is_first()
+    {
+        var entity = Entity(1, "Account", (1, 11), (2, 12));
+        var schema = new TestSchema(entity);
+        var policy = new AllowOnlyFieldPolicy(new FieldId(1));
+        var graph = new SemanticMutationOperationGraph([
+            SemanticMutationBuilder.Update(entity.Id, [new SemanticMutationField(new FieldId(2), "attacker")]),
+            SemanticMutationBuilder.Update(entity.Id, [new SemanticMutationField(new FieldId(1), "ok")])
+        ]);
+        var semanticPlan = new SemanticMutationPlanner().Plan(graph);
+
+        // Ordering must not matter: an unauthorized operation cannot be
+        // smuggled through by placing it ahead of, or behind, a benign one.
+        Assert.Throws<SemanticAuthorizationException>(() =>
+            new MutationAuthorizer(schema, policy).Authorize(semanticPlan));
+    }
+
+    [Fact]
+    public void Batch_authorization_does_not_leak_a_partially_authorized_plan_to_the_caller()
+    {
+        var entity = Entity(1, "Account", (1, 11), (2, 12));
+        var schema = new TestSchema(entity);
+        var policy = new AllowOnlyFieldPolicy(new FieldId(1));
+        var graph = new SemanticMutationOperationGraph([
+            SemanticMutationBuilder.Update(entity.Id, [new SemanticMutationField(new FieldId(1), "ok")]),
+            SemanticMutationBuilder.Update(entity.Id, [new SemanticMutationField(new FieldId(2), "attacker")])
+        ]);
+        var semanticPlan = new SemanticMutationPlanner().Plan(graph);
+
+        SemanticMutationPlan? authorized = null;
+        var exception = Record.Exception(() =>
+            authorized = new MutationAuthorizer(schema, policy).Authorize(semanticPlan));
+
+        // A caller (e.g. the execution lowering step) must never observe a
+        // returned plan when any operation in the batch failed authorization.
+        Assert.IsType<SemanticAuthorizationException>(exception);
+        Assert.Null(authorized);
     }
 
     private static MutationEntitySchema Entity(int id, string name, params (int Field, int Column)[] fields)

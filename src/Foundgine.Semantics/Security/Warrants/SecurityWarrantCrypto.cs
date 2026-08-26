@@ -49,7 +49,9 @@ public static class SecurityWarrantVerifier
             throw new InvalidOperationException("Security warrant expiry must be after issued-at.");
         if (!warrant.IsTimeValid(now))
             throw new InvalidOperationException("Security warrant is expired or not yet valid.");
-        if (expectedIssuer is not null && !StringComparer.Ordinal.Equals(warrant.Issuer, expectedIssuer))
+        if (string.IsNullOrWhiteSpace(expectedIssuer))
+            throw new InvalidOperationException("Security warrant verification requires an explicit trusted issuer.");
+        if (!StringComparer.Ordinal.Equals(warrant.Issuer, expectedIssuer))
             throw new InvalidOperationException("Security warrant issuer is not trusted.");
         if (expectedAudience is not null && !StringComparer.Ordinal.Equals(warrant.Audience, expectedAudience))
             throw new InvalidOperationException("Security warrant audience is not trusted.");

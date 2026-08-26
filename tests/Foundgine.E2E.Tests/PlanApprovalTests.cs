@@ -61,7 +61,8 @@ public sealed class PlanApprovalTests
             new AllowAllSemanticAuthorizationPolicy(),
             new Planner(),
             new TestProviderPlanCompiler(),
-            provider);
+            provider,
+            expectedWarrantIssuer: "test-issuer");
     }
 
     private static SemanticRequest Request() => new(

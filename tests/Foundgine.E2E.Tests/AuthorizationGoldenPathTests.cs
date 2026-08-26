@@ -26,7 +26,7 @@ public sealed class AuthorizationGoldenPathTests
         var compiler = new CapturingCompiler();
         var provider = new CapturingProvider();
         var engine = new FoundgineEngine(
-            new FoundgineOptions { Model = model, AuthorizationPolicy = policy },
+            new FoundgineOptions { Model = model, AuthorizationPolicy = policy, ExpectedWarrantIssuer = "test-issuer" },
             compiler,
             provider);
 
@@ -45,7 +45,7 @@ public sealed class AuthorizationGoldenPathTests
         var compiler = new CapturingCompiler();
         var provider = new CapturingProvider();
         var engine = new FoundgineEngine(
-            new FoundgineOptions { Model = Banking.BankingSemanticModel.Build(), AuthorizationPolicy = policy },
+            new FoundgineOptions { Model = Banking.BankingSemanticModel.Build(), AuthorizationPolicy = policy, ExpectedWarrantIssuer = "test-issuer" },
             compiler,
             provider);
 

@@ -190,7 +190,8 @@ public sealed class BlackBoxAdversarialEngineTests
  new FoundgineOptions
  {
  Model = BankingSemanticModel.Build(),
- AuthorizationPolicy = policy
+ AuthorizationPolicy = policy,
+ ExpectedWarrantIssuer = "test-issuer"
  },
  compiler ?? new SqlCompiler(metadata),
  provider);

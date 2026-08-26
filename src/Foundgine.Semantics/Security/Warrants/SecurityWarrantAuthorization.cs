@@ -45,10 +45,21 @@ public static class SecurityWarrantAuthorization
             return false;
 
         var c = warrant.Constraints;
-        if (tenant is not null && c.AllowedTenants.Count > 0 && !c.AllowedTenants.Contains(tenant, StringComparer.Ordinal)) return false;
+
+        // Fail closed when the warrant carries a tenant restriction but the
+        // caller supplies no tenant. A missing tenant must never be treated as
+        // an implicit match for a tenant-scoped authority.
+        if (c.AllowedTenants.Count > 0 &&
+            (tenant is null || !c.AllowedTenants.Contains(tenant, StringComparer.Ordinal))) return false;
+
         if (c.AllowedOperations.Count > 0 && !c.AllowedOperations.Contains(operation, StringComparer.Ordinal)) return false;
+
+        // Likewise, a constrained resource scope requires an explicit runtime
+        // scope. This prevents null/absent resource context from bypassing a
+        // resource-scoped warrant.
         if (requireResourceScopeMatch &&
-            resourceScope is not null && c.ResourceScopes.Count > 0 && !c.ResourceScopes.Contains(resourceScope, StringComparer.Ordinal)) return false;
+            c.ResourceScopes.Count > 0 &&
+            (resourceScope is null || !c.ResourceScopes.Contains(resourceScope, StringComparer.Ordinal))) return false;
         if (requestedResults is not null && c.MaxResults is not null && requestedResults > c.MaxResults) return false;
         if (requestedAmount is not null && c.MaxAmount is not null && requestedAmount > c.MaxAmount) return false;
         return true;

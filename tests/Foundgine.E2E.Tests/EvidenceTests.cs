@@ -99,7 +99,8 @@ public sealed class EvidenceTests
             new Foundgine.FoundgineOptions
             {
                 Model = Banking.BankingSemanticModel.Build(),
-                AuthorizationPolicy = new AllowAllSemanticAuthorizationPolicy()
+                AuthorizationPolicy = new AllowAllSemanticAuthorizationPolicy(),
+                ExpectedWarrantIssuer = "test-issuer"
             },
             compiler,
             provider);
