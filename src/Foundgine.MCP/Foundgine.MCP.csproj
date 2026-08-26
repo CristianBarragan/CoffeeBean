@@ -15,7 +15,7 @@
     <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
     <ProjectReference Include="../Foundgine/Foundgine.csproj" />
     <ProjectReference Include="../Foundgine.Intent.Json/Foundgine.Intent.Json.csproj" />
-    <PackageReference Include="ModelContextProtocol" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
   </ItemGroup>
 </Project>
