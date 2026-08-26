@@ -23,7 +23,8 @@ public sealed class AuthorizationCapabilityTests
             new FoundgineOptions
             {
                 Model = model,
-                AuthorizationPolicy = policy
+                AuthorizationPolicy = policy,
+                ExpectedWarrantIssuer = "test-issuer"
             },
             new TestProviderPlanCompiler(),
             new TestExecutionProvider());

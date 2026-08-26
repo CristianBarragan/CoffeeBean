@@ -24,6 +24,7 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
     private readonly SemanticCapabilityContract _securityContract;
     private readonly ISecurityWarrantKeyResolver? _warrantKeyResolver;
     private readonly string? _expectedWarrantIssuer;
+    private readonly ISecurityWarrantDelegationTrustResolver? _warrantDelegationTrustResolver;
     private readonly ISecurityWarrantReplayStore? _warrantReplayStore;
     private readonly SecurityResourceLimits _securityResourceLimits;
 
@@ -35,7 +36,8 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
         ISecurityWarrantKeyResolver? warrantKeyResolver = null,
         string? expectedWarrantIssuer = null,
         ISecurityWarrantReplayStore? warrantReplayStore = null,
-        SecurityResourceLimits? securityResourceLimits = null)
+        SecurityResourceLimits? securityResourceLimits = null,
+        ISecurityWarrantDelegationTrustResolver? warrantDelegationTrustResolver = null)
     {
         _schema = schema ?? throw new ArgumentNullException(nameof(schema));
         _policy = policy ?? throw new ArgumentNullException(nameof(policy));
@@ -46,6 +48,7 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
         SecurityInvariantContractValidator.EnsureContractValid(_securityContract);
         _warrantKeyResolver = warrantKeyResolver;
         _expectedWarrantIssuer = expectedWarrantIssuer;
+        _warrantDelegationTrustResolver = warrantDelegationTrustResolver;
         _warrantReplayStore = warrantReplayStore;
         _securityResourceLimits = securityResourceLimits ?? new SecurityResourceLimits();
         _securityResourceLimits.Validate();
@@ -127,12 +130,18 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
         if (_warrantKeyResolver is null)
             throw new InvalidOperationException("A security warrant was supplied, but no warrant key resolver is configured.");
 
-        SecurityWarrantVerifier.Verify(
+        if (string.IsNullOrWhiteSpace(_expectedWarrantIssuer))
+            throw new InvalidOperationException("Warrant-backed mutation execution requires an explicit trusted issuer.");
+
+        SecurityWarrantExecutionTrust.Verify(
             security.Warrant,
             _warrantKeyResolver,
-            DateTimeOffset.UtcNow,
             _expectedWarrantIssuer,
-            security.Audience);
+            security.Audience,
+            DateTimeOffset.UtcNow,
+            security.DelegationChain,
+            _warrantDelegationTrustResolver,
+            security.Tenant);
 
         foreach (var operation in request.Graph.Operations)
         {

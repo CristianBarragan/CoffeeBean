@@ -26,7 +26,8 @@ public sealed class PlanCacheTests
             {
                 Model = Banking.BankingSemanticModel.Build(),
                 AuthorizationPolicy = new TenantPolicy(),
-                PlanCache = cache
+                PlanCache = cache,
+                ExpectedWarrantIssuer = "test-issuer"
             },
             compiler,
             new TestExecutionProvider());
@@ -51,7 +52,8 @@ public sealed class PlanCacheTests
             {
                 Model = Banking.BankingSemanticModel.Build(),
                 AuthorizationPolicy = policy,
-                PlanCache = new MemoryProviderPlanCache()
+                PlanCache = new MemoryProviderPlanCache(),
+                ExpectedWarrantIssuer = "test-issuer"
             },
             compiler,
             new TestExecutionProvider());
@@ -75,7 +77,8 @@ public sealed class PlanCacheTests
             {
                 Model = Banking.BankingSemanticModel.Build(),
                 AuthorizationPolicy = new TenantPolicy(),
-                PlanCache = new MemoryProviderPlanCache()
+                PlanCache = new MemoryProviderPlanCache(),
+                ExpectedWarrantIssuer = "test-issuer"
             },
             compiler,
             new TestExecutionProvider());

@@ -10,18 +10,18 @@ The attacker model assumes that an upstream authorization dependency can be comp
 
 | ID | Attack | Expected result |
 |---|---|---|
-| PT-001 | Compromised authorizer attempts transfer from an account not owned by actor | Denied; no state mutation |
-| PT-002 | Single transfer exceeds source daily limit | Denied; no state mutation |
-| PT-003 | Batch splits transfers to exceed source daily limit | Denied; entire transaction rolled back |
-| PT-004 | Caller supplies a tenant different from account tenant | Denied; no state mutation |
-| PT-005 | Compromised authorizer attempts to bypass daily limit | Denied; no state mutation |
-| PT-006 | Authorization evidence changes before commit | Denied; existing regression coverage |
-| PT-007 | Idempotency replay with altered request | Denied; existing regression coverage |
-| PT-008 | Frozen-account mutation | Denied; existing regression coverage |
+| SEC-001 | Compromised authorizer attempts transfer from an account not owned by actor | Denied; no state mutation |
+| SEC-002 | Single transfer exceeds source daily limit | Denied; no state mutation |
+| SEC-003 | Batch splits transfers to exceed source daily limit | Denied; entire transaction rolled back |
+| SEC-004 | Caller supplies a tenant different from account tenant | Denied; no state mutation |
+| SEC-005 | Compromised authorizer attempts to bypass daily limit | Denied; no state mutation |
+| SEC-006 | Authorization evidence changes before commit | Denied; existing regression coverage |
+| SEC-007 | Idempotency replay with altered request | Denied; existing regression coverage |
+| SEC-008 | Frozen-account mutation | Denied; existing regression coverage |
 
 ## Findings fixed by this pass
 
-### PT-F001 — PostgreSQL execution did not independently enforce ownership
+### SEC-F001 — PostgreSQL execution did not independently enforce ownership
 
 **Severity:** High
 
@@ -29,7 +29,7 @@ The PostgreSQL executor previously delegated ownership entirely to `_authorize`.
 
 **Fix:** `ValidateExecution` now independently requires the actor to own both source and destination accounts before mutation.
 
-### PT-F002 — PostgreSQL execution did not enforce the source daily limit
+### SEC-F002 — PostgreSQL execution did not enforce the source daily limit
 
 **Severity:** High
 
@@ -37,7 +37,7 @@ The semantic capability declared the daily-limit invariant, and the in-memory im
 
 **Fix:** Single-transfer execution now enforces `daily_transferred + amount <= daily_limit` while holding the account row locks.
 
-### PT-F003 — PostgreSQL batch execution could split a daily-limit violation across commands
+### SEC-F003 — PostgreSQL batch execution could split a daily-limit violation across commands
 
 **Severity:** High
 

@@ -55,7 +55,12 @@ var data = new InMemoryDataSet()
 var services = new ServiceCollection();
 services.AddSingleton<IProviderPlanCompiler>(_ => new InMemoryCompiler(metadata, data));
 services.AddSingleton<IExecutionProvider>(_ => new InMemoryExecutionProvider(metadata, data));
-services.AddFoundgine(model, new AllowAllSemanticAuthorizationPolicy());
+services.AddFoundgine(options =>
+{
+    options.Model = model;
+    options.AuthorizationPolicy = new AllowAllSemanticAuthorizationPolicy();
+    options.ExpectedWarrantIssuer = "foundgine-agent-openai-sample";
+});
 
 await using var provider = services.BuildServiceProvider();
 var foundgine = provider.GetRequiredService<IFoundgine>();

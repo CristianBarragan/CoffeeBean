@@ -29,7 +29,10 @@ public sealed class FoundgineOptions
     /// <summary>Optional trusted issuer expected on incoming warrants.</summary>
     public string? ExpectedWarrantIssuer { get; set; }
 
-    /// <summary>Optional replay store used when executing warrant-backed requests.</summary>
+    /// <summary>Trusted issuer/delegation policy used for delegated warrants.</summary>
+    public ISecurityWarrantDelegationTrustResolver? WarrantDelegationTrustResolver { get; set; }
+
+    /// <summary>Replay store used when executing warrant-backed requests. Use a shared/durable implementation for multi-instance deployments.</summary>
     public ISecurityWarrantReplayStore? WarrantReplayStore { get; set; }
 
     /// <summary>Canonical engine-side bounds for untrusted semantic request complexity.</summary>

@@ -172,9 +172,16 @@ jobs:
           echo "API did not become ready in time" >&2
           exit 1
 
+      - name: MCP protocol security fuzzing
+        shell: pwsh
+        env:
+          FOUNDGINE_TARGET_URL: http://localhost:4422/mcp
+        run: ./security/pentest/mcp-protocol-fuzz.ps1
+
       # Passive scan only (no active exploit attempts) — safe to run
-      # against a real endpoint without risking state. MCP-specific
-      # protocol fuzzing is a separate effort (see MCP Inspector).
+      # against a real endpoint without risking state. The repository MCP
+      # protocol corpus has already run immediately above; MCP Inspector can
+      # be used for deeper interactive protocol coverage.
       #
       # allow_issue_writing is disabled because this workflow only grants
       # `permissions: contents: read` at the top level — the action would
