@@ -419,6 +419,58 @@ jobs:
 
 
   # ============================================================
+  # Foundgine semantic penetration suite
+  # Explicitly runs the security test project added for capability,
+  # mutation, plan-integrity, transport-boundary and resource-exhaustion
+  # attacks. This is intentionally a separate release gate even though
+  # the project is also included in the solution/unit-test surface.
+  # ============================================================
+  security-semantic-penetration:
+    name: Security Penetration Test — Foundgine Semantic Boundary
+    needs:
+      - build-pack
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore Foundgine.sln
+
+      - name: Build
+        run: dotnet build Foundgine.sln --no-restore --configuration Release
+
+      - name: Run Foundgine penetration tests
+        run: |
+          set -euo pipefail
+
+          dotnet test \
+            tests/Foundgine.Security.Tests/Foundgine.Security.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --logger "trx;LogFileName=foundgine-security-penetration.trx" \
+            --logger "console;verbosity=normal"
+
+      - name: Upload penetration test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundgine-security-penetration-results
+          path: |
+            tests/Foundgine.Security.Tests/TestResults/*.trx
+            security/pentest/*.md
+          if-no-files-found: warn
+
+
+  # ============================================================
   # Benchmark projects — outside Foundgine.sln, so verify them
   # independently rather than treating solution build as coverage.
   # ============================================================
@@ -567,6 +619,7 @@ jobs:
       - integration-tests
       - security-penetration
       - security-adversarial
+      - security-semantic-penetration
       - benchmark-build
 
     runs-on: ubuntu-latest
