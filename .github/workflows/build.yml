@@ -561,6 +561,11 @@ jobs:
     # IMPORTANT:
     # Publishing is blocked unless BOTH the complete build/test
     # job and PostgreSQL E2E job pass.
+    # NOTE: dependency-audit and secret-scan run in the separate
+    # security.yml workflow. `needs:` cannot reference jobs in a
+    # different workflow file, so those two are enforced instead as
+    # required status checks in branch protection (Settings > Branches
+    # > main > Require status checks to pass) rather than listed here.
     needs:
       - build-pack
       - unit-tests

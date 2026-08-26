@@ -24,4 +24,21 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
     <PackageReference Include="Npgsql" Version="9.0.4" />
   </ItemGroup>
+  <ItemGroup>
+    <!--
+      GHSA-2m69-gcr7-jv3q / CVE-2025-6965: SQLitePCLRaw.lib.e_sqlite3 (transitive,
+      via Microsoft.Data.Sqlite) bundles a SQLite build affected by a memory
+      corruption issue in aggregate term handling (fixed upstream in SQLite 3.50.2+).
+
+      Suppressed here, not upgraded, because the advisory currently lists NO patched
+      NuGet version (checked 2026-08-26: https://github.com/advisories/GHSA-2m69-gcr7-jv3q).
+      Exposure is limited: SQLitePCLRaw is a test only dependency of this E2E project;
+      it is never referenced by, or shipped in, any published Foundgine.* package.
+
+      Remove this suppression and upgrade Microsoft.Data.Sqlite as soon as a patched
+      SQLitePCLRaw.lib.e_sqlite3 version is published. Re-check periodically via:
+        dotnet list package vulnerable include-transitive (see relevant CLI flags in docs)
+    -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
+  </ItemGroup>
 </Project>

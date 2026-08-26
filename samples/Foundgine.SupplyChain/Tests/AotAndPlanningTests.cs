@@ -1,5 +1,4 @@
 using Foundgine.Abstractions;
-using Foundgine.Aot;
 using Foundgine.Generated;
 using Foundgine.Semantics;
 using Foundgine.Planning;

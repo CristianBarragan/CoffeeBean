@@ -1,9 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Foundgine.Abstractions;
-using Foundgine.Aot;
 using Foundgine.Execution;
-using Foundgine.Execution.Mutation;
 using Foundgine.Metadata;
 using Foundgine.Planning.Mutation;
 using Foundgine.Semantics.Mutation;
@@ -44,7 +42,7 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
         return ExecuteSemantic(operation, result => new
         {
             warehouseId, productId, quantity,
-            result
+            result = result.ReturnedValues
         }, ct);
     }
 
@@ -60,7 +58,7 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
                 GeneratedSemanticModel.Shipment.TrackingNumber.Set(trackingNumber),
                 GeneratedSemanticModel.Shipment.Status.Set("In Transit")
             ], GeneratedSemanticModel.Shipment.All);
-        return ExecuteSemantic(operation, result => new { shipment = result }, ct);
+        return ExecuteSemantic(operation, result => new { shipment = result.ReturnedValues }, ct);
     }
 
     public Task<object> UpdateShipment(int shipmentId, string status, CancellationToken ct)
@@ -72,28 +70,20 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
             [GeneratedSemanticModel.Shipment.Status.Set(status)],
             GeneratedSemanticModel.Shipment.Id.Eq(shipmentId),
             [GeneratedSemanticModel.Shipment.Id.Id, GeneratedSemanticModel.Shipment.Status.Id]);
-        return ExecuteSemantic(operation, result => new { shipment = result }, ct);
+        return ExecuteSemantic(operation, result => new { shipment = result.ReturnedValues }, ct);
     }
 
     private async Task<object> ExecuteSemantic(
         SemanticMutationOperation operation,
-        Func<object, object> projection,
+        Func<MutationResult, object> projection,
         CancellationToken ct)
     {
         var graph = new SemanticMutationOperationGraph([operation]);
         var plan = new MutationPlanner((IMutationSchema)_metadata).Plan(graph);
         var sqlPlan = new SqlMutationCompiler(_metadata).Compile(plan);
-
         await using var connection = await _dataSource.OpenConnectionAsync(ct);
-
-        var result = new SqlMutationExecutionProvider(
-                connection,
-                metadata: _metadata)
-            .ExecuteBatch(
-                sqlPlan,
-                new ExecutionContext(),
-                ct);
-
+        var result = new SqlMutationExecutionProvider(connection, metadata: _metadata)
+            .ExecuteBatch(sqlPlan, new ExecutionContext(), ct);
         return projection(result.Results.Single());
     }
 

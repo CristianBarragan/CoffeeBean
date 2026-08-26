@@ -335,72 +335,37 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 !entityIds.TryGetValue(entity.ToDisplayString(), out var entityId))
                 continue;
 
-            var modelName =
-                GetNamedString(GetAttribute(model, ModelAttribute), "Name")
-                ?? model.Name;
-
-            var modelProperties = model.GetMembers()
-                .OfType<IPropertySymbol>()
+            var modelName = GetNamedString(GetAttribute(model, ModelAttribute), "Name") ?? model.Name;
+            var modelProperties = model.GetMembers().OfType<IPropertySymbol>()
                 .Where(p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic)
                 .ToArray();
-
-            var entityProperties = entity.GetMembers()
-                .OfType<IPropertySymbol>()
+            var entityProperties = entity.GetMembers().OfType<IPropertySymbol>()
                 .Where(p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic)
                 .ToDictionary(p => p.Name, StringComparer.Ordinal);
 
             sb.AppendLine($"    public static class {model.Name}");
             sb.AppendLine("    {");
+            sb.AppendLine($"        public const string Name = \"{Escape(modelName)}\";");
+            sb.AppendLine($"        public static readonly EntityId Entity = new({entityId});");
 
-            // Do not call this member "Name": Name may itself be a semantic field.
-            sb.AppendLine(
-                $"        public const string ModelName = \"{Escape(modelName)}\";");
-
-            sb.AppendLine(
-                $"        public static readonly EntityId Entity = new({entityId});");
-
-            var fieldMembers = new List<(string Identifier, ushort FieldId, string SemanticName)>();
-            var usedIdentifiers = new HashSet<string>(StringComparer.Ordinal)
-            {
-                model.Name,
-                "ModelName",
-                "Entity",
-                "All"
-            };
-
+            var fieldNames = new List<string>();
             foreach (var property in modelProperties)
             {
                 if (!entityProperties.TryGetValue(property.Name, out var entityProperty))
                     continue;
-
                 var field = GetAttribute(entityProperty, FieldAttribute);
                 var fieldId = GetNamedUShort(field, "Id");
-
                 if (fieldId is null)
                     continue;
-
-                var identifier = GetGeneratedSemanticFieldIdentifier(
-                    property.Name,
-                    usedIdentifiers);
-
-                usedIdentifiers.Add(identifier);
-
-                fieldMembers.Add((
-                    identifier,
-                    fieldId.Value,
-                    property.Name));
-
-                sb.AppendLine(
-                    $"        public static readonly GeneratedSemanticField {identifier} = " +
-                    $"new(Entity, new FieldId({fieldId.Value}), \"{Escape(property.Name)}\");");
+                var safeName = property.Name;
+                fieldNames.Add(safeName);
+                sb.AppendLine($"        public static readonly GeneratedSemanticField {safeName} = new(Entity, new FieldId({fieldId.Value}), \"{Escape(property.Name)}\");");
             }
 
             sb.AppendLine("        public static IReadOnlyList<FieldId> All { get; } = new FieldId[]");
             sb.AppendLine("        {");
-
-            foreach (var field in fieldMembers)
-                sb.AppendLine($"            {field.Identifier}.Id,");
-
+            foreach (var fieldName in fieldNames)
+                sb.AppendLine($"            {fieldName}.Id,");
             sb.AppendLine("        };");
             sb.AppendLine("    }");
             sb.AppendLine();
@@ -408,28 +373,6 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
         sb.AppendLine("}");
         sb.AppendLine();
-    }
-
-    private static string GetGeneratedSemanticFieldIdentifier(
-        string propertyName,
-        HashSet<string> usedIdentifiers)
-    {
-        var candidate = propertyName;
-
-        if (!usedIdentifiers.Contains(candidate))
-            return candidate;
-
-        candidate = propertyName + "Field";
-
-        if (!usedIdentifiers.Contains(candidate))
-            return candidate;
-
-        var suffix = 2;
-
-        while (usedIdentifiers.Contains(candidate + suffix))
-            suffix++;
-
-        return candidate + suffix;
     }
 
     private static Dictionary<string, INamedTypeSymbol> BuildModelEntityMap(ImmutableArray<INamedTypeSymbol> declarations)
