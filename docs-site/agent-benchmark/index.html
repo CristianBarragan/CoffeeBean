@@ -71,13 +71,22 @@
 
 <div class="run-label">Interactive matrix</div><h2 id="matrix-heading">Run 4 · 4 × 4 execution matrix</h2>
 <p id="matrix-description">Select one workload/concurrency cell to inspect the conventional and Foundgine measurements for that exact experiment.</p>
+<details class="matrix-help" id="matrix-help-wrap" open>
+<summary>What do these controls mean?</summary>
+<dl>
+<div><dt>Run</dt><dd>Which of the four matrix experiments (2, 4, 5, 5b) you're looking at. Each has its own workload/concurrency grid.</dd></div>
+<div><dt>Metric</dt><dd>What each cell shows: an <strong>RPS ratio</strong> (throughput), <strong>average wall time</strong>, <strong>estimated context tokens</strong>, or <strong>tool calls</strong> — always Foundgine compared against the conventional path.</dd></div>
+<div><dt>Customer workload / Concurrency</dt><dd>Filters the grid to one row or column. "All" keeps every published cell visible; the rest are dimmed rather than hidden.</dd></div>
+<div><dt>Reading a cell</dt><dd>A blue left edge means Foundgine wins on the selected metric; amber means the conventional path wins; a dashed grey edge means that metric wasn't recorded for this run. Click any solid cell for the full comparison.</dd></div>
+</dl>
+</details>
 <div id="matrix-controls-wrap"><div class="matrix-controls" style="margin-top:1.2rem">
 <div class="matrix-field"><label for="matrix-run">Run<select id="matrix-run"><option value="2">Run 2</option><option value="4" selected>Run 4</option><option value="5">Run 5</option><option value="5b">Run 5b</option></select></label></div>
 <div class="matrix-field"><label for="matrix-metric">Metric<select id="matrix-metric"><option value="rps">RPS ratio</option><option value="wall">Average wall time</option><option value="tokens">Estimated context tokens (Conventional vs Foundgine)</option><option value="tools">Tool calls</option></select></label></div>
 <div class="matrix-field"><label for="matrix-customers">Customer workload<select id="matrix-customers"><option value="all">All workloads</option></select></label></div>
 <div class="matrix-field"><label for="matrix-concurrency">Concurrency<select id="matrix-concurrency"><option value="all">All concurrency</option></select></label></div>
 </div></div>
-<div id="matrix-legend-wrap" class="matrix-legend"><span id="legend-conventional"><span class="matrix-dot conventional"></span>Conventional</span><span id="legend-foundgine"><span class="matrix-dot foundgine"></span>Foundgine</span><span id="matrix-status"></span></div>
+<div id="matrix-legend-wrap" class="matrix-legend"><span id="legend-conventional"><span class="matrix-dot conventional"></span>Conventional</span><span id="legend-foundgine"><span class="matrix-dot foundgine"></span>Foundgine</span><span><span class="matrix-dot missing"></span>Not measured</span><span id="matrix-status"></span></div>
 <div id="heatmap-wrap" class="heatmap-wrap"><table class="heatmap"><thead><tr><th>Workload \ Concurrency</th><th>C8</th><th>C16</th><th>C32</th><th>C64</th></tr></thead><tbody id="heatmap-body"></tbody></table></div>
 <div id="matrix-empty-state" class="matrix-empty-state" hidden><strong>No matrix for this run.</strong><span>This experiment is a focused agent workflow rather than a 4 × 4 workload/concurrency test.</span></div>
 
@@ -110,12 +119,15 @@ const $=id=>document.getElementById(id);
 const state={runs:[],selectedRun:'4',aggregates:{}};
 const fmt=(n,d=1)=>Number(n||0).toLocaleString(undefined,{maximumFractionDigits:d});
 const pct=(a,b)=>b?((a/b)-1)*100:0;
+const METRIC_FIELD={rps:'rps',wall:'avgWallMs',tokens:'estimatedContextTokens',tools:'toolCalls'};
 function metricPair(c,f,metric){
- if(!c||!f)return {label:'—',detail:'No published pair',good:false};
- if(metric==='rps'){const ratio=f.rps/c.rps;return {label:ratio.toFixed(2)+'×',detail:ratio>=1?'Foundgine higher RPS':'Conventional higher RPS',good:ratio>=1};}
- if(metric==='wall'){const ratio=f.avgWallMs/c.avgWallMs;return {label:fmt(ratio,2)+'×',detail:ratio<=1?'Foundgine lower wall time':'Conventional lower wall time',good:ratio<=1};}
- if(metric==='tokens'){const ratio=f.estimatedContextTokens/c.estimatedContextTokens;return {label:fmt(ratio*100,0)+'%',detail:fmt((1-ratio)*100,1)+'% lower estimated context',good:ratio<=1};}
- const ratio=f.toolCalls/c.toolCalls;return {label:fmt(ratio,2)+'×',detail:ratio<=1?'Fewer Foundgine tool calls':'More Foundgine tool calls',good:ratio<=1};
+ if(!c||!f)return {label:'—',detail:'No published pair',good:false,missing:true};
+ const field=METRIC_FIELD[metric], cv=c[field], fv=f[field];
+ if(cv==null||fv==null||!isFinite(cv)||!isFinite(fv)||cv===0)return {label:'—',detail:'Not measured in this run',good:false,missing:true};
+ if(metric==='rps'){const ratio=fv/cv;return {label:ratio.toFixed(2)+'×',detail:ratio>=1?'Foundgine higher RPS':'Conventional higher RPS',good:ratio>=1};}
+ if(metric==='wall'){const ratio=fv/cv;return {label:fmt(ratio,2)+'×',detail:ratio<=1?'Foundgine lower wall time':'Conventional lower wall time',good:ratio<=1};}
+ if(metric==='tokens'){const ratio=fv/cv;return {label:fmt(ratio*100,0)+'%',detail:fmt((1-ratio)*100,1)+'% lower estimated context',good:ratio<=1};}
+ const ratio=fv/cv;return {label:fmt(ratio,2)+'×',detail:ratio<=1?'Fewer Foundgine tool calls':'More Foundgine tool calls',good:ratio<=1};
 }
 function normalizeRows(run){return (state.aggregates[run]||[]).map(x=>({...x,customers:+x.customers,concurrency:+x.concurrency}));}
 function pair(rows,b,c){return {c:rows.find(x=>x.customers===b&&x.concurrency===c&&/^(?:Conventional|MCP \+ EF Core)$/.test(x.implementation)),f:rows.find(x=>x.customers===b&&x.concurrency===c&&/^MCP \+ Foundgine Postgres$|^Foundgine$|^MCP \+ Foundgine$/.test(x.implementation))};}
@@ -128,7 +140,7 @@ function renderMatrix(){
  const visible=bs.filter(b=>sb===null||b===sb), vcount=visible.reduce((n,b)=>n+cs.filter(c=>sc===null||c===sc).length,0);
  $('legend-conventional').lastChild.textContent=(run==='5'||run==='5b')?'MCP + EF Core':'Conventional'; $('legend-foundgine').lastChild.textContent=(run==='5'||run==='5b')?'MCP + Foundgine':'Foundgine'; $('matrix-status').textContent=`${vcount} visible cells · Run ${run}`;
  $('matrix-heading').textContent=`Run ${run} · ${run==='4'?'4 × 4 execution matrix':run==='5'?'4 × 4 high-assurance mutation matrix':run==='5b'?'4 × 4 same-client individual-vs-batch matrix':'published scalability matrix'}`; if(run==='5'){ $('matrix-description').textContent='Both paths use MCP. Select a workload/concurrency cell to compare the purpose-built MCP + EF Core implementation with MCP + Foundgine High-Assurance Postgres.'; } else if(run==='5b'){ $('matrix-description').textContent='Same client, same logical task on both sides. Select a workload/concurrency cell to compare batchSize individual transfer_funds calls with one transfer_funds_batch call.'; } else if(run==='4'){ $('matrix-description').textContent='Select one workload/concurrency cell to inspect the conventional and Foundgine measurements for that exact experiment.'; }
- $('heatmap-body').innerHTML=visible.map(b=>`<tr><th>${b.toLocaleString()} customers</th>${cs.map(c=>{const p=pair(rows,b,c),m=metricPair(p.c,p.f,metric),hidden=(sc!==null&&c!==sc);return `<td style="opacity:${hidden?.3:1}"><button class="heat-cell ${m.good?'good':'neutral'}" data-b="${b}" data-c="${c}" type="button"><span class="cell-label">C${c}</span><strong>${m.label}</strong><small>${m.detail}</small></button></td>`}).join('')}</tr>`).join('');
+ $('heatmap-body').innerHTML=visible.map(b=>`<tr><th>${b.toLocaleString()} customers</th>${cs.map(c=>{const p=pair(rows,b,c),m=metricPair(p.c,p.f,metric),hidden=(sc!==null&&c!==sc);const cellClass=m.missing?'missing':(m.good?'good':'neutral');return `<td style="opacity:${hidden?.3:1}"><button class="heat-cell ${cellClass}" data-b="${b}" data-c="${c}" type="button" title="${b.toLocaleString()} customers · C${c} · ${m.detail}"><span class="cell-label">C${c}</span><strong>${m.label}</strong><small>${m.detail}</small></button></td>`}).join('')}</tr>`).join('');
  document.querySelectorAll('.heat-cell').forEach(x=>x.onclick=()=>showCell(run,+x.dataset.b,+x.dataset.c));
  if(!window.__benchmarkCellSelected){
    $('selected-cell-title').textContent='No matrix cell selected yet.';
