@@ -38,7 +38,7 @@ public sealed class SalesOrderLineERP
 public sealed class CatalogProductERP
 {
     [FoundgineField("Id", StorageName = "product_id", Id = 1, IsPrimaryKey = true)] public int Id { get; init; }
-    [FoundgineField("Name", StorageName = "name", Id = 2)] public string Name { get; init; } = "";
+    [FoundgineField("Name", StorageName = "product_name", Id = 2)] public string Name { get; init; } = "";
     [FoundgineField("Sku", StorageName = "sku", Id = 3)] public string Sku { get; init; } = "";
     [FoundgineField("UnitPrice", StorageName = "unit_price", Id = 4)] public decimal UnitPrice { get; init; }
     [FoundgineRelationship(typeof(SupplierERP), "SupplierId", "Id", Id = 4, Name = "Supplier")] public SupplierERP Supplier { get; init; } = null!;
@@ -52,7 +52,7 @@ public sealed class CatalogProductERP
 public sealed class SupplierERP
 {
     [FoundgineField("Id", StorageName = "supplier_id", Id = 1, IsPrimaryKey = true)] public int Id { get; init; }
-    [FoundgineField("Name", StorageName = "name", Id = 2)] public string Name { get; init; } = "";
+    [FoundgineField("Name", StorageName = "supplier_name", Id = 2)] public string Name { get; init; } = "";
     [FoundgineField("Email", StorageName = "email", Id = 3)] public string Email { get; init; } = "";
 }
 
@@ -60,7 +60,7 @@ public sealed class SupplierERP
 public sealed class CategoryERP
 {
     [FoundgineField("Id", StorageName = "category_id", Id = 1, IsPrimaryKey = true)] public int Id { get; init; }
-    [FoundgineField("Name", StorageName = "name", Id = 2)] public string Name { get; init; } = "";
+    [FoundgineField("Name", StorageName = "category_name", Id = 2)] public string Name { get; init; } = "";
 }
 
 [FoundgineEntity("InventoryPositionERP", StorageName = "inventory", Id = 7)]
@@ -78,7 +78,7 @@ public sealed class InventoryPositionERP
 public sealed class WarehouseERP
 {
     [FoundgineField("Id", StorageName = "warehouse_id", Id = 1, IsPrimaryKey = true)] public int Id { get; init; }
-    [FoundgineField("Name", StorageName = "name", Id = 2)] public string Name { get; init; } = "";
+    [FoundgineField("Name", StorageName = "warehouse_name", Id = 2)] public string Name { get; init; } = "";
     [FoundgineField("Location", StorageName = "location", Id = 3)] public string Location { get; init; } = "";
 }
 
@@ -100,5 +100,5 @@ public sealed class ShipmentERP
 public sealed class CarrierERP
 {
     [FoundgineField("Id", StorageName = "carrier_id", Id = 1, IsPrimaryKey = true)] public int Id { get; init; }
-    [FoundgineField("Name", StorageName = "name", Id = 2)] public string Name { get; init; } = "";
+    [FoundgineField("Name", StorageName = "carrier_name", Id = 2)] public string Name { get; init; } = "";
 }

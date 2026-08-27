@@ -58,16 +58,14 @@ public sealed class ContextSafePlanCacheTests
         {
             Model = model,
             AuthorizationPolicy = new TenantPolicy(),
-            PlanCache = cache,
-            ExpectedWarrantIssuer = "test-issuer"
+            PlanCache = cache
         }, compiler, new TestExecutionProvider());
 
         var second = new FoundgineEngine(new FoundgineOptions
         {
             Model = model,
             AuthorizationPolicy = new RegionPolicy(),
-            PlanCache = cache,
-            ExpectedWarrantIssuer = "test-issuer"
+            PlanCache = cache
         }, compiler, new TestExecutionProvider());
 
         await first.ExecuteAsync(CreateCustomerRequest());
@@ -98,8 +96,7 @@ public sealed class ContextSafePlanCacheTests
             {
                 Model = Banking.BankingSemanticModel.Build(),
                 AuthorizationPolicy = policy,
-                PlanCache = cache ?? new MemoryProviderPlanCache(),
-                ExpectedWarrantIssuer = "test-issuer"
+                PlanCache = cache ?? new MemoryProviderPlanCache()
             },
             compiler,
             new TestExecutionProvider());

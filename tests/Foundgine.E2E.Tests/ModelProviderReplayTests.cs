@@ -109,8 +109,7 @@ public sealed class ModelProviderReplayTests
  new FoundgineOptions
  {
  Model = BankingSemanticModel.Build(),
- AuthorizationPolicy = new TenantPolicy(),
- ExpectedWarrantIssuer = "test-issuer"
+ AuthorizationPolicy = new TenantPolicy()
  },
  new SqlCompiler(BankingRelationalMetadata.Build()),
  new SqlExecutionProvider(connection, transaction));
@@ -144,8 +143,7 @@ public sealed class ModelProviderReplayTests
  new FoundgineOptions
  {
  Model = BankingSemanticModel.Build(),
- AuthorizationPolicy = new TenantPolicy(),
- ExpectedWarrantIssuer = "test-issuer"
+ AuthorizationPolicy = new TenantPolicy()
  },
  compiler,
  new SqlExecutionProvider(connection));

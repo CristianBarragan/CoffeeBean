@@ -41,12 +41,22 @@ cd samples/Foundgine.SupplyChain
 docker compose up --build
 ```
 
-This starts PostgreSQL on `localhost:4429` and the API container on `localhost:4422`, with `SupplyChainConnectionString` already wired to the containerized database.
+This starts PostgreSQL on `localhost:4429` **and** the API container on `localhost:4422`, with `SupplyChainConnectionString` already wired to the containerized database. If you want to run the API this way, skip straight to the health check below — step 3 is only needed if you'd rather run the API locally (e.g. to attach a debugger) instead of in a container.
+
+If you only want the database, start just that service instead:
+
+```powershell
+docker compose up postgres --build
+```
 
 ## 3. Run the API
 
+Skip this step if you already ran the full `docker compose up --build` above — the API is already running on port 4422.
+
+Otherwise, with just PostgreSQL running (`docker compose up postgres --build`), run the API locally on the same port so the rest of this guide's URLs stay correct:
+
 ```powershell
-dotnet run --project samples/Foundgine.SupplyChain/Api/Foundgine.SupplyChain.Api.csproj
+dotnet run --project samples/Foundgine.SupplyChain/Api/Foundgine.SupplyChain.Api.csproj --urls http://localhost:4422
 ```
 
 Check that it's up:
@@ -57,6 +67,8 @@ curl http://localhost:4422/health/ready
 ```
 
 The MCP endpoint is `http://localhost:4422/mcp`, exposing: `describe_capabilities`, `get_my_orders`, `get_order`, `get_shipment`, `list_products`, `list_customers`, `get_product`, `get_inventory`, `list_suppliers`, `update_inventory`, `create_shipment`, `update_shipment`, `place_order`, `cancel_order` — each a thin adapter over `SupplyChainApplication`.
+
+Every tool call requires both an `actor` and a `token` — a caller has to prove it actually controls the identity it claims, not just name one. `SupplyChainApplication` checks capability authorization for every call before it reaches the semantic layer; see [How it works](../how-it-works/index.html) for the full authorization → planning → execution path, and the repository's `security/pentest/` suite for how that boundary is tested.
 
 ## 4. Walk the architecture layer by layer
 

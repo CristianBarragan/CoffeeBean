@@ -72,15 +72,17 @@
       <p>The sample ships a <code>docker-compose.yml</code> that starts PostgreSQL and the API together:</p>
       <pre><code>cd samples/Foundgine.SupplyChain
 docker compose up --build</code></pre>
-      <p>This starts PostgreSQL on <code>localhost:4429</code> and the API container on <code>localhost:4422</code>, with <code>SupplyChainConnectionString</code> already wired to the containerized database. If you'd rather run the API directly on the host and only containerize the database, start just the <code>postgres</code> service and point <code>SupplyChainConnectionString</code> at it yourself.</p>
+      <p>This starts PostgreSQL on <code>localhost:4429</code> <strong>and</strong> the API container on <code>localhost:4422</code>, with <code>SupplyChainConnectionString</code> already wired to the containerized database. If you ran this, the API is already up — skip straight to the health check in step 3. If you'd rather run the API directly on the host (e.g. to attach a debugger) and only containerize the database, start just the <code>postgres</code> service instead:</p>
+      <pre><code>docker compose up postgres --build</code></pre>
 
       <h2 id="run-api">3. Run the API</h2>
-      <p>From the repository root, with PostgreSQL reachable and <code>SupplyChainConnectionString</code> set:</p>
-      <pre><code>dotnet run --project samples/Foundgine.SupplyChain/Api/Foundgine.SupplyChain.Api.csproj</code></pre>
+      <p>Skip this if you already ran the full <code>docker compose up --build</code> above. Otherwise, with just PostgreSQL running and <code>SupplyChainConnectionString</code> set, run the API locally on the same port so the URLs below stay correct:</p>
+      <pre><code>dotnet run --project samples/Foundgine.SupplyChain/Api/Foundgine.SupplyChain.Api.csproj --urls http://localhost:4422</code></pre>
       <p>Check that it's up:</p>
       <pre><code>curl http://localhost:4422/health
 curl http://localhost:4422/health/ready   # confirms the database connection</code></pre>
       <p>The MCP endpoint is <code>http://localhost:4422/mcp</code>. Point an MCP client at it and you'll see the tools <code>Api/Program.cs</code> exposes — <code>describe_capabilities</code>, <code>get_my_orders</code>, <code>get_order</code>, <code>get_shipment</code>, <code>list_products</code>, <code>list_customers</code>, <code>get_product</code>, <code>get_inventory</code>, <code>list_suppliers</code>, <code>update_inventory</code>, <code>create_shipment</code>, <code>update_shipment</code>, <code>place_order</code> and <code>cancel_order</code> — every one a thin adapter over <code>SupplyChainApplication</code>, never a place that touches SQL directly.</p>
+      <p>Every call requires both an <code>actor</code> and a <code>token</code> — proof of identity, not just a claimed name. <code>SupplyChainApplication</code> checks capability authorization before any call reaches the semantic layer; see <a href="../how-it-works/index.html">How it works</a> for the full authorization → planning → execution path.</p>
 
       <h2 id="layers">4. Walk the architecture layer by layer</h2>
       <p>With the sample running, this is the order to read the code in — each layer only talks to the one directly below it.</p>

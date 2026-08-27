@@ -58,9 +58,7 @@ public static class FoundgineServiceCollectionExtensions
                 options.Model,
                 options.WarrantKeyResolver,
                 options.ExpectedWarrantIssuer,
-                options.WarrantReplayStore,
-                null,
-                options.WarrantDelegationTrustResolver));
+                options.WarrantReplayStore));
 
         return services;
     }
