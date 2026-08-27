@@ -120,6 +120,9 @@ header.site-header {
 }
 
 .site-header-inner nav a:hover { color: var(--signal); }
+.site-header-inner nav a.nav-current { color: var(--signal); font-weight: 600; }
+.nav-toggle { display:none; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:9px; width:42px; height:38px; padding:.55rem; cursor:pointer; }
+.nav-toggle span { display:block; height:2px; margin:4px 0; background:currentColor; border-radius:2px; }
 
 /* ---- Typography ---- */
 
@@ -890,3 +893,14 @@ footer.site-footer {
 
 /* Run 5: same MCP protocol, different execution boundary */
 .run5-boundary{margin:1.5rem 0;padding:1.35rem;border:1px solid #d9e2ef;border-radius:18px;background:#f8fafc}.run5-boundary h2{margin:.25rem 0 .5rem}.run5-boundary>p{margin:0 0 1rem;color:#536274}.run5-paths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}.run5-path{padding:1.1rem;border-radius:14px;border:1px solid #d9e2ef;background:#fff;display:flex;flex-direction:column;gap:.45rem}.run5-path.foundgine{border-color:#b9d7f5;background:#f5faff}.run5-path-label{font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#607086}.run5-path strong{line-height:1.45}.run5-path span:last-child{color:#536274;font-size:.92rem;line-height:1.5}@media(max-width:760px){.run5-paths{grid-template-columns:1fr}}
+
+
+/* Site header navigation: collapse to an accessible hamburger on small screens. */
+@media (max-width: 760px) {
+  .site-header-inner { position:relative; flex-wrap:wrap; }
+  .nav-toggle { display:block; margin-left:auto; }
+  .site-header-inner nav.site-nav { display:none; width:100%; flex-basis:100%; padding:.7rem 0 .2rem; }
+  .site-header-inner nav.site-nav.is-open { display:flex; flex-direction:column; }
+  .site-header-inner nav.site-nav a { margin:0; padding:.72rem .15rem; border-top:1px solid var(--line); }
+  body.nav-open { overflow:hidden; }
+}

@@ -80,11 +80,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Api",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Tests", "samples\Foundgine.SupplyChain\Tests\Foundgine.SupplyChain.Tests.csproj", "{30000006-0000-0000-0000-000000000006}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.PenTest.Mcp.Api", "samples\Foundgine.SupplyChain.PenTest\Mcp.Api\Foundgine.SupplyChain.PenTest.Mcp.Api.csproj", "{21000000-0000-0000-0000-000000000001}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.PenTest.Mcp.Api", "samples\Foundgine.SupplyChain.PenTest\Api\Mcp\Foundgine.SupplyChain.PenTest.Mcp.Api.csproj", "{21000000-0000-0000-0000-000000000001}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.PenTest.Graph.Api", "samples\Foundgine.SupplyChain.PenTest\Graph.Api\Foundgine.SupplyChain.PenTest.Graph.Api.csproj", "{21000000-0000-0000-0000-000000000002}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.PenTest.Graph.Api", "samples\Foundgine.SupplyChain.PenTest\Api\GraphQL\Foundgine.SupplyChain.PenTest.Graph.Api.csproj", "{21000000-0000-0000-0000-000000000002}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.PenTest.Tests", "samples\Foundgine.SupplyChain.PenTest\Tests\Foundgine.SupplyChain.PenTest.Tests.csproj", "{21000000-0000-0000-0000-000000000003}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Semantic", "samples\Foundgine.SupplyChain.Semantic\Foundgine.SupplyChain.Semantic.csproj", "{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C77}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Semantic.Tests", "samples\Foundgine.SupplyChain.Semantic\Tests\Foundgine.SupplyChain.Semantic.Tests.csproj", "{1AD7667F-FACA-46C7-A4DC-24494D8244BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -264,6 +268,14 @@ Global
 		{21000000-0000-0000-0000-000000000003}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{21000000-0000-0000-0000-000000000003}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{21000000-0000-0000-0000-000000000003}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1AD7667F-FACA-46C7-A4DC-24494D8244BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1AD7667F-FACA-46C7-A4DC-24494D8244BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1AD7667F-FACA-46C7-A4DC-24494D8244BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1AD7667F-FACA-46C7-A4DC-24494D8244BE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

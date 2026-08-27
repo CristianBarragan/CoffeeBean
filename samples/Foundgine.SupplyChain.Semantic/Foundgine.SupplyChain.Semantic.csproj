@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The sample project owns Api/Application/Domain/Infrastructure/Semantics source,
+         while Tests is a separate test project. Prevent the SDK's recursive default
+         Compile glob from compiling xUnit test files into this application assembly. -->
+    <Compile Remove="Tests/**/*.cs" />
+    <None Remove="Tests/**/*.cs" />
+    <ProjectReference Include="../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
+  </ItemGroup>
+</Project>
