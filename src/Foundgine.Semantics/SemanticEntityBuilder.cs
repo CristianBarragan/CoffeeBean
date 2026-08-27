@@ -26,9 +26,16 @@ public sealed class SemanticEntityBuilder
         return this;
     }
 
-    public SemanticEntityBuilder Field(FieldId id, string name, Type clrType)
+    public SemanticEntityBuilder Field(
+        FieldId id,
+        string name,
+        Type clrType,
+        SemanticType? semanticType = null,
+        SemanticFieldCapabilities capabilities = SemanticFieldCapabilities.Default)
     {
-        _fields.Add(new SemanticField(id, name, clrType));
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(clrType);
+        _fields.Add(new SemanticField(id, name, clrType, semanticType, capabilities));
         return this;
     }
 
@@ -48,6 +55,6 @@ public sealed class SemanticEntityBuilder
             _name,
             _identity ?? throw new InvalidOperationException(
                 $"Semantic entity '{_name}' must declare an identity."),
-            _fields,
-            _relationships);
+            _fields.ToArray(),
+            _relationships.ToArray());
 }

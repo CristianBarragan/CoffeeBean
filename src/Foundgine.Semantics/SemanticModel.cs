@@ -3,18 +3,20 @@ using Foundgine.Abstractions;
 namespace Foundgine.Semantics;
 
 /// <summary>
-/// Static semantic model derived from domain metadata. This is the source
-/// topology from which request graphs are resolved.
+/// Immutable semantic topology produced by <see cref="SemanticModelBuilder"/>.
+/// Once built, the model is safe to share across concurrent resolutions and can
+/// be deterministically versioned/cached.
 /// </summary>
 public sealed class SemanticModel
 {
-    private readonly Dictionary<EntityId, SemanticEntity> _entities = new();
+    private readonly IReadOnlyDictionary<EntityId, SemanticEntity> _entities;
 
-    internal SemanticModel() { }
+    internal SemanticModel(IReadOnlyDictionary<EntityId, SemanticEntity> entities)
+    {
+        _entities = new Dictionary<EntityId, SemanticEntity>(entities);
+    }
 
-    public IReadOnlyCollection<SemanticEntity> Entities => _entities.Values;
-
-    internal void Register(SemanticEntity entity) => _entities[entity.Id] = entity;
+    public IReadOnlyCollection<SemanticEntity> Entities => _entities.Values.ToArray();
 
     public bool TryGet(EntityId id, out SemanticEntity entity) =>
         _entities.TryGetValue(id, out entity!);

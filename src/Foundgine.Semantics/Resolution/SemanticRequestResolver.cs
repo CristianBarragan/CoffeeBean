@@ -27,13 +27,64 @@ public sealed class SemanticRequestResolver
             throw InvalidSelection("A semantic request must contain at least one selection.");
 
         SemanticFilterValidator.Validate(request.Options?.Filter, root, _model);
-        ValidateOrdering(request.Options?.EffectiveOrder ?? [], root, request.Selections);
+        var normalizedOptions = NormalizeQueryOptions(request.Options, root);
+        SemanticQueryOptionsValidator.Validate(normalizedOptions, root);
+        ValidateOrdering(normalizedOptions?.EffectiveOrder ?? [], root, request.Selections);
 
-        var graph = new SemanticGraph { Options = request.Options };
+        var graph = new SemanticGraph([], normalizedOptions);
 
         ResolveSelections(root, request.Selections, graph, null, null, isRoot: true);
+        SemanticGraphValidator.Validate(graph, _model);
 
         return graph;
+    }
+
+    private SemanticQueryOptions? NormalizeQueryOptions(
+        SemanticQueryOptions? options,
+        SemanticEntity root)
+    {
+        if (options is null) return null;
+        if (options.Order is null && options.After is null) return options;
+
+        var order = options.EffectiveOrder
+            .Select(term => CanonicalizeOrderTerm(term, root))
+            .ToArray();
+
+        // Cursor pagination requires a deterministic root ordering. The
+        // identity field is the semantic tie-breaker and is added here,
+        // rather than being invented by a provider later.
+        if (options.After is not null)
+        {
+            var hasIdentityTieBreaker = order.Any(x =>
+                x.EffectivePath.Count == 0 &&
+                x.Aggregate == SemanticOrderAggregate.None &&
+                x.Field == root.Identity.FieldId);
+
+            if (!hasIdentityTieBreaker)
+                order = order.Append(new SemanticOrderTerm(root.Identity.FieldId, SemanticSortDirection.Asc)).ToArray();
+        }
+
+        return options with { Order = order };
+    }
+
+    private SemanticOrderTerm CanonicalizeOrderTerm(SemanticOrderTerm term, SemanticEntity root)
+    {
+        if (term.Aggregate != SemanticOrderAggregate.Count || term.EffectivePath.Count == 0)
+            return term;
+
+        var entity = root;
+        foreach (var relationshipId in term.EffectivePath)
+        {
+            var relationship = entity.Relationships.FirstOrDefault(x => x.Id == relationshipId)
+                ?? throw InvalidSelection($"Order relationship '{relationshipId}' is not defined on '{entity.Name}'.");
+            entity = _model.Get(relationship.Target);
+        }
+
+        // Compatibility bridge: the current public order record retains a
+        // FieldId for all aggregates, but COUNT has no target-field operand.
+        // Canonicalize it to the target identity so providers never have to
+        // interpret an arbitrary field attached to COUNT.
+        return term with { Field = entity.Identity.FieldId };
     }
 
     private void ResolveSelections(
@@ -63,6 +114,8 @@ public sealed class SemanticRequestResolver
 
                 if (!IsDeclaredField(entity, fieldId))
                     throw InvalidSelection($"Entity '{entity.Name}' does not declare field '{fieldId}'.");
+                if (!IsFieldSelectable(entity, fieldId))
+                    throw InvalidSelection($"Field '{entity.Name}.{fieldId}' is not selectable.");
 
                 if (!fields.Contains(fieldId))
                     fields.Add(fieldId);
@@ -130,9 +183,14 @@ public sealed class SemanticRequestResolver
                             $"Ordering through collection relationship '{entity.Name}.{relationship.Name}' requires an explicit aggregate semantics (COUNT, MIN, or MAX).");
                     }
 
-                    var target = _model.Get(relationship.Target);
-                    if (!IsDeclaredField(target, term.Field))
-                        throw InvalidSelection($"Aggregate order field '{term.Field}' is not defined on '{target.Name}'.");
+                    // COUNT describes the cardinality of the relationship; it
+                    // does not semantically require a target field. Min/Max do.
+                    if (term.Aggregate is SemanticOrderAggregate.Min or SemanticOrderAggregate.Max)
+                    {
+                        var target = _model.Get(relationship.Target);
+                        if (!IsDeclaredField(target, term.Field))
+                            throw InvalidSelection($"Aggregate order field '{term.Field}' is not defined on '{target.Name}'.");
+                    }
                 }
 
                 finalRelationship = relationship;
@@ -162,14 +220,30 @@ public sealed class SemanticRequestResolver
 
                 if (finalRelationship.Cardinality != RelationshipCardinality.Many)
                     throw InvalidSelection("Aggregate ordering is only valid on collection relationships.");
+
+                if (term.Aggregate is SemanticOrderAggregate.Min or SemanticOrderAggregate.Max &&
+                    !IsFieldSortable(entity, term.Field))
+                    throw InvalidSelection($"Aggregate order field '{term.Field}' is not sortable.");
             }
             else if (!IsDeclaredField(entity, term.Field))
             {
                 throw InvalidSelection(
                     $"Order field '{term.Field}' is not defined on '{entity.Name}'.");
             }
+            else if (!IsFieldSortable(entity, term.Field))
+            {
+                throw InvalidSelection($"Field '{entity.Name}.{term.Field}' is not sortable.");
+            }
         }
     }
+
+    private static bool IsFieldSelectable(SemanticEntity entity, FieldId fieldId) =>
+        entity.Identity.FieldId == fieldId ||
+        entity.Fields.FirstOrDefault(x => x.Id == fieldId)?.Capabilities.HasFlag(SemanticFieldCapabilities.Selectable) == true;
+
+    private static bool IsFieldSortable(SemanticEntity entity, FieldId fieldId) =>
+        entity.Identity.FieldId == fieldId ||
+        entity.Fields.FirstOrDefault(x => x.Id == fieldId)?.Capabilities.HasFlag(SemanticFieldCapabilities.Sortable) == true;
 
     private static bool IsDeclaredField(SemanticEntity entity, FieldId fieldId) =>
         entity.Identity.FieldId == fieldId || entity.Fields.Any(f => f.Id == fieldId);

@@ -12,6 +12,23 @@ public sealed class SemanticGraph
 {
     private readonly List<SemanticGraphNode> _nodes = [];
 
+    /// <summary>
+    /// Creates an empty semantic graph. Nodes are added with <see cref="AddRoot"/>,
+    /// <see cref="Add(EntityId, RelationshipId?, SemanticGraphNode?, IEnumerable{FieldId}?)"/>,
+    /// or <see cref="AddConnection"/>. <see cref="Options"/> can be set afterward
+    /// (internally) or via object initializer from an assembly with internal
+    /// visibility into this one.
+    /// </summary>
+    public SemanticGraph() : this([], null)
+    {
+    }
+
+    internal SemanticGraph(IEnumerable<SemanticGraphNode> nodes, Foundgine.Semantics.Query.SemanticQueryOptions? options)
+    {
+        _nodes.AddRange(nodes);
+        Options = options;
+    }
+
     public IReadOnlyList<SemanticGraphNode> Nodes => _nodes;
 
     public Foundgine.Semantics.Query.SemanticQueryOptions? Options { get; internal set; }
@@ -29,36 +46,13 @@ public sealed class SemanticGraph
         if (_nodes.All(node => node.Id != nodeId))
             throw new ArgumentOutOfRangeException(nameof(nodeId));
 
-        var copy = new SemanticGraph { Options = Options };
-        var map = new Dictionary<int, SemanticGraphNode>();
+        // Preserve node identities and topology. Only the affected immutable
+        // record is replaced; this avoids rebuilding the entire graph.
+        var nodes = _nodes
+            .Select(node => node.Id == nodeId ? node with { Authorization = authorization } : node)
+            .ToArray();
 
-        foreach (var source in _nodes)
-        {
-            SemanticGraphNode? parent = null;
-            if (source.ParentId is { } parentId)
-                parent = map[parentId];
-
-            var predicate = source.Id == nodeId ? authorization : source.Authorization;
-            SemanticGraphNode target;
-
-            if (source.ParentId is null)
-            {
-                target = copy.AddRoot(source.EntityId, source.Fields, predicate);
-            }
-            else
-            {
-                target = copy.Add(
-                    source.EntityId,
-                    source.ViaRelationship,
-                    parent,
-                    source.Fields,
-                    predicate);
-            }
-
-            map[source.Id] = target;
-        }
-
-        return copy;
+        return new SemanticGraph(nodes, Options);
     }
 
     public SemanticGraphNode AddRoot(

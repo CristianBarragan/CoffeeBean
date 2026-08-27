@@ -109,11 +109,6 @@ public static class SemanticAuthorizationCapabilityDiscovery
             ? AuthorizationDecision.Allowed
             : AuthorizationDecision.Conditional(predicate);
 
-    private static AuthorizationDecision Effective(params AuthorizationDecision[] decisions)
-    {
-        var result = AuthorizationDecision.Allowed;
-        foreach (var decision in decisions)
-            result = AuthorizationDecision.Combine(result, decision);
-        return result;
-    }
+    private static AuthorizationDecision Effective(params AuthorizationDecision[] decisions) =>
+        SemanticAuthorizationCapabilityComposition.Compose(decisions);
 }
