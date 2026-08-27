@@ -5,6 +5,7 @@ This matrix maps each packable Foundgine package to the release changes that are
 ## 1.1.0
 - **Foundgine.GraphQL.HotChocolate** — 1.1.0: Keeps the GraphQL query adapter pure and independent of execution.
 - **Foundgine.GraphQL.HotChocolate.Execution** — 1.1.0: Adds the secure `FoundgineHotChocolateQueryExecutor` and host-owned security execution-context integration.
+- **Foundgine.GraphQL.HotChocolate.MutationExecution** — 1.1.1: Adds the secure `FoundgineHotChocolateMutationExecutor`, canonical semantic mutation conversion, host-owned security context enforcement, warrant validation, replay protection, and final mutation execution certification.
 - **Foundgine.MCP** — 1.1.0: Converges on the shared `ISecurityExecutionContextProvider` contract while retaining the compatibility delegate path.
 - **Foundgine.Semantics** — 1.1.0: Adds the shared host-owned security execution-context provider contract and helpers.
 - **Other Foundgine packages** — 1.1.0: Versioned with the release line; no unrelated breaking API changes are introduced.

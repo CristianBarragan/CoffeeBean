@@ -55,3 +55,30 @@ corresponding adversarial test coverage. The PostgreSQL-specific wiring
 (`PostgresAuthorizationContextStore`, `PostgresAuthorizationRecoveryCoordinator`,
 `PostgresAuthorizationSecurityUnitOfWork`, and the transfer-funds executor)
 remains in `samples/Foundgine.HighAssurance.Postgres/`.
+
+
+## GraphQL mutation security boundary
+
+GraphQL mutation translation is not an authorization boundary. Applications that execute Foundgine mutations from Hot Chocolate should use `Foundgine.GraphQL.HotChocolate.MutationExecution.FoundgineHotChocolateMutationExecutor`. The executor requires a host-owned `ISecurityExecutionContextProvider`, converts the GraphQL nested intent into the canonical `SemanticMutationOperationGraph`, and invokes `IFoundgineMutations.ExecuteAsync`.
+
+The resulting path is:
+
+```text
+GraphQL payload
+    ↓
+Host security context
+    ↓
+GraphQL mutation adapter
+    ↓
+Canonical semantic mutation graph
+    ↓
+Warrant + tenant + audience + resource checks
+    ↓
+Semantic authorization
+    ↓
+Security-invariant certification
+    ↓
+Provider execution
+```
+
+Identity, tenant, audience, and warrant material must never be accepted from GraphQL arguments or variables. The final mutation execution gate remains authoritative even if an application accidentally bypasses earlier transport-level checks.

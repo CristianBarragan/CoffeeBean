@@ -12,14 +12,8 @@ public sealed class SemanticGraph
 {
     private readonly List<SemanticGraphNode> _nodes = [];
 
-    /// <summary>
-    /// Creates an empty semantic graph. Nodes are added with <see cref="AddRoot"/>,
-    /// <see cref="Add(EntityId, RelationshipId?, SemanticGraphNode?, IEnumerable{FieldId}?)"/>,
-    /// or <see cref="AddConnection"/>. <see cref="Options"/> can be set afterward
-    /// (internally) or via object initializer from an assembly with internal
-    /// visibility into this one.
-    /// </summary>
-    public SemanticGraph() : this([], null)
+    /// <summary>Creates an empty semantic graph for incremental construction and tests.</summary>
+    public SemanticGraph()
     {
     }
 

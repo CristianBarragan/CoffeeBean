@@ -59,23 +59,12 @@ silently become a transport/security-token verifier.
 
 ## Deliberately deferred
 
-Later review rounds proposed a full `SemanticExpression` hierarchy, a `SemanticValue`
-type, canonicalization/hashing, an output-vs-required-projection split, a general
-order-expression form, and (further out) a typed fuzzy-truth/scoring extension on top
-of that algebra.
+The review proposed a full `SemanticExpression` hierarchy, structural graph sharing,
+a richer relationship cardinality algebra, and a separate semantic optimizer and
+canonicalizer. These are good long-term directions, but implementing them all now
+would duplicate existing planning infrastructure and expand the public API before
+there is a demonstrated need.
 
-**Status: none of this is implemented.** `Query/SemanticFilter.cs` and
-`Query/SemanticOrder.cs` are unchanged from what's described above — `SemanticFieldFilter`,
-`SemanticRelationshipFilter`, `SemanticAggregateFilter`, and `SemanticOrderTerm` (with its
-side-channel `SemanticOrderAggregate` enum) remain the only representation. A prior
-write-up of this proposal narrated it as already merged into the codebase; that was
-inaccurate and should not be repeated or cited as a completed change.
-
-The full proposal, including what it does and does not include and the specific
-conditions under which it should be built, now lives in
-[`EXPRESSION-ALGEBRA-PROPOSAL.md`](./EXPRESSION-ALGEBRA-PROPOSAL.md). The short version
-carries forward unchanged from before: implement a formal semantic-expression algebra
-only when a concrete query or mutation feature actually requires shared expression
-semantics (e.g. ordering by an aggregate, or filtering by a computed expression). Until
-that trigger fires, the existing filter/order records stand and the existing planning
-optimizer remains the optimization owner.
+The next architectural step should be a formal semantic-expression algebra only when
+query and mutation features actually require shared expression semantics. The existing
+planning optimizer should remain the optimization owner until then.

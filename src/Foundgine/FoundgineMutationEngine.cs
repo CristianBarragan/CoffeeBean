@@ -12,6 +12,7 @@ using Foundgine.Semantics.Security;
 using Foundgine.Semantics.Security.Execution;
 using Foundgine.Semantics.Security.Warrants;
 using Foundgine.Semantics.Mutation;
+using Foundgine.Semantics.Query;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 
 namespace Foundgine;
@@ -19,6 +20,7 @@ namespace Foundgine;
 public sealed class FoundgineMutationEngine : IFoundgineMutations
 {
     private readonly IMutationSchema _schema;
+    private readonly SemanticModel? _model;
     private readonly ISemanticAuthorizationPolicy _policy;
     private readonly IMutationBatchExecutionProvider _provider;
     private readonly SemanticCapabilityContract _securityContract;
@@ -38,6 +40,7 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
         SecurityResourceLimits? securityResourceLimits = null)
     {
         _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        _model = model;
         _policy = policy ?? throw new ArgumentNullException(nameof(policy));
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _securityContract = model is null
@@ -55,6 +58,24 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
     {
         var plan = AuthorizeAndPlan(request);
         return Describe(plan);
+    }
+
+    /// <summary>
+    /// Executes a mutation directly after authorization, security-invariant
+    /// validation and final execution certification. This is the normal path
+    /// for trusted transports such as GraphQL; approval remains an explicit
+    /// optional workflow rather than an accidental requirement for every mutation.
+    /// </summary>
+    public Task<MutationExecutionResult> ExecuteAsync(
+        SemanticMutationRequest request,
+        ExecutionContext? context = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var plan = AuthorizeAndPlan(request);
+        return ExecutePlanAsync(plan, request.Security, approval: null, context, cancellationToken);
     }
 
     public MutationPlanApproval Approve(SemanticMutationRequest request, string approvedBy)
@@ -78,16 +99,22 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
         ArgumentNullException.ThrowIfNull(approval);
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Replay consumption is deliberately deferred until the exact approved
-        // semantic plan, lowered IR, security contract and execution context have
-        // all been validated. A failed approval fingerprint or security check must
-        // not burn a warrant that was never executable.
         var plan = AuthorizeAndPlan(approval.Request);
         var fingerprint = Fingerprint(plan);
         if (!string.Equals(fingerprint, approval.PlanFingerprint, StringComparison.Ordinal))
             throw new InvalidOperationException(
                 "The approved mutation plan changed after approval. Re-run dry-run and obtain a new approval.");
 
+        return ExecutePlanAsync(plan, approval.Request.Security, approval, context, cancellationToken);
+    }
+
+    private Task<MutationExecutionResult> ExecutePlanAsync(
+        SemanticMutationPlan plan,
+        SecurityExecutionContext? security,
+        MutationPlanApproval? approval,
+        ExecutionContext? context,
+        CancellationToken cancellationToken)
+    {
         var ir = new SemanticMutationExecutionLowerer(_schema).Lower(plan);
         var executionContext = context ?? new ExecutionContext();
         executionContext.EnsureWithinDeadline();
@@ -99,24 +126,27 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
             _provider.GetType().FullName ?? _provider.GetType().Name,
             plan.RequiredSecurityInvariants.Where(IsEnginePreservedInvariant));
 
-        // The final security gate must pass before the replay identity is consumed.
-        // Replay is then committed immediately before the provider side effect.
+        // The final gate binds the exact lowered IR to the provider and required
+        // invariants immediately before any side effect. GraphQL therefore cannot
+        // bypass the same mutation security boundary used by MCP/direct callers.
         MutationExecutionSecurityGate.EnsureExecutable(ir, _provider, certificate);
-        ConsumeWarrantReplay(approval.Request);
 
-        var started = DateTimeOffset.UtcNow;
+        // A warrant is single-use when a replay store is configured. Consume it
+        // only after every authorization/certification check has passed.
+        if (security is not null)
+            ConsumeWarrantReplay(security);
+
         var result = _provider.ExecuteBatch(ir, executionContext, deadlineCts.Token);
         executionContext.EnsureWithinDeadline();
         var resultFingerprint = FingerprintResult(result);
-        _ = started;
         return Task.FromResult(new MutationExecutionResult(
             result,
-            fingerprint,
+            Fingerprint(plan),
             resultFingerprint,
-            approval.ApprovalId,
-            approval.ApprovedBy));
-    }
+            approval?.ApprovalId,
+            approval?.ApprovedBy));
 
+    }
 
     private void ValidateWarrant(SemanticMutationRequest request)
     {
@@ -156,15 +186,75 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
                 throw new UnauthorizedAccessException(
                     $"Security warrant does not authorize capability '{capability.Id}' for subject '{security.Subject}'.");
             }
+
+            ValidateWarrantAllowedFields(operation, security);
         }
 
     }
 
-    private void ConsumeWarrantReplay(SemanticMutationRequest request)
+
+    private void ValidateWarrantAllowedFields(
+        SemanticMutationOperation operation,
+        SecurityExecutionContext security)
     {
-        var security = request.Security;
-        if (security is null)
+        var allowed = security.Warrant.Constraints.AllowedFields;
+        if (allowed.Count == 0)
             return;
+
+        if (_model is null)
+            throw new InvalidOperationException(
+                "A mutation warrant specifies allowed fields, but no SemanticModel is configured to resolve them.");
+
+        var entity = _model.Get(operation.Entity);
+        var requested = operation.Fields
+            .Where(field => field.Source is null)
+            .Select(field => entity.Fields.FirstOrDefault(x => x.Id == field.Field))
+            .Where(field => field is not null)
+            .Select(field => field!.Name)
+            .Concat(operation.ReturnFields
+                .Select(field => entity.Fields.FirstOrDefault(x => x.Id == field))
+                .Where(field => field is not null)
+                .Select(field => field!.Name))
+            .Concat(FilterFields(operation.Filter, entity))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        if (requested.Any(field => !allowed.Contains(field, StringComparer.Ordinal)))
+            throw new UnauthorizedAccessException(
+                $"Security warrant does not authorize one or more requested mutation fields on '{entity.Name}'.");
+    }
+
+    private static IEnumerable<string> FilterFields(
+        SemanticFilterExpression? filter,
+        SemanticEntity entity)
+    {
+        switch (filter)
+        {
+            case SemanticFieldFilter field:
+                var semanticField = entity.Fields.FirstOrDefault(x => x.Id == field.Field);
+                if (semanticField is not null)
+                    yield return semanticField.Name;
+                yield break;
+
+            case SemanticAndFilter and:
+                foreach (var expression in and.Expressions)
+                    foreach (var name in FilterFields(expression, entity))
+                        yield return name;
+                yield break;
+
+            case SemanticOrFilter or:
+                foreach (var expression in or.Expressions)
+                    foreach (var name in FilterFields(expression, entity))
+                        yield return name;
+                yield break;
+
+            default:
+                yield break;
+        }
+    }
+
+    private void ConsumeWarrantReplay(SecurityExecutionContext security)
+    {
 
         if (_warrantReplayStore is null)
             throw new InvalidOperationException("Executing a warrant-backed mutation requires a warrant replay store.");

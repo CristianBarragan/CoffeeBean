@@ -15,6 +15,7 @@
     <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate.Execution/Foundgine.GraphQL.HotChocolate.Execution.csproj" />
     <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" />
     <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj" />
+    <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate.MutationExecution/Foundgine.GraphQL.HotChocolate.MutationExecution.csproj" />
     <ProjectReference Include="../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
     <ProjectReference Include="../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />
     <ProjectReference Include="../../src/Foundgine/Foundgine.csproj" />

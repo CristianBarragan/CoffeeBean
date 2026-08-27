@@ -23,7 +23,8 @@ public sealed class SemanticAuthorizer
         if (graph.Nodes.Count == 0)
             return graph;
 
-        var authorized = new SemanticGraph([], graph.Options);
+        var authorized = new SemanticGraph();
+        authorized.Options = graph.Options;
         var sourceToAuthorized = new Dictionary<int, SemanticGraphNode>();
 
         foreach (var sourceNode in graph.Nodes)
@@ -102,9 +103,9 @@ public sealed class SemanticAuthorizer
             {
                 node = authorized.AddRoot(sourceNode.EntityId, fields, predicate);
             }
-            else if (sourceNode.ViaRelationship is { } viaRelationshipId)
+            else if (sourceNode.ViaRelationship is { } childRelationshipId)
             {
-                node = authorized.Add(sourceNode.EntityId, viaRelationshipId, authorizedParent, fields, predicate);
+                node = authorized.Add(sourceNode.EntityId, childRelationshipId, authorizedParent, fields, predicate);
             }
             else if (sourceNode.ViaConnection is { } connectionId)
             {

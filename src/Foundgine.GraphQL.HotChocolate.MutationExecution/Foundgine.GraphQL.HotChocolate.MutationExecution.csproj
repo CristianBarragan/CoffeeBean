@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Foundgine.GraphQL.HotChocolate.MutationExecution</PackageId>
+    <Description>Secure Hot Chocolate GraphQL mutation execution integration for Foundgine.</Description>
+    <PackageTags>graphql;hotchocolate;security;mutations;execution;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RootNamespace>Foundgine.GraphQL.HotChocolate</RootNamespace>
+    <AssemblyName>Foundgine.GraphQL.HotChocolate.MutationExecution</AssemblyName>
+    <IsPackable>true</IsPackable>
+    <PackageReleaseNotes>1.1.0: Secure GraphQL mutation execution through the canonical Foundgine mutation security boundary. Requires a host-supplied ISecurityExecutionContextProvider.</PackageReleaseNotes>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj" />
+    <ProjectReference Include="../Foundgine.Execution/Foundgine.Execution.csproj" />
+  </ItemGroup>
+</Project>
