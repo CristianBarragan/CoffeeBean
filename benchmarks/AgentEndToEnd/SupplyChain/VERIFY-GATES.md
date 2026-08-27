@@ -37,7 +37,7 @@ Authorization penetration coverage:
 
 ```powershell
 $env:FOUNDGINE_POSTGRES_CONNECTION='Host=localhost;Port=55432;Database=foundgine_e2e;Username=foundgine;Password=foundgine'
-dotnet test tests/Foundgine.Authorization.Tests/Foundgine.Authorization.Tests.csproj -c Release --no-build --filter 'FullyQualifiedName~TransferFundsPenetrationTests'
+dotnet test tests/Foundgine.Security.Authority.Tests/Foundgine.Security.Authority.Tests.csproj -c Release --no-build --filter 'FullyQualifiedName~TransferFundsPenetrationTests'
 ```
 
 Adversarial semantic-input coverage:
