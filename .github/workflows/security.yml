@@ -195,6 +195,119 @@ jobs:
         if: always()
         run: docker compose -f samples/Foundgine.SupplyChain.PenTest/docker-compose.yml
           down --volumes --remove-orphans
+  security-penetration:
+    name: Security Penetration Test — Authorization
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 9.0.x
+      - name: Restore
+        run: dotnet restore Foundgine.sln
+      - name: Build
+        run: dotnet build Foundgine.sln --no-restore --configuration Release
+      - name: Start PostgreSQL 17
+        run: |
+          docker compose \
+            -f docker-compose.postgres.yml \
+            up -d --wait postgres
+      - name: Run authorization penetration tests
+        run: |
+          set -euo pipefail
+          export FOUNDGINE_POSTGRES_CONNECTION='Host=localhost;Port=55432;Database=foundgine_e2e;Username=foundgine;Password=foundgine'
+
+          dotnet test \
+            tests/Foundgine.Authorization.Tests/Foundgine.Authorization.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --filter 'FullyQualifiedName~TransferFundsPenetrationTests' \
+            --logger 'console;verbosity=normal'
+      - name: PostgreSQL diagnostics on failure
+        if: failure()
+        run: |
+          docker compose \
+            -f docker-compose.postgres.yml \
+            logs --no-color postgres
+      - name: Stop PostgreSQL
+        if: always()
+        run: |
+          docker compose \
+            -f docker-compose.postgres.yml \
+            down \
+            --volumes \
+            --remove-orphans
+  security-adversarial:
+    name: Security Penetration Test — Adversarial Intent
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 9.0.x
+      - name: Restore
+        run: dotnet restore Foundgine.sln
+      - name: Build
+        run: dotnet build Foundgine.sln --no-restore --configuration Release
+      - name: Run hostile model corpus
+        run: |
+          set -euo pipefail
+
+          dotnet test \
+            tests/Foundgine.E2E.Tests/Foundgine.E2E.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --filter 'FullyQualifiedName~ModelProviderReplayTests.Hostile_model_corpus_is_replayed_through_the_real_engine' \
+            --logger 'console;verbosity=normal'
+      - name: Run adversarial engine tests
+        run: |
+          set -euo pipefail
+
+          dotnet test \
+            tests/Foundgine.E2E.Tests/Foundgine.E2E.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --filter 'FullyQualifiedName~BlackBoxAdversarialEngineTests' \
+            --logger 'console;verbosity=normal'
+  security-semantic-penetration:
+    name: Security Penetration Test — Foundgine Semantic Boundary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 9.0.x
+      - name: Restore
+        run: dotnet restore Foundgine.sln
+      - name: Build
+        run: dotnet build Foundgine.sln --no-restore --configuration Release
+      - name: Run Foundgine penetration tests
+        run: |
+          set -euo pipefail
+
+          dotnet test \
+            tests/Foundgine.Security.Tests/Foundgine.Security.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --logger "trx;LogFileName=foundgine-security-penetration.trx" \
+            --logger "console;verbosity=normal"
+      - name: Upload penetration test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundgine-security-penetration-results
+          path: |
+            tests/Foundgine.Security.Tests/TestResults/*.trx
+            security/pentest/*.md
+          if-no-files-found: warn
   security-penetration-mcp:
     name: Security Penetration Test — SupplyChain MCP
     runs-on: ubuntu-latest
