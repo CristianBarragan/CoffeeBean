@@ -441,7 +441,10 @@ public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProvi
             ?? throw new InvalidOperationException(
                 $"Entity '{entity.Name}' primary key is not mapped to a semantic field.");
 
-        if (!result.Any(x => x.Field == primaryKeyField.Id))
+        // FieldId is not globally sufficient to identify an ordering term. A field
+        // with the same semantic identity can occur on a related path. Cursor
+        // pagination for this entity requires the primary key at the root path.
+        if (!result.Any(x => x.IsRootField && x.Aggregate == SemanticOrderAggregate.None && x.Field == primaryKeyField.Id))
             result.Add(new SemanticOrderTerm(primaryKeyField.Id, SemanticSortDirection.Asc));
 
         return result;

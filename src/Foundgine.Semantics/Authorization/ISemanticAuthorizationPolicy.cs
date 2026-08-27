@@ -32,6 +32,22 @@ public interface ISemanticAuthorizationPolicy
             ? (CanAccessEntity(entityId) ? AuthorizationDecision.Allowed : AuthorizationDecision.Denied)
             : (CanWriteEntity(entityId) ? AuthorizationDecision.Allowed : AuthorizationDecision.Denied);
 
+    /// <summary>
+    /// Named-operation refinement of <see cref="GetEntityAccess(EntityId, AuthorizationOperation)"/>.
+    /// The default falls back to the coarse Read/Write decision above, so
+    /// existing policies keep their current behavior unchanged. Override this
+    /// only when a policy needs to distinguish domain-specific write intents
+    /// (for example "Invoice.Pay" versus "Invoice.Update") that the coarse
+    /// <see cref="AuthorizationOperation.Write"/> gate does not separate.
+    /// A denial here must never be weaker than the coarse decision would be:
+    /// this refinement may only narrow access, never widen it.
+    /// </summary>
+    AuthorizationDecision GetEntityAccess(
+        EntityId entityId,
+        AuthorizationOperation operation,
+        AuthorizationOperationName? name) =>
+        GetEntityAccess(entityId, operation);
+
     AuthorizationDecision GetFieldAccess(EntityId entityId, FieldId fieldId, AuthorizationOperation operation) =>
         operation == AuthorizationOperation.Read
             ? (CanAccessField(entityId, fieldId) ? AuthorizationDecision.Allowed : AuthorizationDecision.Denied)

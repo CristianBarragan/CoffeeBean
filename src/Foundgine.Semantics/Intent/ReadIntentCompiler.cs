@@ -29,7 +29,8 @@ public sealed class ReadIntentCompiler
         return new SemanticRequest(
             root.Id,
             selections,
-            new SemanticQueryOptions(filter, order, intent.Limit, intent.Offset, intent.After));
+            new SemanticQueryOptions(filter, order, intent.Limit, intent.Offset, intent.After),
+            intent.Security);
     }
 
     private SemanticSelection CompileSelection(SemanticEntity entity, ReadSelection selection)
@@ -93,8 +94,12 @@ public sealed class ReadIntentCompiler
             entity = _model.Get(relationship.Target);
         }
 
+        var fieldId = order.Aggregate == SemanticOrderAggregate.Count
+            ? entity.Identity.FieldId
+            : FindField(entity, order.Field).Id;
+
         return new SemanticOrderTerm(
-            FindField(entity, order.Field).Id,
+            fieldId,
             order.Direction,
             path,
             order.Aggregate);

@@ -9,7 +9,7 @@ namespace Foundgine.Semantics;
 /// </summary>
 public sealed class SemanticModelBuilder
 {
-    private readonly SemanticModel _model = new();
+    private readonly Dictionary<EntityId, SemanticEntity> _entities = new();
 
     public SemanticModelBuilder Entity(
         EntityId id,
@@ -19,25 +19,25 @@ public sealed class SemanticModelBuilder
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(configure);
 
-        if (_model.TryGet(id, out _))
+        if (_entities.ContainsKey(id))
             throw new InvalidOperationException($"Semantic entity '{id}' is already registered.");
 
         var builder = new SemanticEntityBuilder(id, name);
         configure(builder);
-        _model.Register(builder.Build());
+        _entities.Add(id, builder.Build());
         return this;
     }
 
     public SemanticModel Build()
     {
-        foreach (var entity in _model.Entities)
+        foreach (var entity in _entities.Values)
         {
             ValidateUniqueFields(entity);
             ValidateUniqueRelationships(entity);
 
             foreach (var relationship in entity.Relationships)
             {
-                if (!_model.TryGet(relationship.Target, out _))
+                if (!_entities.ContainsKey(relationship.Target))
                 {
                     throw new InvalidOperationException(
                         $"Semantic relationship '{entity.Name}.{relationship.Name}' targets unknown entity '{relationship.Target}'.");
@@ -45,7 +45,7 @@ public sealed class SemanticModelBuilder
             }
         }
 
-        return _model;
+        return new SemanticModel(_entities);
     }
 
     private static void ValidateUniqueFields(SemanticEntity entity)

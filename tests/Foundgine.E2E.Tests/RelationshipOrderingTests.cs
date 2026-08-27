@@ -54,6 +54,36 @@ public sealed class RelationshipOrderingTests
         Assert.False(secondResult.PageInfo!.HasNextPage);
     }
 
+    [Fact]
+    public void Related_field_with_same_field_id_as_root_primary_key_still_gets_root_tie_breaker()
+    {
+        var model = BuildModel();
+        var metadata = BuildMetadata();
+
+        var request = new SemanticRequest(
+            Customer,
+            [
+                new SemanticSelection(new FieldId(1), null, []),
+                new SemanticSelection(
+                    null,
+                    CustomerProfile,
+                    [new SemanticSelection(new FieldId(1), null, [])])
+            ],
+            new SemanticQueryOptions(
+                Order: [new SemanticOrderTerm(new FieldId(1), SemanticSortDirection.Desc, [CustomerProfile])],
+                Limit: 1));
+
+        var plan = Compile(model, metadata, request);
+
+        Assert.Contains(
+            "ORDER BY \"t1\".\"Id\" DESC, \"t0\".\"Id\" ASC",
+            plan.CommandText,
+            StringComparison.Ordinal);
+        Assert.Equal(2, plan.Pagination!.CursorValues.Count);
+        Assert.Equal(new FieldId(1), plan.Pagination.CursorValues[0].FieldId);
+        Assert.Equal(new FieldId(1), plan.Pagination.CursorValues[1].FieldId);
+    }
+
     private static SemanticModel BuildModel() =>
         new SemanticModelBuilder()
             .Entity(Customer, "Customer", e => e

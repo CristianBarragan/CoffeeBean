@@ -23,7 +23,7 @@ public sealed class SemanticAuthorizer
         if (graph.Nodes.Count == 0)
             return graph;
 
-        var authorized = new SemanticGraph { Options = graph.Options };
+        var authorized = new SemanticGraph([], graph.Options);
         var sourceToAuthorized = new Dictionary<int, SemanticGraphNode>();
 
         foreach (var sourceNode in graph.Nodes)
@@ -49,9 +49,8 @@ public sealed class SemanticAuthorizer
                 .Select(x => x.FieldId)
                 .ToArray();
 
-            var fieldAuthorization = AuthorizationDecision.Allowed;
-            foreach (var decision in fieldDecisions.Where(x => x.Decision.IsAllowed))
-                fieldAuthorization = AuthorizationDecision.Combine(fieldAuthorization, decision.Decision);
+            var fieldAuthorization = SemanticAuthorizationCapabilityComposition.Compose(
+                fieldDecisions.Where(x => x.Decision.IsAllowed).Select(x => x.Decision));
 
             var authorization = AuthorizationDecision.Combine(
                 _policy.GetEntityAccess(sourceNode.EntityId, AuthorizationOperation.Read),
@@ -98,14 +97,23 @@ public sealed class SemanticAuthorizer
             }
 
             var predicate = authorization.Predicate;
-            var node = sourceNode.ParentId is null
-                ? authorized.AddRoot(sourceNode.EntityId, fields, predicate)
-                : authorized.Add(
-                    sourceNode.EntityId,
-                    sourceNode.ViaRelationship,
-                    authorizedParent,
-                    fields,
-                    predicate);
+            SemanticGraphNode node;
+            if (sourceNode.ParentId is null)
+            {
+                node = authorized.AddRoot(sourceNode.EntityId, fields, predicate);
+            }
+            else if (sourceNode.ViaRelationship is { } viaRelationshipId)
+            {
+                node = authorized.Add(sourceNode.EntityId, viaRelationshipId, authorizedParent, fields, predicate);
+            }
+            else if (sourceNode.ViaConnection is { } connectionId)
+            {
+                node = authorized.AddConnection(sourceNode.EntityId, connectionId, authorizedParent!, fields, predicate);
+            }
+            else
+            {
+                throw new InvalidOperationException($"Graph node {sourceNode.Id} has a parent but no semantic edge.");
+            }
 
             sourceToAuthorized[sourceNode.Id] = node;
         }

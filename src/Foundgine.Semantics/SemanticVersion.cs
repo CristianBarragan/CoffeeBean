@@ -41,7 +41,7 @@ public sealed record SemanticVersionSet(
             builder.Append("identity|").Append(entity.Identity.ToString()).Append(';');
 
             foreach (var field in entity.Fields.OrderBy(x => x.Id.Value))
-                builder.Append("field|").Append(field.Id.Value).Append('|').Append(field.Name).Append('|').Append(field.ClrType.FullName).Append(';');
+                builder.Append("field|").Append(field.Id.Value).Append('|').Append(field.Name).Append('|').Append(field.EffectiveSemanticType).Append('|').Append(field.Capabilities).Append('|').Append(field.IsNullable).Append(';');
 
             foreach (var relationship in entity.Relationships.OrderBy(x => x.Id.Value))
                 builder.Append("relationship|").Append(relationship.Id.Value).Append('|').Append(relationship.Name).Append('|').Append(relationship.Target.Value).Append('|').Append(relationship.Cardinality).Append(';');
