@@ -42,7 +42,7 @@ The core does not depend on GraphQL, Hot Chocolate, SQL, EF Core, OpenAI, MCP, o
 - `Foundgine.Semantics` — meaning, requests, resolution, authorization
 - `Foundgine.Planning` — provider-independent plans
 - `Foundgine.Execution` — provider execution contracts and results
-- `Foundgine.Authorization` — authorization recovery control plane: witness quorum, credential lifecycle, journal reconciliation, failover
+- `Foundgine.Security.Authority` — authorization recovery control plane: witness quorum, credential lifecycle, journal reconciliation, failover
 - `Foundgine.Sql` — SQL provider
 - `Foundgine.InMemory` — small non-SQL provider
 - `Foundgine.Intent.Json` — JSON input

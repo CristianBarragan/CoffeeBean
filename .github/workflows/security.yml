@@ -220,7 +220,7 @@ jobs:
           export FOUNDGINE_POSTGRES_CONNECTION='Host=localhost;Port=55432;Database=foundgine_e2e;Username=foundgine;Password=foundgine'
 
           dotnet test \
-            tests/Foundgine.Authorization.Tests/Foundgine.Authorization.Tests.csproj \
+            tests/Foundgine.Security.Authority.Tests/Foundgine.Security.Authority.Tests.csproj \
             --no-build \
             --configuration Release \
             --filter 'FullyQualifiedName~TransferFundsPenetrationTests' \

@@ -1,13 +1,21 @@
 using Foundgine.Abstractions;
 
+using Foundgine.Semantics.Expressions;
+
 namespace Foundgine.Semantics.Query;
 
-public abstract record SemanticFilterExpression;
+public abstract record SemanticFilterExpression : SemanticExpression
+{
+    public override SemanticType ResultType => SemanticExpressionTypes.Boolean;
+}
 
 public sealed record SemanticFieldFilter(
     FieldId Field,
     SemanticFilterOperator Operator,
-    object? Value) : SemanticFilterExpression;
+    object? Value) : SemanticFilterExpression
+{
+    public SemanticValue SemanticValue => global::Foundgine.Semantics.SemanticValue.From(Value);
+}
 
 public sealed record SemanticRelationshipFilter(
     RelationshipId Relationship,
@@ -24,7 +32,10 @@ public sealed record SemanticAggregateFilter(
     FieldId? Field,
     SemanticAggregateFilterOperator Operator,
     object? Value,
-    SemanticFilterExpression? Predicate = null) : SemanticFilterExpression;
+    SemanticFilterExpression? Predicate = null) : SemanticFilterExpression
+{
+    public SemanticValue SemanticValue => global::Foundgine.Semantics.SemanticValue.From(Value);
+}
 
 public sealed record SemanticAndFilter(
     IReadOnlyList<SemanticFilterExpression> Expressions) : SemanticFilterExpression;

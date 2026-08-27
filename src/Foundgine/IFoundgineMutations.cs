@@ -9,6 +9,10 @@ namespace Foundgine;
 public interface IFoundgineMutations
 {
     MutationDryRunResult DryRun(SemanticMutationRequest request);
+    Task<MutationExecutionResult> ExecuteAsync(
+        SemanticMutationRequest request,
+        ExecutionContext? context = null,
+        CancellationToken cancellationToken = default);
     MutationPlanApproval Approve(SemanticMutationRequest request, string approvedBy);
     Task<MutationExecutionResult> ExecuteApprovedAsync(
         MutationPlanApproval approval,

@@ -50,6 +50,12 @@ public sealed class McpSecurityIntegrationTests
         public string? LastApprovedBy { get; private set; }
         public SemanticMutationRequest? LastRequest { get; private set; }
 
+        public Task<MutationExecutionResult> ExecuteAsync(
+            SemanticMutationRequest request,
+            ExecutionContext? context = null,
+            CancellationToken cancellationToken = default) =>
+            throw new NotImplementedException();
+
         public MutationDryRunResult DryRun(SemanticMutationRequest request)
         {
             LastRequest = request;

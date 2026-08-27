@@ -31,7 +31,7 @@ public sealed class SemanticRequestResolver
         SemanticQueryOptionsValidator.Validate(normalizedOptions, root);
         ValidateOrdering(normalizedOptions?.EffectiveOrder ?? [], root, request.Selections);
 
-        var graph = new SemanticGraph([], normalizedOptions);
+        var graph = new SemanticGraph { Options = normalizedOptions };
 
         ResolveSelections(root, request.Selections, graph, null, null, isRoot: true);
         SemanticGraphValidator.Validate(graph, _model);

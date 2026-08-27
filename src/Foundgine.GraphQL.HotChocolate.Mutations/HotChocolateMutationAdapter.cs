@@ -19,6 +19,8 @@ public sealed class HotChocolateMutationAdapter
     private readonly SemanticModel _model;
     private readonly IMetadataProvider _metadata;
 
+    public SemanticModel Model => _model;
+
     public HotChocolateMutationAdapter(SemanticModel model, IMetadataProvider metadata)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));

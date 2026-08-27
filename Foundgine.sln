@@ -36,6 +36,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.GraphQL.HotChocol
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.GraphQL.HotChocolate.Mutations", "src\Foundgine.GraphQL.HotChocolate.Mutations\Foundgine.GraphQL.HotChocolate.Mutations.csproj", "{1000000A-0000-0000-0000-00000000000A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.GraphQL.HotChocolate.MutationExecution", "src\Foundgine.GraphQL.HotChocolate.MutationExecution\Foundgine.GraphQL.HotChocolate.MutationExecution.csproj", "{10000015-0000-0000-0000-000000000015}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Intent.Json", "src\Foundgine.Intent.Json\Foundgine.Intent.Json.csproj", "{1000000B-0000-0000-0000-00000000000B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Intent.Json.Tests", "tests\Foundgine.Intent.Json.Tests\Foundgine.Intent.Json.Tests.csproj", "{20000006-0000-0000-0000-000000000006}"
@@ -60,9 +62,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.HighAssurance.Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.HighAssurance.Postgres", "samples\Foundgine.HighAssurance.Postgres\Foundgine.HighAssurance.Postgres.csproj", "{10000012-0000-0000-0000-000000000012}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Authorization.Tests", "tests\Foundgine.Authorization.Tests\Foundgine.Authorization.Tests.csproj", "{2000000B-0000-0000-0000-00000000000B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Security.Authority.Tests", "tests\Foundgine.Security.Authority.Tests\Foundgine.Security.Authority.Tests.csproj", "{2000000B-0000-0000-0000-00000000000B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Authorization", "src\Foundgine.Authorization\Foundgine.Authorization.csproj", "{10000013-0000-0000-0000-000000000013}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Security.Authority", "src\Foundgine.Security.Authority\Foundgine.Security.Authority.csproj", "{10000013-0000-0000-0000-000000000013}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.CoffeeBeanery.ProductComposite", "samples\Foundgine.CoffeeBeanery.ProductComposite\Foundgine.CoffeeBeanery.ProductComposite.csproj", "{523098A7-4F9B-4E76-8D47-14A910E8FE63}"
 EndProject
@@ -90,6 +92,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{10000015-0000-0000-0000-000000000015}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10000015-0000-0000-0000-000000000015}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10000015-0000-0000-0000-000000000015}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10000015-0000-0000-0000-000000000015}.Release|Any CPU.Build.0 = Release|Any CPU
 		{30000001-0000-0000-0000-000000000001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{30000001-0000-0000-0000-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30000001-0000-0000-0000-000000000001}.Release|Any CPU.ActiveCfg = Release|Any CPU

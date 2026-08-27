@@ -27,5 +27,7 @@ public sealed record SemanticReadNode(
     SemanticQueryOptions? QueryOptions = null,
     AuthorizationPredicate? Authorization = null)
 {
+    /// <summary>Fields required internally by predicates/order/dependencies but not necessarily returned.</summary>
+    public IReadOnlyList<FieldId> RequiredFields { get; init; } = [];
     public bool IsRoot => ViaRelationship is null && ViaConnection is null;
 }

@@ -1,6 +1,6 @@
 # Security invariant history
 
-Invariant-by-invariant history of the authorization recovery control plane (`src/Foundgine.Authorization/Recovery/`), in reverse-ish chronological order as originally recorded. Section headers use plain descriptive titles rather than internal tracking IDs; the itemized per-release change list lives in the root [`CHANGELOG.md`](../../CHANGELOG.md).
+Invariant-by-invariant history of the authorization recovery control plane (`src/Foundgine.Security.Authority/Recovery/`), in reverse-ish chronological order as originally recorded. Section headers use plain descriptive titles rather than internal tracking IDs; the itemized per-release change list lives in the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## Repair Proposer Authentication Binding Security
 
