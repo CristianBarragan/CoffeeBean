@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.1.2] - 2026-08-28
+
+### Fixed
+- **Fixed `Foundgine.SupplyChain.Semantic` test compilation.** The sample application project sits above the `Tests/` directory, so the .NET SDK's default recursive compile glob was incorrectly compiling the xUnit test source files as part of the application project. That caused `CS0246` errors for `Xunit`, `Fact`, and `FactAttribute` when building the Semantic sample solution. The application project now explicitly excludes `Tests/**/*.cs`; the dedicated `Foundgine.SupplyChain.Semantic.Tests` project remains responsible for compiling and running the tests.
+- **Aligned the Semantic sample test runner dependency with the main SupplyChain test project**, using `xunit.runner.visualstudio` 3.1.5.
+- **Release version bumped to `1.1.2`** in `Directory.Build.props`.
+
+### Changed
+- **Supply Chain sample structure remains aligned across `Foundgine.SupplyChain`, `Foundgine.SupplyChain.Semantic`, and `Foundgine.SupplyChain.PenTest`.** The Semantic sample continues to use the same physical `Api/`, `Application/`, `Domain/`, `Infrastructure/`, `Semantics/`, and `Tests/` boundaries, with test compilation isolated to its test project.
+- **Website navigation/header fixes carried forward into the release:** the AI Agents self-link is correctly active and uses the direct page path, the global navigation includes `Samples`, the Semantic/PenTest samples are discoverable from the Samples page, and the responsive mobile hamburger menu has working open/close, Escape, link-selection, and desktop-breakpoint behavior.
+- **CI retains independent sample gates** for `Foundgine.SupplyChain` and `Foundgine.SupplyChain.Semantic`, so failures in either sample are surfaced independently from the main repository test job.
+
+### Verification
+- Static project/solution and workflow validation was performed for the release contents.
+- An actual `dotnet build`/`dotnet test` run could not be performed in the packaging environment because the .NET SDK is not installed there; CI should provide the authoritative runtime verification.
+
+
+### Build and sample fixes
+
+- Fixed the Semantic sample seed data to construct `BusinessUnitId` explicitly for strongly typed IDs.
+- Fixed PenTest API project references to the sibling `Foundgine.SupplyChain` sample after the aligned `Api/` layout.
+- Verified all sample project references resolve from their new physical locations.
+
+
 ## [1.1.1] - 2026-08-27
 
 ### Architecture
