@@ -185,3 +185,4 @@ The seam for validating each layer independently: capability authorization, AOT 
 - **Read the full layer-by-layer guide.** [GUIDE.md](https://github.com/cristianbarragan/Foundgine/blob/main/samples/Foundgine.SupplyChain/GUIDE.md) is the source for this page.
 - **See how a request actually executes.** The [How it works](../how-it-works/index.html) page follows structured intent through authorization, planning and execution.
 - **Look at the evidence.** The [Agent Benchmark](../agent-benchmark/index.html) page includes a dedicated Supply Chain end-to-end report.
+- **Explore the other samples.** Once you're comfortable with this canonical layout, see [Samples](../samples/index.html) for `Foundgine.SupplyChain.Semantic` (recursive relationships, authorization invariants, complex fulfillment planning) and `Foundgine.SupplyChain.PenTest` (a GraphQL/MCP transport security-regression harness).
