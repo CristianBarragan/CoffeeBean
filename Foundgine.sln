@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -70,8 +70,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.CoffeeBeanery.Pro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Domain", "samples\Foundgine.SupplyChain\Domain\Foundgine.SupplyChain.Domain.csproj", "{30000001-0000-0000-0000-000000000001}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Semantics", "samples\Foundgine.SupplyChain\Semantics\Foundgine.SupplyChain.Semantics.csproj", "{30000002-0000-0000-0000-000000000002}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Application", "samples\Foundgine.SupplyChain\Application\Foundgine.SupplyChain.Application.csproj", "{30000003-0000-0000-0000-000000000003}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Infrastructure", "samples\Foundgine.SupplyChain\Infrastructure\Foundgine.SupplyChain.Infrastructure.csproj", "{30000004-0000-0000-0000-000000000004}"
@@ -94,6 +92,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Seman
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Semantic.Mcp.Client", "samples\Foundgine.SupplyChain.Semantic\McpClient\Foundgine.SupplyChain.Semantic.Mcp.Client.csproj", "{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C79}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Simple", "samples\Foundgine.SupplyChain.Simple\Foundgine.SupplyChain.Simple.csproj", "{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C80}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -108,10 +108,6 @@ Global
 		{30000001-0000-0000-0000-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30000001-0000-0000-0000-000000000001}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30000001-0000-0000-0000-000000000001}.Release|Any CPU.Build.0 = Release|Any CPU
-		{30000002-0000-0000-0000-000000000002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{30000002-0000-0000-0000-000000000002}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{30000002-0000-0000-0000-000000000002}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{30000002-0000-0000-0000-000000000002}.Release|Any CPU.Build.0 = Release|Any CPU
 		{30000003-0000-0000-0000-000000000003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{30000003-0000-0000-0000-000000000003}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30000003-0000-0000-0000-000000000003}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -280,6 +276,14 @@ Global
 		{1AD7667F-FACA-46C7-A4DC-24494D8244BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1AD7667F-FACA-46C7-A4DC-24494D8244BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1AD7667F-FACA-46C7-A4DC-24494D8244BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C79}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8A1B8F9A-0E8D-4D5C-9A31-6E4B5E2D1C78}.Debug|Any CPU.Build.0 = Debug|Any CPU

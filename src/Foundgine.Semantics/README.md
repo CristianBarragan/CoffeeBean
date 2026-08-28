@@ -64,3 +64,42 @@ new SemanticModelBuilder()
 
 Foundgine validates that both selectors are direct properties and that their CLR types match. `product => product.Id` is rooted in `Product`; `component => component.ParentProductId` is rooted in `ProductComponent`. This is deliberately separate from EF entity metadata or semantic-builder properties.
 
+
+## Authorization configuration
+
+Authorization primitives belong to Foundgine, while applications provide only policy configuration and actor context. `SemanticAuthorizationConfiguration` and `ConfiguredSemanticAuthorizationPolicy` are provider-neutral and can be reused by query, dynamic intent, MCP, GraphQL, and mutation paths.
+
+```csharp
+var configuration = new SemanticAuthorizationConfiguration()
+    .AddEntityRule((ctx, entity, operation) => /* application rule */ true)
+    .AddFieldRule((ctx, entity, field, operation) => /* application rule */ true)
+    .AddRelationshipRule((ctx, entity, relationship, operation) => /* application rule */ true);
+
+var policy = new ConfiguredSemanticAuthorizationPolicy(
+    configuration,
+    new SemanticAuthorizationContext(tenantId, role, claims));
+```
+
+Rules are evaluated after open intent is resolved. Logical traversals are expanded into their complete semantic relationship path before authorization, so a convenient path such as `Customer -> transactions` cannot bypass policy on intermediate entities or relationships.
+
+Attributes such as `SemanticPolicyAttribute`, `SemanticEntityAttribute`, and `SemanticFieldAttribute` are optional Foundgine primitives. Configuration is preferred when security or semantic meaning is application policy rather than domain-model metadata.
+
+## Structural discovery and application configuration
+
+Foundgine keeps four concerns separate:
+
+- **Metadata** describes what exists: entities, fields, identities and direct relationships.
+- **Semantic configuration** describes application meaning that structural metadata cannot infer, such as a logical traversal.
+- **Authorization** describes what an actor may exercise.
+- **Intent** describes what the caller wants.
+
+When structural metadata is available, applications can start with `SemanticModelBuilder.FromMetadata(...)` and add only semantic meaning. Logical traversals can be configured by semantic names, avoiding dependencies on generated numeric identities:
+
+```csharp
+var model = SemanticModelBuilder
+    .FromMetadata(metadata)
+    .Traversal("Customer", "transactions", "relationships", "contract", "transactions")
+    .Build();
+```
+
+The named traversal is expanded into its underlying relationship path before authorization and planning. No shortcut capability is granted merely because the traversal has a convenient caller-facing name.

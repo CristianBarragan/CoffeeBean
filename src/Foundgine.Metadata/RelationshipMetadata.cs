@@ -12,4 +12,5 @@ public sealed record RelationshipMetadata(
     EntityId Target,
     string Name,
     ColumnReference SourceKey,
-    ColumnReference TargetKey);
+    ColumnReference TargetKey,
+    bool IsCollection = true);

@@ -161,7 +161,8 @@ public sealed class SemanticEntityBuilder<TModel>
             _identity ?? throw new InvalidOperationException(
                 $"Semantic entity '{_name}' must declare an identity."),
             _fields.ToArray(),
-            _relationships.ToArray());
+            _relationships.ToArray())
+        { ModelType = typeof(TModel) };
 
     private FieldId AllocateFieldId()
     {

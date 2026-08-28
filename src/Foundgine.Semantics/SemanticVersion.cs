@@ -47,6 +47,16 @@ public sealed record SemanticVersionSet(
                 builder.Append("relationship|").Append(relationship.Id.Value).Append('|').Append(relationship.Name).Append('|').Append(relationship.Target.Value).Append('|').Append(relationship.Cardinality).Append(';');
         }
 
+        foreach (var traversal in model.Traversals
+                     .OrderBy(x => x.Source.Value)
+                     .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            builder.Append("traversal|").Append(traversal.Source.Value).Append('|').Append(traversal.Name).Append('|').Append(traversal.Target.Value).Append('|');
+            foreach (var relationship in traversal.Path)
+                builder.Append(relationship.Value).Append(',');
+            builder.Append(';');
+        }
+
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()));
         return $"sha256:{Convert.ToHexString(hash).ToLowerInvariant()}";
     }

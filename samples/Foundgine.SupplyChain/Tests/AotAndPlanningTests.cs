@@ -6,7 +6,7 @@ using Foundgine.Planning;
 using Foundgine.Semantics.IR;
 using Foundgine.Semantics.Query;
 using Foundgine.Sql;
-using Foundgine.SupplyChain.Semantics;
+using Foundgine.SupplyChain.Application;
 using Xunit;
 
 namespace Foundgine.SupplyChain.Tests;
@@ -16,8 +16,8 @@ public sealed class AotAndPlanningTests
     [Fact]
     public void Aot_metadata_keeps_model_names_separate_from_storage_names()
     {
-        var customer = GeneratedMetadata.Registry.GetEntity(SupplyChainSemanticModel.Customer);
-        var order = GeneratedMetadata.Registry.GetEntity(SupplyChainSemanticModel.SalesOrder);
+        var customer = GeneratedMetadata.Registry.GetEntity(SupplyChainSemanticConfiguration.Customer);
+        var order = GeneratedMetadata.Registry.GetEntity(SupplyChainSemanticConfiguration.SalesOrder);
 
         Assert.Equal("CustomerERP", customer.Name);
         Assert.Equal("customers", customer.EffectiveStorageName);
@@ -29,7 +29,7 @@ public sealed class AotAndPlanningTests
     public void Generated_semantic_surface_exposes_named_fields_without_numeric_ids()
     {
         Assert.Equal("QuantityOnHand", GeneratedSemanticModel.InventoryPosition.QuantityOnHand.Name);
-        Assert.Equal(SupplyChainSemanticModel.InventoryPosition, GeneratedSemanticModel.InventoryPosition.Entity);
+        Assert.Equal(SupplyChainSemanticConfiguration.InventoryPosition, GeneratedSemanticModel.InventoryPosition.Entity);
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public sealed class AotAndPlanningTests
     {
         var operation = new SemanticOperation(new SemanticReadNode(
             1,
-            SupplyChainSemanticModel.CatalogProduct,
+            SupplyChainSemanticConfiguration.CatalogProduct,
             GeneratedSemanticModel.CatalogProduct.All,
             null,
             null,
@@ -51,5 +51,15 @@ public sealed class AotAndPlanningTests
         Assert.Contains("products", sql.CommandText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("WHERE", sql.CommandText, StringComparison.OrdinalIgnoreCase);
         Assert.Single(sql.EffectiveParameters);
+    }
+
+    [Fact]
+    public void Semantic_model_is_discovered_from_generated_metadata_and_enriched_by_application_configuration()
+    {
+        var model = SupplyChainSemanticConfiguration.Model;
+
+        Assert.Contains(model.Entities, entity => entity.Id == SupplyChainSemanticConfiguration.Customer);
+        Assert.Contains(model.Entities, entity => entity.Id == SupplyChainSemanticConfiguration.Shipment);
+        Assert.NotNull(model.Get(SupplyChainSemanticConfiguration.Customer).Identity);
     }
 }

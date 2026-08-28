@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton(SupplyChainSemanticModel.Build());
 builder.Services.AddMcpServer()
     .WithHttpTransport(o => o.Stateless = true)
-    .WithTools<StoreChainMcpTools>();
+    .WithTools<SupplyChainMcpTools>();
 
 var app = builder.Build();
 app.MapMcp("/mcp");
@@ -21,19 +21,19 @@ app.Run();
 public partial class Program { }
 
 [McpServerToolType]
-public sealed class StoreChainMcpTools(SemanticModel model)
+public sealed class SupplyChainMcpTools(SemanticModel model)
 {
-    private static readonly IReadOnlyDictionary<string, (string TenantId, StoreChainRole Role, string Token)> Actors =
-        new Dictionary<string, (string, StoreChainRole, string)>(StringComparer.OrdinalIgnoreCase)
+    private static readonly IReadOnlyDictionary<string, (string TenantId, SupplyChainRole Role, string Token)> Actors =
+        new Dictionary<string, (string, SupplyChainRole, string)>(StringComparer.OrdinalIgnoreCase)
         {
-            ["alice"] = ("tenant-a", StoreChainRole.Customer, "alice-demo-token"),
-            ["analyst-a"] = ("tenant-a", StoreChainRole.Analyst, "analyst-a-demo-token"),
-            ["operator-a"] = ("tenant-a", StoreChainRole.WarehouseOperator, "operator-a-demo-token"),
-            ["manager-a"] = ("tenant-a", StoreChainRole.SupplyChainManager, "manager-a-demo-token"),
-            ["analyst-b"] = ("tenant-b", StoreChainRole.Analyst, "analyst-b-demo-token")
+            ["alice"] = ("tenant-a", SupplyChainRole.Customer, "alice-demo-token"),
+            ["analyst-a"] = ("tenant-a", SupplyChainRole.Analyst, "analyst-a-demo-token"),
+            ["operator-a"] = ("tenant-a", SupplyChainRole.WarehouseOperator, "operator-a-demo-token"),
+            ["manager-a"] = ("tenant-a", SupplyChainRole.SupplyChainManager, "manager-a-demo-token"),
+            ["analyst-b"] = ("tenant-b", SupplyChainRole.Analyst, "analyst-b-demo-token")
         };
 
-    private static (string TenantId, StoreChainRole Role) Authenticate(string actor, string token)
+    private static (string TenantId, SupplyChainRole Role) Authenticate(string actor, string token)
     {
         if (!Actors.TryGetValue(actor, out var identity) ||
             !CryptographicEquals(identity.Token, token))
@@ -50,13 +50,13 @@ public sealed class StoreChainMcpTools(SemanticModel model)
         return diff == 0;
     }
 
-    private StoreChainAuthorizationPolicy Policy(string actor, string token) =>
+    private ConfiguredSemanticAuthorizationPolicy Policy(string actor, string token) =>
         Policy(actor, token, ClaimsValidationResult.Empty);
 
-    private StoreChainAuthorizationPolicy Policy(string actor, string token, ClaimsValidationResult validatedClaims)
+    private ConfiguredSemanticAuthorizationPolicy Policy(string actor, string token, ClaimsValidationResult validatedClaims)
     {
         var identity = Authenticate(actor, token);
-        return new StoreChainAuthorizationPolicy(identity.TenantId, identity.Role, validatedClaims);
+        return SupplyChainAuthorization.Create(identity.TenantId, identity.Role, validatedClaims.Accepted);
     }
 
     /// <summary>
@@ -166,8 +166,8 @@ public sealed class StoreChainMcpTools(SemanticModel model)
         object? result = attack switch
         {
             "cross-tenant" => policy.GetPredicate(SupplyChainSemanticModel.Warehouse, AuthorizationOperation.Read),
-            "sensitive-field" => policy.GetFieldAccess(SupplyChainSemanticModel.InventoryLot, StoreChainAuthorizationPolicy.FieldIds.InventoryQuarantined, AuthorizationOperation.Read),
-            "relationship-escalation" => policy.GetRelationshipAccess(SupplyChainSemanticModel.Supplier, StoreChainAuthorizationPolicy.RelationshipIds.SupplierIncidents, AuthorizationOperation.Read),
+            "sensitive-field" => policy.GetFieldAccess(SupplyChainSemanticModel.InventoryLot, SupplyChainAuthorization.FieldIds.InventoryQuarantined, AuthorizationOperation.Read),
+            "relationship-escalation" => policy.GetRelationshipAccess(SupplyChainSemanticModel.Supplier, SupplyChainAuthorization.RelationshipIds.SupplierIncidents, AuthorizationOperation.Read),
             "write-escalation" => policy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write),
             "named-operation" => policy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write, new AuthorizationOperationName("inventory.reconcile")),
             // Claims-driven probes. All of these route through the same

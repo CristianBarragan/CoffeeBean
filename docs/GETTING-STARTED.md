@@ -118,3 +118,32 @@ docker compose -f docker-compose.postgres.yml down --volumes --remove-orphans
 2. [Testing](TESTING.md)
 3. [PostgreSQL E2E](POSTGRES-E2E.md)
 4. [Current status](CURRENT-STATUS.md)
+
+
+## Open intent authoring
+
+The application-facing API does not require a query interface for every operation. Use the typed surface when CLR types are available:
+
+```csharp
+var result = await foundgine
+    .Query<Customer>()
+    .Select(c => new { c.Id, c.Name })
+    .Include(c => c.Orders, orders => orders
+        .Select(o => new { o.Id, o.OrderDate }))
+    .Where(c => c.TenantId == tenantId)
+    .ExecuteAsync();
+```
+
+Agents and other dynamic producers can use the same open semantic surface:
+
+```csharp
+var result = await foundgine
+    .Query("Customer")
+    .Select("Id", "Name")
+    .Include("Orders", orders => orders
+        .Select("Id", "OrderDate"))
+    .Where("TenantId", SemanticFilterOperator.Eq, tenantId)
+    .ExecuteAsync();
+```
+
+Both forms become the same provider-neutral `ReadIntent` and go through the existing semantic validation, authorization, planning and execution pipeline. Dynamic names are resolved against the semantic model before provider execution.

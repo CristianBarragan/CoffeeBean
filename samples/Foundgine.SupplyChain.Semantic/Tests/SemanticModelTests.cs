@@ -1,4 +1,7 @@
 using Foundgine.SupplyChain.Semantic.Semantics;
+using Foundgine.SupplyChain.Semantic.Application;
+using Foundgine.SupplyChain.Semantic.Authorization;
+using Foundgine.Semantics.Capabilities;
 using Xunit;
 
 namespace Foundgine.SupplyChain.Semantic.Tests;
@@ -10,7 +13,7 @@ public sealed class SemanticModelTests
     {
         var model = SupplyChainSemanticModel.Build();
 
-        Assert.Equal(13, model.Entities.Count);
+        Assert.Equal(15, model.Entities.Count);
         var product = model.Get(SupplyChainSemanticModel.Product);
         Assert.Equal("Product", product.Name);
         Assert.Contains(product.Relationships, r => r.Name == "components");
@@ -25,44 +28,69 @@ public sealed class SemanticModelTests
     }
 
     [Fact]
-    public void Generated_metadata_exposes_resource_limits_for_recursive_queries_and_pagination()
+    public void Execution_limits_are_application_policy_not_generated_semantic_topology()
     {
-        Assert.Equal(5, Generated.SupplyChainGeneratedMetadata.RecursiveBomMaxDepth);
-        Assert.Equal(50, Generated.SupplyChainGeneratedMetadata.MaximumPageSize);
-        Assert.Equal(10000, Generated.SupplyChainGeneratedMetadata.MaximumTraversalNodes);
-        Assert.Equal("products.read", Generated.SupplyChainGeneratedMetadata.ProductPolicy);
-        Assert.Equal("inventory.read", Generated.SupplyChainGeneratedMetadata.InventoryPolicy);
+        Assert.Equal(5, SupplyChainExecutionLimits.RecursiveBomMaxDepth);
+        Assert.Equal(50, SupplyChainExecutionLimits.MaximumPageSize);
+        Assert.Equal(10000, SupplyChainExecutionLimits.MaximumTraversalNodes);
     }
 }
 
-public sealed class MixedAuthoringTests
+public sealed class MetadataBackedAuthoringTests
 {
     [Fact]
-    public void Model_is_deliberately_mixed_between_generated_and_manual_authoring()
+    public void Semantic_model_is_discovered_from_generated_structural_metadata()
     {
         var model = SupplyChainSemanticModel.Build();
 
-        // Generated subset.
-        Assert.True(model.TryGet(SupplyChainSemanticModel.PurchaseOrder, out _));
-        Assert.True(model.TryGet(SupplyChainSemanticModel.Shipment, out _));
+        Assert.Equal(15, model.Entities.Count);
+        Assert.Equal(15, SupplyChainSemanticModel.Metadata.Entities.Count());
+        Assert.Equal(13, SupplyChainSemanticModel.Metadata.Relationships.Count());
 
-        // Manual subset.
-        Assert.True(model.TryGet(SupplyChainSemanticModel.Product, out _));
-        Assert.True(model.TryGet(SupplyChainSemanticModel.Supplier, out _));
-
-        Assert.Equal(13, model.Entities.Count);
+        Assert.Equal("Product", model.Get(SupplyChainSemanticModel.Product).Name);
+        Assert.Equal("PurchaseOrder", model.Get(SupplyChainSemanticModel.PurchaseOrder).Name);
+        Assert.Equal("Shipment", model.Get(SupplyChainSemanticModel.Shipment).Name);
     }
 
     [Fact]
-    public void Generated_and_manual_entities_share_the_same_semantic_model()
+    public void Logical_traversal_is_authored_by_names_and_expands_over_discovered_relationships()
     {
         var model = SupplyChainSemanticModel.Build();
-        var purchaseOrder = model.Get(SupplyChainSemanticModel.PurchaseOrder);
-        var product = model.Get(SupplyChainSemanticModel.Product);
+        var traversal = model.GetTraversal(SupplyChainSemanticModel.Product, "shipments");
 
-        Assert.Equal("PurchaseOrder", purchaseOrder.Name);
-        Assert.Equal("Product", product.Name);
-        Assert.Contains(purchaseOrder.Relationships, x => x.Name == "shipments");
-        Assert.Contains(product.Relationships, x => x.Name == "components");
+        Assert.Equal("shipments", traversal.Name);
+        Assert.Equal(3, traversal.Path.Count);
+        Assert.Equal("purchaseOrderLines", model.Get(SupplyChainSemanticModel.Product).Relationships.Single(x => x.Id == traversal.Path[0]).Name);
+        Assert.Equal("purchaseOrder", model.Get(SupplyChainSemanticModel.PurchaseOrderLine).Relationships.Single(x => x.Id == traversal.Path[1]).Name);
+        Assert.Equal("shipments", model.Get(SupplyChainSemanticModel.PurchaseOrder).Relationships.Single(x => x.Id == traversal.Path[2]).Name);
+    }
+
+
+    [Fact]
+    public void Multi_hop_supplier_incident_traversal_is_hidden_when_an_intermediate_entity_is_denied()
+    {
+        var model = SupplyChainSemanticModel.Build();
+        var customer = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.Customer);
+        var manager = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.SupplyChainManager);
+
+        var customerCapabilities = SemanticCapabilityContractDiscovery.Describe(model, customer);
+        var managerCapabilities = SemanticCapabilityContractDiscovery.Describe(model, manager);
+
+        Assert.DoesNotContain(customerCapabilities.Capabilities, x =>
+            x.Id.Equals("Product.supplierIncidents.traverse", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(managerCapabilities.Capabilities, x =>
+            x.Id.Equals("Product.supplierIncidents.traverse", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Authorization_resolves_fields_and_relationships_without_hard_coded_generated_ids()
+    {
+        Assert.Equal("RiskScore", SupplyChainSemanticModel.Model
+            .Get(SupplyChainSemanticModel.Supplier).Fields
+            .Single(x => x.Id == SupplyChainAuthorization.FieldIds.SupplierRiskScore).Name);
+
+        Assert.Equal("incidents", SupplyChainSemanticModel.Model
+            .Get(SupplyChainSemanticModel.Supplier).Relationships
+            .Single(x => x.Id == SupplyChainAuthorization.RelationshipIds.SupplierIncidents).Name);
     }
 }

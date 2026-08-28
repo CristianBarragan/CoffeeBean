@@ -58,7 +58,7 @@
       <h2 id="separation">Separation of concerns</h2>
 
       <h3>Semantic model</h3>
-      <p>Defines the application-facing capabilities.</p>
+      <p>Defines the application-facing capabilities. As of 1.1.5, a semantic model can be produced two ways: authored by hand, or discovered from structural metadata via <code>SemanticModel.Discover(...)</code> / <code>SemanticModelBuilder.FromMetadata(...)</code> against an <code>IMetadataCatalog</code> — with entities, fields, identities, CLR types, collection shape, and direct relationships inferred automatically, leaving only semantic enrichment (policies, traversals, capabilities) to be added by the application. <code>FoundgineOptions.UseMetadata()</code> makes this the preferred application setup path.</p>
 
       <h3>Intent</h3>
       <p>Describes what the caller wants without binding it directly to a physical provider.</p>
@@ -74,6 +74,9 @@
 
       <h3>Provider</h3>
       <p>Compiles and executes the plan against a concrete backend.</p>
+
+      <h2 id="metadata-contract">Compile-time relationship metadata contract</h2>
+      <p>Since 1.1.5, relationship metadata produced for Foundgine is validated at compile time, not just discovered. Relationship targets must resolve to discovered Foundgine entities, navigation-property targets must match the declared relationship target, foreign-key and principal-key properties must exist as unambiguous scalar properties with matching CLR types, and any violation reports a deterministic <code>FGMETA001</code>–<code>FGMETA007</code> diagnostic instead of emitting a broken generated registry.</p>
 
       <h2 id="multiple-callers">Multiple callers, one execution model</h2>
       <div class="converge">

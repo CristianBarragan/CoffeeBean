@@ -5,7 +5,7 @@ namespace Foundgine.Metadata;
 /// In-memory registry of the static metadata used by resolution and planning.
 /// A future AOT generator can emit an implementation with the same contract.
 /// </summary>
-public sealed class MetadataRegistry : IMetadataProvider, IMutationSchema
+public sealed class MetadataRegistry : IMetadataCatalog, IMutationSchema
 {
     private readonly Dictionary<EntityId, EntityMetadata> _entities = new();
     private readonly Dictionary<RelationshipId, RelationshipMetadata> _relationships = new();

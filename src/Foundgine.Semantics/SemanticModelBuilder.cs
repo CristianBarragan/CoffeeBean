@@ -13,6 +13,7 @@ public sealed class SemanticModelBuilder
 {
     private readonly Dictionary<EntityId, SemanticEntity> _entities = new();
     private readonly Dictionary<EntityId, Type> _entityModelTypes = new();
+    private readonly List<SemanticTraversal> _traversals = [];
 
     /// <summary>
     /// Registers a semantic entity whose fields can be authored against the
@@ -98,6 +99,83 @@ public sealed class SemanticModelBuilder
             _entities.Add(entity.Id, entity);
         }
 
+        _traversals.AddRange(model.Traversals);
+        return this;
+    }
+
+    /// <summary>
+    /// Declares a logical traversal over existing semantic relationships.
+    /// Example: Customer -&gt; CustomerRelationship -&gt; Contract -&gt; Transaction
+    /// can be exposed as the single open-intent traversal <c>transactions</c>.
+    /// Resolution expands it back into the real relationship path before
+    /// authorization and planning.
+    /// </summary>
+    /// <summary>
+    /// Declares a logical traversal using semantic names rather than generated
+    /// identities. Names are resolved against the already discovered semantic
+    /// graph, so application configuration does not need to depend on generated
+    /// numeric identifiers.
+    /// </summary>
+    public SemanticModelBuilder Traversal(
+        string sourceEntityName,
+        string name,
+        params string[] relationshipPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceEntityName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(relationshipPath);
+        if (relationshipPath.Length == 0)
+            throw new ArgumentException("A semantic traversal must contain at least one relationship.", nameof(relationshipPath));
+
+        var source = _entities.Values.FirstOrDefault(x =>
+            string.Equals(x.Name, sourceEntityName, StringComparison.OrdinalIgnoreCase));
+        if (source is null)
+            throw new InvalidOperationException($"Source semantic entity '{sourceEntityName}' is not known.");
+
+        var current = source;
+        var ids = new List<RelationshipId>(relationshipPath.Length);
+        foreach (var relationshipName in relationshipPath)
+        {
+            var relationship = current.Relationships.FirstOrDefault(x =>
+                string.Equals(x.Name, relationshipName, StringComparison.OrdinalIgnoreCase));
+            if (relationship is null)
+                throw new InvalidOperationException(
+                    $"Traversal '{name}' references relationship '{relationshipName}', which is not declared on '{current.Name}'.");
+
+            ids.Add(relationship.Id);
+            current = _entities[relationship.Target];
+        }
+
+        return Traversal(source.Id, name, ids.ToArray());
+    }
+
+    public SemanticModelBuilder Traversal(
+        EntityId source,
+        string name,
+        params RelationshipId[] path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(path);
+
+        if (path.Length == 0)
+            throw new ArgumentException("A semantic traversal must contain at least one relationship.", nameof(path));
+        if (!_entities.ContainsKey(source))
+            throw new InvalidOperationException($"Source semantic entity '{source}' must be registered before declaring traversal '{name}'.");
+        if (_entities[source].Relationships.Any(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)) ||
+            _traversals.Any(x => x.Source == source && string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException($"Semantic traversal '{name}' conflicts with an existing relationship or traversal on entity '{source}'.");
+
+        var current = source;
+        foreach (var relationshipId in path)
+        {
+            var entity = _entities[current];
+            var relationship = entity.Relationships.FirstOrDefault(x => x.Id == relationshipId)
+                ?? throw new InvalidOperationException(
+                    $"Traversal '{name}' references relationship '{relationshipId}', which is not declared on '{entity.Name}'.");
+            current = relationship.Target;
+        }
+
+        _traversals.Add(new SemanticTraversal(source, name, current, path.ToArray()));
         return this;
     }
 
@@ -160,7 +238,13 @@ public sealed class SemanticModelBuilder
             }
         }
 
-        return new SemanticModel(_entities);
+        foreach (var traversal in _traversals)
+        {
+            if (traversal.Path.Count == 0)
+                throw new InvalidOperationException($"Semantic traversal '{traversal.Name}' must contain at least one relationship.");
+        }
+
+        return new SemanticModel(_entities, _traversals);
     }
 
     private static void ValidateUniqueFields(SemanticEntity entity)

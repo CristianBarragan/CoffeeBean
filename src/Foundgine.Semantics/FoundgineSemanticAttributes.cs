@@ -1,10 +1,10 @@
-namespace Foundgine.SupplyChain.Semantic.Authorization;
+namespace Foundgine.Semantics;
 
-/// <summary>Declarative source metadata used by the sample's generated semantic surface.</summary>
+/// <summary>Optional declarative semantic metadata. Configuration is preferred when metadata cannot naturally live with the model.</summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class SemanticEntityAttribute : Attribute;
 
-/// <summary>Declares the semantic policy name associated with a domain model or operation.</summary>
+/// <summary>Associates a model member with a named semantic authorization policy.</summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property, Inherited = false)]
 public sealed class SemanticPolicyAttribute(string name) : Attribute
 {
@@ -13,6 +13,6 @@ public sealed class SemanticPolicyAttribute(string name) : Attribute
         : name;
 }
 
-/// <summary>Marks a domain property as intentionally exposed through generated semantics.</summary>
+/// <summary>Marks a model member as explicitly exposed through semantic metadata.</summary>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter, Inherited = false)]
 public sealed class SemanticFieldAttribute : Attribute;

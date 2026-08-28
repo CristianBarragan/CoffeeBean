@@ -6,7 +6,7 @@ using Foundgine.Planning;
 using Foundgine.Semantics.IR;
 using Foundgine.Sql;
 using Npgsql;
-using Foundgine.SupplyChain.Semantics;
+using Foundgine.SupplyChain.Application;
 using Foundgine.Sql.Query;
 using ExecutionContext = Foundgine.Execution.ExecutionContext;
 

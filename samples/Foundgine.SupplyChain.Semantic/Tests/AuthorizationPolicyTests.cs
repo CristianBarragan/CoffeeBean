@@ -1,4 +1,5 @@
 using Foundgine.Abstractions;
+using Foundgine.Semantics.Authorization;
 using Foundgine.SupplyChain.Semantic.Authorization;
 using Foundgine.SupplyChain.Semantic.Semantics;
 using Xunit;
@@ -10,13 +11,13 @@ public sealed class AuthorizationPolicyTests
     [Fact]
     public void Entity_field_relationship_conditional_write_and_named_operation_policies_are_distinct()
     {
-        var analyst = new StoreChainAuthorizationPolicy("tenant-a", StoreChainRole.Analyst);
-        var operatorPolicy = new StoreChainAuthorizationPolicy("tenant-a", StoreChainRole.WarehouseOperator);
+        var analyst = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.Analyst);
+        var operatorPolicy = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.WarehouseOperator);
 
         Assert.True(analyst.CanAccessEntity(SupplyChainSemanticModel.Product));
         Assert.True(analyst.CanAccessEntity(SupplyChainSemanticModel.ComplianceIncident));
-        Assert.False(analyst.CanAccessField(SupplyChainSemanticModel.InventoryLot, StoreChainAuthorizationPolicy.FieldIds.InventoryQuarantined));
-        Assert.False(operatorPolicy.CanAccessRelationship(SupplyChainSemanticModel.Supplier, StoreChainAuthorizationPolicy.RelationshipIds.SupplierIncidents));
+        Assert.False(analyst.CanAccessField(SupplyChainSemanticModel.InventoryLot, SupplyChainAuthorization.FieldIds.InventoryQuarantined));
+        Assert.False(operatorPolicy.CanAccessRelationship(SupplyChainSemanticModel.Supplier, SupplyChainAuthorization.RelationshipIds.SupplierIncidents));
         Assert.NotNull(analyst.GetPredicate(SupplyChainSemanticModel.Warehouse, AuthorizationOperation.Read));
         Assert.False(analyst.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write).IsAllowed);
         Assert.False(operatorPolicy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write, new AuthorizationOperationName("inventory.reconcile")).IsAllowed);
@@ -26,7 +27,7 @@ public sealed class AuthorizationPolicyTests
 
 /// <summary>
 /// Unit coverage for <see cref="ClientClaimsValidator"/> in isolation, plus
-/// coverage of how <see cref="StoreChainAuthorizationPolicy"/> consumes only
+/// coverage of how <see cref="ConfiguredSemanticAuthorizationPolicy"/> consumes only
 /// the validated, accepted claims that come out of it. These are the same
 /// scenarios the MCP adversarial client exercises end-to-end; the unit tests
 /// pin the behavior at the policy layer so a regression fails fast in CI
@@ -137,8 +138,8 @@ public sealed class ClientClaimsValidatorTests
     {
         var raw = new Dictionary<string, string> { ["scope"] = "read-only" };
         var claims = ClientClaimsValidator.Validate(raw, Now);
-        var manager = new StoreChainAuthorizationPolicy("tenant-a", StoreChainRole.SupplyChainManager, claims);
-        var managerWithoutClaim = new StoreChainAuthorizationPolicy("tenant-a", StoreChainRole.SupplyChainManager);
+        var manager = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.SupplyChainManager, claims.Accepted);
+        var managerWithoutClaim = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.SupplyChainManager);
 
         Assert.False(manager.CanWriteEntity(SupplyChainSemanticModel.InventoryLot));
         Assert.True(managerWithoutClaim.CanWriteEntity(SupplyChainSemanticModel.InventoryLot));
@@ -149,7 +150,7 @@ public sealed class ClientClaimsValidatorTests
     {
         var raw = new Dictionary<string, string> { ["warehouse"] = "12" };
         var claims = ClientClaimsValidator.Validate(raw, Now);
-        var policy = new StoreChainAuthorizationPolicy("tenant-a", StoreChainRole.Analyst, claims);
+        var policy = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.Analyst, claims.Accepted);
 
         var predicate = policy.GetPredicate(SupplyChainSemanticModel.Warehouse, AuthorizationOperation.Read);
 
@@ -160,7 +161,7 @@ public sealed class ClientClaimsValidatorTests
     [Fact]
     public void Reconcile_requires_manager_role_and_valid_evidence_claims_together()
     {
-        var noEvidence = new StoreChainAuthorizationPolicy("tenant-a", StoreChainRole.SupplyChainManager);
+        var noEvidence = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.SupplyChainManager);
         Assert.False(noEvidence
             .GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write, new AuthorizationOperationName("inventory.reconcile"))
             .IsAllowed);
@@ -171,14 +172,14 @@ public sealed class ClientClaimsValidatorTests
             ["change_ticket"] = "CHG-4821"
         };
         var validatedEvidence = ClientClaimsValidator.Validate(evidenceRaw, Now);
-        var withEvidence = new StoreChainAuthorizationPolicy("tenant-a", StoreChainRole.SupplyChainManager, validatedEvidence);
+        var withEvidence = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.SupplyChainManager, validatedEvidence.Accepted);
         Assert.True(withEvidence
             .GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write, new AuthorizationOperationName("inventory.reconcile"))
             .IsAllowed);
 
         // Valid evidence still cannot substitute for role: an operator with
         // the exact same claims remains denied.
-        var operatorWithEvidence = new StoreChainAuthorizationPolicy("tenant-a", StoreChainRole.WarehouseOperator, validatedEvidence);
+        var operatorWithEvidence = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.WarehouseOperator, validatedEvidence.Accepted);
         Assert.False(operatorWithEvidence
             .GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write, new AuthorizationOperationName("inventory.reconcile"))
             .IsAllowed);

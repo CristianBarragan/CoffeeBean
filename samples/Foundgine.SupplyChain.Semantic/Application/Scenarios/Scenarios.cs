@@ -1,6 +1,6 @@
 using Foundgine.SupplyChain.Semantic.Data;
 using Foundgine.SupplyChain.Semantic.Domain;
-using Foundgine.SupplyChain.Semantic.Generated;
+using Foundgine.SupplyChain.Semantic.Application;
 
 namespace Foundgine.SupplyChain.Semantic.Scenarios;
 
@@ -19,7 +19,7 @@ public static class SupplyChainScenarios
 
         void Walk(ProductId product, int depth, HashSet<ProductId> path)
         {
-            if (depth > SupplyChainGeneratedMetadata.RecursiveBomMaxDepth) return;
+            if (depth > SupplyChainExecutionLimits.RecursiveBomMaxDepth) return;
             if (!path.Add(product))
             {
                 result.Add(new(product, default, depth, true));

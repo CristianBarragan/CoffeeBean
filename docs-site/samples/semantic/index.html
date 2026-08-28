@@ -178,7 +178,7 @@ This sample intentionally demonstrates authorization as a semantic concern rathe
 </p>
 
 <table>
-<thead><tr><th>Policy type</th><th>StoreChain case</th><th>Adversarial attempt</th></tr></thead>
+<thead><tr><th>Policy type</th><th>SupplyChain case</th><th>Adversarial attempt</th></tr></thead>
 <tbody>
 <tr><td><strong>Entity</strong></td><td>Compliance incidents are restricted to analysts and managers.</td><td>A customer requests incident data.</td></tr>
 <tr><td><strong>Field</strong></td><td>Inventory quarantine and supplier risk are selectively exposed.</td><td>An agent asks for a restricted field.</td></tr>
@@ -207,13 +207,13 @@ Current actor policy ─────────────┘
                                   Execute</pre>
 
 <p>
-The runtime policy is <code>StoreChainAuthorizationPolicy</code>. Capability discovery is descriptive only: an agent may inspect what is available, but a capability response is never treated as proof of authority. The current policy is evaluated again for the requested operation.
+The runtime policy is <code>SupplyChainAuthorizationPolicy</code>. Capability discovery is descriptive only: an agent may inspect what is available, but a capability response is never treated as proof of authority. The current policy is evaluated again for the requested operation.
 </p>
 
 <h2>Mixed manual + generated authoring</h2>
 
 <p>
-The StoreChain model deliberately mixes authoring strategies. Purchase orders, purchase-order lines, and shipments are represented by the generated artifact; products, suppliers, inventory and the other curated domain concepts are manually authored. The two paths are imported into one <code>SemanticModel</code> before resolution and authorization.
+The SupplyChain model deliberately mixes authoring strategies. Purchase orders, purchase-order lines, and shipments are represented by the generated artifact; products, suppliers, inventory and the other curated domain concepts are manually authored. The two paths are imported into one <code>SemanticModel</code> before resolution and authorization.
 </p>
 
 <pre>Generated entities ────────┐
@@ -252,7 +252,7 @@ The important security property is not merely that the MCP endpoint has a role c
 <code>read_entity</code>, <code>write_entity</code>, and <code>policy_probe</code> also accept an optional, untrusted <code>claims</code> dictionary sent by the MCP caller itself, on top of the existing <code>actor</code>/<code>token</code> authentication. Identity — tenant and role — is still resolved entirely server-side; claims are additional context a caller volunteers about itself, and a new fail-closed <code>ClientClaimsValidator</code> is the only thing standing between that untrusted dictionary and the authorization policy.
 </p>
 
-<pre>Client claims (untrusted) ──&gt; ClientClaimsValidator ──&gt; Accepted claims only ──&gt; StoreChainAuthorizationPolicy
+<pre>Client claims (untrusted) ──&gt; ClientClaimsValidator ──&gt; Accepted claims only ──&gt; SupplyChainAuthorizationPolicy
                                      │
                                      └──&gt; Rejected claims (reported, never consulted)</pre>
 
@@ -271,7 +271,7 @@ The validator treats every claim as hostile until proven otherwise. Reserved ide
 </table>
 
 <p>
-Every accepted claim can only narrow what the authenticated role already allows — the warehouse predicate is combined with <code>AND</code>, never <code>OR</code>, so it can only shrink a result set, and the two-argument <code>StoreChainAuthorizationPolicy</code> constructor used everywhere else in the sample is unchanged and simply delegates to an empty claim set. There is no code path from a rejected or malformed claim into an authorization decision. The adversarial MCP client exercises this directly: role/tenant injection and missing, malformed, or expired reconcile evidence are attacks that must be denied, while a self-imposed read-only scope, a warehouse scope, an unrecognized claim key, and well-formed reconcile evidence are legitimate, self-narrowing uses that the policy must honor rather than silently ignore.
+Every accepted claim can only narrow what the authenticated role already allows — the warehouse predicate is combined with <code>AND</code>, never <code>OR</code>, so it can only shrink a result set, and the two-argument <code>SupplyChainAuthorizationPolicy</code> constructor used everywhere else in the sample is unchanged and simply delegates to an empty claim set. There is no code path from a rejected or malformed claim into an authorization decision. The adversarial MCP client exercises this directly: role/tenant injection and missing, malformed, or expired reconcile evidence are attacks that must be denied, while a self-imposed read-only scope, a warehouse scope, an unrecognized claim key, and well-formed reconcile evidence are legitimate, self-narrowing uses that the policy must honor rather than silently ignore.
 </p>
 
 <p>

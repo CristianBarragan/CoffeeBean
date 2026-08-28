@@ -10,4 +10,8 @@ public sealed record SemanticEntity(
     string Name,
     SemanticIdentity Identity,
     IReadOnlyList<SemanticField> Fields,
-    IReadOnlyList<SemanticRelationship> Relationships);
+    IReadOnlyList<SemanticRelationship> Relationships)
+{
+    /// <summary>CLR model type represented by this semantic entity when known.</summary>
+    public Type? ModelType { get; init; }
+}

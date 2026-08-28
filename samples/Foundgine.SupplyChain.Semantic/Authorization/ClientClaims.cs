@@ -13,7 +13,7 @@ public sealed record RejectedClaim(string Key, string? Value, string Reason);
 
 /// <summary>
 /// The result of validating an untrusted, client-supplied claim set. Only
-/// <see cref="Accepted"/> is ever handed to <see cref="StoreChainAuthorizationPolicy"/>.
+/// <see cref="Accepted"/> is ever handed to <see cref="SupplyChainAuthorization"/>.
 /// Nothing in <see cref="Rejected"/> is used for any authorization decision.
 /// </summary>
 public sealed record ClaimsValidationResult(
@@ -52,7 +52,7 @@ public sealed record ClaimsValidationResult(
 ///     rejection is reported back so the caller can see what was ignored.
 ///  4. Every accepted claim can only ever narrow what the policy already
 ///     allows for the authenticated role. Claims are never additive to
-///     privilege — see <see cref="StoreChainAuthorizationPolicy"/> for how
+///     privilege — see <see cref="SupplyChainAuthorization"/> for how
 ///     each accepted claim is consumed.
 /// </summary>
 public static class ClientClaimsValidator

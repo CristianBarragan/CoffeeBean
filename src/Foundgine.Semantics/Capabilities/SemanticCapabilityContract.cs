@@ -98,7 +98,7 @@ public static class SemanticCapabilityContractDiscovery
                 Read = PreservePredicate(entity.Read, policy.GetPredicate(entity.EntityId, AuthorizationOperation.Read)),
                 Write = PreservePredicate(entity.Write, policy.GetPredicate(entity.EntityId, AuthorizationOperation.Write))
             })
-            .SelectMany(entity => BuildCapabilities(model, entity))
+            .SelectMany(entity => BuildCapabilities(model, entity, policy))
             .OrderBy(capability => capability.Id, StringComparer.Ordinal)
             .ToArray();
 
@@ -115,7 +115,8 @@ public static class SemanticCapabilityContractDiscovery
 
     private static IEnumerable<SemanticCapability> BuildCapabilities(
         SemanticModel model,
-        SemanticAuthorizationCapability entity)
+        SemanticAuthorizationCapability entity,
+        ISemanticAuthorizationPolicy policy)
     {
         yield return new SemanticCapability(
             Id: $"{entity.Name}.read",
@@ -133,6 +134,10 @@ public static class SemanticCapabilityContractDiscovery
             Relationships: entity.Relationships
                 .Where(x => x.Read.IsAllowed)
                 .Select(x => x.Name)
+                .Concat(model.Traversals
+                    .Where(x => x.Source == entity.EntityId && TraversalIsReadable(model, x, policy))
+                    .Select(x => x.Name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
                 .ToArray())
         {
@@ -193,8 +198,49 @@ public static class SemanticCapabilityContractDiscovery
                 IsIdempotent = true
             };
         }
+
+        foreach (var traversal in model.Traversals.Where(x => x.Source == entity.EntityId && TraversalIsReadable(model, x, policy)))
+        {
+            yield return new SemanticCapability(
+                Id: $"{entity.Name}.{traversal.Name}.traverse",
+                Name: $"Traverse {entity.Name}.{traversal.Name}",
+                TargetEntityId: traversal.Target,
+                Access: AuthorizationDecision.Allowed,
+                Inputs: [],
+                Constraints: [new SemanticCapabilityConstraint(
+                    "semantic-path",
+                    $"Logical traversal expands through relationship path {string.Join(" -> ", traversal.Path.Select(x => x.Value))}; every hop remains subject to execution-time authorization.")],
+                Effects: [],
+                Fields: [],
+                Relationships: [])
+            {
+                Operation = "traverse",
+                HasSideEffects = false,
+                IsIdempotent = true
+            };
+        }
     }
 
+
+    private static bool TraversalIsReadable(
+        SemanticModel model,
+        SemanticTraversal traversal,
+        ISemanticAuthorizationPolicy policy)
+    {
+        var current = model.Get(traversal.Source);
+        foreach (var relationshipId in traversal.Path)
+        {
+            var relationship = current.Relationships.FirstOrDefault(x => x.Id == relationshipId);
+            if (relationship is null || !policy.GetRelationshipAccess(current.Id, relationship.Id, AuthorizationOperation.Read).IsAllowed)
+                return false;
+
+            current = model.Get(relationship.Target);
+            if (!policy.GetEntityAccess(current.Id, AuthorizationOperation.Read).IsAllowed)
+                return false;
+        }
+
+        return true;
+    }
 
     private static IReadOnlyList<SemanticCapabilityConstraint> BuildWriteConstraints() =>
     [

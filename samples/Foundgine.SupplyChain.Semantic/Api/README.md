@@ -2,7 +2,7 @@
 
 The semantic showcase entry point lives in the API layer, matching the physical layering used by `Foundgine.SupplyChain`.
 
-# StoreChain MCP authorization lab
+# SupplyChain MCP authorization lab
 
 This API is intentionally small and stateless. It is not a production authentication implementation; its fixed demo identities exist so the semantic authorization behavior can be exercised deterministically.
 
