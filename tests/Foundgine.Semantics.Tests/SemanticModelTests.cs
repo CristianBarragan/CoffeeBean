@@ -117,6 +117,111 @@ public sealed class SemanticModelTests
         Assert.Equal(typeof(int), entity.Fields[0].ClrType);
     }
 
+
+    [Fact]
+    public void Metadata_discovery_builds_structural_semantics_without_manual_entity_registration()
+    {
+        var registry = new MetadataRegistry();
+        var customer = new EntityId(200);
+        var order = new EntityId(201);
+        var customerId = new FieldId(1);
+        var orderId = new FieldId(2);
+        var customerPk = new ColumnId(1);
+        var orderPk = new ColumnId(2);
+        var relationship = new RelationshipId(200);
+
+        registry.Register(new EntityMetadata(
+            customer,
+            "Customer",
+            [new ColumnMetadata(customerPk, "Id")],
+            PrimaryKey: new ColumnReference(customer, customerPk),
+            Fields:
+            [
+                new FieldMetadata(customerId, "Id", typeof(int), new ColumnReference(customer, customerPk)),
+                new FieldMetadata(new FieldId(3), "Name", typeof(string))
+            ],
+            ClrType: typeof(TestCustomer)));
+
+        registry.Register(new EntityMetadata(
+            order,
+            "Order",
+            [new ColumnMetadata(orderPk, "Id")],
+            PrimaryKey: new ColumnReference(order, orderPk),
+            Fields:
+            [
+                new FieldMetadata(orderId, "Id", typeof(int), new ColumnReference(order, orderPk))
+            ],
+            ClrType: typeof(TestOrder)));
+
+        registry.Register(new RelationshipMetadata(
+            relationship,
+            customer,
+            order,
+            "Orders",
+            new ColumnReference(customer, customerPk),
+            new ColumnReference(order, orderPk),
+            IsCollection: true));
+
+        var model = SemanticModel.Discover(registry);
+
+        Assert.Equal(typeof(TestCustomer), model.Get(customer).ModelType);
+        Assert.Equal(customerId, model.Get(customer).Identity.FieldId);
+        Assert.Contains(model.Get(customer).Fields, field => field.Name == "Name");
+        var discoveredRelationship = Assert.Single(model.Get(customer).Relationships);
+        Assert.Equal("Orders", discoveredRelationship.Name);
+        Assert.Equal(RelationshipCardinality.Many, discoveredRelationship.Cardinality);
+    }
+
+    [Fact]
+    public void Metadata_discovery_can_be_enriched_with_logical_traversals()
+    {
+        var registry = new MetadataRegistry();
+        var customer = new EntityId(210);
+        var relationshipEntity = new EntityId(211);
+        var contract = new EntityId(212);
+        var transaction = new EntityId(213);
+
+        RegisterEntity(registry, customer, "Customer", 210);
+        RegisterEntity(registry, relationshipEntity, "CustomerRelationship", 211);
+        RegisterEntity(registry, contract, "Contract", 212);
+        RegisterEntity(registry, transaction, "Transaction", 213);
+
+        registry.Register(new RelationshipMetadata(new RelationshipId(210), customer, relationshipEntity, "Relationships",
+            new ColumnReference(customer, new ColumnId(210)), new ColumnReference(relationshipEntity, new ColumnId(211))));
+        registry.Register(new RelationshipMetadata(new RelationshipId(211), relationshipEntity, contract, "Contract",
+            new ColumnReference(relationshipEntity, new ColumnId(211)), new ColumnReference(contract, new ColumnId(212))));
+        registry.Register(new RelationshipMetadata(new RelationshipId(212), contract, transaction, "Transactions",
+            new ColumnReference(contract, new ColumnId(212)), new ColumnReference(transaction, new ColumnId(213))));
+
+        var model = SemanticModelBuilder.FromMetadata(registry)
+            .Traversal(customer, "transactions",
+                new RelationshipId(210),
+                new RelationshipId(211),
+                new RelationshipId(212))
+            .Build();
+
+        var traversal = model.GetTraversal(customer, "transactions");
+        Assert.Equal(transaction, traversal.Target);
+        Assert.Equal(3, traversal.Path.Count);
+    }
+
+    private sealed record TestCustomer(int Id, string Name);
+    private sealed record TestOrder(int Id);
+
+    private static void RegisterEntity(MetadataRegistry registry, EntityId id, string name, ushort columnId)
+    {
+        var column = new ColumnId(columnId);
+        registry.Register(new EntityMetadata(
+            id,
+            name,
+            [new ColumnMetadata(column, "Id")],
+            PrimaryKey: new ColumnReference(id, column),
+            Fields:
+            [
+                new FieldMetadata(new FieldId(columnId), "Id", typeof(int), new ColumnReference(id, column))
+            ]));
+    }
+
     private sealed record TestProduct(int Id, string Sku, string Name, decimal Price);
 
     // Deliberately different from TestProduct to prove the manual selector is

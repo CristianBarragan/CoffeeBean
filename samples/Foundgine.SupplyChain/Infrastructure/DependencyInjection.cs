@@ -3,7 +3,6 @@ using Foundgine.Planning;
 using Foundgine.SupplyChain.Application;
 using Foundgine.SupplyChain.Infrastructure.Mutations;
 using Foundgine.SupplyChain.Infrastructure.Queries;
-using Foundgine.SupplyChain.Semantics;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
@@ -14,8 +13,9 @@ public static class DependencyInjection
     public static IServiceCollection AddSupplyChainInfrastructure(this IServiceCollection services, string connectionString)
     {
         services.AddSingleton(NpgsqlDataSource.Create(connectionString));
-        services.AddSingleton<IMetadataProvider>(_ => SupplyChainSemanticModel.Metadata);
-        services.AddSingleton(SupplyChainSemanticModel.Metadata);
+        services.AddSingleton<IMetadataProvider>(_ => SupplyChainSemanticConfiguration.Metadata);
+        services.AddSingleton(SupplyChainSemanticConfiguration.Metadata);
+        services.AddSingleton(SupplyChainSemanticConfiguration.Model);
         services.AddSingleton<Planner>();
         services.AddSingleton<SemanticSqlQueryExecutor>();
         services.AddScoped<ISupplyChainQueries, SupplyChainQueryRepository>();

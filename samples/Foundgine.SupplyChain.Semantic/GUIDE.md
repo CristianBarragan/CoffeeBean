@@ -1,22 +1,69 @@
-# Foundgine StoreChain Semantic Sample — Guide
+# Foundgine SupplyChain Semantic Sample — Guide
 
 This guide is the detailed reference for `samples/Foundgine.SupplyChain.Semantic`. The
 [README](README.md) is the short pitch; this document walks through every moving part —
 the mixed manual/generated semantic model, the authorization policy, and the client-claims
 feature — with enough detail to extend the sample yourself.
 
+## The shape of the boundary
+
+Before any of the implementation detail, here is the path a request takes:
+
+```
+Agent / MCP caller
+       ↓
+Intent
+       ↓
+Foundgine semantic boundary
+       ↓
+Authorization
+       ↓
+Plan
+       ↓
+Provider
+```
+
+Everything in the rest of this guide — domain, semantic model, claims, policy, MCP —
+is the sample's implementation of **one step**: the semantic boundary and the
+authorization decision that happens at it. Claims validation is a supporting detail of
+that boundary, not the headline feature. The headline feature is that every caller,
+regardless of transport, goes through the same authorization surface before a plan is
+ever built.
+
+## What this sample does NOT implement
+
+This is worth stating explicitly, because it's easy to read the MCP tool code below and
+assume it's doing more than it is. The MCP layer in this sample does not implement:
+
+- tenant predicates
+- relationship traversal
+- authorization predicate composition
+- SQL (or any provider) generation
+- joins
+- mutation planning
+- provider-specific execution
+- capability semantics
+
+All of that belongs to Foundgine, underneath `SupplyChainAuthorization` and the
+semantic model. The application code you'll read in this sample — the MCP tools, the
+client-claims validator, the configured policy subclass — is the thin layer that authenticates a
+caller, validates the claims it hands over, and then asks Foundgine to authorize and
+execute an intent. It is not reimplementing authorization logic; it's *supplying inputs*
+to Foundgine's authorization logic.
+
 ## Contents
 
 1. [Layout](#layout)
 2. [Domain and semantic model](#domain-and-semantic-model)
-3. [Identity vs. claims — the core distinction](#identity-vs-claims--the-core-distinction)
-4. [Claims validation](#claims-validation)
-5. [How the policy consumes validated claims](#how-the-policy-consumes-validated-claims)
-6. [MCP tool surface](#mcp-tool-surface)
-7. [Adversarial MCP client](#adversarial-mcp-client)
-8. [Full attack / legitimate-use matrix](#full-attack--legitimate-use-matrix)
-9. [Running everything](#running-everything)
-10. [Extending the sample](#extending-the-sample)
+3. [Manual vs. generated semantics](#manual-vs-generated-semantics)
+4. [Identity vs. claims — the core distinction](#identity-vs-claims--the-core-distinction)
+5. [Claims validation](#claims-validation)
+6. [How the configured policy consumes validated claims](#how-the-policy-consumes-validated-claims)
+7. [MCP tool surface](#mcp-tool-surface)
+8. [Adversarial MCP client](#adversarial-mcp-client)
+9. [Full attack / legitimate-use matrix](#full-attack--legitimate-use-matrix)
+10. [Running everything](#running-everything)
+11. [Extending the sample](#extending-the-sample)
 
 ## Layout
 
@@ -26,12 +73,12 @@ samples/Foundgine.SupplyChain.Semantic/
 ├── Semantics/SupplyChainSemanticModel.cs      manual semantic authoring (SemanticModelBuilder)
 ├── Semantics/Generated/                       generated semantic authoring, imported into the same model
 ├── Authorization/
-│   ├── PolicyAnnotations.cs                   the annotation types themselves ([SemanticEntity], [SemanticPolicy], ...)
-│   ├── SupplyChainAuthorizationPolicy.cs       the runtime authorization policy (ISemanticAuthorizationPolicy)
+│   ├── FoundgineSemanticAttributes.cs (in src/Foundgine.Semantics)                   the annotation types themselves ([SemanticEntity], [SemanticPolicy], ...)
+│   ├── SupplyChainAuthorization.cs       the runtime authorization policy (ISemanticAuthorizationPolicy)
 │   └── ClientClaims.cs                        client-claim validator + result types (this feature)
 ├── Api/
 │   ├── Program.cs                              deterministic in-memory scenario runner
-│   └── Mcp/Program.cs                          the MCP server exposing StoreChain over tools/call
+│   └── Mcp/Program.cs                          the MCP server exposing SupplyChain over tools/call
 ├── McpClient/Program.cs                        the Run-5-style adversarial MCP client
 └── Tests/
     ├── AuthorizationPolicyTests.cs             policy + claims-validator unit tests
@@ -40,18 +87,45 @@ samples/Foundgine.SupplyChain.Semantic/
 
 ## Domain and semantic model
 
-The domain is intentionally a mix of manually authored and generated semantics — see the
-README's [Manual vs generated semantic models](README.md#manual-vs-generated-semantic-models)
-section for the authoring API itself. This guide focuses on what happens *after* the model
-exists: authorization.
+The domain is intentionally a mix of manually authored and generated semantics. This
+guide focuses on what happens *after* the model exists: authorization. The authoring
+API itself is covered next.
+
+## Manual vs. generated semantics
+
+```
+Application model
+       │
+       ├── manual semantics    (Semantics/SupplyChainSemanticModel.cs)
+       │
+       └── generated semantics (Semantics/Generated/)
+                ↓
+           AOT metadata
+                ↓
+         Foundgine runtime
+```
+
+Both paths feed the same `SemanticModelBuilder` and end up in the same runtime model —
+the sample doesn't distinguish between them at the authorization or execution layer.
+The split exists so you can see both authoring styles side by side:
+
+- **Manual** (`SupplyChainSemanticModel.cs`) — semantics authored directly against the
+  builder API. Use this when you're hand-tuning a model or exploring the API surface.
+- **Generated** (`Semantics/Generated/`) — semantics produced ahead of time from the
+  domain's `[SemanticEntity]`/`[SemanticPolicy]` annotations (see `Domain/Domain.cs`),
+  compiled into AOT metadata so the runtime never reflects over attributes at startup.
+
+This is one of the more consequential architectural choices in Foundgine: the semantic
+model doesn't have to be built dynamically at runtime. It can be generated once, ahead
+of time, and loaded as metadata — which is what makes the AOT story possible.
 
 ## Identity vs. claims — the core distinction
 
-Before this feature, `StoreChainAuthorizationPolicy` was constructed directly from a
+Before this feature, `SupplyChainAuthorization` was constructed directly from a
 server-resolved `(tenantId, role)` pair, and the MCP tools resolved that pair with:
 
 ```csharp
-private static (string TenantId, StoreChainRole Role) Authenticate(string actor, string token)
+private static (string TenantId, SupplyChainRole Role) Authenticate(string actor, string token)
 {
     if (!Actors.TryGetValue(actor, out var identity) || !CryptographicEquals(identity.Token, token))
         throw new UnauthorizedAccessException("Invalid actor credentials.");
@@ -148,29 +222,29 @@ public sealed record ClaimsValidationResult(
    that a change ticket presented after its own stated validity window can no longer be
    used as evidence, even though each field is individually well-formed.
 
-### Why validation is a separate step from the policy
+### Why validation is a separate step from the configured policy
 
-`ClientClaimsValidator` has no knowledge of `StoreChainRole`, `TenantId`, or the
+`ClientClaimsValidator` has no knowledge of `SupplyChainRole`, `TenantId`, or the
 `SemanticModel`. It only knows the shape of a claim. This means:
 
 - It can be unit tested in complete isolation (see `ClientClaimsValidatorTests`).
-- `StoreChainAuthorizationPolicy` never sees a raw, unvalidated claim — its constructor
+- `SupplyChainAuthorization` never sees a raw, unvalidated claim — its constructor
   only accepts a `ClaimsValidationResult`, and it only ever reads `.Accepted`. There is
-  no code path in the policy that can reach a rejected or malformed claim.
+  no code path in the configured policy that can reach a rejected or malformed claim.
 
-## How the policy consumes validated claims
+## How the configured policy consumes validated claims
 
-`StoreChainAuthorizationPolicy` gained one new constructor overload:
+`SupplyChainAuthorization` gained one new configuration factory:
 
 ```csharp
-public StoreChainAuthorizationPolicy(string tenantId, StoreChainRole role, ClaimsValidationResult validatedClaims)
+public SupplyChainAuthorization(string tenantId, SupplyChainRole role, ClaimsValidationResult validatedClaims)
 ```
 
 The existing two-argument constructor still exists and delegates to this one with
 `ClaimsValidationResult.Empty`, so every pre-existing call site and test keeps working
 unmodified.
 
-Three places in the policy read `Claims` (the accepted, post-validation dictionary):
+Three places in the configured policy read `Claims` (the accepted, post-validation dictionary):
 
 - **`SelfRestrictedToReadOnly`** — `Claims["scope"] == "read-only"`. ANDed into
   `CanWriteEntity`, `CanWriteField`, `CanWriteRelationship`. A manager who sends this
@@ -191,6 +265,12 @@ Three places in the policy read `Claims` (the accepted, post-validation dictiona
 
 ## MCP tool surface
 
+Conceptually, every tool below does the same three things: authenticate the caller,
+validate any claims it sent, and hand the resulting identity + claims to Foundgine as
+authorization inputs. None of the tools implement authorization decisions themselves —
+that stays in `SupplyChainAuthorization` and the Foundgine runtime underneath it.
+What's shown here is the translation step: MCP request in, Foundgine call out.
+
 `Api/Mcp/Program.cs` exposes the following tools. `claims` is a new, optional
 `Dictionary<string,string>` parameter on the three tools where it's meaningful.
 
@@ -208,7 +288,7 @@ Every claims-aware tool follows the same shape:
 var validatedClaims = ValidateClaims(claims);
 if (validatedClaims.IsSpoofingAttempt)
     return ClaimSpoofingError(validatedClaims);
-// ... build the policy with validatedClaims, proceed as before ...
+// ... build the configured policy with validatedClaims, proceed as before ...
 return WithClaimDiagnostics(result, validatedClaims);
 ```
 
@@ -217,7 +297,7 @@ so the demo (and the adversarial client) can see exactly which claims were honor
 any others weren't — this is diagnostic information for the sample, not something a
 production API would necessarily echo back.
 
-`ClaimSpoofingError` is returned *before* the policy or the model is touched at all when an
+`ClaimSpoofingError` is returned *before* the configured policy or the model is touched at all when an
 identity-spoofing claim is present — the request never reaches `Authenticate`'s result being
 used together with the claims, because it's rejected purely on the shape of the claim set.
 
@@ -290,7 +370,7 @@ Run the unit tests (does not require the server):
 dotnet test samples/Foundgine.SupplyChain.Semantic/Tests/Foundgine.SupplyChain.Semantic.Tests.csproj
 ```
 
-Set `RUN_STORECHAIN_MCP_TESTS=1` to additionally opt in to the wire-contract test in
+Set `RUN_SUPPLYCHAIN_MCP_TESTS=1` to additionally opt in to the wire-contract test in
 `AuthorizationMcpPenetrationTests` that talks to a running server on `localhost:4782`.
 
 ## Extending the sample
@@ -299,19 +379,19 @@ A few notes if you add another claim or another named operation:
 
 - **Adding a new recognized claim key**: add it to `RecognizedKeys` and to the `switch` in
   `ValidateFormat` in `ClientClaims.cs`. Decide up front whether it's a *narrowing* claim
-  (consumed by the policy to restrict something) or an *evidence* claim (required alongside
+  (consumed by the configured policy to restrict something) or an *evidence* claim (required alongside
   a role check for a specific named operation) — the two categories are handled differently
-  in `StoreChainAuthorizationPolicy` and mixing them tends to blur the "claims only narrow"
+  in `SupplyChainAuthorization` and mixing them tends to blur the "claims only narrow"
   invariant this sample is built around.
 - **Adding a new identity-shaped key** (anything that describes *who* the caller is, not
   *what* they're asking for): add it to `ReservedIdentityKeys` instead. When in doubt, a key
   belongs in `ReservedIdentityKeys` if trusting it would let the caller change which role or
-  tenant the policy evaluates against.
+  tenant the configured policy evaluates against.
 - **Adding a new evidence-gated named operation**: add its name to
-  `OperationsRequiringEvidence` in `SupplyChainAuthorizationPolicy`, and add the role check
+  `OperationsRequiringEvidence` in `SupplyChainAuthorization`, and add the role check
   for it before the evidence check — evidence should always be a second gate on top of role,
   never a replacement for it.
 - **Testing a new case**: add a unit test in `AuthorizationPolicyTests.cs` (fast, no server),
   a `policy_probe` attack branch in `Api/Mcp/Program.cs` if it needs to be reachable over MCP,
   and a case in `McpClient/Program.cs` plus a row in this guide's matrix so the adversarial
-  client and the documentation stay in sync with the policy.
+  client and the documentation stay in sync with the configured policy.

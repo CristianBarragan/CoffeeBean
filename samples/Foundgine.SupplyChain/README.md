@@ -13,7 +13,7 @@ Api
         ↓
 Application
         ↓
-Domain + Semantics
+Domain + Foundgine configuration
         ↓
 Foundgine Planning / Execution
         ↓
@@ -29,7 +29,7 @@ PostgreSQL
 | `Api` | ASP.NET + MCP transport; protocol adapter only |
 | `Application` | use cases, capability authorization and application contracts |
 | `Domain` | storage records and AOT application models |
-| `Semantics` | stable semantic entity/relationship identities and generated metadata entry point |
+| `Application/SupplyChainSemanticConfiguration.cs` | application-specific semantic enrichment; structural metadata is discovered by Foundgine |
 | `Infrastructure` | PostgreSQL integration and Foundgine.Sql query/mutation adapters |
 | `Tests` | application, semantic and infrastructure tests |
 

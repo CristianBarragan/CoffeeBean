@@ -224,7 +224,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 var sourceKeyColumn = sourceOwnsForeignKey ? fkId : principalId;
                 var targetKeyEntity = targetId;
                 var targetKeyColumn = sourceOwnsForeignKey ? principalId : fkId;
-                sb.AppendLine($"        registry.Register(new RelationshipMetadata(new RelationshipId({id}), new EntityId({sourceId}), new EntityId({targetId}), \"{Escape(name)}\", new ColumnReference(new EntityId({sourceKeyEntity}), new ColumnId({sourceKeyColumn})), new ColumnReference(new EntityId({targetKeyEntity}), new ColumnId({targetKeyColumn}))));");
+                sb.AppendLine($"        registry.Register(new RelationshipMetadata(new RelationshipId({id}), new EntityId({sourceId}), new EntityId({targetId}), \"{Escape(name)}\", new ColumnReference(new EntityId({sourceKeyEntity}), new ColumnId({sourceKeyColumn})), new ColumnReference(new EntityId({targetKeyEntity}), new ColumnId({targetKeyColumn})), {IsCollectionExpression(p.Type)}));");
             }
         }
 
@@ -915,4 +915,16 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     }
 
     private static string Escape(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+    private static string IsCollectionExpression(ITypeSymbol type)
+    {
+        if (type is IArrayTypeSymbol)
+            return "true";
+
+        if (type.AllInterfaces.Any(i =>
+            i.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T))
+            return "true";
+
+        return "false";
+    }
+
 }

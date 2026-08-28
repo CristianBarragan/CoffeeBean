@@ -4,7 +4,6 @@
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <ProjectReference Include="../Application/Foundgine.SupplyChain.Application.csproj" />
     <ProjectReference Include="../Domain/Foundgine.SupplyChain.Domain.csproj" />
-    <ProjectReference Include="../Semantics/Foundgine.SupplyChain.Semantics.csproj" />
     <ProjectReference Include="../../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
     <ProjectReference Include="../../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />
     <ProjectReference Include="../../../src/Foundgine.Planning/Foundgine.Planning.csproj" />

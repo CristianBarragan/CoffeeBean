@@ -1,4 +1,4 @@
-using Foundgine.SupplyChain.Semantic.Authorization;
+using Foundgine.Semantics;
 
 namespace Foundgine.SupplyChain.Semantic.Domain;
 

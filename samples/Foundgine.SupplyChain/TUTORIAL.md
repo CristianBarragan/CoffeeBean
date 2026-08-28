@@ -48,9 +48,9 @@ samples/Foundgine.SupplyChain/
 │   ├── Models.cs
 │   ├── StorageModels.cs
 │   └── Foundgine.SupplyChain.Domain.csproj
-├── Semantics/
+├── Application/\n│   └── SupplyChainSemanticConfiguration.cs
 │   ├── SupplyChainSemanticModel.cs
-│   └── Foundgine.SupplyChain.Semantics.csproj
+│   └── Foundgine.SupplyChain.Application.csproj
 ├── Application/
 │   ├── Contracts.cs
 │   ├── Authorization.cs
@@ -194,7 +194,7 @@ Do not manually maintain the generated metadata or construct numeric runtime ide
 
 ## 6. Build the semantic surface
 
-`Semantics/SupplyChainSemanticModel.cs` exposes the generated registry:
+`Application/SupplyChainSemanticConfiguration.cs` enriches the discovered metadata:
 
 ```csharp
 public static MetadataRegistry Registry { get; } = GeneratedMetadata.Registry;

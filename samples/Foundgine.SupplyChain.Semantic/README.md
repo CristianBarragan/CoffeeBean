@@ -108,7 +108,7 @@ The current sample contains a deterministic in-memory scenario evaluator so the 
 
 The sample now treats authorization as a first-class part of the semantic example. It deliberately demonstrates all of the authorization boundaries exposed by Foundgine rather than showing only a single role check.
 
-| Policy case | StoreChain example | What the MCP adversary tries |
+| Policy case | SupplyChain example | What the MCP adversary tries |
 |---|---|---|
 | Entity access | `ComplianceIncident` is analyst/manager only | Customer asks for incident data |
 | Field access | `InventoryLot.Quarantined` is operational-only; `Supplier.RiskScore` is analyst/manager-only | Agent asks for a hidden field |
@@ -122,7 +122,7 @@ The sample now treats authorization as a first-class part of the semantic exampl
 
 The domain models contain small declarative annotations such as `[SemanticEntity]`, `[SemanticField]`, and `[SemanticPolicy("...")]`. These annotations describe the semantic source metadata and are useful input to generation. They are **not** the runtime authorization decision.
 
-The runtime policy is `StoreChainAuthorizationPolicy`. This separation is intentional:
+The sample policy is configured by `SupplyChainAuthorization`. The authorization primitives themselves live in `Foundgine.Semantics`; the sample owns only domain-specific configuration:
 
 ```text
 Annotations / generated metadata ─┐
@@ -181,3 +181,9 @@ The client exercises:
 11. client-claims self-narrowing (read-only scope, warehouse scoping, unknown-key noise) as legitimate, honored uses.
 
 The expected result is that an attempted privilege crossing is denied without changing the underlying semantic model or allowing the caller to supply its own authorization predicate — and that claims volunteered by a well-behaved caller to restrict itself are correctly honored rather than ignored.
+
+### Open logical traversals
+
+The sample also demonstrates an open-intent traversal that hides an intermediate supply-chain path. `Product.shipments` is exposed as a logical traversal while the semantic model retains `Product -> PurchaseOrderLine -> PurchaseOrder -> Shipment`. Dynamic callers can request `shipments` without knowing the intermediate entities; resolution expands the path before authorization and planning, so every hop remains enforceable.
+
+The semantic mutation tests exercise the same open authoring model across a branching `PurchaseOrder -> PurchaseOrderLine` and `PurchaseOrder -> Shipment` dependency graph, including generated identity propagation and an update with a target filter.

@@ -8,5 +8,5 @@
     <ProjectReference Include="../../../src/Foundgine.Planning/Foundgine.Planning.csproj" />
     <ProjectReference Include="../../../src/Foundgine.Sql/Foundgine.Sql.csproj" />
     <ProjectReference Include="../Domain/Foundgine.SupplyChain.Domain.csproj" />
-    <ProjectReference Include="../Application/Foundgine.SupplyChain.Application.csproj" /><ProjectReference Include="../Infrastructure/Foundgine.SupplyChain.Infrastructure.csproj" /><ProjectReference Include="../Semantics/Foundgine.SupplyChain.Semantics.csproj" /></ItemGroup>
+    <ProjectReference Include="../Application/Foundgine.SupplyChain.Application.csproj" /><ProjectReference Include="../Infrastructure/Foundgine.SupplyChain.Infrastructure.csproj" /></ItemGroup>
 </Project>

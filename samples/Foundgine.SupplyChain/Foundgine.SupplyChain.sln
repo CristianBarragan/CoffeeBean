@@ -8,8 +8,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Appli
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Domain", "Domain\Foundgine.SupplyChain.Domain.csproj", "{10000000-0000-0000-0000-000000000003}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Semantics", "Semantics\Foundgine.SupplyChain.Semantics.csproj", "{10000000-0000-0000-0000-000000000004}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Infrastructure", "Infrastructure\Foundgine.SupplyChain.Infrastructure.csproj", "{10000000-0000-0000-0000-000000000005}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Tests", "Tests\Foundgine.SupplyChain.Tests.csproj", "{10000000-0000-0000-0000-000000000006}"

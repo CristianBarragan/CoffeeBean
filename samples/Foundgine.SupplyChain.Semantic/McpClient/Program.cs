@@ -5,7 +5,7 @@ using System.Text.Json;
 var url = args.Length > 0 ? args[0] : "http://localhost:4782/mcp";
 using var client = new HttpClient();
 
-Console.WriteLine("Foundgine StoreChain — MCP authorization adversarial client");
+Console.WriteLine("Foundgine SupplyChain — MCP authorization adversarial client");
 Console.WriteLine("===========================================================");
 Console.WriteLine($"Endpoint: {url}");
 Console.WriteLine();

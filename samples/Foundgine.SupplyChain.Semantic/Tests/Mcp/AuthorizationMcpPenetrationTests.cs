@@ -82,7 +82,7 @@ public sealed class AuthorizationMcpPenetrationTests
         // This test is opt-in against the running sample server. It verifies
         // the wire contract when explicitly enabled instead of making CI
         // depend on a local MCP process.
-        if (!string.Equals(Environment.GetEnvironmentVariable("RUN_STORECHAIN_MCP_TESTS"), "1", StringComparison.Ordinal))
+        if (!string.Equals(Environment.GetEnvironmentVariable("RUN_SUPPLYCHAIN_MCP_TESTS"), "1", StringComparison.Ordinal))
             return;
 
         using var response = await client.SendAsync(request);

@@ -11,7 +11,8 @@ public sealed record EntityMetadata(
     IReadOnlyList<ColumnMetadata> Columns,
     string? StorageName = null,
     IReadOnlyList<FieldMetadata>? Fields = null,
-    ColumnReference? PrimaryKey = null)
+    ColumnReference? PrimaryKey = null,
+    Type? ClrType = null)
 {
     public string EffectiveStorageName => StorageName ?? Name;
     public IReadOnlyList<FieldMetadata> EffectiveFields => Fields ?? [];

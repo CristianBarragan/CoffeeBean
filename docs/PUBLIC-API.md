@@ -101,3 +101,8 @@ application code.
 
 The lower-level orchestration constructor is internal and is reserved for
 Foundgine adapters and tests.
+
+
+## Open intent authoring
+
+See [Open Intent API](OPEN-INTENT-API.md) for the typed and dynamic query surfaces and their shared semantic pipeline.

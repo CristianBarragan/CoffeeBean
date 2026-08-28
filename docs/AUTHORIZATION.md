@@ -130,7 +130,7 @@ Claims, roles, identity providers, and policy administration are deliberately
 outside this layer. They can sit above Foundgine and produce semantic policy
 decisions without becoming part of the Foundgine core.
 
-## StoreChain reference matrix
+## SupplyChain reference matrix
 
 The `Foundgine.SupplyChain.Semantic` sample is the canonical worked example for the policy boundaries above. It deliberately mixes manual and generated semantic authoring and then applies a single provider-independent policy model to the resulting `SemanticModel`.
 

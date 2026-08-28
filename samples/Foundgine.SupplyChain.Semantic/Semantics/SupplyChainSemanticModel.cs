@@ -123,5 +123,22 @@ public static class SupplyChainSemanticModel
             order => order.Id,
             CustomerOrderLine, line => line.CustomerOrderId,
             RelationshipCardinality.Many)
+        .Relationship<Product, PurchaseOrderLine>(
+            Product, new RelationshipId(12), "purchaseOrderLines",
+            product => product.Id,
+            PurchaseOrderLine, line => line.ProductId,
+            RelationshipCardinality.Many)
+        .Relationship<PurchaseOrderLine, PurchaseOrder>(
+            PurchaseOrderLine, new RelationshipId(13), "purchaseOrder",
+            line => line.PurchaseOrderId,
+            PurchaseOrder, order => order.Id,
+            RelationshipCardinality.One)
+        .Relationship<PurchaseOrder, Supplier>(
+            PurchaseOrder, new RelationshipId(14), "supplier",
+            order => order.SupplierId,
+            Supplier, supplier => supplier.Id,
+            RelationshipCardinality.One)
+        .Traversal(Product, "shipments", new RelationshipId(12), new RelationshipId(13), new RelationshipId(11))
+        .Traversal(Product, "suppliers", new RelationshipId(12), new RelationshipId(13), new RelationshipId(14))
         .Build();
 }

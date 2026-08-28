@@ -91,19 +91,23 @@ security boundary across multiple transports.
 <tbody>
 <tr>
 <td>
-<strong><a href="../getting-started/index.html">Foundgine.SupplyChain</a></strong>
+<strong>01 — Architecture</strong><br>
+<a href="../getting-started/index.html">Foundgine.SupplyChain</a>
 </td>
 <td>
-The canonical layered sample covering API, Application, Domain, AOT,
+Learn how a production-style Foundgine application is assembled. The
+canonical layered sample covering API, Application, Domain, AOT,
 Semantics, Infrastructure, MCP, PostgreSQL, and tests.
 </td>
 </tr>
 <tr>
 <td>
-<strong><a href="semantic/index.html">Foundgine.SupplyChain.Semantic</a></strong>
+<strong>02 — Semantics</strong><br>
+<a href="semantic/index.html">Foundgine.SupplyChain.Semantic</a>
 </td>
 <td>
-An intentionally difficult semantic showcase covering recursive relationships,
+See how complex business intent becomes an authorized execution plan. An
+intentionally difficult semantic showcase covering recursive relationships,
 bounded traversal, authorization-aware planning, temporal reasoning,
 aggregation, mutation dependency graphs, and adversarial domain data. It also
 shows manual semantic authoring beside generated semantics, including strongly
@@ -114,11 +118,13 @@ its own access but never widen it.
 </tr>
 <tr>
 <td>
-<strong><a href="pentest/index.html">Foundgine.SupplyChain.PenTest</a></strong>
+<strong>03 — Assurance</strong><br>
+<a href="pentest/index.html">Foundgine.SupplyChain.PenTest</a>
 </td>
 <td>
-A security-regression harness exercising MCP and GraphQL against the same
-hardened application and PostgreSQL boundary.
+Try to break the same boundary through MCP and GraphQL. A security-regression
+harness exercising MCP and GraphQL against the same hardened application and
+PostgreSQL boundary.
 </td>
 </tr>
 </tbody>
@@ -128,11 +134,11 @@ hardened application and PostgreSQL boundary.
 <h2>The learning path</h2>
 
 <div class="rail">
-<div class="rail-step"><span class="dot"></span>Supply Chain</div>
+<div class="rail-step"><span class="dot"></span>01 — Architecture</div>
 <div class="rail-connector"></div>
-<div class="rail-step"><span class="dot"></span>Semantic</div>
+<div class="rail-step"><span class="dot"></span>02 — Semantics</div>
 <div class="rail-connector"></div>
-<div class="rail-step"><span class="dot"></span>PenTest</div>
+<div class="rail-step"><span class="dot"></span>03 — Assurance</div>
 </div>
 
 <h3>1. Learn the physical architecture</h3>
@@ -178,7 +184,7 @@ planning → execution → persistence</strong>.
 <a class="button" href="../getting-started/index.html">Start with Supply Chain →</a>
 </p>
 
-<section class="callout"><strong>Semantic Execution</strong><p>The advanced StoreChain sample mixes manually curated and generated semantic models, strongly typed relationships, entity/field/relationship/conditional/write policies, a Run 5-style adversarial MCP client, and a fail-closed validator for untrusted, client-supplied claims that can only narrow — never widen — what a caller's role already allows.</p><p><a href="semantic/index.html">Explore the semantic authorization showcase →</a></p></section>
+<section class="callout"><strong>Semantic Execution</strong><p>The advanced SupplyChain sample mixes manually curated and generated semantic models, strongly typed relationships, entity/field/relationship/conditional/write policies, a Run 5-style adversarial MCP client, and a fail-closed validator for untrusted, client-supplied claims that can only narrow — never widen — what a caller's role already allows.</p><p><a href="semantic/index.html">Explore the semantic authorization showcase →</a></p></section>
 </main>
 </div>
 

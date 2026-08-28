@@ -99,7 +99,7 @@ Planner / SqlCompiler
 
 The important architectural point is that runtime does not need to rediscover the storage metadata graph.
 
-## 5. Semantic layer — `Semantics`
+## 5. Semantic configuration — `Application/SupplyChainSemanticConfiguration.cs`
 
 `SupplyChainSemanticModel` contains stable semantic IDs for entities and relationships.
 

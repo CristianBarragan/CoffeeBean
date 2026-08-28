@@ -4,6 +4,7 @@ using Foundgine.Semantics.Authorization;
 using Foundgine.Abstractions;
 using Foundgine.Semantics.Security.Warrants;
 using Foundgine.Semantics.Security.Execution;
+using Foundgine.Metadata;
 
 namespace Foundgine;
 
@@ -13,9 +14,60 @@ namespace Foundgine;
 /// </summary>
 public sealed class FoundgineOptions
 {
+    /// <summary>
+    /// Optional structural metadata source. When supplied, Foundgine discovers
+    /// the ordinary semantic model from metadata before applying semantic
+    /// configuration.
+    /// </summary>
+    public IMetadataCatalog? Metadata { get; private set; }
+
+    /// <summary>Optional semantic enrichment applied after structural discovery.</summary>
+    public Action<SemanticModelBuilder>? SemanticConfiguration { get; private set; }
+
+    /// <summary>Optional application authorization configuration.</summary>
+    public SemanticAuthorizationConfiguration? AuthorizationConfiguration { get; private set; }
+
+    /// <summary>Execution identity consumed by configured authorization rules.</summary>
+    public SemanticAuthorizationContext AuthorizationContext { get; private set; } = new();
+
     public SemanticModel? Model { get; set; }
 
     public ISemanticAuthorizationPolicy? AuthorizationPolicy { get; set; }
+
+    public FoundgineOptions UseMetadata(IMetadataCatalog metadata)
+    {
+        Metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+        return this;
+    }
+
+    public FoundgineOptions ConfigureSemantics(Action<SemanticModelBuilder> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        SemanticConfiguration = SemanticConfiguration is null
+            ? configure
+            : Compose(SemanticConfiguration, configure);
+        return this;
+    }
+
+    public FoundgineOptions ConfigureAuthorization(
+        Action<SemanticAuthorizationConfiguration> configure,
+        SemanticAuthorizationContext? context = null)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        AuthorizationConfiguration ??= new SemanticAuthorizationConfiguration();
+        configure(AuthorizationConfiguration);
+        if (context is not null)
+            AuthorizationContext = context;
+        return this;
+    }
+
+    private static Action<SemanticModelBuilder> Compose(
+        Action<SemanticModelBuilder> first,
+        Action<SemanticModelBuilder> second) => builder =>
+    {
+        first(builder);
+        second(builder);
+    };
 
     /// <summary>
     /// Optional cache for compiled provider plans. Authorization is always evaluated

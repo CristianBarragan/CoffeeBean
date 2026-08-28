@@ -1,6 +1,6 @@
-# StoreChain semantic authorization cases
+# SupplyChain semantic authorization cases
 
-The StoreChain sample is deliberately a mixed authorization laboratory. It demonstrates six independent policy boundaries and exercises them through an MCP client that treats every request as untrusted.
+The SupplyChain sample is deliberately a mixed authorization laboratory. It demonstrates six independent policy boundaries and exercises them through an MCP client that treats every request as untrusted.
 
 ## 1. Entity policy
 
@@ -45,7 +45,7 @@ Coarse write access can be refined by a domain operation name. `inventory.reconc
 - Unrecognized keys are dropped individually and reported back, without blocking the rest of the call.
 - Evidence (`reason`, `change_ticket`) paired with an expired `not_after` is rejected as stale.
 
-Only the accepted claims ever reach `StoreChainAuthorizationPolicy`, and each one can only narrow what the role already allows: `scope=read-only` self-restricts writes for that call, `warehouse=<id>` ANDs an extra resource predicate onto the tenant predicate, and `reason`/`change_ticket` add a required evidence gate on top of the existing manager-only check for `inventory.reconcile`. Nothing a claim asserts can widen access.
+Only the accepted claims ever reach `SupplyChainAuthorizationPolicy`, and each one can only narrow what the role already allows: `scope=read-only` self-restricts writes for that call, `warehouse=<id>` ANDs an extra resource predicate onto the tenant predicate, and `reason`/`change_ticket` add a required evidence gate on top of the existing manager-only check for `inventory.reconcile`. Nothing a claim asserts can widen access.
 
 ## MCP adversarial matrix
 

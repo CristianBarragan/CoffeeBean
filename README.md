@@ -43,6 +43,33 @@ The result is a reusable execution boundary that can sit underneath multiple int
                     ▼         ▼         ▼
                    SQL     InMemory   Providers
 
+## Open intent, not predefined queries
+
+Foundgine keeps intent open. Developers do not need to create an application-owned query interface for every operation a caller might ever need. Use the typed fluent surface when CLR types are available:
+
+```csharp
+var result = await foundgine
+    .Query<Customer>()
+    .Select(c => new { c.Id, c.Name })
+    .Include(c => c.Orders, orders => orders
+        .Select(o => new { o.Id, o.OrderDate }))
+    .Where(c => c.TenantId == tenantId)
+    .ExecuteAsync();
+```
+
+Dynamic callers, including agents, can compose the same open intent model:
+
+```csharp
+var result = await foundgine
+    .Query("Customer")
+    .Select("Id", "Name")
+    .Include("Orders", orders => orders.Select("Id", "OrderDate"))
+    .Where("TenantId", SemanticFilterOperator.Eq, tenantId)
+    .ExecuteAsync();
+```
+
+Both forms converge on the same provider-neutral `ReadIntent`. Dynamic names are resolved against the semantic model before planning or provider execution, so openness does not mean bypassing validation or authorization. See [`docs/OPEN-INTENT-API.md`](docs/OPEN-INTENT-API.md).
+
 ## Why does Foundgine exist?
 
 Modern applications increasingly have many callers:
@@ -275,7 +302,7 @@ Foundgine connects those two through an application-controlled semantic and plan
 
 | Sample | What it demonstrates |
 |---|---|
-| [`Foundgine.SupplyChain`](samples/Foundgine.SupplyChain) | The canonical layered sample: API, Application, Domain, Semantics, Infrastructure, and Tests. Start here — see [Getting Started](https://cristianbarragan.github.io/Foundgine/docs-site/getting-started/index.html). |
+| [`Foundgine.SupplyChain`](samples/Foundgine.SupplyChain) | The canonical layered sample: API, Application, Domain, Infrastructure, and Tests; semantic enrichment is configured in Application. Start here — see [Getting Started](https://cristianbarragan.github.io/Foundgine/docs-site/getting-started/index.html). |
 | [`Foundgine.SupplyChain.Semantic`](samples/Foundgine.SupplyChain.Semantic) | An intentionally difficult semantic showcase covering recursive relationships, authorization invariants, and complex fulfillment planning. |
 | [`Foundgine.SupplyChain.PenTest`](samples/Foundgine.SupplyChain.PenTest) | A security-regression harness that exercises GraphQL and MCP transports against the same Supply Chain application boundary. |
 
@@ -449,3 +476,6 @@ The PostgreSQL high-assurance authorization context is now lifecycle-safe. Actor
 ### Authorization context cryptographic integrity
 
 Persisted PostgreSQL authorization evidence is cryptographically bound to its complete canonical security payload with an externally held HMAC-SHA256 key, backed by an authorized external key lifecycle with active/verification-only/retired states, monotonic rotation provenance, atomic immutable ring snapshots, and safe retirement checks against persisted evidence. Unknown keys, algorithm mismatches, altered actor/tenant/state/version/fingerprint values, and tampered lifecycle tombstones fail closed. Key rotation is supported through a verification key ring while cryptographic material remains outside the database and cache identity.
+## Open intent
+
+Foundgine supports typed and dynamic intent authoring over the same semantic execution pipeline. Dynamic callers can use logical semantic traversals that hide intermediate domain hops; those hops are expanded before authorization so every entity and relationship policy still applies. See `docs/OPEN-INTENT-API.md` for the detailed model.
