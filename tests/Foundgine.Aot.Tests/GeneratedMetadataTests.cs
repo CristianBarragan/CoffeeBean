@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Foundgine.Aot;
 using Foundgine.Generated;
 using Foundgine.Metadata;
+using Foundgine.Semantics;
 using Foundgine.Abstractions;
 using Xunit;
 
@@ -144,6 +145,21 @@ public sealed class GeneratedMetadataTests
     }
 
     [Fact]
+    public void Generator_emits_authoritative_semantic_model_from_entities()
+    {
+        var model = GeneratedSemanticModel.Model;
+
+        var customer = model.Get(new EntityId(1));
+        Assert.Equal("Customer", customer.Name);
+        Assert.Equal(new FieldId(1), customer.Identity.FieldId);
+        Assert.Contains(customer.Fields, x => x.Name == "Name" && x.ClrType == typeof(string));
+        var accounts = Assert.Single(customer.Relationships);
+        Assert.Equal("Accounts", accounts.Name);
+        Assert.Equal(Foundgine.Semantics.RelationshipCardinality.Many, accounts.Cardinality);
+        Assert.Equal(new EntityId(2), accounts.Target);
+    }
+
+    [Fact]
     public void Generator_emits_relationship_join_mapping()
     {
         var relationship = GeneratedMetadata.Registry.GetRelationship(new RelationshipId(1));
@@ -280,3 +296,35 @@ public sealed class GeneratedMetadataTests
     }
 
 }
+
+[FoundgineSchema("commerce")]
+[FoundgineCapability(
+    typeof(Customer),
+    "commerce",
+    "customer.lookup",
+    nameof(CommerceMapping.LookupCustomer),
+    Operation = "lookup",
+    Description = "Look up a customer in the commerce semantic schema.")]
+internal static class CommerceMapping
+{
+    public static void LookupCustomer(int customerId) { }
+}
+
+public sealed class GeneratedSemanticMappingTests
+{
+    [Fact]
+    public void Generator_emits_consumer_neutral_schema_mapping()
+    {
+        var schema = GeneratedSemanticMappings.Set.Schemas.Single(x => x.Name == "commerce");
+        var capability = Assert.Single(schema.Capabilities);
+
+        Assert.Contains(new EntityId(1), schema.EntityIds);
+        Assert.Equal("customer.lookup", capability.Id);
+        Assert.Equal(new EntityId(1), capability.TargetEntityId);
+        Assert.EndsWith("CommerceMapping", capability.ImplementationType);
+        Assert.Equal(nameof(CommerceMapping.LookupCustomer), capability.MethodName);
+        Assert.Equal("lookup", capability.Operation);
+    }
+}
+
+

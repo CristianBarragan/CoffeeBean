@@ -18,6 +18,14 @@ public sealed class SemanticModel
 
     public IReadOnlyCollection<SemanticEntity> Entities => _entities.Values.ToArray();
 
+    /// <summary>Creates a semantic model from an already validated entity set.</summary>
+    public static SemanticModel FromEntities(
+        IReadOnlyDictionary<EntityId, SemanticEntity> entities)
+    {
+        ArgumentNullException.ThrowIfNull(entities);
+        return new SemanticModel(entities);
+    }
+
     public bool TryGet(EntityId id, out SemanticEntity entity) =>
         _entities.TryGetValue(id, out entity!);
 

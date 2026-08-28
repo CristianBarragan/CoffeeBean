@@ -1,186 +1,36 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-
-<title>Foundgine Samples | Supply Chain, Semantic Execution & PenTest</title>
-<meta name="description" content="Explore Foundgine reference applications: a layered .NET Supply Chain sample, an advanced semantic execution showcase, and MCP/GraphQL security regression tests.">
-<meta name="robots" content="index,follow">
-<link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/samples/">
-
-<meta property="og:type" content="website">
-<meta property="og:title" content="Foundgine Samples | Supply Chain, Semantic Execution & PenTest">
-<meta property="og:description" content="Explore Foundgine's reference applications for layered architecture, semantic execution, AI-agent workflows, and transport security.">
-<meta property="og:url" content="https://cristianbarragan.github.io/Foundgine/samples/">
-<meta property="og:site_name" content="Foundgine">
-
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Foundgine Samples">
-<meta name="twitter:description" content="Supply Chain, advanced semantic execution, and security regression reference applications.">
-
-<link rel="stylesheet" href="../assets/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Foundgine Samples — Supply Chain and Semantic Examples</title>
+  <meta name="description" content="Foundgine sample applications showing the standard Supply Chain architecture, advanced semantic modeling, and security penetration testing.">
+  <link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/samples/">
+  <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-<header class="site-header">
-<div class="site-header-inner">
-<a class="brand" href="../index.html">
-      <svg
-        class="brand-mark"
-        width="20"
-        height="20"
-        viewBox="0 0 32 32"
-        aria-hidden="true"
-      >
-        <g
-          stroke="currentColor"
-          stroke-width="4"
-          stroke-linecap="round"
-          fill="none"
-        >
-          <line x1="6" y1="6" x2="6" y2="26"></line>
-          <line x1="6" y1="6" x2="14" y2="6"></line>
-          <line x1="6" y1="26" x2="14" y2="26"></line>
-        </g>
-        <circle
-          cx="24"
-          cy="16"
-          r="4.5"
-          fill="currentColor"
-        ></circle>
-      </svg>
-      Foundgine
-    </a>
-<button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation"><span></span><span></span><span></span></button>
-<nav id="site-nav" class="site-nav" aria-label="Primary navigation">
-<a href="../what-is-foundgine.html">What is it</a>
-<a href="../getting-started/index.html">Getting started</a>
-<a href="../ai-agents/index.html">AI agents</a>
-<a href="../architecture/index.html">Architecture</a>
-<a href="../how-it-works/index.html">How it works</a>
-<div class="nav-item has-submenu"><span class="nav-item-row"><a href="../samples/index.html" class="nav-parent-link nav-current" aria-current="page">Samples</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-samples" aria-label="Show Samples pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-samples"><a href="../samples/index.html" class="nav-current" aria-current="page">Overview</a><a href="../samples/semantic/index.html">Semantic Execution</a><a href="../samples/pentest/index.html">Security PenTest</a></div></div>
-<div class="nav-item has-submenu"><span class="nav-item-row"><a href="../agent-benchmark/index.html" class="nav-parent-link">Agent benchmark</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-agent-benchmark" aria-label="Show Agent benchmark pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-agent-benchmark"><a href="../agent-benchmark/index.html">Overview</a><a href="../agent-benchmark/run-1/index.html">Run 1 · Baseline</a><a href="../agent-benchmark/run-2/index.html">Run 2 · Scalability</a><a href="../agent-benchmark/run-3/index.html">Run 3 · Efficiency</a><a href="../agent-benchmark/run-4/index.html">Run 4 · Execution architecture</a><a href="../agent-benchmark/run-5/index.html">Run 5 · High-assurance TransferFunds</a><a href="../agent-benchmark/run-5b/index.html">Run 5b · Individual vs batch</a><a href="../agent-benchmark/supply-chain/index.html">Supply Chain E2E</a></div></div>
-<a href="https://github.com/cristianbarragan/Foundgine" target="_blank" rel="noopener">GitHub</a>
-</nav>
-</div>
-</header>
-
-<div class="page">
-<main class="article">
-
-<span class="eyebrow">Reference applications</span>
-
-<h1>Foundgine samples</h1>
-
-<p class="subtitle">
-Three reference applications form a deliberate progression:
-learn the layered architecture, stress semantic execution, then verify the
-security boundary across multiple transports.
-</p>
-
-<h2>A progression from architecture to security</h2>
-
-<div class="table-wrap">
-<table>
-<thead>
-<tr>
-<th>Sample</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<strong><a href="../getting-started/index.html">Foundgine.SupplyChain</a></strong>
-</td>
-<td>
-The canonical layered sample covering API, Application, Domain, AOT,
-Semantics, Infrastructure, MCP, PostgreSQL, and tests.
-</td>
-</tr>
-<tr>
-<td>
-<strong><a href="semantic/index.html">Foundgine.SupplyChain.Semantic</a></strong>
-</td>
-<td>
-An intentionally difficult semantic showcase covering recursive relationships,
-bounded traversal, authorization-aware planning, temporal reasoning,
-aggregation, mutation dependency graphs, and adversarial domain data.
-</td>
-</tr>
-<tr>
-<td>
-<strong><a href="pentest/index.html">Foundgine.SupplyChain.PenTest</a></strong>
-</td>
-<td>
-A security-regression harness exercising MCP and GraphQL against the same
-hardened application and PostgreSQL boundary.
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-
-<h2>The learning path</h2>
-
-<div class="rail">
-<div class="rail-step"><span class="dot"></span>Supply Chain</div>
-<div class="rail-connector"></div>
-<div class="rail-step"><span class="dot"></span>Semantic</div>
-<div class="rail-connector"></div>
-<div class="rail-step"><span class="dot"></span>PenTest</div>
-</div>
-
-<h3>1. Learn the physical architecture</h3>
-<p>
-Start with <a href="../getting-started/index.html">Supply Chain</a> to see how
-API, application, domain, semantic, planning, infrastructure, and persistence
-layers fit together in a working .NET application.
-</p>
-
-<h3>2. Understand the semantic boundary</h3>
-<p>
-Continue with the
-<a href="semantic/index.html">Complex Semantic Showcase</a>. It deliberately
-avoids a simple CRUD demonstration and instead exercises recursive graph
-traversal, authorization-aware planning, temporal constraints, aggregation,
-mutation dependency planning, and hostile data.
-</p>
-
-<h3>3. Verify the security boundary</h3>
-<p>
-Finish with the
-<a href="pentest/index.html">Security PenTest sample</a>. MCP and GraphQL
-are treated as untrusted transport adapters while authentication and
-authorization remain centralized in the application layer.
-</p>
-
-<h2>Why the samples are separate</h2>
-
-<p>
-Each sample answers a different architectural question. Supply Chain asks
-“How are the layers assembled?” Semantic asks “What can a semantic execution
-boundary safely express and plan?” PenTest asks “Does the same security
-boundary remain intact when requests arrive through different transports?”
-</p>
-
-<p>
-Together they demonstrate the intended Foundgine flow:
-<strong>caller intent → semantic model → resolution → authorization →
-planning → execution → persistence</strong>.
-</p>
-
-<p>
-<a class="button" href="../getting-started/index.html">Start with Supply Chain →</a>
-</p>
-
-</main>
-</div>
-
-<footer class="site-footer">
-Foundgine · actively evolving ·
-<a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a>
-</footer>
-<script src="../assets/site-nav.js"></script>
+  <header class="site-header"><div class="site-header-inner"><a class="brand" href="../index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a><button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation"><span></span><span></span><span></span></button><nav id="site-nav" class="site-nav"><a href="../what-is-foundgine.html">What is it</a><a href="../getting-started/index.html">Getting started</a><a href="../ai-agents/index.html">AI agents</a><a href="../architecture/index.html">Architecture</a><a href="../how-it-works/index.html">How it works</a><a href="index.html" class="nav-current">Samples</a><a href="../agent-benchmark/index.html">Agent benchmark</a><a href="https://github.com/cristianbarragan/Foundgine" target="_blank" rel="noopener">GitHub</a></nav></div></header>
+  <div class="page">
+    <main class="article">
+      <span class="eyebrow">Reference applications</span>
+      <h1>Samples</h1>
+      <p class="subtitle">Concrete Foundgine applications that show the architecture in progressively harder scenarios.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sample</th><th>What it demonstrates</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Foundgine.SupplyChain</strong></td><td>The canonical layered sample: API, Application, Domain, Semantics, Infrastructure, and Tests.</td></tr>
+            <tr><td><strong>Foundgine.SupplyChain.Semantic</strong></td><td>An intentionally difficult semantic showcase covering recursive relationships, authorization invariants, and complex fulfillment planning.</td></tr>
+            <tr><td><strong>Foundgine.SupplyChain.PenTest</strong></td><td>A security-regression harness that exercises GraphQL and MCP transports against the same Supply Chain application boundary.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h2>Why there are separate samples</h2>
+      <p>The samples are deliberately separated so the getting-started path stays clear while advanced semantics and transport-security testing can evolve independently. They still follow the same physical layering vocabulary so the architecture remains recognizable across the repository.</p>
+      <p><a class="button" href="../getting-started/index.html">Start with Supply Chain →</a></p>
+    </main>
+  </div>
+  <footer class="site-footer">Foundgine · actively evolving · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer>
+  <script src="../assets/site-nav.js"></script>
 </body>
 </html>

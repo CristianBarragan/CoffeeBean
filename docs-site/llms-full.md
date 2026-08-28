@@ -167,11 +167,11 @@ MCP endpoint: `http://localhost:4422/mcp`. Health: `http://localhost:4422/health
 
 ### 4. Walk the architecture layer by layer
 
-1. **API layer (`Api`)** — thin ASP.NET + MCP host; no SQL, business rules, or semantic definitions.
+1. **API layer (`Api`)** — thin ASP.NET + MCP host built on a bundled `AddSupplyChainCore(cs)`/`MapSupplyChainHealthChecks()` setup shared with the PenTest sample's hosts; no SQL, business rules, or semantic definitions.
 2. **Application layer (`Application`)** — use-case boundary (`ISupplyChainQueries`/`ISupplyChainMutations`) with capability authorization in `SupplyChainApplication`.
 3. **Domain layer (`Domain`)** — two separate representations: `*ERP` storage records (`FoundgineEntity`/`FoundgineField`/`FoundgineRelationship`) and application models (`Customer`, `SalesOrder`, ...), linked only via explicit `FoundgineConnection` declarations.
 4. **AOT layer** — `Foundgine.Aot.Generator` compiles the AOT attributes into `Foundgine.Generated.GeneratedMetadata`, consumed via `SupplyChainSemanticModel.Metadata`.
-5. **Semantic layer (`Semantics`)** — stable semantic entity/relationship IDs used instead of raw table names.
+5. **Semantic layer (`Semantics`)** — stable semantic entity/relationship IDs used instead of raw table names, plus `SupplyChainCapabilities`' declarative `SemanticCapabilityDefinition`s (Step 5/6 capability-definition API) and shared `SemanticCapabilityRegistry`.
 6. **Query repository (`Infrastructure/Queries`)** — builds semantic operations (`SemanticReadNode` → Planner → `SqlCompiler` → `SqlExecutionProvider`) rather than SQL strings.
 7. **Mutation repository (`Infrastructure/Mutations`)** — simple mutations via `SemanticMutationBuilder` → `MutationPlanner` → `SqlMutationCompiler`.
 8. **High-assurance mutations** — `place_order`/`cancel_order` keep explicit parameterized SQL for idempotency, advisory locks, `FOR UPDATE SKIP LOCKED`, and atomic multi-table invariants that are currently PostgreSQL-specific.

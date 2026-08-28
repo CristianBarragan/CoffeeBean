@@ -29,7 +29,7 @@ PostgreSQL
 | `Api` | ASP.NET + MCP transport; protocol adapter only |
 | `Application` | use cases, capability authorization and application contracts |
 | `Domain` | storage records and AOT application models |
-| `Semantics` | stable semantic entity/relationship identities and generated metadata entry point |
+| `Semantics` | stable semantic entity/relationship identities, generated metadata entry point, and the Step 5/6 declarative capability definitions |
 | `Infrastructure` | PostgreSQL integration and Foundgine.Sql query/mutation adapters |
 | `Tests` | application, semantic and infrastructure tests |
 
@@ -64,6 +64,14 @@ InventoryPosition    → InventoryPositionERP
 ```
 
 The model does not inherit from or reuse the ERP entity. Relationships and storage mappings are expressed through Foundgine metadata, while application code uses the generated semantic handles.
+
+## Capability definitions (Step 5/6 API)
+
+`Semantics/SupplyChainCapabilities.cs` declares every capability the sample exposes (`get_my_orders`, `place_order`, `update_inventory`, etc.) as a provider-neutral `SemanticCapabilityDefinition`, each carrying declarative `SemanticCapabilityAuthorizationRequirement` metadata (a policy requirement per capability, plus a tenant requirement for the five customer-scoped ones). This is descriptive metadata only — `Application/Authorization.cs`'s `SupplyChainAuthorizer` remains the only thing that actually permits or denies a call at runtime. The shared `SemanticCapabilityRegistry` this produces is registered once (see `Infrastructure/SupplyChainHost.cs` below) and consumed by every host.
+
+## Bundled host setup
+
+`Infrastructure/SupplyChainHost.cs` bundles the pieces every SupplyChain host (this API, and the PenTest sample's GraphQL/MCP hosts) needs: `AddSupplyChainCore(connectionString)` wires up the application, infrastructure, and capability registry in one call; `ResolveSupplyChainConnectionString()` resolves the connection string consistently; `MapSupplyChainHealthChecks()` maps `/health` and `/health/ready`. `Api/Program.cs` calls these instead of repeating the setup.
 
 ## Run
 

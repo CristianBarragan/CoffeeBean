@@ -4,7 +4,7 @@ This guide explains the sample as an application architecture, not as a benchmar
 
 ## 1. API layer — `Api`
 
-`Api/Program.cs` is deliberately small. It creates the ASP.NET host, registers the application/infrastructure composition roots, enables the Foundgine MCP adapter, and maps `/mcp` and health endpoints.
+`Api/Program.cs` is deliberately small. It calls `AddSupplyChainCore(connectionString)` — a bundled extension in `Infrastructure/SupplyChainHost.cs` that registers the application/infrastructure composition roots and the shared capability registry in one call — enables the Foundgine MCP adapter, and maps `/mcp` and health endpoints via the same file's `MapSupplyChainHealthChecks()`.
 
 The API does **not** contain SQL, business rules, semantic definitions or authorization policy.
 
@@ -21,6 +21,8 @@ SupplyChainApplication
 The application layer defines the use-case boundary through `ISupplyChainQueries` and `ISupplyChainMutations`.
 
 `SupplyChainApplication` performs capability authorization before delegating to the appropriate port.
+
+Alongside that runtime check, `Semantics/SupplyChainCapabilities.cs` declares each capability's authorization *requirements* (policy, and tenant scoping for customer-owned capabilities) as first-class `SemanticCapabilityDefinition` metadata — the Step 5/6 capability-definition API. This is descriptive only; it documents what the runtime authorizer already establishes rather than replacing it.
 
 This gives us:
 
@@ -117,6 +119,8 @@ SalesOrderLine
 are semantic concepts, while PostgreSQL knows about `products`, `inventory`, `orders`, and `order_items`.
 
 This is the boundary that makes the repository future-proof.
+
+`Semantics/SupplyChainCapabilities.cs` lives in this project too: it declares the sample's capabilities as `SemanticCapabilityDefinition`s and builds the shared `SemanticCapabilityRegistry` that every host registers via `Infrastructure/SupplyChainHost.cs`'s `AddSupplyChainCore`.
 
 ## 6. Query repository — `Infrastructure/Queries`
 
