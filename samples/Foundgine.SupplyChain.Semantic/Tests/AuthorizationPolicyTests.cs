@@ -1,4 +1,5 @@
 using Foundgine.Abstractions;
+using Foundgine.Semantics.Authorization;
 using Foundgine.SupplyChain.Semantic.Authorization;
 using Foundgine.SupplyChain.Semantic.Semantics;
 using Xunit;

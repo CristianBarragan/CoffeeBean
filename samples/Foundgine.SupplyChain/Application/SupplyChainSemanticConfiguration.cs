@@ -51,7 +51,7 @@ public static class SupplyChainSemanticConfiguration
     /// </summary>
     private static SemanticModel Build()
     {
-        var builder = SemanticModelBuilder.FromMetadata(Metadata);
+        var builder = Metadata.FromMetadata();
 
         // The base SupplyChain sample currently exposes the logical path
         // through its semantic showcase model when those relationships exist.

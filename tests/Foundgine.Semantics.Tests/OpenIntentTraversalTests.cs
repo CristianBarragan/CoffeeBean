@@ -3,6 +3,7 @@ using Foundgine.Semantics.Authorization;
 using Foundgine.Semantics.Intent;
 using Foundgine.Semantics.Resolution;
 using Foundgine.Semantics.Capabilities;
+using Foundgine.Semantics.Query;
 using Xunit;
 
 namespace Foundgine.Semantics.Tests;

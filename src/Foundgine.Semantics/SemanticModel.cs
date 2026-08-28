@@ -1,5 +1,4 @@
 using Foundgine.Abstractions;
-using Foundgine.Metadata;
 
 namespace Foundgine.Semantics;
 
@@ -24,74 +23,6 @@ public sealed class SemanticModel
     /// <summary>Logical open-intent traversals. These may span multiple relationships.</summary>
     public IReadOnlyList<SemanticTraversal> Traversals => _traversals;
 
-
-    /// <summary>
-    /// Discovers the structural semantic model from Foundgine.Metadata.
-    /// Metadata describes what exists; this method does not grant capability
-    /// exposure or authorization. Applications can enrich the result with
-    /// logical traversals and policy configuration afterwards.
-    /// </summary>
-    public static SemanticModel Discover(IMetadataCatalog metadata)
-    {
-        ArgumentNullException.ThrowIfNull(metadata);
-
-        var entities = new Dictionary<EntityId, SemanticEntity>();
-        foreach (var item in metadata.Entities)
-        {
-            var fields = item.EffectiveFields
-                .Select(field => new SemanticField(
-                    field.Id,
-                    field.Name,
-                    field.ClrType))
-                .ToArray();
-
-            var primary = item.PrimaryKey is null
-                ? null
-                : fields.FirstOrDefault(field =>
-                    item.EffectiveFields.Any(source =>
-                        source.Id == field.Id &&
-                        source.Column?.ColumnId == item.PrimaryKey.ColumnId));
-
-            if (primary is null)
-                throw new InvalidOperationException(
-                    $"Metadata entity '{item.Name}' has no field corresponding to its primary key.");
-
-            entities[item.EntityId] = new SemanticEntity(
-                item.EntityId,
-                item.Name,
-                new SemanticIdentity(primary.Id, primary.Name),
-                fields,
-                [])
-            {
-                ModelType = item.ClrType
-            };
-        }
-
-        foreach (var relationship in metadata.Relationships)
-        {
-            if (!entities.TryGetValue(relationship.Source, out var source))
-                throw new InvalidOperationException(
-                    $"Relationship '{relationship.Name}' references unknown source entity '{relationship.Source}'.");
-
-            if (!entities.ContainsKey(relationship.Target))
-                throw new InvalidOperationException(
-                    $"Relationship '{relationship.Name}' references unknown target entity '{relationship.Target}'.");
-
-            var relationships = source.Relationships.ToList();
-            relationships.Add(new SemanticRelationship(
-                relationship.Id,
-                relationship.Name,
-                relationship.Target,
-                relationship.IsCollection ? RelationshipCardinality.Many : RelationshipCardinality.One));
-
-            entities[relationship.Source] = source with
-            {
-                Relationships = relationships.ToArray()
-            };
-        }
-
-        return new SemanticModel(entities);
-    }
 
     public bool TryGetTraversal(EntityId source, string name, out SemanticTraversal traversal)
     {

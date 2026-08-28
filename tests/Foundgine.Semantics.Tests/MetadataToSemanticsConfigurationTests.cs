@@ -32,8 +32,8 @@ public sealed class MetadataToSemanticsConfigurationTests
         metadata.Register(new RelationshipMetadata(new RelationshipId(11), new EntityId(2), new EntityId(3), "contract", new ColumnReference(new EntityId(2), new ColumnId(2)), new ColumnReference(new EntityId(3), new ColumnId(4)), false));
         metadata.Register(new RelationshipMetadata(new RelationshipId(12), new EntityId(3), new EntityId(4), "transactions", new ColumnReference(new EntityId(3), new ColumnId(4)), new ColumnReference(new EntityId(4), new ColumnId(6))));
 
-        var model = SemanticModelBuilder
-            .FromMetadata(metadata)
+        var model = metadata
+            .FromMetadata()
             .Traversal("Customer", "transactions", "relationships", "contract", "transactions")
             .Build();
 

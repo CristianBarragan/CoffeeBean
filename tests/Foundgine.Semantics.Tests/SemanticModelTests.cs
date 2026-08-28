@@ -162,7 +162,7 @@ public sealed class SemanticModelTests
             new ColumnReference(order, orderPk),
             IsCollection: true));
 
-        var model = SemanticModel.Discover(registry);
+        var model = registry.Discover();
 
         Assert.Equal(typeof(TestCustomer), model.Get(customer).ModelType);
         Assert.Equal(customerId, model.Get(customer).Identity.FieldId);
@@ -193,7 +193,7 @@ public sealed class SemanticModelTests
         registry.Register(new RelationshipMetadata(new RelationshipId(212), contract, transaction, "Transactions",
             new ColumnReference(contract, new ColumnId(212)), new ColumnReference(transaction, new ColumnId(213))));
 
-        var model = SemanticModelBuilder.FromMetadata(registry)
+        var model = registry.FromMetadata()
             .Traversal(customer, "transactions",
                 new RelationshipId(210),
                 new RelationshipId(211),

@@ -1,7 +1,0 @@
-C:\Foundgine\tests\Foundgine.Semantics.Tests\bin\Debug\net9.0\.msCoverageSourceRootsMapping_Foundgine.Semantics.Tests
-C:\Foundgine\tests\Foundgine.Semantics.Tests\obj\Debug\net9.0\Foundgine.Semantics.Tests.csproj.AssemblyReference.cache
-C:\Foundgine\tests\Foundgine.Semantics.Tests\obj\Debug\net9.0\Foundgine.Semantics.Tests.GeneratedMSBuildEditorConfig.editorconfig
-C:\Foundgine\tests\Foundgine.Semantics.Tests\obj\Debug\net9.0\Foundgine.Semantics.Tests.AssemblyInfoInputs.cache
-C:\Foundgine\tests\Foundgine.Semantics.Tests\obj\Debug\net9.0\Foundgine.Semantics.Tests.AssemblyInfo.cs
-C:\Foundgine\tests\Foundgine.Semantics.Tests\obj\Debug\net9.0\Foundgine.Semantics.Tests.csproj.CoreCompileInputs.cache
-C:\Foundgine\tests\Foundgine.Semantics.Tests\obj\Debug\net9.0\Foundgine.Semantics.Tests.sourcelink.json

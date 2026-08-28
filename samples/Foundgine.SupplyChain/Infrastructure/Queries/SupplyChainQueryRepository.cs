@@ -10,7 +10,6 @@ using Foundgine.Semantics.Mutation;
 using Foundgine.Semantics.Query;
 using Foundgine.Sql.Mutation;
 using Foundgine.SupplyChain.Application;
-using Foundgine.SupplyChain.Application;
 using Foundgine.Generated;
 using Foundgine.Semantics.IR;
 using Npgsql;

@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using Foundgine.Abstractions;
-using Foundgine.Metadata;
 
 namespace Foundgine.Semantics;
 
@@ -12,14 +11,6 @@ namespace Foundgine.Semantics;
 /// </summary>
 public sealed class SemanticModelBuilder
 {
-    /// <summary>
-    /// Starts a semantic configuration from structural metadata. Ordinary
-    /// entities, fields, identities and direct relationships are discovered;
-    /// subsequent builder calls are reserved for application meaning.
-    /// </summary>
-    public static SemanticModelBuilder FromMetadata(IMetadataCatalog metadata) =>
-        new SemanticModelBuilder().Import(SemanticModel.Discover(metadata));
-
     private readonly Dictionary<EntityId, SemanticEntity> _entities = new();
     private readonly Dictionary<EntityId, Type> _entityModelTypes = new();
     private readonly List<SemanticTraversal> _traversals = [];

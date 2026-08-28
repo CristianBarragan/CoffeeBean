@@ -1,4 +1,5 @@
 using Foundgine.Execution;
+using Foundgine.Metadata;
 using Foundgine.Semantics;
 using Foundgine.Semantics.Authorization;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,7 +58,7 @@ public static class FoundgineServiceCollectionExtensions
 
         if (options.Model is null && options.Metadata is not null)
         {
-            var builder = SemanticModelBuilder.FromMetadata(options.Metadata);
+            var builder = options.Metadata.FromMetadata();
             options.SemanticConfiguration?.Invoke(builder);
             options.Model = builder.Build();
         }

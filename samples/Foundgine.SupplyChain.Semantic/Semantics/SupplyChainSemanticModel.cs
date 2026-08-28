@@ -31,7 +31,7 @@ public static class SupplyChainSemanticModel
     public static EntityId ComplianceIncident => Entity("ComplianceIncident");
 
     public static SemanticModel Build() =>
-        SemanticModelBuilder.FromMetadata(Metadata)
+        Metadata.FromMetadata()
             .Traversal("Product", "shipments", "purchaseOrderLines", "purchaseOrder", "shipments")
             .Traversal("Product", "supplierIncidents", "purchaseOrderLines", "purchaseOrder", "supplier", "incidents")
             .Build();

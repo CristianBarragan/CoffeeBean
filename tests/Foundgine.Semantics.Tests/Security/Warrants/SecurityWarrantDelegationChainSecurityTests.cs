@@ -79,7 +79,11 @@ public sealed class SecurityWarrantDelegationChainSecurityTests
     {
         var now = DateTimeOffset.UtcNow;
         var root = Create(now);
-        var child = Child(root, "child", "agent-b") with { ParentDigest = "00" + root.Digest[2..] };
+        // Flip the leading digest character deterministically rather than
+        // hardcoding a replacement, so the tampered digest is guaranteed to
+        // differ from the real one regardless of what it happens to start with.
+        var tamperedLeadingChar = root.Digest[0] == '0' ? '1' : '0';
+        var child = Child(root, "child", "agent-b") with { ParentDigest = tamperedLeadingChar + root.Digest[1..] };
 
         Assert.Throws<InvalidOperationException>(() =>
             SecurityWarrantDelegationChainValidator.Validate([root, child], now));

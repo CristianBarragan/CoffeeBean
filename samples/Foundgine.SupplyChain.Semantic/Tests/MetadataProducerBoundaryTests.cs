@@ -31,7 +31,7 @@ public sealed class MetadataProducerBoundaryTests
     {
         var model = SupplyChainSemanticModel.Build();
 
-        Assert.Equal(SupplyChainMetadataProducer.Catalog.Entities.Count, model.Entities.Count);
-        Assert.Equal(SupplyChainMetadataProducer.Catalog.Relationships.Count, model.Entities.SelectMany(x => x.Relationships).Count());
+        Assert.Equal(SupplyChainMetadataProducer.Catalog.Entities.Count(), model.Entities.Count);
+        Assert.Equal(SupplyChainMetadataProducer.Catalog.Relationships.Count(), model.Entities.SelectMany(x => x.Relationships).Count());
     }
 }
