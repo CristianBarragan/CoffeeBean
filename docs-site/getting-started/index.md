@@ -74,7 +74,7 @@ Every tool call requires both an `actor` and a `token` — a caller has to prove
 
 ### Layer 1 — API layer (`Api`)
 
-`Api/Program.cs` is deliberately small: it calls `AddSupplyChainCore(connectionString)` — a bundled extension shared with the PenTest sample's GraphQL/MCP hosts that registers the application/infrastructure composition roots and the shared capability registry in one call — enables the Foundgine MCP adapter, and maps `/mcp` and health endpoints via the same file's `MapSupplyChainHealthChecks()`. No SQL, business rules, semantic definitions or authorization policy live here.
+`Api/Program.cs` is deliberately small: it creates the ASP.NET host, registers the application/infrastructure composition roots, enables the Foundgine MCP adapter, and maps `/mcp` and health endpoints. No SQL, business rules, semantic definitions or authorization policy live here.
 
 ```text
 MCP request
@@ -86,7 +86,7 @@ SupplyChainApplication
 
 ### Layer 2 — Application layer (`Application`)
 
-Defines the use-case boundary through `ISupplyChainQueries` and `ISupplyChainMutations`. `SupplyChainApplication` performs capability authorization before delegating to the appropriate port. Alongside that runtime check, the `Semantics` layer declares the same capabilities' authorization requirements as descriptive `SemanticCapabilityDefinition` metadata (the Step 5/6 capability-definition API) — see Layer 5 below.
+Defines the use-case boundary through `ISupplyChainQueries` and `ISupplyChainMutations`. `SupplyChainApplication` performs capability authorization before delegating to the appropriate port.
 
 ```text
 protocol
@@ -123,7 +123,7 @@ Planner / SqlCompiler
 
 ### Layer 5 — Semantic layer (`Semantics`)
 
-`SupplyChainSemanticModel` holds stable semantic IDs for entities and relationships, used by semantic operations instead of raw database table names. `SupplyChainCapabilities` in the same project declares each capability as a `SemanticCapabilityDefinition` with declarative authorization-requirement metadata, and builds the shared `SemanticCapabilityRegistry` every host registers.
+`SupplyChainSemanticModel` holds stable semantic IDs for entities and relationships, used by semantic operations instead of raw database table names.
 
 ### Layer 6 — Query repository (`Infrastructure/Queries`)
 
@@ -185,3 +185,4 @@ The seam for validating each layer independently: capability authorization, AOT 
 - **Read the full layer-by-layer guide.** [GUIDE.md](https://github.com/cristianbarragan/Foundgine/blob/main/samples/Foundgine.SupplyChain/GUIDE.md) is the source for this page.
 - **See how a request actually executes.** The [How it works](../how-it-works/index.html) page follows structured intent through authorization, planning and execution.
 - **Look at the evidence.** The [Agent Benchmark](../agent-benchmark/index.html) page includes a dedicated Supply Chain end-to-end report.
+- **Explore the other samples.** Once you're comfortable with this canonical layout, see [Samples](../samples/index.html) for `Foundgine.SupplyChain.Semantic` (recursive relationships, authorization invariants, complex fulfillment planning) and `Foundgine.SupplyChain.PenTest` (a GraphQL/MCP transport security-regression harness).

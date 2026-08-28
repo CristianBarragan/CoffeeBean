@@ -63,7 +63,7 @@ body {
 .page {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  max-width: 1120px;
+  max-width: min(1120px, 95vw);
   margin: 0 auto;
   padding: 0 1.5rem;
 }
@@ -79,12 +79,25 @@ body {
   .page.has-toc { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* Dashboard-style pages (agent-benchmark family) carry grids, heatmaps and
+   tables that need more room than a prose column, and scale further on
+   large monitors instead of stopping at the standard 1120px shell. */
+.page.page-wide {
+  max-width: min(1440px, 96vw);
+}
+
 main.article {
+  margin: 0 auto;
   padding: 3.5rem 0 6rem;
   max-width: var(--measure);
+  width: 100%;
 }
 
 .page.has-toc main.article { max-width: none; }
+
+main.article.article-wide {
+  max-width: 100%;
+}
 
 header.site-header {
   border-bottom: 1px solid var(--line);
@@ -123,6 +136,81 @@ header.site-header {
 .site-header-inner nav a.nav-current { color: var(--signal); font-weight: 600; }
 .nav-toggle { display:none; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:9px; width:42px; height:38px; padding:.55rem; cursor:pointer; }
 .nav-toggle span { display:block; height:2px; margin:4px 0; background:currentColor; border-radius:2px; }
+
+/* ---- Nav submenus (dropdown on desktop, accordion on mobile) ---- */
+
+.site-header-inner nav.site-nav { display: flex; align-items: center; }
+
+.site-header-inner nav .nav-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 1.4rem;
+}
+
+.site-header-inner nav .nav-item .nav-item-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.site-header-inner nav .nav-item .nav-parent-link { margin-left: 0; }
+
+.submenu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.submenu-toggle:hover { color: var(--signal); }
+.submenu-toggle svg { transition: transform 0.15s ease; }
+
+.nav-item.is-open .submenu-toggle svg { transform: rotate(180deg); }
+
+/* No margin-top gap here on purpose: a visual gap between the trigger and
+   the panel is a dead zone the pointer has to cross with nothing hovered
+   under it, which is what was closing the menu before a click could land.
+   The same breathing room is recreated with padding-top, which keeps the
+   panel's hit-box touching the trigger the whole way down. */
+.submenu {
+  position: absolute;
+  top: 100%;
+  left: -0.9rem;
+  min-width: 250px;
+  display: none;
+  flex-direction: column;
+  gap: 0.05rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.9rem 0.4rem 0.4rem;
+  box-shadow: 0 16px 34px rgba(18, 24, 38, 0.14);
+  z-index: 45;
+}
+
+.submenu.align-right { left: auto; right: -0.9rem; }
+
+.submenu a {
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.submenu a:hover { background: var(--signal-soft); color: var(--signal); }
+.submenu a.nav-current { background: var(--signal-soft); color: var(--signal); font-weight: 600; }
+
+.nav-item.is-open > .submenu { display: flex; }
 
 /* ---- Typography ---- */
 
@@ -755,7 +843,8 @@ footer.site-footer {
 .matrix-section{margin-top:2rem;padding:1.5rem}
 .matrix-section h2{margin-top:0}
 .matrix-section .matrix-controls{margin-bottom:.8rem}
-@media(max-width:950px){.run-intro-grid{grid-template-columns:1fr}.run-metrics{grid-template-columns:repeat(2,1fr)}@media(max-width:620px){.run-metrics,
+@media(max-width:950px){.run-intro-grid{grid-template-columns:1fr}.run-metrics{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.run-metrics{grid-template-columns:1fr}}
 
 /* Problem framing and benchmark evidence */
 .problem-hero {
@@ -770,7 +859,6 @@ footer.site-footer {
 .problem-grid span { color:var(--muted); font-size:.92rem; }
 @media (max-width:760px){ .problem-grid{grid-template-columns:1fr;} .problem-hero{padding:1.1rem;} }
 
-@media(max-width:620px){
 /* Benchmark evidence frame. */
 .benchmark-evidence-frame{
   margin-top:2rem;
@@ -838,14 +926,28 @@ footer.site-footer {
 .heat-cell:hover,.heat-cell:focus-visible{transform:translateY(-2px);border-color:var(--signal);background:var(--signal-soft);box-shadow:0 5px 16px rgba(18,24,38,.08);outline:none}
 .heat-cell.good{border-left:3px solid var(--signal)}
 .heat-cell.neutral{border-left:3px solid var(--gate)}
+.heat-cell.missing{border-left:3px dashed var(--line);background:color-mix(in srgb,var(--surface) 92%,var(--bg));cursor:default}
+.heat-cell.missing:hover{transform:none;border-color:var(--line);background:color-mix(in srgb,var(--surface) 92%,var(--bg));box-shadow:none}
+.heat-cell.missing strong{color:var(--muted)}
 .heat-cell .cell-label{font-family:var(--font-mono);font-size:.68rem;color:var(--muted);text-transform:uppercase}
 .heat-cell strong{font-family:var(--font-display);font-size:1.05rem;margin-top:.2rem}
-.heat-cell small{display:block;color:var(--muted);font-size:.7rem;line-height:1.25;margin-top:.2rem}
+.heat-cell small{display:block;color:var(--muted);font-size:.7rem;line-height:1.25;margin-top:.2rem;word-break:break-word}
 .matrix-legend{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin:0 1.6rem .8rem;color:var(--muted);font: .72rem var(--font-mono)}
 .matrix-legend>span{display:inline-flex;align-items:center;gap:.35rem}
 .matrix-dot{display:inline-block;width:9px;height:9px;border-radius:50%}
 .matrix-dot.conventional{background:var(--gate)}
 .matrix-dot.foundgine{background:var(--signal)}
+.matrix-dot.missing{background:var(--line);border:1px dashed var(--muted)}
+.matrix-help{margin:1.5rem 1.6rem 0;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.matrix-help summary{cursor:pointer;padding:.85rem 1.1rem;font-family:var(--font-display);font-weight:600;font-size:.92rem;color:var(--ink);list-style:none}
+.matrix-help summary::-webkit-details-marker{display:none}
+.matrix-help summary::before{content:'▸ ';color:var(--signal)}
+.matrix-help[open] summary::before{content:'▾ '}
+.matrix-help dl{margin:0;padding:0 1.1rem 1.1rem;display:grid;gap:.75rem}
+.matrix-help dl>div{display:grid;grid-template-columns:170px 1fr;gap:.6rem;align-items:start}
+.matrix-help dt{font-family:var(--font-mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--signal)}
+.matrix-help dd{margin:0;color:var(--muted);font-size:.88rem;line-height:1.5}
+@media(max-width:700px){.matrix-help{margin-left:1rem;margin-right:1rem}.matrix-help dl>div{grid-template-columns:1fr}}
 #matrix-status{margin-left:auto;color:var(--muted)}
 .selected-evidence{margin:1.5rem 1.6rem 0}
 .selected-evidence .chart-grid{margin:0}
@@ -903,4 +1005,37 @@ footer.site-footer {
   .site-header-inner nav.site-nav.is-open { display:flex; flex-direction:column; }
   .site-header-inner nav.site-nav a { margin:0; padding:.72rem .15rem; border-top:1px solid var(--line); }
   body.nav-open { overflow:hidden; }
+
+  /* Submenus become inline accordions instead of floating dropdowns. */
+  .site-header-inner nav.site-nav .nav-item {
+    flex-direction: column;
+    align-items: stretch;
+    margin-left: 0;
+    width: 100%;
+  }
+  .site-header-inner nav.site-nav .nav-item .nav-item-row {
+    justify-content: space-between;
+    border-top: 1px solid var(--line);
+  }
+  .site-header-inner nav.site-nav .nav-item .nav-parent-link {
+    flex: 1;
+    padding: .72rem .15rem;
+    border-top: 0;
+  }
+  .site-header-inner nav.site-nav .submenu-toggle {
+    width: 38px;
+    height: 38px;
+  }
+  .site-header-inner nav.site-nav .submenu {
+    position: static;
+    display: none;
+    margin: 0 0 .3rem;
+    padding: 0 0 0 .9rem;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+    min-width: 0;
+  }
+  .site-header-inner nav.site-nav .nav-item.is-open .submenu { display: flex; }
+  .site-header-inner nav.site-nav .submenu a { padding: .6rem .5rem; border-top: 0; }
 }

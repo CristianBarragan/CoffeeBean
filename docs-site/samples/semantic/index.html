@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Foundgine Semantic Showcase | Recursive Planning & Secure Execution</title>
+<meta name="description" content="Explore Foundgine's advanced Supply Chain semantic model with recursive relationships, bounded traversal, authorization-aware planning, temporal reasoning, aggregation, and adversarial data.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/samples/semantic/">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Foundgine Semantic Showcase | Recursive Planning & Secure Execution">
+<meta property="og:description" content="An intentionally difficult Foundgine reference sample demonstrating semantic modeling, recursive traversal, authorization, planning, temporal reasoning, and adversarial data.">
+<meta property="og:url" content="https://cristianbarragan.github.io/Foundgine/samples/semantic/">
+<meta property="og:site_name" content="Foundgine">
+
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Foundgine Semantic Showcase">
+<meta name="twitter:description" content="Recursive relationships, bounded traversal, authorization-aware planning, and adversarial semantic execution.">
+
+<link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+<header class="site-header">
+<div class="site-header-inner">
+<a class="brand" href="../index.html">
+      <svg
+        class="brand-mark"
+        width="20"
+        height="20"
+        viewBox="0 0 32 32"
+        aria-hidden="true"
+      >
+        <g
+          stroke="currentColor"
+          stroke-width="4"
+          stroke-linecap="round"
+          fill="none"
+        >
+          <line x1="6" y1="6" x2="6" y2="26"></line>
+          <line x1="6" y1="6" x2="14" y2="6"></line>
+          <line x1="6" y1="26" x2="14" y2="26"></line>
+        </g>
+        <circle
+          cx="24"
+          cy="16"
+          r="4.5"
+          fill="currentColor"
+        ></circle>
+      </svg>
+      Foundgine
+    </a>
+<button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation"><span></span><span></span><span></span></button>
+<nav id="site-nav" class="site-nav" aria-label="Primary navigation">
+<a href="../../what-is-foundgine.html">What is it</a>
+<a href="../../getting-started/index.html">Getting started</a>
+<a href="../../ai-agents/index.html">AI agents</a>
+<a href="../../architecture/index.html">Architecture</a>
+<a href="../../how-it-works/index.html">How it works</a>
+<div class="nav-item has-submenu"><span class="nav-item-row"><a href="../../samples/index.html" class="nav-parent-link nav-current">Samples</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-samples" aria-label="Show Samples pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-samples"><a href="../../samples/index.html">Overview</a><a href="../../samples/semantic/index.html" class="nav-current" aria-current="page">Semantic Execution</a><a href="../../samples/pentest/index.html">Security PenTest</a></div></div>
+<div class="nav-item has-submenu"><span class="nav-item-row"><a href="../../agent-benchmark/index.html" class="nav-parent-link">Agent benchmark</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-agent-benchmark" aria-label="Show Agent benchmark pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-agent-benchmark"><a href="../../agent-benchmark/index.html">Overview</a><a href="../../agent-benchmark/run-1/index.html">Run 1 · Baseline</a><a href="../../agent-benchmark/run-2/index.html">Run 2 · Scalability</a><a href="../../agent-benchmark/run-3/index.html">Run 3 · Efficiency</a><a href="../../agent-benchmark/run-4/index.html">Run 4 · Execution architecture</a><a href="../../agent-benchmark/run-5/index.html">Run 5 · High-assurance TransferFunds</a><a href="../../agent-benchmark/run-5b/index.html">Run 5b · Individual vs batch</a><a href="../../agent-benchmark/supply-chain/index.html">Supply Chain E2E</a></div></div>
+<a href="https://github.com/cristianbarragan/Foundgine" target="_blank" rel="noopener">GitHub</a>
+</nav>
+</div>
+</header>
+
+<div class="page">
+<main class="article">
+
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Foundgine</a> /
+<a href="../index.html">Samples</a> / Semantic
+</nav>
+
+<span class="eyebrow">Advanced semantic reference</span>
+
+<h1>Foundgine Supply Chain — Complex Semantic Showcase</h1>
+
+<p class="subtitle">
+The intentionally difficult reference vertical for Foundgine. It exercises
+the semantic execution boundary rather than demonstrating ordinary CRUD.
+</p>
+
+<h2>Why the semantic boundary matters</h2>
+
+<p>
+A persistence model describes how data is stored. A semantic model describes
+what the application exposes, what relationships and business concepts are
+available, and what operations the system is willing to execute.
+</p>
+
+<p>
+The caller should express business intent. It should not choose database
+tables, inject tenant predicates, bypass authorization, construct
+provider-specific SQL, remove semantic constraints, or disable traversal
+limits.
+</p>
+
+<p>
+This sample makes that distinction concrete by combining recursive data,
+authorization constraints, temporal state, aggregation, mutation dependencies,
+and deliberately hostile domain cases.
+</p>
+
+<h2>Semantic execution pipeline</h2>
+
+<pre>Agent / caller intent
+        ↓
+Semantic model
+        ↓
+Resolution
+        ↓
+Authorization
+        ↓
+Safe optimization
+        ↓
+Execution IR
+        ↓
+Provider lowering
+        ↓
+Execution</pre>
+
+<p>
+Optimization is required to preserve the resolved operation and its security
+constraints. Projection reduction, predicate composition, relationship pruning,
+bounded traversal, ordering, and aggregation may change the physical plan,
+but must not remove authorization predicates, semantic constraints, or
+resource bounds.
+</p>
+
+<h2>Domain model</h2>
+
+<p>
+The model includes companies, business units, warehouses, suppliers, supplier
+certifications, products, recursive BOM components, purchase orders, shipments,
+inventory lots, customer orders, allocations, production incidents, and
+compliance incidents.
+</p>
+
+<pre>Company
+ ├── BusinessUnit
+ │    └── Warehouse
+ │         └── InventoryLot
+ ├── Supplier
+ │    └── SupplierCertification
+ └── Product
+      └── BOM Component
+           └── Product
+                └── Supplier
+                     └── PurchaseOrder
+                          └── Shipment
+                               └── InventoryLot</pre>
+
+<h2>Scenario 1 — Deep supply-chain investigation</h2>
+
+<p>
+This scenario crosses several relationships:
+product → component → supplier → purchase order → shipment → inventory.
+It demonstrates multi-hop traversal, relationship resolution, projection
+shaping, predicate composition, and execution-plan construction.
+</p>
+
+<p>
+The caller expresses a business question rather than constructing joins or
+SQL. Foundgine resolves the request against the semantic model and builds a
+provider-independent representation before execution.
+</p>
+
+<h2>Scenario 2 — Recursive supplier risk</h2>
+
+<p>
+BOM relationships are recursive and the seed data deliberately contains a
+cycle:
+</p>
+
+<pre>Product A → Component B → Component C → Product A</pre>
+
+<p>
+The traversal therefore demonstrates bounded depth, visited-node tracking,
+deduplication, deterministic traversal, and deliberate cycle detection.
+Depth limits and visited-node tracking also help prevent recursive intent from
+becoming an unbounded resource-consumption path.
+</p>
+
+<h2>Scenario 3 — Fulfillment planning</h2>
+
+<p>
+The planner must distinguish physical inventory from inventory that is
+actually usable. It considers available quantity, reservations, quarantine,
+inbound shipments, shipment state, temporal constraints, aggregation,
+ordering, and authorization.
+</p>
+
+<pre>Customer Order
+      ↓
+Required Product
+      ├── Available Inventory
+      ├── Reserved Inventory
+      ├── Quarantined Inventory
+      └── Inbound Shipments</pre>
+
+<p>
+This demonstrates that business availability is a semantic concept, not
+merely a database row-existence check.
+</p>
+
+<h2>Scenario 4 — Transactional mutation planning</h2>
+
+<p>
+The domain is structured for generated mutation dependency graphs such as:
+</p>
+
+<pre>Purchase Order
+      ↓
+Purchase Order Lines
+      ↓
+Shipment
+      ↓
+Inventory Lot
+      ↓
+Inventory Movement</pre>
+
+<p>
+The semantic model describes what the mutation means. The planner determines
+a valid dependency order, while the execution layer can apply that order using
+the provider's transactional capabilities.
+</p>
+
+<h2>Scenario 5 — Adversarial security and state</h2>
+
+<p>
+The sample deliberately includes cross-tenant warehouse data, expired
+certifications, and BOM cycles alongside delayed and partial shipments,
+cancelled purchase orders, and quarantined inventory.
+</p>
+
+<p>
+A warehouse can exist in the semantic model without being accessible to the
+current actor. Likewise, an existing certification is not necessarily valid
+if its validity period has expired. Semantic execution therefore has to
+consider both <em>what exists</em> and <em>what is valid and accessible</em>.
+</p>
+
+<h2>Deliberately hostile data</h2>
+
+<ul>
+<li><strong>BOM cycle:</strong> exercises bounded traversal and cycle detection.</li>
+<li><strong>Delayed shipment:</strong> tests temporal filtering.</li>
+<li><strong>Partial shipment:</strong> tests quantity aggregation and remaining demand.</li>
+<li><strong>Cancelled purchase order:</strong> tests semantic state filtering.</li>
+<li><strong>Quarantined inventory:</strong> tests business availability versus physical existence.</li>
+<li><strong>Cross-tenant data:</strong> tests authorization boundaries.</li>
+<li><strong>Expired certification:</strong> tests temporal semantic constraints.</li>
+</ul>
+
+<h2>Layer-by-layer architecture</h2>
+
+<h3>Domain model</h3>
+<p>
+Defines business concepts such as Product, Supplier, Warehouse, Shipment,
+and InventoryLot.
+</p>
+
+<h3>Semantic metadata</h3>
+<p>
+Describes application-facing fields, relationships, operations, predicates,
+and capabilities in a machine-reasonable form.
+</p>
+
+<h3>Intent</h3>
+<p>
+Represents what the caller wants without binding the request to a database
+provider or physical schema.
+</p>
+
+<h3>Resolution</h3>
+<p>
+Maps requested intent onto the semantic model and rejects invalid operations
+before execution.
+</p>
+
+<h3>Authorization</h3>
+<p>
+Applies security constraints to the resolved semantic operation. Authorization
+constraints remain part of the operation that subsequent optimization must
+preserve.
+</p>
+
+<h3>Safe optimization</h3>
+<p>
+Allows projection reduction, predicate composition, relationship pruning,
+bounded traversal, ordering, and aggregation while preserving the meaning,
+security constraints, and resource bounds of the resolved operation.
+</p>
+
+<h3>Execution IR</h3>
+<p>
+Provides the provider-independent boundary between semantic planning and
+physical execution.
+</p>
+
+<h3>Provider lowering</h3>
+<p>
+Only at the final stage does provider-specific execution enter the system,
+such as PostgreSQL SQL generation.
+</p>
+
+<h2>In-memory execution</h2>
+
+<p>
+The current sample contains a deterministic in-memory scenario evaluator so
+domain and semantic behavior can be exercised without external infrastructure.
+This makes the semantic layer independently testable rather than requiring
+every scenario to start with a database.
+</p>
+
+<p>
+The semantic model is intentionally shaped like the generated artifact,
+leaving room for a future AOT semantic generator to replace hand-emitted
+semantic artifacts.
+</p>
+
+<h2>Run the sample</h2>
+
+<pre>dotnet run --project samples/Foundgine.SupplyChain.Semantic</pre>
+
+<p>
+No external database is required for the basic deterministic scenario
+evaluation.
+</p>
+
+<h2>How this sample fits the Foundgine architecture</h2>
+
+<p>
+Use <a href="../../getting-started/index.html">Getting Started</a> and the
+<a href="../index.html">Supply Chain sample</a> to understand the physical
+application layers first.
+</p>
+
+<p>
+Then use this sample to understand why a semantic boundary exists:
+it separates caller intent from persistence details while providing a place
+to resolve relationships, apply authorization, enforce traversal limits,
+reason about temporal state, optimize safely, and construct executable plans.
+</p>
+
+<p>
+Finally, use the
+<a href="../pentest/index.html">PenTest sample</a> to examine what happens
+when the same application is exposed through multiple transports and those
+transport boundaries are subjected to security regression testing.
+</p>
+
+<h2>Next step</h2>
+
+<p>
+The semantic sample demonstrates the planning and modeling side of the
+architecture. The
+<a href="../pentest/index.html">Security PenTest sample</a> demonstrates the
+security side: MCP and GraphQL converge on the same application authorization
+boundary instead of implementing separate transport-specific policies.
+</p>
+
+<p>
+<a class="button" href="../index.html">← Back to all samples</a>
+</p>
+
+</main>
+</div>
+
+<footer class="site-footer">
+Foundgine · actively evolving ·
+<a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a>
+</footer>
+<script src="../../assets/site-nav.js"></script>
+</body>
+</html>
