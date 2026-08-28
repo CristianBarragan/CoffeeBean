@@ -118,38 +118,3 @@ public sealed class FoundgineAuthorizationAttribute : Attribute
     public ushort Id { get; init; }
     public string? Name { get; init; }
 }
-
-/// <summary>
-/// Declares a named, consumer-neutral semantic schema. The schema is a boundary
-/// for semantic composition; it is not an Agent, MCP, GraphQL, or transport type.
-/// </summary>
-[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-public sealed class FoundgineSchemaAttribute : Attribute
-{
-    public FoundgineSchemaAttribute(string name) => Name = name;
-    public string Name { get; }
-}
-
-/// <summary>
-/// Declares a consumer-neutral semantic capability from a mapping type. The
-/// target type and implementation method are referenced without decorating the
-/// domain type with Agent, MCP, GraphQL, or other consumer concepts.
-/// </summary>
-[AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-public sealed class FoundgineCapabilityAttribute : Attribute
-{
-    public FoundgineCapabilityAttribute(Type targetType, string schema, string name, string methodName)
-    {
-        TargetType = targetType;
-        Schema = schema;
-        Name = name;
-        MethodName = methodName;
-    }
-
-    public Type TargetType { get; }
-    public string Schema { get; }
-    public string Name { get; }
-    public string MethodName { get; }
-    public string? Operation { get; init; }
-    public string? Description { get; init; }
-}

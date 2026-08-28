@@ -7,10 +7,18 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- The sample project owns Api/Application/Domain/Infrastructure/Semantics source,
-         while Tests is a separate test project. Prevent the SDK's recursive default
-         Compile glob from compiling xUnit test files into this application assembly. -->
+         while Tests, Api/Mcp, and McpClient are separate projects with their own
+         package references (ASP.NET Core, ModelContextProtocol) and, in McpClient's
+         and Api/Mcp's case, their own top-level-statement Program.cs. Prevent the
+         SDK's recursive default Compile glob from pulling any of those into this
+         application assembly, which would collide on duplicate top-level statements
+         and fail to resolve packages this project does not reference. -->
     <Compile Remove="Tests/**/*.cs" />
     <None Remove="Tests/**/*.cs" />
+    <Compile Remove="Api/Mcp/**/*.cs" />
+    <None Remove="Api/Mcp/**/*.cs" />
+    <Compile Remove="McpClient/**/*.cs" />
+    <None Remove="McpClient/**/*.cs" />
     <ProjectReference Include="../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
     <ProjectReference Include="../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
   </ItemGroup>

@@ -16,12 +16,10 @@ public sealed class FulfillmentPlanningTests
         var risks = SupplyChainScenarios.FulfillmentPlanning(data, new DateOnly(2026, 8, 27), auth);
 
         // Product 4 has 70 on hand, 20 reserved and 10 quarantined in the
-        // tenant's authorized warehouse (1). The usable quantity there is
-        // therefore 40, not 70. Warehouse 3's 5,000 units belong to
-        // tenant-b and must be excluded from this tenant's usable total.
-        var inventoryForProduct4 = data.Inventory
-            .Where(x => x.ProductId == new ProductId(4) && auth.AllowedWarehouses.Contains(x.WarehouseId))
-            .Sum(x => Math.Max(0, x.OnHand - x.Reserved - x.Quarantined));
+        // authorized warehouse (warehouse 1). The usable quantity there is
+        // therefore 40, not 70. Warehouse 3's 5,000 units belong to tenant-b
+        // and must be excluded from this tenant's usable inventory.
+        var inventoryForProduct4 = data.Inventory.Where(x => x.ProductId == new ProductId(4) && auth.AllowedWarehouses.Contains(x.WarehouseId)).Sum(x => Math.Max(0, x.OnHand - x.Reserved - x.Quarantined));
         Assert.Equal(40, inventoryForProduct4);
         Assert.DoesNotContain(risks, x => x.ProductId == new ProductId(4));
     }

@@ -82,7 +82,7 @@ The same server metadata is available at [`.well-known/mcp.json`](.well-known/mc
 
 <a href="https://dofollow.tools" target="_blank"><img src="https://dofollow.tools/badge/badge_light.svg" alt="Featured on Dofollow.Tools" width="200" height="54" /></a>
 
-**Release line:** **1.1.0**, targeting **.NET 9.0**. The repository is prepared for the 1.1.0 release; the last published NuGet snapshot recorded by this repository is **0.5.2** until the new packages are published. The **NuGet Downloads** badge above represents this package-ecosystem total, not just the `Foundgine` core package.
+**Release line:** **1.1.4**, targeting **.NET 9.0**. The repository is prepared for the 1.1.4 release; the last published NuGet snapshot recorded by this repository is **0.5.2** until the new packages are published. The **NuGet Downloads** badge above represents this package-ecosystem total, not just the `Foundgine` core package.
 
 | Package | Downloads | Role |
 |---|---:|---|
@@ -101,7 +101,7 @@ The same server metadata is available at [`.well-known/mcp.json`](.well-known/mc
 | [Foundgine.GraphQL.HotChocolate](https://www.nuget.org/packages/Foundgine.GraphQL.HotChocolate) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-522-blue)](https://www.nuget.org/packages/Foundgine.GraphQL.HotChocolate) | Hot Chocolate adapter that converts GraphQL selections into Foundgine semantic requests. |
 | [Foundgine.Agent.OpenAI](https://www.nuget.org/packages/Foundgine.Agent.OpenAI) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-318-blue)](https://www.nuget.org/packages/Foundgine.Agent.OpenAI) | OpenAI agent integration for Foundgine. |
 | [Foundgine.GraphQL.HotChocolate.Mutations](https://www.nuget.org/packages/Foundgine.GraphQL.HotChocolate.Mutations) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-450-blue)](https://www.nuget.org/packages/Foundgine.GraphQL.HotChocolate.Mutations) | Hot Chocolate mutation adapter for Foundgine. |
-| Foundgine.GraphQL.HotChocolate.MutationExecution | Secure Hot Chocolate mutation execution through Foundgine's canonical mutation authorization and execution boundary. |
+| Foundgine.GraphQL.HotChocolate.MutationExecution | Not yet published | Secure Hot Chocolate mutation execution through Foundgine's canonical mutation authorization and execution boundary. |
 | [Foundgine.CoffeeBeanery.ProductComposite](https://www.nuget.org/packages/Foundgine.CoffeeBeanery.ProductComposite) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-186-blue)](https://www.nuget.org/packages/Foundgine.CoffeeBeanery.ProductComposite) | Product-composite integration package. |
 | [Foundgine.Security.Authority](https://www.nuget.org/packages/Foundgine.Security.Authority) | New in 1.1.1 | Optional authority/recovery infrastructure with witness quorum, credential lifecycle, journal reconciliation and failover. Kept outside the Foundgine semantic execution core. |
 | [Foundgine.HighAssurance.Postgres](https://www.nuget.org/packages/Foundgine.HighAssurance.Postgres) | [![NuGet Downloads](https://img.shields.io/badge/NuGet%20Downloads-29-blue)](https://www.nuget.org/packages/Foundgine.HighAssurance.Postgres) | PostgreSQL high-assurance authorization and execution support. |
@@ -214,10 +214,6 @@ AI → generate SQL → database
 
 Foundgine is intended to keep the application in control of authorization and execution while allowing AI and other structured callers to use application capabilities.
 
-## Website
-
-# [Foundgine.io](https://cristianbarragan.github.io/Foundgine/docs-site/index.html)
-
 ## Capabilities
 
 | Capability | Purpose |
@@ -275,31 +271,55 @@ What the database can execute
 
 Foundgine connects those two through an application-controlled semantic and planning layer.
 
-## Performance evidence
+## Samples
 
-The 12 August 2026 CoffeeBeanery benchmark contains three successful runs over a deterministic PostgreSQL graph workload.
+| Sample | What it demonstrates |
+|---|---|
+| [`Foundgine.SupplyChain`](samples/Foundgine.SupplyChain) | The canonical layered sample: API, Application, Domain, Semantics, Infrastructure, and Tests. Start here — see [Getting Started](https://cristianbarragan.github.io/Foundgine/docs-site/getting-started/index.html). |
+| [`Foundgine.SupplyChain.Semantic`](samples/Foundgine.SupplyChain.Semantic) | An intentionally difficult semantic showcase covering recursive relationships, authorization invariants, and complex fulfillment planning. |
+| [`Foundgine.SupplyChain.PenTest`](samples/Foundgine.SupplyChain.PenTest) | A security-regression harness that exercises GraphQL and MCP transports against the same Supply Chain application boundary. |
 
-At concurrency 32:
+See the [Samples](https://cristianbarragan.github.io/Foundgine/docs-site/samples/index.html) page for more.
 
-| Implementation | Average RPS | Average p95 |
-|---|---:|---:|
-| Hot Chocolate + EF Core | 139.4 | 338.4 ms |
-| Foundgine — no cache | 2,781.0 | 20.3 ms |
-| Foundgine — provider-plan cache | 2,838.9 | 19.9 ms |
+## Security testing
 
-That corresponds to approximately **20.0× the throughput** of the baseline without the cache and **20.4× with the cache** for this workload.
+Foundgine ships with a dedicated adversarial test suite in addition to its functional unit and integration tests. The security work is organized in two layers: deterministic, CI-runnable penetration tests, and a live-tooling harness for authorized target environments.
 
-The benchmark also reports zero application errors, zero request timeouts, and zero cancelled requests across the three successful runs.
+### Deterministic penetration tests
 
-These results are workload-specific evidence, not a universal claim that Foundgine is faster than every EF Core or GraphQL workload.
+`tests/Foundgine.Security.Tests/Penetration` contains ~59 xUnit tests that run in CI on every build — no live target or external tooling required. They attack the boundary `Agent/MCP → semantic resolution → authorization → planning → plan-integrity → execution-time authorization → provider → database` rather than treating Foundgine as an ordinary CRUD API. Covered attack families include:
 
-See [`docs-site/performance/index.md`](docs-site/performance/index.md) for the full query benchmark methodology and caveats.
+- capability escalation and authorization bypass
+- tenant-boundary and ownership bypass
+- field/projection disclosure and relationship traversal abuse
+- predicate removal/weakening and plan tampering (certificate transplant)
+- execution-time authorization bypass and plan-cache context isolation
+- SQL-injection/parameterization invariants
+- replay/idempotency abuse, atomicity, and row-locking requirements
+- resource exhaustion (depth/fanout/filter/page/cursor limits)
+- MCP/JSON authority injection and audit/evidence requirements
+- malformed intent grammar, parser-limit bypasses, and JSON-RPC/HTTP transport ambiguity
+- cryptographic warrant verification: issuer-trust bypass, delegation-chain forgery, replay races, key rotation, Unicode-confusable identifiers, cache-partition collisions
 
-### Agent benchmark
+The full catalogue — [`security/pentest/ATTACK-MATRIX.md`](security/pentest/ATTACK-MATRIX.md) — currently tracks **69 scenarios (SEC-01–SEC-69)**, of which 66 are automated and passing in CI; the remainder require a live deployed target (network exposure scans, CVE scans) and are run manually. A passing result means more than an HTTP 4xx — for consequential operations it requires: the unauthorized request is rejected, no protected database state changes, no cross-tenant result is returned, no hidden field/relationship is exposed, a modified plan is rejected, stale authorization is rejected at execution time, replay does not duplicate the side effect, and evidence identifies the authorized execution boundary.
 
-A separate suite measures the AI-agent path specifically: how an agent calling Foundgine through MCP compares to an agent calling a conventional EF Core path directly, across workload size and concurrency. It covers tool-call count, throughput, wall time, and estimated per-transaction token/context load.
+### Live tooling harness
 
-See [`docs-site/agent-benchmark/index.html`](docs-site/agent-benchmark/index.html) for the interactive workload/concurrency matrix and the per-run write-ups.
+[`security/pentest/`](security/pentest) also documents how to run authorized live tests against a deployed Foundgine instance: Nmap for service/port exposure, OWASP ZAP for dynamic scanning (including a dedicated MCP protocol fuzzer that exercises malformed JSON-RPC, duplicate properties, identity/provider/SQL authority injection, oversized values, and Unicode-confusable transport keys), Burp Suite for manual boundary replay, and Nessus/OpenVAS for network-level vulnerability scanning. These are meant to complement, not replace, the deterministic semantic-security tests, and should only ever be run against an isolated environment you own or are explicitly authorized to test.
+
+### CI security gates
+
+The CI release workflow (`security.yml`) makes several security jobs prerequisites for package publication:
+
+| Job | Purpose |
+|---|---|
+| `authorization-penetration` | Runs the deterministic penetration suite against high-assurance authorization paths |
+| `dependency-audit` | NuGet vulnerability audit across transitive packages, plus a deprecated-package report |
+| `secret-scan` | Gitleaks scan for committed secrets |
+| `sbom` | CycloneDX SBOM generation |
+| `zap-baseline` | Scheduled/manual dynamic OWASP ZAP scan combined with MCP protocol fuzzing against the SupplyChain sample |
+
+See [`security/pentest/README.md`](security/pentest/README.md) for the full security model under test and live-tool instructions, and [`security/pentest/PENTEST-STATUS.md`](security/pentest/PENTEST-STATUS.md) for what's automated versus what requires a live environment.
 
 ## The verification story
 
@@ -413,7 +433,7 @@ Foundgine's authorization and execution boundaries are intended to reduce unsafe
 
 ## Status
 
-Foundgine is actively evolving (current version: 1.1.0). Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
+Foundgine is actively evolving (current version: 1.1.4). Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
 
 Detailed, dated engineering notes for each release are kept in [`CHANGELOG.md`](CHANGELOG.md).
 

@@ -105,7 +105,11 @@ Semantics, Infrastructure, MCP, PostgreSQL, and tests.
 <td>
 An intentionally difficult semantic showcase covering recursive relationships,
 bounded traversal, authorization-aware planning, temporal reasoning,
-aggregation, mutation dependency graphs, and adversarial domain data.
+aggregation, mutation dependency graphs, and adversarial domain data. It also
+shows manual semantic authoring beside generated semantics, including strongly
+typed <code>&lt;fromEntity, toModel&gt;</code> relationship definitions, plus a
+fail-closed, client-supplied claims validator that lets an MCP caller narrow
+its own access but never widen it.
 </td>
 </tr>
 <tr>
@@ -174,6 +178,7 @@ planning → execution → persistence</strong>.
 <a class="button" href="../getting-started/index.html">Start with Supply Chain →</a>
 </p>
 
+<section class="callout"><strong>Semantic Execution</strong><p>The advanced StoreChain sample mixes manually curated and generated semantic models, strongly typed relationships, entity/field/relationship/conditional/write policies, a Run 5-style adversarial MCP client, and a fail-closed validator for untrusted, client-supplied claims that can only narrow — never widen — what a caller's role already allows.</p><p><a href="semantic/index.html">Explore the semantic authorization showcase →</a></p></section>
 </main>
 </div>
 

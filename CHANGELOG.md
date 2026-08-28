@@ -1,71 +1,49 @@
-## [1.1.3] - 2026-08-28
-
-### Changed
-- **All three `samples/Foundgine.SupplyChain*` sample projects now adopt the Step 5/6 capability-definition API** (`SemanticCapabilityMapping` → `SemanticCapabilityDefinition`, with `SemanticCapabilityAuthorizationRequirement` metadata) instead of leaving each capability's authorization shape implicit in hand-rolled switch statements:
-  - `Foundgine.SupplyChain/Semantics/SupplyChainCapabilities.cs` declares all 13 canonical capabilities (`get_my_orders`, `place_order`, `update_inventory`, etc.), each with a `SemanticCapabilityPolicyRequirement` and, for the five customer-scoped capabilities, a `SemanticCapabilityTenantRequirement`. This is descriptive metadata only - `Application.SupplyChainAuthorizer.Demand` remains the only thing that actually permits or denies a call.
-  - `Foundgine.SupplyChain.Semantic/Semantics/SupplyChainCapabilities.cs` declares the same shape for the Semantic sample's two scenario operations (`read_supplier_risk`, `write_purchasing`), mirroring what its existing `AuthorizationContext` (`TenantId`, `AllowedWarehouses`, `CanReadSupplierRisk`, `CanWritePurchasing`) already establishes at runtime. The console sample's `Api/Program.cs` now prints each capability's requirement kinds alongside the existing scenario output.
-  - `Foundgine.SupplyChain.PenTest` picks up the canonical project's capability registry transitively through its existing `Foundgine.SupplyChain.Application`/`Infrastructure` project references; no PenTest-specific capability model was introduced.
-- **Bundled host setup for easier maintenance.** `Foundgine.SupplyChain/Infrastructure/SupplyChainHost.cs` is new and consolidates three things every SupplyChain host previously repeated independently:
-  - `AddSupplyChainCore(connectionString)` replaces the `AddSupplyChainApplication().AddSupplyChainInfrastructure(cs)` pair and also registers the new shared `SemanticCapabilityRegistry`.
-  - `ResolveSupplyChainConnectionString()` is a strict superset of the three hosts' previously slightly-different connection-string lookups (flat configuration key, `ConnectionStrings` section, environment variable), so no host's existing configuration needs to change.
-  - `MapSupplyChainHealthChecks()` replaces the identical `/health`/`/health/ready` minimal-API mappings that were copy-pasted into the canonical API's and the PenTest MCP host's `Program.cs`.
-  - `Foundgine.SupplyChain/Api/Program.cs`, `Foundgine.SupplyChain.PenTest/Api/Mcp/Program.cs`, and `Foundgine.SupplyChain.PenTest/Api/GraphQL/Program.cs` were all updated to call the bundled extensions instead of repeating the setup.
-- `Foundgine.SupplyChain.Infrastructure` now takes a `FrameworkReference` on `Microsoft.AspNetCore.App`, required for `SupplyChainHost`'s `WebApplication`/`IConfiguration` helpers.
-- **Release version bumped to `1.1.3`** in `Directory.Build.props`.
-
-### Verification
-- As with `1.1.2`, no `dotnet build`/`dotnet test` run could be performed in the packaging environment (no .NET SDK available); the new capability-definition and bundled-host-setup code has not yet been compiler-verified. CI, or a local `dotnet build`/`dotnet test` pass across `Foundgine.SupplyChain.sln` and `Foundgine.SupplyChain.PenTest.sln`, should be treated as the authoritative check before merging.
-
-## [Unreleased / Step 5] - 2026-08-28
-
-### Added
-- Promoted semantic capabilities to first-class `SemanticCapabilityDefinition` objects.
-- Added provider-neutral `SemanticCapabilityImplementation` and `SemanticCapabilityMetadata`.
-- Added `SemanticCapabilityRegistry` with deterministic qualified-name lookup and duplicate rejection.
-- Added mapping materialization from `SemanticCapabilityMapping` into the authoritative capability definition.
-- Exposed capability definitions from the unified `SemanticSchemaSet` so Agent, MCP, GraphQL and other adapters can consume the same object.
-
-### Architecture
-- Capability identity, semantic contract, authorization decision, constraints, effects, and optional implementation binding now have one authoritative representation.
-- No Agent/MCP/GraphQL-specific capability model was introduced.
-
-## Unreleased — Step 4: Schema Composition
-
-- Added `SemanticSchemaComposition` as the explicit composition boundary between the generated semantic schema and manually-authored semantic schemas.
-- Added `SemanticSchemaRegistry.RegisterRange` for deterministic registration of multiple schema contributions.
-- Added schema and capability lookup APIs to `SemanticSchemaSet` (`TryGetSchema`, `GetSchema`, `TryGetCapability`, `GetCapability`).
-- Preserved generated semantic metadata as the authoritative source for generated entities while allowing manual schemas to extend the unified semantic graph.
-- Added tests for generated/manual composition, schema-name collisions, conflicting entity definitions, and multi-schema registration.
-- No Agent, MCP, GraphQL, or other consumer-specific concepts were introduced in this step; those adapters remain downstream projections of the unified semantic model.
-
-## Unreleased — Step 3: Generated Semantic Model
-
-- Extended the existing Roslyn AOT pipeline to emit an authoritative `GeneratedSemanticModel.Model` from discovered `FoundgineEntity` declarations.
-- Generated semantic entities now include identities, scalar fields, CLR types, relationships, and relationship cardinality without runtime reflection.
-- Preserved the existing application-model field-handle API and consumer-neutral capability mappings.
-- Added AOT test coverage proving generated semantic topology is available from the same generated metadata pipeline.
-
-## Step 2 — Declarative Schema/Capability Mapping (2026-08-28)
-
-- Added consumer-neutral `FoundgineSchemaAttribute` and `FoundgineCapabilityAttribute` declarations.
-- Added generated semantic mapping metadata for schema boundaries and capabilities.
-- Kept capability declarations in a dedicated mapping type so domain models do not depend on Agent, MCP, or GraphQL concepts.
-- Capability mappings record target entity, implementation type/method, schema, operation, and description without executing application code.
-- Added semantic mapping tests and AOT generator integration coverage.
-
 # Changelog
 
+## [1.1.4] - 2026-08-28
 
-### Semantic schema foundation (snapshot step 1)
+### Fixed
+- **`Foundgine.SupplyChain.Semantic` still failed to build after the previous fix, with a further 8 errors.** (1) `StoreChainAuthorizationPolicy.CanAccessEntity` referenced `SupplyChainSemanticModel.SupplierCertification` (`CS0117`), but the entity's `EntityId` field is named `SupplyChainSemanticModel.Certification` (the domain *type* is `SupplierCertification`; the semantic-model *entity id* is `Certification`) — corrected the reference. (2) `Semantics/Generated/SupplyChainGeneratedSemanticModel.cs` failed with `CS0229` ambiguous-reference errors on `PurchaseOrder`, `PurchaseOrderLine`, and `Shipment`, because it combined `using Foundgine.SupplyChain.Semantic.Domain;` (bringing in the domain *types* `PurchaseOrder`, `PurchaseOrderLine`, `Shipment`) with `using static ...SupplyChainSemanticModel;` (bringing in the same-named `EntityId` *fields* at the same scope) — both are ordinary `using` imports at file scope, so the compiler can't prefer one over the other. Replaced the `using static` with a normal `using` plus explicit `SupplyChainSemanticModel.` qualification on every `EntityId` reference, matching the pattern the (unambiguous) manually authored model already uses.
+- **`Foundgine.SupplyChain.Semantic` failed to build.** Two issues surfaced together: (1) the sample's main project had no `Compile Remove` for `Api/Mcp/**/*.cs` or `McpClient/**/*.cs`, so the SDK's default recursive glob pulled those two separate sub-projects' `Program.cs` files (and their `ModelContextProtocol`/ASP.NET Core-only types) straight into the main assembly, causing `CS8802` (multiple top-level-statement files) and cascading `CS0246`/`CS0234` missing-type errors. Both subdirectories are now excluded from the main project's compile items, matching the existing `Tests/**/*.cs` exclusion. (2) `StoreChainAuthorizationPolicy`'s 3-argument `GetEntityAccess(entityId, operation, name)` override didn't compile (`CS0115`) because its base class, `AllowAllSemanticAuthorizationPolicy`, only implemented the 2-argument overload as a class member — the 3-argument overload existed solely as a C# default interface method on `ISemanticAuthorizationPolicy`, which a derived class cannot `override`. `AllowAllSemanticAuthorizationPolicy` now declares its own `virtual` 3-argument `GetEntityAccess`, delegating to the 2-argument overload exactly as the interface default did, so derived policies can override it as intended.
 
-- Added `SemanticSchema` as the named, consumer-neutral semantic namespace.
-- Added `SemanticSchemaRegistry` and immutable `SemanticSchemaSet` for composition of generated and manual semantic models.
-- Added deterministic validation for duplicate schemas, duplicate capabilities, unknown capability targets, and conflicting entity definitions.
-- Added `Schema` metadata to `SemanticCapability`; schema ownership is authoritative at registration time.
-- Added `SemanticModel.FromEntities` as the composition boundary used by the schema registry.
-- Added tests covering schema ownership, generated/manual composition, and conflicting entity definitions.
+### Added
+- **Client-supplied claims validation in `samples/Foundgine.SupplyChain.Semantic`.** The StoreChain MCP tools (`read_entity`, `write_entity`, `policy_probe`) now accept an optional, untrusted `claims` dictionary sent by the MCP caller itself, alongside the existing (unchanged) `actor`/`token` authentication. New `Authorization/ClientClaims.cs` adds:
+  - `ClientClaimsValidator.Validate(...)`, a fail-closed validator that never has access to the caller's authenticated identity, so it cannot cross-check or "average" a claim against reality into something more permissive.
+  - A hard, whole-request rejection for any claim that tries to assert identity or privilege directly (`role`, `tenant`, `tenantId`, `actor`, `isAdmin`, `admin`, `permissions`, `capabilities`, `scopes`) — presence alone fails the call closed, even when the asserted value happens to match the caller's real identity.
+  - Per-key format validation for recognized narrowing/evidence claims — `scope` (`read-only`/`full`), `warehouse` (positive integer), `max_rows` (1–10,000), `reason` (8–240 chars), `change_ticket` (`CHG-####`), `not_after` (ISO-8601) — with malformed values rejected individually rather than failing the whole request.
+  - Fail-open handling of unrecognized keys: dropped individually and reported back, without blocking the rest of the call.
+  - Cross-field staleness checking: evidence (`reason`, `change_ticket`) paired with an already-expired `not_after` is rejected as stale.
+- **`StoreChainAuthorizationPolicy` now accepts a validated claim set** via a new `(tenantId, role, ClaimsValidationResult)` constructor overload (the original two-argument constructor is unchanged and delegates to it with an empty claim set). Only the *validated* `Accepted` claims are ever visible to the policy — there is no code path from a rejected or malformed claim into an authorization decision. Three claims are wired in, and every one can only narrow what the role already allows, never widen it:
+  - `scope=read-only` — lets a caller self-restrict its own write access for a single call.
+  - `warehouse=<id>` — ANDs an additional resource predicate onto the existing tenant predicate for `Warehouse`/`InventoryLot` reads; combined with `AND`, never `OR`, so it can only shrink the result set.
+  - `reason` + `change_ticket` — required, in addition to the existing manager-only role check, before the high-assurance `inventory.reconcile` named operation is allowed.
+- **9 new MCP adversarial/legitimate-use cases** in `McpClient/Program.cs`: role-injection, tenant-injection, missing/malformed/expired reconcile evidence (attacks), plus self-imposed read-only scope, warehouse scoping, unknown-claim-key noise, and valid reconcile evidence (legitimate, self-narrowing uses that the policy must honor rather than silently ignore).
+- **New unit test coverage**: `ClientClaimsValidatorTests` (identity-spoofing rejection per reserved key, value-match-doesn't-matter, unrecognized-key drop, malformed-value rejection per recognized key, expired-evidence cross-field rejection, well-formed-evidence acceptance) and policy-level tests confirming self-narrowing scope/warehouse claims are honored and that evidence claims can never substitute for the role check. `AuthorizationMcpPenetrationTests` gained a `Claims_attack_matrix_defines_the_required_claim_validation_boundaries` test listing the 5 claim attacks and 4 legitimate narrowing uses as a single source of truth.
+- **New `samples/Foundgine.SupplyChain.Semantic/GUIDE.md`** — a detailed guide covering the sample layout, the identity-vs-claims distinction, every claims validation rule, how the policy consumes accepted claims, the full MCP tool surface, the adversarial client's case list, and a complete attack/legitimate-use matrix. `README.md` and `Api/README.md` now link to it and summarize the claims feature inline.
 
-This snapshot deliberately does **not** generate Agent/MCP/GraphQL adapters yet. Those are subsequent steps and will consume the unified schema/capability representation.
+### Changed
+- `Api/Mcp/Program.cs` responses from `read_entity`, `write_entity`, and `policy_probe` now include `acceptedClaims`/`rejectedClaims` diagnostics alongside the existing result payload, so the adversarial client (and anyone exercising the tools directly) can see exactly which claims were honored and why any others weren't.
+
+### Verification
+- Static structural review (brace/paren balance, type/signature consistency against the existing codebase) was performed on every edited file.
+- ZIP packaging integrity was verified after building the release contents.
+- The .NET SDK is unavailable in the packaging environment, so `dotnet build`/`dotnet test` could not be run here; CI remains the authoritative runtime verification for this release.
+
+## [1.1.3] - 2026-08-28
+
+### Added
+- **Strongly typed manual relationship API.** The manual `SemanticModelBuilder.Relationship<TFrom, TTo>(...)` surface now makes both sides of a relationship explicit domain-model generics (`<fromEntity, toModel>`) instead of an object/entity-abstraction pair, so each lambda's parameter is unambiguously typed to its own model (`product => product.Id`, `transaction => transaction.ProductId`) and cannot accidentally reference the other side's properties.
+- **Mixed manual + generated semantic authoring in `samples/Foundgine.SupplyChain.Semantic`.** `SupplyChainSemanticModel.Build()` now imports a generated semantic artifact (`Semantics/Generated/`) via `SemanticModelBuilder.Import(...)` alongside manually authored entities and relationships, so both authoring paths converge on one immutable `SemanticModel`.
+- **Authorization annotations and policies.** New `Authorization/PolicyAnnotations.cs` (`[SemanticEntity]`, `[SemanticField]`, `[SemanticPolicy("...")]`) describes semantic source metadata on the domain model; the authoritative runtime decision lives separately in the new `Authorization/SupplyChainAuthorizationPolicy.cs`, which demonstrates every authorization boundary Foundgine exposes: entity access, field access, relationship access, conditional (tenant) predicates, write access, and named-operation refinement (`inventory.reconcile`, manager-only).
+- **StoreChain MCP authorization lab.** New `Api/Mcp/Foundgine.SupplyChain.Semantic.Mcp.Api.csproj` hosts `describe_capabilities`, `read_entity`, `read_relationship`, `write_entity`, and `policy_probe` tools over a stateless MCP server, backed by a small fixed set of demo actor/token/role/tenant identities so tenant and role are always server-derived rather than caller-asserted.
+- **Run-5-style adversarial MCP client.** New `McpClient/Foundgine.SupplyChain.Semantic.Mcp.Client.csproj` sends untrusted `tools/call` requests attempting capability-discovery abuse, cross-tenant reads, sensitive-field access, relationship escalation, write escalation, named-operation escalation, unauthorized writes, wrong-token/unknown-actor authentication probes, and an authorized-write positive control.
+- **New `Tests/AuthorizationPolicyTests.cs` and `Tests/Mcp/AuthorizationMcpPenetrationTests.cs`** covering the policy's entity/field/relationship/conditional/write/named-operation distinctions and defining the MCP attack matrix.
+- Root and Samples website pages updated to document the manual `<fromEntity, toModel>` relationship API and the mixed manual/generated + authorization + adversarial-MCP StoreChain showcase.
+
+### Verification
+- ZIP integrity was verified after packaging; solution project/configuration entries were checked for structural consistency and the website sections were confirmed present.
+- The .NET SDK was unavailable in the packaging environment, so `dotnet build`/`dotnet test` could not be run.
+
 
 ## [1.1.2] - 2026-08-28
 

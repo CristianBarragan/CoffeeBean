@@ -50,8 +50,6 @@ samples/Foundgine.SupplyChain/
 │   └── Foundgine.SupplyChain.Domain.csproj
 ├── Semantics/
 │   ├── SupplyChainSemanticModel.cs
-│   ├── SupplyChainCapabilities.cs
-│   ├── DependencyInjection.cs
 │   └── Foundgine.SupplyChain.Semantics.csproj
 ├── Application/
 │   ├── Contracts.cs
@@ -61,8 +59,6 @@ samples/Foundgine.SupplyChain/
 ├── Infrastructure/
 │   ├── Queries/
 │   ├── Mutations/
-│   ├── DependencyInjection.cs
-│   ├── SupplyChainHost.cs
 │   └── Foundgine.SupplyChain.Infrastructure.csproj
 ├── Api/
 │   ├── Program.cs
@@ -313,8 +309,6 @@ semantic execution
 
 This keeps transport concerns out of the domain and infrastructure layers.
 
-`Semantics/SupplyChainCapabilities.cs` declares the same capabilities as first-class `SemanticCapabilityDefinition`s (the Step 5/6 capability-definition API), each with declarative `SemanticCapabilityAuthorizationRequirement` metadata — a policy requirement per capability, plus a tenant requirement for the five customer-scoped ones (`get_my_orders`, `get_order`, `get_shipment`, `place_order`, `cancel_order`). This is descriptive metadata consumed via the shared `SemanticCapabilityRegistry`; it does not replace `SupplyChainAuthorizer.Demand`, which remains the only thing that actually permits or denies a call.
-
 ## 10. Infrastructure
 
 `Infrastructure/DependencyInjection.cs` registers the source-tree Foundgine services used by the sample:
@@ -328,15 +322,13 @@ services.AddSingleton<SemanticSqlQueryExecutor>();
 
 The only external persistence package used here is `Npgsql`.
 
-`Infrastructure/SupplyChainHost.cs` bundles this together with the application layer and the capability registry into a single `AddSupplyChainCore(connectionString)` call, plus shared `ResolveSupplyChainConnectionString()` and `MapSupplyChainHealthChecks()` helpers, so this sample and the PenTest sample's GraphQL/MCP hosts all wire themselves up the same way instead of each repeating the setup.
-
 Normal queries use Foundgine planning and SQL compilation. The high-assurance `PlaceOrder` and `CancelOrder` workflows retain explicit PostgreSQL transaction code because they require database-specific locking, idempotency and atomic inventory invariants.
 
 That boundary is intentional: Foundgine handles the semantic planning surface; application-specific transaction orchestration remains explicit where the invariant requires it.
 
 ## 11. API and MCP
 
-`Api/Program.cs` calls `AddSupplyChainCore(cs)` and `MapSupplyChainHealthChecks()` to wire the application, infrastructure, and capability registry, and exposes MCP over HTTP.
+`Api/Program.cs` wires the application and infrastructure services and exposes MCP over HTTP.
 
 Run it from the repository root:
 

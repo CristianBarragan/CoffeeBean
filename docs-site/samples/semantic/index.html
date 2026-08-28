@@ -103,6 +103,181 @@ authorization constraints, temporal state, aggregation, mutation dependencies,
 and deliberately hostile domain cases.
 </p>
 
+
+<h2>Manual and generated semantic models</h2>
+
+<p>
+The sample distinguishes two ways of creating the semantic surface: <strong>manual semantic authoring</strong> and <strong>generated semantic metadata</strong>. Both produce the same provider-independent semantic representation and use the same resolution, authorization, planning, and execution pipeline.
+</p>
+
+<h3>Manual: author semantics against the domain model</h3>
+
+<pre>new SemanticModelBuilder()
+    .Entity&lt;Product&gt;(Product, "Product", e =&gt; e
+        .Identity(x =&gt; x.Id)
+        .Field(x =&gt; x.Sku)
+        .Field(x =&gt; x.Name)
+        .Field(x =&gt; x.SafetyStock));</pre>
+
+<p>
+The <code>x</code> in these selectors is the application/domain model type, such as <code>Product</code>. It is not the semantic entity builder, an EF entity metadata object, or provider metadata. Foundgine derives the property name and CLR type and allocates the entity-local <code>FieldId</code>, so manual semantic definitions do not need <code>new FieldId(2)</code> or repeated <code>typeof(string)</code>.
+</p>
+
+<h4>Type both sides of a relationship</h4>
+
+<pre>.Relationship&lt;Product, ProductComponent&gt;(
+    Product, new RelationshipId(1), "components",
+    product =&gt; product.Id,
+    Component, component =&gt; component.ParentProductId,
+    RelationshipCardinality.Many)</pre>
+
+<p>
+Manual relationships use an explicit <code>&lt;fromEntity, toModel&gt;</code> generic pair. The first selector is compiled against the source <strong>domain model</strong> and the second against the target <strong>domain model</strong>. That distinction is intentional: <code>product =&gt; product.Id</code> is a property on the application model, not <code>entity.Property(...)</code> on an EF/storage entity. Foundgine validates that both selectors are direct model properties and that their CLR types match. This makes both sides strongly typed and prevents source/target property mix-ups before execution.
+</p>
+
+<div class="callout">
+<strong>Model property, not entity metadata.</strong> Manual semantic lambdas should read like <code>model =&gt; model.Property</code>. They should not depend on EF <code>EntityType</code>, <code>Property</code>, column metadata, or numeric <code>FieldId</code> values. Storage mapping remains a separate concern.
+</div>
+
+<h4>Why the generic pair matters</h4>
+
+<pre>&lt;fromEntity, toModel&gt;
+       │       │
+       ▼       ▼
+ product =&gt;   component =&gt;
+ product.Id    component.ParentProductId
+       │       │
+       └── typed relationship ──┘</pre>
+
+<p>
+The compiler now knows the type of each lambda independently. A property belonging to the target model cannot accidentally be selected from the source model, and a storage-layer property cannot be substituted for a domain-model property. The generated approach derives the same relationship information automatically; the manual approach makes the intent explicit.
+</p>
+
+<h3>Generated: derive semantic handles from model metadata</h3>
+
+<pre>Domain / declared model
+        ↓
+Foundgine generator
+        ↓
+Generated semantic handles
+        ↓
+Same SemanticModel / execution pipeline</pre>
+
+<p>
+Generated semantics remove repetitive hand-written mapping when the application's semantic surface can be derived safely. Manual semantics remain useful when the exposed surface needs deliberate curation or when semantic names and capabilities intentionally differ from the underlying model.
+</p>
+
+<p>
+The important distinction is <strong>authoring strategy</strong>, not runtime architecture: both approaches converge on Foundgine's semantic model before resolution, authorization, planning, and provider execution.
+</p>
+
+<h2>Authorization is part of the semantic example</h2>
+
+<p>
+This sample intentionally demonstrates authorization as a semantic concern rather than as a transport-only role check. The policy surface has several independent boundaries, and a request must survive all of the applicable boundaries before it can become an executable plan.
+</p>
+
+<table>
+<thead><tr><th>Policy type</th><th>StoreChain case</th><th>Adversarial attempt</th></tr></thead>
+<tbody>
+<tr><td><strong>Entity</strong></td><td>Compliance incidents are restricted to analysts and managers.</td><td>A customer requests incident data.</td></tr>
+<tr><td><strong>Field</strong></td><td>Inventory quarantine and supplier risk are selectively exposed.</td><td>An agent asks for a restricted field.</td></tr>
+<tr><td><strong>Relationship</strong></td><td>Supplier incident traversal is restricted.</td><td>An agent tries to reach a denied subtree through a relationship.</td></tr>
+<tr><td><strong>Conditional</strong></td><td>Tenant-owned resources require <code>resource.TenantId == context.TenantId</code>.</td><td>An agent attempts a cross-tenant read.</td></tr>
+<tr><td><strong>Write</strong></td><td>Inventory writes require an operational role.</td><td>A read-only analyst attempts a mutation.</td></tr>
+<tr><td><strong>Named operation</strong></td><td><code>inventory.reconcile</code> is manager-only.</td><td>An operator attempts an elevated operation.</td></tr>
+</tbody>
+</table>
+
+<h3>Annotations describe; policies decide</h3>
+
+<p>
+The domain models use small declarative annotations such as <code>[SemanticEntity]</code>, <code>[SemanticField]</code>, and <code>[SemanticPolicy("...")]</code>. These are source metadata for the semantic/generation path. They are deliberately not the final authorization decision.
+</p>
+
+<pre>Annotations / generated metadata ─┐
+Manual semantic definitions ──────┼──&gt; SemanticModel
+                                  │
+Current actor policy ─────────────┘
+                                      ↓
+                               Authorization
+                                      ↓
+                            Semantic Plan / IR
+                                      ↓
+                                  Execute</pre>
+
+<p>
+The runtime policy is <code>StoreChainAuthorizationPolicy</code>. Capability discovery is descriptive only: an agent may inspect what is available, but a capability response is never treated as proof of authority. The current policy is evaluated again for the requested operation.
+</p>
+
+<h2>Mixed manual + generated authoring</h2>
+
+<p>
+The StoreChain model deliberately mixes authoring strategies. Purchase orders, purchase-order lines, and shipments are represented by the generated artifact; products, suppliers, inventory and the other curated domain concepts are manually authored. The two paths are imported into one <code>SemanticModel</code> before resolution and authorization.
+</p>
+
+<pre>Generated entities ────────┐
+                          ├──&gt; one SemanticModel
+Manual entities ──────────┘
+                              ↓
+                         Authorization
+                              ↓
+                       Resolution / Planning
+                              ↓
+                           Execution</pre>
+
+<h2>MCP adversarial client — Run 5 style</h2>
+
+<p>
+The sample includes a small protocol-level MCP client that treats the MCP boundary as hostile. It sends ordinary <code>tools/call</code> requests, but deliberately attempts to cross each policy boundary. This is intentionally similar to the high-assurance adversarial shape used in Run 5 of the agent benchmarks: the caller is untrusted, the tool surface is real, and authorization must hold at execution time rather than relying on what the caller previously discovered.
+</p>
+
+<pre>describe_capabilities
+        ↓
+Cross-tenant probe ────────&gt; DENY
+Sensitive field probe ─────&gt; DENY
+Relationship escalation ───&gt; DENY
+Write escalation ──────────&gt; DENY
+Named operation escalation ─&gt; DENY
+Unauthorized write ────────&gt; DENY
+Authorized operator write ─&gt; ALLOW</pre>
+
+<p>
+The important security property is not merely that the MCP endpoint has a role check. The semantic policy survives capability discovery, intent resolution, relationship traversal, planning, and execution. A caller cannot provide its own tenant predicate, turn a denied field into an allowed field, or convert read authority into mutation authority.
+</p>
+
+<h2>Client-supplied claims — narrowing, never widening</h2>
+
+<p>
+<code>read_entity</code>, <code>write_entity</code>, and <code>policy_probe</code> also accept an optional, untrusted <code>claims</code> dictionary sent by the MCP caller itself, on top of the existing <code>actor</code>/<code>token</code> authentication. Identity — tenant and role — is still resolved entirely server-side; claims are additional context a caller volunteers about itself, and a new fail-closed <code>ClientClaimsValidator</code> is the only thing standing between that untrusted dictionary and the authorization policy.
+</p>
+
+<pre>Client claims (untrusted) ──&gt; ClientClaimsValidator ──&gt; Accepted claims only ──&gt; StoreChainAuthorizationPolicy
+                                     │
+                                     └──&gt; Rejected claims (reported, never consulted)</pre>
+
+<p>
+The validator treats every claim as hostile until proven otherwise. Reserved identity keys are never accepted under any circumstances — not even when the asserted value happens to match the caller's real identity — because their presence alone is the attack: a well-formed caller has no reason to assert its own identity through a side channel. Recognized non-identity keys are validated against a strict per-key format and rejected individually on a bad value; unrecognized keys are dropped individually and reported back rather than failing the call. Evidence claims are cross-checked against their own expiry, so stale evidence cannot substitute for current authorization.
+</p>
+
+<table>
+<thead><tr><th>Claim</th><th>Effect</th><th>Direction</th></tr></thead>
+<tbody>
+<tr><td><code>scope=read-only</code></td><td>Self-imposed write restriction for that call.</td><td>Narrowing</td></tr>
+<tr><td><code>warehouse=&lt;id&gt;</code></td><td>ANDs a warehouse-id predicate onto the existing tenant predicate for <code>Warehouse</code>/<code>InventoryLot</code> reads.</td><td>Narrowing</td></tr>
+<tr><td><code>reason</code>, <code>change_ticket</code></td><td>Required evidence for the manager-only <code>inventory.reconcile</code> named operation, on top of the existing role check.</td><td>Additional gate</td></tr>
+<tr><td><code>role</code>, <code>tenant</code>, <code>actor</code>, <code>isAdmin</code>, <code>permissions</code>, …</td><td>Presence alone fails the entire call closed.</td><td>Spoofing attempt</td></tr>
+</tbody>
+</table>
+
+<p>
+Every accepted claim can only narrow what the authenticated role already allows — the warehouse predicate is combined with <code>AND</code>, never <code>OR</code>, so it can only shrink a result set, and the two-argument <code>StoreChainAuthorizationPolicy</code> constructor used everywhere else in the sample is unchanged and simply delegates to an empty claim set. There is no code path from a rejected or malformed claim into an authorization decision. The adversarial MCP client exercises this directly: role/tenant injection and missing, malformed, or expired reconcile evidence are attacks that must be denied, while a self-imposed read-only scope, a warehouse scope, an unrecognized claim key, and well-formed reconcile evidence are legitimate, self-narrowing uses that the policy must honor rather than silently ignore.
+</p>
+
+<p>
+See the sample's <a href="https://github.com/cristianbarragan/Foundgine/blob/main/samples/Foundgine.SupplyChain.Semantic/GUIDE.md">GUIDE.md</a> for the full validation rules, the policy wiring, and the complete attack/legitimate-use matrix.
+</p>
+
 <h2>Semantic execution pipeline</h2>
 
 <pre>Agent / caller intent

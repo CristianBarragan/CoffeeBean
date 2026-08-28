@@ -1,5 +1,7 @@
 using Foundgine.Abstractions;
 using Foundgine.Semantics;
+using Foundgine.SupplyChain.Semantic.Domain;
+using Foundgine.SupplyChain.Semantic.Generated;
 
 namespace Foundgine.SupplyChain.Semantic.Semantics;
 
@@ -19,89 +21,107 @@ public static class SupplyChainSemanticModel
     public static readonly EntityId Certification = new(1011);
     public static readonly EntityId ComplianceIncident = new(1012);
 
-    // This is intentionally written in the same shape the semantic generator emits.
-    // The domain annotations can later become the source of this generated artifact.
+    /// <summary>
+    /// Deliberately mixed semantic model. Purchase orders, lines and shipments
+    /// come from the generated artifact; the remaining domain surface is
+    /// manually curated. Both paths converge through SemanticModelBuilder and
+    /// therefore produce one immutable SemanticModel for authorization,
+    /// resolution and planning.
+    /// </summary>
     public static SemanticModel Build() => new SemanticModelBuilder()
-        .Entity(Product, "Product", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "Sku", typeof(string))
-            .Field(new FieldId(3), "Name", typeof(string))
-            .Field(new FieldId(4), "Category", typeof(string))
-            .Field(new FieldId(5), "SafetyStock", typeof(decimal))
-            .Relationship(new RelationshipId(1), "components", Component, RelationshipCardinality.Many))
-        .Entity(Component, "ProductComponent", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "ParentProductId", typeof(int))
-            .Field(new FieldId(3), "ComponentProductId", typeof(int))
-            .Field(new FieldId(4), "QuantityPerParent", typeof(decimal))
-            .Relationship(new RelationshipId(2), "componentProduct", Product, RelationshipCardinality.One))
-        .Entity(Supplier, "Supplier", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "Name", typeof(string))
-            .Field(new FieldId(3), "Country", typeof(string))
-            .Field(new FieldId(4), "RiskScore", typeof(decimal))
-            .Relationship(new RelationshipId(3), "shipments", Shipment, RelationshipCardinality.Many)
-            .Relationship(new RelationshipId(4), "certifications", Certification, RelationshipCardinality.Many)
-            .Relationship(new RelationshipId(5), "incidents", ComplianceIncident, RelationshipCardinality.Many))
-        .Entity(Shipment, "Shipment", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "PurchaseOrderId", typeof(int))
-            .Field(new FieldId(3), "ExpectedArrival", typeof(DateOnly))
-            .Field(new FieldId(4), "Status", typeof(string))
-            .Field(new FieldId(5), "Quantity", typeof(decimal)))
-        .Entity(InventoryLot, "InventoryLot", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "WarehouseId", typeof(int))
-            .Field(new FieldId(3), "ProductId", typeof(int))
-            .Field(new FieldId(4), "OnHand", typeof(decimal))
-            .Field(new FieldId(5), "Reserved", typeof(decimal))
-            .Field(new FieldId(6), "Quarantined", typeof(decimal))
-            .Relationship(new RelationshipId(6), "warehouse", Warehouse, RelationshipCardinality.One))
-        .Entity(Warehouse, "Warehouse", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "BusinessUnitId", typeof(int))
-            .Field(new FieldId(3), "Name", typeof(string))
-            .Field(new FieldId(4), "TenantId", typeof(string))
-            .Relationship(new RelationshipId(7), "businessUnit", BusinessUnit, RelationshipCardinality.One)
-            .Relationship(new RelationshipId(8), "inventory", InventoryLot, RelationshipCardinality.Many))
-        .Entity(BusinessUnit, "BusinessUnit", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "CompanyId", typeof(int))
-            .Field(new FieldId(3), "Name", typeof(string)))
-        .Entity(CustomerOrder, "CustomerOrder", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "BusinessUnitId", typeof(int))
-            .Field(new FieldId(3), "PlacedOn", typeof(DateOnly))
-            .Field(new FieldId(4), "Status", typeof(string))
-            .Relationship(new RelationshipId(9), "lines", CustomerOrderLine, RelationshipCardinality.Many))
-        .Entity(CustomerOrderLine, "CustomerOrderLine", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "CustomerOrderId", typeof(int))
-            .Field(new FieldId(3), "ProductId", typeof(int))
-            .Field(new FieldId(4), "Quantity", typeof(decimal)))
-        .Entity(PurchaseOrder, "PurchaseOrder", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "SupplierId", typeof(int))
-            .Field(new FieldId(3), "WarehouseId", typeof(int))
-            .Field(new FieldId(4), "Status", typeof(string))
-            .Field(new FieldId(5), "ExpectedArrival", typeof(DateOnly))
-            .Relationship(new RelationshipId(10), "lines", PurchaseOrderLine, RelationshipCardinality.Many)
-            .Relationship(new RelationshipId(11), "shipments", Shipment, RelationshipCardinality.Many))
-        .Entity(PurchaseOrderLine, "PurchaseOrderLine", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "PurchaseOrderId", typeof(int))
-            .Field(new FieldId(3), "ProductId", typeof(int))
-            .Field(new FieldId(4), "Quantity", typeof(decimal))
-            .Field(new FieldId(5), "UnitPrice", typeof(decimal)))
-        .Entity(Certification, "SupplierCertification", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "SupplierId", typeof(int))
-            .Field(new FieldId(3), "Type", typeof(string))
-            .Field(new FieldId(4), "ValidTo", typeof(DateOnly)))
-        .Entity(ComplianceIncident, "ComplianceIncident", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "SupplierId", typeof(int))
-            .Field(new FieldId(3), "Severity", typeof(string))
-            .Field(new FieldId(4), "OccurredOn", typeof(DateOnly)))
+        .Import(SupplyChainGeneratedSemanticModel.Build())
+        .Entity<Product>(Product, "Product", e => e
+            .Identity(x => x.Id)
+            .Field(x => x.Sku)
+            .Field(x => x.Name)
+            .Field(x => x.Category)
+            .Field(x => x.SafetyStock))
+        .Entity<ProductComponent>(Component, "ProductComponent", e => e
+            .Identity(x => x.ParentProductId, "Id")
+            .Field(x => x.ParentProductId)
+            .Field(x => x.ComponentProductId)
+            .Field(x => x.QuantityPerParent))
+        .Entity<Supplier>(Supplier, "Supplier", e => e
+            .Identity(x => x.Id)
+            .Field(x => x.Name)
+            .Field(x => x.Country)
+            .Field(x => x.RiskScore)
+            .Field(x => x.TenantId))
+        .Entity<InventoryLot>(InventoryLot, "InventoryLot", e => e
+            .Identity(x => x.Id)
+            .Field(x => x.WarehouseId)
+            .Field(x => x.ProductId)
+            .Field(x => x.OnHand)
+            .Field(x => x.Reserved)
+            .Field(x => x.Quarantined))
+        .Entity<Warehouse>(Warehouse, "Warehouse", e => e
+            .Identity(x => x.Id)
+            .Field(x => x.BusinessUnitId)
+            .Field(x => x.Name)
+            .Field(x => x.TenantId))
+        .Entity<BusinessUnit>(BusinessUnit, "BusinessUnit", e => e
+            .Identity(x => x.Id)
+            .Field(x => x.CompanyId)
+            .Field(x => x.Name))
+        .Entity<CustomerOrder>(CustomerOrder, "CustomerOrder", e => e
+            .Identity(x => x.Id)
+            .Field(x => x.BusinessUnitId)
+            .Field(x => x.PlacedOn)
+            .Field(x => x.Status))
+        .Entity<CustomerOrderLine>(CustomerOrderLine, "CustomerOrderLine", e => e
+            .Identity(x => x.Id)
+            .Field(x => x.CustomerOrderId)
+            .Field(x => x.ProductId)
+            .Field(x => x.Quantity))
+        .Entity<SupplierCertification>(Certification, "SupplierCertification", e => e
+            .Identity(x => x.Id)
+            .Field(x => x.SupplierId)
+            .Field(x => x.Type)
+            .Field(x => x.ValidTo))
+        .Entity<ComplianceIncident>(ComplianceIncident, "ComplianceIncident", e => e
+            .Identity(x => x.Id)
+            .Field(x => x.SupplierId)
+            .Field(x => x.Severity)
+            .Field(x => x.OccurredOn))
+        .Relationship<Product, ProductComponent>(
+            Product, new RelationshipId(1), "components",
+            product => product.Id,
+            Component, component => component.ParentProductId,
+            RelationshipCardinality.Many)
+        .Relationship<ProductComponent, Product>(
+            Component, new RelationshipId(2), "componentProduct",
+            component => component.ComponentProductId,
+            Product, product => product.Id,
+            RelationshipCardinality.One)
+        .Relationship<Supplier, SupplierCertification>(
+            Supplier, new RelationshipId(4), "certifications",
+            supplier => supplier.Id,
+            Certification, certification => certification.SupplierId,
+            RelationshipCardinality.Many)
+        .Relationship<Supplier, ComplianceIncident>(
+            Supplier, new RelationshipId(5), "incidents",
+            supplier => supplier.Id,
+            ComplianceIncident, incident => incident.SupplierId,
+            RelationshipCardinality.Many)
+        .Relationship<InventoryLot, Warehouse>(
+            InventoryLot, new RelationshipId(6), "warehouse",
+            lot => lot.WarehouseId,
+            Warehouse, warehouse => warehouse.Id,
+            RelationshipCardinality.One)
+        .Relationship<Warehouse, BusinessUnit>(
+            Warehouse, new RelationshipId(7), "businessUnit",
+            warehouse => warehouse.BusinessUnitId,
+            BusinessUnit, businessUnit => businessUnit.Id,
+            RelationshipCardinality.One)
+        .Relationship<Warehouse, InventoryLot>(
+            Warehouse, new RelationshipId(8), "inventory",
+            warehouse => warehouse.Id,
+            InventoryLot, lot => lot.WarehouseId,
+            RelationshipCardinality.Many)
+        .Relationship<CustomerOrder, CustomerOrderLine>(
+            CustomerOrder, new RelationshipId(9), "lines",
+            order => order.Id,
+            CustomerOrderLine, line => line.CustomerOrderId,
+            RelationshipCardinality.Many)
         .Build();
 }
