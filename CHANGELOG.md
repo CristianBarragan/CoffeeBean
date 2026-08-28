@@ -1,4 +1,71 @@
+## [1.1.3] - 2026-08-28
+
+### Changed
+- **All three `samples/Foundgine.SupplyChain*` sample projects now adopt the Step 5/6 capability-definition API** (`SemanticCapabilityMapping` → `SemanticCapabilityDefinition`, with `SemanticCapabilityAuthorizationRequirement` metadata) instead of leaving each capability's authorization shape implicit in hand-rolled switch statements:
+  - `Foundgine.SupplyChain/Semantics/SupplyChainCapabilities.cs` declares all 13 canonical capabilities (`get_my_orders`, `place_order`, `update_inventory`, etc.), each with a `SemanticCapabilityPolicyRequirement` and, for the five customer-scoped capabilities, a `SemanticCapabilityTenantRequirement`. This is descriptive metadata only - `Application.SupplyChainAuthorizer.Demand` remains the only thing that actually permits or denies a call.
+  - `Foundgine.SupplyChain.Semantic/Semantics/SupplyChainCapabilities.cs` declares the same shape for the Semantic sample's two scenario operations (`read_supplier_risk`, `write_purchasing`), mirroring what its existing `AuthorizationContext` (`TenantId`, `AllowedWarehouses`, `CanReadSupplierRisk`, `CanWritePurchasing`) already establishes at runtime. The console sample's `Api/Program.cs` now prints each capability's requirement kinds alongside the existing scenario output.
+  - `Foundgine.SupplyChain.PenTest` picks up the canonical project's capability registry transitively through its existing `Foundgine.SupplyChain.Application`/`Infrastructure` project references; no PenTest-specific capability model was introduced.
+- **Bundled host setup for easier maintenance.** `Foundgine.SupplyChain/Infrastructure/SupplyChainHost.cs` is new and consolidates three things every SupplyChain host previously repeated independently:
+  - `AddSupplyChainCore(connectionString)` replaces the `AddSupplyChainApplication().AddSupplyChainInfrastructure(cs)` pair and also registers the new shared `SemanticCapabilityRegistry`.
+  - `ResolveSupplyChainConnectionString()` is a strict superset of the three hosts' previously slightly-different connection-string lookups (flat configuration key, `ConnectionStrings` section, environment variable), so no host's existing configuration needs to change.
+  - `MapSupplyChainHealthChecks()` replaces the identical `/health`/`/health/ready` minimal-API mappings that were copy-pasted into the canonical API's and the PenTest MCP host's `Program.cs`.
+  - `Foundgine.SupplyChain/Api/Program.cs`, `Foundgine.SupplyChain.PenTest/Api/Mcp/Program.cs`, and `Foundgine.SupplyChain.PenTest/Api/GraphQL/Program.cs` were all updated to call the bundled extensions instead of repeating the setup.
+- `Foundgine.SupplyChain.Infrastructure` now takes a `FrameworkReference` on `Microsoft.AspNetCore.App`, required for `SupplyChainHost`'s `WebApplication`/`IConfiguration` helpers.
+- **Release version bumped to `1.1.3`** in `Directory.Build.props`.
+
+### Verification
+- As with `1.1.2`, no `dotnet build`/`dotnet test` run could be performed in the packaging environment (no .NET SDK available); the new capability-definition and bundled-host-setup code has not yet been compiler-verified. CI, or a local `dotnet build`/`dotnet test` pass across `Foundgine.SupplyChain.sln` and `Foundgine.SupplyChain.PenTest.sln`, should be treated as the authoritative check before merging.
+
+## [Unreleased / Step 5] - 2026-08-28
+
+### Added
+- Promoted semantic capabilities to first-class `SemanticCapabilityDefinition` objects.
+- Added provider-neutral `SemanticCapabilityImplementation` and `SemanticCapabilityMetadata`.
+- Added `SemanticCapabilityRegistry` with deterministic qualified-name lookup and duplicate rejection.
+- Added mapping materialization from `SemanticCapabilityMapping` into the authoritative capability definition.
+- Exposed capability definitions from the unified `SemanticSchemaSet` so Agent, MCP, GraphQL and other adapters can consume the same object.
+
+### Architecture
+- Capability identity, semantic contract, authorization decision, constraints, effects, and optional implementation binding now have one authoritative representation.
+- No Agent/MCP/GraphQL-specific capability model was introduced.
+
+## Unreleased — Step 4: Schema Composition
+
+- Added `SemanticSchemaComposition` as the explicit composition boundary between the generated semantic schema and manually-authored semantic schemas.
+- Added `SemanticSchemaRegistry.RegisterRange` for deterministic registration of multiple schema contributions.
+- Added schema and capability lookup APIs to `SemanticSchemaSet` (`TryGetSchema`, `GetSchema`, `TryGetCapability`, `GetCapability`).
+- Preserved generated semantic metadata as the authoritative source for generated entities while allowing manual schemas to extend the unified semantic graph.
+- Added tests for generated/manual composition, schema-name collisions, conflicting entity definitions, and multi-schema registration.
+- No Agent, MCP, GraphQL, or other consumer-specific concepts were introduced in this step; those adapters remain downstream projections of the unified semantic model.
+
+## Unreleased — Step 3: Generated Semantic Model
+
+- Extended the existing Roslyn AOT pipeline to emit an authoritative `GeneratedSemanticModel.Model` from discovered `FoundgineEntity` declarations.
+- Generated semantic entities now include identities, scalar fields, CLR types, relationships, and relationship cardinality without runtime reflection.
+- Preserved the existing application-model field-handle API and consumer-neutral capability mappings.
+- Added AOT test coverage proving generated semantic topology is available from the same generated metadata pipeline.
+
+## Step 2 — Declarative Schema/Capability Mapping (2026-08-28)
+
+- Added consumer-neutral `FoundgineSchemaAttribute` and `FoundgineCapabilityAttribute` declarations.
+- Added generated semantic mapping metadata for schema boundaries and capabilities.
+- Kept capability declarations in a dedicated mapping type so domain models do not depend on Agent, MCP, or GraphQL concepts.
+- Capability mappings record target entity, implementation type/method, schema, operation, and description without executing application code.
+- Added semantic mapping tests and AOT generator integration coverage.
+
 # Changelog
+
+
+### Semantic schema foundation (snapshot step 1)
+
+- Added `SemanticSchema` as the named, consumer-neutral semantic namespace.
+- Added `SemanticSchemaRegistry` and immutable `SemanticSchemaSet` for composition of generated and manual semantic models.
+- Added deterministic validation for duplicate schemas, duplicate capabilities, unknown capability targets, and conflicting entity definitions.
+- Added `Schema` metadata to `SemanticCapability`; schema ownership is authoritative at registration time.
+- Added `SemanticModel.FromEntities` as the composition boundary used by the schema registry.
+- Added tests covering schema ownership, generated/manual composition, and conflicting entity definitions.
+
+This snapshot deliberately does **not** generate Agent/MCP/GraphQL adapters yet. Those are subsequent steps and will consume the unified schema/capability representation.
 
 ## [1.1.2] - 2026-08-28
 

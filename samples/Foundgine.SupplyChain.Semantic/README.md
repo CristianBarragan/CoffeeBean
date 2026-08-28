@@ -42,6 +42,10 @@ Provider lowering
 
 The agent should express intent. It should not choose tables, inject tenant predicates, bypass authorization, or construct provider-specific execution details.
 
+## Capability definitions (Step 5/6 API)
+
+`Semantics/SupplyChainCapabilities.cs` declares this sample's two scenario operations (`read_supplier_risk`, `write_purchasing`) as `SemanticCapabilityDefinition`s with declarative authorization requirements — tenant, warehouse-resource, and a policy requirement per operation — mirroring what the existing `AuthorizationContext` (`TenantId`, `AllowedWarehouses`, `CanReadSupplierRisk`, `CanWritePurchasing`) already establishes at runtime. `Api/Program.cs` prints these alongside the scenario output.
+
 ## Run
 
 ```bash

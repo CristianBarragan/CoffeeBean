@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -18,6 +18,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     private const string ModelEntityMapAttribute = "Foundgine.Aot.FoundgineModelEntityMapAttribute";
     private const string ConversionAttribute = "Foundgine.Aot.FoundgineConversionAttribute";
     private const string AuthorizationAttribute = "Foundgine.Aot.FoundgineAuthorizationAttribute";
+    private const string SchemaAttribute = "Foundgine.Aot.FoundgineSchemaAttribute";
+    private const string CapabilityAttribute = "Foundgine.Aot.FoundgineCapabilityAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -49,6 +51,20 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 static (ctx, _) => (IPropertySymbol)ctx.TargetSymbol)
             .Collect();
 
+        var schemas = context.SyntaxProvider
+            .ForAttributeWithMetadataName(
+                SchemaAttribute,
+                static (node, _) => node is ClassDeclarationSyntax,
+                static (ctx, _) => (INamedTypeSymbol)ctx.TargetSymbol)
+            .Collect();
+
+        var capabilities = context.SyntaxProvider
+            .ForAttributeWithMetadataName(
+                CapabilityAttribute,
+                static (node, _) => node is ClassDeclarationSyntax,
+                static (ctx, _) => (INamedTypeSymbol)ctx.TargetSymbol)
+            .Collect();
+
         var connectionMaps = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 ConnectionMapAttribute,
@@ -63,15 +79,17 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 static (ctx, _) => (INamedTypeSymbol)ctx.TargetSymbol)
             .Collect();
 
-        var input = entities.Combine(models).Combine(conversions).Combine(authorizations).Combine(connectionMaps).Combine(modelEntityMaps);
+        var input = entities.Combine(models).Combine(conversions).Combine(authorizations).Combine(connectionMaps).Combine(modelEntityMaps).Combine(schemas).Combine(capabilities);
         context.RegisterSourceOutput(input, static (spc, pair) =>
         {
-            var entities = pair.Left.Left.Left.Left.Left;
-            var models = pair.Left.Left.Left.Left.Right;
-            var conversions = pair.Left.Left.Left.Right;
-            var authorizations = pair.Left.Left.Right;
-            var connectionMaps = pair.Left.Right;
-            var modelEntityMaps = pair.Right;
+            var capabilities = pair.Right;
+            var schemas = pair.Left.Right;
+            var modelEntityMaps = pair.Left.Left.Right;
+            var connectionMaps = pair.Left.Left.Left.Right;
+            var authorizations = pair.Left.Left.Left.Left.Right;
+            var conversions = pair.Left.Left.Left.Left.Left.Right;
+            var models = pair.Left.Left.Left.Left.Left.Left.Right;
+            var entities = pair.Left.Left.Left.Left.Left.Left.Left;
 
             // Do not emit a GeneratedMetadata type for projects that do not
             // contain any Foundgine AOT declarations. This keeps the runtime
@@ -82,7 +100,9 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 conversions.IsDefaultOrEmpty &&
                 authorizations.IsDefaultOrEmpty &&
                 connectionMaps.IsDefaultOrEmpty &&
-                modelEntityMaps.IsDefaultOrEmpty)
+                modelEntityMaps.IsDefaultOrEmpty &&
+                schemas.IsDefaultOrEmpty &&
+                capabilities.IsDefaultOrEmpty)
             {
                 return;
             }
@@ -93,7 +113,9 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 conversions,
                 authorizations,
                 connectionMaps,
-                modelEntityMaps));
+                modelEntityMaps,
+                schemas,
+                capabilities));
         });
     }
 
@@ -103,7 +125,9 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         ImmutableArray<IMethodSymbol> conversions,
         ImmutableArray<IPropertySymbol> authorizations,
         ImmutableArray<INamedTypeSymbol> connectionMaps,
-        ImmutableArray<INamedTypeSymbol> modelEntityMaps)
+        ImmutableArray<INamedTypeSymbol> modelEntityMaps,
+        ImmutableArray<INamedTypeSymbol> schemas,
+        ImmutableArray<INamedTypeSymbol> capabilities)
     {
         var ordered = symbols
             .OrderBy(x => x.ToDisplayString(), StringComparer.Ordinal)
@@ -299,7 +323,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         sb.AppendLine("}");
         sb.AppendLine();
 
-        EmitSemanticModel(sb, models, modelEntityMap, entityIds);
+        EmitSemanticModel(sb, ordered, models, modelEntityMap, entityIds);
 
         sb.AppendLine("public sealed class GeneratedMetadataProvider : IMetadataProvider, IMetadataSource");
         sb.AppendLine("{");
@@ -316,91 +340,231 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         sb.AppendLine("    public ConversionMetadata? FindConversion(Type sourceType, Type targetType) => GeneratedMetadata.Registry.FindConversion(sourceType, targetType);");
         sb.AppendLine("    public AuthorizationMetadata GetAuthorization(AuthorizationId authorizationId) => GeneratedMetadata.Registry.GetAuthorization(authorizationId);");
         sb.AppendLine("}");
+        var schemaEntries = schemas
+            .Select(schema =>
+            {
+                var attribute = GetAttribute(schema, SchemaAttribute);
+                var name = GetCtorString(attribute, 0) ?? GetNamedString(attribute, "Name") ?? schema.Name;
+                return (schema, name);
+            })
+            .OrderBy(x => x.name, StringComparer.Ordinal)
+            .ToArray();
+
+        sb.AppendLine();
+        sb.AppendLine("public static class GeneratedSemanticMappings");
+        sb.AppendLine("{");
+        sb.AppendLine("    public static readonly global::Foundgine.Semantics.Mapping.SemanticMappingSet Set = Build();");
+        sb.AppendLine();
+        sb.AppendLine("    private static global::Foundgine.Semantics.Mapping.SemanticMappingSet Build()");
+        sb.AppendLine("    {");
+        sb.AppendLine("        return new global::Foundgine.Semantics.Mapping.SemanticMappingSet(");
+        sb.AppendLine("            new global::Foundgine.Semantics.Mapping.SemanticSchemaMapping[]");
+        sb.AppendLine("            {");
+
+        foreach (var (schema, schemaName) in schemaEntries)
+        {
+            var schemaEntityIds = new HashSet<ushort>(
+                ordered
+                    .Where(entity => SymbolHasSchema(entity, schemaName))
+                    .Select(entity => entityIds[entity.ToDisplayString()]));
+
+            foreach (var mappingType in capabilities)
+            {
+                foreach (var attribute in mappingType.GetAttributes().Where(a => a.AttributeClass?.ToDisplayString() == CapabilityAttribute))
+                {
+                    if (!string.Equals(GetCtorString(attribute, 1), schemaName, StringComparison.Ordinal))
+                        continue;
+
+                    var target = GetTypeArgument(attribute, 0);
+                    if (target is not null && entityIds.TryGetValue(target.ToDisplayString(), out var targetId))
+                        schemaEntityIds.Add(targetId);
+                }
+            }
+
+            var entityIdsForSchema = schemaEntityIds.OrderBy(id => id).ToArray();
+
+            sb.AppendLine("                new global::Foundgine.Semantics.Mapping.SemanticSchemaMapping(");
+            sb.AppendLine($"                    \"{Escape(schemaName)}\",");
+            sb.AppendLine("                    new global::Foundgine.Abstractions.EntityId[]");
+            sb.AppendLine("                    {");
+            foreach (var entityId in entityIdsForSchema)
+                sb.AppendLine($"                        new global::Foundgine.Abstractions.EntityId({entityId}),");
+            sb.AppendLine("                    },");
+            sb.AppendLine("                    new global::Foundgine.Semantics.Mapping.SemanticCapabilityMapping[]");
+            sb.AppendLine("                    {");
+
+            foreach (var mappingType in capabilities.OrderBy(m => m.ToDisplayString(), StringComparer.Ordinal))
+            {
+                foreach (var attribute in mappingType.GetAttributes()
+                    .Where(a => a.AttributeClass?.ToDisplayString() == CapabilityAttribute)
+                    .OrderBy(a => GetCtorString(a, 2), StringComparer.Ordinal))
+                {
+                    var target = GetTypeArgument(attribute, 0);
+                    var attributeSchema = GetCtorString(attribute, 1);
+                    var name = GetCtorString(attribute, 2);
+                    var methodName = GetCtorString(attribute, 3);
+                    if (target is null || attributeSchema is null || name is null || methodName is null ||
+                        !string.Equals(attributeSchema, schemaName, StringComparison.Ordinal) ||
+                        !entityIds.TryGetValue(target.ToDisplayString(), out var targetId))
+                        continue;
+
+                    var operation = GetNamedString(attribute, "Operation") ?? methodName;
+                    var description = GetNamedString(attribute, "Description");
+                    var implementationType = mappingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat).Replace("global::", string.Empty);
+
+                    sb.AppendLine("                        new global::Foundgine.Semantics.Mapping.SemanticCapabilityMapping(");
+                    sb.AppendLine($"                            \"{Escape(name)}\",");
+                    sb.AppendLine($"                            \"{Escape(schemaName)}\",");
+                    sb.AppendLine($"                            new global::Foundgine.Abstractions.EntityId({targetId}),");
+                    sb.AppendLine($"                            \"{Escape(implementationType)}\",");
+                    sb.AppendLine($"                            \"{Escape(methodName)}\",");
+                    sb.AppendLine($"                            \"{Escape(operation)}\",");
+                    sb.AppendLine(description is null ? "                            null)," : $"                            \"{Escape(description)}\"),");
+                }
+            }
+
+            sb.AppendLine("                    }");
+            sb.AppendLine("                )");
+        }
+
+        sb.AppendLine("            });");
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+
         return sb.ToString();
     }
 
 
     private static void EmitSemanticModel(
         StringBuilder sb,
+        IReadOnlyList<INamedTypeSymbol> entities,
         ImmutableArray<INamedTypeSymbol> models,
         Dictionary<string, INamedTypeSymbol> modelEntityMap,
         Dictionary<string, ushort> entityIds)
     {
         sb.AppendLine("public static class GeneratedSemanticModel");
         sb.AppendLine("{");
+        sb.AppendLine("    /// <summary>Authoritative AOT semantic model generated from the declared Foundgine entities.</summary>");
+        sb.AppendLine("    public static readonly global::Foundgine.Semantics.SemanticModel Model = Build();");
+        sb.AppendLine();
+        sb.AppendLine("    private static global::Foundgine.Semantics.SemanticModel Build()");
+        sb.AppendLine("    {");
+        sb.AppendLine("        var entities = new global::System.Collections.Generic.Dictionary<global::Foundgine.Abstractions.EntityId, global::Foundgine.Semantics.SemanticEntity>();");
 
+        foreach (var entity in entities.OrderBy(x => x.ToDisplayString(), StringComparer.Ordinal))
+        {
+            var entityId = entityIds[entity.ToDisplayString()];
+            var entityName = GetEntityName(entity);
+            var properties = entity.GetMembers()
+                .OfType<IPropertySymbol>()
+                .Where(p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic)
+                .ToArray();
+            var scalar = properties.Where(p => GetAttribute(p, RelationshipAttribute) is null).ToArray();
+            var fieldIds = AllocateIds(scalar.Select(p => entity.ToDisplayString() + "." + p.Name).ToArray());
+            var identity = scalar.FirstOrDefault(p => GetNamedBool(GetAttribute(p, FieldAttribute), "IsPrimaryKey"))
+                           ?? scalar.FirstOrDefault(p => string.Equals(p.Name, "Id", StringComparison.OrdinalIgnoreCase));
+
+            sb.AppendLine($"        entities.Add(new global::Foundgine.Abstractions.EntityId({entityId}), new global::Foundgine.Semantics.SemanticEntity(");
+            sb.AppendLine($"            new global::Foundgine.Abstractions.EntityId({entityId}),");
+            sb.AppendLine($"            \"{Escape(entityName)}\",");
+            if (identity is not null)
+            {
+                var identityAttribute = GetAttribute(identity, FieldAttribute);
+                var identityId = GetNamedUShort(identityAttribute, "Id") ?? fieldIds[entity.ToDisplayString() + "." + identity.Name];
+                var identityName = GetNamedString(identityAttribute, "Name") ?? identity.Name;
+                sb.AppendLine($"            new global::Foundgine.Semantics.SemanticIdentity(new global::Foundgine.Abstractions.FieldId({identityId}), \"{Escape(identityName)}\"),");
+            }
+            else
+            {
+                // The existing metadata pipeline requires an identity. Emit a stable diagnostic-friendly
+                // fallback so generated semantic metadata remains total for unusual entities.
+                var fallbackId = scalar.Length > 0
+                    ? (GetNamedUShort(GetAttribute(scalar[0], FieldAttribute), "Id") ?? fieldIds[entity.ToDisplayString() + "." + scalar[0].Name])
+                    : (ushort)1;
+                var fallbackName = scalar.Length > 0 ? scalar[0].Name : "Id";
+                sb.AppendLine($"            new global::Foundgine.Semantics.SemanticIdentity(new global::Foundgine.Abstractions.FieldId({fallbackId}), \"{Escape(fallbackName)}\"),");
+            }
+
+            sb.AppendLine("            new global::Foundgine.Semantics.SemanticField[]");
+            sb.AppendLine("            {");
+            foreach (var property in scalar)
+            {
+                var attribute = GetAttribute(property, FieldAttribute);
+                var fieldId = GetNamedUShort(attribute, "Id") ?? fieldIds[entity.ToDisplayString() + "." + property.Name];
+                var fieldName = GetNamedString(attribute, "Name") ?? property.Name;
+                var clrType = property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                sb.AppendLine($"                new global::Foundgine.Semantics.SemanticField(new global::Foundgine.Abstractions.FieldId({fieldId}), \"{Escape(fieldName)}\", typeof({clrType})),");
+            }
+            sb.AppendLine("            },");
+            sb.AppendLine("            new global::Foundgine.Semantics.SemanticRelationship[]");
+            sb.AppendLine("            {");
+            foreach (var property in properties)
+            {
+                var relationship = GetAttribute(property, RelationshipAttribute);
+                if (relationship is null) continue;
+                var target = GetTypeArgument(relationship, 0);
+                if (target is null || !entityIds.TryGetValue(target.ToDisplayString(), out var targetId)) continue;
+                var relationshipId = GetNamedUShort(relationship, "Id") ?? AllocateIds(new[] { entity.ToDisplayString() + "." + property.Name })[entity.ToDisplayString() + "." + property.Name];
+                var relationshipName = GetNamedString(relationship, "Name") ?? property.Name;
+                var cardinality = IsCollectionType(property.Type) ? "global::Foundgine.Semantics.RelationshipCardinality.Many" : "global::Foundgine.Semantics.RelationshipCardinality.One";
+                sb.AppendLine($"                new global::Foundgine.Semantics.SemanticRelationship(new global::Foundgine.Abstractions.RelationshipId({relationshipId}), \"{Escape(relationshipName)}\", new global::Foundgine.Abstractions.EntityId({targetId}), {cardinality}),");
+            }
+            sb.AppendLine("            }));");
+        }
+
+        sb.AppendLine("        return global::Foundgine.Semantics.SemanticModel.FromEntities(entities);");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Preserve the compact per-model field handles generated in the previous API.
+        // These handles remain keyed by the semantic application model while the
+        // authoritative SemanticModel above is generated from the physical entities.
         foreach (var model in models.OrderBy(x => x.ToDisplayString(), StringComparer.Ordinal))
         {
             if (!modelEntityMap.TryGetValue(model.ToDisplayString(), out var entity) ||
                 !entityIds.TryGetValue(entity.ToDisplayString(), out var entityId))
                 continue;
 
-            var modelName =
-                GetNamedString(GetAttribute(model, ModelAttribute), "Name")
-                ?? model.Name;
-
+            var modelName = GetNamedString(GetAttribute(model, ModelAttribute), "Name") ?? model.Name;
             var modelProperties = model.GetMembers()
                 .OfType<IPropertySymbol>()
                 .Where(p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic)
                 .ToArray();
-
             var entityProperties = entity.GetMembers()
                 .OfType<IPropertySymbol>()
                 .Where(p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic)
                 .ToDictionary(p => p.Name, StringComparer.Ordinal);
 
-            sb.AppendLine($"    public static class {model.Name}");
+            sb.AppendLine($"    public static class {SanitizeIdentifier(model.Name)}");
             sb.AppendLine("    {");
+            sb.AppendLine($"        public const string ModelName = \"{Escape(modelName)}\";");
+            sb.AppendLine($"        public static readonly global::Foundgine.Abstractions.EntityId Entity = new({entityId});");
 
-            // Do not call this member "Name": Name may itself be a semantic field.
-            sb.AppendLine(
-                $"        public const string ModelName = \"{Escape(modelName)}\";");
-
-            sb.AppendLine(
-                $"        public static readonly EntityId Entity = new({entityId});");
-
-            var fieldMembers = new List<(string Identifier, ushort FieldId, string SemanticName)>();
-            var usedIdentifiers = new HashSet<string>(StringComparer.Ordinal)
+            var used = new HashSet<string>(StringComparer.Ordinal)
             {
-                model.Name,
-                "ModelName",
-                "Entity",
-                "All"
+                model.Name, "ModelName", "Entity", "All"
             };
+            var fieldMembers = new List<(string Identifier, ushort FieldId)>();
 
             foreach (var property in modelProperties)
             {
                 if (!entityProperties.TryGetValue(property.Name, out var entityProperty))
                     continue;
-
                 var field = GetAttribute(entityProperty, FieldAttribute);
                 var fieldId = GetNamedUShort(field, "Id");
-
                 if (fieldId is null)
                     continue;
 
-                var identifier = GetGeneratedSemanticFieldIdentifier(
-                    property.Name,
-                    usedIdentifiers);
-
-                usedIdentifiers.Add(identifier);
-
-                fieldMembers.Add((
-                    identifier,
-                    fieldId.Value,
-                    property.Name));
-
-                sb.AppendLine(
-                    $"        public static readonly GeneratedSemanticField {identifier} = " +
-                    $"new(Entity, new FieldId({fieldId.Value}), \"{Escape(property.Name)}\");");
+                var identifier = GetGeneratedSemanticFieldIdentifier(property.Name, used);
+                used.Add(identifier);
+                fieldMembers.Add((identifier, fieldId.Value));
+                sb.AppendLine($"        public static readonly global::Foundgine.Aot.GeneratedSemanticField {identifier} = new(Entity, new global::Foundgine.Abstractions.FieldId({fieldId.Value}), \"{Escape(property.Name)}\");");
             }
 
-            sb.AppendLine("        public static IReadOnlyList<FieldId> All { get; } = new FieldId[]");
+            sb.AppendLine("        public static IReadOnlyList<global::Foundgine.Abstractions.FieldId> All { get; } = new global::Foundgine.Abstractions.FieldId[]");
             sb.AppendLine("        {");
-
             foreach (var field in fieldMembers)
                 sb.AppendLine($"            {field.Identifier}.Id,");
-
             sb.AppendLine("        };");
             sb.AppendLine("    }");
             sb.AppendLine();
@@ -409,6 +573,34 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         sb.AppendLine("}");
         sb.AppendLine();
     }
+
+    private static bool IsCollectionType(ITypeSymbol type)
+    {
+        if (type is IArrayTypeSymbol)
+            return true;
+
+        return type.AllInterfaces.Any(i =>
+            i is INamedTypeSymbol named &&
+            named.IsGenericType &&
+            named.ConstructedFrom.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T);
+    }
+
+    private static string SanitizeIdentifier(string value)
+    {
+        var sb = new StringBuilder(value.Length);
+        for (var i = 0; i < value.Length; i++)
+        {
+            var c = value[i];
+            if ((i == 0 && SyntaxFacts.IsIdentifierStartCharacter(c)) ||
+                (i > 0 && SyntaxFacts.IsIdentifierPartCharacter(c)))
+                sb.Append(c);
+            else
+                sb.Append('_');
+        }
+        var result = sb.Length == 0 ? "Entity" : sb.ToString();
+        return SyntaxFacts.GetKeywordKind(result) != SyntaxKind.None ? "@" + result : result;
+    }
+
 
     private static string GetGeneratedSemanticFieldIdentifier(
         string propertyName,
@@ -874,6 +1066,11 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         return (ushort)(hash ^ (hash >> 16));
     }
 
+    private static bool SymbolHasSchema(INamedTypeSymbol symbol, string schemaName) =>
+        symbol.GetAttributes()
+            .Where(a => a.AttributeClass?.ToDisplayString() == SchemaAttribute)
+            .Any(a => string.Equals(GetCtorString(a, 0) ?? GetNamedString(a, "Name"), schemaName, StringComparison.Ordinal));
+
     private static AttributeData? GetAttribute(ISymbol symbol, string fullName) =>
         symbol.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == fullName);
 
@@ -896,8 +1093,10 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         attribute?.NamedArguments.FirstOrDefault(x => x.Key == name).Value.Value is true;
 
 
-    private static string? GetCtorString(AttributeData attribute, int index) =>
-        index < attribute.ConstructorArguments.Length ? attribute.ConstructorArguments[index].Value as string : null;
+    private static string? GetCtorString(AttributeData? attribute, int index) =>
+        attribute is not null && index >= 0 && index < attribute.ConstructorArguments.Length
+            ? attribute.ConstructorArguments[index].Value as string
+            : null;
 
     private static INamedTypeSymbol? GetTypeArgument(AttributeData? attribute, int index) =>
         attribute is not null && index < attribute.ConstructorArguments.Length
@@ -916,3 +1115,10 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
     private static string Escape(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
 }
+
+
+
+
+
+
+

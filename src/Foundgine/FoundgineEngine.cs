@@ -285,7 +285,7 @@ public sealed class FoundgineEngine : IFoundgine
         var capabilities = operation.Root.TraverseDepthFirst()
             .Select(node => _securityContract.Capabilities.FirstOrDefault(c =>
                 c.TargetEntityId == node.EntityId &&
-                string.Equals(c.Operation, "read", StringComparison.Ordinal)))
+                string.Equals(c.Operation, SemanticCapabilityOperations.Read, StringComparison.Ordinal)))
             .Where(c => c is not null)
             .Cast<SemanticCapability>()
             .DistinctBy(c => c.Id, StringComparer.Ordinal)
@@ -341,7 +341,7 @@ public sealed class FoundgineEngine : IFoundgine
 
         var capability = _securityContract.Capabilities.FirstOrDefault(c =>
             c.TargetEntityId == operation.Root.EntityId &&
-            string.Equals(c.Operation, "read", StringComparison.Ordinal));
+            string.Equals(c.Operation, SemanticCapabilityOperations.Read, StringComparison.Ordinal));
 
         if (capability is null)
             throw new InvalidOperationException(

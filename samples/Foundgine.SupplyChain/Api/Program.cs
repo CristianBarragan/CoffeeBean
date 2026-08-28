@@ -1,7 +1,7 @@
-using Foundgine.SupplyChain.Application; using Foundgine.SupplyChain.Infrastructure; using ModelContextProtocol.Server; using Foundgine.MCP; using Npgsql;
-var builder=WebApplication.CreateBuilder(args);var cs=builder.Configuration["SupplyChainConnectionString"]??Environment.GetEnvironmentVariable("SupplyChainConnectionString")??throw new InvalidOperationException("SupplyChainConnectionString is required.");
-builder.Services.AddSupplyChainApplication().AddSupplyChainInfrastructure(cs).AddFoundgineMcp(()=>new Foundgine.Execution.ExecutionContext());builder.Services.AddMcpServer().WithHttpTransport(o=>o.Stateless=true).WithTools<SupplyChainMcpTools>();
-var app=builder.Build();app.MapMcp("/mcp");app.MapGet("/health",()=>Results.Ok(new{status="ok"}));app.MapGet("/health/ready",async(NpgsqlDataSource ds,CancellationToken ct)=>{await using var c=await ds.OpenConnectionAsync(ct);await using var cmd=new NpgsqlCommand("SELECT 1",c);await cmd.ExecuteScalarAsync(ct);return Results.Ok(new{status="ready"});});app.Run();
+using Foundgine.SupplyChain.Application; using Foundgine.SupplyChain.Infrastructure; using ModelContextProtocol.Server; using Foundgine.MCP;
+var builder=WebApplication.CreateBuilder(args);var cs=builder.Configuration.ResolveSupplyChainConnectionString();
+builder.Services.AddSupplyChainCore(cs).AddFoundgineMcp(()=>new Foundgine.Execution.ExecutionContext());builder.Services.AddMcpServer().WithHttpTransport(o=>o.Stateless=true).WithTools<SupplyChainMcpTools>();
+var app=builder.Build();app.MapMcp("/mcp");app.MapSupplyChainHealthChecks();app.Run();
 // Every tool now requires a 'token' argument proving the caller actually
 // controls the identity named by 'actor' - see Application/Authorization.cs.
 // Previously 'actor' was accepted with no proof at all.
