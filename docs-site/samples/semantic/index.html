@@ -103,6 +103,74 @@ authorization constraints, temporal state, aggregation, mutation dependencies,
 and deliberately hostile domain cases.
 </p>
 
+
+<h2>Manual and generated semantic models</h2>
+
+<p>
+The sample distinguishes two ways of creating the semantic surface: <strong>manual semantic authoring</strong> and <strong>generated semantic metadata</strong>. Both produce the same provider-independent semantic representation and use the same resolution, authorization, planning, and execution pipeline.
+</p>
+
+<h3>Manual: author semantics against the domain model</h3>
+
+<pre>new SemanticModelBuilder()
+    .Entity&lt;Product&gt;(Product, "Product", e =&gt; e
+        .Identity(x =&gt; x.Id)
+        .Field(x =&gt; x.Sku)
+        .Field(x =&gt; x.Name)
+        .Field(x =&gt; x.SafetyStock));</pre>
+
+<p>
+The <code>x</code> in these selectors is the application/domain model type, such as <code>Product</code>. It is not the semantic entity builder, an EF entity metadata object, or provider metadata. Foundgine derives the property name and CLR type and allocates the entity-local <code>FieldId</code>, so manual semantic definitions do not need <code>new FieldId(2)</code> or repeated <code>typeof(string)</code>.
+</p>
+
+<h4>Type both sides of a relationship</h4>
+
+<pre>.Relationship&lt;Product, ProductComponent&gt;(
+    Product, new RelationshipId(1), "components",
+    product =&gt; product.Id,
+    Component, component =&gt; component.ParentProductId,
+    RelationshipCardinality.Many)</pre>
+
+<p>
+Manual relationships use an explicit <code>&lt;fromEntity, toModel&gt;</code> generic pair. The first selector is compiled against the source <strong>domain model</strong> and the second against the target <strong>domain model</strong>. That distinction is intentional: <code>product =&gt; product.Id</code> is a property on the application model, not <code>entity.Property(...)</code> on an EF/storage entity. Foundgine validates that both selectors are direct model properties and that their CLR types match. This makes both sides strongly typed and prevents source/target property mix-ups before execution.
+</p>
+
+<div class="callout">
+<strong>Model property, not entity metadata.</strong> Manual semantic lambdas should read like <code>model =&gt; model.Property</code>. They should not depend on EF <code>EntityType</code>, <code>Property</code>, column metadata, or numeric <code>FieldId</code> values. Storage mapping remains a separate concern.
+</div>
+
+<h4>Why the generic pair matters</h4>
+
+<pre>&lt;fromEntity, toModel&gt;
+       │       │
+       ▼       ▼
+ product =&gt;   component =&gt;
+ product.Id    component.ParentProductId
+       │       │
+       └── typed relationship ──┘</pre>
+
+<p>
+The compiler now knows the type of each lambda independently. A property belonging to the target model cannot accidentally be selected from the source model, and a storage-layer property cannot be substituted for a domain-model property. The generated approach derives the same relationship information automatically; the manual approach makes the intent explicit.
+</p>
+
+<h3>Generated: derive semantic handles from model metadata</h3>
+
+<pre>Domain / declared model
+        ↓
+Foundgine generator
+        ↓
+Generated semantic handles
+        ↓
+Same SemanticModel / execution pipeline</pre>
+
+<p>
+Generated semantics remove repetitive hand-written mapping when the application's semantic surface can be derived safely. Manual semantics remain useful when the exposed surface needs deliberate curation or when semantic names and capabilities intentionally differ from the underlying model.
+</p>
+
+<p>
+The important distinction is <strong>authoring strategy</strong>, not runtime architecture: both approaches converge on Foundgine's semantic model before resolution, authorization, planning, and provider execution.
+</p>
+
 <h2>Semantic execution pipeline</h2>
 
 <pre>Agent / caller intent

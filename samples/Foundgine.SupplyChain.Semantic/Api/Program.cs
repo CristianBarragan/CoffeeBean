@@ -32,11 +32,3 @@ Console.WriteLine("04 — Semantic intent");
 Console.WriteLine("  Find the top products likely to cause fulfillment failure within 14 days,");
 Console.WriteLine("  including recursive BOM dependencies, delayed inbound supply, authorization,");
 Console.WriteLine("  certification validity, aggregation, stable ordering and bounded traversal.");
-
-Console.WriteLine();
-Console.WriteLine("05 — Capability definitions (Step 5/6 API)");
-foreach (var definition in SupplyChainCapabilities.Definitions)
-{
-    var requirementKinds = string.Join(", ", definition.AuthorizationRequirements.Select(r => r.Kind));
-    Console.WriteLine($"  {definition.QualifiedName} [{definition.Capability.Operation}] requires: {requirementKinds}");
-}
