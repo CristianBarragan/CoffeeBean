@@ -1,27 +1,23 @@
-## 1.2.4
-
-### Metadata structural contract
-
-- Added compile-time validation for Foundgine relationship metadata.
-- Relationship targets must be discovered Foundgine entities.
-- Navigation property targets must match the declared relationship target.
-- Foreign-key and principal-key properties must exist, be scalar properties, and be unambiguous.
-- Foreign-key and principal-key CLR types must match.
-- Invalid relationship metadata now reports deterministic `FGMETA001`–`FGMETA007` diagnostics and does not emit the generated registry.
-
 # Changelog
 
-## Unreleased — Metadata-backed semantic discovery
+## [1.1.5] - 2026-08-29
 
-- Added `IMetadataCatalog` as the model-wide structural metadata contract.
-- Added `SemanticModel.Discover(...)` and `SemanticModelBuilder.FromMetadata(...)`.
-- Structural entities, fields, identities and direct relationships can now be discovered from `Foundgine.Metadata` without application semantic enumeration.
-- Added CLR type and collection-shape information to structural metadata so semantic discovery can preserve model type and relationship cardinality.
-- Moved the canonical Supply Chain sample's semantic enrichment into `Application/SupplyChainSemanticConfiguration.cs`.
-- Removed the `Foundgine.SupplyChain.Semantics` project from the canonical sample.
-- Registered the discovered/enriched semantic model through the sample's infrastructure composition root.
-- Added tests covering metadata discovery and logical traversal enrichment.
+### Added
+- **Metadata-backed semantic discovery.** Added `IMetadataCatalog` as the model-wide structural metadata contract, plus `SemanticModel.Discover(...)` and `SemanticModelBuilder.FromMetadata(...)`. Structural entities, fields, identities and direct relationships can now be discovered from `Foundgine.Metadata` without application semantic enumeration. Added CLR type and collection-shape information to structural metadata so semantic discovery can preserve model type and relationship cardinality.
+- **`FoundgineOptions.UseMetadata()` and semantic/authorization configuration hooks**, making metadata-backed model discovery the preferred application setup path. Added name-based logical traversal configuration so applications no longer depend on generated relationship IDs.
+- **Semantic mutation intent builder** (`Foundgine.Semantics/Mutation/SemanticMutationIntentBuilder.cs`) and a new fluent `QueryBuilder`/`MutationBuilder` surface in `Foundgine`/`FoundgineServiceCollectionExtensions.cs`.
+- **Metadata structural contract.** Added compile-time validation for Foundgine relationship metadata: relationship targets must be discovered Foundgine entities; navigation property targets must match the declared relationship target; foreign-key and principal-key properties must exist, be scalar properties, and be unambiguous; foreign-key and principal-key CLR types must match. Invalid relationship metadata now reports deterministic `FGMETA001`–`FGMETA007` diagnostics and does not emit the generated registry.
+- **Domain CLR metadata producer boundary.** Extended the AOT metadata generator to discover `[FoundgineEntity]` declarations directly on C# record types, making the SupplyChain domain declarations the structural source observed by the AOT producer, while `SupplyChainMetadataProducer` remains the `IMetadataCatalog` seam consumed by semantics.
+- **New `samples/Foundgine.SupplyChain.Simple` sample** — the canonical Supply Chain sample collapsed from 6 projects into 1 (folders instead of project boundaries), demonstrating that the AOT generator and layer separation don't require separate assemblies.
+- Traversal paths are now included in semantic model version hashing (`SemanticVersion.cs`), so a changed logical traversal path changes the model's version identity.
+- Added tests covering metadata discovery, logical traversal enrichment, multi-hop traversal configuration, capability-contract authorization-policy propagation, and semantic mutation intent building.
 
+### Changed
+- Moved the canonical Supply Chain sample's semantic enrichment into `Application/SupplyChainSemanticConfiguration.cs` and removed the `Foundgine.SupplyChain.Semantics` project from the canonical sample; the discovered/enriched semantic model is now registered through the sample's infrastructure composition root.
+- Removed the SupplyChain semantic sample's parallel structural model, now that domain declarations are the structural source.
+
+### Fixed
+- Fixed capability-contract traversal discovery to pass the active authorization policy through the capability builder.
 
 ## [1.1.4] - 2026-08-28
 
@@ -187,18 +183,3 @@
 ### Changed
 - `VersionPrefix` bumped `0.1.0` → `0.4.0` in `Directory.Build.props`.
 
-## 1.1.9
-
-- Made metadata-backed model discovery the preferred application setup path.
-- Added `FoundgineOptions.UseMetadata()` and semantic/authorization configuration hooks.
-- Added name-based logical traversal configuration so applications do not depend on generated relationship IDs.
-- Fixed capability-contract traversal discovery to pass the active authorization policy through the capability builder.
-- Added metadata-to-semantics enrichment coverage for multi-hop logical traversals.
-
-## v1.2.3 — Domain CLR metadata producer boundary
-
-- Removed the SupplyChain semantic sample's parallel structural model.
-- Extended the AOT metadata generator to discover `[FoundgineEntity]` declarations on C# record types.
-- Made the SupplyChain domain declarations the structural source observed by the AOT producer.
-- Kept `SupplyChainMetadataProducer` as the `IMetadataCatalog` seam consumed by semantics.
-- Updated metadata-boundary regression tests and documentation.

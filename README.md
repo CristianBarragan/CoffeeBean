@@ -109,7 +109,7 @@ The same server metadata is available at [`.well-known/mcp.json`](.well-known/mc
 
 <a href="https://dofollow.tools" target="_blank"><img src="https://dofollow.tools/badge/badge_light.svg" alt="Featured on Dofollow.Tools" width="200" height="54" /></a>
 
-**Release line:** **1.1.4**, targeting **.NET 9.0**. The repository is prepared for the 1.1.4 release; the last published NuGet snapshot recorded by this repository is **0.5.2** until the new packages are published. The **NuGet Downloads** badge above represents this package-ecosystem total, not just the `Foundgine` core package.
+**Release line:** **1.1.5**, targeting **.NET 9.0**. The repository is prepared for the 1.1.5 release; the last published NuGet snapshot recorded by this repository is **0.5.2** until the new packages are published. The **NuGet Downloads** badge above represents this package-ecosystem total, not just the `Foundgine` core package.
 
 | Package | Downloads | Role |
 |---|---:|---|
@@ -303,6 +303,7 @@ Foundgine connects those two through an application-controlled semantic and plan
 | Sample | What it demonstrates |
 |---|---|
 | [`Foundgine.SupplyChain`](samples/Foundgine.SupplyChain) | The canonical layered sample: API, Application, Domain, Infrastructure, and Tests; semantic enrichment is configured in Application. Start here — see [Getting Started](https://cristianbarragan.github.io/Foundgine/docs-site/getting-started/index.html). |
+| [`Foundgine.SupplyChain.Simple`](samples/Foundgine.SupplyChain.Simple) | New in 1.1.5. The same canonical sample collapsed from 6 projects into 1 folder-organized project, showing that Foundgine's AOT generator and layer separation don't require separate assemblies. |
 | [`Foundgine.SupplyChain.Semantic`](samples/Foundgine.SupplyChain.Semantic) | An intentionally difficult semantic showcase covering recursive relationships, authorization invariants, and complex fulfillment planning. |
 | [`Foundgine.SupplyChain.PenTest`](samples/Foundgine.SupplyChain.PenTest) | A security-regression harness that exercises GraphQL and MCP transports against the same Supply Chain application boundary. |
 
@@ -460,7 +461,7 @@ Foundgine's authorization and execution boundaries are intended to reduce unsafe
 
 ## Status
 
-Foundgine is actively evolving (current version: 1.1.4). Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
+Foundgine is actively evolving (current version: 1.1.5). Public API stability, provider coverage, AI-agent integrations, and production deployment patterns should be treated according to the project's current release and compatibility policy.
 
 Detailed, dated engineering notes for each release are kept in [`CHANGELOG.md`](CHANGELOG.md).
 
