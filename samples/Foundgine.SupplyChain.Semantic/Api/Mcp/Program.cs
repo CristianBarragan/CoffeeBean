@@ -163,7 +163,7 @@ public sealed class StoreChainMcpTools(SemanticModel model)
             return ClaimSpoofingError(validatedClaims);
 
         var policy = Policy(actor, token, validatedClaims);
-        var result = attack switch
+        object? result = attack switch
         {
             "cross-tenant" => policy.GetPredicate(SupplyChainSemanticModel.Warehouse, AuthorizationOperation.Read),
             "sensitive-field" => policy.GetFieldAccess(SupplyChainSemanticModel.InventoryLot, StoreChainAuthorizationPolicy.FieldIds.InventoryQuarantined, AuthorizationOperation.Read),

@@ -7,6 +7,6 @@
   <ItemGroup>
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
     <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
-    <ProjectReference Include="../../../Foundgine.SupplyChain.Semantic.csproj" />
+    <ProjectReference Include="../../Foundgine.SupplyChain.Semantic.csproj" />
   </ItemGroup>
 </Project>

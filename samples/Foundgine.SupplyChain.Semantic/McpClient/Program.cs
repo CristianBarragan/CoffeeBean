@@ -10,7 +10,7 @@ Console.WriteLine("===========================================================")
 Console.WriteLine($"Endpoint: {url}");
 Console.WriteLine();
 
-var cases = new[]
+var cases = new (string, string, object)[]
 {
     ("capabilities", "describe_capabilities", new { actor = "analyst-a", token = "analyst-a-demo-token" }),
     ("cross-tenant read", "policy_probe", new { actor = "analyst-a", token = "analyst-a-demo-token", attack = "cross-tenant" }),
