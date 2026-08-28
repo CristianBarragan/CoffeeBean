@@ -81,6 +81,26 @@ public sealed class SemanticModelBuilder
         return this;
     }
 
+    /// <summary>
+    /// Imports an already generated or independently authored semantic model.
+    /// Entity identities must not collide. This lets an application deliberately
+    /// mix generated semantics with manually curated semantic entities.
+    /// </summary>
+    public SemanticModelBuilder Import(SemanticModel model)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+
+        foreach (var entity in model.Entities)
+        {
+            if (_entities.ContainsKey(entity.Id))
+                throw new InvalidOperationException($"Semantic entity '{entity.Id}' is already registered.");
+
+            _entities.Add(entity.Id, entity);
+        }
+
+        return this;
+    }
+
     public SemanticModelBuilder Entity(
         EntityId id,
         string name,

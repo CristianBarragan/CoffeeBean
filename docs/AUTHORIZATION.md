@@ -129,3 +129,20 @@ safe provider execution
 Claims, roles, identity providers, and policy administration are deliberately
 outside this layer. They can sit above Foundgine and produce semantic policy
 decisions without becoming part of the Foundgine core.
+
+## StoreChain reference matrix
+
+The `Foundgine.SupplyChain.Semantic` sample is the canonical worked example for the policy boundaries above. It deliberately mixes manual and generated semantic authoring and then applies a single provider-independent policy model to the resulting `SemanticModel`.
+
+It demonstrates:
+
+- entity allow/deny;
+- field allow/deny;
+- relationship allow/deny;
+- conditional tenant predicates;
+- opt-in write authorization;
+- named-operation refinement;
+- capability discovery as non-authoritative metadata; and
+- MCP adversarial calls that attempt to cross those boundaries.
+
+The sample also separates transport authentication from semantic authorization: the MCP server resolves a fixed actor/token into a tenant and role, then constructs the semantic policy for that actor. A caller cannot promote itself by supplying a different role in the semantic request.

@@ -1,6 +1,7 @@
 using Foundgine.Abstractions;
 using Foundgine.Semantics;
 using Foundgine.SupplyChain.Semantic.Domain;
+using Foundgine.SupplyChain.Semantic.Generated;
 
 namespace Foundgine.SupplyChain.Semantic.Semantics;
 
@@ -20,11 +21,15 @@ public static class SupplyChainSemanticModel
     public static readonly EntityId Certification = new(1011);
     public static readonly EntityId ComplianceIncident = new(1012);
 
-    // Manual semantic authoring: property selectors target the domain model types,
-    // not semantic/provider metadata. Foundgine derives FieldId, CLR type, and field
-    // name from each selected property. The generated path can produce the same
-    // semantic shape without requiring this hand-authored mapping.
+    /// <summary>
+    /// Deliberately mixed semantic model. Purchase orders, lines and shipments
+    /// come from the generated artifact; the remaining domain surface is
+    /// manually curated. Both paths converge through SemanticModelBuilder and
+    /// therefore produce one immutable SemanticModel for authorization,
+    /// resolution and planning.
+    /// </summary>
     public static SemanticModel Build() => new SemanticModelBuilder()
+        .Import(SupplyChainGeneratedSemanticModel.Build())
         .Entity<Product>(Product, "Product", e => e
             .Identity(x => x.Id)
             .Field(x => x.Sku)
@@ -41,13 +46,7 @@ public static class SupplyChainSemanticModel
             .Field(x => x.Name)
             .Field(x => x.Country)
             .Field(x => x.RiskScore)
-            .Relationship(new RelationshipId(3), "shipments", Shipment, RelationshipCardinality.Many))
-        .Entity<Shipment>(Shipment, "Shipment", e => e
-            .Identity(x => x.Id)
-            .Field(x => x.PurchaseOrderId)
-            .Field(x => x.ExpectedArrival)
-            .Field(x => x.Status)
-            .Field(x => x.Quantity))
+            .Field(x => x.TenantId))
         .Entity<InventoryLot>(InventoryLot, "InventoryLot", e => e
             .Identity(x => x.Id)
             .Field(x => x.WarehouseId)
@@ -74,18 +73,6 @@ public static class SupplyChainSemanticModel
             .Field(x => x.CustomerOrderId)
             .Field(x => x.ProductId)
             .Field(x => x.Quantity))
-        .Entity<PurchaseOrder>(PurchaseOrder, "PurchaseOrder", e => e
-            .Identity(x => x.Id)
-            .Field(x => x.SupplierId)
-            .Field(x => x.WarehouseId)
-            .Field(x => x.Status)
-            .Field(x => x.ExpectedArrival))
-        .Entity<PurchaseOrderLine>(PurchaseOrderLine, "PurchaseOrderLine", e => e
-            .Identity(x => x.Id)
-            .Field(x => x.PurchaseOrderId)
-            .Field(x => x.ProductId)
-            .Field(x => x.Quantity)
-            .Field(x => x.UnitPrice))
         .Entity<SupplierCertification>(Certification, "SupplierCertification", e => e
             .Identity(x => x.Id)
             .Field(x => x.SupplierId)
@@ -96,9 +83,6 @@ public static class SupplyChainSemanticModel
             .Field(x => x.SupplierId)
             .Field(x => x.Severity)
             .Field(x => x.OccurredOn))
-        // Relationship<TFromModel, TToModel> makes both property selectors
-        // compile against the intended domain model type. This is deliberately
-        // separate from EF/entity metadata and avoids string/ID-based mistakes.
         .Relationship<Product, ProductComponent>(
             Product, new RelationshipId(1), "components",
             product => product.Id,
@@ -138,16 +122,6 @@ public static class SupplyChainSemanticModel
             CustomerOrder, new RelationshipId(9), "lines",
             order => order.Id,
             CustomerOrderLine, line => line.CustomerOrderId,
-            RelationshipCardinality.Many)
-        .Relationship<PurchaseOrder, PurchaseOrderLine>(
-            PurchaseOrder, new RelationshipId(10), "lines",
-            order => order.Id,
-            PurchaseOrderLine, line => line.PurchaseOrderId,
-            RelationshipCardinality.Many)
-        .Relationship<PurchaseOrder, Shipment>(
-            PurchaseOrder, new RelationshipId(11), "shipments",
-            order => order.Id,
-            Shipment, shipment => shipment.PurchaseOrderId,
             RelationshipCardinality.Many)
         .Build();
 }
