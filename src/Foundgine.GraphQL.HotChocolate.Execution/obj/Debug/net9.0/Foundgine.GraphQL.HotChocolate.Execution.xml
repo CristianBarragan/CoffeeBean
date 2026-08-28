@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Foundgine.GraphQL.HotChocolate.Execution</name>
+    </assembly>
+    <members>
+        <member name="T:Foundgine.GraphQL.HotChocolate.GraphQLQueryExecutionResult">
+            <summary>
+            The outcome of a secured GraphQL query execution: the raw provider-neutral
+            execution result, plus the GraphQL result shape (aliases, nesting) needed to
+            project it into a GraphQL response. Foundgine does not ship response
+            materialization; the host maps <see cref="P:Foundgine.GraphQL.HotChocolate.GraphQLQueryExecutionResult.Execution"/> through
+            <see cref="P:Foundgine.GraphQL.HotChocolate.GraphQLQueryExecutionResult.ResultShape"/> into its own GraphQL response representation.
+            </summary>
+        </member>
+        <member name="M:Foundgine.GraphQL.HotChocolate.GraphQLQueryExecutionResult.#ctor(Foundgine.Execution.ExecutionResult,Foundgine.GraphQL.HotChocolate.GraphQLResultShape)">
+            <summary>
+            The outcome of a secured GraphQL query execution: the raw provider-neutral
+            execution result, plus the GraphQL result shape (aliases, nesting) needed to
+            project it into a GraphQL response. Foundgine does not ship response
+            materialization; the host maps <see cref="P:Foundgine.GraphQL.HotChocolate.GraphQLQueryExecutionResult.Execution"/> through
+            <see cref="P:Foundgine.GraphQL.HotChocolate.GraphQLQueryExecutionResult.ResultShape"/> into its own GraphQL response representation.
+            </summary>
+        </member>
+        <member name="T:Foundgine.GraphQL.HotChocolate.FoundgineHotChocolateQueryExecutor">
+             <summary>
+             Optional, secure-by-default execution entry point for GraphQL queries hosted
+             on Hot Chocolate. This is the query-side counterpart to
+             <c>Foundgine.MCP.FoundgineMcpTools</c>: it translates GraphQL text using
+             <see cref="T:Foundgine.GraphQL.HotChocolate.HotChocolateSemanticAdapter"/>, requires a host-supplied
+             <see cref="T:Foundgine.Semantics.Security.Execution.SecurityExecutionContext"/> via <see cref="T:Foundgine.Semantics.Security.Execution.ISecurityExecutionContextProvider"/>,
+             and calls <see cref="T:Foundgine.IFoundgine"/> directly. GraphQL request payloads can
+             never supply identity, tenant, audience, or warrant material; that context
+             is always established by the host before this class is invoked.
+            
+             Using this class is optional. <see cref="T:Foundgine.GraphQL.HotChocolate.HotChocolateSemanticAdapter"/> remains
+             a pure GraphQL-to-<see cref="T:Foundgine.Semantics.SemanticRequest"/> translator
+             with no security opinion, for hosts that want to wire execution themselves.
+             </summary>
+        </member>
+        <member name="M:Foundgine.GraphQL.HotChocolate.FoundgineHotChocolateQueryExecutor.ExecuteAsync(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Translates and executes a GraphQL query. Throws <see cref="T:System.UnauthorizedAccessException"/>
+            if the host has not established a <see cref="T:Foundgine.Semantics.Security.Execution.SecurityExecutionContext"/> for this call.
+            GraphQL syntax/translation errors propagate as the same exceptions
+            <see cref="M:Foundgine.GraphQL.HotChocolate.HotChocolateSemanticAdapter.AdaptResultShape(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object},System.String)"/>
+            would throw directly. Prefer <see cref="M:Foundgine.GraphQL.HotChocolate.FoundgineHotChocolateQueryExecutor.TryExecuteAsync(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object},System.String,System.Threading.CancellationToken)"/> when you want these
+            mapped to stable GraphQL-facing error codes instead of thrown.
+            </summary>
+        </member>
+        <member name="M:Foundgine.GraphQL.HotChocolate.FoundgineHotChocolateQueryExecutor.TryExecuteAsync(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Same as <see cref="M:Foundgine.GraphQL.HotChocolate.FoundgineHotChocolateQueryExecutor.ExecuteAsync(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object},System.String,System.Threading.CancellationToken)"/>, but maps translation, security, and execution
+            failures into a stable <see cref="T:Foundgine.GraphQL.HotChocolate.GraphQLAdapterError"/> via
+            <see cref="M:Foundgine.GraphQL.HotChocolate.GraphQLAdapterErrors.FromException(System.Exception)"/> instead of throwing, so hosts can
+            surface them as ordinary GraphQL response errors.
+            </summary>
+        </member>
+    </members>
+</doc>

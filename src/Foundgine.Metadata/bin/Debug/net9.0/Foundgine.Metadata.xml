@@ -1,0 +1,166 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Foundgine.Metadata</name>
+    </assembly>
+    <members>
+        <member name="T:Foundgine.Metadata.AuthorizationMetadata">
+            <summary>
+            A compile-time authorization predicate attached to a semantic connection.
+            The expression is descriptive metadata; providers may later lower the
+            predicate into their native authorization/filter representation.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Metadata.AuthorizationMetadata.#ctor(Foundgine.Abstractions.AuthorizationId,Foundgine.Abstractions.ConnectionId,System.String,System.String,System.Type,System.Type,System.String,Foundgine.Abstractions.AuthorizationPredicate)">
+            <summary>
+            A compile-time authorization predicate attached to a semantic connection.
+            The expression is descriptive metadata; providers may later lower the
+            predicate into their native authorization/filter representation.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Metadata.ColumnReference">
+            <summary>
+            A provider-neutral reference to a physical column. Kept in metadata so
+            later providers can translate storage bindings without putting storage
+            knowledge into the semantic graph.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Metadata.ColumnReference.#ctor(Foundgine.Abstractions.EntityId,Foundgine.Abstractions.ColumnId)">
+            <summary>
+            A provider-neutral reference to a physical column. Kept in metadata so
+            later providers can translate storage bindings without putting storage
+            knowledge into the semantic graph.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Metadata.ConnectionFieldMetadata">
+            <summary>
+            Compile-time correspondence between a semantic source member and a target
+            entity member. This is a description only; Foundgine never creates or
+            populates either object.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Metadata.ConnectionFieldMetadata.#ctor(System.String,System.String,System.Type,System.Type,System.String)">
+            <summary>
+            Compile-time correspondence between a semantic source member and a target
+            entity member. This is a description only; Foundgine never creates or
+            populates either object.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Metadata.ConnectionMetadata">
+            <summary>
+            A compile-time semantic connection from a model to a known entity.
+            The connection describes what may be visited; it does not materialize or
+            populate either side. Relational key details remain owned by the entity
+            metadata/EF model.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Metadata.ConnectionMetadata.#ctor(Foundgine.Abstractions.ConnectionId,Foundgine.Abstractions.ModelId,Foundgine.Abstractions.EntityId,System.String,System.String,System.Collections.Generic.IReadOnlyList{Foundgine.Metadata.ConnectionFieldMetadata})">
+            <summary>
+            A compile-time semantic connection from a model to a known entity.
+            The connection describes what may be visited; it does not materialize or
+            populate either side. Relational key details remain owned by the entity
+            metadata/EF model.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Metadata.ConversionMetadata">
+            <summary>
+            A compile-time value conversion that may be used while resolving a
+            connection. The converter is ordinary application code; Foundgine only
+            records its identity for AOT planning.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Metadata.ConversionMetadata.#ctor(System.Type,System.Type,System.String)">
+            <summary>
+            A compile-time value conversion that may be used while resolving a
+            connection. The converter is ordinary application code; Foundgine only
+            records its identity for AOT planning.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Metadata.EntityMetadata">
+            <summary>
+            Static description of a domain entity. Metadata describes what exists;
+            it does not describe a request and does not know about GraphQL or SQL.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Metadata.EntityMetadata.#ctor(Foundgine.Abstractions.EntityId,System.String,System.Collections.Generic.IReadOnlyList{Foundgine.Metadata.ColumnMetadata},System.String,System.Collections.Generic.IReadOnlyList{Foundgine.Metadata.FieldMetadata},Foundgine.Metadata.ColumnReference,System.Type)">
+            <summary>
+            Static description of a domain entity. Metadata describes what exists;
+            it does not describe a request and does not know about GraphQL or SQL.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Metadata.FieldMetadata">
+            <summary>
+            Static field metadata, including an optional provider-neutral storage
+            column reference. Providers decide how to translate that reference.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Metadata.FieldMetadata.#ctor(Foundgine.Abstractions.FieldId,System.String,System.Type,Foundgine.Metadata.ColumnReference)">
+            <summary>
+            Static field metadata, including an optional provider-neutral storage
+            column reference. Providers decide how to translate that reference.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Metadata.FoundgineMetadataMarker">
+            <summary>Marker for the static domain metadata layer.</summary>
+        </member>
+        <member name="T:Foundgine.Metadata.IMetadataCatalog">
+            <summary>
+            Read-only catalog view used when a semantic model is discovered from
+            structural metadata. It extends the provider contract with model-wide
+            enumeration without coupling semantics to a concrete registry.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Metadata.IMetadataProvider">
+            <summary>
+            Runtime access to generated/static metadata. The core depends on this
+            abstraction rather than on a particular generator implementation.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Metadata.MetadataRegistry">
+            <summary>
+            In-memory registry of the static metadata used by resolution and planning.
+            A future AOT generator can emit an implementation with the same contract.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Metadata.ModelMetadata">
+            <summary>
+            Static semantic model metadata. A model is a description of application
+            data; it is not an entity and Foundgine never creates or populates it.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Metadata.ModelMetadata.#ctor(Foundgine.Abstractions.ModelId,System.String,System.Nullable{Foundgine.Abstractions.EntityId})">
+            <summary>
+            Static semantic model metadata. A model is a description of application
+            data; it is not an entity and Foundgine never creates or populates it.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Metadata.RelationshipMetadata">
+            <summary>
+            Static domain relationship metadata. The key mapping identifies how the
+            related domain entities correlate; provider-specific join behavior is
+            deliberately not part of the semantic relationship contract.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Metadata.RelationshipMetadata.#ctor(Foundgine.Abstractions.RelationshipId,Foundgine.Abstractions.EntityId,Foundgine.Abstractions.EntityId,System.String,Foundgine.Metadata.ColumnReference,Foundgine.Metadata.ColumnReference,System.Boolean)">
+            <summary>
+            Static domain relationship metadata. The key mapping identifies how the
+            related domain entities correlate; provider-specific join behavior is
+            deliberately not part of the semantic relationship contract.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Metadata.StorageEntityId">
+            <summary>
+            Identity of a physical storage entity. It is intentionally distinct from
+            EntityId so logical/domain identity cannot accidentally be treated as a
+            database table identity.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Metadata.StorageEntityId.#ctor(System.UInt16)">
+            <summary>
+            Identity of a physical storage entity. It is intentionally distinct from
+            EntityId so logical/domain identity cannot accidentally be treated as a
+            database table identity.
+            </summary>
+        </member>
+    </members>
+</doc>

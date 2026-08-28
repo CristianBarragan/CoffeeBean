@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Foundgine.InMemory</name>
+    </assembly>
+    <members>
+        <member name="T:Foundgine.InMemory.InMemoryRow">
+            <summary>A small provider-neutral test/runtime provider backed by CLR objects.</summary>
+        </member>
+        <member name="M:Foundgine.InMemory.InMemoryRow.#ctor(Foundgine.Abstractions.EntityId,System.Collections.Generic.IReadOnlyDictionary{Foundgine.Abstractions.FieldId,System.Object})">
+            <summary>A small provider-neutral test/runtime provider backed by CLR objects.</summary>
+        </member>
+        <member name="T:Foundgine.InMemory.InMemoryExecutionProvider">
+            <summary>
+            Executes the provider-neutral execution IR directly over CLR data. It deliberately
+            has no SQL dependency and uses metadata only to resolve relationships.
+            This provider is intentionally small: its purpose is to prove that the
+            execution plan is not merely SQL with the SQL removed.
+            </summary>
+        </member>
+        <member name="M:Foundgine.InMemory.InMemoryCompiler.Compile(Foundgine.Planning.SemanticPlan)">
+            <summary>Compatibility bridge for callers holding a semantic plan.
+            Lowering remains explicit and provider-neutral.</summary>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,329 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "Foundgine.GraphQL.HotChocolate.MutationExecution/1.2.4": {
+        "dependencies": {
+          "Foundgine.Execution": "1.2.4",
+          "Foundgine.GraphQL.HotChocolate.Mutations": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.GraphQL.HotChocolate.MutationExecution.dll": {}
+        }
+      },
+      "HotChocolate.Language/16.6.1": {
+        "dependencies": {
+          "HotChocolate.Language.SyntaxTree": "16.6.1",
+          "HotChocolate.Language.Utf8": "16.6.1",
+          "HotChocolate.Language.Visitors": "16.6.1",
+          "HotChocolate.Language.Web": "16.6.1"
+        },
+        "runtime": {
+          "lib/net9.0/HotChocolate.Language.dll": {
+            "assemblyVersion": "16.6.1.0",
+            "fileVersion": "16.6.1.0"
+          }
+        }
+      },
+      "HotChocolate.Language.SyntaxTree/16.6.1": {
+        "dependencies": {
+          "HotChocolate.Utilities.Buffers": "16.6.1",
+          "Microsoft.Extensions.ObjectPool": "9.0.2"
+        },
+        "runtime": {
+          "lib/net9.0/HotChocolate.Language.SyntaxTree.dll": {
+            "assemblyVersion": "16.6.1.0",
+            "fileVersion": "16.6.1.0"
+          }
+        }
+      },
+      "HotChocolate.Language.Utf8/16.6.1": {
+        "dependencies": {
+          "HotChocolate.Language.SyntaxTree": "16.6.1",
+          "HotChocolate.Language.Utf8.SyntaxTree": "16.6.1",
+          "HotChocolate.Utilities.Buffers": "16.6.1"
+        },
+        "runtime": {
+          "lib/net9.0/HotChocolate.Language.Utf8.dll": {
+            "assemblyVersion": "16.6.1.0",
+            "fileVersion": "16.6.1.0"
+          }
+        }
+      },
+      "HotChocolate.Language.Utf8.SyntaxTree/16.6.1": {
+        "dependencies": {
+          "HotChocolate.Language.SyntaxTree": "16.6.1",
+          "HotChocolate.Utilities.Buffers": "16.6.1"
+        },
+        "runtime": {
+          "lib/net9.0/HotChocolate.Language.Utf8.SyntaxTree.dll": {
+            "assemblyVersion": "16.6.1.0",
+            "fileVersion": "16.6.1.0"
+          }
+        }
+      },
+      "HotChocolate.Language.Visitors/16.6.1": {
+        "dependencies": {
+          "HotChocolate.Language.SyntaxTree": "16.6.1"
+        },
+        "runtime": {
+          "lib/net9.0/HotChocolate.Language.Visitors.dll": {
+            "assemblyVersion": "16.6.1.0",
+            "fileVersion": "16.6.1.0"
+          }
+        }
+      },
+      "HotChocolate.Language.Web/16.6.1": {
+        "dependencies": {
+          "HotChocolate.Language.Utf8": "16.6.1",
+          "HotChocolate.Language.Visitors": "16.6.1"
+        },
+        "runtime": {
+          "lib/net9.0/HotChocolate.Language.Web.dll": {
+            "assemblyVersion": "16.6.1.0",
+            "fileVersion": "16.6.1.0"
+          }
+        }
+      },
+      "HotChocolate.Utilities.Buffers/16.6.1": {
+        "runtime": {
+          "lib/net9.0/HotChocolate.Buffers.dll": {
+            "assemblyVersion": "16.6.1.0",
+            "fileVersion": "16.6.1.0"
+          }
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions/10.0.11": {
+        "runtime": {
+          "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.1126.37416"
+          }
+        }
+      },
+      "Microsoft.Extensions.ObjectPool/9.0.2": {
+        "runtime": {
+          "lib/net9.0/Microsoft.Extensions.ObjectPool.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.225.6704"
+          }
+        }
+      },
+      "Foundgine/1.2.4": {
+        "dependencies": {
+          "Foundgine.Execution": "1.2.4",
+          "Foundgine.Planning": "1.2.4",
+          "Foundgine.Semantics": "1.2.4",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.11"
+        },
+        "runtime": {
+          "Foundgine.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Abstractions/1.2.4": {
+        "runtime": {
+          "Foundgine.Abstractions.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Execution/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4",
+          "Foundgine.Planning": "1.2.4",
+          "Foundgine.Semantics": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.Execution.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.GraphQL.HotChocolate/1.2.4": {
+        "dependencies": {
+          "Foundgine": "1.2.4",
+          "Foundgine.Metadata": "1.2.4",
+          "Foundgine.Semantics": "1.2.4",
+          "HotChocolate.Language": "16.6.1"
+        },
+        "runtime": {
+          "Foundgine.GraphQL.HotChocolate.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.GraphQL.HotChocolate.Mutations/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4",
+          "Foundgine.Execution": "1.2.4",
+          "Foundgine.GraphQL.HotChocolate": "1.2.4",
+          "Foundgine.Metadata": "1.2.4",
+          "Foundgine.Planning": "1.2.4",
+          "Foundgine.Semantics": "1.2.4",
+          "HotChocolate.Language": "16.6.1"
+        },
+        "runtime": {
+          "Foundgine.GraphQL.HotChocolate.Mutations.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Metadata/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.Metadata.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Planning/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4",
+          "Foundgine.Semantics": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.Planning.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Semantics/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4",
+          "Foundgine.Metadata": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.Semantics.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Foundgine.GraphQL.HotChocolate.MutationExecution/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "HotChocolate.Language/16.6.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-pLLump0T6qV2hROJhirDP4tlMTMVp/4JMjcACqQ3W/Ud+8GqOonDRh2Dat6j5WVHVsDQ/MGVHJiZnV5GIB5TiQ==",
+      "path": "hotchocolate.language/16.6.1",
+      "hashPath": "hotchocolate.language.16.6.1.nupkg.sha512"
+    },
+    "HotChocolate.Language.SyntaxTree/16.6.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-lImykMum1gdNoNXKt+NlcwZsFtyw++vei4wemmMN+hHdVanAeGwGpOY3wwoN0Vk2N4Wzyaz2FqZw5450EJyeiw==",
+      "path": "hotchocolate.language.syntaxtree/16.6.1",
+      "hashPath": "hotchocolate.language.syntaxtree.16.6.1.nupkg.sha512"
+    },
+    "HotChocolate.Language.Utf8/16.6.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-XVKz2bO4+hucnvqGbUKX+RThipBoH4bfhTMJHtTrxNh7FPHEPETJZwqZpSkTJHOKNCqLYlcVkFctQu+IYoedfQ==",
+      "path": "hotchocolate.language.utf8/16.6.1",
+      "hashPath": "hotchocolate.language.utf8.16.6.1.nupkg.sha512"
+    },
+    "HotChocolate.Language.Utf8.SyntaxTree/16.6.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-FxMvELX2w2cSTbD4rXvk+ydvbfDOvLNRCT9ClTbcCDz+hwaNHGdktSBZFi3tu2wpocVzKhvQ7tWkWniDWVqHxQ==",
+      "path": "hotchocolate.language.utf8.syntaxtree/16.6.1",
+      "hashPath": "hotchocolate.language.utf8.syntaxtree.16.6.1.nupkg.sha512"
+    },
+    "HotChocolate.Language.Visitors/16.6.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-2oozxeUexThb6BqhzgC+2jiijbXqSTBxqWY7gJIACn3ysKFgquE8QFw8oQCvszowxp8UBPgnFifOhWQ5iw11zA==",
+      "path": "hotchocolate.language.visitors/16.6.1",
+      "hashPath": "hotchocolate.language.visitors.16.6.1.nupkg.sha512"
+    },
+    "HotChocolate.Language.Web/16.6.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-q8jhJyPdKlMHEk4oaqDWZPpTYyyhc7wGlhoRx2N4dV/ysFj+QJXs//dC69+fmVn/N6eWuThkAJ6dfZTFuAhFrw==",
+      "path": "hotchocolate.language.web/16.6.1",
+      "hashPath": "hotchocolate.language.web.16.6.1.nupkg.sha512"
+    },
+    "HotChocolate.Utilities.Buffers/16.6.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ZMxAooGfreKtLoVcqEyTT0zgcWVH1/5HdsbrQrlLLtKwMV/30S9rOVf+EQP2LgecjQczmT7ePQ9tzgN2OG09JA==",
+      "path": "hotchocolate.utilities.buffers/16.6.1",
+      "hashPath": "hotchocolate.utilities.buffers.16.6.1.nupkg.sha512"
+    },
+    "Microsoft.Extensions.DependencyInjection.Abstractions/10.0.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-/a1aJz4m7ylhEDf25ugQChLQoN5XwoGjWw/BoR/ZWWKsO1v4DdJElS1uyngahz4B/eOzjFk1KNTkarRLE5wsIg==",
+      "path": "microsoft.extensions.dependencyinjection.abstractions/10.0.11",
+      "hashPath": "microsoft.extensions.dependencyinjection.abstractions.10.0.11.nupkg.sha512"
+    },
+    "Microsoft.Extensions.ObjectPool/9.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-nWx7uY6lfkmtpyC2dGc0IxtrZZs/LnLCQHw3YYQucbqWj8a27U/dZ+eh72O3ZiolqLzzLkVzoC+w/M8dZwxRTw==",
+      "path": "microsoft.extensions.objectpool/9.0.2",
+      "hashPath": "microsoft.extensions.objectpool.9.0.2.nupkg.sha512"
+    },
+    "Foundgine/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Abstractions/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Execution/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.GraphQL.HotChocolate/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.GraphQL.HotChocolate.Mutations/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Metadata/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Planning/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Semantics/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

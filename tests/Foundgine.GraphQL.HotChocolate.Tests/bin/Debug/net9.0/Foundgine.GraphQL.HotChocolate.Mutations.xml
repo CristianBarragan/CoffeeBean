@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Foundgine.GraphQL.HotChocolate.Mutations</name>
+    </assembly>
+    <members>
+        <member name="T:Foundgine.GraphQL.HotChocolate.GraphQLMutationBatchItem">
+            <summary>
+            One entry of a batched GraphQL mutation document (see
+            <c>HotChocolateMutationAdapter.AdaptBatchWithResultShape</c>). ResultKey is the field's
+            GraphQL alias (or, for the single-unaliased-field convenience case, its field name) -
+            use it both to key the response object per-item and to line up each item's planned
+            operations with <c>MutationPlanner.Plan(IReadOnlyList&lt;NestedMutationIntent&gt;)</c>.
+            </summary>
+        </member>
+        <member name="M:Foundgine.GraphQL.HotChocolate.GraphQLMutationBatchItem.#ctor(System.String,Foundgine.GraphQL.HotChocolate.GraphQLMutationAdaptation)">
+            <summary>
+            One entry of a batched GraphQL mutation document (see
+            <c>HotChocolateMutationAdapter.AdaptBatchWithResultShape</c>). ResultKey is the field's
+            GraphQL alias (or, for the single-unaliased-field convenience case, its field name) -
+            use it both to key the response object per-item and to line up each item's planned
+            operations with <c>MutationPlanner.Plan(IReadOnlyList&lt;NestedMutationIntent&gt;)</c>.
+            </summary>
+        </member>
+        <member name="T:Foundgine.GraphQL.HotChocolate.GraphQLMutationSemanticConverter">
+            <summary>
+            Converts the GraphQL adapter's legacy nested intent representation into the
+            canonical semantic mutation graph. Security-sensitive GraphQL execution must
+            use this boundary so the mutation engine can apply warrant validation,
+            policy authorization and the final execution security gate to the exact
+            operation graph that came from GraphQL.
+            </summary>
+        </member>
+        <member name="T:Foundgine.GraphQL.HotChocolate.HotChocolateMutationAdapter">
+            <summary>
+            Translates GraphQL mutation syntax into provider-neutral Foundgine mutation
+            intents. GraphQL variables, fragments, aliases, directives and output
+            projection remain entirely at this adapter boundary.
+            </summary>
+        </member>
+        <member name="M:Foundgine.GraphQL.HotChocolate.HotChocolateMutationAdapter.AdaptBatchWithResultShape(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object},System.String)">
+             <summary>
+             Batch form of <see cref="M:Foundgine.GraphQL.HotChocolate.HotChocolateMutationAdapter.AdaptWithResultShape(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object},System.String)"/>: accepts a mutation document with
+             MORE THAN ONE root field, each of which becomes an independent mutation (createX,
+             updateX, deleteX, upsertX; each may still have its own nested children, same as the
+             single-field form). Every root field in a batch document MUST be aliased - that alias
+             is the key used to correlate each result back to its request in the response and in
+             <see cref="P:Foundgine.GraphQL.HotChocolate.GraphQLMutationBatchItem.ResultKey"/>.
+            
+             This does not change the single-field contract: a document with exactly one,
+             unaliased root field should keep going through <see cref="M:Foundgine.GraphQL.HotChocolate.HotChocolateMutationAdapter.AdaptWithResultShape(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object},System.String)"/>.
+             Combine the returned items' <c>Intent</c> values with
+             <c>MutationPlanner.Plan(IReadOnlyList&lt;NestedMutationIntent&gt;)</c> to get one
+             dependency-aware <c>MutationBatchPlan</c> for the whole document.
+             </summary>
+        </member>
+    </members>
+</doc>

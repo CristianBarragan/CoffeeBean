@@ -1,0 +1,6 @@
+C:\Foundgine\src\Foundgine.Aot.Generator\obj\Debug\netstandard2.0\Foundgine.Aot.Generator.csproj.AssemblyReference.cache
+C:\Foundgine\src\Foundgine.Aot.Generator\obj\Debug\netstandard2.0\Foundgine.Aot.Generator.GeneratedMSBuildEditorConfig.editorconfig
+C:\Foundgine\src\Foundgine.Aot.Generator\obj\Debug\netstandard2.0\Foundgine.Aot.Generator.AssemblyInfoInputs.cache
+C:\Foundgine\src\Foundgine.Aot.Generator\obj\Debug\netstandard2.0\Foundgine.Aot.Generator.AssemblyInfo.cs
+C:\Foundgine\src\Foundgine.Aot.Generator\obj\Debug\netstandard2.0\Foundgine.Aot.Generator.csproj.CoreCompileInputs.cache
+C:\Foundgine\src\Foundgine.Aot.Generator\obj\Debug\netstandard2.0\Foundgine.Aot.Generator.sourcelink.json

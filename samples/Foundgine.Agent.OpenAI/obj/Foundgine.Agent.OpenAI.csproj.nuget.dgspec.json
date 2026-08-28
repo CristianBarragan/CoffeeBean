@@ -1,0 +1,766 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Foundgine\\samples\\Foundgine.Agent.OpenAI\\Foundgine.Agent.OpenAI.csproj": {}
+  },
+  "projects": {
+    "C:\\Foundgine\\samples\\Foundgine.Agent.OpenAI\\Foundgine.Agent.OpenAI.csproj": {
+      "version": "1.2.4",
+      "restore": {
+        "projectUniqueName": "C:\\Foundgine\\samples\\Foundgine.Agent.OpenAI\\Foundgine.Agent.OpenAI.csproj",
+        "projectName": "Foundgine.Agent.OpenAI",
+        "projectPath": "C:\\Foundgine\\samples\\Foundgine.Agent.OpenAI\\Foundgine.Agent.OpenAI.csproj",
+        "packagesPath": "C:\\Users\\clbp_\\.nuget\\packages\\",
+        "outputPath": "C:\\Foundgine\\samples\\Foundgine.Agent.OpenAI\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\clbp_\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "C:\\Foundgine\\src\\Foundgine.AI\\Foundgine.AI.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.AI\\Foundgine.AI.csproj"
+              },
+              "C:\\Foundgine\\src\\Foundgine.InMemory\\Foundgine.InMemory.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.InMemory\\Foundgine.InMemory.csproj"
+              },
+              "C:\\Foundgine\\src\\Foundgine.Metadata\\Foundgine.Metadata.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Metadata\\Foundgine.Metadata.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "Microsoft.Extensions.AI.OpenAI": {
+              "target": "Package",
+              "version": "[10.9.0, )"
+            },
+            "Microsoft.Extensions.DependencyInjection": {
+              "target": "Package",
+              "version": "[10.0.11, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Foundgine\\src\\Foundgine.Abstractions\\Foundgine.Abstractions.csproj": {
+      "version": "1.2.4",
+      "restore": {
+        "projectUniqueName": "C:\\Foundgine\\src\\Foundgine.Abstractions\\Foundgine.Abstractions.csproj",
+        "projectName": "Foundgine.Abstractions",
+        "projectPath": "C:\\Foundgine\\src\\Foundgine.Abstractions\\Foundgine.Abstractions.csproj",
+        "packagesPath": "C:\\Users\\clbp_\\.nuget\\packages\\",
+        "outputPath": "C:\\Foundgine\\src\\Foundgine.Abstractions\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\clbp_\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Foundgine\\src\\Foundgine.AI\\Foundgine.AI.csproj": {
+      "version": "1.2.4",
+      "restore": {
+        "projectUniqueName": "C:\\Foundgine\\src\\Foundgine.AI\\Foundgine.AI.csproj",
+        "projectName": "Foundgine.AI",
+        "projectPath": "C:\\Foundgine\\src\\Foundgine.AI\\Foundgine.AI.csproj",
+        "packagesPath": "C:\\Users\\clbp_\\.nuget\\packages\\",
+        "outputPath": "C:\\Foundgine\\src\\Foundgine.AI\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\clbp_\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "C:\\Foundgine\\src\\Foundgine.Intent.Json\\Foundgine.Intent.Json.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Intent.Json\\Foundgine.Intent.Json.csproj"
+              },
+              "C:\\Foundgine\\src\\Foundgine\\Foundgine.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine\\Foundgine.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "Microsoft.Extensions.AI": {
+              "target": "Package",
+              "version": "[10.9.0, )"
+            },
+            "Microsoft.Extensions.AI.Abstractions": {
+              "target": "Package",
+              "version": "[10.9.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Foundgine\\src\\Foundgine.Execution\\Foundgine.Execution.csproj": {
+      "version": "1.2.4",
+      "restore": {
+        "projectUniqueName": "C:\\Foundgine\\src\\Foundgine.Execution\\Foundgine.Execution.csproj",
+        "projectName": "Foundgine.Execution",
+        "projectPath": "C:\\Foundgine\\src\\Foundgine.Execution\\Foundgine.Execution.csproj",
+        "packagesPath": "C:\\Users\\clbp_\\.nuget\\packages\\",
+        "outputPath": "C:\\Foundgine\\src\\Foundgine.Execution\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\clbp_\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "C:\\Foundgine\\src\\Foundgine.Abstractions\\Foundgine.Abstractions.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Abstractions\\Foundgine.Abstractions.csproj"
+              },
+              "C:\\Foundgine\\src\\Foundgine.Planning\\Foundgine.Planning.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Planning\\Foundgine.Planning.csproj"
+              },
+              "C:\\Foundgine\\src\\Foundgine.Semantics\\Foundgine.Semantics.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Semantics\\Foundgine.Semantics.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Foundgine\\src\\Foundgine.InMemory\\Foundgine.InMemory.csproj": {
+      "version": "1.2.4",
+      "restore": {
+        "projectUniqueName": "C:\\Foundgine\\src\\Foundgine.InMemory\\Foundgine.InMemory.csproj",
+        "projectName": "Foundgine.InMemory",
+        "projectPath": "C:\\Foundgine\\src\\Foundgine.InMemory\\Foundgine.InMemory.csproj",
+        "packagesPath": "C:\\Users\\clbp_\\.nuget\\packages\\",
+        "outputPath": "C:\\Foundgine\\src\\Foundgine.InMemory\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\clbp_\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "C:\\Foundgine\\src\\Foundgine.Execution\\Foundgine.Execution.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Execution\\Foundgine.Execution.csproj"
+              },
+              "C:\\Foundgine\\src\\Foundgine.Metadata\\Foundgine.Metadata.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Metadata\\Foundgine.Metadata.csproj"
+              },
+              "C:\\Foundgine\\src\\Foundgine.Planning\\Foundgine.Planning.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Planning\\Foundgine.Planning.csproj"
+              },
+              "C:\\Foundgine\\src\\Foundgine.Semantics\\Foundgine.Semantics.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Semantics\\Foundgine.Semantics.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Foundgine\\src\\Foundgine.Intent.Json\\Foundgine.Intent.Json.csproj": {
+      "version": "1.2.4",
+      "restore": {
+        "projectUniqueName": "C:\\Foundgine\\src\\Foundgine.Intent.Json\\Foundgine.Intent.Json.csproj",
+        "projectName": "Foundgine.Intent.Json",
+        "projectPath": "C:\\Foundgine\\src\\Foundgine.Intent.Json\\Foundgine.Intent.Json.csproj",
+        "packagesPath": "C:\\Users\\clbp_\\.nuget\\packages\\",
+        "outputPath": "C:\\Foundgine\\src\\Foundgine.Intent.Json\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\clbp_\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "C:\\Foundgine\\src\\Foundgine.Semantics\\Foundgine.Semantics.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Semantics\\Foundgine.Semantics.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Foundgine\\src\\Foundgine.Metadata\\Foundgine.Metadata.csproj": {
+      "version": "1.2.4",
+      "restore": {
+        "projectUniqueName": "C:\\Foundgine\\src\\Foundgine.Metadata\\Foundgine.Metadata.csproj",
+        "projectName": "Foundgine.Metadata",
+        "projectPath": "C:\\Foundgine\\src\\Foundgine.Metadata\\Foundgine.Metadata.csproj",
+        "packagesPath": "C:\\Users\\clbp_\\.nuget\\packages\\",
+        "outputPath": "C:\\Foundgine\\src\\Foundgine.Metadata\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\clbp_\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "C:\\Foundgine\\src\\Foundgine.Abstractions\\Foundgine.Abstractions.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Abstractions\\Foundgine.Abstractions.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Foundgine\\src\\Foundgine.Planning\\Foundgine.Planning.csproj": {
+      "version": "1.2.4",
+      "restore": {
+        "projectUniqueName": "C:\\Foundgine\\src\\Foundgine.Planning\\Foundgine.Planning.csproj",
+        "projectName": "Foundgine.Planning",
+        "projectPath": "C:\\Foundgine\\src\\Foundgine.Planning\\Foundgine.Planning.csproj",
+        "packagesPath": "C:\\Users\\clbp_\\.nuget\\packages\\",
+        "outputPath": "C:\\Foundgine\\src\\Foundgine.Planning\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\clbp_\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "C:\\Foundgine\\src\\Foundgine.Abstractions\\Foundgine.Abstractions.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Abstractions\\Foundgine.Abstractions.csproj"
+              },
+              "C:\\Foundgine\\src\\Foundgine.Semantics\\Foundgine.Semantics.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Semantics\\Foundgine.Semantics.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Foundgine\\src\\Foundgine.Semantics\\Foundgine.Semantics.csproj": {
+      "version": "1.2.4",
+      "restore": {
+        "projectUniqueName": "C:\\Foundgine\\src\\Foundgine.Semantics\\Foundgine.Semantics.csproj",
+        "projectName": "Foundgine.Semantics",
+        "projectPath": "C:\\Foundgine\\src\\Foundgine.Semantics\\Foundgine.Semantics.csproj",
+        "packagesPath": "C:\\Users\\clbp_\\.nuget\\packages\\",
+        "outputPath": "C:\\Foundgine\\src\\Foundgine.Semantics\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\clbp_\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "C:\\Foundgine\\src\\Foundgine.Abstractions\\Foundgine.Abstractions.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Abstractions\\Foundgine.Abstractions.csproj"
+              },
+              "C:\\Foundgine\\src\\Foundgine.Metadata\\Foundgine.Metadata.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Metadata\\Foundgine.Metadata.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Foundgine\\src\\Foundgine\\Foundgine.csproj": {
+      "version": "1.2.4",
+      "restore": {
+        "projectUniqueName": "C:\\Foundgine\\src\\Foundgine\\Foundgine.csproj",
+        "projectName": "Foundgine",
+        "projectPath": "C:\\Foundgine\\src\\Foundgine\\Foundgine.csproj",
+        "packagesPath": "C:\\Users\\clbp_\\.nuget\\packages\\",
+        "outputPath": "C:\\Foundgine\\src\\Foundgine\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\clbp_\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "C:\\Foundgine\\src\\Foundgine.Execution\\Foundgine.Execution.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Execution\\Foundgine.Execution.csproj"
+              },
+              "C:\\Foundgine\\src\\Foundgine.Planning\\Foundgine.Planning.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Planning\\Foundgine.Planning.csproj"
+              },
+              "C:\\Foundgine\\src\\Foundgine.Semantics\\Foundgine.Semantics.csproj": {
+                "projectPath": "C:\\Foundgine\\src\\Foundgine.Semantics\\Foundgine.Semantics.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "Microsoft.Extensions.DependencyInjection.Abstractions": {
+              "target": "Package",
+              "version": "[10.0.11, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

@@ -44,19 +44,24 @@ public static class SupplyChainAuthorization
         return new ConfiguredSemanticAuthorizationPolicy(config, context);
     }
 
+    /// <summary>
+    /// Authorization refers to semantic names and resolves generated identities
+    /// through the discovered model. Numeric metadata IDs never become part of
+    /// application policy source code.
+    /// </summary>
     public static class FieldIds
     {
-        public static readonly FieldId SupplierRiskScore = new(4);
-        public static readonly FieldId InventoryOnHand = new(4);
-        public static readonly FieldId InventoryReserved = new(5);
-        public static readonly FieldId InventoryQuarantined = new(6);
+        public static FieldId SupplierRiskScore => SupplyChainSemanticModel.Field("Supplier", "RiskScore");
+        public static FieldId InventoryOnHand => SupplyChainSemanticModel.Field("InventoryLot", "OnHand");
+        public static FieldId InventoryReserved => SupplyChainSemanticModel.Field("InventoryLot", "Reserved");
+        public static FieldId InventoryQuarantined => SupplyChainSemanticModel.Field("InventoryLot", "Quarantined");
     }
 
     public static class RelationshipIds
     {
-        public static readonly RelationshipId SupplierCertifications = new(4);
-        public static readonly RelationshipId SupplierIncidents = new(5);
-        public static readonly RelationshipId WarehouseInventory = new(8);
+        public static RelationshipId SupplierCertifications => SupplyChainSemanticModel.Relationship("Supplier", "certifications");
+        public static RelationshipId SupplierIncidents => SupplyChainSemanticModel.Relationship("Supplier", "incidents");
+        public static RelationshipId WarehouseInventory => SupplyChainSemanticModel.Relationship("Warehouse", "inventory");
     }
 
     private static bool CanReadEntity(EntityId id, SupplyChainRole role) => id switch

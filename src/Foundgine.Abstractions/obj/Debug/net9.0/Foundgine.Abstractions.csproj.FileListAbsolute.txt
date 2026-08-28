@@ -1,0 +1,14 @@
+C:\Foundgine\src\Foundgine.Abstractions\bin\Debug\net9.0\Foundgine.Abstractions.deps.json
+C:\Foundgine\src\Foundgine.Abstractions\bin\Debug\net9.0\Foundgine.Abstractions.dll
+C:\Foundgine\src\Foundgine.Abstractions\bin\Debug\net9.0\Foundgine.Abstractions.pdb
+C:\Foundgine\src\Foundgine.Abstractions\bin\Debug\net9.0\Foundgine.Abstractions.xml
+C:\Foundgine\src\Foundgine.Abstractions\obj\Debug\net9.0\Foundgine.Abstractions.GeneratedMSBuildEditorConfig.editorconfig
+C:\Foundgine\src\Foundgine.Abstractions\obj\Debug\net9.0\Foundgine.Abstractions.AssemblyInfoInputs.cache
+C:\Foundgine\src\Foundgine.Abstractions\obj\Debug\net9.0\Foundgine.Abstractions.AssemblyInfo.cs
+C:\Foundgine\src\Foundgine.Abstractions\obj\Debug\net9.0\Foundgine.Abstractions.csproj.CoreCompileInputs.cache
+C:\Foundgine\src\Foundgine.Abstractions\obj\Debug\net9.0\Foundgine.Abstractions.sourcelink.json
+C:\Foundgine\src\Foundgine.Abstractions\obj\Debug\net9.0\Foundgine.Abstractions.dll
+C:\Foundgine\src\Foundgine.Abstractions\obj\Debug\net9.0\refint\Foundgine.Abstractions.dll
+C:\Foundgine\src\Foundgine.Abstractions\obj\Debug\net9.0\Foundgine.Abstractions.xml
+C:\Foundgine\src\Foundgine.Abstractions\obj\Debug\net9.0\Foundgine.Abstractions.pdb
+C:\Foundgine\src\Foundgine.Abstractions\obj\Debug\net9.0\ref\Foundgine.Abstractions.dll

@@ -19,12 +19,68 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     private const string ConversionAttribute = "Foundgine.Aot.FoundgineConversionAttribute";
     private const string AuthorizationAttribute = "Foundgine.Aot.FoundgineAuthorizationAttribute";
 
+    private static readonly DiagnosticDescriptor RelationshipTargetMustBeEntity = new(
+        "FGMETA001",
+        "Relationship target is not a Foundgine entity",
+        "Relationship '{0}.{1}' targets '{2}', but that type is not marked with [FoundgineEntity].",
+        "Foundgine.Metadata",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor RelationshipForeignKeyMissing = new(
+        "FGMETA002",
+        "Relationship foreign key property is missing",
+        "Relationship '{0}.{1}' references foreign-key property '{2}', but that property does not exist on either side of the relationship.",
+        "Foundgine.Metadata",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor RelationshipPrincipalKeyMissing = new(
+        "FGMETA003",
+        "Relationship principal key property is missing",
+        "Relationship '{0}.{1}' references principal-key property '{2}', but that property does not exist on the principal entity '{3}'.",
+        "Foundgine.Metadata",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor RelationshipKeyTypesMismatch = new(
+        "FGMETA004",
+        "Relationship key types do not match",
+        "Relationship '{0}.{1}' maps foreign key '{2}' ({3}) to principal key '{4}' ({5}); the key types must match.",
+        "Foundgine.Metadata",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor RelationshipNavigationTargetMismatch = new(
+        "FGMETA005",
+        "Relationship navigation target does not match",
+        "Relationship '{0}.{1}' targets '{2}', but the navigation property type resolves to '{3}'.",
+        "Foundgine.Metadata",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor RelationshipForeignKeyAmbiguous = new(
+        "FGMETA006",
+        "Relationship foreign key is ambiguous",
+        "Relationship '{0}.{1}' finds foreign-key property '{2}' on both '{3}' and '{4}'. Declare the relationship from the side that owns the foreign key or use an unambiguous key name.",
+        "Foundgine.Metadata",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor RelationshipKeyMustBeScalar = new(
+        "FGMETA007",
+        "Relationship key must be a scalar property",
+        "Relationship '{0}.{1}' uses '{2}' as a key, but that property is itself a relationship navigation. Relationship keys must reference scalar properties.",
+        "Foundgine.Metadata",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var entities = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 EntityAttribute,
-                static (node, _) => node is ClassDeclarationSyntax,
+                static (node, _) => node is TypeDeclarationSyntax,
                 static (ctx, _) => (INamedTypeSymbol)ctx.TargetSymbol)
             .Collect();
 
@@ -87,17 +143,22 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 return;
             }
 
-            spc.AddSource("Foundgine.GeneratedMetadata.g.cs", Emit(
+            var generated = Emit(
+                spc,
                 entities,
                 models,
                 conversions,
                 authorizations,
                 connectionMaps,
-                modelEntityMaps));
+                modelEntityMaps);
+
+            if (generated is not null)
+                spc.AddSource("Foundgine.GeneratedMetadata.g.cs", generated);
         });
     }
 
-    private static string Emit(
+    private static string? Emit(
+        SourceProductionContext spc,
         ImmutableArray<INamedTypeSymbol> symbols,
         ImmutableArray<INamedTypeSymbol> models,
         ImmutableArray<IMethodSymbol> conversions,
@@ -110,6 +171,9 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             .ToArray();
 
         var entityIds = AllocateEntityIds(ordered);
+        if (!ValidateRelationships(spc, ordered))
+            return null;
+
         var modelIds = AllocateModelIds(models);
         var connectionIds = AllocateConnectionIds(models);
         var modelEntityMap = BuildModelEntityMap(modelEntityMaps);
@@ -915,6 +979,105 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     }
 
     private static string Escape(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+    private static bool ValidateRelationships(
+        SourceProductionContext spc,
+        IReadOnlyList<INamedTypeSymbol> entities)
+    {
+        var entitySet = new HashSet<string>(entities.Select(x => x.ToDisplayString()), StringComparer.Ordinal);
+        var valid = true;
+
+        foreach (var entity in entities)
+        {
+            foreach (var navigation in entity.GetMembers().OfType<IPropertySymbol>())
+            {
+                var relationship = GetAttribute(navigation, RelationshipAttribute);
+                if (relationship is null) continue;
+
+                var target = GetTypeArgument(relationship, 0);
+                if (target is null || !entitySet.Contains(target.ToDisplayString()))
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(RelationshipTargetMustBeEntity, navigation.GetLocation(), entity.Name, navigation.Name, target?.ToDisplayString() ?? "<missing>"));
+                    valid = false;
+                    continue;
+                }
+
+                var navigationTarget = GetNavigationTargetType(navigation.Type);
+                if (navigationTarget is null || !SymbolEqualityComparer.Default.Equals(navigationTarget, target))
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(RelationshipNavigationTargetMismatch, navigation.GetLocation(), entity.Name, navigation.Name, target.ToDisplayString(), navigationTarget?.ToDisplayString() ?? navigation.Type.ToDisplayString()));
+                    valid = false;
+                }
+
+                var foreignKeyName = GetCtorString(relationship, 1) ?? "Id";
+                var principalKeyName = GetCtorString(relationship, 2) ?? "Id";
+                var sourceForeignKey = entity.GetMembers(foreignKeyName).OfType<IPropertySymbol>().FirstOrDefault();
+                var targetForeignKey = target.GetMembers(foreignKeyName).OfType<IPropertySymbol>().FirstOrDefault();
+                if (sourceForeignKey is not null && targetForeignKey is not null)
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(
+                        RelationshipForeignKeyAmbiguous, navigation.GetLocation(), entity.Name, navigation.Name,
+                        foreignKeyName, entity.Name, target.Name));
+                    valid = false;
+                    continue;
+                }
+
+                var sourceOwnsForeignKey = sourceForeignKey is not null;
+                var foreignKey = sourceForeignKey ?? targetForeignKey;
+
+                if (foreignKey is null)
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(RelationshipForeignKeyMissing, navigation.GetLocation(), entity.Name, navigation.Name, foreignKeyName));
+                    valid = false;
+                    continue;
+                }
+
+                if (GetAttribute(foreignKey, RelationshipAttribute) is not null)
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(
+                        RelationshipKeyMustBeScalar, navigation.GetLocation(), entity.Name, navigation.Name, foreignKeyName));
+                    valid = false;
+                    continue;
+                }
+
+                var principalEntity = sourceOwnsForeignKey ? target : entity;
+                var principalKey = principalEntity.GetMembers(principalKeyName).OfType<IPropertySymbol>().FirstOrDefault();
+                if (principalKey is null)
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(RelationshipPrincipalKeyMissing, navigation.GetLocation(), entity.Name, navigation.Name, principalKeyName, principalEntity.Name));
+                    valid = false;
+                    continue;
+                }
+
+                if (GetAttribute(principalKey, RelationshipAttribute) is not null)
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(
+                        RelationshipKeyMustBeScalar, navigation.GetLocation(), entity.Name, navigation.Name, principalKeyName));
+                    valid = false;
+                    continue;
+                }
+
+                if (!SymbolEqualityComparer.IncludeNullability.Equals(foreignKey.Type, principalKey.Type))
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(RelationshipKeyTypesMismatch, navigation.GetLocation(), entity.Name, navigation.Name, foreignKeyName, foreignKey.Type.ToDisplayString(), principalKeyName, principalKey.Type.ToDisplayString()));
+                    valid = false;
+                }
+            }
+        }
+
+        return valid;
+    }
+
+    private static ITypeSymbol? GetNavigationTargetType(ITypeSymbol type)
+    {
+        if (type is IArrayTypeSymbol array) return array.ElementType;
+        if (type is INamedTypeSymbol named)
+        {
+            var enumerable = named.AllInterfaces.FirstOrDefault(i => i.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T && i.TypeArguments.Length == 1);
+            if (enumerable is not null) return enumerable.TypeArguments[0];
+        }
+        return type;
+    }
+
     private static string IsCollectionExpression(ITypeSymbol type)
     {
         if (type is IArrayTypeSymbol)

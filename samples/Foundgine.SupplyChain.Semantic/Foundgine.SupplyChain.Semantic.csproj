@@ -20,6 +20,9 @@
     <Compile Remove="McpClient/**/*.cs" />
     <None Remove="McpClient/**/*.cs" />
     <ProjectReference Include="../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Aot/Foundgine.Aot.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
     <ProjectReference Include="../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
   </ItemGroup>
 </Project>

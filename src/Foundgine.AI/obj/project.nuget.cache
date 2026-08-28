@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "dgSpecHash": "56W5pN558E8=",
+  "success": true,
+  "projectFilePath": "C:\\Foundgine\\src\\Foundgine.AI\\Foundgine.AI.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\clbp_\\.nuget\\packages\\microsoft.extensions.ai\\10.9.0\\microsoft.extensions.ai.10.9.0.nupkg.sha512",
+    "C:\\Users\\clbp_\\.nuget\\packages\\microsoft.extensions.ai.abstractions\\10.9.0\\microsoft.extensions.ai.abstractions.10.9.0.nupkg.sha512",
+    "C:\\Users\\clbp_\\.nuget\\packages\\microsoft.extensions.caching.abstractions\\10.0.11\\microsoft.extensions.caching.abstractions.10.0.11.nupkg.sha512",
+    "C:\\Users\\clbp_\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.11\\microsoft.extensions.dependencyinjection.abstractions.10.0.11.nupkg.sha512",
+    "C:\\Users\\clbp_\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\10.0.11\\microsoft.extensions.logging.abstractions.10.0.11.nupkg.sha512",
+    "C:\\Users\\clbp_\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.11\\microsoft.extensions.primitives.10.0.11.nupkg.sha512",
+    "C:\\Users\\clbp_\\.nuget\\packages\\system.diagnostics.diagnosticsource\\10.0.11\\system.diagnostics.diagnosticsource.10.0.11.nupkg.sha512",
+    "C:\\Users\\clbp_\\.nuget\\packages\\system.io.pipelines\\10.0.11\\system.io.pipelines.10.0.11.nupkg.sha512",
+    "C:\\Users\\clbp_\\.nuget\\packages\\system.numerics.tensors\\10.0.11\\system.numerics.tensors.10.0.11.nupkg.sha512",
+    "C:\\Users\\clbp_\\.nuget\\packages\\system.text.encodings.web\\10.0.11\\system.text.encodings.web.10.0.11.nupkg.sha512",
+    "C:\\Users\\clbp_\\.nuget\\packages\\system.text.json\\10.0.11\\system.text.json.10.0.11.nupkg.sha512",
+    "C:\\Users\\clbp_\\.nuget\\packages\\system.threading.channels\\10.0.11\\system.threading.channels.10.0.11.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,217 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Foundgine.Sql</name>
+    </assembly>
+    <members>
+        <member name="T:Foundgine.Sql.Mutation.PostgresBatchedMutationCompiler">
+             <summary>
+             Compiles an entire mutation batch into one PostgreSQL statement.
+            
+             Create/Upsert operations at the same dependency level are grouped by shape and
+             expanded with PostgreSQL unnest(array parameters). Reference-valued fields use
+             the source group's 1-based unnest ordinal and an ord-map CTE, so generated
+             values flow between levels without client-side round trips.
+            
+             Update/Delete operations remain one CTE each, but are still folded into the
+             same physical statement. If a batch cannot be represented safely, TryCompile
+             returns null and the caller can use the existing sequential SQL compiler.
+             </summary>
+        </member>
+        <member name="M:Foundgine.Sql.Mutation.PostgresBatchedMutationCompiler.Compile(Foundgine.Execution.Mutation.ExecutionMutationIR)">
+            <summary>
+            Canonical provider entry point. PostgreSQL lowering consumes the
+            provider-neutral execution IR. The existing MutationBatchPlan overload
+            is retained for compatibility while callers migrate.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Sql.Mutation.PostgresBatchedMutationCompiler.TryCompile(Foundgine.Execution.Mutation.ExecutionMutationIR)">
+            <summary>
+            Canonical execution-IR entry point with the same safe fallback semantics
+            as the legacy mutation-batch overload.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.Mutation.Postgres.PostgresBatchedMutationExecutionProvider">
+             <summary>
+             Executes a mutation batch as one PostgreSQL statement when the batch can
+             safely be represented by PostgresBatchedMutationCompiler. Otherwise it
+             delegates to the existing sequential SQL mutation provider.
+            
+             PostgreSQL selection is explicit: callers construct this provider for a
+             PostgreSQL connection. The provider never inspects the runtime connection
+             type to decide whether PostgreSQL is available.
+             </summary>
+        </member>
+        <member name="M:Foundgine.Sql.Mutation.Postgres.PostgresBatchedMutationExecutionProvider.ExecuteBatch(Foundgine.Execution.Mutation.ExecutionMutationIR,Foundgine.Execution.ExecutionContext)">
+            <summary>
+            Preferred entry point when the caller still has the provider-neutral
+            mutation batch. Compilation and fallback happen here.
+            </summary>
+            <summary>
+            Canonical execution entry point for mutation IR.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Sql.Mutation.Postgres.PostgresBatchedMutationExecutionProvider.ExecuteBatch(Foundgine.Execution.Mutation.ProviderMutationBatchPlan,Foundgine.Execution.ExecutionContext,System.Threading.CancellationToken)">
+            <summary>
+            Interface entry point for callers that already have a provider plan.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.Mutation.SqlBatchedMutationPlan">
+            <summary>
+            A provider-specific PostgreSQL mutation plan containing one physical SQL
+            command for the entire logical mutation batch.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Sql.Mutation.SqlBatchedMutationPlan.#ctor(System.String,System.Collections.Generic.IReadOnlyList{Foundgine.Sql.Query.SqlParameterBinding},System.Collections.Generic.IReadOnlyList{Foundgine.Sql.Mutation.BatchedGroupMeta},System.Collections.Generic.IReadOnlyList{Foundgine.Sql.Mutation.BatchedOperationRowKey},System.Collections.Generic.IReadOnlyList{Foundgine.Planning.Mutation.MutationDependency})">
+            <summary>
+            A provider-specific PostgreSQL mutation plan containing one physical SQL
+            command for the entire logical mutation batch.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.Mutation.BatchedOperationRowKey">
+            <summary>
+            Correlates one physical result row to an original mutation operation.
+            Ordinal is the 1-based position inside the group's unnest arrays.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Sql.Mutation.BatchedOperationRowKey.#ctor(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Correlates one physical result row to an original mutation operation.
+            Ordinal is the 1-based position inside the group's unnest arrays.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.Mutation.BatchedGroupMeta">
+            <summary>
+            Metadata required by the batched executor to reconstruct the original
+            per-operation MutationResult list.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Sql.Mutation.BatchedGroupMeta.#ctor(System.Int32,System.Collections.Generic.IReadOnlyList{System.Int32},System.Boolean,System.Collections.Generic.IReadOnlyDictionary{Foundgine.Abstractions.FieldId,System.Type})">
+            <summary>
+            Metadata required by the batched executor to reconstruct the original
+            per-operation MutationResult list.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.Mutation.SqlMutationCompiler">
+            <summary>
+            Compiles provider-neutral mutation plans into parameterized relational SQL.
+            Upsert uses INSERT ... ON CONFLICT ... DO UPDATE ... RETURNING.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Sql.Mutation.SqlMutationCompiler.Compile(Foundgine.Execution.Mutation.ExecutionMutationIR)">
+            <summary>
+            Canonical execution entry point. Provider-specific SQL lowering starts
+            from ExecutionMutationIR; the legacy planning overload remains as an
+            internal compatibility surface for existing callers.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.Mutation.SqlMutationExecutionProvider">
+            <summary>
+            Executes one compiled mutation through ADO.NET and materializes RETURNING
+            values into the provider-neutral MutationResult.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Sql.Mutation.SqlMutationExecutionProvider.ExecuteBatch(Foundgine.Execution.Mutation.ExecutionMutationIR,Foundgine.Execution.ExecutionContext)">
+            <summary>
+            Canonical batch execution entry point. Physical SQL lowering is owned by
+            this provider and therefore occurs only after the execution-IR boundary.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.Query.SqlAuthorizationWriter">
+            <summary>
+            Lowers the small AOT authorization predicate IR into provider-neutral SQL
+            fragments. Context values remain parameterized and are resolved only at
+            execution time.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.Security.SqlSecurityConformanceResult">
+            <summary>
+            Structural conformance checks for a compiled SQL plan. These checks do not
+            prove arbitrary provider correctness; they verify that the SQL plan exposes
+            the concrete evidence required by the Foundgine security contract.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Sql.Security.SqlSecurityConformanceResult.#ctor(System.Collections.Generic.IReadOnlyList{System.String},System.Collections.Generic.IReadOnlyList{System.String},System.Collections.Generic.IReadOnlyList{System.String})">
+            <summary>
+            Structural conformance checks for a compiled SQL plan. These checks do not
+            prove arbitrary provider correctness; they verify that the SQL plan exposes
+            the concrete evidence required by the Foundgine security contract.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.SqlCompiler">
+            <summary>
+            Compiles the provider-independent Execution IR into SQL, including
+            filtering, ordering, aggregation, and cursor pagination.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Sql.SqlCompiler.Evaluate(Foundgine.Execution.ExecutionIR,Foundgine.Execution.ProviderPlan)">
+            <summary>Compatibility bridge for existing callers that still hold a semantic plan.
+            The semantic plan is lowered immediately into provider-neutral Execution IR;
+            no provider-specific information is introduced at this boundary.</summary>
+        </member>
+        <member name="T:Foundgine.Sql.SqlCostModelOptions">
+            <summary>
+            Conservative provider-aware cost model for SQL plan selection.
+            It is intentionally heuristic and provider-neutral at the planning API;
+            deployments may replace it with statistics-backed estimates later.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Sql.SqlCostModelOptions.#ctor(System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.String,System.String,System.Nullable{System.DateTimeOffset},System.Nullable{System.TimeSpan})">
+            <summary>
+            Conservative provider-aware cost model for SQL plan selection.
+            It is intentionally heuristic and provider-neutral at the planning API;
+            deployments may replace it with statistics-backed estimates later.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.SqlCostEstimator">
+            <summary>
+            SQL provider cost estimator used by the provider-aware rewrite selector.
+            It uses semantic plan shape and metadata, never SQL text or request authority.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.SqlExecutionProvider">
+            <summary>
+            Executes an already-compiled SQL plan against an ADO.NET connection.
+            Compilation and execution remain separate responsibilities.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.SqlPlan">
+            <summary>
+            Physical SQL representation of a provider-independent execution plan.
+            SQL exists only at this provider boundary.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Sql.SqlPlan.#ctor(System.String,System.Collections.Generic.IReadOnlyList{Foundgine.Sql.SqlColumnBinding},System.Collections.Generic.IReadOnlyList{Foundgine.Sql.Query.SqlParameterBinding},Foundgine.Sql.SqlPaginationPlan,System.Collections.Generic.IReadOnlyList{Foundgine.Sql.SqlAuthorizationPredicate})">
+            <summary>
+            Physical SQL representation of a provider-independent execution plan.
+            SQL exists only at this provider boundary.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.SqlPaginationPlan">
+            <summary>
+            Forward keyset pagination metadata. CursorValues describes the exact
+            semantic ordering tuple used by the SQL seek predicate.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Sql.SqlPaginationPlan.#ctor(System.Int32,System.Collections.Generic.IReadOnlyList{Foundgine.Sql.SqlCursorBinding},System.String)">
+            <summary>
+            Forward keyset pagination metadata. CursorValues describes the exact
+            semantic ordering tuple used by the SQL seek predicate.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Sql.SqlAuthorizationPredicate">
+            <summary>
+            Authorization predicates carried into the SQL provider plan. The predicate
+            remains provider-independent here; SQL lowering can bind its members and
+            context values without retaining an expression tree or delegate.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Sql.SqlAuthorizationPredicate.#ctor(System.Int32,Foundgine.Abstractions.AuthorizationPredicate)">
+            <summary>
+            Authorization predicates carried into the SQL provider plan. The predicate
+            remains provider-independent here; SQL lowering can bind its members and
+            context values without retaining an expression tree or delegate.
+            </summary>
+        </member>
+    </members>
+</doc>

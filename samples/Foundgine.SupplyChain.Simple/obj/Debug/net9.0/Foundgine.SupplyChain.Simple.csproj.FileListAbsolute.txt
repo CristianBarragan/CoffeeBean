@@ -1,0 +1,8 @@
+C:\Foundgine\samples\Foundgine.SupplyChain.Simple\obj\Debug\net9.0\Foundgine.SupplyChain.Simple.csproj.AssemblyReference.cache
+C:\Foundgine\samples\Foundgine.SupplyChain.Simple\obj\Debug\net9.0\rpswa.dswa.cache.json
+C:\Foundgine\samples\Foundgine.SupplyChain.Simple\obj\Debug\net9.0\Foundgine.SupplyChain.Simple.GeneratedMSBuildEditorConfig.editorconfig
+C:\Foundgine\samples\Foundgine.SupplyChain.Simple\obj\Debug\net9.0\Foundgine.SupplyChain.Simple.AssemblyInfoInputs.cache
+C:\Foundgine\samples\Foundgine.SupplyChain.Simple\obj\Debug\net9.0\Foundgine.SupplyChain.Simple.AssemblyInfo.cs
+C:\Foundgine\samples\Foundgine.SupplyChain.Simple\obj\Debug\net9.0\Foundgine.SupplyChain.Simple.csproj.CoreCompileInputs.cache
+C:\Foundgine\samples\Foundgine.SupplyChain.Simple\obj\Debug\net9.0\Foundgine.SupplyChain.Simple.MvcApplicationPartsAssemblyInfo.cache
+C:\Foundgine\samples\Foundgine.SupplyChain.Simple\obj\Debug\net9.0\Foundgine.SupplyChain.Simple.sourcelink.json

@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "WGldZKa2QEc=",
+  "success": true,
+  "projectFilePath": "C:\\Foundgine\\src\\Foundgine\\Foundgine.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\clbp_\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.11\\microsoft.extensions.dependencyinjection.abstractions.10.0.11.nupkg.sha512"
+  ],
+  "logs": []
+}

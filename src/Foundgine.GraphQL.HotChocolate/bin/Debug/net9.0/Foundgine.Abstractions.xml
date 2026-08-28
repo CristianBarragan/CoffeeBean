@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Foundgine.Abstractions</name>
+    </assembly>
+    <members>
+        <member name="T:Foundgine.Abstractions.AuthorizationOperation">
+            <summary>Operation for which a semantic authorization decision is requested.</summary>
+        </member>
+        <member name="T:Foundgine.Abstractions.AuthorizationAccess">
+            <summary>High-level authorization state exposed by the semantic capability model.</summary>
+        </member>
+        <member name="T:Foundgine.Abstractions.AuthorizationDecision">
+            <summary>
+            Provider-independent authorization result. Conditional access carries a
+            predicate that must remain part of execution semantics and be evaluated at
+            the provider boundary with the current execution context.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Abstractions.AuthorizationDecision.#ctor(Foundgine.Abstractions.AuthorizationAccess,Foundgine.Abstractions.AuthorizationPredicate)">
+            <summary>
+            Provider-independent authorization result. Conditional access carries a
+            predicate that must remain part of execution semantics and be evaluated at
+            the provider boundary with the current execution context.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Abstractions.AuthorizationId">
+            <summary>Stable identifier for an AOT authorization predicate.</summary>
+        </member>
+        <member name="M:Foundgine.Abstractions.AuthorizationId.#ctor(System.UInt16)">
+            <summary>Stable identifier for an AOT authorization predicate.</summary>
+        </member>
+        <member name="T:Foundgine.Abstractions.AuthorizationOperationName">
+            <summary>
+            Optional named refinement of an <see cref="T:Foundgine.Abstractions.AuthorizationOperation"/> for
+            policies that distinguish domain-specific write intents (for example
+            "Invoice.Pay" versus "Invoice.Update") beyond the coarse Read/Write gate.
+            This is a policy-facing hint only: it never changes what
+            <see cref="T:Foundgine.Abstractions.AuthorizationOperation"/> means structurally, and it carries no
+            storage or provider semantics.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Abstractions.AuthorizationOperationName.#ctor(System.String)">
+            <summary>
+            Optional named refinement of an <see cref="T:Foundgine.Abstractions.AuthorizationOperation"/> for
+            policies that distinguish domain-specific write intents (for example
+            "Invoice.Pay" versus "Invoice.Update") beyond the coarse Read/Write gate.
+            This is a policy-facing hint only: it never changes what
+            <see cref="T:Foundgine.Abstractions.AuthorizationOperation"/> means structurally, and it carries no
+            storage or provider semantics.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Abstractions.AuthorizationPredicate">
+            <summary>
+            Small provider-independent representation of an AOT authorization predicate.
+            It contains no expression trees and no executable delegates.
+            </summary>
+        </member>
+        <member name="M:Foundgine.Abstractions.AuthorizationPredicate.#ctor(Foundgine.Abstractions.AuthorizationPredicateKind,System.String,System.String,Foundgine.Abstractions.AuthorizationPredicate,Foundgine.Abstractions.AuthorizationPredicate)">
+            <summary>
+            Small provider-independent representation of an AOT authorization predicate.
+            It contains no expression trees and no executable delegates.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Abstractions.FieldIdJsonConverter">
+            <summary>
+            Lets <see cref="T:Foundgine.Abstractions.FieldId"/> be used both as an ordinary JSON value and as a
+            dictionary key (e.g. <c>IReadOnlyDictionary&lt;FieldId, object?&gt;</c>
+            results returned from mutation execution). System.Text.Json's default
+            object converter cannot serialize a struct as a property name unless it
+            explicitly overrides ReadAsPropertyName/WriteAsPropertyName, so without
+            this converter any dictionary keyed by FieldId throws NotSupportedException
+            the moment it is serialized.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Abstractions.FoundgineAbstractionsMarker">
+            <summary>Marker for the intentionally small Foundgine cross-layer contract assembly.</summary>
+        </member>
+        <member name="T:Foundgine.Abstractions.IMutationSchema">
+            <summary>
+            Narrow, provider-neutral schema contract required by mutation planning.
+            It deliberately exposes stable identities and key mappings only; concrete
+            metadata types remain outside the planning layer.
+            </summary>
+        </member>
+    </members>
+</doc>

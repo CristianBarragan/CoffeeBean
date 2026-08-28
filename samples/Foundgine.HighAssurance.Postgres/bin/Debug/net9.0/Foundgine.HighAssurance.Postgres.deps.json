@@ -1,0 +1,196 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "Foundgine.HighAssurance.Postgres/1.2.4": {
+        "dependencies": {
+          "Foundgine.Execution": "1.2.4",
+          "Foundgine.HighAssurance.Banking": "1.2.4",
+          "Foundgine.Security.Authority": "1.2.4",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.19",
+          "Npgsql": "10.0.3"
+        },
+        "runtime": {
+          "Foundgine.HighAssurance.Postgres.dll": {}
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions/9.0.19": {
+        "runtime": {
+          "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.1926.36724"
+          }
+        }
+      },
+      "Microsoft.Extensions.Logging.Abstractions/9.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.19"
+        },
+        "runtime": {
+          "lib/net9.0/Microsoft.Extensions.Logging.Abstractions.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.24.52809"
+          }
+        }
+      },
+      "Npgsql/10.0.3": {
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "9.0.0"
+        },
+        "runtime": {
+          "lib/net9.0/Npgsql.dll": {
+            "assemblyVersion": "10.0.3.0",
+            "fileVersion": "10.0.3.0"
+          }
+        }
+      },
+      "Foundgine.Abstractions/1.2.4": {
+        "runtime": {
+          "Foundgine.Abstractions.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Execution/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4",
+          "Foundgine.Planning": "1.2.4",
+          "Foundgine.Semantics": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.Execution.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.HighAssurance.Banking/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4",
+          "Foundgine.Execution": "1.2.4",
+          "Foundgine.Semantics": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.HighAssurance.Banking.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Metadata/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.Metadata.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Planning/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4",
+          "Foundgine.Semantics": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.Planning.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Security.Authority/1.2.4": {
+        "dependencies": {
+          "Foundgine.Execution": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.Security.Authority.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Semantics/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4",
+          "Foundgine.Metadata": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.Semantics.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Foundgine.HighAssurance.Postgres/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Microsoft.Extensions.DependencyInjection.Abstractions/9.0.19": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-XgQ0aVWClYjYSBqbYrKC/xyZ1KHf+VVwNF3+d54jcaqnst30Q//ugs/FJwUztLZiph0gp85g7i/eB0556twO0Q==",
+      "path": "microsoft.extensions.dependencyinjection.abstractions/9.0.19",
+      "hashPath": "microsoft.extensions.dependencyinjection.abstractions.9.0.19.nupkg.sha512"
+    },
+    "Microsoft.Extensions.Logging.Abstractions/9.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-g0UfujELzlLbHoVG8kPKVBaW470Ewi+jnptGS9KUi6jcb+k2StujtK3m26DFSGGwQ/+bVgZfsWqNzlP6YOejvw==",
+      "path": "microsoft.extensions.logging.abstractions/9.0.0",
+      "hashPath": "microsoft.extensions.logging.abstractions.9.0.0.nupkg.sha512"
+    },
+    "Npgsql/10.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-7nb5YzXuvWWJxB0J8DiyL3we+X4FOctZrt0fIBnucOIaIevFEEwGQVZKtiu9olXdlNAK1eNgqSral6r/jlhI4w==",
+      "path": "npgsql/10.0.3",
+      "hashPath": "npgsql.10.0.3.nupkg.sha512"
+    },
+    "Foundgine.Abstractions/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Execution/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.HighAssurance.Banking/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Metadata/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Planning/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Security.Authority/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Semantics/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

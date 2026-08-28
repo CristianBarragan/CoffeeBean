@@ -1,0 +1,125 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "Foundgine/1.2.4": {
+        "dependencies": {
+          "Foundgine.Execution": "1.2.4",
+          "Foundgine.Planning": "1.2.4",
+          "Foundgine.Semantics": "1.2.4",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.11"
+        },
+        "runtime": {
+          "Foundgine.dll": {}
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions/10.0.11": {
+        "runtime": {
+          "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.1126.37416"
+          }
+        }
+      },
+      "Foundgine.Abstractions/1.2.4": {
+        "runtime": {
+          "Foundgine.Abstractions.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Execution/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4",
+          "Foundgine.Planning": "1.2.4",
+          "Foundgine.Semantics": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.Execution.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Metadata/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.Metadata.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Planning/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4",
+          "Foundgine.Semantics": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.Planning.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      },
+      "Foundgine.Semantics/1.2.4": {
+        "dependencies": {
+          "Foundgine.Abstractions": "1.2.4",
+          "Foundgine.Metadata": "1.2.4"
+        },
+        "runtime": {
+          "Foundgine.Semantics.dll": {
+            "assemblyVersion": "1.2.4.0",
+            "fileVersion": "1.2.4.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Foundgine/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Microsoft.Extensions.DependencyInjection.Abstractions/10.0.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-/a1aJz4m7ylhEDf25ugQChLQoN5XwoGjWw/BoR/ZWWKsO1v4DdJElS1uyngahz4B/eOzjFk1KNTkarRLE5wsIg==",
+      "path": "microsoft.extensions.dependencyinjection.abstractions/10.0.11",
+      "hashPath": "microsoft.extensions.dependencyinjection.abstractions.10.0.11.nupkg.sha512"
+    },
+    "Foundgine.Abstractions/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Execution/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Metadata/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Planning/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Foundgine.Semantics/1.2.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

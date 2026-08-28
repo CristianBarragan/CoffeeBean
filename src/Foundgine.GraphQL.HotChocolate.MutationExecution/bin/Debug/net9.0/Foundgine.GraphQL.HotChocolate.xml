@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Foundgine.GraphQL.HotChocolate</name>
+    </assembly>
+    <members>
+        <member name="T:Foundgine.GraphQL.HotChocolate.GraphQLAdapterError">
+            <summary>
+            Structured GraphQL-facing adapter error. The core Foundgine pipeline remains
+            exception/transport agnostic; hosts can map this error to GraphQL errors.
+            </summary>
+        </member>
+        <member name="M:Foundgine.GraphQL.HotChocolate.GraphQLAdapterError.#ctor(System.String,System.String,System.Collections.Generic.IReadOnlyList{System.Object},System.String)">
+            <summary>
+            Structured GraphQL-facing adapter error. The core Foundgine pipeline remains
+            exception/transport agnostic; hosts can map this error to GraphQL errors.
+            </summary>
+        </member>
+        <member name="T:Foundgine.GraphQL.HotChocolate.GraphQLAdapterErrors">
+            <summary>
+            Converts adapter failures into stable GraphQL-facing error categories.
+            </summary>
+        </member>
+        <member name="T:Foundgine.GraphQL.HotChocolate.GraphQLDirectiveEvaluator">
+            <summary>
+            Evaluates the standard GraphQL @include and @skip directives at the
+            adapter boundary. No directive concepts are exposed to Foundgine core.
+            </summary>
+        </member>
+        <member name="T:Foundgine.GraphQL.HotChocolate.GraphQLSchemaAdapter">
+            <summary>
+            Builds the GraphQL schema vocabulary from Foundgine's semantic model.
+            Introspection itself remains a responsibility of the GraphQL host; this
+            adapter supplies the schema that the host exposes and therefore keeps
+            __schema/__type outside the Foundgine core.
+            </summary>
+        </member>
+        <member name="M:Foundgine.GraphQL.HotChocolate.GraphQLSchemaAdapter.BuildSdl">
+            <summary>
+            Produces SDL suitable for registration with a GraphQL host. A host such
+            as Hot Chocolate can then expose standard GraphQL introspection over the
+            resulting schema.
+            </summary>
+        </member>
+        <member name="T:Foundgine.GraphQL.HotChocolate.GraphQLSchemaDescriptor">
+            <summary>
+            Provider-neutral description of the GraphQL schema exposed by the adapter.
+            It contains GraphQL-facing names and CLR-derived scalar types, but no
+            Hot Chocolate runtime objects. Hosts can use the descriptor to construct a
+            real Hot Chocolate schema, whose standard introspection system then exposes
+            __schema and __type.
+            </summary>
+        </member>
+        <member name="M:Foundgine.GraphQL.HotChocolate.GraphQLSchemaDescriptor.#ctor(System.Collections.Generic.IReadOnlyList{Foundgine.GraphQL.HotChocolate.GraphQLObjectTypeDescriptor},System.Collections.Generic.IReadOnlyList{Foundgine.GraphQL.HotChocolate.GraphQLObjectTypeDescriptor},System.Collections.Generic.IReadOnlyList{Foundgine.GraphQL.HotChocolate.GraphQLInputTypeDescriptor})">
+            <summary>
+            Provider-neutral description of the GraphQL schema exposed by the adapter.
+            It contains GraphQL-facing names and CLR-derived scalar types, but no
+            Hot Chocolate runtime objects. Hosts can use the descriptor to construct a
+            real Hot Chocolate schema, whose standard introspection system then exposes
+            __schema and __type.
+            </summary>
+        </member>
+        <member name="T:Foundgine.GraphQL.HotChocolate.GraphQLVariableCoercer">
+            <summary>
+            Performs GraphQL variable input coercion at the adapter boundary.
+            Foundgine core receives ordinary CLR values and never sees GraphQL
+            variable/type syntax.
+            </summary>
+        </member>
+        <member name="T:Foundgine.GraphQL.HotChocolate.HotChocolateSemanticAdapter">
+            <summary>
+            Translates GraphQL query syntax into provider-neutral SemanticRequest
+            objects. GraphQL aliases, fragments, directives and variables are consumed
+            here and never leak into Foundgine core.
+            </summary>
+        </member>
+    </members>
+</doc>

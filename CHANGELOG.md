@@ -1,3 +1,14 @@
+## 1.2.4
+
+### Metadata structural contract
+
+- Added compile-time validation for Foundgine relationship metadata.
+- Relationship targets must be discovered Foundgine entities.
+- Navigation property targets must match the declared relationship target.
+- Foreign-key and principal-key properties must exist, be scalar properties, and be unambiguous.
+- Foreign-key and principal-key CLR types must match.
+- Invalid relationship metadata now reports deterministic `FGMETA001`–`FGMETA007` diagnostics and does not emit the generated registry.
+
 # Changelog
 
 ## Unreleased — Metadata-backed semantic discovery
@@ -183,3 +194,11 @@
 - Added name-based logical traversal configuration so applications do not depend on generated relationship IDs.
 - Fixed capability-contract traversal discovery to pass the active authorization policy through the capability builder.
 - Added metadata-to-semantics enrichment coverage for multi-hop logical traversals.
+
+## v1.2.3 — Domain CLR metadata producer boundary
+
+- Removed the SupplyChain semantic sample's parallel structural model.
+- Extended the AOT metadata generator to discover `[FoundgineEntity]` declarations on C# record types.
+- Made the SupplyChain domain declarations the structural source observed by the AOT producer.
+- Kept `SupplyChainMetadataProducer` as the `IMetadataCatalog` seam consumed by semantics.
+- Updated metadata-boundary regression tests and documentation.

@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Foundgine.Security.Authority.Tests</name>
+    </assembly>
+    <members>
+        <member name="T:Foundgine.Security.Authority.Tests.AuthorizationCapabilityScopeSecurityTests">
+            <summary>adversarial tests for capability scope and confused-deputy resistance.</summary>
+        </member>
+        <member name="T:Foundgine.Security.Authority.Tests.AuthorizationContextIntegrityKeyLifecycleSecurityTests">
+            <summary>
+            : adversarial tests for external authorization-integrity key lifecycle.
+            These tests are runtime-independent; no PostgreSQL instance is required.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Security.Authority.Tests.AuthorizationEvidenceFreshnessSecurityTests">
+            <summary>adversarial temporal authorization tests; no PostgreSQL required.</summary>
+        </member>
+        <member name="T:Foundgine.Security.Authority.Tests.AuthorizationEvidenceTransitionSecurityTests">
+            <summary>adversarial tests for revocation and authorization-state transitions.</summary>
+        </member>
+        <member name="T:Foundgine.Security.Authority.Tests.AuthorizationExecutionBindingSecurityTests">
+            <summary>adversarial tests for decision-to-execution binding and TOCTOU resistance.</summary>
+        </member>
+        <member name="M:Foundgine.Security.Authority.Tests.AuthorizationRecoveryQuorumAnchorSecurityTests.MakeCluster(System.Int32)">
+            <summary>
+            Three witnesses that all observe the same primary, plus per-witness reachability toggles the
+            test controls directly to simulate partitions without any network involved.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Security.Authority.Tests.PostgresAuthorizationContextIntegritySecurityTests">
+            <summary>
+            : persisted authorization evidence is cryptographically bound to its
+            complete canonical security payload and an externally-held key.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Security.Authority.Tests.PostgresAuthorizationContextLifecycleSecurityTests">
+            <summary>
+            closes authorization-context lifecycle races and replay paths.
+            The authorization identity is (actor, tenant), its version is monotonic,
+            and absence is security-negative for mutation execution.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Security.Authority.Tests.PostgresAuthorizationContextProvenanceSecurityTests">
+            <summary>
+            : authorization lifecycle writes require registered provenance,
+            tenant/actor scope, database-role binding, and monotonic writer sequencing.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Security.Authority.Tests.PostgresFactAttribute">
+            <summary>Runs only when the PostgreSQL integration connection is configured.</summary>
+        </member>
+        <member name="T:Foundgine.Security.Authority.Tests.PostgresTransferFundsAuthorizationAtomicityTests">
+            <summary>
+            proves that authorization evidence is bound to the PostgreSQL
+            transaction's serialization point rather than merely checked twice.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Security.Authority.Tests.PostgresTransferFundsAuthorizationEvidenceTests">
+            <summary>
+            proves that authorization decisions carry explicit versioned evidence
+            and that the evidence must still match immediately before commit.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Security.Authority.Tests.PostgresTransferFundsVisibilityRaceTests">
+            <summary>
+            Verifies that execution-time authorization and account state are read from the
+            post-lock PostgreSQL view, rather than from a stale pre-lock observation.
+            </summary>
+        </member>
+        <member name="T:Foundgine.Security.Authority.Tests.TransferFundsPenetrationTests">
+            <summary>
+            Deliberately hostile tests for the consequential TransferFunds boundary.
+            These are penetration-style tests: the authorization callback is treated as
+            potentially compromised, request state is mutated between attempts, and
+            batch inputs are constructed to bypass per-item checks.
+            </summary>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Foundgine.MCP.Tests</name>
+    </assembly>
+    <members>
+        <member name="T:Foundgine.MCP.Tests.McpMaliciousIntentSecurityTests">
+            <summary>
+            hostile-agent corpus. These tests deliberately treat MCP/AI payloads
+            as attacker-controlled data and assert that security authority cannot be
+            manufactured inside the intent document.
+            </summary>
+        </member>
+    </members>
+</doc>
