@@ -1,6 +1,57 @@
+
 # Foundgine Supply Chain — Complex Semantic Showcase
 
 This is the intentionally difficult reference vertical for Foundgine. It is designed to exercise the semantic boundary rather than demonstrate CRUD.
+
+## Manual vs generated semantic models
+
+This sample keeps the two semantic-authoring strategies conceptually distinct.
+
+### Manual semantic model
+
+Manual semantics are authored against the application/domain model with strongly typed property selectors:
+
+```csharp
+new SemanticModelBuilder()
+    .Entity<Product>(Product, "Product", e => e
+        .Identity(x => x.Id)
+        .Field(x => x.Sku)
+        .Field(x => x.Name)
+        .Field(x => x.SafetyStock));
+```
+
+The `x` parameter in these selectors is `Product` (the domain model type). It is **not** `SemanticEntityBuilder`, an EF `IEntityType`, or a provider metadata object. Foundgine derives the field name and CLR type from the selected property and reserves `FieldId(1)` for identity and allocates subsequent entity-local `FieldId` values.
+
+If the semantic name intentionally differs from the domain property name, the identity can specify an explicit semantic name: `Identity(x => x.ParentProductId, "Id")`.
+
+Relationships can also be authored with **both domain-model sides explicitly typed**. This is the preferred manual form when a relationship has a direct key correspondence:
+
+```csharp
+.Relationship<Product, ProductComponent>(
+    Product, new RelationshipId(1), "components",
+    product => product.Id,
+    Component, component => component.ParentProductId,
+    RelationshipCardinality.Many)
+```
+
+The generic pair is `<fromEntity, toModel>`. The first selector can only access `Product` properties; the second can only access `ProductComponent` properties. Foundgine verifies that the selected CLR property types match.
+
+Not every semantic edge has a direct property-to-property correspondence. The sample's `Supplier -> Shipment` edge is therefore intentionally retained as a topology-only relationship because `Shipment` reaches the supplier indirectly through `PurchaseOrder`.
+
+### Generated semantic model
+
+The generated approach derives semantic handles from the application's declared model/metadata and exposes generated fields without manually constructing `FieldId` values. The generated artifact and the manual builder feed the same provider-independent semantic runtime.
+
+The distinction is therefore **how the semantic model is authored**, not a different execution architecture:
+
+```text
+Manual domain-property selectors ──┐
+                                   ├──> SemanticModel ──> Resolution ──> Planning ──> Execution
+Generated semantic metadata ──────┘
+```
+
+Use manual semantics when the exposed semantic surface needs deliberate curation or differs from the complete application model. Use generated semantics when the semantic surface can safely be derived from the declared model and you want less hand-written mapping code.
+
 
 ## Domain
 
@@ -41,10 +92,6 @@ Provider lowering
 ```
 
 The agent should express intent. It should not choose tables, inject tenant predicates, bypass authorization, or construct provider-specific execution details.
-
-## Capability definitions (Step 5/6 API)
-
-`Semantics/SupplyChainCapabilities.cs` declares this sample's two scenario operations (`read_supplier_risk`, `write_purchasing`) as `SemanticCapabilityDefinition`s with declarative authorization requirements — tenant, warehouse-resource, and a policy requirement per operation — mirroring what the existing `AuthorizationContext` (`TenantId`, `AllowedWarehouses`, `CanReadSupplierRisk`, `CanWritePurchasing`) already establishes at runtime. `Api/Program.cs` prints these alongside the scenario output.
 
 ## Run
 

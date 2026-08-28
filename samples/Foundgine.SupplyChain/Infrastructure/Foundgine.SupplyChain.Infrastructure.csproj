@@ -1,12 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><TargetFramework>net9.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
   <ItemGroup>
-    <!-- Needed for SupplyChainHost's WebApplication/IConfiguration bundled host-setup
-         helpers, which every SupplyChain host (Api, PenTest Graph.Api, PenTest Mcp.Api)
-         now calls instead of repeating the same wiring. -->
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <ProjectReference Include="../Application/Foundgine.SupplyChain.Application.csproj" />
     <ProjectReference Include="../Domain/Foundgine.SupplyChain.Domain.csproj" />

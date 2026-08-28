@@ -168,7 +168,7 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
         {
             var capability = _securityContract.Capabilities.FirstOrDefault(c =>
                 c.TargetEntityId == operation.Entity &&
-                string.Equals(c.Operation, SemanticCapabilityOperations.From(operation.Kind), StringComparison.Ordinal));
+                string.Equals(c.Operation, operation.Kind.ToString().ToLowerInvariant(), StringComparison.Ordinal));
 
             if (capability is null)
                 throw new UnauthorizedAccessException(
@@ -291,7 +291,7 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
         {
             var capability = _securityContract.Capabilities.FirstOrDefault(c =>
                 c.TargetEntityId == operation.Entity &&
-                string.Equals(c.Operation, SemanticCapabilityOperations.From(operation.Kind), StringComparison.Ordinal));
+                string.Equals(c.Operation, operation.Kind.ToString().ToLowerInvariant(), StringComparison.Ordinal));
 
             if (capability is null)
                 throw new InvalidOperationException(
