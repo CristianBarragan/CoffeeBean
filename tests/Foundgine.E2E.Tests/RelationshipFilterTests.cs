@@ -34,9 +34,12 @@ public sealed class RelationshipFilterTests
                     SemanticRelationshipQuantifier.Some,
                     new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.Eq, 100.50m))));
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var plan = new Planner().Plan(authorized);
+        var plan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sql = new SqlCompiler(metadata).Compile(plan);
 
         Assert.Contains("EXISTS", sql.CommandText, StringComparison.OrdinalIgnoreCase);
@@ -68,9 +71,12 @@ public sealed class RelationshipFilterTests
                     SemanticRelationshipQuantifier.None,
                     new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.Eq, 100.50m))));
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var plan = new Planner().Plan(authorized);
+        var plan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sql = new SqlCompiler(metadata).Compile(plan);
 
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -100,3 +106,4 @@ public sealed class RelationshipFilterTests
         await command.ExecuteNonQueryAsync();
     }
 }
+

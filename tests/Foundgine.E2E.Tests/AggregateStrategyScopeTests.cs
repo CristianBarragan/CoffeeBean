@@ -75,13 +75,15 @@ public sealed class AggregateStrategyScopeTests
     }
 
     private static SemanticPlan CreatePlan(SemanticFilterExpression filter) =>
-        new(new SemanticPlanNode(
-            1,
-            ExecutionOperation.Scan,
-            BankingSemanticModel.Customer,
-            [new FieldId(1)],
-            null,
-            null,
-            [],
-            new SemanticQueryOptions(Filter: filter)));
+        new(
+            new SemanticPlanNode(
+                1,
+                ExecutionOperation.Scan,
+                BankingSemanticModel.Customer,
+                [new FieldId(1)],
+                null,
+                null,
+                [],
+                new SemanticQueryOptions(Filter: filter)),
+            AuthorizationBinding: new SemanticPlanAuthorizationBinding("test-contract", "test-authorization"));
 }

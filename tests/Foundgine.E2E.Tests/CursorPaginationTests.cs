@@ -27,7 +27,10 @@ public sealed class CursorPaginationTests
         var firstPlan = new SqlCompiler(metadata).Compile(
             new Planner().Plan(
                 new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(
-                    new SemanticRequestResolver(model).Resolve(first))));
+                    new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(first))) with
+            {
+                AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+            });
 
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -46,7 +49,10 @@ public sealed class CursorPaginationTests
         var secondPlan = new SqlCompiler(metadata).Compile(
             new Planner().Plan(
                 new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(
-                    new SemanticRequestResolver(model).Resolve(second))));
+                    new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(second))) with
+            {
+                AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+            });
 
         var secondResult = await provider.ExecuteAsync(secondPlan, PaginationExecutionContext.Create(2, firstResult.PageInfo.EndCursor));
         var row = Assert.Single(secondResult.Rows);
@@ -62,9 +68,12 @@ public sealed class CursorPaginationTests
         var metadata = BankingRelationalMetadata.Build();
         var request = BuildRequest("not-a-valid-cursor");
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var plan = new Planner().Plan(authorized);
+        var plan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
 
         var ex = Assert.Throws<InvalidOperationException>(() => new SqlCompiler(metadata).Compile(plan));
         Assert.Contains("pagination cursor", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -90,3 +99,4 @@ public sealed class CursorPaginationTests
         await command.ExecuteNonQueryAsync();
     }
 }
+

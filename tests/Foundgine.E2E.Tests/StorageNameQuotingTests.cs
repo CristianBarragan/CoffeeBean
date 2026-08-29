@@ -1,4 +1,4 @@
-using Foundgine.Abstractions;
+﻿using Foundgine.Abstractions;
 using Foundgine.Metadata;
 using Foundgine.Planning;
 using Foundgine.Semantics;
@@ -43,13 +43,19 @@ public sealed class StorageNameQuotingTests
             BankingModel.Customer,
             [new SemanticSelection(new FieldId(1), null, [])]);
 
-        var resolved = new SemanticRequestResolver(BankingModel.Build()).Resolve(request);
+        var resolved = new SemanticRequestResolver(BankingModel.Build().Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(
             new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var plan = new Planner().Plan(authorized);
+        var plan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sql = new SqlCompiler(metadata).Compile(plan).CommandText;
 
         Assert.Contains("FROM \"Banking\".\"Customer\"", sql, StringComparison.Ordinal);
         Assert.DoesNotContain("FROM \"Banking.Customer\"", sql, StringComparison.Ordinal);
     }
 }
+
+
+

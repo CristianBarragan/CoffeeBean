@@ -417,6 +417,48 @@ if its validity period has expired. Semantic execution therefore has to
 consider both <em>what exists</em> and <em>what is valid and accessible</em>.
 </p>
 
+<h2>Scenario 6 — Approximate &amp; provider-backed retrieval</h2>
+
+<p>
+Not every reference a caller supplies is an exact identity. "Suppliers named
+something like Acme Suplies" or "products that mention hydraulic fitting"
+require grounding before the semantic layer can resolve them. Foundgine
+models this as a provider-neutral <code>RetrievalStrategy</code> so the
+semantic model never depends on which search technology answers the
+question:
+</p>
+
+<pre>public enum RetrievalStrategy
+{
+    Relational,
+    FullText,
+    Search,          // relevance-oriented lexical retrieval, e.g. BM25/pg_search
+    Fuzzy,           // e.g. pg_trgm
+    Vector,          // reserved for a future pgvector provider
+    GraphSimilarity  // e.g. Apache AGE
+}</pre>
+
+<p>
+The Supply Chain sample's PostgreSQL provider implements four of these today
+and deliberately reserves the fifth:
+</p>
+
+<ul>
+<li><strong>Fuzzy</strong> — <code>pg_trgm</code> trigram similarity, enabled by default. Grounds a misspelled supplier name such as "Acme Suplies" against the real <code>Supplier.Name</code> column.</li>
+<li><strong>FullText</strong> — native PostgreSQL <code>tsvector</code>/<code>websearch_to_tsquery</code>, enabled by default. Grounds a natural-language product description such as "hydraulic fitting".</li>
+<li><strong>Search</strong> — relevance-oriented lexical retrieval (BM25) via the optional <code>pg_search</code> extension. Off by default; the caller opts in explicitly because the extension is not present on a vanilla PostgreSQL instance.</li>
+<li><strong>GraphSimilarity</strong> — neighbor-similarity retrieval via the optional Apache AGE graph extension, e.g. "suppliers similar to this one" by shared purchase-order neighbors. Off by default for the same reason.</li>
+<li><strong>Vector</strong> — intentionally reserved. Calling it always throws <code>NotSupportedException</code> today; the semantic contract exists so a future <code>pgvector</code> provider can be added without changing any caller-facing code.</li>
+</ul>
+
+<p>
+Every strategy returns the same shape — ranked candidates plus provenance
+evidence — so the resolution boundary, authorization, and planning layers
+never know or care which search technology produced a match. Disabled or
+unopted-in strategies fail closed with a clear <code>NotSupportedException</code>
+rather than silently falling back to a different provider.
+</p>
+
 <h2>Deliberately hostile data</h2>
 
 <ul>
@@ -478,7 +520,10 @@ physical execution.
 <h3>Provider lowering</h3>
 <p>
 Only at the final stage does provider-specific execution enter the system,
-such as PostgreSQL SQL generation.
+such as PostgreSQL SQL generation. Approximate retrieval follows the same
+rule: pg_trgm, full text, pg_search, and Apache AGE are provider details
+behind the <code>RetrievalStrategy</code> boundary described in Scenario 6,
+never a dependency the semantic model carries directly.
 </p>
 
 <h2>In-memory execution</h2>

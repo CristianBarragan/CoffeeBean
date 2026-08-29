@@ -39,9 +39,12 @@ public sealed class CollectionOrderingTests
                     SemanticOrderAggregate.Count)],
                 Limit: 2));
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var plan = new SqlCompiler(metadata).Compile(new Planner().Plan(authorized));
+        var plan = new SqlCompiler(metadata).Compile(new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        });
 
         Assert.Contains("COUNT(*)", plan.CommandText, StringComparison.Ordinal);
         Assert.Contains("ORDER BY", plan.CommandText, StringComparison.Ordinal);
@@ -67,9 +70,12 @@ public sealed class CollectionOrderingTests
                 Limit: 2,
                 After: result.PageInfo.EndCursor));
 
-        var nextResolved = new SemanticRequestResolver(model).Resolve(nextRequest);
+        var nextResolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(nextRequest);
         var nextAuthorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(nextResolved);
-        var nextPlan = new SqlCompiler(metadata).Compile(new Planner().Plan(nextAuthorized));
+        var nextPlan = new SqlCompiler(metadata).Compile(new Planner().Plan(nextAuthorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        });
         var nextResult = await new SqlExecutionProvider(connection).ExecuteAsync(nextPlan, PaginationExecutionContext.Create(2, result.PageInfo.EndCursor));
 
         Assert.Single(nextResult.Rows);
@@ -91,7 +97,7 @@ public sealed class CollectionOrderingTests
                     [CustomerAccounts],
                     SemanticOrderAggregate.Min)]));
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         Assert.NotNull(resolved);
     }
 
@@ -154,3 +160,4 @@ public sealed class CollectionOrderingTests
         await command.ExecuteNonQueryAsync();
     }
 }
+

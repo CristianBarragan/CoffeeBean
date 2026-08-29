@@ -1,5 +1,6 @@
-using Foundgine.Abstractions;
+﻿using Foundgine.Abstractions;
 using Foundgine.Semantics.IR;
+using Foundgine.Semantics.IR.Graph;
 
 namespace Foundgine.Semantics.Authorization;
 
@@ -128,6 +129,72 @@ public sealed class SemanticAuthorizer
     /// semantic-to-planning authorization boundary: physical providers are
     /// deliberately not involved.
     /// </summary>
+    /// <summary>
+    /// Authorizes canonical Semantic IR against the trusted immutable contract.
+    /// The snapshot is validated before policy evaluation so authorization can
+    /// never silently reason about identities that are outside the contract
+    /// used to resolve and plan the operation.
+    /// </summary>
+    /// <summary>
+    /// Authorizes the complete canonical operation graph as one security object.
+    /// Every reachable entity, field and relationship edge is evaluated before
+    /// the graph is returned to planning. The provider is deliberately absent
+    /// from this boundary.
+    /// </summary>
+    public SemanticOperationGraph Authorize(
+        SemanticContractSnapshot contract,
+        SemanticOperationGraph graph)
+    {
+        return AuthorizeGraphWithEvidence(contract, graph).Graph;
+    }
+
+    /// <summary>
+    /// Authorizes the complete operation graph and returns evidence bound to the
+    /// exact semantic contract and resulting authorized operation.
+    /// </summary>
+    public SemanticOperationGraphAuthorizationResult AuthorizeGraphWithEvidence(
+        SemanticContractSnapshot contract,
+        SemanticOperationGraph graph)
+    {
+        ArgumentNullException.ThrowIfNull(contract);
+        ArgumentNullException.ThrowIfNull(graph);
+
+        // Graph validation and contract validation happen before policy evaluation.
+        // Converting back to canonical IR also prevents the graph authorizer from
+        // becoming a second semantic representation with different security rules.
+        var operation = graph.ToOperation();
+        var authorized = AuthorizeWithEvidence(contract, operation);
+        var authorizedGraph = SemanticOperationGraph.Create(authorized.Operation);
+
+        return new SemanticOperationGraphAuthorizationResult(
+            authorizedGraph,
+            authorized.Evidence);
+    }
+
+    public SemanticOperation Authorize(
+        SemanticContractSnapshot contract,
+        SemanticOperation operation)
+    {
+        return AuthorizeWithEvidence(contract, operation).Operation;
+    }
+
+    /// <summary>
+    /// Authorizes an operation and returns immutable evidence bound to the exact
+    /// semantic contract used for the decision.
+    /// </summary>
+    public SemanticAuthorizationResult AuthorizeWithEvidence(
+        SemanticContractSnapshot contract,
+        SemanticOperation operation)
+    {
+        ArgumentNullException.ThrowIfNull(contract);
+        ArgumentNullException.ThrowIfNull(operation);
+
+        SemanticAuthorizationContractValidator.Validate(contract, operation);
+        var authorized = Authorize(operation);
+        var evidence = SemanticAuthorizationEvidence.Create(contract, authorized);
+        return new SemanticAuthorizationResult(authorized, evidence);
+    }
+
     public SemanticOperation Authorize(SemanticOperation operation)
     {
         ArgumentNullException.ThrowIfNull(operation);
@@ -239,4 +306,5 @@ public sealed class SemanticAuthorizer
             ? AuthorizationDecision.Allowed
             : AuthorizationDecision.Conditional(predicate);
 }
+
 

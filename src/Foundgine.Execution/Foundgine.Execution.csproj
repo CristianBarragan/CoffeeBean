@@ -5,6 +5,7 @@
     <PackageTags>execution-plan;authorization;execution-provider;semantic-execution;dotnet</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>Foundgine.Execution</RootNamespace>
+    <TargetFramework>net9.0</TargetFramework>
     <AssemblyName>Foundgine.Execution</AssemblyName>
     <IsPackable>true</IsPackable>
     <PackageReleaseNotes>1.1.0: Additive release with the host-owned security execution-context provider contract. GraphQL secure query execution is provided by Foundgine.GraphQL.HotChocolate.Execution. The Supply Chain reference sample is source-integrated against this release line. 1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0. 0.5.0: Packaging/documentation cleanup only; no execution-boundary runtime capability change. 0.3.0: Provider-independent execution planning, execution receipts, and plan-bound approval became part of the validated release surface.</PackageReleaseNotes>

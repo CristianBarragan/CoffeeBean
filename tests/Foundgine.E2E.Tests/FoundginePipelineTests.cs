@@ -35,7 +35,7 @@ public sealed class FoundginePipelineTests
                     ])
             ]);
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
         var plan = new Planner().Plan(authorized);
 
@@ -58,3 +58,4 @@ public sealed class FoundginePipelineTests
             transaction.Fields);
     }
 }
+

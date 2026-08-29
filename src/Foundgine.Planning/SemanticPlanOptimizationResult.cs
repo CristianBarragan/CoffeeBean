@@ -6,6 +6,7 @@ public sealed record SemanticPlanOptimizationResult(
     IReadOnlyList<string> AppliedRules,
     SecurityPreservationProof SecurityProof,
     SemanticEquivalenceProof SemanticProof,
+    SemanticPlanAuthorizationBindingProof AuthorizationBindingProof,
     IReadOnlyList<PlanRewriteRuleResult>? RuleApplications = null,
     double TotalCostImpact = 0d,
     bool TerminatedNormally = true)

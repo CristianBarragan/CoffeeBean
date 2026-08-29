@@ -28,12 +28,14 @@ public sealed class SemanticPlanOptimizer : IPlanOptimizer
             ? SecurityPreservationProof.Create(plan, composition.Plan)
             : SecurityPreservationProof.Create(plan, composition.Plan);
         var semanticProof = SemanticEquivalenceProof.Create(plan, composition.Plan);
+        var authorizationBindingProof = SemanticPlanAuthorizationBindingProof.Create(plan, composition.Plan);
 
         return new SemanticPlanOptimizationResult(
             composition.Plan,
             composition.AppliedRules,
             securityProof,
             semanticProof,
+            authorizationBindingProof,
             composition.Applications,
             composition.TotalCostImpact,
             composition.TerminatedNormally);
@@ -48,6 +50,8 @@ public sealed class SemanticPlanOptimizer : IPlanOptimizer
         var securityProof = SecurityPreservationProof.Create(before, after);
         var obligationProof = SecurityObligationProof.Create(rule, before, after);
         var semanticProof = SemanticEquivalenceProof.Create(before, after);
+        var authorizationBindingProof = SemanticPlanAuthorizationBindingProof.Create(before, after);
+        var optimizationProof = PlanOptimizationProof.Create(rule, before, after);
         return new PlanRewriteRuleResult(
             rule.Name,
             before,
@@ -57,6 +61,8 @@ public sealed class SemanticPlanOptimizer : IPlanOptimizer
             rule.CostImpact,
             securityProof,
             obligationProof,
-            semanticProof);
+            semanticProof,
+            authorizationBindingProof,
+            optimizationProof);
     }
 }

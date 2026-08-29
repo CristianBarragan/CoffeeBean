@@ -40,9 +40,12 @@ public sealed class FoundgineGraphQlPipelineTests
         var request = new HotChocolateSemanticAdapter(model).Adapt(graphql);
 
         // The core pipeline remains protocol-neutral.
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var executionPlan = new Planner().Plan(authorized);
+        var executionPlan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sqlPlan = new SqlCompiler(metadata).Compile(executionPlan);
 
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -86,3 +89,4 @@ public sealed class FoundgineGraphQlPipelineTests
         await command.ExecuteNonQueryAsync();
     }
 }
+

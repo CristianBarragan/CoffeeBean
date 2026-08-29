@@ -1,6 +1,10 @@
 using Foundgine.Abstractions;
 using Foundgine.Semantics;
 using Foundgine.Semantics.IR;
+using Foundgine.Semantics.Authorization;
+using Foundgine.Semantics.IR.Graph;
+using Foundgine.Planning.Algebra;
+using Foundgine.Semantics.Security.Execution;
 
 namespace Foundgine.Planning;
 
@@ -12,6 +16,36 @@ namespace Foundgine.Planning;
 /// </summary>
 public sealed class Planner : IPlanner
 {
+    public SemanticPlan Plan(SemanticContractSnapshot contract, SemanticOperation operation)
+    {
+        ArgumentNullException.ThrowIfNull(contract);
+        ArgumentNullException.ThrowIfNull(operation);
+        SemanticOperationContractValidator.Validate(operation, contract);
+        return Plan(operation);
+    }
+
+    public SemanticPlan Plan(
+        SemanticContractSnapshot contract,
+        SemanticAuthorizationResult authorization)
+    {
+        ArgumentNullException.ThrowIfNull(contract);
+        ArgumentNullException.ThrowIfNull(authorization);
+        authorization.EnsureMatches(contract);
+        SemanticOperationContractValidator.Validate(authorization.Operation, contract);
+        return Plan(contract, authorization.Operation) with
+        {
+            AuthorizationBinding = SemanticPlanAuthorizationBinding.Create(contract, authorization.Evidence)
+        };
+    }
+
+    public SemanticPlan Plan(SemanticOperationGraph graph)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        SemanticOperationAlgebra.Validate(graph);
+        SemanticOperationGraphSafetyValidator.Validate(graph, new SecurityResourceLimits());
+        return Plan(graph.ToOperation());
+    }
+
     public SemanticPlan Plan(SemanticOperation operation)
     {
         ArgumentNullException.ThrowIfNull(operation);

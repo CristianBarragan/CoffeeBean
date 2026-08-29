@@ -10,23 +10,33 @@ namespace Foundgine.Semantics.Resolution;
 /// </summary>
 public sealed class SemanticRequestResolver
 {
-    private readonly SemanticModel _model;
+    private readonly SemanticContractSnapshot _contract;
 
-    public SemanticRequestResolver(SemanticModel model)
+    public SemanticRequestResolver(SemanticContractSnapshot contract)
     {
-        _model = model ?? throw new ArgumentNullException(nameof(model));
+        _contract = contract ?? throw new ArgumentNullException(nameof(contract));
+    }
+
+    /// <summary>
+    /// Compatibility constructor for low-level callers still holding a model.
+    /// Runtime application wiring should inject the snapshot instead.
+    /// </summary>
+    [Obsolete("Pass SemanticContractSnapshot to the resolver at the runtime boundary.", false)]
+    public SemanticRequestResolver(SemanticModel model)
+        : this((model ?? throw new ArgumentNullException(nameof(model))).Freeze().CreateSnapshot())
+    {
     }
 
     public SemanticGraph Resolve(SemanticRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var root = _model.Get(request.Root);
+        var root = _contract.Get(request.Root);
 
         if (request.Selections.Count == 0)
             throw InvalidSelection("A semantic request must contain at least one selection.");
 
-        SemanticFilterValidator.Validate(request.Options?.Filter, root, _model);
+        SemanticFilterValidator.Validate(request.Options?.Filter, root, _contract);
         var normalizedOptions = NormalizeQueryOptions(request.Options, root);
         SemanticQueryOptionsValidator.Validate(normalizedOptions, root);
         ValidateOrdering(normalizedOptions?.EffectiveOrder ?? [], root, request.Selections);
@@ -34,7 +44,7 @@ public sealed class SemanticRequestResolver
         var graph = new SemanticGraph { Options = normalizedOptions };
 
         ResolveSelections(root, request.Selections, graph, null, null, isRoot: true);
-        SemanticGraphValidator.Validate(graph, _model);
+        SemanticGraphValidator.Validate(graph, _contract);
 
         return graph;
     }
@@ -77,7 +87,7 @@ public sealed class SemanticRequestResolver
         {
             var relationship = entity.Relationships.FirstOrDefault(x => x.Id == relationshipId)
                 ?? throw InvalidSelection($"Order relationship '{relationshipId}' is not defined on '{entity.Name}'.");
-            entity = _model.Get(relationship.Target);
+            entity = _contract.Get(relationship.Target);
         }
 
         // Compatibility bridge: the current public order record retains a
@@ -143,7 +153,7 @@ public sealed class SemanticRequestResolver
 
         foreach (var (relationship, children) in relationships)
         {
-            var target = _model.Get(relationship.Target);
+            var target = _contract.Get(relationship.Target);
 
             if (children.Count == 0)
                 throw InvalidSelection(
@@ -187,7 +197,7 @@ public sealed class SemanticRequestResolver
                     // does not semantically require a target field. Min/Max do.
                     if (term.Aggregate is SemanticOrderAggregate.Min or SemanticOrderAggregate.Max)
                     {
-                        var target = _model.Get(relationship.Target);
+                        var target = _contract.Get(relationship.Target);
                         if (!IsDeclaredField(target, term.Field))
                             throw InvalidSelection($"Aggregate order field '{term.Field}' is not defined on '{target.Name}'.");
                     }
@@ -206,7 +216,7 @@ public sealed class SemanticRequestResolver
                         "The provider will not introduce an implicit join solely for ordering.");
                 }
 
-                entity = _model.Get(relationship.Target);
+                entity = _contract.Get(relationship.Target);
                 currentSelections = FindRelationshipSelections(currentSelections, relationshipId);
             }
 

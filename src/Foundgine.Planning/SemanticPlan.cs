@@ -9,7 +9,8 @@ namespace Foundgine.Planning;
 /// </summary>
 public sealed record SemanticPlan(
     SemanticPlanNode Root,
-    IReadOnlyList<string>? RequiredSecurityInvariants = null)
+    IReadOnlyList<string>? RequiredSecurityInvariants = null,
+    SemanticPlanAuthorizationBinding? AuthorizationBinding = null)
 {
     public IReadOnlyList<string> EffectiveSecurityInvariants =>
         RequiredSecurityInvariants ?? [];

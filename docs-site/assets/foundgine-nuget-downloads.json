@@ -3,34 +3,34 @@
   "label": "NuGet Downloads",
   "message": "24,652",
   "color": "blue",
-  "generatedAt": "2026-08-29T07:09:05.8987863Z",
+  "generatedAt": "2026-08-28T22:25:35.1054564Z",
   "totalDownloads": 24652,
   "packageCount": 27,
   "packages": [
     {
       "id": "Foundgine",
       "downloads": 1362,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.Abstractions",
       "downloads": 2994,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.Agent.OpenAI",
       "downloads": 853,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.AI",
       "downloads": 947,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.Aot",
       "downloads": 1063,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.Authorization",
@@ -45,97 +45,97 @@
     {
       "id": "Foundgine.CoffeeBeanery.ProductComposite",
       "downloads": 676,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.Execution",
       "downloads": 1996,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.GraphQL.HotChocolate",
       "downloads": 1090,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.GraphQL.HotChocolate.Execution",
       "downloads": 195,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.GraphQL.HotChocolate.MutationExecution",
       "downloads": 73,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.GraphQL.HotChocolate.Mutations",
       "downloads": 885,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.HighAssurance.Postgres",
       "downloads": 449,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.InMemory",
       "downloads": 1161,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.Intent.Json",
       "downloads": 1291,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.MCP",
       "downloads": 794,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.Metadata",
       "downloads": 1698,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.Planning",
       "downloads": 2082,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.Security.Authority",
       "downloads": 76,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.Semantics",
       "downloads": 2630,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.Sql",
       "downloads": 958,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.SupplyChain.Application",
       "downloads": 196,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.SupplyChain.Domain",
       "downloads": 226,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.SupplyChain.Infrastructure",
       "downloads": 202,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.SupplyChain.Semantic",
       "downloads": 74,
-      "version": "1.1.5"
+      "version": "1.1.4"
     },
     {
       "id": "Foundgine.SupplyChain.Semantics",

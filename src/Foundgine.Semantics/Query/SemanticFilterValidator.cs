@@ -7,16 +7,25 @@ internal static class SemanticFilterValidator
     public static void Validate(
         SemanticFilterExpression? filter,
         SemanticEntity entity,
+        SemanticContractSnapshot contract)
+    {
+        if (filter is null) return;
+        Visit(filter, entity, contract.Get);
+    }
+
+    public static void Validate(
+        SemanticFilterExpression? filter,
+        SemanticEntity entity,
         SemanticModel model)
     {
         if (filter is null) return;
-        Visit(filter, entity, model);
+        Visit(filter, entity, model.Get);
     }
 
     private static void Visit(
         SemanticFilterExpression expression,
         SemanticEntity entity,
-        SemanticModel model)
+        Func<EntityId, SemanticEntity> getEntity)
     {
         switch (expression)
         {
@@ -36,8 +45,8 @@ internal static class SemanticFilterValidator
                 if (relationship is null)
                     throw Invalid($"Entity '{entity.Name}' does not declare filter relationship '{relationshipFilter.Relationship}'.");
 
-                var target = model.Get(relationship.Target);
-                Visit(relationshipFilter.Predicate, target, model);
+                var target = getEntity(relationship.Target);
+                Visit(relationshipFilter.Predicate, target, getEntity);
                 break;
 
             case SemanticAggregateFilter aggregate:
@@ -47,9 +56,9 @@ internal static class SemanticFilterValidator
                 if (aggregateRelationship.Cardinality != RelationshipCardinality.Many)
                     throw Invalid("Aggregate filters are only valid on collection relationships.");
 
-                var aggregateTarget = model.Get(aggregateRelationship.Target);
+                var aggregateTarget = getEntity(aggregateRelationship.Target);
                 if (aggregate.Predicate is not null)
-                    Visit(aggregate.Predicate, aggregateTarget, model);
+                    Visit(aggregate.Predicate, aggregateTarget, getEntity);
                 if (aggregate.Aggregate == SemanticFilterAggregate.Count)
                 {
                     if (aggregate.Field is not null)
@@ -72,14 +81,14 @@ internal static class SemanticFilterValidator
                 if (andFilter.Expressions.Count == 0)
                     throw Invalid("AND filter cannot be empty.");
                 foreach (var child in andFilter.Expressions)
-                    Visit(child, entity, model);
+                    Visit(child, entity, getEntity);
                 break;
 
             case SemanticOrFilter orFilter:
                 if (orFilter.Expressions.Count == 0)
                     throw Invalid("OR filter cannot be empty.");
                 foreach (var child in orFilter.Expressions)
-                    Visit(child, entity, model);
+                    Visit(child, entity, getEntity);
                 break;
 
             default:

@@ -104,11 +104,11 @@ internal static class MutationJsonAdapter
 
     private static SemanticMutationOperation ParseOperation(JsonElement op, int index)
     {
-        var entity = new EntityId(GetUShort(op, "entity"));
+        var entity = new EntityId(GetULong(op, "entity"));
         var kind = Enum.Parse<SemanticMutationKind>(GetString(op, "kind"), true);
         var fields = new List<SemanticMutationField>();
         if (op.TryGetProperty("fields", out var fieldObject) && fieldObject.ValueKind == JsonValueKind.Object)
-            foreach (var p in fieldObject.EnumerateObject()) fields.Add(new SemanticMutationField(new FieldId(ushort.Parse(p.Name)), JsonElementToValue(p.Value)));
+            foreach (var p in fieldObject.EnumerateObject()) fields.Add(new SemanticMutationField(new FieldId(ulong.Parse(p.Name)), JsonElementToValue(p.Value)));
 
         var returns = ParseIds(op, "returnFields");
         var conflicts = ParseIds(op, "conflictFields");
@@ -132,17 +132,17 @@ internal static class MutationJsonAdapter
         if (json.TryGetProperty("and", out var and)) return new SemanticAndFilter(and.EnumerateArray().Select(ParseFilter).ToArray());
         if (json.TryGetProperty("or", out var or)) return new SemanticOrFilter(or.EnumerateArray().Select(ParseFilter).ToArray());
         return new SemanticFieldFilter(
-            new FieldId(GetUShort(json, "field")),
+            new FieldId(json.GetProperty("field").GetUInt64()),
             Enum.Parse<SemanticFilterOperator>(GetString(json, "operator"), true),
             json.TryGetProperty("value", out var value) ? JsonElementToValue(value) : null);
     }
 
     private static IReadOnlyList<FieldId> ParseIds(JsonElement op, string property) =>
         op.TryGetProperty(property, out var values) && values.ValueKind == JsonValueKind.Array
-            ? values.EnumerateArray().Select(x => new FieldId(x.GetUInt16())).ToArray()
+            ? values.EnumerateArray().Select(x => new FieldId(x.GetUInt64())).ToArray()
             : Array.Empty<FieldId>();
 
-    private static ushort GetUShort(JsonElement obj, string property) => obj.GetProperty(property).GetUInt16();
+    private static ulong GetULong(JsonElement obj, string property) => obj.GetProperty(property).GetUInt64();
     private static string GetString(JsonElement obj, string property) => obj.GetProperty(property).GetString() ?? throw new ArgumentException($"'{property}' is required.");
 
     private static object? JsonElementToValue(JsonElement value) => value.ValueKind switch

@@ -286,10 +286,8 @@ public sealed class SemanticMutationIntentBuilder
 
     private SemanticEntity FindEntity(string name) =>
         _model.Entities.FirstOrDefault(
-            x => string.Equals(
-                x.Name,
-                name,
-                StringComparison.OrdinalIgnoreCase))
+            x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
+                 x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)))
         ?? throw new InvalidOperationException(
             $"Unknown semantic mutation entity '{name}'.");
 
@@ -300,10 +298,8 @@ public sealed class SemanticMutationIntentBuilder
         var entity = _model.Get(entityId);
 
         return entity.Fields.FirstOrDefault(
-                   x => string.Equals(
-                       x.Name,
-                       name,
-                       StringComparison.OrdinalIgnoreCase))
+                   x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
+                        x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)))
                ?? (string.Equals(
                        entity.Identity.Name,
                        name,
@@ -326,10 +322,8 @@ public sealed class SemanticMutationIntentBuilder
         var entity = _model.Get(entityId);
 
         return entity.Relationships.FirstOrDefault(
-                   x => string.Equals(
-                       x.Name,
-                       name,
-                       StringComparison.OrdinalIgnoreCase))
+                   x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
+                        x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)))
                ?? throw new InvalidOperationException(
                    $"Unknown semantic mutation relationship '{entity.Name}.{name}'.");
     }
