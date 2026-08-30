@@ -1,74 +1,175 @@
-# Current status — Foundgine 1.1.0
+# Current status — Foundgine 1.1.7
 
-Foundgine 1.1.0 is the current release. It is an additive 1.x release. The GraphQL query executor and shared security execution-context provider are now part of the source tree. The Supply Chain getting-started sample is source-integrated against `src/`. See [RELEASE-1.1.0.md](RELEASE-1.1.0.md) for the release surface and verification status.
+The repository is on the 1.1.7 release line and targets .NET 9.
 
-## Proven by the active tests
+This page is intentionally short: it describes the current architectural state rather than preserving historical release notes.
 
-- semantic entities, fields, relationships, and IDs;
-- request resolution;
-- read and write authorization;
-- authorization rules carried into execution;
-- provider-independent query planning;
-- provider-independent mutation planning;
-- SQL compilation;
-- SQLite execution;
-- a small InMemory provider;
-- AOT metadata generation;
-- JSON input;
-- GraphQL input and mutations;
-- nested relationships;
-- filters and aggregates;
-- cursor pagination;
-- execution evidence;
-- PostgreSQL integration contracts;
-- real PostgreSQL E2E tests when PostgreSQL 17 is available.
+## Implemented architecture
 
-## Main rule
-
-The semantic core does not depend on GraphQL or SQL.
+The active source tree contains the following layers:
 
 ```text
-Input
- ↓
-Semantics
- ↓
-Authorization
- ↓
-Plan
- ↓
-Provider
- ↓
-Result
+Foundgine.Abstractions
+        ↓
+Foundgine.Semantics
+        ↓
+Foundgine.Planning
+        ↓
+Foundgine.Execution
+        ↓
+Providers
+  ├── Foundgine.Sql
+  └── Foundgine.InMemory
 ```
 
-## PostgreSQL status
-
-PostgreSQL 17 is part of the PR test path.
-
-The local PostgreSQL tests require:
+Around that core are:
 
 ```text
-FOUNDGINE_POSTGRES_CONNECTION_STRING
+Metadata
+AOT / source generation
+JSON
+GraphQL
+MCP
+AI
+Security.Authority
 ```
 
-The CI job starts its own PostgreSQL 17 container, so the database tests are real PR checks.
+## Current semantic capabilities
+
+The semantic layer currently covers:
+
+- semantic entities, fields, identities, relationships and aliases;
+- typed and dynamic read intent;
+- filters and logical filter composition;
+- relationship filters and quantifiers;
+- ordering and relationship-path ordering;
+- limit/offset/cursor controls;
+- semantic type/value validation;
+- logical traversals;
+- immutable semantic contract snapshots;
+- semantic capability descriptions;
+- entity/field/relationship authorization;
+- read/write authorization;
+- conditional authorization predicates;
+- semantic mutation graphs;
+- generated-value mutation dependencies;
+- security execution context and warrant-related contracts.
+
+## Current planning capabilities
+
+The planner currently provides:
+
+- provider-independent read plans;
+- separate mutation planning;
+- authorization-preserving plan state;
+- execution IR lowering;
+- deterministic plan/fingerprint concepts;
+- conservative rewrite rules;
+- authorization canonicalization;
+- predicate pushdown;
+- safe projection pruning;
+- relationship traversal/join ordering metadata;
+- aggregate-related rewrites and safety gates;
+- provider-aware advisory cost estimation.
+
+## Current execution capabilities
+
+`Foundgine.Execution` provides:
+
+- provider compilation/execution contracts;
+- execution IR;
+- result materialization;
+- execution evidence/receipts;
+- provider security conformance;
+- security-invariant execution gates;
+- optional execution-time authorization revalidation;
+- provider plan caching;
+- mutation dependency/execution coordination.
+
+## Current providers
+
+### SQL
+
+`Foundgine.Sql` provides the primary SQL implementation and PostgreSQL-specific functionality, including:
+
+- parameterized SQL compilation;
+- SQL execution through ADO.NET;
+- PostgreSQL retrieval candidate sources;
+- PostgreSQL full-text/fuzzy/search integration;
+- SQL security conformance;
+- SQL mutation compilation;
+- PostgreSQL batched mutation compilation/execution;
+- provider cost estimation.
+
+### InMemory
+
+`Foundgine.InMemory` is a deliberately limited provider used to validate provider independence and support deterministic tests/examples.
+
+## Current adapters
+
+### GraphQL
+
+Hot Chocolate adapters translate GraphQL into Foundgine semantic operations. Dedicated execution packages establish the secure host-owned execution boundary.
+
+### JSON
+
+`Foundgine.Intent.Json` parses structured read intent with explicit complexity limits.
+
+### MCP
+
+`Foundgine.MCP` exposes capability discovery, read intent, and optional mutation dry-run/approval/execution tools through MCP.
+
+### AI
+
+`Foundgine.AI` integrates with `Microsoft.Extensions.AI` and exposes Foundgine operations as model tools while keeping authority host-owned.
+
+## AOT
+
+`Foundgine.Aot` and `Foundgine.Aot.Generator` provide compile-time declarations, validation, deterministic metadata generation, and generated semantic helpers.
+
+## Security architecture
+
+The security model is based on these invariants:
+
+```text
+untrusted intent
+      ↓
+semantic resolution
+      ↓
+authorization
+      ↓
+security-preserving plan
+      ↓
+provider conformance
+      ↓
+execution
+```
+
+Capability discovery is advisory.
+
+Authentication and identity lifecycle remain application/host responsibilities.
+
+`Foundgine.Security.Authority` is optional and outside the core.
 
 ## What is not claimed
 
-The repository does not claim:
+Foundgine does not claim to be:
 
-- universal database support;
-- universal performance superiority;
-- autonomous agent execution;
-- workflow orchestration;
-- rollback or compensation semantics.
+- a complete autonomous agent platform;
+- a universal provider implementation;
+- a replacement for ORMs for ordinary persistence;
+- an authorization server;
+- a workflow/orchestration engine.
 
-Those claims require separate implementation and evidence.
+Those are intentionally outside the core boundary.
 
 ## Source of truth
 
-Use this order when information conflicts:
+For implementation behavior use:
 
-1. current source code;
+1. active source code;
 2. active tests;
-3. current documentation.
+3. package READMEs under `src/`;
+4. this documentation.
+
+Historical release notes and benchmark snapshots have been removed from the active documentation set to avoid presenting old behavior as current.

@@ -1,107 +1,145 @@
 # Testing
 
-Tests are the main proof of the current design.
+Foundgine uses tests to protect architectural boundaries as well as individual APIs.
 
 ## Run everything
 
 ```bash
-dotnet test Foundgine.sln --configuration Release
+dotnet test
 ```
 
-This is the normal test run. It does not require PostgreSQL.
-
-## Test projects
-
-| Test project | What it checks |
-|---|---|
-| `Foundgine.Semantics.Tests` | Model, requests, resolution, authorization |
-| `Foundgine.Planning.Tests` | Provider-independent plans |
-| `Foundgine.InMemory.Tests` | Non-SQL provider |
-| `Foundgine.Intent.Json.Tests` | JSON input and input limits |
-| `Foundgine.GraphQL.HotChocolate.Tests` | GraphQL input and schema |
-| `Foundgine.Aot.Tests` | Generated metadata |
-| `Foundgine.E2E.Tests` | Full paths across layers |
-
-## Useful commands
-
-Semantic tests:
+Build first when diagnosing compilation failures:
 
 ```bash
-dotnet test tests/Foundgine.Semantics.Tests/Foundgine.Semantics.Tests.csproj
+dotnet build
+dotnet test
 ```
 
-Planning tests:
+## Test layers
 
-```bash
-dotnet test tests/Foundgine.Planning.Tests/Foundgine.Planning.Tests.csproj
-```
-
-InMemory tests:
-
-```bash
-dotnet test tests/Foundgine.InMemory.Tests/Foundgine.InMemory.Tests.csproj
-```
-
-JSON tests:
-
-```bash
-dotnet test tests/Foundgine.Intent.Json.Tests/Foundgine.Intent.Json.Tests.csproj
-```
-
-GraphQL tests:
-
-```bash
-dotnet test tests/Foundgine.GraphQL.HotChocolate.Tests/Foundgine.GraphQL.HotChocolate.Tests.csproj
-```
-
-AOT tests:
-
-```bash
-dotnet test tests/Foundgine.Aot.Tests/Foundgine.Aot.Tests.csproj
-```
-
-E2E:
-
-```bash
-dotnet test tests/Foundgine.E2E.Tests/Foundgine.E2E.Tests.csproj
-```
-
-PostgreSQL:
-
-```bash
-bash ./scripts/run-postgres-e2e.sh
-```
-
-PowerShell:
-
-```powershell
-.\scripts\run-postgres-e2e.ps1
-```
-
-## Test rule
-
-Test the smallest layer that owns the rule.
-
-Then add an E2E test when the rule crosses layers.
-
-Example:
+The repository contains tests for the major packages, including:
 
 ```text
-New semantic rule
- → semantic unit test
-
-New SQL translation
- → SQL/provider test
-
-New full behavior
- → E2E test
-
-New PostgreSQL behavior
- → real PostgreSQL E2E test
+Abstractions
+AOT / generator
+Semantics
+Metadata
+Planning
+Execution
+SQL
+InMemory
+GraphQL
+MCP
+AI
+Security.Authority
+E2E
 ```
 
-Do not weaken a test just to make an implementation pass.
+Exact test project names are visible under `tests/`.
 
-If the contract is right, fix the implementation.
+## What the tests should prove
 
-If the contract is wrong, change the contract and its tests together.
+### Semantics
+
+Test:
+
+- entity/field/relationship resolution;
+- invalid references;
+- type/value validation;
+- pagination validation;
+- logical traversal expansion;
+- immutable snapshots;
+- authorization decisions;
+- conditional predicates;
+- mutation semantic graphs.
+
+### Planning
+
+Test:
+
+- plan topology;
+- provider independence;
+- authorization preservation;
+- rewrite equivalence;
+- aggregate legality;
+- deterministic fingerprints;
+- provider-cost selection.
+
+### Execution
+
+Test:
+
+- provider boundary;
+- execution IR;
+- security invariant gates;
+- result materialization;
+- evidence;
+- plan caching;
+- mutation dependency execution.
+
+### Providers
+
+Test that a provider:
+
+- compiles the logical plan correctly;
+- preserves authorization;
+- satisfies required security invariants;
+- handles pagination;
+- materializes the expected result.
+
+## Security tests
+
+Security tests should assume transports are hostile.
+
+Important cases include:
+
+```text
+caller requests denied field
+caller traverses denied relationship
+caller tries to cross tenant boundary
+caller supplies forged authority context
+provider drops authorization predicate
+cached plan loses runtime context
+mutation executes without required approval/security proof
+```
+
+The expected result is rejection, not widened access.
+
+## PostgreSQL tests
+
+PostgreSQL integration tests are separate from the database-free suite.
+
+See [POSTGRES-E2E.md](POSTGRES-E2E.md).
+
+## Deterministic testing
+
+Prefer tests that assert semantic/plan contracts rather than exact SQL formatting when the SQL text is not the behavior under test.
+
+For provider tests, exact SQL assertions are appropriate where SQL generation itself is the subject.
+
+## Test the boundary, not implementation trivia
+
+A strong Foundgine test generally follows:
+
+```text
+intent
+ → resolve
+ → authorize
+ → plan
+ → provider
+ → result
+```
+
+This is more valuable than testing an internal helper in isolation when the helper's only purpose is to support the pipeline.
+
+## Regression discipline
+
+When fixing a bug:
+
+1. add a focused failing test;
+2. fix the owning layer;
+3. run the affected package tests;
+4. run the full suite;
+5. run PostgreSQL E2E when the change crosses the SQL/provider boundary.
+
+Do not fix a semantic bug inside a transport adapter merely because that is where the failure was first observed.

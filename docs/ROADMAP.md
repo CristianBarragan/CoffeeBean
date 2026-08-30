@@ -1,131 +1,125 @@
 # Roadmap
 
-Foundgine 1.1.0 is the current release. The roadmap below is design-rationale context plus forward-looking work; the shipped 1.1.0 release surface is documented in [RELEASE-1.1.0.md](RELEASE-1.1.0.md). The sections below are kept for design-rationale context; the "Near term" and "Later" sections at the end are the actual open/forward-looking items.
+The roadmap is intentionally small. Foundgine's core boundaries are already established; future work should deepen those boundaries rather than turning the project into a collection of unrelated features.
 
-## Semantic authorization and capability discovery (implemented)
+## Current foundation
 
-Granular authorization as part of semantic execution:
+The following are already implemented and should be treated as the baseline:
 
-- entity read/write access;
-- field read/write access;
-- relationship read/write access;
-- provider-independent conditional predicates;
-- capability discovery for callers such as AI agents;
-- mutation write authorization;
-- authorization predicates preserved into the execution plan.
-
-This deliberately does **not** introduce identity management, claims parsing,
-role administration, OAuth/JWT handling, policy storage, or an authorization
-server. Those concerns can sit above the semantic policy contract later.
-
-The key invariant is:
-
-```text
-Caller capability context
-        ↓
-Authorization policy
-        ↓
-Semantic graph
-        ↓
-Authorization predicates
-        ↓
-Execution plan
-        ↓
-Provider execution
-```
-
-Capability discovery is advisory context only. Execution always evaluates the
-configured policy again.
-
-## Authorization-aware plan caching (implemented)
-
-A narrow, safe cache boundary for compiled provider plans:
-
-- semantic resolution still runs on every request;
-- authorization still runs on every request;
-- only the provider compilation step is cached;
-- authorization predicates remain in the cached provider plan;
-- runtime execution context is resolved by the provider on every execution;
-- exact request values are part of the current cache fingerprint.
-
-This deliberately establishes correctness before introducing parameterized plan
-templates or distributed caching.
-
-## Execution IR (implemented)
-
-The canonical `ExecutionIR` boundary has been introduced. Both the SQL and InMemory providers now consume it directly.
-
-## Agent-safe execution contract (implemented)
-
-The agent execution surface is defined as a single semantic lifecycle:
-
-```text
-Capability contract
-        ↓
-Intent
-        ↓
-Authorization
-        ↓
-Semantic plan
-        ↓
-Dry run
-        ↓
-Plan-bound approval
-        ↓
-Exact-plan execution
-        ↓
-Execution receipt
-```
-
-This includes semantic capability actions, dry-run inspection, plan-bound
-approval, execution receipts, semantic version binding, and an MCP adapter that
-translates MCP requests into the existing Foundgine semantic boundary.
-
-MCP is a transport adapter, not an execution architecture.
-
-## Policy-aware plan optimization (implemented)
-
-The first conservative policy-aware optimization pass, implemented as `AuthorizationCanonicalizationRule` in `src/Foundgine.Planning`:
-
-- deterministic authorization predicate normalization;
-- duplicate predicate elimination;
-- commutative `AND`/`OR` canonicalization;
-- double-negation elimination;
-- deterministic plan fingerprints after normalization;
-- improved compiled-plan cache reuse for semantically equivalent policies.
-
-The optimizer must never grant authorization, evaluate context, or remove a
-predicate merely because a transport or provider claims it is safe.
-
-Future predicate placement and pushdown require explicit semantic proofs around
-relationship cardinality, null behavior, aggregation, ordering, and pagination.
-
-## Plan-rewrite optimizer suite (implemented)
-
-Provider-neutral rewrite cost and benefit estimation, deterministic rewrite-rule selection, and the concrete optimization rules below are all implemented in `src/Foundgine.Planning`. Every accepted rewrite preserves ordering, termination, semantic equivalence, and security proofs.
-
-- **Predicate pushdown** — implemented.
-- **Projection pruning** — a conservative rule that removes redundant duplicate fields without changing requested field order. Fields required by filters and ordering are tracked explicitly. The current semantic model intentionally does not remove unique requested fields, because output and working projections are not yet represented separately — that stronger dead-field optimization is reserved for future work.
-- **Relationship traversal / join ordering** — conservative cardinality- and selectivity-aware traversal ordering metadata for sibling relationship plans. Logical child order remains unchanged; providers may use `TraversalOrder` for physical planning subject to semantic and security conformance.
-- **Aggregate pushdown + relationship filter interaction** — merges eligible COUNT-existence predicates with matching relationship `SOME` filters while preserving semantic and security proofs. Shipped as `AggregateRelationshipFilterPushdownRule`.
-- **Null / empty / cardinality semantics** — centralizes the empty-collection, NULL-input, and duplicate-sensitivity contract for COUNT/MIN/MAX in `SemanticAggregateSemanticsCatalog`, with an `AggregateRewriteLegality` gate that rejects aggregate substitutions violating that contract (e.g. COUNT ↔ MIN). A semantic safety gate, not a rewrite rule itself — it is the foundation the aggregate rewrite safety gate below builds on.
-- **Aggregate rewrite safety (proof gate)** — `AggregateRewriteProof`, the composite fail-closed gate combining semantic equivalence, the null/empty/duplicate/cardinality legality checks, provider capability, and `AuthorizationPreservationProof` security-regression checks. `AggregateExistenceCollapseRule` (COUNT-existence predicates collapsing into relationship quantifiers) is the concrete rewrite rule gated by this proof.
+- semantic model and open intent;
+- semantic resolution/validation/normalization;
+- granular semantic authorization;
+- conditional authorization predicates;
+- immutable semantic contract snapshots;
+- provider-independent planning;
+- execution IR;
+- security-preserving plan rewrites;
+- provider security conformance;
+- SQL and InMemory providers;
+- JSON, GraphQL, MCP and AI adapters;
+- AOT metadata generation;
+- mutation planning/execution boundaries;
+- execution evidence;
+- optional authority/recovery package outside the core.
 
 ## Near term
 
-- simplify public APIs where the current contracts are more complex than necessary;
-- improve provider composition and real-world examples;
-- measure end-to-end performance;
-- keep GraphQL and JSON adapters thin;
-- document only capabilities that are implemented and tested.
+### 1. Simplify the public API
 
-## Later
+Reduce unnecessary ceremony in advanced APIs while preserving the architectural boundaries.
 
-Potential work includes more providers, richer semantic actions, claims/roles
-integration above the policy contract, and stronger AI/agent integration.
+The goal is:
 
-These are ideas, not current core capabilities.
+```text
+simple common path
+        +
+explicit advanced path
+```
 
-## Documentation rule
+rather than exposing every internal proof/IR type to ordinary application developers.
 
-The active source and tests are the source of truth. Public documentation must distinguish implemented/demonstrated capabilities from planned work and historical material.
+### 2. Strengthen provider composition
+
+Make it easier to implement and compose providers without leaking provider details into semantics/planning.
+
+A new provider should primarily need:
+
+```text
+logical plan / ExecutionIR
+        ↓
+provider compiler
+        ↓
+provider execution
+```
+
+with explicit security conformance.
+
+### 3. Improve real-world reference applications
+
+Continue using the SupplyChain samples as architecture tests.
+
+The reference applications should show:
+
+- structural metadata;
+- application semantic enrichment;
+- authorization;
+- typed/dynamic intent;
+- MCP/GraphQL boundaries;
+- mutations;
+- PostgreSQL execution.
+
+### 4. Measure before optimizing
+
+Performance work should be driven by repeatable measurements from the actual provider.
+
+The planner should not accumulate speculative physical optimizations.
+
+### 5. Keep adapters thin
+
+GraphQL, JSON, MCP, and AI should continue converging on the same semantic/execution contracts instead of developing transport-specific semantics.
+
+## Medium term
+
+Potential areas include:
+
+- additional production providers;
+- richer semantic expressions where demonstrated use cases require them;
+- stronger semantic equivalence/property testing;
+- improved operation canonicalization;
+- more precise working-vs-output projection semantics;
+- broader provider-aware planning evidence;
+- stronger mutation ergonomics.
+
+These should be introduced only when they solve a demonstrated application problem.
+
+## Long term / optional
+
+Possible extensions include:
+
+- integrations with external identity/claims systems above the semantic policy boundary;
+- more agent-framework adapters;
+- additional durable authority/recovery integrations;
+- richer event/action semantics.
+
+These are optional extensions, not requirements for the core.
+
+## Explicit non-goals
+
+The roadmap does not aim to turn Foundgine into:
+
+- an ORM;
+- a GraphQL server;
+- an LLM platform;
+- an authorization server;
+- a workflow engine;
+- a general-purpose distributed database.
+
+## Roadmap rule
+
+Every new feature should answer three questions:
+
+1. **Which architectural boundary owns it?**
+2. **Can it be implemented without leaking provider/transport details upward?**
+3. **What correctness/security test proves it?**
+
+If those questions cannot be answered clearly, the feature should not be added yet.

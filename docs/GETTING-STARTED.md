@@ -1,149 +1,191 @@
 # Getting started
 
-Foundgine is easiest to understand by following one request through the layers.
+Foundgine targets .NET 9.
+
+The quickest way to understand it is to run the repository's SupplyChain sample and then inspect the same pipeline in the `src/` packages.
 
 ## Requirements
 
 - .NET 9 SDK
-- Docker Engine and Docker Compose for PostgreSQL tests
 - Git
-- Windows, Linux, or macOS
-
-Check:
-
-```bash
-dotnet --version
-docker version
-docker compose version
-```
+- Docker Desktop (required for PostgreSQL-backed integration/sample execution)
 
 ## Build
 
 From the repository root:
 
 ```bash
-dotnet restore Foundgine.sln
-dotnet build Foundgine.sln --configuration Release
+dotnet restore
+dotnet build
 ```
 
-## Run the normal tests
+The repository enables nullable reference types and treats warnings as errors.
+
+## Run the unit tests
 
 ```bash
-dotnet test Foundgine.sln --configuration Release
+dotnet test
 ```
 
-This does not require PostgreSQL.
+The normal unit suite is designed to run without a database.
 
-## Follow one request
+For PostgreSQL integration tests, see [POSTGRES-E2E.md](POSTGRES-E2E.md).
 
-Start with:
+## First application
 
-```text
-tests/Foundgine.E2E.Tests
+At minimum an application needs:
+
+1. a semantic model;
+2. an authorization policy;
+3. a provider plan compiler;
+4. an execution provider.
+
+The normal composition is:
+
+```csharp
+services.AddFoundgine(options =>
+{
+    options.Model = model;
+    options.AuthorizationPolicy = policy;
+});
 ```
 
-The main path is:
+Provider registration is separate.
 
-```text
-Input
-  ↓
-Semantic request
-  ↓
-Resolution
-  ↓
-Authorization
-  ↓
-Plan
-  ↓
-Provider
-  ↓
-Result
-```
+For PostgreSQL, add the SQL provider and register its compiler/execution services according to the application/provider composition.
 
-## Run PostgreSQL 17
+## A simple query
 
-Start the test database:
-
-```bash
-docker compose -f docker-compose.postgres.yml up -d
-```
-
-Check it:
-
-```bash
-docker compose -f docker-compose.postgres.yml ps
-```
-
-PowerShell:
-
-```powershell
-$env:FOUNDGINE_POSTGRES_CONNECTION_STRING="Host=localhost;Port=55432;Database=foundgine_e2e;Username=foundgine;Password=foundgine"
-```
-
-Bash:
-
-```bash
-export FOUNDGINE_POSTGRES_CONNECTION_STRING='Host=localhost;Port=55432;Database=foundgine_e2e;Username=foundgine;Password=foundgine'
-```
-
-Run:
-
-```bash
-dotnet test tests/Foundgine.E2E.Tests/Foundgine.E2E.Tests.csproj \
-  --configuration Release \
-  --filter "FullyQualifiedName~Postgres"
-```
-
-Or use the helper script:
-
-```bash
-bash ./scripts/run-postgres-e2e.sh
-```
-
-PowerShell:
-
-```powershell
-.\scripts\run-postgres-e2e.ps1
-```
-
-Stop PostgreSQL:
-
-```bash
-docker compose -f docker-compose.postgres.yml down --volumes --remove-orphans
-```
-
-## Where to read next
-
-1. [Architecture](ARCHITECTURE.md)
-2. [Testing](TESTING.md)
-3. [PostgreSQL E2E](POSTGRES-E2E.md)
-4. [Current status](CURRENT-STATUS.md)
-
-
-## Open intent authoring
-
-The application-facing API does not require a query interface for every operation. Use the typed surface when CLR types are available:
+Typed:
 
 ```csharp
 var result = await foundgine
     .Query<Customer>()
     .Select(c => new { c.Id, c.Name })
-    .Include(c => c.Orders, orders => orders
-        .Select(o => new { o.Id, o.OrderDate }))
     .Where(c => c.TenantId == tenantId)
+    .Take(50)
     .ExecuteAsync();
 ```
 
-Agents and other dynamic producers can use the same open semantic surface:
+Dynamic:
 
 ```csharp
 var result = await foundgine
     .Query("Customer")
     .Select("Id", "Name")
-    .Include("Orders", orders => orders
-        .Select("Id", "OrderDate"))
     .Where("TenantId", SemanticFilterOperator.Eq, tenantId)
+    .Take(50)
     .ExecuteAsync();
 ```
 
-Both forms become the same provider-neutral `ReadIntent` and go through the existing semantic validation, authorization, planning and execution pipeline. Dynamic names are resolved against the semantic model before provider execution.
+Both produce the same provider-neutral semantic intent.
+
+## Structural metadata
+
+If the application already has metadata:
+
+```csharp
+services.AddFoundgine(options =>
+{
+    options
+        .UseMetadata(metadata)
+        .ConfigureSemantics(model =>
+        {
+            model.Traversal(
+                "Customer",
+                "transactions",
+                "customerRelationships",
+                "contract",
+                "transactions");
+        })
+        .ConfigureAuthorization(auth =>
+        {
+            // application policy
+        });
+});
+```
+
+Metadata supplies structural facts. Semantic configuration supplies application meaning.
+
+## AOT
+
+For compile-time metadata, use `Foundgine.Aot` declarations with the `Foundgine.Aot.Generator`.
+
+```text
+attributes
+   ↓
+source generator
+   ↓
+generated metadata
+   ↓
+metadata/semantic model
+```
+
+See [AOT.md](AOT.md).
+
+## JSON intent
+
+For structured callers:
+
+```csharp
+var adapter = new JsonReadIntentAdapter();
+var intent = adapter.Parse(json);
+
+var result = await foundgine.ExecuteAsync(intent);
+```
+
+Configure `JsonReadIntentAdapterOptions` for public endpoints.
+
+## GraphQL
+
+Use `Foundgine.GraphQL.HotChocolate` to translate GraphQL.
+
+For secure query execution use:
+
+`Foundgine.GraphQL.HotChocolate.Execution`.
+
+For mutations use:
+
+- `Foundgine.GraphQL.HotChocolate.Mutations`;
+- `Foundgine.GraphQL.HotChocolate.MutationExecution`.
+
+The host owns authentication/security context.
+
+## MCP
+
+`Foundgine.MCP` exposes semantic capabilities and intent through MCP.
+
+The host should provide an `ISecurityExecutionContextProvider` backed by authenticated request/session state.
+
+Do not allow MCP arguments to choose tenant, identity, warrant, or provider credentials.
+
+## AI
+
+`Foundgine.AI` integrates with `Microsoft.Extensions.AI`.
+
+The model can call semantic tools:
+
+```text
+LLM
+ ↓
+Foundgine.AI
+ ↓
+Foundgine
+ ↓
+authorization + planning
+ ↓
+provider
+```
+
+The model is an untrusted producer of intent.
+
+## What to read next
+
+- [Why Foundgine](WHY-FOUNDGINE.md)
+- [Architecture](ARCHITECTURE.md)
+- [Open Intent API](OPEN-INTENT-API.md)
+- [Authorization](AUTHORIZATION.md)
+- [Security](SECURITY.md)
+- [PostgreSQL E2E](POSTGRES-E2E.md)
+
+For package-specific details, see the `README.md` in each `src/Foundgine.*` project.

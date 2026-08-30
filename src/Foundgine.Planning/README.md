@@ -1,16 +1,36 @@
 # Foundgine.Planning
 
-`Foundgine.Planning` converts an authorized semantic graph into a provider-independent execution plan.
+`Foundgine.Planning` converts an authorized semantic operation into a provider-independent execution plan.
 
-## Execution algebra
+The planner is deliberately **logical**. It describes what must be executed without embedding SQL, database tables, SQL aliases, provider parameters, or transport-specific objects.
 
-Foundgine deliberately keeps the logical execution algebra small.
-
-A read plan is a tree of **execution nodes**:
+## Planning pipeline
 
 ```text
-ExecutionPlan
-└── ExecutionPlanNode
+Semantic request
+      ↓
+Resolved semantic operation
+      ↓
+Authorization
+      ↓
+Semantic plan
+      ↓
+Security-preserving rewrites
+      ↓
+Execution IR
+      ↓
+Provider compiler
+```
+
+The planner is therefore the boundary between application meaning and physical execution.
+
+## Read execution algebra
+
+The core read representation is a tree of semantic plan nodes:
+
+```text
+SemanticPlan
+└── SemanticPlanNode
     ├── Operation
     ├── Entity
     ├── Projection
@@ -20,194 +40,247 @@ ExecutionPlan
     └── Children
 ```
 
-The current node operations are:
+The current logical operations are intentionally small:
 
 | Operation | Meaning |
 |---|---|
 | `Scan` | Read the root semantic entity set |
-| `Traverse` | Read a child entity through a resolved relationship |
-| `TraverseConnection` | Read a child entity through a pre-resolved semantic connection |
+| `Traverse` | Visit a child through a resolved relationship |
+| `TraverseConnection` | Visit a child through a resolved semantic connection |
 
-These operations describe **logical topology**, not SQL.
+These are topology operations, not physical database operations.
 
-### Clauses
+## Clauses are not operations
 
-The current execution model carries `SemanticQueryOptions` on the **root execution node**. A node may also carry:
+Filtering, ordering, pagination, and cursor controls are semantic constraints.
 
-- filter
-- order
-- limit
-- offset
-- cursor
-
-These clauses are deliberately separate from `ExecutionOperation`. They describe constraints on a logical read rather than physical operations.
-
-### Authorization
-
-Authorization is attached to the execution node and therefore survives planning:
-
-```text
-Semantic intent
-    ↓
-Authorization
-    ↓
-ExecutionPlanNode.Authorization
-    ↓
-Provider compilation
-```
-
-A provider must preserve the authorization semantics when lowering the plan.
-
-### Provider independence
-
-The execution plan must not contain:
-
-- SQL
-- table names
-- column names
-- SQL aliases
-- GraphQL AST nodes
-- provider-specific operations
-- provider-specific parameter objects
-
-Providers lower the logical plan into their own physical representation.
-
-```text
-                 Logical execution algebra
-                           │
-                ┌──────────┼──────────┐
-                ▼          ▼          ▼
-               SQL      InMemory    Future
-             provider   provider   providers
-```
-
-## Why the algebra is intentionally small
-
-Foundgine is not trying to reproduce a database execution engine in the core.
-
-The core answers:
-
-> **What semantic operation is being requested, over which entities, through which semantic edges, with which constraints and authorization?**
-
-The provider answers:
-
-> **How should that operation be physically executed here?**
-
-This boundary is intentional.
-
-## What does not belong in `ExecutionOperation`
-
-Do not add an enum member for every query feature.
-
-For example, these are clauses, not node operations:
-
-```text
-Filter
-Order
-Limit
-Offset
-Cursor
-```
-
-Likewise, SQL-specific concepts such as:
+They should not become physical operation enum members such as:
 
 ```text
 IndexSeek
 HashJoin
 NestedLoop
 Sort
-Parameter
 ```
 
-must never become core execution operations.
+Those decisions belong to providers.
 
-Those belong to provider lowering.
+## Planner invariants
 
-## Mutations
+A valid plan maintains structural invariants including:
 
-Mutations use a separate planning algebra under `Foundgine.Planning.Mutation`.
+1. exactly one root;
+2. non-root nodes have a parent/navigation relationship;
+3. root nodes do not have a parent navigation edge;
+4. parent references point to existing nodes;
+5. the graph is acyclic and reachable;
+6. relationship/connection topology is coherent;
+7. provider-specific data is absent;
+8. authorization is preserved;
+9. query clauses remain semantic;
+10. physical execution strategy is left to the provider.
 
-Do not mix CRUD operations into the read `ExecutionOperation` enum.
+These invariants are more important than adding more planner operations.
 
-The mutation algebra has its own concepts:
+## `Planner`
+
+The `Planner` can plan semantic contracts/operations and semantic operation graphs.
+
+The result is a `SemanticPlan` that can be inspected, fingerprinted, optimized, and compiled by a provider.
+
+## Optimization
+
+Foundgine's optimizer is conservative.
+
+A rewrite is not accepted merely because it looks faster. It must preserve semantic meaning and security.
+
+The planning layer includes rules such as:
+
+- `AuthorizationCanonicalizationRule`;
+- `PredicatePushdownRule`;
+- `ProjectionPruningRule`;
+- `RelationshipTraversalOptimizationRule`;
+- `RelationshipJoinOrderingRule`;
+- `AggregateRelationshipFilterPushdownRule`;
+- `AggregateExistenceCollapseRule`;
+- `AggregateCardinalityOptimizationRule`.
+
+Rules can expose preconditions, cost/benefit information, idempotence, priorities, and security obligations.
+
+## Rewrite proof model
+
+The optimizer uses explicit proof records around accepted rewrites.
+
+Conceptually:
 
 ```text
-MutationPlan
-└── MutationOperation
-    ├── Create
-    ├── Update
-    ├── Delete
-    └── Upsert
+Before
+  ↓
+candidate rewrite
+  ↓
+semantic equivalence proof
+  +
+authorization preservation proof
+  +
+aggregate/cardinality/null legality where required
+  +
+provider capability where required
+  ↓
+After
 ```
 
-Dependencies between mutation operations are represented explicitly rather than encoded as read-plan traversal.
+A rewrite that cannot prove its obligations should be rejected.
 
-## Result contract
+## Authorization canonicalization
 
-The logical execution plan describes **what is requested**, not the final materialization format.
+Authorization predicates can be normalized deterministically.
 
-A provider may execute rows internally, but the execution layer owns the semantic result contract.
+The goal is to make semantically equivalent predicates produce stable plan shapes without changing authority.
 
-This distinction is important for future providers that do not naturally produce SQL-style rows.
+The optimizer must never:
 
-## Design invariants
+- evaluate caller authorization itself;
+- remove a predicate because a provider claims it is redundant;
+- widen access;
+- turn a conditional policy into an unconditional one.
 
-The planner must guarantee:
+## Predicate pushdown
 
-1. There is exactly one root node.
-2. Every non-root node has exactly one navigation edge.
-3. A node cannot have both a relationship and a connection edge.
-4. A root cannot have a navigation edge.
-5. Every parent reference points to an existing node.
-6. The graph is acyclic and all nodes are reachable.
-7. Provider-specific information is absent from the logical plan.
-8. Authorization attached to the semantic graph is preserved in the plan.
-9. Query clauses remain semantic and provider-neutral.
-10. Physical execution choices are made only by providers.
+`PredicatePushdownRule` provides conservative Boolean normalization/pushdown where semantic equivalence can be maintained.
 
-These invariants define the current execution algebra.
+Provider-specific pushdown remains a provider compilation concern.
 
-## P0.2 evolution rule
+## Projection pruning
 
-Before adding a new `ExecutionOperation`, ask:
+Projection pruning currently focuses on safe redundancy removal while preserving requested output order and tracking fields required by filters/order expressions.
 
-> Does this represent a fundamentally different kind of logical execution topology?
-
-If the answer is no, it should probably be a clause, property, or provider concern instead.
-
-This rule is intended to prevent `ExecutionPlanNode` and `ExecutionOperation` from becoming a catch-all abstraction.
-
-See [docs/SECURITY.md](../../docs/SECURITY.md) for the security contract that the plan must preserve.
-
-## Provider-aware rewrite cost
-
-Rewrite selection may optionally consume an `IProviderCostEstimator`. The provider supplies an advisory execution-cost estimate for each candidate semantic plan. This estimate can influence ranking but never replaces semantic-equivalence or security-preservation proofs.
-
-```text
-semantic candidate
-      ↓
-provider cost estimate
-      ↓
-selection
-      ↓
-semantic proof + security proof
-```
-
-Provider-specific physical concepts remain outside the logical planning model.
-
-## Cost provenance and statistics freshness
-
-Provider cost estimates carry explicit provenance: source, optional statistics version, estimate timestamp, statistics age, and freshness state. Heuristic estimates are explicitly labelled and do not pretend to originate from live database statistics. Freshness is advisory evidence for planning quality; it never changes semantic or security requirements.
-
-### Predicate pushdown
-
-The planner includes the conservative `predicate.pushdown.disjunction` rule. It applies bounded Boolean distributivity while preserving semantic equivalence and security invariants.
+The semantic model intentionally distinguishes neither all internal working fields nor all provider projections, so the optimizer does not perform aggressive dead-field elimination that could alter the requested result.
 
 ## Relationship traversal optimization
 
-Relationship traversal nodes can carry optional cardinality metadata and receive a provider-neutral `SingleHop` or `SetBased` traversal hint. The hint is physical-plan metadata and is not treated as semantic meaning.
+Relationship traversal can carry provider-neutral metadata such as cardinality and a `SingleHop`/`SetBased` hint.
 
+The hint is not semantic meaning. A provider may use it when selecting a physical strategy, subject to security and semantic constraints.
 
-### Aggregate cardinality optimization
+## Aggregate safety
 
-The planner exposes the `aggregate.cardinality.short-circuit` rule. It adds physical hints for provably equivalent COUNT emptiness tests while leaving semantic filters unchanged.
+Aggregate rewrites are especially sensitive to:
+
+- empty collections;
+- NULL values;
+- duplicate rows;
+- cardinality;
+- authorization filtering.
+
+Foundgine therefore models aggregate legality and provider capability separately from the rewrite itself.
+
+`AggregateRewriteProof` combines the relevant equivalence, semantic legality, provider capability, and security checks before an aggregate rewrite is accepted.
+
+## Provider-aware cost estimation
+
+`IProviderCostEstimator` allows a provider to supply advisory cost estimates.
+
+```text
+logical rewrite candidates
+          ↓
+provider cost estimate
+          ↓
+candidate selection
+          ↓
+semantic/security proof
+          ↓
+accepted rewrite
+```
+
+Cost is advisory. A cheap estimate never overrides semantic correctness or security.
+
+Cost estimates include provenance and freshness metadata so heuristic estimates are not mistaken for live database statistics.
+
+## Mutation planning
+
+Read and mutation planning use separate algebras.
+
+Mutation concepts include:
+
+```text
+MutationPlan
+  └── MutationOperation
+       ├── Create
+       ├── Update
+       ├── Delete
+       └── Upsert
+```
+
+Dependencies between operations are explicit.
+
+This is important for nested writes where one generated key becomes an input to a later operation.
+
+### Authorization
+
+`MutationAuthorizer` applies semantic mutation authorization after structural planning and before provider compilation.
+
+The planner itself should not invent application authorization.
+
+## Provider independence
+
+A planner can be used by:
+
+- SQL;
+- InMemory;
+- future providers.
+
+A provider should consume the logical plan and lower it into its own representation.
+
+```text
+Foundgine.Planning
+        │
+        ▼
+ProviderPlanCompiler
+   ┌────┼────┐
+   ▼    ▼    ▼
+ SQL  Memory Future
+```
+
+## Execution IR
+
+The current architecture also has a canonical `ExecutionIR` boundary.
+
+The logical plan can be lowered to execution IR before provider compilation:
+
+```text
+SemanticPlan
+    ↓
+ExecutionIR
+    ↓
+Provider compiler
+```
+
+This gives execution/security gates a stable representation without moving SQL into the planner.
+
+## What does not belong here
+
+Do not add:
+
+- SQL strings;
+- database table/column names;
+- ADO.NET parameters;
+- GraphQL AST nodes;
+- database connection objects;
+- LLM/tool definitions.
+
+If a proposed planner feature is provider-specific, it probably belongs after this boundary.
+
+## Related packages
+
+- `Foundgine.Semantics` — source meaning and authorization.
+- `Foundgine.Execution` — execution IR, provider contracts, evidence.
+- `Foundgine.Sql` — SQL lowering and PostgreSQL physical execution.
+- `Foundgine.InMemory` — provider-independence proof implementation.
+
+## Design rule
+
+Before adding a new logical operation, ask:
+
+> **Does this describe a fundamentally different semantic execution topology?**
+
+If not, it should probably be a clause, property, rewrite, or provider concern instead.

@@ -1,26 +1,32 @@
-# Foundgine 1.1.0
+# Foundgine 1.1.7
 
-Current release: 1.1.0 — an additive 1.x release with a secure GraphQL query executor, shared host-owned security execution-context provider, and a source-integrated Supply Chain getting-started sample.
+Foundgine is a programmable semantic execution platform for .NET. It separates structured intent from application-owned authorization and physical provider execution.
 
-# Foundgine
+## Canonical flow
 
-> Foundgine is a programmable semantic execution platform for .NET. It creates a controlled boundary between application callers — including APIs, GraphQL, automation, and AI agents — and the data and operations they are allowed to execute. Callers submit structured intent; Foundgine resolves it against an application-defined semantic model, applies authorization, builds a provider-independent execution plan, and executes it through a provider (SQL, InMemory, or others).
+```text
+Caller → Intent → Semantic Model → Resolution → Authorization → Plan → Provider → Result + Evidence
+```
 
-Foundgine is not an ORM replacement, a database, a GraphQL server, an LLM, an agent framework, or an identity provider. It is an execution layer that can sit underneath those kinds of systems.
+## Primary website pages
 
-## Docs
+- [Home](https://cristianbarragan.github.io/Foundgine/) — product problem, execution model and boundaries.
+- [What is Foundgine?](https://cristianbarragan.github.io/Foundgine/what-is-foundgine.html) — semantic execution explained.
+- [Getting Started](https://cristianbarragan.github.io/Foundgine/getting-started/) — canonical Supply Chain application walkthrough.
+- [How it works](https://cristianbarragan.github.io/Foundgine/how-it-works/) — concrete request lifecycle.
+- [Architecture](https://cristianbarragan.github.io/Foundgine/architecture/) — layers, providers and adapters.
+- [AI agents](https://cristianbarragan.github.io/Foundgine/ai-agents/) — host-owned authority and safe agent integration.
+- [Samples](https://cristianbarragan.github.io/Foundgine/samples/) — canonical, semantic and PenTest applications.
+- [Security](https://cristianbarragan.github.io/Foundgine/security/) — host-owned identity, semantic authorization, security-preserving planning and provider conformance.
+- [Packages](https://cristianbarragan.github.io/Foundgine/packages/) — all source packages and their responsibilities.
+- [Agent benchmark](https://cristianbarragan.github.io/Foundgine/agent-benchmark/) — controlled agent-facing experiments.
+- [Performance](https://cristianbarragan.github.io/Foundgine/performance/) — scoped performance evidence and interpretation rules.
 
-- [Foundgine](https://cristianbarragan.github.io/Foundgine/): The problem Foundgine solves and the intent → semantic model → authorization → plan → provider → result execution model.
-- [What is Foundgine?](https://cristianbarragan.github.io/Foundgine/what-is-foundgine.html): The problem Foundgine solves, the semantic-vs-persistence model distinction, and where Foundgine fits relative to REST/GraphQL/automation/AI-agent callers.
-- [Getting Started](https://cristianbarragan.github.io/Foundgine/getting-started/): A hands-on tutorial that runs the Foundgine.SupplyChain sample end to end and walks through the API, Application, Domain, AOT, Semantics, Infrastructure, MCP and Testing layers, following the sample's GUIDE.md.
-- [AI agents with Foundgine](https://cristianbarragan.github.io/Foundgine/ai-agents/): Why AI agents should not generate SQL directly or hold database credentials, the intended agent → structured intent → Foundgine → PostgreSQL boundary, and required security scenarios (field authorization, tenant isolation, prompt injection).
-- [Architecture](https://cristianbarragan.github.io/Foundgine/architecture/): The core execution pipeline (intent, semantic model, resolution, authorization, plan, rewrite/optimize, provider compilation, execution, evidence) and how multiple callers share one execution model.
-- [How Foundgine executes a request](https://cristianbarragan.github.io/Foundgine/how-it-works/): Step-by-step walkthroughs of a simple and a relationship-heavy request through structured intent, authorization, planning, provider execution and result evidence.
-- [Agent Benchmark](https://cristianbarragan.github.io/Foundgine/agent-benchmark/): Five end-to-end experiments testing whether a semantic execution boundary reduces agent-side work while preserving correctness and application control — baseline, scalability, efficiency, execution-architecture comparison, and a high-assurance TransferFunds capability, plus a Supply Chain end-to-end report.
-- [Performance](https://cristianbarragan.github.io/Foundgine/performance/): CoffeeBeanery PostgreSQL graph benchmark (12 August 2026) — Foundgine query throughput and p95 latency, explicitly scoped to a relationship-heavy graph workload.
+## Boundaries
 
-## Optional
+GraphQL, JSON, MCP and AI are adapters/intent sources. SQL and InMemory are providers. Authentication and identity lifecycle remain host-owned. Capability discovery is descriptive, not authorization.
 
-- [Full documentation, single file](https://cristianbarragan.github.io/Foundgine/llms-full.md): All pages above concatenated for full-context ingestion.
-- [Repository](https://github.com/cristianbarragan/Foundgine): Source, development setup, and benchmark source data.
-- [Repository-level AI context](https://raw.githubusercontent.com/cristianbarragan/Foundgine/main/llms.txt): Codebase-oriented llms.txt describing the project layout, package structure, and MCP server, for agents working with the source rather than the website.
+## Source
+
+- [Repository](https://github.com/cristianbarragan/Foundgine)
+- [Repository AI context](https://raw.githubusercontent.com/CristianBarragan/Foundgine/main/llms.txt)

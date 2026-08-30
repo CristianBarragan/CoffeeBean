@@ -1,249 +1,41 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-
-<title>Getting Started with Foundgine | Semantic Execution for .NET</title>
-<meta name="description" content="Run the Foundgine Supply Chain sample and learn its layered .NET architecture, semantic model, authorization boundary, planning pipeline, and PostgreSQL execution.">
-<meta name="robots" content="index,follow">
-<link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/getting-started/">
-
-<meta property="og:type" content="website">
-<meta property="og:title" content="Getting Started with Foundgine | Semantic Execution for .NET">
-<meta property="og:description" content="Run the Foundgine Supply Chain sample and explore its MCP, application, semantic, planning, and PostgreSQL execution layers.">
-<meta property="og:url" content="https://cristianbarragan.github.io/Foundgine/getting-started/">
-<meta property="og:site_name" content="Foundgine">
-
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Getting Started with Foundgine">
-<meta name="twitter:description" content="Run the Supply Chain sample and learn Foundgine's layered semantic execution architecture.">
-
-<link rel="stylesheet" href="../assets/style.css">
-</head>
-<body>
-<header class="site-header">
-<div class="site-header-inner">
-<a class="brand" href="../index.html">
-      <svg
-        class="brand-mark"
-        width="20"
-        height="20"
-        viewBox="0 0 32 32"
-        aria-hidden="true"
-      >
-        <g
-          stroke="currentColor"
-          stroke-width="4"
-          stroke-linecap="round"
-          fill="none"
-        >
-          <line x1="6" y1="6" x2="6" y2="26"></line>
-          <line x1="6" y1="6" x2="14" y2="6"></line>
-          <line x1="6" y1="26" x2="14" y2="26"></line>
-        </g>
-        <circle
-          cx="24"
-          cy="16"
-          r="4.5"
-          fill="currentColor"
-        ></circle>
-      </svg>
-      Foundgine
-    </a>
-<button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation"><span></span><span></span><span></span></button>
-<nav id="site-nav" class="site-nav" aria-label="Primary navigation">
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Getting Started with Foundgine | Semantic Execution for .NET</title><meta name="description" content="Run the Foundgine Supply Chain sample and follow the application-controlled semantic execution path from API to PostgreSQL."><link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/../">
+<meta property="og:title" content="Getting Started with Foundgine | Semantic Execution for .NET"><meta property="og:description" content="Run the Foundgine Supply Chain sample and follow the application-controlled semantic execution path from API to PostgreSQL."><meta property="og:type" content="website"><meta property="og:url" content="https://cristianbarragan.github.io/Foundgine/../"><meta property="og:site_name" content="Foundgine"><meta property="og:image" content="https://cristianbarragan.github.io/Foundgine/Foundgine.webp"><meta property="og:image:width" content="1280"><meta property="og:image:height" content="320">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Getting Started with Foundgine | Semantic Execution for .NET"><meta name="twitter:description" content="Run the Foundgine Supply Chain sample and follow the application-controlled semantic execution path from API to PostgreSQL."><meta name="twitter:image" content="https://cristianbarragan.github.io/Foundgine/Foundgine.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Getting Started with Foundgine | Semantic Execution for .NET","description":"Run the Foundgine Supply Chain sample and follow the application-controlled semantic execution path from API to PostgreSQL.","url":"https://cristianbarragan.github.io/Foundgine/../","author":{"@type":"Organization","name":"Foundgine"}}</script>
+</head><body><header class="site-header"><div class="site-header-inner"><a class="brand" href="../index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a><button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation"><span></span><span></span><span></span></button><nav id="site-nav" class="site-nav" aria-label="Primary navigation">
 <a href="../what-is-foundgine.html">What is it</a>
-<a href="index.html" class="nav-current" aria-current="page">Getting started</a>
+<a href="../getting-started/index.html" class="nav-current" aria-current="page">Getting started</a>
 <a href="../ai-agents/index.html">AI agents</a>
-<a href="../architecture/index.html">Architecture</a>
+<a href="../architecture/index.html">Architecture</a><a href="../security/index.html">Security</a><a href="../packages/index.html">Packages</a>
 <a href="../how-it-works/index.html">How it works</a>
 <div class="nav-item has-submenu"><span class="nav-item-row"><a href="../samples/index.html" class="nav-parent-link">Samples</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-samples" aria-label="Show Samples pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-samples"><a href="../samples/index.html">Overview</a><a href="../samples/semantic/index.html">Semantic Execution</a><a href="../samples/pentest/index.html">Security PenTest</a></div></div>
-<div class="nav-item has-submenu"><span class="nav-item-row"><a href="../agent-benchmark/index.html" class="nav-parent-link">Agent benchmark</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-agent-benchmark" aria-label="Show Agent benchmark pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-agent-benchmark"><a href="../agent-benchmark/index.html">Overview</a><a href="../agent-benchmark/run-1/index.html">Run 1 · Baseline</a><a href="../agent-benchmark/run-2/index.html">Run 2 · Scalability</a><a href="../agent-benchmark/run-3/index.html">Run 3 · Efficiency</a><a href="../agent-benchmark/run-4/index.html">Run 4 · Execution architecture</a><a href="../agent-benchmark/run-5/index.html">Run 5 · High-assurance TransferFunds</a><a href="../agent-benchmark/run-5b/index.html">Run 5b · Individual vs batch</a><a href="../agent-benchmark/supply-chain/index.html">Supply Chain E2E</a></div></div>
+<div class="nav-item has-submenu"><span class="nav-item-row"><a href="../agent-benchmark/index.html" class="nav-parent-link">Evidence</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-evidence" aria-label="Show evidence pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-evidence"><a href="../agent-benchmark/index.html">Evidence</a><a href="../performance/index.html">Performance</a><a href="../agent-benchmark/supply-chain/index.html">Supply Chain E2E</a></div></div>
+<a href="../packages/index.html">Packages</a>
 <a href="https://github.com/cristianbarragan/Foundgine" target="_blank" rel="noopener">GitHub</a>
-</nav>
-</div>
-</header>
-
-<div class="page">
-<main class="article">
-<nav class="breadcrumbs" aria-label="Breadcrumb">
-<a href="../index.html">Foundgine</a> / Getting started
-</nav>
-
-<span class="eyebrow">Hands-on tutorial</span>
-
-<h1>Get started with Foundgine</h1>
-
-<p class="subtitle">
-Run the <code>Foundgine.SupplyChain</code> sample end to end, then walk through
-the architecture from the MCP boundary and application authorization layer
-to semantic planning and PostgreSQL execution.
-</p>
-
-<h2>What you'll build and run</h2>
-
-<p>
-The canonical Supply Chain sample exposes a supply-chain domain through MCP
-while keeping transport, application, authorization, semantics, planning,
-and persistence concerns separate.
-</p>
-
-<pre>Agent / MCP client
-        ↓
-      API
-        ↓
-   Application
-        ↓
-Domain + Semantics
-        ↓
-Planning / Execution
-        ↓
-   Foundgine.Sql
-        ↓
-   PostgreSQL</pre>
-
-<p>
-The purpose of the sample is not simply to demonstrate database CRUD. It
-shows how a structured caller intent can cross a controlled application
-boundary and become a provider-specific database operation without making
-the transport responsible for business security.
-</p>
-
-<h2>1. Prerequisites</h2>
-
-<ul>
-<li>.NET 9 SDK</li>
-<li>Docker</li>
-<li>A clone of the Foundgine repository</li>
-</ul>
-
-<h2>2. Start PostgreSQL</h2>
-
-<pre>cd samples/Foundgine.SupplyChain
-docker compose up --build</pre>
-
-<h2>3. Run the API</h2>
-
-<p>If PostgreSQL is already running:</p>
-
-<pre>dotnet run --project samples/Foundgine.SupplyChain/Api/Foundgine.SupplyChain.Api.csproj --urls http://localhost:4422</pre>
-
-<p>Check the application health and readiness endpoints:</p>
-
-<pre>curl http://localhost:4422/health
-curl http://localhost:4422/health/ready</pre>
-
-<p>
-The MCP endpoint is <code>http://localhost:4422/mcp</code>. MCP tools are thin
-transport adapters over <code>SupplyChainApplication</code>; they do not contain
-SQL or duplicate business authorization.
-</p>
-
-<h2>4. Walk the architecture</h2>
-
-<h3>API and MCP boundary</h3>
-<p>
-The API layer creates the ASP.NET host, registers dependencies, exposes MCP
-and health endpoints, and forwards structured requests into the application
-layer. It contains no SQL and does not own business authorization.
-</p>
-
-<h3>Application and authorization</h3>
-<p>
-<code>SupplyChainApplication</code> defines the use-case boundary. It
-authenticates the actor and token and applies capability authorization before
-delegating to query or mutation ports.
-</p>
-
-<p>
-This central boundary is important when multiple transports exist: adding
-another transport should not require copying security rules into another
-adapter.
-</p>
-
-<h3>Domain model</h3>
-<p>
-The domain contains storage-oriented ERP records and application-facing
-domain models. Semantic names remain independent from physical table and
-column names, allowing application intent to remain stable when persistence
-details change.
-</p>
-
-<h3>AOT metadata</h3>
-<p>
-<code>Foundgine.Aot.Generator</code> turns annotated domain declarations into
-generated metadata at compile time. The generated representation supplies
-machine-readable information to the semantic layer without requiring runtime
-reflection for the normal path.
-</p>
-
-<h3>Semantic model</h3>
-<p>
-<code>SupplyChainSemanticModel</code> provides stable semantic entities,
-relationships, fields, predicates, and operations. Application code can build
-semantic operations without depending directly on database table and column
-names.
-</p>
-
-<p>
-The semantic model is the application-facing contract: it describes what the
-system exposes and what operations can be executed, rather than merely
-describing how rows are stored.
-</p>
-
-<h3>Planning and infrastructure</h3>
-<p>
-Query and mutation repositories build semantic operations that flow through
-Foundgine planning and provider execution rather than embedding SQL for the
-normal path. Planning can resolve relationships, compose predicates, shape
-projections, and preserve application constraints before provider-specific
-execution.
-</p>
-
-<h3>High-assurance mutations</h3>
-<p>
-Operations such as <code>place_order</code> and <code>cancel_order</code> retain
-explicit parameterized PostgreSQL SQL where provider-specific transactional
-invariants require it. Semantic execution therefore does not mean hiding
-every database operation behind an abstraction when explicit SQL provides the
-stronger guarantee.
-</p>
-
-<h3>Testing</h3>
-<p>
-Tests validate authorization, generated metadata, semantic plans, SQL
-compilation, PostgreSQL integration, and transport contracts. The dedicated
-<a href="../samples/pentest/index.html">PenTest sample</a> extends this story
-with transport-level security regression tests against MCP and GraphQL.
-</p>
-
-<h2>Where to go next</h2>
-
-<p>
-Once the physical architecture is clear, the best next step is the
-<a href="../samples/semantic/index.html">Complex Semantic Showcase</a>.
-It demonstrates why Foundgine has a semantic boundary in the first place,
-using recursive relationships, bounded traversal, temporal reasoning,
-authorization-aware planning, aggregation, and adversarial data.
-</p>
-
-<p>
-After that, explore the
-<a href="../samples/pentest/index.html">Security PenTest sample</a> to see
-how multiple transports share the same application authorization boundary.
-</p>
-
-<p>
-<a class="button" href="../samples/index.html">Explore the samples →</a>
-</p>
-</main>
-</div>
-
-<footer class="site-footer">
-Foundgine · actively evolving ·
-<a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a>
-</footer>
-<script src="../assets/site-nav.js"></script>
-</body>
-</html>
+</nav></div></header>
+<div class="page has-toc"><main class="article"><span class="eyebrow">Hands-on reference application</span><h1>Get started with Foundgine</h1><p class="subtitle">Run the canonical <code>Foundgine.SupplyChain</code> sample and follow one request through API, application, domain, AOT metadata, semantics, planning, SQL and MCP.</p>
+<h2>What you will run</h2><pre>Agent / MCP client
+      ↓
+SupplyChain API
+      ↓
+Application capability
+      ↓
+Domain + generated metadata
+      ↓
+Foundgine semantics
+      ↓
+Planning / ExecutionIR
+      ↓
+Foundgine.Sql
+      ↓
+PostgreSQL</pre>
+<h2>Prerequisites</h2><ul><li>.NET 9 SDK</li><li>Docker with Compose support</li><li>A clone of the Foundgine repository</li></ul>
+<h2>Start PostgreSQL</h2><pre>docker compose -f docker-compose.postgres.yml up -d</pre><p>Use the repository's supplied connection/configuration for the sample rather than creating a second persistence abstraction.</p>
+<h2>Run the API</h2><pre>dotnet run --project samples/Foundgine.SupplyChain/Api</pre><p>The exact local commands and environment settings are maintained in the sample's <code>GUIDE.md</code>. The website intentionally explains the architecture rather than duplicating every shell command.</p>
+<h2>Walk the layers</h2><h3>1 — API</h3><p>Maps transport requests into application calls. It should not know how SQL is written.</p><h3>2 — Application</h3><p>Defines business capabilities and orchestrates domain operations. This is where application authority and use-case boundaries remain explicit.</p><h3>3 — Domain</h3><p>Contains domain records and business concepts. Foundgine metadata declarations describe their structural shape.</p><h3>4 — AOT metadata</h3><p><code>Foundgine.Aot.Generator</code> discovers declarations at compile time and emits generated metadata. This supports deterministic startup and Native AOT-friendly execution.</p><h3>5 — Semantic model</h3><p>The sample maps structural metadata into application semantics: entities, fields, relationships, capabilities and authorization rules.</p><h3>6 — Queries</h3><p>A query repository builds semantic operations rather than SQL strings. The planner turns those operations into provider-independent execution.</p><h3>7 — Mutations</h3><p>Ordinary mutations use semantic mutation planning. High-assurance operations retain explicit PostgreSQL SQL where domain invariants depend on transactional database features.</p><h3>8 — MCP</h3><p>MCP is a protocol adapter. It does not become the source of authorization.</p><h3>9 — Testing</h3><p>Tests cover semantic contracts, generated metadata, planning, provider compilation, PostgreSQL integration, MCP contracts and end-to-end behavior.</p>
+<h2>Next steps</h2><p>Read the <a href="../how-it-works/index.html">execution walkthrough</a>, then the <a href="../architecture/index.html">architecture</a>. For the advanced semantic showcase, open <a href="../samples/semantic/index.html">SupplyChain Semantic</a>.</p></main><aside class="toc"><div class="toc-label">On this page</div><ol><li><a href="#overview">Overview</a></li><li><a href="#architecture">Architecture</a></li><li><a href="#usage">Usage</a></li><li><a href="#boundaries">Boundaries</a></li></ol></aside></div><footer class="site-footer">Foundgine 1.1.7 · .NET 9 · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer><script src="../assets/site-nav.js"></script></body></html>

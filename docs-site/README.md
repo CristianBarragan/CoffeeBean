@@ -1,32 +1,41 @@
-# Foundgine docs site
+# Foundgine website
 
-## Current structure
+This directory contains the static public website for the current Foundgine release line (`1.1.7`, .NET 9).
 
-The site is organized around the product story:
+## Public story
 
-1. Problem / intention
-2. What Foundgine is
-3. Getting started (hands-on Supply Chain sample tutorial, follows the sample's GUIDE.md)
-4. How it works
-5. Architecture
-6. AI agents
-7. Agent benchmark explorer
-8. Performance evidence
+The site is intentionally organized around the product rather than development milestones:
 
-Milestone/phase pages are not part of the public site structure.
+1. **What it is** — the semantic execution problem and model.
+2. **Getting started** — the canonical Supply Chain application.
+3. **How it works** — request lifecycle with representative payloads.
+4. **Architecture** — semantic, planning, execution and provider boundaries.
+5. **AI agents** — host-owned authority and controlled model integration.
+6. **Security** — authorization invariants and execution gates.
+7. **Samples** — canonical, semantic and PenTest applications.
+8. **Packages** — all source packages and their responsibilities.
+9. **Evidence** — controlled agent benchmarks, Supply Chain E2E and scoped performance evidence.
 
-## Benchmark explorer
+## Content policy
 
-`agent-benchmark/index.html` is the canonical benchmark page. The landing area opens a sliding run menu containing Run 1 through Run 5. Each run item explains the purpose, experiment, finding and meaning of that run. Selecting a run updates `?run=N` and moves to the corresponding evidence section.
+The public website should describe the current architecture. Do not add milestone/phase notes, obsolete release snapshots, abandoned design alternatives, or historical implementation details to the public navigation.
 
-The matrix remains a secondary navigation/evidence surface. Runs 2, 4 and 5 have published workload/concurrency matrices in the current assets.
+Historical development material belongs in the repository history or changelog, not in the current product narrative.
 
-## Telemetry
+## Benchmark assets
 
-The static site does not expose secrets or host sensors. `telemetry-api/` is a .NET 9 bridge that reads:
+Only published aggregate measurements and the Supply Chain report are retained as website data. Large per-request captures and obsolete benchmark experiments are not part of the public site.
 
-- Scaphandre power metrics
-- Electricity Maps grid carbon intensity
-- provider/model token usage posted by the benchmark runner
+Benchmark claims must distinguish measured values from estimated context metrics and must state the workload/concurrency scope.
 
-The browser polls the bridge every 10 seconds. If the bridge is unavailable it never invents power or CO₂ values.
+## Editing
+
+The website is static HTML with shared CSS and small JavaScript components. The Markdown files beside major pages provide concise source/context versions for documentation and LLM ingestion; the served HTML remains the public rendering source.
+
+When adding a page:
+
+1. use the existing site shell and navigation;
+2. describe the current implementation, not historical milestones;
+3. link to the relevant source README/sample when deeper detail is needed;
+4. add the page to `sitemap.xml` and `llms.txt` when it is public/indexable;
+5. verify all relative links before committing.

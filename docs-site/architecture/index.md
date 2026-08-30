@@ -1,89 +1,31 @@
-> Source content for [`index.html`](index.html), the page actually served on the site. Edit this file, then regenerate the HTML page and `llms-full.md`.
-
 # Foundgine Architecture
 
-## Core execution pipeline
+## Core pipeline
 
 ```text
-Intent
-  ↓
-Semantic Model
-  ↓
-Resolution
-  ↓
-Authorization
-  ↓
-Plan
-  ↓
-Rewrite / Optimize
-  ↓
-Provider Compilation
-  ↓
-Execution
-  ↓
-Result + Evidence
+Intent → Resolve → Authorize → Plan → Rewrite/Optimize → Provider Compilation → Execution → Result + Evidence
 ```
 
-## Separation of concerns
+## Semantic model
 
-### Semantic model
+Application-facing meaning: entities, fields, relationships, capabilities and authorization. It is provider-independent.
 
-Defines the application-facing capabilities.
+## Metadata
 
-### Intent
+Structural facts can be discovered from application declarations and AOT-generated metadata without making semantic code depend on runtime reflection.
 
-Describes what the caller wants without binding it directly to a physical provider.
+## Planning
 
-### Authorization
+`Foundgine.Planning` produces provider-independent plans and `ExecutionIR`. Logical filters, ordering, pagination, traversal and aggregation stay logical; physical execution choices belong to providers.
 
-Determines which parts of the requested operation are permitted and can contribute predicates or constraints to the execution plan.
+## Execution
 
-### Planner
+`Foundgine.Execution` is the provider boundary for compilation/dispatch, security conformance, materialization and execution evidence.
 
-Builds a provider-independent representation of the requested operation.
+## Providers
 
-### Rewriting and optimization
+`Foundgine.Sql` provides SQL/PostgreSQL execution. `Foundgine.InMemory` provides a small non-SQL implementation for provider-independence testing.
 
-Transforms the plan while preserving semantics and authorization constraints.
+## Adapters
 
-### Provider
-
-Compiles and executes the plan against a concrete backend.
-
-## Multiple callers, one execution model
-
-```text
-REST/API
-GraphQL
-JSON
-AI Agent
-Automation
-   │
-   ▼
-Semantic Intent
-   │
-   ▼
-Foundgine Planner
-   │
-   ├── SQL
-   ├── InMemory
-   └── Future providers
-```
-
-The goal is to avoid implementing separate execution semantics for every interface.
-
-## Why the intermediate plan matters
-
-The plan is the architectural boundary between semantic intent and physical execution.
-
-It gives the runtime a place to:
-
-- preserve authorization constraints
-- validate dependencies
-- rewrite operations
-- estimate cost
-- reason about provider capabilities
-- optimize execution
-- produce execution evidence
-
-This is the core mechanism that allows multiple input surfaces and providers to share execution semantics.
+JSON, GraphQL, MCP and AI integrations translate caller requests into Foundgine operations. They do not become the authority over execution.

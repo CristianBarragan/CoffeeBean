@@ -327,7 +327,7 @@
 ## [1.0.0]
 
 ### Changed
-- **`VersionPrefix` bumped `0.5.0` → `1.0.0` in `Directory.Build.props`.** This is a semver-stability declaration, not a runtime capability change: no `src/` package's implementation changed in this release. It marks the public API surface documented in [RELEASE-0.5.0.md](docs/RELEASE-0.5.0.md) (carried forward unchanged) as the first release under a `1.x` stability commitment.
+- **`VersionPrefix` bumped `0.5.0` → `1.0.0` in `Directory.Build.props`.** This is a semver-stability declaration, not a runtime capability change: no `src/` package's implementation changed in this release. It marks the public API surface documented in the historical 0.5.0 release notes (carried forward unchanged) as the first release under a `1.x` stability commitment.
 
 ### Added
 - `docs-site/getting-started/` — a hands-on "Getting started" tutorial page that runs the `Foundgine.SupplyChain` sample end to end and walks through its ten architectural layers (API → Application → Domain → AOT → Semantics → Query/Mutation repositories → high-assurance mutations → MCP → Testing), following the sample's `GUIDE.md`. Linked from the site nav, `sitemap.xml`, `llms.txt`, and `llms-full.md`.
@@ -345,7 +345,7 @@
 - **`Foundgine.Security.Authority` promoted to a real, packaged library.** The authorization recovery control plane — witness quorum, credential lifecycle, journal reconciliation, and failover — moved out of `samples/Foundgine.HighAssurance.Postgres/Authorization/` and `.../Execution/` into a new `src/Foundgine.Security.Authority/` project, under a single `Foundgine.Security.Authority` namespace, depending only on `Foundgine.Execution` and the BCL. The two files that hardcode the sample's `transferFunds` operation (`AuthorizationDecision.cs`, `AuthorizationExecutionBinding.cs`) and the four genuinely Postgres-specific files (`PostgresAuthorizationContextStore`, `PostgresAuthorizationRecoveryCoordinator`, `PostgresAuthorizationSecurityUnitOfWork`, `PostgresTransferFundsExecutor`) stayed in the sample.
 - **`Foundgine.sln` fixed.** Removed a duplicate `ProjectConfigurationPlatforms` block that sat outside any `GlobalSection`, added the missing `Release|Any CPU` build configuration for the Banking/Postgres sample projects, and registered the new `Foundgine.Security.Authority` project.
 - **Milestone-numbering scheme removed from public surfaces.** Internal tracking IDs previously embedded in doc comments, README section headers, and changelog entries carried no meaning outside the original development process and are now gone; section headers use plain descriptive titles instead.
-- **Documentation index rewritten.** `docs/README.md` no longer links to files that don't exist in this repository. The same dead-link and stale-path cleanup was applied to `docs/ROADMAP.md`, `docs/SECURITY.md`, `docs/security/CHANGELOG.md`, `README.md`, `ai.seo.md`, and `llms-full.md`.
+- **Documentation index rewritten.** `docs/README.md` no longer links to files that don't exist in this repository. The same dead-link and stale-path cleanup was applied to `docs/ROADMAP.md`, `docs/SECURITY.md`, `the active Security.Authority test suite`, `README.md`, `ai.seo.md`, and `llms-full.md`.
 
 ### Fixed
 - Test files under `tests/Foundgine.Security.Authority.Tests` that reference the relocated `Foundgine.Security.Authority` types were missing the corresponding `using Foundgine.Security.Authority;` directive after the move; added.
