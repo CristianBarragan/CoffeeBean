@@ -134,7 +134,7 @@ The repository tests each seam independently, then composes them into PostgreSQL
 
 ## Next
 
-Read [How it works](../how-it-works/index.html), then [Architecture](../architecture/index.html), and finally the [advanced semantic sample](../samples/semantic/index.html).
+Read [How it works](how-it-works/index.html), then [Architecture](architecture/index.html), and finally the [advanced semantic sample](samples/semantic/index.html).
 
 
 ---

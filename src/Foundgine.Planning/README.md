@@ -24,6 +24,32 @@ Provider compiler
 
 The planner is therefore the boundary between application meaning and physical execution.
 
+## Authorization binding across planning
+
+Planning starts from an authorized semantic operation, not from raw transport input. When the planner is given a trusted `SemanticContractSnapshot` and `SemanticAuthorizationResult`, it validates contract membership, builds the provider-independent plan, and attaches `SemanticPlanAuthorizationBinding`.
+
+```text
+SemanticOperationGraph
+        ↓
+ authorization
+        ↓
+AuthorizedGraph + Evidence
+        ↓
+      Planner
+        ↓
+   SemanticPlan
+        │
+        └── AuthorizationBinding
+        ↓
+ security-preserving rewrites
+        ↓
+   ExecutionIR
+```
+
+The binding records the exact contract fingerprint and authorization fingerprint. It is immutable provenance connecting the logical plan to the security decision that permitted it.
+
+`SemanticPlanAuthorizationBindingProof` is used when rewrites are evaluated to ensure that optimization did not add, remove, or substitute authorization provenance. Semantic equivalence alone is insufficient: a rewrite must preserve authority as well as meaning.
+
 ## Read execution algebra
 
 The core read representation is a tree of semantic plan nodes:

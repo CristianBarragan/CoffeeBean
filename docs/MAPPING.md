@@ -143,3 +143,7 @@ The expression is a compile-time declaration. Foundgine records its source and
 strongly typed context/resource identities in `AuthorizationMetadata`; it does
 not instantiate or populate either object. Provider-specific lowering of the
 predicate belongs to the planning/provider layer.
+
+---
+
+Next: [Open Intent API](OPEN-INTENT-API.md)

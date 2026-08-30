@@ -221,6 +221,24 @@ Authorization = authoritative decision
 
 A capability snapshot must never be treated as a reusable authorization token.
 
+### Authorization → plan binding
+
+The operation graph is the point where semantic topology becomes one security object. Authorization evaluates the complete graph and returns immutable evidence. Planning then binds the resulting plan to the exact contract and authorization decision.
+
+```text
+SemanticOperationGraph
+        ↓
+AuthorizedGraph + Evidence
+        ↓
+SemanticPlan
+        ↓
+AuthorizationBinding
+        ↓
+ExecutionIR
+```
+
+The binding is provenance rather than authority. It prevents an authorized plan from being transplanted to a different semantic contract or authorization decision, while leaving request-specific authority in the trusted execution context.
+
 ## Security execution context
 
 `SecurityExecutionContext` carries host-established execution authority into the semantic request.
@@ -274,6 +292,8 @@ var graph = new SemanticMutationIntentBuilder(model)
 ```
 
 The builder creates meaning. Planning and execution decide how that meaning is performed.
+
+The complete lifecycle is `SemanticMutationOperationGraph → authorization/evidence → mutation plan → execution security/conformance`. Mutation semantics remain provider-independent until the execution boundary.
 
 ## Candidate resolution and retrieval
 

@@ -70,9 +70,64 @@ This is important for:
 - tenant isolation;
 - user/resource ownership;
 - row-level access;
-- future safe plan caching.
+- safe plan caching with authorization-preserving context isolation.
 
 A provider must not discard a predicate merely because the provider can produce a syntactically valid query without it.
+
+## Resource and complexity limits
+
+Security is not only about authorization. A caller can also attack the semantic
+engine with structurally expensive intent. `SecurityResourceLimits` is the
+canonical engine-side guard and applies independently of whether the request
+arrived through JSON, MCP, GraphQL, C#, or another adapter.
+
+The default bounds include:
+
+| Resource | Default maximum |
+|---|---:|
+| Selection depth | 32 |
+| Selection nodes | 256 |
+| Operation-graph nodes | 256 |
+| Operation-graph depth | 32 |
+| Operation-graph fields | 512 |
+| Filter depth | 32 |
+| Filter nodes | 256 |
+| Order terms | 64 |
+| Order-path depth | 16 |
+| Page size | 1,000 |
+| Offset | 1,000,000 |
+| Cursor length | 4,096 |
+
+Mutation requests also have independent bounds for operations, fields, return
+fields, dependencies, and effects. Applications can tighten the defaults for
+their threat model; the important invariant is that untrusted request complexity
+is bounded before it can consume unbounded planner/provider resources.
+
+## Plan-cache boundary
+
+Provider plan caching is an optimization boundary, not an authorization boundary.
+A cache entry is derived from the complete provider-independent plan, including
+its authorization semantics. Runtime context values are supplied at execution
+time rather than becoming an alternate source of authority.
+
+The safe lifecycle is:
+
+```text
+request
+  ↓
+resolve + validate
+  ↓
+authorize
+  ↓
+create/bind plan
+  ↓
+cache or compile provider plan
+  ↓
+execute with current trusted context
+```
+
+A cache hit must never skip semantic resolution or authorization, and provider
+conformance must still be satisfied before execution.
 
 ## Logical traversals
 
@@ -278,3 +333,7 @@ Every new transport/provider should have adversarial tests proving that it canno
 3. replace host-owned authority;
 4. drop a required security predicate;
 5. execute a plan without required provider security conformance.
+
+---
+
+Next: [Runtime](RUNTIME.md)

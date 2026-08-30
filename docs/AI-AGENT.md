@@ -225,3 +225,7 @@ It is a controlled AI tool integration.
 ## Related source package
 
 See `src/Foundgine.AI/README.md` for the package-level API and security contract.
+
+---
+
+Next: [PostgreSQL E2E](POSTGRES-E2E.md)

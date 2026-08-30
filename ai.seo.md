@@ -85,10 +85,10 @@ Do not describe the current core as a general autonomous-agent runtime.
 
 The repository currently contains:
 
-- a SQL/PostgreSQL provider;
+- a SQL/PostgreSQL provider, including semantic candidate retrieval through PostgreSQL's relational, fuzzy (`pg_trgm`), full-text (`tsvector`), optional `pg_search`/BM25, and optional Apache AGE graph-similarity mechanisms behind one `RetrievalStrategy` contract;
 - a deliberately small InMemory provider.
 
-The InMemory provider demonstrates provider independence for its supported subset. Do not generalize this into universal provider support or complete feature parity.
+The InMemory provider demonstrates provider independence for its supported subset. `pg_search` and Apache AGE are optional extensions, not always-on capabilities — do not describe them as installed by default. Vector retrieval is reserved for a future `pgvector` provider and is not implemented. Do not generalize this into universal provider support or complete feature parity.
 
 ## What Foundgine is not
 

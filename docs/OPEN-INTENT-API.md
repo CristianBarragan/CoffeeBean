@@ -125,3 +125,7 @@ For high-assurance mutations, callers should still use the normal mutation execu
 > Open intent describes what callers may ask for. The semantic model describes what exists and how it connects. Authorization determines what the caller may actually use. Planning determines how the authorized meaning can execute.
 
 The application therefore does not need to predict every future query or mutation while retaining a single authoritative security and execution pipeline.
+
+---
+
+Next: [Authorization](AUTHORIZATION.md)

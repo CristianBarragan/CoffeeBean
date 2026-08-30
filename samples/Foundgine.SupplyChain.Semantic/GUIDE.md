@@ -61,7 +61,7 @@ successful if the security behavior remains intact while the old generated seman
 model disappears.
 
 
-## v1.2.3 boundary proof
+## Boundary proof — metadata producer and semantic consumer
 
 The sample deliberately keeps its structural declarations on the CLR domain types. The AOT generator observes `[FoundgineEntity]`, `[FoundgineField]`, and `[FoundgineRelationship]` declarations and emits `GeneratedMetadata.Registry`. `SupplyChainMetadataProducer` exposes that registry as `IMetadataCatalog`; the semantic layer consumes only that catalog.
 

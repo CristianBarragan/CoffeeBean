@@ -112,7 +112,7 @@ new generic architecture can express them without falling back to a second,
 hand-maintained semantic model.
 
 
-## v1.2.1 architecture checkpoint
+## Architecture checkpoint — metadata and semantic boundary
 
 The sample no longer carries a generated semantic-topology artifact. Structural topology comes from `Foundgine.Metadata`; semantic configuration adds only application meaning; execution limits remain application policy.
 

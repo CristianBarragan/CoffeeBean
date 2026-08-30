@@ -71,6 +71,34 @@ Without a common semantic execution boundary, each surface tends to duplicate:
 
 Foundgine centralizes those concerns without making GraphQL, AI, MCP, or a database the center of the architecture.
 
+### The tool-surface problem
+
+This matters most where a single caller can reach many capabilities at once — an AI agent with a set of tools is the clearest case. In a typical stack, each tool is free to implement its own authorization, tenant filtering, and validation on the way to the database:
+
+```text
+Agent
+ ├── Tool A → its own auth / filtering / query logic
+ ├── Tool B → its own auth / filtering / query logic
+ ├── Tool C → its own auth / filtering / query logic
+ └── Tool D → its own auth / filtering / query logic
+```
+
+An agent with 50 tools can end up with 50 separate execution and security surfaces, each only as safe as the developer who wrote that one tool.
+
+Foundgine gives every capability the same path instead:
+
+```text
+Agent
+ ↓
+Capability (structured intent)
+ ↓
+Foundgine — one semantic + authorization boundary
+ ↓
+Execution plan → provider
+```
+
+The application still defines what each capability means and who may use it. What Foundgine removes is the need for every tool, endpoint, or adapter to reimplement that decision on its own.
+
 > **Callers describe what they want. The application defines what exists and what is allowed. Foundgine determines how the authorized meaning executes.**
 
 ## Open intent
@@ -126,7 +154,47 @@ Open intent does **not** mean open authority. Names are resolved against the sem
                ┌──────┴──────┐
                ▼             ▼
               SQL         InMemory
+               │
+     ┌─────────┼──────────┬─────────────────┐
+     ▼         ▼          ▼                 ▼
+  Relational Fuzzy /   optional          optional
+  (tables,   Full-text pg_search/        Apache AGE
+   joins)   (pg_trgm,  BM25 search       graph similarity
+            tsvector)
 ```
+
+### The security-preserving lifecycle
+
+The central execution artifact is the semantic operation graph. It is resolved and authorized before planning, then carried forward through immutable provenance binding into execution:
+
+```text
+Intent
+  ↓
+Semantic Operation Graph
+  ↓
+Validate + bound complexity
+  ↓
+Authorize against semantic contract
+  ↓
+Authorized Graph + Evidence
+  ↓
+Provider-independent Plan
+  │  └─ AuthorizationBinding
+  ↓
+Security-preserving optimization
+  ↓
+ExecutionIR
+  ↓
+Provider Plan + Security Proof
+  ↓
+Final Execution Gate
+  ↓
+Execute
+```
+
+The key invariant is simple: **an executable provider artifact must remain traceably bound to the semantic contract and authorization decision that produced it.** Optimization may change the execution shape, but it cannot detach or weaken that security provenance.
+
+The SQL provider isn't limited to relational access: the same semantic candidate-retrieval contract also reaches PostgreSQL's full-text/fuzzy search and, optionally, Apache AGE for graph-similarity queries — see [Providers](#providers) below.
 
 ### Semantic model
 
@@ -196,13 +264,22 @@ For high-assurance mutation workflows, the mutation execution boundary can addit
 
 PostgreSQL-specific functionality includes:
 
-- `pg_trgm` fuzzy retrieval;
-- PostgreSQL full-text search;
-- optional `pg_search`/BM25 retrieval;
 - PostgreSQL mutation compilation;
 - set-based batched mutation compilation/execution;
 - provider cost estimation;
 - SQL security conformance.
+
+It also implements semantic candidate retrieval — ranked, provenance-carrying matches for ambiguous references — through one provider-neutral `RetrievalStrategy` contract with several PostgreSQL-backed strategies:
+
+| Strategy | PostgreSQL mechanism |
+|---|---|
+| `Fuzzy` | `pg_trgm` |
+| `FullText` | `tsvector` / `websearch_to_tsquery` |
+| `Search` | optional `pg_search` / BM25 |
+| `GraphSimilarity` | optional Apache AGE (Cypher over a semantic relationship) |
+| `Vector` | reserved for a future `pgvector` provider |
+
+`Fuzzy` and `FullText` need nothing beyond PostgreSQL itself. `Search` and `GraphSimilarity` are optional and only activate when `pg_search` or Apache AGE are installed. Whichever strategy runs, retrieval only produces candidates and evidence — the result still goes through ordinary semantic resolution and authorization before it can appear in an execution plan.
 
 ### InMemory
 
@@ -259,6 +336,8 @@ Provider execution
 
 All mutation transports should converge on this boundary.
 
+Writes are where this matters most, because the cost of a wrong authorization decision is much higher than for a read. `samples/Foundgine.HighAssurance.Banking` is the concrete proof case: a `TransferFunds` mutation whose execution boundary revalidates tenant, ownership, account state, and daily limits, holds deterministic locks across both accounts, and produces an audit entry and execution receipt — while making no claim that Foundgine infers financial policy from natural language. See its [README](samples/Foundgine.HighAssurance.Banking/README.md) for the full walkthrough.
+
 ## Package map
 
 | Package | Role |
@@ -284,6 +363,21 @@ All mutation transports should converge on this boundary.
 
 All packages target .NET 9 except the Roslyn generator, which targets `netstandard2.0`.
 
+### Minimum footprint
+
+17 packages looks like a lot, but a basic application only ever installs two of them explicitly:
+
+- `Foundgine` — the facade;
+- one provider — `Foundgine.Sql` or `Foundgine.InMemory`.
+
+`Foundgine` transitively brings in `Foundgine.Semantics`, `Foundgine.Metadata`, `Foundgine.Planning`, `Foundgine.Execution`, and `Foundgine.Abstractions` — those are implementation layers, not separate things you choose between. The remaining packages are each optional and additive by design, not modularity for its own sake:
+
+- `Foundgine.Aot` / `Foundgine.Aot.Generator` — only needed for attribute-driven, source-generated metadata instead of runtime discovery.
+- `Foundgine.Intent.Json`, `Foundgine.MCP`, `Foundgine.AI`, `Foundgine.GraphQL.HotChocolate*` — one package per caller-facing interface, so a project that only exposes GraphQL doesn't pull in Hot Chocolate's, MCP's, or Microsoft.Extensions.AI's dependency trees for interfaces it never uses.
+- `Foundgine.Security.Authority` — a substantial, independently-versioned recovery/control-plane subsystem (warrants, quorum, witnesses) that the large majority of applications will never need.
+
+If you're only trying it out: `Foundgine` + `Foundgine.InMemory` is the entire footprint.
+
 ## Samples
 
 The repository contains progressively more advanced examples, including the SupplyChain semantic sample.
@@ -300,12 +394,7 @@ The SupplyChain samples are also useful as architecture tests: they show how API
 
 ## Documentation
 
-Start with [`docs/GETTING-STARTED.md`](docs/GETTING-STARTED.md), then read:
-
-1. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-2. [`docs/OPEN-INTENT-API.md`](docs/OPEN-INTENT-API.md)
-3. [`docs/AUTHORIZATION.md`](docs/AUTHORIZATION.md)
-4. [`docs/SECURITY.md`](docs/SECURITY.md)
+The docs are meant to be read in order, each page linking to the next: start at [`docs/GETTING-STARTED.md`](docs/GETTING-STARTED.md) and follow the "Next" link at the bottom of each page, or use the full list in [`docs/README.md`](docs/README.md).
 
 Every project under `src/` has its own package-level README describing its responsibility, API boundary, security considerations, and relationship to the rest of Foundgine.
 

@@ -205,3 +205,7 @@ When changing these, update the affected adapter/provider tests rather than addi
 | MCP | `Foundgine.MCP` |
 | AI | `Foundgine.AI` |
 | Authority recovery | `Foundgine.Security.Authority` |
+
+---
+
+Next: [AI agents](AI-AGENT.md)

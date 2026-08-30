@@ -11,3 +11,7 @@ When moving code from an archive:
 5. delete the old compatibility code.
 
 Do not copy the old project structure into the new repository.
+
+---
+
+That's the full sequence. Back to the [documentation index](README.md).

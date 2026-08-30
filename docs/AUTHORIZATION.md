@@ -28,6 +28,41 @@ Employee
       └── TenantId   conditional
 ```
 
+## Semantic operation graph and authorization provenance
+
+Authorization applies to the complete resolved semantic operation graph. The graph is validated before policy evaluation and the resulting decision is captured as immutable evidence.
+
+```text
+resolved operation graph
+        ↓
+contract validation + resource limits
+        ↓
+authorization
+   ┌────┴────┐
+ deny       allow
+  ↓           ↓
+reject   evidence + authorized graph
+              ↓
+             plan
+              ↓
+     authorization binding
+              ↓
+        execution IR
+              ↓
+       provider artifact
+              ↓
+         final gate
+```
+
+The plan binding contains two identities:
+
+- the semantic contract fingerprint;
+- the authorization-decision fingerprint.
+
+This is provenance, not a reusable permission token. A plan cannot be detached from the contract or authorization evidence that produced it. Rewrites must preserve the binding, and execution rejects mismatches.
+
+The final provider execution gate adds a second proof: the provider artifact must be security-conformant for the exact `ExecutionIR` being executed.
+
 ## Conditional authorization
 
 Conditional access is represented by the small provider-independent predicate
@@ -106,7 +141,7 @@ semantic policy after planning and before provider compilation.
 
 Authorization predicates must remain part of execution semantics.
 
-A future plan cache may safely reuse a plan shape, but it must not turn:
+A provider plan cache may safely reuse an already-authorized plan shape, but it must not turn:
 
 ```text
 resource.TenantId == context.TenantId
@@ -146,3 +181,7 @@ It demonstrates:
 - MCP adversarial calls that attempt to cross those boundaries.
 
 The sample also separates transport authentication from semantic authorization: the MCP server resolves a fixed actor/token into a tenant and role, then constructs the semantic policy for that actor. A caller cannot promote itself by supplying a different role in the semantic request.
+
+---
+
+Next: [Security](SECURITY.md)

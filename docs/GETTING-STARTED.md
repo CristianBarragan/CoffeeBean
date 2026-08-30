@@ -179,13 +179,8 @@ provider
 
 The model is an untrusted producer of intent.
 
-## What to read next
-
-- [Why Foundgine](WHY-FOUNDGINE.md)
-- [Architecture](ARCHITECTURE.md)
-- [Open Intent API](OPEN-INTENT-API.md)
-- [Authorization](AUTHORIZATION.md)
-- [Security](SECURITY.md)
-- [PostgreSQL E2E](POSTGRES-E2E.md)
-
 For package-specific details, see the `README.md` in each `src/Foundgine.*` project.
+
+---
+
+Next: [Why Foundgine](WHY-FOUNDGINE.md)
