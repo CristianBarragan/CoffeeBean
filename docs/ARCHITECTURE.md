@@ -294,6 +294,10 @@ Foundgine.Sql
 Foundgine.InMemory
 ```
 
+Alongside the execution providers, two optional lexical-grounding candidate
+providers plug into the resolution layer without either depending on the
+other: `Foundgine.Elasticsearch` and `Foundgine.Postgres.Vector`.
+
 SQL lowers the plan into parameterized SQL and executes through ADO.NET.
 
 InMemory executes a deliberately limited subset over CLR-backed rows.
@@ -304,6 +308,11 @@ The existence of both providers is an architectural test: the logical plan canno
 
 Semantic resolution sometimes needs ranked candidates for an ambiguous reference — a name that doesn't exactly match, a fuzzy search term, or a "find things related to this" request. `Foundgine.Sql` answers that through PostgreSQL mechanisms selected per request, all behind the same provider-neutral `RetrievalStrategy` contract:
 
+<p align="center"><img src="assets/retrieval-strategy-boundary.svg" alt="Foundgine.Sql RetrievalStrategy boundary: Relational, Fuzzy (pg_trgm), FullText (tsvector), Search/BM25 (pg_search, optional), GraphSimilarity (Apache AGE, optional), and Vector (reserved, always throws NotSupportedException on this boundary). All strategies converge on ranked candidates and provenance, then ordinary semantic resolution and authorization." width="100%"></p>
+
+<details>
+<summary>Text version</summary>
+
 ```text
 Semantic candidate request
           ↓
@@ -311,9 +320,9 @@ Semantic candidate request
           ↓
 ┌─────────┬──────────┬─────────┬────────────────┬──────────┐
 │  Fuzzy  │ FullText │ Search  │ GraphSimilarity │  Vector  │
-│ pg_trgm │ tsvector │pg_search│  Apache AGE     │(reserved)│
-│         │          │ / BM25  │   (Cypher)      │for future│
-│         │          │(optional)│   (optional)   │ pgvector │
+│ pg_trgm │ tsvector │pg_search│  Apache AGE     │(not on   │
+│         │          │ / BM25  │   (Cypher)      │ this     │
+│         │          │(optional)│   (optional)   │ boundary)│
 └─────────┴──────────┴─────────┴────────────────┴──────────┘
           ↓
   Ranked candidates + provenance
@@ -321,7 +330,9 @@ Semantic candidate request
    Semantic resolution / authorization (unchanged)
 ```
 
-`Fuzzy` and `FullText` use PostgreSQL's built-in `pg_trgm` and `tsvector`/`websearch_to_tsquery`. `Search` and `GraphSimilarity` are optional and require the `pg_search` and Apache AGE extensions respectively — `GraphSimilarity` runs a Cypher query through AGE over a semantic relationship (for example, finding suppliers similar to a given one by shared purchase-order neighbors) and returns ranked candidates, the same shape as any other strategy. `Vector` is intentionally reserved for a future `pgvector` provider rather than implemented today.
+</details>
+
+`Fuzzy` and `FullText` use PostgreSQL's built-in `pg_trgm` and `tsvector`/`websearch_to_tsquery`. `Search` and `GraphSimilarity` are optional and require the `pg_search` and Apache AGE extensions respectively — `GraphSimilarity` runs a Cypher query through AGE over a semantic relationship (for example, finding suppliers similar to a given one by shared purchase-order neighbors) and returns ranked candidates, the same shape as any other strategy. `Vector` is not implemented on this per-field `IApproximateCandidateSource` boundary; token-level vector retrieval instead lives in `Foundgine.Postgres.Vector`, a `pgvector`-backed implementation of the separate `ISemanticLexicalCandidateSource` boundary used by lexical grounding (see below and [`LEXICAL-GROUNDING.md`](LEXICAL-GROUNDING.md)).
 
 Retrieval only ever produces candidates and evidence. It does not bypass semantic resolution, authorization, or planning — a candidate still has to resolve to a real semantic entity and pass authorization before it can appear in a plan.
 
@@ -476,3 +487,43 @@ Its purpose is the boundary between semantic intent and controlled execution.
 ---
 
 Next: [Metadata → Semantics](METADATA-TO-SEMANTICS.md)
+
+## Lexical grounding: retrieval proposes, semantics decides
+
+Free-form language is resolved through a provider-neutral lexical candidate
+boundary. Each token may be searched against every semantic kind (entity, node,
+relationship, traversal, field, value, or operation). The highest retrieval
+score is the first hypothesis, not truth.
+
+<p align="center"><img src="assets/lexical-grounding-flow.svg" alt="Foundgine lexical grounding flow: natural language, tokenization, candidate retrieval via ISemanticLexicalCandidateSource (Elasticsearch BM25 or pgvector similarity), ranked candidates, highest-scoring root candidate, semantic-contract validation, neighbour-constrained graph walk with backtracking, canonical semantic interpretation, authorization, planning/execution." width="100%"></p>
+
+<details>
+<summary>Text version</summary>
+
+```text
+Token
+  ↓
+ISemanticLexicalCandidateSource
+  ↓ (Elasticsearch BM25, or pgvector cosine/L2/IP similarity, or both)
+ranked candidates across semantic kinds
+  ↓
+highest-scoring root candidate
+  ↓
+semantic graph validation
+  ↓
+neighbour-constrained walk
+  ↓
+backtrack if the candidate cannot form a complete path
+  ↓
+canonical semantic interpretation
+```
+
+</details>
+
+The semantic graph is authoritative for topology. Approximate retrieval scores
+never authorize a path and are never treated as probabilities. Database/provider
+execution begins only after semantic resolution and authorization.
+`Foundgine.Elasticsearch` and `Foundgine.Postgres.Vector` are two
+interchangeable implementations of `ISemanticLexicalCandidateSource`; the
+semantic layer depends on neither directly, and a deployment may use one,
+the other, or both.

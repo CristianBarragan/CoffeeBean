@@ -29,6 +29,7 @@ nav:
   - Getting started: GETTING-STARTED.md
   - Layer setup: LAYER-SETUP.md
   - Architecture: ARCHITECTURE.md
+  - Lexical grounding: LEXICAL-GROUNDING.md
   - Product identity: PRODUCT-IDENTITY.md
   - Provider independence: PROVIDER-INDEPENDENCE.md
   - Security: SECURITY.md

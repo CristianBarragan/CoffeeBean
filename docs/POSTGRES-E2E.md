@@ -11,6 +11,11 @@ CI always supplies that connection string.
 
 PostgreSQL retrieval is a branch inside the canonical semantic lifecycle, not a second pipeline:
 
+<p align="center"><img src="assets/retrieval-strategy-boundary.svg" alt="Foundgine.Sql RetrievalStrategy boundary: Relational, Fuzzy (pg_trgm), FullText (tsvector), Search/BM25 (pg_search, optional), GraphSimilarity (Apache AGE, optional), and Vector (reserved, always throws NotSupportedException on this boundary). All strategies converge on ranked candidates and provenance, then ordinary semantic resolution and authorization." width="100%"></p>
+
+<details>
+<summary>Text version</summary>
+
 ```text
 Semantic Operation Graph
           ↓
@@ -30,6 +35,13 @@ Relational Fuzzy  FullText   BM25      AGE
                     ↓
                   Plan
 ```
+
+</details>
+
+Note that this `RetrievalStrategy` boundary is separate from the
+`ISemanticLexicalCandidateSource` boundary that `Foundgine.Postgres.Vector`
+implements (see [LEXICAL-GROUNDING.md](LEXICAL-GROUNDING.md)) — `Vector` stays
+reserved/unimplemented here on purpose.
 
 No retrieval strategy grants authority or bypasses semantic authorization.
 
@@ -55,12 +67,14 @@ docker compose -f docker-compose.postgres.yml exec -T postgres \
 The container uses:
 
 ```text
-image: postgres:17-alpine
+image: pgvector/pgvector:pg17
 host port: 55432
 database: foundgine_e2e
 user: foundgine
 password: foundgine
 ```
+
+`pgvector/pgvector:pg17` is a drop-in-compatible build of the official `postgres:17` image with the `pgvector` extension preinstalled. It is required by `Foundgine.Postgres.Vector`'s E2E tests (`PostgresVectorE2ETests`), which call `CREATE EXTENSION vector` — something a vanilla `postgres:17` image cannot satisfy.
 
 The database uses a temporary filesystem, so it is safe to throw away after the test.
 
@@ -100,7 +114,10 @@ The PostgreSQL tests are the physical database proof for:
 - dependency levels;
 - compiler-owned correlation;
 - batched mutation execution;
-- real PostgreSQL execution.
+- real PostgreSQL execution;
+- the pgvector-backed lexical grounding pipeline — semantic contract → lexicon projection → embedding → pgvector index → nearest-neighbor retrieval → graph-constrained resolution (`PostgresVectorE2ETests`).
+
+<p align="center"><img src="assets/pgvector-e2e-pipeline.svg" alt="PostgresVectorE2ETests sequence: build a semantic contract, project it through SemanticLexiconProjection, embed entries, index them into pgvector via PgVectorSemanticLexiconIndexClient, retrieve ranked candidates via PgVectorSemanticLexicalCandidateSource, and resolve a two-token expression through SemanticLexicalResolver." width="100%"></p>
 
 The tests that need a database are deliberately skipped when no connection string exists. This keeps ordinary local tests easy to run.
 

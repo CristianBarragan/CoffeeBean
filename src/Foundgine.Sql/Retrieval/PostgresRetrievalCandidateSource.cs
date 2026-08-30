@@ -100,8 +100,12 @@ public sealed class PostgresRetrievalCandidateSource
 
             RetrievalStrategy.Vector =>
                 throw new NotSupportedException(
-                    "Vector retrieval is intentionally reserved " +
-                    "for a pgvector provider."),
+                    "This field-value retrieval boundary does not implement " +
+                    "vector search. For token-level lexical grounding backed " +
+                    "by pgvector, use PgVectorSemanticLexicalCandidateSource " +
+                    "in Foundgine.Postgres.Vector, which implements " +
+                    "ISemanticLexicalCandidateSource directly against the " +
+                    "projected semantic lexicon."),
 
             RetrievalStrategy.Relational =>
                 [],
