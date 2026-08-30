@@ -6,6 +6,7 @@ using Foundgine.Metadata;
 using Foundgine.Planning;
 using Foundgine.Planning.Mutation;
 using Foundgine.Semantics.Authorization;
+using Foundgine.Semantics.IR;
 using Foundgine.Semantics.Resolution;
 using Foundgine.Sql;
 using Foundgine.Sql.Mutation.Postgres;
@@ -21,7 +22,8 @@ var connectionString =
 var model = CoffeeBeanerySemanticModel.Build();
 var metadata = CoffeeBeaneryMetadata.Build();
 var policy = new AllowAllSemanticAuthorizationPolicy();
-var resolver = new SemanticRequestResolver(model);
+var contract = model.Freeze().CreateSnapshot();
+var resolver = new SemanticRequestResolver(contract);
 var authorizer = new SemanticAuthorizer(policy);
 var planner = new Planner();
 var compiler = new SqlCompiler(metadata);
@@ -96,8 +98,9 @@ app.MapPost("/graphql/{mode}", async (
         var queryAdaptation = new HotChocolateSemanticAdapter(model)
             .AdaptResultShape(request.Query, request.Variables, request.OperationName);
         var resolved = resolver.Resolve(queryAdaptation.Request);
-        var authorized = authorizer.Authorize(resolved);
-        var planQuery = planner.Plan(authorized);
+        var semanticOperation = SemanticOperationCompiler.Compile(resolved);
+        var authorization = authorizer.AuthorizeWithEvidence(contract, semanticOperation);
+        var planQuery = planner.Plan(contract, authorization);
 
         var cache = string.Equals(mode, "warm", StringComparison.OrdinalIgnoreCase)
             ? (IProviderPlanCache)warmQueryCache

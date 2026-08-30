@@ -45,7 +45,10 @@ public sealed class AotAndPlanningTests
             new SemanticQueryOptions(
                 GeneratedSemanticModel.CatalogProduct.Id.Eq(42))));
 
-        var plan = new Planner().Plan(operation);
+        var plan = new Planner().Plan(operation) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sql = new SqlCompiler(GeneratedMetadata.Registry).Compile(plan);
 
         Assert.Contains("products", sql.CommandText, StringComparison.OrdinalIgnoreCase);

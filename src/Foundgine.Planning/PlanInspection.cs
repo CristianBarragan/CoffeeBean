@@ -16,10 +16,10 @@ public sealed record PlanInspection(
 public sealed record PlanInspectionNode(
     int NodeId,
     string Operation,
-    int EntityId,
-    IReadOnlyList<int> FieldIds,
-    int? ViaRelationshipId,
-    int? ViaConnectionId,
+    ulong EntityId,
+    IReadOnlyList<ulong> FieldIds,
+    ulong? ViaRelationshipId,
+    ulong? ViaConnectionId,
     bool AuthorizationApplied,
     IReadOnlyList<PlanInspectionNode> Children);
 
@@ -66,7 +66,7 @@ public static class PlanInspector
             node.Id,
             node.Operation.ToString(),
             node.EntityId.Value,
-            node.Fields.Select(x => (int)x.Value).ToArray(),
+            node.Fields.Select(x => x.Value).ToArray(),
             node.ViaRelationship?.Value,
             node.ViaConnection?.Value,
             node.Authorization is not null,

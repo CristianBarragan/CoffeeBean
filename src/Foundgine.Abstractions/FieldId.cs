@@ -4,27 +4,32 @@ using System.Text.Json.Serialization;
 namespace Foundgine.Abstractions;
 
 [JsonConverter(typeof(FieldIdJsonConverter))]
-public readonly record struct FieldId(ushort Value);
+public readonly record struct FieldId(ulong Value)
+{
+    public static FieldId Create(string semanticEntityName, string semanticFieldName) =>
+        new(SemanticIdentity.Hash(SemanticIdentity.FieldKey(semanticEntityName, semanticFieldName)));
+}
 
-/// <summary>
-/// Lets <see cref="FieldId"/> be used both as an ordinary JSON value and as a
-/// dictionary key (e.g. <c>IReadOnlyDictionary&lt;FieldId, object?&gt;</c>
-/// results returned from mutation execution). System.Text.Json's default
-/// object converter cannot serialize a struct as a property name unless it
-/// explicitly overrides ReadAsPropertyName/WriteAsPropertyName, so without
-/// this converter any dictionary keyed by FieldId throws NotSupportedException
-/// the moment it is serialized.
-/// </summary>
 public sealed class FieldIdJsonConverter : JsonConverter<FieldId>
 {
     public override FieldId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        => new(reader.GetUInt16());
+    {
+        if (reader.TokenType == JsonTokenType.Number)
+            return new FieldId(reader.GetUInt64());
+        if (reader.TokenType == JsonTokenType.StartObject)
+        {
+            using var document = JsonDocument.ParseValue(ref reader);
+            if (document.RootElement.TryGetProperty("Value", out var value))
+                return new FieldId(value.GetUInt64());
+        }
+        throw new JsonException("Expected a FieldId numeric value or a legacy {\"Value\":...} object.");
+    }
 
     public override void Write(Utf8JsonWriter writer, FieldId value, JsonSerializerOptions options)
         => writer.WriteNumberValue(value.Value);
 
     public override FieldId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        => new(ushort.Parse(reader.GetString()!));
+        => new(ulong.Parse(reader.GetString()!));
 
     public override void WriteAsPropertyName(Utf8JsonWriter writer, FieldId value, JsonSerializerOptions options)
         => writer.WritePropertyName(value.Value.ToString());

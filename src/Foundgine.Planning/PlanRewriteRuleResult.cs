@@ -10,10 +10,14 @@ public sealed record PlanRewriteRuleResult(
     double CostImpact,
     SecurityPreservationProof SecurityProof,
     SecurityObligationProof SecurityObligationProof,
-    SemanticEquivalenceProof SemanticProof)
+    SemanticEquivalenceProof SemanticProof,
+    SemanticPlanAuthorizationBindingProof AuthorizationBindingProof,
+    PlanOptimizationProof? OptimizationProof = null)
 {
     public bool IsSatisfied =>
         SecurityProof.IsSatisfied &&
         SecurityObligationProof.IsSatisfied &&
-        SemanticProof.IsSatisfied;
+        SemanticProof.IsSatisfied &&
+        AuthorizationBindingProof.IsSatisfied &&
+        (OptimizationProof?.IsSatisfied ?? true);
 }

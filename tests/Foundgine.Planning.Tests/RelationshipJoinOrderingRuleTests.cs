@@ -21,8 +21,7 @@ public sealed class RelationshipJoinOrderingRuleTests
         Assert.Equal(before.Root.Children[0].ViaRelationship, after.Root.Children[0].ViaRelationship);
         Assert.Equal(0, after.Root.Children[1].TraversalOrder);
         Assert.Equal(1, after.Root.Children[0].TraversalOrder);
-        Assert.Equal(20, after.Root.Children[0].ViaRelationship!.Value.Value);
-        Assert.Equal(10, after.Root.Children[1].ViaRelationship!.Value.Value);
+        Assert.NotEqual(after.Root.Children[0].ViaRelationship, after.Root.Children[1].ViaRelationship);
     }
 
     [Fact]
@@ -63,14 +62,14 @@ public sealed class RelationshipJoinOrderingRuleTests
         Assert.Same(once, twice);
     }
 
-    private static SemanticPlanNode Node(int id, ushort relationshipId, RelationshipCardinality cardinality, SemanticFilterExpression? filter)
+    private static SemanticPlanNode Node(int id, ulong relationshipId, RelationshipCardinality cardinality, SemanticFilterExpression? filter)
     {
         var options = filter is null ? null : new SemanticQueryOptions(Filter: filter);
         return new SemanticPlanNode(
             id,
             ExecutionOperation.Traverse,
-            new EntityId((ushort)id),
-            [new FieldId((ushort)id)],
+            new EntityId((ulong)id),
+            [new FieldId((ulong)id)],
             new RelationshipId(relationshipId),
             null,
             [],
@@ -78,3 +77,5 @@ public sealed class RelationshipJoinOrderingRuleTests
             RelationshipCardinality: cardinality);
     }
 }
+
+

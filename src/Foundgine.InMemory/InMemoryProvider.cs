@@ -108,7 +108,9 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
     public ProviderPlan Compile(ExecutionIR ir)
     {
         ArgumentNullException.ThrowIfNull(ir);
-        return new InMemoryPlan(ir);
+        var plan = new InMemoryPlan(ir);
+        ExecutionIRBoundary.BindProviderPlan(ir, plan);
+        return plan;
     }
 
 
@@ -119,6 +121,9 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
     {
         if (plan is not InMemoryPlan memoryPlan)
             throw new ArgumentException("Expected an InMemoryPlan.", nameof(plan));
+        if (memoryPlan.AuthorizationBinding is null)
+            throw new InvalidOperationException(
+                "The in-memory provider refuses to execute a provider plan without authorization provenance.");
 
         cancellationToken.ThrowIfCancellationRequested();
         if (_metadata is null || _data is null)
@@ -273,7 +278,9 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
 
     private ExecutionRow ToExecutionRow(ExecutionIRNode node, InMemoryRow row) =>
         new(
-            row.Values.ToDictionary(x => x.Key.ToString(), x => x.Value),
+            node.Fields.ToDictionary(
+                field => $"__fg_{node.Id}_{field}",
+                field => row.Values.TryGetValue(field, out var value) ? value : null),
             node.Fields.ToDictionary(
                 field => new ExecutionCellKey(node.Id, node.EntityId, field),
                 field => row.Values.TryGetValue(field, out var value) ? value : null));

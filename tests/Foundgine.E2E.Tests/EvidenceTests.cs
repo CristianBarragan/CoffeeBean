@@ -37,7 +37,10 @@ public sealed class EvidenceTests
             new[] { new FieldId(1), new FieldId(3) },
             authorization.Predicate);
 
-        var logicalPlan = new Planner().Plan(semanticGraph);
+        var logicalPlan = new Planner().Plan(semanticGraph) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sqlPlan = new SqlCompiler(GeneratedMetadata.Registry).Compile(logicalPlan);
 
         var result = await new SqlExecutionProvider(connection).ExecuteAsync(
@@ -69,8 +72,14 @@ public sealed class EvidenceTests
         graph2.AddRoot(new EntityId(3), new[] { new FieldId(1), new FieldId(3) }, authorization.Predicate);
 
         var compiler = new SqlCompiler(GeneratedMetadata.Registry);
-        var sql1 = compiler.Compile(new Planner().Plan(graph1));
-        var sql2 = compiler.Compile(new Planner().Plan(graph2));
+        var sql1 = compiler.Compile(new Planner().Plan(graph1) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        });
+        var sql2 = compiler.Compile(new Planner().Plan(graph2) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        });
 
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();

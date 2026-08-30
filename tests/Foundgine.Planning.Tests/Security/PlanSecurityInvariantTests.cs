@@ -46,7 +46,10 @@ public sealed class PlanSecurityInvariantTests
     {
         var node = new SemanticPlanNode(
             1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(2)], null, null, []);
-        var plan = SecurityInvariantPlanRequirements.Attach(new SemanticPlan(node));
+        var plan = SecurityInvariantPlanRequirements.Attach(new SemanticPlan(node)) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var ir = ExecutionIRCompiler.Compile(plan);
         var compiler = new MissingInvariantCompiler();
         var providerPlan = compiler.Compile(ir);
@@ -62,7 +65,10 @@ public sealed class PlanSecurityInvariantTests
     {
         var node = new SemanticPlanNode(
             1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(2)], null, null, []);
-        var plan = SecurityInvariantPlanRequirements.Attach(new SemanticPlan(node));
+        var plan = SecurityInvariantPlanRequirements.Attach(new SemanticPlan(node)) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var ir = ExecutionIRCompiler.Compile(plan);
         var compiler = new FullInvariantCompiler();
         var providerPlan = compiler.Compile(ir);

@@ -74,16 +74,17 @@ public sealed class SecurityProofRailsPenetrationTests
             SecurityInvariantProofGate.AttachAndValidate(new TestPlan("p1"), ir, new GoodCompiler()));
     }
 
-    private static ExecutionIR CreateIr(params string[] invariants) => new(
-        new ExecutionIRNode(
-            1,
-            ExecutionOperation.Scan,
-            new EntityId(1),
-            [new FieldId(1)],
-            null,
-            null,
-            []),
-        invariants);
+    private static ExecutionIR CreateIr(params string[] invariants) =>
+        Foundgine.Testing.ExecutionIRTestFactory.Create(
+            new ExecutionIRNode(
+                1,
+                ExecutionOperation.Scan,
+                new EntityId(1),
+                [new FieldId(1)],
+                null,
+                null,
+                []),
+            invariants);
 
     private sealed record TestPlan(string Provider) : ProviderPlan(Provider);
 
@@ -101,3 +102,4 @@ public sealed class SecurityProofRailsPenetrationTests
             new(plan.Provider, ir.RequiredSecurityInvariants, ir.RequiredSecurityInvariants, []);
     }
 }
+

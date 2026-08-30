@@ -2,7 +2,22 @@ using Foundgine.Abstractions;
 
 namespace Foundgine.Semantics.Resolution;
 
-public sealed record ResolutionEvidence(string Description);
+public enum CandidateEvidenceKind : byte
+{
+    ExactIdentity,
+    Alias,
+    Trigram,
+    FullText,
+    Bm25,
+    GraphSimilarity,
+    VectorSimilarity,
+    Relationship
+}
+
+public sealed record ResolutionEvidence(
+    string Description,
+    CandidateEvidenceKind? Kind = null,
+    double? Score = null);
 
 public enum ResolutionOutcome
 {

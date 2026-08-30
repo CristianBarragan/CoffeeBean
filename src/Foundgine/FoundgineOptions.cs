@@ -87,6 +87,12 @@ public sealed class FoundgineOptions
     /// <summary>Canonical engine-side bounds for untrusted semantic request complexity.</summary>
     public SecurityResourceLimits SecurityResourceLimits { get; set; } = new();
 
+    /// <summary>Optional trusted authority consulted immediately before provider execution.</summary>
+    public IExecutionAuthorizationRevalidator? ExecutionAuthorizationRevalidator { get; set; }
+
+    /// <summary>Optional current authorization authority state resolver used for execution-time revalidation.</summary>
+    public Func<SemanticAuthorizationEvidence, CancellationToken, ValueTask<ExecutionAuthorizationAuthorityState?>>? ExecutionAuthorizationAuthorityResolver { get; set; }
+
     /// <summary>Optional mutation schema and provider for the semantic mutation pipeline.</summary>
     public IMutationSchema? MutationSchema { get; set; }
     public Foundgine.Execution.Mutation.IMutationBatchExecutionProvider? MutationProvider { get; set; }

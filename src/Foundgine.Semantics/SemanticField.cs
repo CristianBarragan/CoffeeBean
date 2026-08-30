@@ -11,11 +11,22 @@ public sealed record SemanticField(
     string Name,
     Type ClrType,
     SemanticType? SemanticType = null,
-    SemanticFieldCapabilities Capabilities = SemanticFieldCapabilities.Default)
+    SemanticFieldCapabilities Capabilities = SemanticFieldCapabilities.Default,
+    IReadOnlyList<SemanticAlias>? Aliases = null,
+    IReadOnlyList<SemanticConstraint>? Constraints = null,
+    bool? NullableOverride = null)
 {
+    public IReadOnlyList<SemanticAlias> EffectiveAliases => Aliases ?? [];
+    public IReadOnlyList<SemanticConstraint> EffectiveConstraints => Constraints ?? [];
     public SemanticType EffectiveSemanticType => SemanticType ?? Foundgine.Semantics.SemanticType.FromClrType(ClrType);
 
-    public bool IsNullable => !ClrType.IsValueType || Nullable.GetUnderlyingType(ClrType) is not null;
+    /// <summary>
+    /// Whether the semantic field permits null. For reference types this may
+    /// be explicitly supplied by the typed/AOT semantic pipeline so nullable-
+    /// reference metadata is preserved even though string and string? share
+    /// the same runtime <see cref="Type"/>.
+    /// </summary>
+    public bool IsNullable => NullableOverride ?? (!ClrType.IsValueType || Nullable.GetUnderlyingType(ClrType) is not null);
 }
 
 [Flags]

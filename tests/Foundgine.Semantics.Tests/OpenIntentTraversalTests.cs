@@ -4,6 +4,8 @@ using Foundgine.Semantics.Intent;
 using Foundgine.Semantics.Resolution;
 using Foundgine.Semantics.Capabilities;
 using Foundgine.Semantics.Query;
+using Foundgine.Semantics.IR;
+using Foundgine.Semantics.IR.Graph;
 using Xunit;
 
 namespace Foundgine.Semantics.Tests;
@@ -31,7 +33,7 @@ public sealed class OpenIntentTraversalTests
                 Children: [new ReadSelection(Field: "Amount")])]);
 
         var request = new ReadIntentCompiler(model).Compile(intent);
-        var graph = new SemanticRequestResolver(model).Resolve(request);
+        var graph = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
 
         Assert.Equal(4, graph.Nodes.Count);
         Assert.Equal(Customer, graph.Nodes[0].EntityId);
@@ -45,6 +47,71 @@ public sealed class OpenIntentTraversalTests
     }
 
     [Fact]
+    public void Dynamic_intent_converges_on_the_same_canonical_operation_graph_as_typed_semantic_request()
+    {
+        var model = BuildModel();
+        var snapshot = model.Freeze().CreateSnapshot();
+        var intent = new ReadIntent(
+            "Customer",
+            [new ReadSelection(
+                Relationship: "transactions",
+                Children: [new ReadSelection(Field: "Amount")])]);
+
+        var dynamicGraph = new ReadIntentCompiler(snapshot).CompileOperationGraph(intent);
+        var typedRequest = new ReadIntentCompiler(snapshot).Compile(intent);
+        var typedGraph = SemanticOperationGraph.Create(
+            SemanticOperationCompiler.Compile(
+                new SemanticRequestResolver(snapshot).Resolve(typedRequest)));
+
+        Assert.Equal(
+            SemanticOperationGraphFingerprint.Create(typedGraph),
+            SemanticOperationGraphFingerprint.Create(dynamicGraph));
+        Assert.Equal(snapshot.ContractFingerprint, new ReadIntentCompiler(snapshot).ContractFingerprint);
+        Assert.Equal(4, dynamicGraph.Nodes.Count);
+        Assert.Equal(Transaction, dynamicGraph.GetNode(3).EntityId);
+        Assert.Equal(TransactionAmount, dynamicGraph.GetNode(3).Fields.Single());
+    }
+
+    [Fact]
+    public void Dynamic_intent_is_resolved_against_the_frozen_contract_before_planning()
+    {
+        var model = BuildModel();
+        var snapshot = model.Freeze().CreateSnapshot();
+        var intent = new ReadIntent(
+            "Customer",
+            [new ReadSelection(
+                Relationship: "transactions",
+                Children: [new ReadSelection(Field: "Amount")])]);
+
+        var graph = new ReadIntentCompiler(snapshot).CompileOperationGraph(intent);
+        var planner = new Foundgine.Planning.Planner();
+        var plan = planner.Plan(graph);
+
+        Assert.Equal(Customer, plan.Root.EntityId);
+        Assert.Equal(4, plan.Root.Children.Count == 1 ? CountPlanNodes(plan.Root) : -1);
+        Assert.Equal(Transaction, FindPlanNode(plan.Root, Transaction).EntityId);
+    }
+
+    private static int CountPlanNodes(Foundgine.Planning.SemanticPlanNode node) =>
+        1 + node.Children.Sum(CountPlanNodes);
+
+    private static Foundgine.Planning.SemanticPlanNode FindPlanNode(
+        Foundgine.Planning.SemanticPlanNode node,
+        EntityId entityId)
+    {
+        if (node.EntityId == entityId)
+            return node;
+
+        foreach (var child in node.Children)
+        {
+            try { return FindPlanNode(child, entityId); }
+            catch (Xunit.Sdk.XunitException) { }
+        }
+
+        throw new Xunit.Sdk.XunitException($"Entity '{entityId}' was not found in the plan.");
+    }
+
+    [Fact]
     public void Dynamic_logical_traversal_preserves_authorization_at_every_hop()
     {
         var model = BuildModel();
@@ -54,7 +121,7 @@ public sealed class OpenIntentTraversalTests
                 Relationship: "transactions",
                 Children: [new ReadSelection(Field: "Amount")])]);
 
-        var graph = new SemanticRequestResolver(model).Resolve(
+        var graph = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(
             new ReadIntentCompiler(model).Compile(request));
 
         var authorized = new SemanticAuthorizer(new DenyContractPolicy()).Authorize(graph);
@@ -148,3 +215,4 @@ public sealed class OpenIntentTraversalTests
         public override bool CanAccessEntity(EntityId entityId) => entityId != Contract;
     }
 }
+

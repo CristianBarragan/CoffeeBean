@@ -108,11 +108,14 @@ public sealed class CompoundCursorPaginationTests
         IMetadataProvider metadata,
         SemanticRequest request)
     {
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(
             new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
 
-        return new SqlCompiler(metadata).Compile(new Planner().Plan(authorized));
+        return new SqlCompiler(metadata).Compile(new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        });
     }
 
     private static SemanticRequest BuildRequest(int limit, string? after = null) => new(
@@ -152,3 +155,4 @@ public sealed class CompoundCursorPaginationTests
         await command.ExecuteNonQueryAsync();
     }
 }
+

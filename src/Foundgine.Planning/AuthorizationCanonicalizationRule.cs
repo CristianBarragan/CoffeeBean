@@ -41,7 +41,7 @@ public sealed class AuthorizationCanonicalizationRule : IPlanRewriteRule
 
         var changed = false;
         var root = RewriteNode(plan.Root, ref changed);
-        return changed ? new SemanticPlan(root, plan.RequiredSecurityInvariants) : plan;
+        return changed ? new SemanticPlan(root, plan.RequiredSecurityInvariants, plan.AuthorizationBinding) : plan;
     }
 
     private static SemanticPlanNode RewriteNode(SemanticPlanNode node, ref bool changed)

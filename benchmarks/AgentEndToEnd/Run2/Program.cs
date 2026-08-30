@@ -835,17 +835,30 @@ public sealed record Summary(
         values.Count == 0 ? 0 : values.Average(x => x.ToolTimeMs),
         values.Count == 0 ? 0 : values.Average(x => x.ModelCalls),
         values.Count == 0 ? 0 : values.Average(x => x.ToolCalls),
+
+        values.Count == 0 ? 0 : values.Average(x => x.AgentToolPayloadBytes),
+        values.Count == 0 ? 0 : values.Average(x => x.AgentToolRoundTrips),
+
         values.Count == 0 ? 0 : values.Average(x => x.ProviderInputTokens),
         values.Count == 0 ? 0 : values.Average(x => x.ProviderOutputTokens),
         values.Count == 0 ? 0 : values.Average(x => x.ProviderTotalTokens),
         values.Count == 0 ? 0 : values.Average(x => x.CachedInputTokens),
+
         values.Count == 0 ? 0 : values.Average(x => x.EstimatedToolInputTokens),
         values.Count == 0 ? 0 : values.Average(x => x.EstimatedToolOutputTokens),
         values.Count == 0 ? 0 : values.Average(x => x.EstimatedContextLoadTokens),
+
         values.Count == 0 ? 0 : values.Count(x => x.Success) * 100.0 / values.Count,
-        BenchmarkMath.Percentile(values.Where(x => x.Success).Select(x => x.WallClockMs), 0.50),
-        BenchmarkMath.Percentile(values.Where(x => x.Success).Select(x => x.WallClockMs), 0.95),
-        BenchmarkMath.Percentile(values.Where(x => x.Success).Select(x => x.WallClockMs), 0.99),
+
+        BenchmarkMath.Percentile(
+            values.Where(x => x.Success).Select(x => x.WallClockMs), 0.50),
+
+        BenchmarkMath.Percentile(
+            values.Where(x => x.Success).Select(x => x.WallClockMs), 0.95),
+
+        BenchmarkMath.Percentile(
+            values.Where(x => x.Success).Select(x => x.WallClockMs), 0.99),
+
         values.Count == 0 ? 0 : values.Max(x => x.PeakActiveHttpRequests),
         values.Sum(x => x.HttpRetries));
 }

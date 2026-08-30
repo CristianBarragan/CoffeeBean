@@ -8,10 +8,12 @@ namespace Foundgine.Semantics;
 public sealed record SemanticEntity(
     EntityId Id,
     string Name,
-    SemanticIdentity Identity,
+    SemanticFieldIdentity Identity,
     IReadOnlyList<SemanticField> Fields,
-    IReadOnlyList<SemanticRelationship> Relationships)
+    IReadOnlyList<SemanticRelationship> Relationships,
+    IReadOnlyList<SemanticAlias>? Aliases = null)
 {
+    public IReadOnlyList<SemanticAlias> EffectiveAliases => Aliases ?? [];
     /// <summary>CLR model type represented by this semantic entity when known.</summary>
     public Type? ModelType { get; init; }
 }

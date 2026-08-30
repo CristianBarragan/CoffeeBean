@@ -53,9 +53,12 @@ public sealed class JsonIntentPipelineTests
         var intent = new JsonReadIntentAdapter().Parse(json);
         var request = new Foundgine.Semantics.Intent.ReadIntentCompiler(model).Compile(intent);
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var plan = new Planner().Plan(authorized);
+        var plan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sqlPlan = new SqlCompiler(metadata).Compile(plan);
 
         Assert.Contains("WHERE", sqlPlan.CommandText, StringComparison.OrdinalIgnoreCase);
@@ -110,3 +113,4 @@ public sealed class JsonIntentPipelineTests
         await command.ExecuteNonQueryAsync();
     }
 }
+

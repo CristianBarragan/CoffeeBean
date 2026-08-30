@@ -7,6 +7,7 @@
     <RootNamespace>Foundgine.Metadata</RootNamespace>
     <AssemblyName>Foundgine.Metadata</AssemblyName>
     <IsPackable>true</IsPackable>
+    <TargetFramework>net9.0</TargetFramework>
     <PackageReleaseNotes>1.1.0: Additive release with the host-owned security execution-context provider contract. GraphQL secure query execution is provided by Foundgine.GraphQL.HotChocolate.Execution. The Supply Chain reference sample is source-integrated against this release line. 1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0. 0.5.0: Packaging/documentation cleanup only; no metadata-model runtime capability change. 0.3.0: Metadata and semantic modeling became part of the validated semantic execution release surface. AOT metadata support builds on this package.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
