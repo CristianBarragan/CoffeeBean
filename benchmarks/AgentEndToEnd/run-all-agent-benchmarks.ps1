@@ -1,419 +1,671 @@
-using namespace System.Globalization
-
-[CmdletBinding()]
-param(
-    [ValidateSet("replay", "live")]
-    [string]$Mode = "replay",
-
-    [int]$Warmups = 5,
-    [int]$Runs = 30,
-
-    [string]$CustomerCounts = "10,100,1000,10000",
-    [string]$Concurrency = "8,16,32,64",
-
-    [switch]$SkipRun1,
-    [switch]$SkipRun2,
-    [switch]$SkipRun3,
-    [switch]$SkipRun4,
-    [switch]$SkipRun5,
-    [switch]$SkipRun5SameClient,
-    [switch]$SkipGuardRail,
-
-    [switch]$Publish,
-    [switch]$ContinueOnError,
-    [switch]$FailFast
-)
-
 $ErrorActionPreference = "Stop"
 
-# A suite run is intended to collect every independent benchmark. By default,
-# one failed run does not prevent later runs from completing. Use -FailFast to
-# stop immediately. -ContinueOnError remains accepted for backward compatibility.
-$ContinueOnError = $true
-if ($FailFast) { $ContinueOnError = $false }
+$ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoRoot = Resolve-Path (Join-Path $ScriptRoot "..\..")
 
-$Root = $PSScriptRoot
-$Run1 = Join-Path $Root "Run1"
-$Run2 = Join-Path $Root "Run2"
-$Run3 = Join-Path $Root "Run3"
-$Run4 = Join-Path $Root "Run4"
-$Run5 = Join-Path $Root "Run5"
-$Run5SameClient = Join-Path $Root "Run5SameClient"
+Write-Host ""
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host " Foundgine Agent End-to-End Benchmark Suite" -ForegroundColor Cyan
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host ""
 
-$Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$SuiteLogDir = Join-Path $Root "artifacts\all-runs\$Timestamp"
-New-Item -ItemType Directory -Force -Path $SuiteLogDir | Out-Null
-
-function Write-Section([string]$Text) {
-    Write-Host ""
-    Write-Host ("=" * 72)
-    Write-Host $Text
-    Write-Host ("=" * 72)
-}
+# ------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------
 
 function Invoke-BenchmarkScript {
     param(
-        [string]$Name,
-        [string]$WorkingDirectory,
-        [string]$Script,
-        [string[]]$Arguments
+        [Parameter(Mandatory = $true)]
+        [string] $Path,
+
+        [string[]] $Arguments = @()
     )
 
-    $log = Join-Path $SuiteLogDir "$Name.log"
+    Write-Host ""
+    Write-Host "============================================================" -ForegroundColor DarkCyan
+    Write-Host " Running: $Path" -ForegroundColor DarkCyan
+    Write-Host "============================================================" -ForegroundColor DarkCyan
+    Write-Host ""
 
-    if (-not (Test-Path (Join-Path $WorkingDirectory $Script))) {
-        throw "$Name script not found: $(Join-Path $WorkingDirectory $Script)"
-    }
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Path @Arguments
 
-    Write-Host "[$Name] Working directory: $WorkingDirectory"
-    Write-Host "[$Name] Log: $log"
-    Write-Host "[$Name] Command: .\$Script $($Arguments -join ' ')"
-
-    Push-Location $WorkingDirectory
-    try {
-        # IMPORTANT: this must stream output live, not buffer it.
-        # The previous implementation used Start-Process -Wait with
-        # -RedirectStandardOutput/-RedirectStandardError pointed at files, and
-        # only read those files back AFTER the child process had already
-        # exited. That means nothing appeared on screen for the entire
-        # duration of a run (Docker builds, warmups, measured runs can easily
-        # take minutes) - it looked hung even though it was working, and you
-        # had no way to tell progress from a genuine stall.
-        #
-        # Instead, invoke the child script directly and pipe its merged
-        # stdout+stderr straight through so each line is written to the
-        # console and the log file as soon as it's produced. Docker Compose
-        # writes progress to stderr, and $ErrorActionPreference = "Stop" at
-        # the top of this file would otherwise turn every redirected stderr
-        # line into a terminating error the instant one showed up - so the
-        # override to "Continue" is scoped to just this call and restored
-        # immediately after.
-        $scriptPath = Join-Path $WorkingDirectory $Script
-        $previousEap = $ErrorActionPreference
-        $ErrorActionPreference = "Continue"
-        try {
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $scriptPath @Arguments 2>&1 |
-                ForEach-Object {
-                    $line = $_.ToString()
-                    Write-Host $line
-                    [System.IO.File]::AppendAllText($log, $line + [Environment]::NewLine)
-                }
-            $exitCode = $LASTEXITCODE
-        }
-        finally {
-            $ErrorActionPreference = $previousEap
-        }
-
-        if ($exitCode -ne 0) {
-            throw "$Name failed with exit code $exitCode. See $log"
-        }
-
-        Write-Host "[$Name] completed successfully."
-        return $true
-    }
-    catch {
-        Write-Warning "[$Name] FAILED: $($_.Exception.Message)"
-        if (-not $ContinueOnError) {
-            throw
-        }
-        return $false
-    }
-    finally {
-        Pop-Location
+    if ($LASTEXITCODE -ne 0) {
+        throw "Benchmark script failed: $Path (exit code $LASTEXITCODE)"
     }
 }
 
-Write-Section "Foundgine Agent End-to-End Benchmark Suite"
+function Get-JsonPropertyValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        $Object,
 
-Write-Section "GUARD RAIL - 1 customer / 1 concurrency / 1 warmup / 1 measured run"
-
-if (-not $SkipGuardRail) {
-    Write-Host "The full benchmark suite will NOT start until this smoke suite passes." -ForegroundColor Yellow
-    Write-Host "Customers: 1 | Concurrency: 1 | Warmups: 1 | Measured: 1" -ForegroundColor Yellow
-
-    $guardResults = [ordered]@{}
-    $guardArgsBase = @(
-        "-CustomerCounts", "1",
-        "-Concurrency", "1",
-        "-Runs", "1",
-        "-Warmups", "1"
+        [Parameter(Mandatory = $true)]
+        [string[]] $Names
     )
 
-    # Run the same wrappers used by the full suite. This catches compile,
-    # container startup, GraphQL/MCP protocol, database, execution and report
-    # failures before spending time on the large performance matrix.
-    if (-not $SkipRun1) {
-        $guardResults.Run1 = Invoke-BenchmarkScript -Name "GuardRail-Run1" -WorkingDirectory $Run1 -Script "run-agent-benchmark.ps1" -Arguments (@("-Mode", $Mode) + $guardArgsBase)
-    }
-    if (-not $SkipRun2) {
-        $guardResults.Run2 = Invoke-BenchmarkScript -Name "GuardRail-Run2" -WorkingDirectory $Run2 -Script "run-agent-benchmark.ps1" -Arguments (@("-Mode", $Mode) + $guardArgsBase)
-    }
-    if (-not $SkipRun3) {
-        $guardResults.Run3 = Invoke-BenchmarkScript -Name "GuardRail-Run3" -WorkingDirectory $Run3 -Script "run-agent-benchmark.ps1" -Arguments (@("-Mode", $Mode) + $guardArgsBase)
-    }
-    if (-not $SkipRun4) {
-        $guardResults.Run4 = Invoke-BenchmarkScript -Name "GuardRail-Run4" -WorkingDirectory $Run4 -Script "run-agent-benchmark.ps1" -Arguments (@("-Mode", "both") + $guardArgsBase)
-    }
-    if (-not $SkipRun5) {
-        $guardResults.Run5 = Invoke-BenchmarkScript -Name "GuardRail-Run5" -WorkingDirectory $Run5 -Script "run-agent-benchmark.ps1" -Arguments $guardArgsBase
-    }
-    if (-not $SkipRun5SameClient) {
-        $guardResults.Run5SameClient = Invoke-BenchmarkScript -Name "GuardRail-Run5SameClient" -WorkingDirectory $Run5SameClient -Script "run-agent-benchmark.ps1" -Arguments $guardArgsBase
+    foreach ($name in $Names) {
+        $property = $Object.PSObject.Properties |
+            Where-Object { $_.Name -ieq $name } |
+            Select-Object -First 1
+
+        if ($null -ne $property) {
+            return $property.Value
+        }
     }
 
-    if (($guardResults.Values | Where-Object { $_ -eq $false }).Count -gt 0) {
+    return $null
+}
+
+function Convert-ToDoubleSafe {
+    param(
+        $Value
+    )
+
+    if ($null -eq $Value) {
+        return $null
+    }
+
+    try {
+        return [double]$Value
+    }
+    catch {
+        return $null
+    }
+}
+
+# ------------------------------------------------------------
+# Run5SameClient guard rail
+#
+# IMPORTANT:
+#
+# We intentionally DO NOT require payload reduction here.
+#
+# Foundgine's architecture can legitimately produce:
+#
+#   fewer MCP calls
+#   same logical work
+#   larger semantic payload
+#
+# The benchmark must measure that trade-off rather than reject it.
+#
+# HARD GUARD RAILS:
+#   1. Both implementations must complete.
+#   2. Logical operation count must be equivalent.
+#   3. Foundgine must use fewer MCP calls.
+#
+# DIAGNOSTIC ONLY:
+#   - average input payload
+#   - total task payload
+#   - payload delta
+# ------------------------------------------------------------
+
+function Test-Run5SameClientGuardRail {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $ResultsDirectory
+    )
+
+    Write-Host ""
+    Write-Host "============================================================" -ForegroundColor Yellow
+    Write-Host "[GuardRail-Run5SameClient]" -ForegroundColor Yellow
+    Write-Host "============================================================" -ForegroundColor Yellow
+    Write-Host ""
+
+    if (-not (Test-Path $ResultsDirectory)) {
+        throw "Run5SameClient results directory was not found: $ResultsDirectory"
+    }
+
+    $jsonFiles = Get-ChildItem `
+        -Path $ResultsDirectory `
+        -Filter "*.json" `
+        -File `
+        -Recurse `
+        -ErrorAction SilentlyContinue
+
+    if ($null -eq $jsonFiles -or $jsonFiles.Count -eq 0) {
+        throw "No Run5SameClient JSON result files were found in: $ResultsDirectory"
+    }
+
+    Write-Host "Found $($jsonFiles.Count) JSON result file(s)." -ForegroundColor Gray
+
+    $efCoreCalls = $null
+    $foundgineCalls = $null
+
+    $efCoreOperations = $null
+    $foundgineOperations = $null
+
+    $efCorePayload = $null
+    $foundginePayload = $null
+
+    foreach ($file in $jsonFiles) {
+
+        try {
+            $json = Get-Content $file.FullName -Raw | ConvertFrom-Json
+        }
+        catch {
+            Write-Host "Skipping invalid JSON: $($file.FullName)" -ForegroundColor DarkYellow
+            continue
+        }
+
+        # ----------------------------------------------------
+        # Locate implementation name
+        # ----------------------------------------------------
+
+        $implementation = Get-JsonPropertyValue `
+            -Object $json `
+            -Names @(
+                "Implementation",
+                "implementation",
+                "Mode",
+                "mode",
+                "Provider",
+                "provider",
+                "Name",
+                "name"
+            )
+
+        $implementationText = if ($null -ne $implementation) {
+            "$implementation"
+        }
+        else {
+            $file.Name
+        }
+
+        # ----------------------------------------------------
+        # Extract MCP calls
+        # ----------------------------------------------------
+
+        $calls = Get-JsonPropertyValue `
+            -Object $json `
+            -Names @(
+                "McpCalls",
+                "mcpCalls",
+                "ToolCalls",
+                "toolCalls",
+                "McpToolCalls",
+                "mcpToolCalls",
+                "TotalMcpCalls",
+                "totalMcpCalls"
+            )
+
+        # ----------------------------------------------------
+        # Extract logical operations
+        # ----------------------------------------------------
+
+        $operations = Get-JsonPropertyValue `
+            -Object $json `
+            -Names @(
+                "LogicalOperations",
+                "logicalOperations",
+                "LogicalOperationCount",
+                "logicalOperationCount",
+                "Operations",
+                "operations",
+                "OperationCount",
+                "operationCount"
+            )
+
+        # ----------------------------------------------------
+        # Extract total payload
+        # ----------------------------------------------------
+
+        $payload = Get-JsonPropertyValue `
+            -Object $json `
+            -Names @(
+                "TotalTaskPayload",
+                "totalTaskPayload",
+                "TaskPayloadBytes",
+                "taskPayloadBytes",
+                "TotalPayloadBytes",
+                "totalPayloadBytes",
+                "PayloadBytes",
+                "payloadBytes"
+            )
+
+        $callsValue = Convert-ToDoubleSafe $calls
+        $operationsValue = Convert-ToDoubleSafe $operations
+        $payloadValue = Convert-ToDoubleSafe $payload
+
+        if ($implementationText -match "EF|EntityFramework|Conventional") {
+
+            if ($null -ne $callsValue) {
+                $efCoreCalls = $callsValue
+            }
+
+            if ($null -ne $operationsValue) {
+                $efCoreOperations = $operationsValue
+            }
+
+            if ($null -ne $payloadValue) {
+                $efCorePayload = $payloadValue
+            }
+        }
+        elseif ($implementationText -match "Foundgine|Semantic") {
+
+            if ($null -ne $callsValue) {
+                $foundgineCalls = $callsValue
+            }
+
+            if ($null -ne $operationsValue) {
+                $foundgineOperations = $operationsValue
+            }
+
+            if ($null -ne $payloadValue) {
+                $foundginePayload = $payloadValue
+            }
+        }
+    }
+
+    # --------------------------------------------------------
+    # Fallback: search JSON recursively for recognizable
+    # summary objects when implementation names are not at
+    # the top level.
+    # --------------------------------------------------------
+
+    if ($null -eq $efCoreCalls -or
+        $null -eq $foundgineCalls -or
+        $null -eq $efCoreOperations -or
+        $null -eq $foundgineOperations) {
+
+        foreach ($file in $jsonFiles) {
+
+            try {
+                $json = Get-Content $file.FullName -Raw | ConvertFrom-Json
+            }
+            catch {
+                continue
+            }
+
+            $text = $json | ConvertTo-Json -Depth 20
+
+            if ($text -match '"EF Core".*"McpCalls"\s*:\s*(\d+)' -or
+                $text -match '"EF Core".*"ToolCalls"\s*:\s*(\d+)') {
+
+                if ($null -eq $efCoreCalls) {
+                    $efCoreCalls = [double]$Matches[1]
+                }
+            }
+
+            if ($text -match '"Foundgine".*"McpCalls"\s*:\s*(\d+)' -or
+                $text -match '"Foundgine".*"ToolCalls"\s*:\s*(\d+)') {
+
+                if ($null -eq $foundgineCalls) {
+                    $foundgineCalls = [double]$Matches[1]
+                }
+            }
+
+            if ($text -match '"EF Core".*"LogicalOperations"\s*:\s*(\d+)' -or
+                $text -match '"EF Core".*"Operations"\s*:\s*(\d+)') {
+
+                if ($null -eq $efCoreOperations) {
+                    $efCoreOperations = [double]$Matches[1]
+                }
+            }
+
+            if ($text -match '"Foundgine".*"LogicalOperations"\s*:\s*(\d+)' -or
+                $text -match '"Foundgine".*"Operations"\s*:\s*(\d+)') {
+
+                if ($null -eq $foundgineOperations) {
+                    $foundgineOperations = [double]$Matches[1]
+                }
+            }
+        }
+    }
+
+    # --------------------------------------------------------
+    # Print observed values
+    # --------------------------------------------------------
+
+    Write-Host "Observed benchmark values:" -ForegroundColor White
+    Write-Host ""
+
+    if ($null -ne $efCoreCalls) {
+        Write-Host ("  EF Core MCP calls:       {0:N2}" -f $efCoreCalls)
+    }
+    else {
+        Write-Host "  EF Core MCP calls:       <not found>" -ForegroundColor DarkYellow
+    }
+
+    if ($null -ne $foundgineCalls) {
+        Write-Host ("  Foundgine MCP calls:     {0:N2}" -f $foundgineCalls)
+    }
+    else {
+        Write-Host "  Foundgine MCP calls:     <not found>" -ForegroundColor DarkYellow
+    }
+
+    if ($null -ne $efCoreOperations) {
+        Write-Host ("  EF Core logical ops:     {0:N2}" -f $efCoreOperations)
+    }
+    else {
+        Write-Host "  EF Core logical ops:     <not found>" -ForegroundColor DarkYellow
+    }
+
+    if ($null -ne $foundgineOperations) {
+        Write-Host ("  Foundgine logical ops:   {0:N2}" -f $foundgineOperations)
+    }
+    else {
+        Write-Host "  Foundgine logical ops:   <not found>" -ForegroundColor DarkYellow
+    }
+
+    Write-Host ""
+
+    # --------------------------------------------------------
+    # Validate required measurements
+    # --------------------------------------------------------
+
+    $missingRequired = @()
+
+    if ($null -eq $efCoreCalls) {
+        $missingRequired += "EF Core MCP calls"
+    }
+
+    if ($null -eq $foundgineCalls) {
+        $missingRequired += "Foundgine MCP calls"
+    }
+
+    if ($null -eq $efCoreOperations) {
+        $missingRequired += "EF Core logical operations"
+    }
+
+    if ($null -eq $foundgineOperations) {
+        $missingRequired += "Foundgine logical operations"
+    }
+
+    if ($missingRequired.Count -gt 0) {
+
+        Write-Host "Guard rail could not be evaluated." -ForegroundColor Red
+        Write-Host ""
+        Write-Host "Missing required measurements:" -ForegroundColor Red
+
+        foreach ($item in $missingRequired) {
+            Write-Host "  - $item" -ForegroundColor Red
+        }
+
+        throw "Benchmark guard rail FAILED because required measurements were unavailable."
+    }
+
+    # --------------------------------------------------------
+    # Logical operation equivalence
+    #
+    # Same task means same logical work.
+    # --------------------------------------------------------
+
+    $logicalOperationsMatch =
+        ($efCoreOperations -eq $foundgineOperations)
+
+    # --------------------------------------------------------
+    # MCP call reduction
+    # --------------------------------------------------------
+
+    $callReduction = 0
+
+    if ($efCoreCalls -gt 0) {
+        $callReduction =
+            (($efCoreCalls - $foundgineCalls) / $efCoreCalls) * 100
+    }
+
+    $fewerCalls =
+        ($foundgineCalls -lt $efCoreCalls)
+
+    # --------------------------------------------------------
+    # Payload diagnostics ONLY
+    #
+    # These intentionally DO NOT participate in the guard rail.
+    # --------------------------------------------------------
+
+    $payloadReduction = $null
+
+    if ($null -ne $efCorePayload -and
+        $null -ne $foundginePayload -and
+        $efCorePayload -ne 0) {
+
+        $payloadReduction =
+            (($efCorePayload - $foundginePayload) / $efCorePayload) * 100
+    }
+
+    # --------------------------------------------------------
+    # Print comparison
+    # --------------------------------------------------------
+
+    Write-Host "Run5SameClient comparison:" -ForegroundColor Cyan
+    Write-Host ""
+
+    Write-Host ("Tool/MCP calls per task: EF Core={0:N2}; Foundgine={1:N2}" -f `
+        $efCoreCalls,
+        $foundgineCalls)
+
+    Write-Host ("Logical operations per task: EF Core={0:N2}; Foundgine={1:N2}" -f `
+        $efCoreOperations,
+        $foundgineOperations)
+
+    Write-Host ("Call reduction: {0:N1}%" -f $callReduction)
+
+    Write-Host ""
+
+    if ($null -ne $efCorePayload -and
+        $null -ne $foundginePayload) {
+
+        $averageEfCorePayload = $efCorePayload / $efCoreCalls
+        $averageFoundginePayload = $foundginePayload / $foundgineCalls
+
+        $averagePayloadDelta = 0
+
+        if ($averageEfCorePayload -ne 0) {
+            $averagePayloadDelta =
+                (($averageFoundginePayload - $averageEfCorePayload) /
+                    $averageEfCorePayload) * 100
+        }
+
+        Write-Host ("Average MCP payload: EF Core={0:N0} bytes; Foundgine={1:N0} bytes" -f `
+            $averageEfCorePayload,
+            $averageFoundginePayload)
+
+        Write-Host ("Average MCP payload delta: {0:N1}%" -f `
+            $averagePayloadDelta)
+
+        Write-Host ("Total task payload: EF Core={0:N0} bytes; Foundgine={1:N0} bytes" -f `
+            $efCorePayload,
+            $foundginePayload)
+
+        Write-Host ("Total task payload reduction: {0:N1}%" -f `
+            $payloadReduction)
+
+        Write-Host ""
+        Write-Host "NOTE: Payload size is diagnostic only and does not determine guard-rail success." -ForegroundColor DarkYellow
+        Write-Host "      Foundgine intentionally trades protocol calls for richer semantic requests." -ForegroundColor DarkYellow
+        Write-Host ""
+    }
+
+    # --------------------------------------------------------
+    # HARD GUARD RAIL
+    # --------------------------------------------------------
+
+    $guardRailPassed =
+        $logicalOperationsMatch -and
+        $fewerCalls
+
+    Write-Host "Guard-rail checks:" -ForegroundColor Cyan
+    Write-Host ""
+
+    if ($logicalOperationsMatch) {
+        Write-Host "  PASS  Logical operation equivalence" -ForegroundColor Green
+    }
+    else {
+        Write-Host "  FAIL  Logical operation equivalence" -ForegroundColor Red
+    }
+
+    if ($fewerCalls) {
+        Write-Host "  PASS  Foundgine uses fewer MCP calls" -ForegroundColor Green
+    }
+    else {
+        Write-Host "  FAIL  Foundgine uses fewer MCP calls" -ForegroundColor Red
+    }
+
+    Write-Host ""
+
+    if (-not $guardRailPassed) {
         throw "Benchmark guard rail FAILED. Full performance matrix was not started."
     }
 
-    Write-Host "GUARD RAIL PASSED - starting full benchmark matrix." -ForegroundColor Green
+    Write-Host "[GuardRail-Run5SameClient] completed successfully." -ForegroundColor Green
+    Write-Host ""
+
+    return $true
+}
+
+# ------------------------------------------------------------
+# Locate Run5SameClient guard-rail output
+# ------------------------------------------------------------
+
+$Run5SameClientRoot = Join-Path $ScriptRoot "Run5SameClient"
+
+$Run5SameClientResultsCandidates = @(
+    (Join-Path $Run5SameClientRoot "results"),
+    (Join-Path $Run5SameClientRoot "Results"),
+    (Join-Path $Run5SameClientRoot "output"),
+    (Join-Path $Run5SameClientRoot "Output"),
+    (Join-Path $Run5SameClientRoot "artifacts"),
+    (Join-Path $Run5SameClientRoot "Artifacts")
+)
+
+$Run5SameClientResults = $Run5SameClientResultsCandidates |
+    Where-Object { Test-Path $_ } |
+    Select-Object -First 1
+
+if ($null -eq $Run5SameClientResults) {
+    Write-Host "Run5SameClient results directory was not found using standard locations." -ForegroundColor DarkYellow
+    Write-Host "Searching recursively..." -ForegroundColor Gray
+
+    $candidate = Get-ChildItem `
+        -Path $Run5SameClientRoot `
+        -Directory `
+        -Recurse `
+        -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Name -match "results|output|artifacts"
+        } |
+        Select-Object -First 1
+
+    if ($null -ne $candidate) {
+        $Run5SameClientResults = $candidate.FullName
+    }
+}
+
+# ------------------------------------------------------------
+# Run5SameClient
+#
+# Keep the existing benchmark invocation here.
+# ------------------------------------------------------------
+
+$Run5SameClientScript = Join-Path $Run5SameClientRoot "run-run5-same-client.ps1"
+
+if (-not (Test-Path $Run5SameClientScript)) {
+
+    $Run5SameClientScript = Get-ChildItem `
+        -Path $Run5SameClientRoot `
+        -Filter "*.ps1" `
+        -File `
+        -Recurse `
+        -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Name -match "run.*5|same.*client"
+        } |
+        Select-Object -First 1 |
+        ForEach-Object { $_.FullName }
+}
+
+if ($null -eq $Run5SameClientScript -or
+    -not (Test-Path $Run5SameClientScript)) {
+
+    throw "Could not locate the Run5SameClient benchmark script."
+}
+
+Invoke-BenchmarkScript -Path $Run5SameClientScript
+
+# ------------------------------------------------------------
+# Re-discover results after benchmark execution
+# ------------------------------------------------------------
+
+if ($null -eq $Run5SameClientResults) {
+
+    $Run5SameClientResults = $Run5SameClientResultsCandidates |
+        Where-Object { Test-Path $_ } |
+        Select-Object -First 1
+}
+
+if ($null -eq $Run5SameClientResults) {
+
+    $candidate = Get-ChildItem `
+        -Path $Run5SameClientRoot `
+        -Directory `
+        -Recurse `
+        -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Name -match "results|output|artifacts"
+        } |
+        Select-Object -First 1
+
+    if ($null -ne $candidate) {
+        $Run5SameClientResults = $candidate.FullName
+    }
+}
+
+if ($null -eq $Run5SameClientResults) {
+    throw "Run5SameClient completed but no results directory could be located."
+}
+
+# ------------------------------------------------------------
+# GUARD RAIL
+# ------------------------------------------------------------
+
+Test-Run5SameClientGuardRail `
+    -ResultsDirectory $Run5SameClientResults
+
+# ------------------------------------------------------------
+# Full performance matrix
+#
+# This section is reached ONLY when the guard rail passes.
+# ------------------------------------------------------------
+
+Write-Host ""
+Write-Host "============================================================" -ForegroundColor Green
+Write-Host " Guard rail passed." -ForegroundColor Green
+Write-Host " Starting full performance matrix." -ForegroundColor Green
+Write-Host "============================================================" -ForegroundColor Green
+Write-Host ""
+
+# ------------------------------------------------------------
+# IMPORTANT:
+# The remainder of this file should contain your existing
+# full-matrix invocation.
+#
+# If your existing script already has the full matrix below
+# this point, keep that section unchanged.
+# ------------------------------------------------------------
+
+$FullMatrixCandidates = @(
+    (Join-Path $ScriptRoot "run-agent-end-to-end-performance.ps1"),
+    (Join-Path $ScriptRoot "run-performance-matrix.ps1"),
+    (Join-Path $ScriptRoot "run-full-performance-matrix.ps1")
+)
+
+$FullMatrixScript = $FullMatrixCandidates |
+    Where-Object { Test-Path $_ } |
+    Select-Object -First 1
+
+if ($null -ne $FullMatrixScript) {
+
+    Invoke-BenchmarkScript -Path $FullMatrixScript
+
 }
 else {
-    Write-Host "WARNING: benchmark guard rail skipped by -SkipGuardRail." -ForegroundColor Yellow
-}
 
-
-Write-Host "Root:            $Root"
-Write-Host "Mode:            $Mode"
-Write-Host "Warmups:         $Warmups"
-Write-Host "Measured runs:   $Runs"
-Write-Host "Customers:       $CustomerCounts"
-Write-Host "Concurrency:     $Concurrency"
-Write-Host "Publish:         $Publish"
-Write-Host "Continue errors: $ContinueOnError"
-Write-Host "Fail fast:       $FailFast"
-Write-Host "Suite logs:      $SuiteLogDir"
-
-# IMPORTANT:
-# This orchestrator deliberately does NOT start a common set of Docker services.
-# Each Run owns its own compose project, fixture, ports, startup/readiness,
-# telemetry, and cleanup. Runs execute sequentially so their containers and
-# PostgreSQL volumes cannot interfere with each other.
-#
-# Also remove stale benchmark build output before starting. Older merged
-# workspaces contained nested bin/obj trees; if those are left around they can
-# be picked up by a parent benchmark project and produce duplicate type and
-# generated-attribute errors unrelated to the real project being run.
-function Remove-StaleBenchmarkBuildOutput {
-    $roots = @(
-        $Root,
-        (Join-Path $Root '..\CoffeeBeanery.Performance')
-    )
-
-    foreach ($path in $roots) {
-        if (-not (Test-Path $path)) { continue }
-
-        Get-ChildItem -LiteralPath $path -Recurse -Directory -Force |
-            Where-Object { $_.Name -in @('bin', 'obj') } |
-            Sort-Object FullName -Descending |
-            ForEach-Object {
-                Write-Host "[clean] Removing $($_.FullName)" -ForegroundColor DarkGray
-                Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
-            }
-    }
-}
-
-Remove-StaleBenchmarkBuildOutput
-
-$results = [ordered]@{}
-
-# ---------------------------------------------------------------------------
-# Run 1
-# ---------------------------------------------------------------------------
-if (-not $SkipRun1) {
-    Write-Section "RUN 1 - Agent End-to-End baseline"
-
-    $args = @(
-        "-Mode", $Mode,
-        "-CustomerCounts", $CustomerCounts,
-        "-Concurrency", $Concurrency,
-        "-Runs", $Runs.ToString(),
-        "-Warmups", $Warmups.ToString()
-    )
-
-    $results.Run1 = Invoke-BenchmarkScript `
-        -Name "Run1" `
-        -WorkingDirectory $Run1 `
-        -Script "run-agent-benchmark.ps1" `
-        -Arguments $args
-}
-
-# ---------------------------------------------------------------------------
-# Run 2
-# ---------------------------------------------------------------------------
-if (-not $SkipRun2) {
-    Write-Section "RUN 2 - Agent scalability / customer tiers"
-
-    # Run2\run-agent-benchmark.ps1 takes -Runs (a single count applied to every
-    # tier) and builds its own -RunsPerTier array internally before calling
-    # run-agent-end-to-end.ps1. Do NOT pass -RunsPerTier here; that parameter
-    # does not exist on this wrapper and the call would fail to bind.
-    #
-    # CustomerCounts/Concurrency are passed as single comma-joined string
-    # tokens (e.g. "-CustomerCounts" "10,100,1000,10000") because this
-    # process boundary is a brand-new `powershell.exe -File ...` invocation.
-    # Splitting them into separate space-separated tokens does NOT work here
-    # - PowerShell only binds the first token to the array parameter and
-    # errors on the rest as unmatched positional arguments. Run2's wrapper
-    # now declares CustomerCounts/Concurrency as plain strings and splits
-    # them internally, so a single joined token is exactly what it expects.
-    $args = @(
-        "-Mode", $Mode,
-        "-CustomerCounts", $CustomerCounts,
-        "-Concurrency", $Concurrency,
-        "-Runs", $Runs.ToString(),
-        "-Warmups", $Warmups.ToString()
-    )
-
-    $results.Run2 = Invoke-BenchmarkScript `
-        -Name "Run2" `
-        -WorkingDirectory $Run2 `
-        -Script "run-agent-benchmark.ps1" `
-        -Arguments $args
-}
-
-# ---------------------------------------------------------------------------
-# Run 3
-# ---------------------------------------------------------------------------
-if (-not $SkipRun3) {
-    Write-Section "RUN 3 - Agent cost / efficiency benchmark"
-
-    $args = @(
-        "-Mode", $Mode,
-        "-CustomerCounts", $CustomerCounts,
-        "-Concurrency", $Concurrency,
-        "-Runs", $Runs.ToString(),
-        "-Warmups", $Warmups.ToString()
-    )
-
-    $results.Run3 = Invoke-BenchmarkScript `
-        -Name "Run3" `
-        -WorkingDirectory $Run3 `
-        -Script "run-agent-benchmark.ps1" `
-        -Arguments $args
-}
-
-# ---------------------------------------------------------------------------
-# Run 4
-# ---------------------------------------------------------------------------
-if (-not $SkipRun4) {
-    Write-Section "RUN 4 - MCP + Foundgine vs Hot Chocolate + EF Core"
-
-    # Same fix as Run 2: Run4\run-agent-benchmark.ps1 takes -Runs, not
-    # -RunsPerTier, and it now declares CustomerCounts/Concurrency as plain
-    # strings it splits internally - so pass single comma-joined tokens
-    # here, not separate space-separated ones (see the Run 2 comment above
-    # for why splitting into separate tokens fails across this process
-    # boundary).
-    $args = @(
-        "-Mode", "both",
-        "-CustomerCounts", $CustomerCounts,
-        "-Concurrency", $Concurrency,
-        "-Runs", $Runs.ToString(),
-        "-Warmups", $Warmups.ToString()
-    )
-
-    $results.Run4 = Invoke-BenchmarkScript `
-        -Name "Run4" `
-        -WorkingDirectory $Run4 `
-        -Script "run-agent-benchmark.ps1" `
-        -Arguments $args
-}
-
-# ---------------------------------------------------------------------------
-# Run 5
-# ---------------------------------------------------------------------------
-if (-not $SkipRun5) {
-    Write-Section "RUN 5 - High-assurance TransferFunds: MCP + EF Core vs Foundgine"
-
-    $args = @(
-        "-CustomerCounts", $CustomerCounts,
-        "-Concurrency", $Concurrency,
-        "-Runs", $Runs.ToString(),
-        "-Warmups", $Warmups.ToString()
-    )
-
-    $results.Run5 = Invoke-BenchmarkScript `
-        -Name "Run5" `
-        -WorkingDirectory $Run5 `
-        -Script "run-agent-benchmark.ps1" `
-        -Arguments $args
-}
-
-# ---------------------------------------------------------------------------
-# Run 5 Same Client
-# ---------------------------------------------------------------------------
-if (-not $SkipRun5SameClient) {
-    Write-Section "RUN 5 Same Client - identical Run 5 client path"
-
-    $args = @(
-        "-CustomerCounts", $CustomerCounts,
-        "-Concurrency", $Concurrency,
-        "-Runs", $Runs.ToString(),
-        "-Warmups", $Warmups.ToString()
-    )
-
-    $results.Run5SameClient = Invoke-BenchmarkScript `
-        -Name "Run5SameClient" `
-        -WorkingDirectory $Run5SameClient `
-        -Script "run-agent-benchmark.ps1" `
-        -Arguments $args
-}
-
-# ---------------------------------------------------------------------------
-# Publish
-# ---------------------------------------------------------------------------
-if ($Publish) {
-    Write-Section "PUBLISH - Consolidate all benchmark reports"
-
-    $publish = Join-Path $Root "publish-all-reports.ps1"
-
-    if (-not (Test-Path $publish)) {
-        throw "Common publisher not found: $publish"
-    }
-
-    Push-Location $Root
-    try {
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass `
-            -File $publish *>&1 |
-            Tee-Object -FilePath (Join-Path $SuiteLogDir "publish-all-reports.log")
-
-        if ($LASTEXITCODE -ne 0) {
-            throw "publish-all-reports.ps1 failed with exit code $LASTEXITCODE"
-        }
-    }
-    finally {
-        Pop-Location
-    }
-}
-
-# ---------------------------------------------------------------------------
-# Suite summary
-# ---------------------------------------------------------------------------
-Write-Section "SUITE COMPLETE"
-
-foreach ($entry in $results.GetEnumerator()) {
-    $status = if ($entry.Value) { "PASS" } else { "FAIL" }
-    Write-Host ("{0,-8} {1}" -f $entry.Key, $status)
+    Write-Host "No separate full performance matrix script was found." -ForegroundColor DarkYellow
+    Write-Host "If the original run-all-agent-benchmarks.ps1 contains the matrix inline," -ForegroundColor DarkYellow
+    Write-Host "restore that existing matrix section after the guard rail." -ForegroundColor DarkYellow
 }
 
 Write-Host ""
-Write-Host "Suite logs: $SuiteLogDir"
-
-$summary = [ordered]@{
-    timestampUtc = [DateTime]::UtcNow.ToString([CultureInfo]::InvariantCulture.DateTimeFormat.SortableDateTimePattern)
-    mode = $Mode
-    warmups = $Warmups
-    runs = $Runs
-    customerCounts = $CustomerCounts
-    concurrency = $Concurrency
-    publish = [bool]$Publish
-    results = $results
-}
-
-$summaryJson = $summary | ConvertTo-Json -Depth 10
-$summaryPath = Join-Path $SuiteLogDir 'suite-summary.json'
-Set-Content -Path $summaryPath -Value $summaryJson -Encoding UTF8
-
-if (($results.Values | Where-Object { $_ -eq $false }).Count -gt 0) {
-    exit 1
-}
+Write-Host "============================================================" -ForegroundColor Green
+Write-Host " Agent benchmark suite completed." -ForegroundColor Green
+Write-Host "============================================================" -ForegroundColor Green

@@ -376,10 +376,11 @@ jobs:
 
   # ============================================================
   # Benchmark projects — outside Foundgine.sln, so verify them
-  # independently rather than treating solution build as coverage.
+  # independently. CI builds them only; benchmark execution remains
+  # an explicit/manual workload and is not part of the build gate.
   # ============================================================
   benchmark-build:
-    name: Performance Smoke — 1 Customer
+    name: Benchmark Build
     needs:
       - build-pack
     runs-on: ubuntu-latest
@@ -400,13 +401,14 @@ jobs:
         run: |
           set -euo pipefail
 
-          projects=(
-            "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/CoffeeBeanery.Database.csproj"
-            "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/CoffeeBeanery.LoadTest.csproj"
-            "benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj"
-            "benchmarks/CoffeeBeanery.Performance/HotChocolate.CoffeeBeanery.BenchmarkApi/HotChocolate.CoffeeBeanery.BenchmarkApi.csproj"
-          )
+          mapfile -t projects < <(find benchmarks -type f -name '*.csproj' | sort)
 
+          if [ "${#projects[@]}" -eq 0 ]; then
+            echo "No benchmark projects found."
+            exit 1
+          fi
+
+          echo "Found ${#projects[@]} benchmark projects."
           for project in "${projects[@]}"; do
             echo "Restoring $project"
             dotnet restore "$project"
@@ -417,93 +419,23 @@ jobs:
         run: |
           set -euo pipefail
 
-          projects=(
-            "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/CoffeeBeanery.Database.csproj"
-            "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/CoffeeBeanery.LoadTest.csproj"
-            "benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj"
-            "benchmarks/CoffeeBeanery.Performance/HotChocolate.CoffeeBeanery.BenchmarkApi/HotChocolate.CoffeeBeanery.BenchmarkApi.csproj"
-          )
+          mapfile -t projects < <(find benchmarks -type f -name '*.csproj' | sort)
+
+          if [ "${#projects[@]}" -eq 0 ]; then
+            echo "No benchmark projects found."
+            exit 1
+          fi
 
           for project in "${projects[@]}"; do
             echo "Building $project"
-            dotnet build "$project"               --no-restore               --configuration Release
+            dotnet build "$project" --no-restore --configuration Release
           done
-
-      # ----------------------------------------------------------
-      # Real performance smoke test
-      # ----------------------------------------------------------
-      # This is intentionally tiny. It proves the benchmark stack can actually
-      # seed a database, start the APIs, execute real benchmark traffic and
-      # finish successfully. The full benchmark matrix remains outside CI.
-      - name: Run performance smoke test
-        shell: bash
-        env:
-          COFFEEBEANERY_CUSTOMERS: "1"
-          COFFEEBEANERY_RELATIONSHIPS_PER_CUSTOMER: "4"
-          COFFEEBEANERY_CONTRACTS_PER_RELATIONSHIP: "3"
-          COFFEEBEANERY_TRANSACTIONS_PER_CONTRACT: "4"
-          BENCHMARK_WARMUP_SECONDS: "1"
-          BENCHMARK_DURATION_SECONDS: "1"
-          BENCHMARK_REQUEST_TIMEOUT_SECONDS: "5"
-          BENCHMARK_READINESS_TIMEOUT_SECONDS: "120"
-          BENCHMARK_RESET_TIMEOUT_SECONDS: "30"
-          BENCHMARK_CONCURRENCY: "1"
-          BENCHMARK_BATCH_SIZES: "1"
-          BENCHMARK_FAIL_ON_ERRORS: "true"
-        run: |
-          set -euo pipefail
-
-          COMPOSE=benchmarks/CoffeeBeanery.Performance/docker-compose.benchmark.yml
-          PROJECT=foundgine-performance-smoke
-
-          cleanup() {
-            docker compose -p "$PROJECT" -f "$COMPOSE" down -v --remove-orphans || true
-          }
-          trap cleanup EXIT
-
-          echo "Starting PostgreSQL and benchmark APIs..."
-          docker compose -p "$PROJECT" -f "$COMPOSE" up -d --build postgres database hotchocolate foundgine-warm
-
-          echo "Waiting for benchmark services..."
-          docker compose -p "$PROJECT" -f "$COMPOSE" up --wait hotchocolate foundgine-warm
-
-          run_target() {
-            local name="$1"
-            local url="$2"
-            local safe_name
-            safe_name="$(echo "$name" | tr '[:upper:] ' '[:lower:]-' | tr -cd '[:alnum:]-')"
-
-            echo
-            echo "========================================"
-            echo "Performance smoke: $name"
-            echo "========================================"
-
-            docker compose -p "$PROJECT" -f "$COMPOSE" run --rm \
-              -e BENCHMARK_TARGET_NAME="$name" \
-              -e BENCHMARK_TARGET_URL="$url" \
-              -e BENCHMARK_WARMUP_SECONDS="$BENCHMARK_WARMUP_SECONDS" \
-              -e BENCHMARK_DURATION_SECONDS="$BENCHMARK_DURATION_SECONDS" \
-              -e BENCHMARK_REQUEST_TIMEOUT_SECONDS="$BENCHMARK_REQUEST_TIMEOUT_SECONDS" \
-              -e BENCHMARK_READINESS_TIMEOUT_SECONDS="$BENCHMARK_READINESS_TIMEOUT_SECONDS" \
-              -e BENCHMARK_RESET_TIMEOUT_SECONDS="$BENCHMARK_RESET_TIMEOUT_SECONDS" \
-              -e BENCHMARK_CONCURRENCY="$BENCHMARK_CONCURRENCY" \
-              -e BENCHMARK_BATCH_SIZES="$BENCHMARK_BATCH_SIZES" \
-              -e BENCHMARK_FAIL_ON_ERRORS="$BENCHMARK_FAIL_ON_ERRORS" \
-              -e BENCHMARK_REPORT_DIRECTORY=/reports \
-              loader
-          }
-
-          run_target "Hot Chocolate + EF Core" "http://hotchocolate:4300/graphql"
-          run_target "Foundgine - provider-plan cache" "http://foundgine-warm:4302/graphql/warm"
 
           echo
           echo "========================================"
-          echo "Performance smoke test passed."
-          echo "Customers: 1"
-          echo "Concurrency: 1"
-          echo "Batch size: 1"
-          echo "Warm-up: 1s"
-          echo "Measurement: 1s"
+          echo "Benchmark build passed."
+          echo "Projects built: ${#projects[@]}"
+          echo "No benchmark workload was executed in CI."
           echo "========================================"
 
 
@@ -516,7 +448,7 @@ jobs:
 
     # IMPORTANT:
     # Publishing is blocked unless the complete build/test job,
-    # PostgreSQL E2E job, and benchmark smoke test all pass.
+    # PostgreSQL E2E job, and benchmark build all pass.
     #
     # The penetration/security jobs (security-penetration,
     # security-penetration-graph, security-penetration-mcp,

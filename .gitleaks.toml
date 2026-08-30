@@ -1,0 +1,22 @@
+title = "Foundgine Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+# Generated benchmark output is not source and is ignored by the repository.
+[[allowlists]]
+description = "Generated benchmark artifacts"
+paths = [
+  '''(?i)benchmarks/.*/artifacts/.*'''
+]
+
+# These are deliberately non-secret local benchmark fixture credentials.
+# Keep this allowlist narrow and scoped to benchmark/test configuration.
+[[allowlists]]
+description = "Known non-secret benchmark fixture credentials"
+paths = [
+  '''(?i)benchmarks/.*'''
+]
+regexes = [
+  '''(?i)Password=(benchmark|foundgine)'''
+]

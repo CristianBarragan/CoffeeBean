@@ -23,7 +23,7 @@ namespace Foundgine.SupplyChain.Semantic.Tests;
 /// relationship, but with the join key modeled the way a legacy ERP
 /// integration column often is in practice: present on every backing row,
 /// required to resolve the relationship, and never exposed as a semantic
-/// field. See <see cref="Foundgine.InMemory.Tests.ExecutionRowCapabilityBoundaryTests"/>
+/// field. See cref="Foundgine.InMemory.Tests.ExecutionRowCapabilityBoundaryTests"
 /// for the provider-neutral synthetic version of the same fix.
 /// </summary>
 public sealed class CapabilityBoundaryTests

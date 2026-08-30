@@ -64,3 +64,25 @@ BenchmarkDotNet.Artifacts/
 # OS files
 .DS_Store
 Thumbs.db
+# Benchmark generated artifacts
+benchmarks/AgentEndToEnd/*/artifacts/
+
+# Benchmark generated output
+benchmarks/**/artifacts/
+benchmarks/**/results/
+benchmarks/**/reports/
+
+# Microsoft Office temporary/lock files
+~$*
+**/~$*
+
+# Microsoft Office temporary lock files
+~$*
+**/~$*
+# Local/editor temporary files
+*.tmp
+**/*.tmp
+# .NET build output
+**/bin/
+**/obj/
+# Generated benchmark artifacts
