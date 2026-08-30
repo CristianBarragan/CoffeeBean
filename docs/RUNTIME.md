@@ -2,6 +2,27 @@
 
 The Foundgine runtime coordinates semantic requests, planning, provider execution, and results.
 
+
+## Canonical execution lifecycle
+
+Runtime implements the latter half of the canonical lifecycle:
+
+```text
+Authorization
+      ↓
+Plan Binding
+      ↓
+Execution IR
+      ↓
+Provider
+      ↓
+Execution
+      ↓
+Evidence
+```
+
+The runtime must not accept an unbound execution artifact. The semantic contract and authorization provenance carried by the plan remain verifiable through provider execution.
+
 ## Reads
 
 A normal read follows:

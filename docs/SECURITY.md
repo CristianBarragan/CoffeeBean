@@ -24,6 +24,33 @@ Execute
 
 No transport adapter should bypass the semantic/security boundary.
 
+
+## Canonical security boundary
+
+Foundgine's security story follows one lifecycle rather than separate transport-specific paths:
+
+```text
+Caller → Intent → Semantic Model → Operation Graph
+                                      ↓
+                                  Retrieval
+                                      ↓
+                                  Resolution
+                                      ↓
+                                Authorization
+                                      ↓
+                                Plan Binding
+                                      ↓
+                                Execution IR
+                                      ↓
+                                  Provider
+                                      ↓
+                                  Execution
+                                      ↓
+                                  Evidence
+```
+
+**Retrieval is never authorization.** Fuzzy, full-text, BM25 and Apache AGE graph retrieval may return candidates and evidence, but every candidate is still resolved and authorized before execution.
+
 ## Authority and intent are different
 
 The caller controls intent:

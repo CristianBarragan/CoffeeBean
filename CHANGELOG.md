@@ -1,4 +1,11 @@
 ## [1.1.7] - 2026-08-30
+## Documentation — Canonical architecture lifecycle
+
+- Established one canonical architecture across the repository and website: Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence.
+- Added the canonical architecture SVG to `docs/assets/` and `docs-site/assets/` and reused it across the main README, architecture documentation and website lifecycle/security/AI pages.
+- Documented retrieval as a parallel candidate-discovery stage covering relational lookup, `pg_trgm`, PostgreSQL full-text, optional `pg_search`/BM25, optional Apache AGE, and future/custom strategies.
+- Explicitly preserved the invariant that retrieval produces candidates + evidence and never grants authorization.
+
 
 ### Fixed
 - **Removed a duplicate `SemanticIdentity` type that shadowed the real one in tests.** `Foundgine.Semantics` contained an unrelated, unused `record SemanticIdentity(FieldId FieldId, string Name)` that shared its name with the canonical `static class SemanticIdentity` in `Foundgine.Abstractions`. Because `Foundgine.Semantics.Tests` is nested under the `Foundgine.Semantics` namespace, unqualified `SemanticIdentity` references resolved to the enclosing-namespace record instead of the intended `using`-imported class, breaking `SemanticIdentityTests`. The dead record has been deleted.

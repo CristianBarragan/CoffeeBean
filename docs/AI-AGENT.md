@@ -2,6 +2,31 @@
 
 Foundgine's AI integration is deliberately small: it exposes semantic execution as tools without making Foundgine depend on a particular LLM provider or agent framework.
 
+
+## AI agents use the same canonical lifecycle
+
+An agent is another untrusted caller. It does not receive a special execution path:
+
+```text
+AI Agent
+   ↓
+Intent
+   ↓
+Semantic Model
+   ↓
+Semantic Operation Graph
+   ↓
+Retrieval / Resolution
+   ↓
+Authorization
+   ↓
+Plan Binding
+   ↓
+Execution IR → Provider → Execution → Evidence
+```
+
+Capability discovery is descriptive. Search results, model output and tool arguments remain untrusted until the normal semantic and authorization stages accept them.
+
 ## Architecture
 
 ```text

@@ -6,6 +6,33 @@ The normal test suite does not require a database. The PostgreSQL tests run when
 
 CI always supplies that connection string.
 
+
+## PostgreSQL retrieval in the canonical lifecycle
+
+PostgreSQL retrieval is a branch inside the canonical semantic lifecycle, not a second pipeline:
+
+```text
+Semantic Operation Graph
+          ↓
+      Retrieval
+          │
+   ┌──────┼────────┬──────────┬──────────┐
+   ▼      ▼        ▼          ▼          ▼
+Relational Fuzzy  FullText   BM25      AGE
+           pg_trgm tsvector pg_search Apache AGE
+   └──────┴────────┴──────────┴──────────┘
+                    ↓
+           Candidates + Evidence
+                    ↓
+               Resolution
+                    ↓
+              Authorization
+                    ↓
+                  Plan
+```
+
+No retrieval strategy grants authority or bypasses semantic authorization.
+
 ## Start PostgreSQL
 
 ```bash

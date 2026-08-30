@@ -20,33 +20,12 @@ Foundgine separates **what a caller wants** from **how the application executes 
 
 A caller submits structured intent. Foundgine resolves that intent against an application-defined semantic model, validates it, applies authorization, builds a provider-independent execution plan, and sends that plan to a provider such as SQL or InMemory.
 
-```text
-Caller / transport
-        │
-        ▼
-      Intent
-        │
-        ▼
-  Semantic Model
-        │
-        ▼
- Resolution + Validation
-        │
-        ▼
-   Authorization
-        │
-        ▼
- Provider-independent Plan
-        │
-        ▼
-     Execution
-        │
-        ▼
- SQL / InMemory / future providers
-        │
-        ▼
-      Result
-```
+<p align="center"><img src="docs/assets/canonical-architecture.svg" alt="Foundgine canonical architecture: Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence. Retrieval uses parallel relational, pg_trgm fuzzy, PostgreSQL full-text, optional pg_search BM25, and optional Apache AGE graph strategies to produce candidates and evidence." width="100%"></p>
+
+> **Canonical lifecycle:** Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence.
+>
+> **Retrieval is discovery, not authority:** relational lookup, `pg_trgm`, `tsvector`, optional `pg_search`/BM25, and optional Apache AGE produce candidates + evidence. Those results still pass through semantic resolution and authorization.
+
 
 ## Why Foundgine?
 
@@ -133,35 +112,61 @@ Open intent does **not** mean open authority. Names are resolved against the sem
 
 ## The architecture
 
+The diagram above is the **canonical Foundgine architecture**. Every interface and provider-specific feature fits into this same lifecycle; individual documentation pages may zoom into one portion, but the ordering and security boundaries do not change.
+
+### Canonical semantic lifecycle
+
 ```text
-                    Intent sources
-        ┌─────────────┼─────────────┐
-        │             │             │
-       C#          GraphQL          MCP
-        │             │             │
-       JSON           AI / Agents   │
-        └─────────────┼─────────────┘
-                      ▼
-              ┌───────────────┐
-              │   Foundgine   │
-              │               │
-              │   Semantics   │
-              │ Authorization │
-              │   Planning    │
-              │   Execution   │
-              └───────┬───────┘
-                      │
-               ┌──────┴──────┐
-               ▼             ▼
-              SQL         InMemory
-               │
-     ┌─────────┼──────────┬─────────────────┐
-     ▼         ▼          ▼                 ▼
-  Relational Fuzzy /   optional          optional
-  (tables,   Full-text pg_search/        Apache AGE
-   joins)   (pg_trgm,  BM25 search       graph similarity
-            tsvector)
+Caller
+  ↓
+Intent
+  ↓
+Semantic Model
+  ↓
+Semantic Operation Graph
+  ↓
+Retrieval
+  ↓
+Resolution
+  ↓
+Authorization
+  ↓
+Plan Binding
+  ↓
+Execution IR
+  ↓
+Provider
+  ↓
+Execution
+  ↓
+Evidence
 ```
+
+### Retrieval is a parallel candidate-discovery stage
+
+```text
+                    Retrieval
+                       │
+       ┌───────────────┼───────────────┐
+       ▼               ▼               ▼
+   Relational       Fuzzy          FullText
+   structured      pg_trgm         tsvector
+       │               │               │
+       ▼               ▼               ▼
+     BM25          AGE Graph        Other
+   pg_search       Apache AGE      strategies
+       └───────────────┬───────────────┘
+                       ▼
+              Candidates + Evidence
+                       │
+                       ▼
+                  Resolution
+                       │
+                       ▼
+                  Authorization
+```
+
+Search and graph mechanisms are therefore **not alternate authorization or execution paths**. They are retrieval strategies that help resolve ambiguous references.
 
 ### The security-preserving lifecycle
 
