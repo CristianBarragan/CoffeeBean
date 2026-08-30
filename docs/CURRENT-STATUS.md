@@ -94,8 +94,7 @@ The planner currently provides:
 
 - parameterized SQL compilation;
 - SQL execution through ADO.NET;
-- PostgreSQL retrieval candidate sources;
-- PostgreSQL full-text/fuzzy/search integration;
+- PostgreSQL retrieval candidate sources — relational, `Fuzzy` (`pg_trgm`), `FullText` (`tsvector`), optional `Search` (`pg_search`/BM25), and optional `GraphSimilarity` (Apache AGE);
 - SQL security conformance;
 - SQL mutation compilation;
 - PostgreSQL batched mutation compilation/execution;
@@ -173,3 +172,7 @@ For implementation behavior use:
 4. this documentation.
 
 Historical release notes and benchmark snapshots have been removed from the active documentation set to avoid presenting old behavior as current.
+
+---
+
+Next: [Roadmap](ROADMAP.md)

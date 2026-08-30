@@ -34,6 +34,12 @@ A persistence model describes storage. A semantic model describes what the appli
 
 An AI model can propose structured intent without becoming the authority over database schema, tenants, credentials or business invariants. Foundgine re-evaluates the request inside the application-controlled semantic and authorization boundary.
 
+An agent is also the clearest case for *why* a shared boundary matters: an agent with many tools can otherwise end up with as many independent execution and security surfaces, each only as correct as the tool that implements it. Routing every tool through the same semantic and authorization path — read or write — means that decision is made once, consistently, regardless of which tool or transport the request arrived through.
+
 ## What Foundgine is not
 
 Foundgine is not an ORM replacement, database, GraphQL server, identity provider, authorization server, workflow engine or general autonomous-agent framework.
+
+## Next
+
+Read [Architecture](architecture/index.html) next.

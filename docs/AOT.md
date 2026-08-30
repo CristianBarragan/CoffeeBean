@@ -74,3 +74,7 @@ EF / SQL / other source
 ```
 
 The expensive discovery work belongs in AOT. Runtime should bind request-specific values and execute the already-known topology.
+
+---
+
+Next: [Public API](PUBLIC-API.md)

@@ -57,6 +57,20 @@ The execution plan describes **what Foundgine will execute**.
 
 The provider determines **how that operation is physically executed**.
 
+## The tool-surface problem
+
+The case where duplicated semantics is most costly is a single caller with many capabilities — an AI agent with a set of tools is the clearest example. If each tool independently implements its own authorization, tenant filtering, and query construction:
+
+```text
+Agent
+ ├── Tool A → its own auth / filtering / query logic
+ ├── Tool B → its own auth / filtering / query logic
+ ├── Tool C → its own auth / filtering / query logic
+ └── Tool D → its own auth / filtering / query logic
+```
+
+then an agent with 50 tools has up to 50 independent execution and security surfaces, each only as correct as the person who wrote that one tool. Routing every capability through the same semantic and authorization boundary instead means there is one place where "is this request meaningful, and is this caller allowed to make it" gets answered, no matter which tool or transport the request came through.
+
 ## Why not put this in the transport?
 
 GraphQL is good at describing an API contract. JSON is good at representing structured data. AI systems are good at generating structured requests.
@@ -125,6 +139,10 @@ The model can request an operation. Foundgine decides whether that operation is 
 
 This makes AI a consumer of the execution layer rather than a dependency of the execution layer.
 
+## Why mutations raise the stakes
+
+Reads are useful; writes are where a wrong authorization decision is expensive. `samples/Foundgine.HighAssurance.Banking` demonstrates this with a `TransferFunds` mutation: the execution boundary revalidates tenant, ownership, account state, and daily limits, holds deterministic locks across both accounts, applies debit and credit together, and produces an audit entry and execution receipt. The sample deliberately stops short of claiming Foundgine can infer financial business policy from natural language — it proves the boundary holds under a consequential mutation, nothing more.
+
 ## What Foundgine currently proves
 
 The active repository currently demonstrates:
@@ -149,3 +167,7 @@ The most important rule is:
 > **Foundgine Core must not depend on the transport used to express intent or the physical provider used to execute it.**
 
 That rule is more important than any individual adapter or provider. It is what allows Foundgine to remain a semantic execution layer instead of becoming another GraphQL framework, ORM, or AI framework.
+
+---
+
+Next: [Architecture](ARCHITECTURE.md)

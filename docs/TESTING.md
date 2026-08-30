@@ -143,3 +143,7 @@ When fixing a bug:
 5. run PostgreSQL E2E when the change crosses the SQL/provider boundary.
 
 Do not fix a semantic bug inside a transport adapter merely because that is where the failure was first observed.
+
+---
+
+Next: [Current status](CURRENT-STATUS.md)

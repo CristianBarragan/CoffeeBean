@@ -33,7 +33,7 @@ The older create-then-select rows remain in the repository as historical benchma
 An earlier version of this note, and the 2026-08-15 report it pointed to, claimed query performance had
 fallen behind Hot Chocolate + EF Core. That claim was wrong — it had no raw data checked in to back it
 and contradicted every other run on record. It has been retracted; see the correction notice at the top
-of [`docs/benchmarks/2026-08-15-performance-results.md`](../../docs/benchmarks/2026-08-15-performance-results.md).
+of [`reports/query/`](reports/query/).
 
 The corrected 2026-08-15 baseline, rebuilt directly from the benchmark log, matches the 2026-08-13
 baseline: Foundgine remains substantially faster than Hot Chocolate + EF Core on the query workload at

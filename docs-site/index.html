@@ -21,7 +21,7 @@
 <div class="page"><main class="article"><span class="eyebrow">.NET 9 · Semantic execution · v1.1.7</span>
 <h1>From intent to authorized execution.</h1>
 <p class="subtitle">Foundgine is a programmable semantic execution platform for .NET. It gives APIs, GraphQL, automation and AI agents a common application-controlled boundary between structured intent and physical execution.</p>
-<div class="rail" role="img" aria-label="Pipeline: Caller, Intent, Semantic Model, Authorization, Execution Plan, Provider, Result"><div class="rail-step"><span class="dot"></span>Caller</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Intent</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Semantic Model</div><div class="rail-connector"></div><div class="rail-step is-current"><span class="dot"></span>Authorization</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Execution Plan</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Provider</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Result</div></div>
+<div class="rail" role="img" aria-label="Pipeline: Caller, Intent, Semantic Model, Operation Graph, Authorization, Bound Plan, Execution IR, Provider, Result"><div class="rail-step"><span class="dot"></span>Caller</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Intent</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Semantic Model</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Operation Graph</div><div class="rail-connector"></div><div class="rail-step is-current"><span class="dot"></span>Authorization</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Bound Plan</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Execution IR</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Provider</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Result</div></div>
 <section id="overview"><h2>The problem</h2><p>Applications increasingly have many callers. APIs, GraphQL, automation and AI agents can each become a separate execution path with its own validation, authorization, orchestration and data-access assumptions.</p><div class="problem-grid"><div><strong>Bespoke capability surfaces.</strong> <span>Every new business capability can become another endpoint or tool contract.</span></div><div><strong>Fragmented policy.</strong> <span>Authorization and invariants can drift when each interface owns its own execution path.</span></div><div><strong>Too much agent orchestration.</strong> <span>Agents may need several calls and intermediate results to complete one business task.</span></div></div></section>
 <section><h2>The Foundgine answer</h2><p>Foundgine separates <strong>what the caller wants</strong> from <strong>how the application executes it</strong>. The caller supplies structured intent. The application defines the semantic model and authority. Foundgine resolves, validates, authorizes, plans and executes through a provider.</p><div class="converge"><div class="converge-row"><span class="converge-chip">API</span><span class="converge-chip">GraphQL</span><span class="converge-chip">JSON</span><span class="converge-chip">MCP</span><span class="converge-chip">AI</span></div><div class="converge-arrow">↓</div><div class="converge-core">Foundgine</div><div class="converge-arrow">↓</div><div class="converge-row"><span class="converge-chip">SQL</span><span class="converge-chip">InMemory</span></div></div></section>
 <section id="architecture"><h2>One execution model</h2><pre>Caller
@@ -30,12 +30,20 @@ Structured intent
   ↓
 Semantic resolution + validation
   ↓
-Authorization
+Semantic Operation Graph
   ↓
-Provider-independent plan / ExecutionIR
+Authorization + evidence
   ↓
-Provider compilation + execution
+Bound provider-independent plan
   ↓
-Result + execution evidence</pre><p>The semantic and planning layers do not know PostgreSQL or GraphQL. Transport adapters do not become authorities. Providers do not decide what the application is willing to expose.</p></section>
+ExecutionIR
+  ↓
+Provider plan + security proof
+  ↓
+Final execution gate
+  ↓
+Provider execution
+  ↓
+Result + execution evidence</pre><p>The semantic and planning layers do not know PostgreSQL or GraphQL. Transport adapters do not become authorities. Providers do not decide what the application is willing to expose. The execution artifact remains traceably bound to the semantic contract and authorization decision that produced it.</p></section>
 <section><h2>What Foundgine is — and is not</h2><table><thead><tr><th>Foundgine is</th><th>Foundgine is not</th></tr></thead><tbody><tr><td>A semantic execution boundary</td><td>An ORM replacement</td></tr><tr><td>A provider-independent planning/runtime layer</td><td>A database</td></tr><tr><td>A place to centralize semantic authorization</td><td>An identity provider or authorization server</td></tr><tr><td>An execution substrate for multiple callers</td><td>A general autonomous-agent framework</td></tr><tr><td>A way to expose application capabilities to agents</td><td>A model provider</td></tr></tbody></table></section>
 <section><h2>Where to go next</h2><p><a href="getting-started/index.html">Start with the Supply Chain sample</a> for the concrete architecture. Then read <a href="architecture/index.html">Architecture</a>, <a href="how-it-works/index.html">How it works</a>, and <a href="ai-agents/index.html">AI agents</a>. For package-level detail, see <a href="packages/index.html">Packages</a>.</p></section></main></div><footer class="site-footer">Foundgine 1.1.7 · .NET 9 · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer><script src="assets/site-nav.js"></script></body></html>

@@ -123,3 +123,7 @@ Every new feature should answer three questions:
 3. **What correctness/security test proves it?**
 
 If those questions cannot be answered clearly, the feature should not be added yet.
+
+---
+
+Next: [Migration](MIGRATION.md)

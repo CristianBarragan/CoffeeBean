@@ -18,4 +18,22 @@
 <a href="../packages/index.html">Packages</a>
 <a href="https://github.com/cristianbarragan/Foundgine" target="_blank" rel="noopener">GitHub</a>
 </nav></div></header>
-<div class="page"><main class="article"><span class="eyebrow">Execution walkthrough</span><h1>See the request move through Foundgine.</h1><p class="subtitle">Two representative requests show the same semantic pipeline handling a small read and a relationship-heavy operation. The payloads are explanatory shapes, not a promise of one public wire format.</p><div class="process-intro"><div><strong>Intent</strong><span>Express the business request without embedding SQL.</span></div><div><strong>Authorization</strong><span>Apply application-owned access and resource constraints.</span></div><div><strong>Plan</strong><span>Build provider-independent work before physical lowering.</span></div></div><div class="ajax-tabs" role="tablist" aria-label="Execution examples"><button class="ajax-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="process-panel" data-process="simple">Simple process <span>1 relationship</span></button><button class="ajax-tab" type="button" role="tab" aria-selected="false" aria-controls="process-panel" data-process="complex">Complex process <span>4 hops + aggregation</span></button></div><section id="process-panel" class="process-panel" aria-live="polite"><div class="process-loading">Loading execution walkthrough…</div></section></main></div><script src="../assets/how-it-works.js"></script><footer class="site-footer">Foundgine 1.1.7 · .NET 9 · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer><script src="../assets/site-nav.js"></script></body></html>
+<div class="page"><main class="article"><span class="eyebrow">Execution walkthrough</span><h1>See the request move through Foundgine.</h1><p class="subtitle">Two representative requests show the same semantic pipeline handling a small read and a relationship-heavy operation. The payloads are explanatory shapes, not a promise of one public wire format.</p><div class="process-intro"><div><strong>Intent</strong><span>Express the business request without embedding SQL.</span></div><div><strong>Authorization</strong><span>Apply application-owned access and resource constraints.</span></div><div><strong>Plan</strong><span>Build provider-independent work before physical lowering.</span></div></div><div class="ajax-tabs" role="tablist" aria-label="Execution examples"><button class="ajax-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="process-panel" data-process="simple">Simple process <span>1 relationship</span></button><button class="ajax-tab" type="button" role="tab" aria-selected="false" aria-controls="process-panel" data-process="complex">Complex process <span>4 hops + aggregation</span></button></div><section id="process-panel" class="process-panel" aria-live="polite"><div class="process-loading">Loading execution walkthrough…</div></section><section class="process-section"><h2>The security-preserving lifecycle</h2><p>The walkthrough above shows the request shape. The deeper invariant is that the resolved operation becomes one semantic graph, one authorization decision, one bound plan and one execution chain.</p><pre><code>Intent
+  ↓
+Semantic Operation Graph
+  ↓
+Validate + resource limits
+  ↓
+Authorize
+  ↓
+Authorized Graph + Evidence
+  ↓
+Semantic Plan + AuthorizationBinding
+  ↓
+ExecutionIR
+  ↓
+Provider Plan + Security Proof
+  ↓
+Final Execution Gate
+  ↓
+Execute</code></pre><p>Search and graph retrieval may help discover candidates, but they only provide evidence. They cannot bypass semantic resolution or authorization. Plan optimization may change the physical shape later, but it must preserve the authorization binding.</p></section><h2>Next</h2><p>Read <a href="../security/index.html">Security</a> next.</p></main></div><script src="../assets/how-it-works.js"></script><footer class="site-footer">Foundgine 1.1.7 · .NET 9 · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer><script src="../assets/site-nav.js"></script></body></html>

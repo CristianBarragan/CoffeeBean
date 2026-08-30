@@ -50,4 +50,4 @@ The read half is intentionally identical to the standalone query workload, so th
 
 ## Current performance baseline — 2026-08-15
 
-See [`docs/benchmarks/2026-08-15-performance-results.md`](../../../docs/benchmarks/2026-08-15-performance-results.md) for the latest confirmed results. The current baseline shows a substantial query-performance gap versus Hot Chocolate + EF Core, while Foundgine mutation throughput is considerably stronger. Do not mix historical benchmark runs with the current baseline.
+See [`../reports/query/`](../reports/query/) for the latest confirmed results. The current baseline shows a substantial query-performance gap versus Hot Chocolate + EF Core, while Foundgine mutation throughput is considerably stronger. Do not mix historical benchmark runs with the current baseline.

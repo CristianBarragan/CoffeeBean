@@ -38,6 +38,13 @@
 - Added initial planner algebra for predicate composition and deterministic field normalization.
 - Added regression tests for topology, immutability/snapshot semantics, round-tripping, and non-mutating algebra.
 
+
+## Documentation — Semantic execution lifecycle
+
+- Formalized the Semantic Operation Graph → Authorization → Plan Binding → Execution lifecycle across the architecture, authorization, runtime and planning documentation.
+- Documented authorization provenance through `SemanticPlanAuthorizationBinding`, `ExecutionIR`, provider-plan binding and the final security gate.
+- Added the same lifecycle to the website architecture and execution walkthrough.
+
 # Step 28 — Execution / Provider Boundary
 
 ## Step 29 — Execution-Time Authorization Revalidation

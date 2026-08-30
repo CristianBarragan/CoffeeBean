@@ -10,7 +10,7 @@ The supplied 2026-08-13 baseline shows three important results:
 2. **Mutation is competitive, not universally faster.** At concurrency 32/batch 50, Hot Chocolate + EF Core reaches 86,955 logical mutations/s, Foundgine no-cache reaches 69,675, and Foundgine with the provider-plan cache reaches 81,910. Foundgine uses materially less measured API-container CPU and memory.
 3. **Upsert + select is the main next target.** The benchmark now performs a real `upsertCustomer` against deterministic existing rows and then executes the exact same top-50/full-graph query used by the standalone query workload. This corrected workload must be rerun before new upsert conclusions are published.
 
-These are workload-specific observations, not universal performance claims. See the full [2026-08-13 performance analysis](../../docs/benchmarks/2026-08-13-performance-analysis.md).
+These are workload-specific observations, not universal performance claims. See the full [checked-in benchmark reports](reports/query/).
 
 ## Benchmark matrix
 
@@ -115,12 +115,12 @@ The next benchmark cycle should answer four questions:
 3. What is the effect of plan cache + result cache together?
 4. Does a FASTER-backed cache change throughput, memory or PostgreSQL pressure enough to justify its complexity?
 
-For the full findings, limitations and proposed experiments, see [the performance analysis](../../docs/benchmarks/2026-08-13-performance-analysis.md).
+For the full findings, limitations and proposed experiments, see [the checked-in benchmark reports](reports/query/).
 
 
 ## Current benchmark status — 2026-08-15
 
-The latest confirmed benchmark baseline is documented in [`docs/benchmarks/2026-08-15-performance-results.md`](../../docs/benchmarks/2026-08-15-performance-results.md).
+The latest confirmed benchmark baseline is documented in [`reports/query/`](reports/query/).
 
 The current evidence shows:
 
