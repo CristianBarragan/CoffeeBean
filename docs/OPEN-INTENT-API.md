@@ -2,6 +2,23 @@
 
 Foundgine's intent surface is deliberately open. Applications expose a semantic model and authorization policy; callers do not need a pre-generated method or interface for every possible query.
 
+
+## Open intent enters the canonical lifecycle
+
+Typed, dynamic, JSON, MCP, GraphQL and AI callers all converge on the same semantic lifecycle after producing intent:
+
+```text
+Caller → Intent → Semantic Model → Semantic Operation Graph
+                                      ↓
+                           Retrieval → Resolution
+                                      ↓
+                              Authorization
+                                      ↓
+                         Plan Binding → Execution IR
+                                      ↓
+                           Provider → Execution → Evidence
+```
+
 ## Typed and dynamic authoring
 
 Typed authoring gives developers compile-time help:

@@ -8,33 +8,35 @@ The central architectural rule is:
 
 ## Canonical pipeline
 
-```text
-Caller / transport
-       ↓
-Intent
-       ↓
-Semantic model
-       ↓
-Resolve
-       ↓
-Validate
-       ↓
-Normalize
-       ↓
-Authorize
-       ↓
-Security-preserving plan optimization
-       ↓
-Execution plan / ExecutionIR
-       ↓
-Provider compilation
-       ↓
-Provider execution
-       ↓
-Result + evidence
-```
+<p align="center"><img src="assets/canonical-architecture.svg" alt="Foundgine canonical architecture showing the complete semantic lifecycle and parallel retrieval strategies." width="100%"></p>
 
-The layers are deliberately separate.
+The canonical lifecycle is: **Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence**. Other pages may focus on individual stages, but they must preserve this ordering.
+
+```text
+Caller
+  ↓
+Intent
+  ↓
+Semantic Model
+  ↓
+Semantic Operation Graph
+  ↓
+Retrieval
+  ↓
+Resolution
+  ↓
+Authorization
+  ↓
+Plan Binding
+  ↓
+Execution IR
+  ↓
+Provider
+  ↓
+Execution
+  ↓
+Evidence
+```
 
 ## Semantic Operation Graph → Authorization → Plan Binding → Execution
 
@@ -90,7 +92,27 @@ SemanticContractSnapshot + SemanticOperationGraph
        AuthorizedGraph + AuthorizationEvidence
 ```
 
-Retrieval strategies such as fuzzy search, full-text search, BM25 or Apache AGE may help resolve ambiguous references, but they only produce candidates and evidence. They never become the authority over which graph nodes may be exercised.
+Retrieval strategies such as relational lookup, fuzzy search, full-text search, BM25 or Apache AGE may help resolve ambiguous references, but they only produce candidates and evidence. They never become the authority over which graph nodes may be exercised.
+
+```text
+                    Retrieval
+                       │
+       ┌───────────────┼───────────────┐
+       ▼               ▼               ▼
+   Relational       Fuzzy          FullText
+   structured      pg_trgm         tsvector
+       │               │               │
+       ├───────────────┼───────────────┤
+       ▼               ▼               ▼
+     BM25          AGE Graph        Other
+   pg_search       Apache AGE      strategies
+       └───────────────┬───────────────┘
+                       ▼
+              Candidates + Evidence
+                       │
+                       ▼
+                  Resolution
+```
 
 ### Plan binding is provenance, not a second authorization system
 

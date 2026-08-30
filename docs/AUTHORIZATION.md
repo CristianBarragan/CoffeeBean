@@ -28,6 +28,25 @@ Employee
       └── TenantId   conditional
 ```
 
+
+## Authorization in the canonical lifecycle
+
+Authorization is stage 7 of the canonical lifecycle: **Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence**. Retrieval can discover candidates, but authorization evaluates the resolved operation graph under the trusted semantic contract.
+
+```text
+Semantic Operation Graph
+        ↓
+     Resolution
+        ↓
+   Authorization
+        ↓
+   Plan Binding
+        ↓
+  Execution IR
+```
+
+A retrieval result, capability description, or caller-supplied claim never becomes authority merely because it helped construct intent.
+
 ## Semantic operation graph and authorization provenance
 
 Authorization applies to the complete resolved semantic operation graph. The graph is validated before policy evaluation and the resulting decision is captured as immutable evidence.
