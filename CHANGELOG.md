@@ -1,4 +1,190 @@
+## [1.1.6] - 2026-08-30
+
+### Added
+- **Provider-backed semantic retrieval test coverage in `samples/Foundgine.SupplyChain.Semantic`.** New `Tests/Retrieval/` suite exercises every `RetrievalStrategy` supported by `Foundgine.Sql.Retrieval.PostgresRetrievalCandidateSource` against the sample's own Supplier/Product domain:
+  - `SupplyChainRetrievalCapabilityTests` — provider-wiring unit tests requiring no live database: the reserved `Vector` strategy always throws `NotSupportedException`; `Relational` is confirmed as a documented no-op; `Fuzzy`, `FullText`, `Search`, and `GraphSimilarity` each reject when their opt-in flag is off; `GraphSimilarity` request validation (missing `Relationship`/`ReferenceIdentity`) fails fast even when enabled; constructor null-argument guards.
+  - `SupplyChainFuzzyAndFullTextRetrievalTests` — live PostgreSQL integration tests for the two default-enabled providers: `pg_trgm` fuzzy matching on `Supplier.Name` (including limit and no-match behavior) and native `tsvector` full text search on `Product.Name`, seeded against a schema matching the sample's generated storage names.
+  - `SupplyChainSearchRetrievalTests` — live integration tests for the optional `pg_search`/BM25 provider, gated behind an explicit `FOUNDGINE_POSTGRES_PGSEARCH=1` opt-in on top of the database connection since the extension isn't present on a vanilla PostgreSQL image.
+  - `SupplyChainGraphSimilarityRetrievalTests` — live integration tests for the optional Apache AGE graph-similarity provider, gated behind `FOUNDGINE_POSTGRES_AGE=1`, seeding a small Cypher graph over the `Supplier.purchaseOrders` relationship to demonstrate neighbor-similarity candidate retrieval.
+  - `PostgresRetrievalFactAttribute` (`PostgresRetrievalFactAttribute`/`PgSearchFactAttribute`/`ApacheAgeFactAttribute`) — connection- and extension-gated `[Fact]` variants, mirroring the existing `Foundgine.Security.Authority.Tests.PostgresFactAttribute` pattern, so the new tests skip cleanly without a configured database instead of failing CI.
+  - `Tests/Foundgine.SupplyChain.Semantic.Tests.csproj` now references `Foundgine.Sql` and `Npgsql` to support the new suite.
+- **Scenario 6 — Approximate & provider-backed retrieval** added to the advanced semantics sample page (`docs-site/samples/semantic/index.html`), documenting the provider-neutral `RetrievalStrategy` contract and how the PostgreSQL provider backs `Fuzzy` (pg_trgm), `FullText` (native tsvector), `Search` (optional pg_search/BM25), and `GraphSimilarity` (optional Apache AGE) while intentionally reserving `Vector` for a future `pgvector` provider. The "Provider lowering" architecture layer summary was updated to reference the same boundary.
+
+## Step 36 — MCP Capability Discovery → Intent → Execution
+
+- Added `FoundgineMcpAgentClient` for capability discovery and provider-neutral dynamic query execution.
+- Added complete discovery → intent → execution workflow support.
+- Added JSON/SSE MCP response handling and JSON-RPC error handling.
+- Added client conformance tests proving discovered capabilities drive dynamic intent construction without client-supplied security authority.
+- Added `SEMANTIC-MCP-CAPABILITY-DISCOVERY-STEP36.md`.
+
+
+## Step 34 — Planner Algebra / Optimization
+
+- Added explicit optimization preservation proof covering semantic meaning, security obligations, and authorization binding.
+- Kept provider cost estimates advisory for candidate selection rather than correctness evidence.
+- Added regression tests for optimization-proof dimensions.
+- Added `SEMANTIC-PLANNER-OPTIMIZATION-STEP34.md`.
+## Step 30 — Semantic Operation Graph & Planner Algebra
+
+- Added immutable `SemanticOperationGraph` as an explicit provider-neutral intermediate representation over canonical Semantic IR.
+- Added graph validation and pure round-trip conversion back to `SemanticOperation`.
+- Added initial planner algebra for predicate composition and deterministic field normalization.
+- Added regression tests for topology, immutability/snapshot semantics, round-tripping, and non-mutating algebra.
+
+# Step 28 — Execution / Provider Boundary
+
+## Step 29 — Execution-Time Authorization Revalidation
+
+- Added the final execution-time authorization revalidation boundary.
+- Added `IExecutionAuthorizationRevalidator` and the default semantic implementation.
+- Added optional current authority resolution to `FoundgineOptions`.
+- Extended semantic authorization evidence with optional authority version/fingerprint binding.
+- Revalidation occurs after provider-plan cache lookup and immediately before provider execution.
+- Revoked or superseded authority fails closed.
+
+
+- Bound ExecutionIR and provider plans to semantic authorization provenance.
+- Added fail-closed provider boundary validation.
+- Added execution/provider boundary documentation.
+
+## Step 21 — Semantic Contract Runtime Boundary
+
+## Step 27 — Semantic Contract Plan Optimization Binding
+
+- Added authorization-binding preservation proof for plan rewrites.
+- Optimizer rejects rewrites that add, remove, or change contract/authorization provenance.
+- Optimization results now expose the final authorization-binding proof.
+- Added Step 27 regression documentation.
+
+
+## Step 26 — Semantic Contract Plan Authorization Binding
+
+- Bound authorized semantic plans to the immutable semantic contract fingerprint and authorization fingerprint.
+- Added contract-aware planner overload accepting `SemanticAuthorizationResult`.
+- Preserved authorization binding through plan rewrites.
+- Required matching authorization evidence at executable plan boundary.
+- Added Step 26 regression coverage and architecture documentation.
+
+
+## Step 24 — Semantic Contract Authorization Boundary
+
+- Added contract-aware authorization using `SemanticContractSnapshot`.
+- Added pre-policy validation of semantic operation identity and relationship integrity.
+- Updated `FoundgineEngine` runtime authorization to use the immutable contract snapshot.
+- Added authorization boundary regression coverage and documentation.
+
+
+
+## Step 22 — Semantic Contract Runtime Consumer
+
+
+- Migrated `SemanticRequestResolver` runtime consumption to `SemanticContractSnapshot`.
+- Added snapshot-aware semantic graph and filter validation.
+- Updated `FoundgineEngine` to consume the startup singleton snapshot for request resolution.
+- Retained model overloads/constructor as compatibility bridges.
+- Added runtime-boundary regression coverage and documentation.
+
+- Added `ISemanticContractProvider` as the runtime dependency port for trusted semantic state.
+- Added `SemanticContractProvider` for immutable singleton contract delivery.
+- `AddFoundgine(...)` now freezes the configured semantic model and creates one application-lifetime `SemanticContractSnapshot`.
+- Registered the snapshot and provider through dependency injection.
+- Added documentation for the construction-to-runtime dependency boundary.
+
 # Changelog
+
+## Step 23 — Semantic Contract Planning Boundary
+
+- Added contract-aware `IPlanner.Plan(SemanticContractSnapshot, SemanticOperation)`.
+- Added runtime validation that canonical semantic IR belongs to the trusted frozen contract.
+- `FoundgineEngine` now supplies the immutable semantic snapshot to planning.
+- Added regression coverage for unknown entities, fields, and relationship target mismatches.
+
+
+## Step 20 — Semantic Contract Snapshot
+
+- Added `SemanticContractSnapshot` as the explicit immutable runtime representation of a frozen semantic contract.
+- Added `SemanticModel.CreateSnapshot()` with a fail-closed frozen-model requirement.
+- Preserved the canonical contract fingerprint across snapshot creation.
+- Added defensive copying for nested semantic collections and traversal paths.
+- Added documentation for the construction-to-trusted-runtime lifecycle boundary.
+
+## Step 19 — Semantic Contract Immutability & Freeze
+
+- Added an explicit `SemanticModel.Freeze()` lifecycle boundary and `EnsureFrozen()` guard.
+- Preserved `ContractFingerprint` across freezing and made freezing idempotent.
+- Added defensive deep copies/read-only wrappers for semantic entity, field, relationship, alias, constraint, and traversal collections.
+- Added regression coverage proving post-build lifecycle state, fingerprint preservation, idempotence, and nested collection immutability.
+- Added `SEMANTIC-CONTRACT-FREEZE-STEP19.md`.
+
+
+## Step 17 — Semantic Nullability Contract
+
+- Preserve nullable-reference metadata in typed semantic fields.
+- Include field nullability in the canonical contract identity.
+- Add regression coverage proving `string` and `string?` produce different semantic contracts.
+## Step 16 — Semantic Version / Contract Fingerprint Unification
+
+- Made `SemanticVersionSet.SemanticModelVersion` a direct projection of `SemanticModel.ContractFingerprint`.
+- Removed the second model-version hashing algorithm to prevent divergent notions of semantic-model identity.
+- Cache the immutable model contract fingerprint at construction time.
+- Expanded fingerprint canonicalization to include field nullability and traversal targets.
+- Added regression coverage for version/fingerprint equivalence and alias-driven contract changes.
+
+
+## Step 15 — Semantic Contract Fingerprint
+
+- Added canonical `SemanticModel.ContractFingerprint`.
+- Fingerprinting is deterministic across declaration order and independent CLR type identity.
+- Added regression coverage for stable, changing, and format-valid fingerprints.
+- Added `IDENTITY-FINGERPRINT-STEP15.md`.
+
+
+## Identity Step 14 — Relationship Identity Consistency
+
+- Hardened global relationship identity validation so repeated canonical relationship declarations must agree on target entity and cardinality.
+- Added regression coverage for target and cardinality conflicts.
+- Added `IDENTITY-CONSISTENCY-STEP14.md` documenting the invariant that stable relationship identity implies a stable semantic contract.
+
+
+## Step 13 — Relationship identity collision hardening
+
+- Added global relationship identity collision detection during semantic model composition.
+- Composition now fails closed when different semantic relationships share a `RelationshipId`.
+- Added regression coverage for direct and independently imported module collisions.
+- Preserved legacy explicit relationship-ID compatibility while making deterministic typed declarations the preferred path.
+
+
+## Identity architecture hardening
+
+- promoted deterministic `RelationshipId.Create(entity, relationship)` through typed relationship builder overloads;
+- added semantic graph validation modes: Strict, Loose, Federated, and Exploratory;
+- added graph annotations/provenance, expected cardinality, nullable-path metadata, and semantic constraints;
+- added field constraints for range, pattern, temporal semantics, currency, and country code;
+- extended entity resolution with semantic-identity, traversal, composite-key, temporal, and non-authoritative fuzzy-name paths;
+- marked the legacy untyped semantic entity builder as obsolete and hidden from normal IntelliSense while retaining compatibility.
+
+# Changelog
+
+## Step 19 — Semantic Contract Immutability & Freeze
+
+- Added an explicit `SemanticModel.Freeze()` lifecycle boundary and `EnsureFrozen()` guard.
+- Preserved `ContractFingerprint` across freezing and made freezing idempotent.
+- Added defensive deep copies/read-only wrappers for semantic entity, field, relationship, alias, constraint, and traversal collections.
+- Added regression coverage proving post-build lifecycle state, fingerprint preservation, idempotence, and nested collection immutability.
+- Added `SEMANTIC-CONTRACT-FREEZE-STEP19.md`.
+
+
+## [Unreleased] — Identity Regression / Step 12
+
+### Added
+- **Identity determinism regression gate.** Added `IdentityDeterminismTests` covering declaration reordering, independent compilation, module composition, alias stability, full identity JSON round-trips, reserved-zero enforcement, and duplicate explicit entity IDs.
+- Added `IDENTITY-REGRESSION-STEP12.md` documenting the identity contract and the criteria required before freezing it.
+
+### Fixed
+- The AOT generator now distinguishes an omitted explicit identity from `Id = 0`. Explicit zero is rejected instead of being silently treated as an automatically allocated identity.
+- Reserved-zero validation is now applied consistently to generated model, connection, and authorization identities in addition to entities, fields, columns, and relationships.
+
 
 ## [1.1.5] - 2026-08-29
 
@@ -183,3 +369,34 @@
 ### Changed
 - `VersionPrefix` bumped `0.1.0` → `0.4.0` in `Directory.Build.props`.
 
+
+## Step 18 — Semantic Contract Attestation
+
+- Added `SemanticContractAttestation` for fail-closed AOT/runtime contract verification.
+- Exposed `GeneratedSemanticModel.ContractFingerprint` from generated metadata.
+- Added regression coverage for generated/runtime fingerprint equivalence.
+
+## Step 30 follow-up — Dynamic intent convergence
+
+- Added immutable-contract binding to `ReadIntentCompiler`.
+- Added `CompileOperationGraph(ReadIntent)` for dynamic intent to canonical IR convergence.
+- Added contract fingerprint exposure for runtime provenance.
+- Added regression coverage proving deep logical traversals converge on the same operation-graph fingerprint and planner input.
+
+## Step 31 — Semantic Intent Document & Resolution Contract
+
+Added a contract-bound, versioned `SemanticIntentDocument` for dynamic/runtime intents. Documents bind caller-produced intent to the frozen semantic contract fingerprint and are rejected on contract mismatch before semantic resolution. Added explicit `SemanticIntentResolution` evidence and graph resolution helpers, plus regression coverage proving direct and document-based intents converge on the same operation-graph fingerprint.
+
+## Step 32 — Semantic Traversal Safety & Resource Bounds
+
+- Added provider-neutral operation-graph node, depth, edge, and field limits.
+- Added canonical `SemanticOperationGraphSafetyValidator`.
+- Added topology consistency, cycle/repeat, and unreachable-node checks.
+- Applied graph safety to dynamic `ReadIntentCompiler.CompileOperationGraph` and planner graph entry points.
+
+## Step 33 — Graph-Level Authorization
+
+- Added explicit `SemanticOperationGraph` authorization APIs.
+- Added `SemanticOperationGraphAuthorizationResult` with contract-bound evidence.
+- Added regression coverage for denied relationship subtrees and contract-bound evidence.
+- Added `SEMANTIC-GRAPH-AUTHORIZATION-STEP33.md`.

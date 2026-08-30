@@ -51,13 +51,16 @@ public sealed class FoundgineCoreProofTests
                             SemanticFilterOperator.Eq,
                             15000m)))));
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
 
         // Policy is attached after resolution, preserving the resolved
         // collection traversal and query options.
         var sourceRoot = resolved.Nodes.Single(x => x.ParentId is null);
         var authorized = resolved.WithAuthorization(sourceRoot.Id, tenantPolicy);
-        var plan = new Planner().Plan(authorized);
+        var plan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sql = new SqlCompiler(metadata).Compile(plan);
 
         Assert.Contains("EXISTS", sql.CommandText, StringComparison.OrdinalIgnoreCase);
@@ -107,3 +110,4 @@ public sealed class FoundgineCoreProofTests
         await command.ExecuteNonQueryAsync();
     }
 }
+

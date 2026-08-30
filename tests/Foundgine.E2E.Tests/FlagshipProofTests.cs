@@ -50,9 +50,12 @@ public sealed class FlagshipProofTests
         var intent = new JsonReadIntentAdapter().Parse(json);
         var request = new ReadIntentCompiler(model).Compile(intent);
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new CustomerReadPolicy()).Authorize(resolved);
-        var plan = new Planner().Plan(authorized);
+        var plan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
 
         // The logical plan contains no storage names, SQL, aliases, or provider state.
         var fingerprint = SemanticPlanFingerprint.CreateShapeKey(plan);
@@ -131,3 +134,4 @@ public sealed class FlagshipProofTests
             fieldId == new FieldId(1) || fieldId == new FieldId(2);
     }
 }
+

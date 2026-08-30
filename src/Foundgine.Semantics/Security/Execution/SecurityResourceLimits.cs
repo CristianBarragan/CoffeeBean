@@ -9,6 +9,10 @@ namespace Foundgine.Semantics.Security.Execution;
 public sealed record SecurityResourceLimits
 {
     public int MaxSelectionDepth { get; init; } = 32;
+    public int MaxOperationGraphNodes { get; init; } = 256;
+    public int MaxOperationGraphDepth { get; init; } = 32;
+    public int MaxOperationGraphEdges { get; init; } = 255;
+    public int MaxOperationGraphFields { get; init; } = 512;
     public int MaxSelectionNodes { get; init; } = 256;
     public int MaxFilterDepth { get; init; } = 32;
     public int MaxFilterNodes { get; init; } = 256;
@@ -25,7 +29,8 @@ public sealed record SecurityResourceLimits
 
     public void Validate()
     {
-        if (MaxSelectionDepth < 1 || MaxSelectionNodes < 1 ||
+        if (MaxSelectionDepth < 1 || MaxOperationGraphNodes < 1 || MaxOperationGraphDepth < 1 ||
+            MaxOperationGraphEdges < 1 || MaxOperationGraphFields < 1 || MaxSelectionNodes < 1 ||
             MaxFilterDepth < 1 || MaxFilterNodes < 1 ||
             MaxOrderTerms < 1 || MaxOrderPathDepth < 1 ||
             MaxPageSize < 1 || MaxOffset < 0 || MaxCursorLength < 1 ||

@@ -198,15 +198,21 @@ static string BuildMcpBatchRequest(int customer, int customers, int batchSize)
     });
 }
 
-static async Task<string> PostMcp(HttpClient http,string url,string request)
+static async Task<string> PostMcp(HttpClient http, string url, string request)
 {
-    using var msg = new HttpRequestMessage(HttpMethod.Post, url)
+    // HttpRequestMessage is single-use. The retry path must create a NEW
+    // request for every attempt; re-sending the same message throws:
+    // "The request message was already sent."
+    using var r = await Send(http, async () =>
     {
-        Content = new StringContent(request, Encoding.UTF8, "application/json")
-    };
-    msg.Headers.Accept.ParseAdd("application/json, text/event-stream");
-    msg.Headers.TryAddWithoutValidation("MCP-Protocol-Version", "2025-06-18");
-    using var r = await Send(http, () => http.SendAsync(msg));
+        using var msg = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = new StringContent(request, Encoding.UTF8, "application/json")
+        };
+        msg.Headers.Accept.ParseAdd("application/json, text/event-stream");
+        msg.Headers.TryAddWithoutValidation("MCP-Protocol-Version", "2025-06-18");
+        return await http.SendAsync(msg);
+    });
     var b = await r.Content.ReadAsStringAsync();
     if (!r.IsSuccessStatusCode)
         throw new HttpRequestException($"MCP HTTP {(int)r.StatusCode} {r.ReasonPhrase}: {b}");

@@ -9,10 +9,26 @@ namespace Foundgine.Semantics;
 /// </summary>
 public static class SemanticGraphValidator
 {
-    public static void Validate(SemanticGraph graph, SemanticModel model)
+    public static void Validate(SemanticGraph graph, SemanticContractSnapshot contract, SemanticGraphValidationMode mode = SemanticGraphValidationMode.Strict)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        ArgumentNullException.ThrowIfNull(contract);
+        ValidateCore(graph, contract.TryGet, contract.Get, mode);
+    }
+
+    public static void Validate(SemanticGraph graph, SemanticModel model, SemanticGraphValidationMode mode = SemanticGraphValidationMode.Strict)
     {
         ArgumentNullException.ThrowIfNull(graph);
         ArgumentNullException.ThrowIfNull(model);
+        ValidateCore(graph, model.TryGet, model.Get, mode);
+    }
+
+    private static void ValidateCore(
+        SemanticGraph graph,
+        TryGetEntity tryGetEntity,
+        Func<EntityId, SemanticEntity> getEntity,
+        SemanticGraphValidationMode mode)
+    {
 
         if (graph.Nodes.Count == 0)
             throw new InvalidOperationException("A semantic graph cannot be empty.");
@@ -22,12 +38,14 @@ public static class SemanticGraphValidator
             throw new InvalidOperationException("A semantic graph contains duplicate node identities.");
         var idSet = ids.ToHashSet();
         var roots = graph.Nodes.Where(x => x.ParentId is null).ToArray();
-        if (roots.Length != 1)
+        if (mode == SemanticGraphValidationMode.Strict && roots.Length != 1)
             throw new InvalidOperationException("A semantic graph must contain exactly one root node.");
+        if (mode != SemanticGraphValidationMode.Strict && roots.Length == 0)
+            throw new InvalidOperationException("A semantic graph must contain at least one root node.");
 
         foreach (var node in graph.Nodes)
         {
-            var entityFound = model.TryGet(node.EntityId, out var entity);
+            var entityFound = tryGetEntity(node.EntityId, out var entity);
 
             if (node.ParentId is { } parentId)
             {
@@ -43,13 +61,19 @@ public static class SemanticGraphValidator
                     if (node.ViaConnection is not null)
                         throw new InvalidOperationException($"Semantic node {node.Id} cannot specify both relationship and connection edges.");
 
-                    var relationship = GetParentEntity(model, parent).Relationships.FirstOrDefault(x => x.Id == relationshipId)
-                        ?? throw new InvalidOperationException(
-                            $"Parent entity '{GetParentEntity(model, parent).Name}' does not declare relationship '{relationshipId}' for semantic node {node.Id}.");
+                    var parentEntity = getEntity(parent.EntityId);
+                    var relationship = parentEntity.Relationships.FirstOrDefault(x => x.Id == relationshipId);
+                    if (relationship is null)
+                    {
+                        if (mode is SemanticGraphValidationMode.Federated or SemanticGraphValidationMode.Exploratory)
+                            continue;
+                        throw new InvalidOperationException(
+                            $"Parent entity '{parentEntity.Name}' does not declare relationship '{relationshipId}' for semantic node {node.Id}.");
+                    }
 
                     if (relationship.Target != node.EntityId)
                     {
-                        var targetName = model.TryGet(relationship.Target, out var targetEntity)
+                        var targetName = tryGetEntity(relationship.Target, out var targetEntity)
                             ? targetEntity.Name
                             : relationship.Target.ToString();
                         throw new InvalidOperationException(
@@ -63,20 +87,30 @@ public static class SemanticGraphValidator
             }
 
             if (!entityFound)
+            {
+                if (mode is SemanticGraphValidationMode.Federated or SemanticGraphValidationMode.Exploratory)
+                    continue;
                 throw new InvalidOperationException($"Semantic node {node.Id} references unknown entity '{node.EntityId}'.");
+            }
 
             foreach (var fieldId in node.Fields.Distinct())
             {
                 if (fieldId != entity.Identity.FieldId && entity.Fields.All(x => x.Id != fieldId))
+                {
+                    if (mode is SemanticGraphValidationMode.Exploratory)
+                        continue;
                     throw new InvalidOperationException($"Semantic node {node.Id} selects unknown field '{fieldId}' on '{entity.Name}'.");
+                }
             }
         }
 
-        // Every node must be reachable from the single root.
+        // Every node must be reachable from a root. Strict mode has exactly one root;
+        // loose/federated/exploratory modes may intentionally have several.
         var children = graph.Nodes.ToLookup(x => x.ParentId);
         var visited = new HashSet<int>();
-        Visit(roots[0], children, visited);
-        if (visited.Count != graph.Nodes.Count)
+        foreach (var root in roots)
+            Visit(root, children, visited);
+        if (visited.Count != graph.Nodes.Count && mode != SemanticGraphValidationMode.Exploratory)
             throw new InvalidOperationException("Semantic graph contains unreachable nodes.");
     }
 
@@ -88,5 +122,5 @@ public static class SemanticGraphValidator
             Visit(child, children, visited);
     }
 
-    private static SemanticEntity GetParentEntity(SemanticModel model, SemanticGraphNode node) => model.Get(node.EntityId);
+    private delegate bool TryGetEntity(EntityId id, out SemanticEntity entity);
 }

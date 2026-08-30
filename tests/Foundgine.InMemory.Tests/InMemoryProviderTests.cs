@@ -44,7 +44,10 @@ public sealed class InMemoryProviderTests
                 AuthorizationPredicate.Member(AuthorizationPredicate.ContextParameter("tenant"), "id")));
 
         // The provider-neutral plan contains no SQL objects.
-        var plan = new Planner().Plan(graph);
+        var plan = new Planner().Plan(graph) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
 
         var metadata = new MetadataRegistry();
         metadata.Register(Entity(customer, "Customer", customerId, customerName, 11, 12));
@@ -86,7 +89,8 @@ public sealed class InMemoryProviderTests
     public void Provider_plan_is_not_a_sql_plan()
     {
         var plan = new SemanticPlan(
-            new SemanticPlanNode(0, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, []));
+            new SemanticPlanNode(0, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, []),
+            AuthorizationBinding: new SemanticPlanAuthorizationBinding("test-contract", "test-authorization"));
 
         var compiled = new InMemoryCompiler().Compile(ExecutionIRCompiler.Compile(plan));
 

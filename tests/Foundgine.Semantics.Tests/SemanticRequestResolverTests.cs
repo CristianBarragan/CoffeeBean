@@ -51,7 +51,7 @@ public sealed class SemanticRequestResolverTests
                     ])
             ]);
 
-        var graph = new SemanticRequestResolver(model).Resolve(request);
+        var graph = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
 
         Assert.Equal(3, graph.Nodes.Count);
 
@@ -82,8 +82,9 @@ public sealed class SemanticRequestResolverTests
             [new SemanticSelection(null, new RelationshipId(99), [])]);
 
         var ex = Assert.Throws<InvalidOperationException>(
-            () => new SemanticRequestResolver(model).Resolve(request));
+            () => new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request));
 
         Assert.Contains("does not declare relationship", ex.Message);
     }
 }
+

@@ -1,6 +1,7 @@
-using Foundgine.Abstractions;
+﻿using Foundgine.Abstractions;
 using Foundgine.Planning;
 using Foundgine.Semantics;
+using Foundgine.Semantics.Authorization;
 using Foundgine.Semantics.Query;
 
 namespace Foundgine.Execution;
@@ -14,15 +15,21 @@ namespace Foundgine.Execution;
 /// </summary>
 public sealed record ExecutionIR(
     ExecutionIRNode Root,
-    IReadOnlyList<string> RequiredSecurityInvariants)
+    IReadOnlyList<string> RequiredSecurityInvariants,
+    SemanticPlanAuthorizationBinding AuthorizationBinding)
 {
     public static ExecutionIR From(SemanticPlan plan)
     {
         ArgumentNullException.ThrowIfNull(plan);
 
+        var binding = plan.AuthorizationBinding
+            ?? throw new InvalidOperationException(
+                "An executable plan must carry authorization provenance.");
+
         return new ExecutionIR(
             ExecutionIRNode.From(plan.Root),
-            plan.RequiredSecurityInvariants ?? Array.Empty<string>());
+            plan.RequiredSecurityInvariants ?? Array.Empty<string>(),
+            binding);
     }
 }
 
@@ -58,6 +65,32 @@ public sealed record ExecutionIRNode(
 /// </summary>
 public static class ExecutionIRCompiler
 {
-    public static ExecutionIR Compile(SemanticPlan plan) =>
-        ExecutionIR.From(plan);
+    public static ExecutionIR Compile(SemanticPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+
+        if (plan.AuthorizationBinding is null)
+            throw new InvalidOperationException(
+                "An executable plan must carry authorization provenance before crossing the execution boundary.");
+
+        return ExecutionIR.From(plan);
+    }
+
+    public static ExecutionIR Compile(
+        SemanticContractSnapshot contract,
+        SemanticPlan plan,
+        SemanticAuthorizationEvidence evidence)
+    {
+        ArgumentNullException.ThrowIfNull(contract);
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(evidence);
+
+        if (plan.AuthorizationBinding is null)
+            throw new InvalidOperationException(
+                "The semantic plan has no authorization binding.");
+
+        plan.AuthorizationBinding.EnsureMatches(contract, evidence);
+
+        return Compile(plan);
+    }
 }

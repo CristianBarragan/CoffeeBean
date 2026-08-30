@@ -56,8 +56,11 @@ public sealed class AdversarialIntentTests
         var model = BankingModel.Build();
         var intent = new JsonReadIntentAdapter().Parse(json);
         var request = new ReadIntentCompiler(model).Compile(intent);
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
-        var plan = new Foundgine.Planning.Planner().Plan(resolved);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
+        var plan = new Foundgine.Planning.Planner().Plan(resolved) with
+        {
+            AuthorizationBinding = new Foundgine.Planning.SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sql = new SqlCompiler(BankingRelationalMetadata.Build()).Compile(plan);
 
         Assert.DoesNotContain("Alice' OR 1=1 --", sql.CommandText, StringComparison.Ordinal);
@@ -133,3 +136,4 @@ public sealed class AdversarialIntentTests
         Assert.Contains("Unsupported filter kind", exception.Message, StringComparison.Ordinal);
     }
 }
+

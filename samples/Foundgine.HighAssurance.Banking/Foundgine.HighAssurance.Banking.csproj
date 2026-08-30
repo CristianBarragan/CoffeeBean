@@ -3,6 +3,7 @@
     <OutputType>Library</OutputType>
     <IsPackable>false</IsPackable>
     <RootNamespace>Foundgine.HighAssurance.Banking</RootNamespace>
+    <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />

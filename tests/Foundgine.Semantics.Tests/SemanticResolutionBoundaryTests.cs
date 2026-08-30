@@ -18,7 +18,7 @@ public sealed class SemanticResolutionBoundaryTests
         var request = new SemanticRequest(new EntityId(1), []);
 
         var ex = Assert.Throws<InvalidOperationException>(
-            () => new SemanticRequestResolver(model).Resolve(request));
+            () => new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request));
 
         Assert.Contains("at least one selection", ex.Message);
     }
@@ -45,7 +45,7 @@ public sealed class SemanticResolutionBoundaryTests
             ]);
 
         var ex = Assert.Throws<InvalidOperationException>(
-            () => new SemanticRequestResolver(model).Resolve(request));
+            () => new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request));
 
         Assert.Contains("selected more than once", ex.Message);
     }
@@ -64,10 +64,11 @@ public sealed class SemanticResolutionBoundaryTests
             customer,
             [new SemanticSelection(new FieldId(2), null, [])]);
 
-        var graph = new SemanticRequestResolver(model).Resolve(request);
+        var graph = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
 
         Assert.Single(graph.Nodes);
         Assert.Equal(customer, graph.Nodes[0].EntityId);
         Assert.Equal(new[] { new FieldId(2) }, graph.Nodes[0].Fields);
     }
 }
+

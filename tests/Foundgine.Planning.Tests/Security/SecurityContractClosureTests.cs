@@ -1,3 +1,4 @@
+using Foundgine.Semantics.Authorization;
 using Foundgine.Abstractions;
 using Foundgine.Execution;
 using Foundgine.Planning;
@@ -42,7 +43,7 @@ public sealed class SecurityContractClosureTests
     {
         var plan = new UnprovedPlan();
 
-        var ir = new ExecutionIR(
+        var ir = Foundgine.Testing.ExecutionIRTestFactory.Create(
             new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [], null, null, []),
             [SecurityInvariantIds.AuthorizationRequired]);
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -60,7 +61,7 @@ public sealed class SecurityContractClosureTests
             []);
         var plan = new UnprovedPlan { SecurityProof = proof };
 
-        var ir = new ExecutionIR(
+        var ir = Foundgine.Testing.ExecutionIRTestFactory.Create(
             new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [], null, null, []),
             [SecurityInvariantIds.AuthorizationRequired]);
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -71,3 +72,5 @@ public sealed class SecurityContractClosureTests
 
     private sealed record UnprovedPlan() : ProviderPlan("test");
 }
+
+

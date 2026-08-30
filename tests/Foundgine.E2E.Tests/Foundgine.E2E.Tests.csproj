@@ -2,6 +2,7 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <None Include="AdversarialFixtures\M17.2-hostile-intents.json" CopyToOutputDirectory="PreserveNewest" />

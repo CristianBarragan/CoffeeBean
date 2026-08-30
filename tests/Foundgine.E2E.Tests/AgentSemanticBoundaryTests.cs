@@ -45,7 +45,7 @@ public sealed class AgentSemanticBoundaryTests
 
         var request = new ReadIntentCompiler(model).Compile(intent);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(
-            new SemanticRequestResolver(model).Resolve(request));
+            new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request));
 
         Assert.Equal(customer, authorized.Nodes.Single(node => node.ParentId is null).EntityId);
         Assert.Contains(new FieldId(2), authorized.Nodes[0].Fields);
@@ -70,7 +70,7 @@ public sealed class AgentSemanticBoundaryTests
             [new ReadSelection(Field: "Id"), new ReadSelection(Field: "Balance")]);
 
         var request = new ReadIntentCompiler(model).Compile(intent);
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
 
         var policy = new DenyBalancePolicy(account);
         var authorized = new SemanticAuthorizer(policy).Authorize(resolved);
@@ -84,3 +84,4 @@ public sealed class AgentSemanticBoundaryTests
             entityId != account || fieldId != new FieldId(2);
     }
 }
+

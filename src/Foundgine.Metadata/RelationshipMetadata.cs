@@ -13,4 +13,5 @@ public sealed record RelationshipMetadata(
     string Name,
     ColumnReference SourceKey,
     ColumnReference TargetKey,
-    bool IsCollection = true);
+    bool IsCollection = true,
+    IReadOnlyList<string>? Aliases = null);

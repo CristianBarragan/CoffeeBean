@@ -1,6 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
-
 namespace Foundgine.Semantics;
 
 /// <summary>
@@ -34,30 +31,7 @@ public sealed record SemanticVersionSet(
 
     private static string ComputeModelVersion(SemanticModel model)
     {
-        var builder = new StringBuilder(1024);
-        foreach (var entity in model.Entities.OrderBy(x => x.Id.Value))
-        {
-            builder.Append("entity|").Append(entity.Id.Value).Append('|').Append(entity.Name).Append(';');
-            builder.Append("identity|").Append(entity.Identity.ToString()).Append(';');
-
-            foreach (var field in entity.Fields.OrderBy(x => x.Id.Value))
-                builder.Append("field|").Append(field.Id.Value).Append('|').Append(field.Name).Append('|').Append(field.EffectiveSemanticType).Append('|').Append(field.Capabilities).Append('|').Append(field.IsNullable).Append(';');
-
-            foreach (var relationship in entity.Relationships.OrderBy(x => x.Id.Value))
-                builder.Append("relationship|").Append(relationship.Id.Value).Append('|').Append(relationship.Name).Append('|').Append(relationship.Target.Value).Append('|').Append(relationship.Cardinality).Append(';');
-        }
-
-        foreach (var traversal in model.Traversals
-                     .OrderBy(x => x.Source.Value)
-                     .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
-        {
-            builder.Append("traversal|").Append(traversal.Source.Value).Append('|').Append(traversal.Name).Append('|').Append(traversal.Target.Value).Append('|');
-            foreach (var relationship in traversal.Path)
-                builder.Append(relationship.Value).Append(',');
-            builder.Append(';');
-        }
-
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()));
-        return $"sha256:{Convert.ToHexString(hash).ToLowerInvariant()}";
+        ArgumentNullException.ThrowIfNull(model);
+        return $"sha256:{model.ContractFingerprint}";
     }
 }

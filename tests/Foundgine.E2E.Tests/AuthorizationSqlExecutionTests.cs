@@ -31,7 +31,10 @@ public sealed class AuthorizationSqlExecutionTests
         var graph = new SemanticGraph();
         graph.AddRoot(new EntityId(3), new[] { new FieldId(1), new FieldId(3) }, authorization.Predicate);
 
-        var plan = new Planner().Plan(graph);
+        var plan = new Planner().Plan(graph) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sql = new SqlCompiler(GeneratedMetadata.Registry).Compile(plan);
 
         Assert.Contains("tenant_id", sql.CommandText, StringComparison.OrdinalIgnoreCase);
@@ -64,7 +67,10 @@ public sealed class AuthorizationSqlExecutionTests
         var authorization = GeneratedMetadata.Registry.Authorizations.Single();
         var graph = new SemanticGraph();
         graph.AddRoot(new EntityId(3), new[] { new FieldId(1), new FieldId(3) }, authorization.Predicate);
-        var plan = new SqlCompiler(GeneratedMetadata.Registry).Compile(new Planner().Plan(graph));
+        var plan = new SqlCompiler(GeneratedMetadata.Registry).Compile(new Planner().Plan(graph) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        });
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             new SqlExecutionProvider(connection).ExecuteAsync(plan, new FoundgineExecutionContext()));
@@ -78,7 +84,10 @@ public sealed class AuthorizationSqlExecutionTests
         var graph = new SemanticGraph();
         graph.AddRoot(new EntityId(3), Array.Empty<FieldId>());
 
-        var plan = new Planner().Plan(graph);
+        var plan = new Planner().Plan(graph) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
 
         var exception = Assert.Throws<InvalidOperationException>(
             () => new SqlCompiler(GeneratedMetadata.Registry).Compile(plan));

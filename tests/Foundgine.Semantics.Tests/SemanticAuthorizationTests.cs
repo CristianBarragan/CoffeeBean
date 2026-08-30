@@ -11,10 +11,61 @@ public sealed class SemanticAuthorizationTests
 {
 
     [Fact]
+    public void Contract_aware_authorization_accepts_operation_from_same_contract()
+    {
+        var (model, request, customer, _, _) = CreateBankingRequest();
+        var contract = model.Freeze().CreateSnapshot();
+        var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(
+            new SemanticRequestResolver(contract).Resolve(request));
+
+        var authorized = new SemanticAuthorizer(new DenyAccountPolicy()).Authorize(contract, operation);
+
+        Assert.Equal(customer, authorized.Root.EntityId);
+    }
+
+    [Fact]
+    public void Contract_aware_authorization_rejects_unknown_entity_before_policy_evaluation()
+    {
+        var (model, request, _, _, _) = CreateBankingRequest();
+        var contract = model.Freeze().CreateSnapshot();
+        var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(
+            new SemanticRequestResolver(contract).Resolve(request));
+        operation = operation with { Root = operation.Root with { EntityId = new EntityId(999) } };
+
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(contract, operation));
+
+        Assert.Contains("999", ex.Message);
+    }
+
+    [Fact]
+    public void Contract_aware_authorization_rejects_relationship_target_mismatch_before_policy_evaluation()
+    {
+        var (model, request, _, account, _) = CreateBankingRequest();
+        var contract = model.Freeze().CreateSnapshot();
+        var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(
+            new SemanticRequestResolver(contract).Resolve(request));
+        var child = operation.Root.Children.Single();
+        operation = operation with
+        {
+            Root = operation.Root with
+            {
+                Children = [child with { EntityId = new EntityId(1) }]
+            }
+        };
+
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(contract, operation));
+
+        Assert.Contains("targets", ex.Message);
+        Assert.Equal(account, child.EntityId);
+    }
+
+    [Fact]
     public void Authorization_can_be_applied_to_canonical_semantic_ir()
     {
         var (model, request, customer, account, _) = CreateBankingRequest();
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(resolved);
 
         var authorized = new SemanticAuthorizer(new DenyAccountPolicy()).Authorize(operation);
@@ -33,7 +84,7 @@ public sealed class SemanticAuthorizationTests
                 AuthorizationPredicate.ContextParameter("user"), "TenantId"));
 
         var (model, request, _, _, _) = CreateBankingRequest();
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(resolved);
 
         var authorized = new SemanticAuthorizer(new ConditionalPolicy(predicate)).Authorize(operation);
@@ -46,7 +97,7 @@ public sealed class SemanticAuthorizationTests
     {
         var (model, request, customer, account, _) = CreateBankingRequest();
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new DenyBalancePolicy()).Authorize(resolved);
 
         Assert.Equal(3, authorized.Nodes.Count);
@@ -60,7 +111,7 @@ public sealed class SemanticAuthorizationTests
     public void Denying_every_requested_field_does_not_reintroduce_fields()
     {
         var (model, request, _, _, _) = CreateBankingRequest();
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new DenyAllCustomerFieldsPolicy()).Authorize(resolved);
 
         Assert.Empty(authorized.Nodes[0].Fields);
@@ -71,7 +122,7 @@ public sealed class SemanticAuthorizationTests
     {
         var (model, request, customer, _, transaction) = CreateBankingRequest();
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new DenyTransactionsPolicy()).Authorize(resolved);
 
         Assert.Equal(2, authorized.Nodes.Count);
@@ -85,7 +136,7 @@ public sealed class SemanticAuthorizationTests
     {
         var (model, request, customer, account, _) = CreateBankingRequest();
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new DenyAccountPolicy()).Authorize(resolved);
 
         Assert.Single(authorized.Nodes);
@@ -98,7 +149,7 @@ public sealed class SemanticAuthorizationTests
     {
         var (model, request, _, _, _) = CreateBankingRequest();
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
 
         var ex = Assert.Throws<SemanticAuthorizationException>(
             () => new SemanticAuthorizer(new DenyCustomerPolicy()).Authorize(resolved));
@@ -244,7 +295,7 @@ public sealed class SemanticAuthorizationCapabilityTests
             new EntityId(1),
             [new SemanticSelection(new FieldId(2), null, [])]);
 
-        var graph = new SemanticRequestResolver(model).Resolve(request);
+        var graph = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new TenantPolicy()).Authorize(graph);
 
         var predicate = Assert.Single(authorized.Nodes).Authorization;
@@ -278,3 +329,4 @@ public sealed class SemanticAuthorizationCapabilityTests
                 : null;
     }
 }
+

@@ -61,7 +61,7 @@ public sealed class SemanticSemanticContractTests
                 Limit: 10,
                 After: "cursor"));
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var order = resolved.Options!.EffectiveOrder;
 
         Assert.Equal(new FieldId(3), order[0].Field);
@@ -83,7 +83,7 @@ public sealed class SemanticSemanticContractTests
             [new SemanticSelection(new FieldId(1), null, [])],
             new SemanticQueryOptions(Limit: -1));
 
-        var ex = Assert.Throws<InvalidOperationException>(() => new SemanticRequestResolver(model).Resolve(request));
+        var ex = Assert.Throws<InvalidOperationException>(() => new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request));
         Assert.Contains("limit", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }
@@ -108,4 +108,5 @@ public sealed class SemanticGraphValidationTests
         Assert.Contains("targets entity", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }
+
 

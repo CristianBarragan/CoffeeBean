@@ -39,7 +39,13 @@ public static class BankingRelationalMetadata
             Fields:
             [
                 new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(BankingSemanticModel.Account, new ColumnId(1))),
-                new FieldMetadata(new FieldId(3), "Balance", typeof(decimal), new ColumnReference(BankingSemanticModel.Account, new ColumnId(3)))
+                new FieldMetadata(new FieldId(3), "Balance", typeof(decimal), new ColumnReference(BankingSemanticModel.Account, new ColumnId(3))),
+                // Internal foreign-key mapping only: CustomerId has no corresponding
+                // field in the semantic model, so it is never selectable or
+                // discoverable through a capability contract. It exists solely so
+                // relational/in-memory providers can resolve the CustomerAccounts
+                // and AccountCustomer relationship key columns during traversal.
+                new FieldMetadata(new FieldId(4), "CustomerId", typeof(int), new ColumnReference(BankingSemanticModel.Account, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(BankingSemanticModel.Account, new ColumnId(1)));
 

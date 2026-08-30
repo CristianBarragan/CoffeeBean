@@ -40,7 +40,7 @@ public static class SemanticEquivalenceFingerprint
             .Append(node.ViaConnection?.Value.ToString() ?? "-").Append(')');
 
         builder.Append("fields[");
-        var seenFields = new HashSet<ushort>();
+        var seenFields = new HashSet<ulong>();
         foreach (var field in node.Fields)
         {
             if (seenFields.Add(field.Value))

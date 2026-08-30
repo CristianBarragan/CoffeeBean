@@ -5,9 +5,18 @@ namespace Foundgine.Aot;
 public sealed class FoundgineEntityAttribute : Attribute
 {
     public FoundgineEntityAttribute(string? name = null) => Name = name;
-    public string? Name { get; }
+    public string? Name { get; init; }
     public string? StorageName { get; init; }
-    public ushort Id { get; init; }
+    public ulong Id { get; init; }
+}
+
+/// <summary>Declares a historical semantic name for an AOT entity, field, or relationship.
+/// Aliases resolve to the canonical declaration and never participate in identity generation.</summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Property, AllowMultiple = true, Inherited = false)]
+public sealed class FoundgineAliasAttribute : Attribute
+{
+    public FoundgineAliasAttribute(string name) => Name = name;
+    public string Name { get; }
 }
 
 /// <summary>Marks an application model for compile-time semantic metadata generation.
@@ -17,7 +26,7 @@ public sealed class FoundgineModelAttribute : Attribute
 {
     public FoundgineModelAttribute(string? name = null) => Name = name;
     public string? Name { get; }
-    public ushort Id { get; init; }
+    public ulong Id { get; init; }
 }
 
 /// <summary>Overrides generated field metadata for a scalar entity property.</summary>
@@ -25,10 +34,46 @@ public sealed class FoundgineModelAttribute : Attribute
 public sealed class FoundgineFieldAttribute : Attribute
 {
     public FoundgineFieldAttribute(string? name = null) => Name = name;
-    public string? Name { get; }
+    public string? Name { get; init; }
     public string? StorageName { get; init; }
-    public ushort Id { get; init; }
+    public ulong Id { get; init; }
+    /// <summary>Optional explicit physical column identity. When omitted, the column identity is derived from storage name and physical column name.</summary>
+    public ulong ColumnId { get; init; }
     public bool IsPrimaryKey { get; init; }
+
+    /// <summary>Hints that this field is (or should be) backed by a storage index.
+    /// Providers may use this to prioritize indexed access paths during query
+    /// planning; it does not by itself create an index.</summary>
+    public bool Index { get; init; }
+}
+
+/// <summary>Marks a scalar field as a semantic dimension: an axis a query planner
+/// can use for filtering, authorization, aggregation, or traversal (e.g. a tenant,
+/// country, category, or business-unit key) rather than a plain data value.</summary>
+[AttributeUsage(AttributeTargets.Property, Inherited = false)]
+public sealed class FoundgineSemanticDimensionAttribute : Attribute
+{
+    public FoundgineSemanticDimensionAttribute(string dimension) => Dimension = dimension;
+
+    /// <summary>The dimension name, e.g. "tenant", "country", "category".</summary>
+    public string Dimension { get; }
+}
+
+/// <summary>Marks an entity as representing an occurrence at a point in time
+/// (an event) rather than the current state of something. Event entities are
+/// immutable once recorded and are the natural subject of temporal/"as of"
+/// queries, time-series aggregation, and forecasting - as opposed to state
+/// entities, which describe the current condition of a thing and can change
+/// in place.</summary>
+[AttributeUsage(AttributeTargets.Class, Inherited = false)]
+public sealed class FoundgineEventAttribute : Attribute
+{
+    /// <param name="occurredAtField">Optional name of the scalar property that
+    /// carries the timestamp the event occurred at. When omitted, the entity is
+    /// still treated as an event, just without a declared temporal column.</param>
+    public FoundgineEventAttribute(string? occurredAtField = null) => OccurredAtField = occurredAtField;
+
+    public string? OccurredAtField { get; }
 }
 
 /// <summary>Declares a storage relationship. EF remains the authoritative
@@ -46,7 +91,7 @@ public sealed class FoundgineRelationshipAttribute : Attribute
     public Type Target { get; }
     public string ForeignKey { get; }
     public string PrincipalKey { get; }
-    public ushort Id { get; init; }
+    public ulong Id { get; init; }
     public string? Name { get; init; }
 }
 
@@ -68,7 +113,7 @@ public sealed class FoundgineConnectionAttribute : Attribute
     public FoundgineConnectionAttribute(Type target) => Target = target;
 
     public Type? Target { get; }
-    public ushort Id { get; init; }
+    public ulong Id { get; init; }
     public string? Name { get; init; }
 }
 
@@ -113,8 +158,8 @@ public sealed class FoundgineModelEntityMapAttribute : Attribute
 [AttributeUsage(AttributeTargets.Property, Inherited = false)]
 public sealed class FoundgineAuthorizationAttribute : Attribute
 {
-    public FoundgineAuthorizationAttribute(ushort connectionId) => ConnectionId = connectionId;
-    public ushort ConnectionId { get; }
-    public ushort Id { get; init; }
+    public FoundgineAuthorizationAttribute(ulong connectionId) => ConnectionId = connectionId;
+    public ulong ConnectionId { get; }
+    public ulong Id { get; init; }
     public string? Name { get; init; }
 }

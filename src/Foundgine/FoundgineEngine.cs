@@ -20,6 +20,7 @@ namespace Foundgine;
 public sealed class FoundgineEngine : IFoundgine
 {
     private readonly SemanticModel _model;
+    private readonly SemanticContractSnapshot _contract;
     private readonly ISemanticAuthorizationPolicy _authorizationPolicy;
     private readonly IPlanner _planner;
     private readonly IPlanOptimizer _planOptimizer;
@@ -32,16 +33,20 @@ public sealed class FoundgineEngine : IFoundgine
     private readonly string? _expectedWarrantIssuer;
     private readonly ISecurityWarrantReplayStore? _warrantReplayStore;
     private readonly SecurityResourceLimits _securityResourceLimits;
+    private readonly IExecutionAuthorizationRevalidator _executionAuthorizationRevalidator;
+    private readonly Func<SemanticAuthorizationEvidence, CancellationToken, ValueTask<ExecutionAuthorizationAuthorityState?>>? _executionAuthorizationAuthorityResolver;
     private readonly string _cacheNamespace = Guid.NewGuid().ToString("N");
 
     internal FoundgineEngine(
         FoundgineOptions options,
+        SemanticContractSnapshot contract,
         IProviderPlanCompiler compiler,
         IExecutionProvider provider)
     {
         ArgumentNullException.ThrowIfNull(options);
         _model = options.Model ?? throw new InvalidOperationException(
             "FoundgineOptions.Model must be configured.");
+        _contract = contract ?? throw new ArgumentNullException(nameof(contract));
         _authorizationPolicy = options.AuthorizationPolicy ?? throw new InvalidOperationException(
             "FoundgineOptions.AuthorizationPolicy must be configured.");
         _planner = new Planner();
@@ -56,7 +61,32 @@ public sealed class FoundgineEngine : IFoundgine
         _expectedWarrantIssuer = options.ExpectedWarrantIssuer;
         _warrantReplayStore = options.WarrantReplayStore;
         _securityResourceLimits = options.SecurityResourceLimits ?? new SecurityResourceLimits();
+        _executionAuthorizationRevalidator = options.ExecutionAuthorizationRevalidator ?? new SemanticExecutionAuthorizationRevalidator();
+        _executionAuthorizationAuthorityResolver = options.ExecutionAuthorizationAuthorityResolver;
         _securityResourceLimits.Validate();
+    }
+
+    /// <summary>
+    /// Convenience overload for callers (largely tests) that build
+    /// <see cref="FoundgineOptions"/> directly and do not already hold a
+    /// frozen <see cref="SemanticContractSnapshot"/>. The snapshot is derived
+    /// from <see cref="FoundgineOptions.Model"/> the same way
+    /// <see cref="FoundgineServiceCollectionExtensions"/> does at startup.
+    /// </summary>
+    internal FoundgineEngine(
+        FoundgineOptions options,
+        IProviderPlanCompiler compiler,
+        IExecutionProvider provider)
+        : this(options, CreateContract(options), compiler, provider)
+    {
+    }
+
+    private static SemanticContractSnapshot CreateContract(FoundgineOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        var model = options.Model ?? throw new InvalidOperationException(
+            "FoundgineOptions.Model must be configured.");
+        return model.Freeze().CreateSnapshot();
     }
 
     /// <summary>
@@ -72,6 +102,7 @@ public sealed class FoundgineEngine : IFoundgine
         IProviderPlanCache? planCache = null)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
+        _contract = _model.Freeze().CreateSnapshot();
         _authorizationPolicy = authorizationPolicy ?? throw new ArgumentNullException(nameof(authorizationPolicy));
         _planner = planner ?? throw new ArgumentNullException(nameof(planner));
         _planOptimizer = new SemanticPlanOptimizer();
@@ -82,6 +113,7 @@ public sealed class FoundgineEngine : IFoundgine
         _securityContract = SemanticCapabilityContractDiscovery.Describe(_model, _authorizationPolicy);
         SecurityInvariantContractValidator.EnsureContractValid(_securityContract);
         _securityResourceLimits = new SecurityResourceLimits();
+        _executionAuthorizationRevalidator = new SemanticExecutionAuthorizationRevalidator();
     }
 
     public SemanticAuthorizationCapabilities DescribeCapabilities() =>
@@ -132,11 +164,13 @@ public sealed class FoundgineEngine : IFoundgine
         ArgumentNullException.ThrowIfNull(request);
         SecurityResourceLimitValidator.Validate(request, _securityResourceLimits);
 
-        var graph = new SemanticRequestResolver(_model).Resolve(request);
+        var graph = new SemanticRequestResolver(_contract).Resolve(request);
         var semanticOperation = SemanticOperationCompiler.Compile(graph);
         ValidateWarrant(request, semanticOperation, consumeReplay: false);
-        var authorizedOperation = new SemanticAuthorizer(_authorizationPolicy).Authorize(semanticOperation);
-        var plan = BuildSecuredPlan(authorizedOperation);
+        var authorization = new SemanticAuthorizer(_authorizationPolicy).AuthorizeWithEvidence(_contract, semanticOperation);
+        authorization.EnsureMatches(_contract);
+        var authorizedOperation = authorization.Operation;
+        var plan = BuildSecuredPlan(authorization);
         return new DryRunResult(PlanInspector.Inspect(plan));
     }
 
@@ -177,11 +211,13 @@ public sealed class FoundgineEngine : IFoundgine
                 "The approval was created against an incompatible semantic version set. Re-run dry-run and obtain a new approval.");
         }
 
-        var graph = new SemanticRequestResolver(_model).Resolve(approval.Request);
+        var graph = new SemanticRequestResolver(_contract).Resolve(approval.Request);
         var semanticOperation = SemanticOperationCompiler.Compile(graph);
         ValidateWarrant(approval.Request, semanticOperation, consumeReplay: true);
-        var authorizedOperation = new SemanticAuthorizer(_authorizationPolicy).Authorize(semanticOperation);
-        var plan = BuildSecuredPlan(authorizedOperation);
+        var authorization = new SemanticAuthorizer(_authorizationPolicy).AuthorizeWithEvidence(_contract, semanticOperation);
+        authorization.EnsureMatches(_contract);
+        var authorizedOperation = authorization.Operation;
+        var plan = BuildSecuredPlan(authorization);
         var currentFingerprint = SemanticPlanFingerprint.Create(plan);
 
         if (!string.Equals(currentFingerprint, approval.PlanFingerprint, StringComparison.Ordinal))
@@ -205,7 +241,8 @@ public sealed class FoundgineEngine : IFoundgine
             executionContext,
             executionIr,
             cancellationToken,
-            approval);
+            approval,
+            authorization.Evidence);
     }
 
     public Task<ExecutionResult> ExecuteAsync(
@@ -226,11 +263,13 @@ public sealed class FoundgineEngine : IFoundgine
         ArgumentNullException.ThrowIfNull(request);
         SecurityResourceLimitValidator.Validate(request, _securityResourceLimits);
 
-        var graph = new SemanticRequestResolver(_model).Resolve(request);
+        var graph = new SemanticRequestResolver(_contract).Resolve(request);
         var semanticOperation = SemanticOperationCompiler.Compile(graph);
         ValidateWarrant(request, semanticOperation, consumeReplay: true);
-        var authorizedOperation = new SemanticAuthorizer(_authorizationPolicy).Authorize(semanticOperation);
-        var plan = BuildSecuredPlan(authorizedOperation);
+        var authorization = new SemanticAuthorizer(_authorizationPolicy).AuthorizeWithEvidence(_contract, semanticOperation);
+        authorization.EnsureMatches(_contract);
+        var authorizedOperation = authorization.Operation;
+        var plan = BuildSecuredPlan(authorization);
         var executionIr = ExecutionIRCompiler.Compile(plan);
         var cacheKey = BuildProviderPlanCacheKey(plan, request.Security);
         var providerPlan = _planCache.GetOrAdd(
@@ -246,7 +285,8 @@ public sealed class FoundgineEngine : IFoundgine
             providerPlan,
             executionContext,
             executionIr,
-            cancellationToken);
+            cancellationToken,
+            authorizationEvidence: authorization.Evidence);
     }
     private string BuildProviderPlanCacheKey(
         SemanticPlan plan,
@@ -329,23 +369,24 @@ public sealed class FoundgineEngine : IFoundgine
         }
     }
 
-    private SemanticPlan BuildSecuredPlan(SemanticOperation operation)
+    private SemanticPlan BuildSecuredPlan(SemanticAuthorizationResult authorization)
     {
-        ArgumentNullException.ThrowIfNull(operation);
+        ArgumentNullException.ThrowIfNull(authorization);
+        authorization.EnsureMatches(_contract);
 
-        var planned = _planner.Plan(operation);
+        var planned = _planner.Plan(_contract, authorization);
         var optimized = _planOptimizer.Optimize(planned);
         if (!optimized.SecurityProof.IsSatisfied)
             throw new InvalidOperationException(
                 "The optimized semantic plan does not carry a satisfied security-preservation proof.");
 
         var capability = _securityContract.Capabilities.FirstOrDefault(c =>
-            c.TargetEntityId == operation.Root.EntityId &&
+            c.TargetEntityId == authorization.Operation.Root.EntityId &&
             string.Equals(c.Operation, "read", StringComparison.Ordinal));
 
         if (capability is null)
             throw new InvalidOperationException(
-                $"No security capability contract exists for root entity '{operation.Root.EntityId}' and operation 'read'.");
+                $"No security capability contract exists for root entity '{authorization.Operation.Root.EntityId}' and operation 'read'.");
 
         var plan = SecurityInvariantPlanRequirements.Attach(
             optimized.Plan,
@@ -369,9 +410,28 @@ public sealed class FoundgineEngine : IFoundgine
         ExecutionContext context,
         ExecutionIR executionIr,
         CancellationToken cancellationToken,
-        PlanApproval? approval = null)
+        PlanApproval? approval = null,
+        SemanticAuthorizationEvidence? authorizationEvidence = null)
     {
         SecurityInvariantExecutionGate.EnsureExecutable(providerPlan, executionIr);
+
+        if (authorizationEvidence is null)
+            throw new InvalidOperationException(
+                "Executable semantic plans require authorization evidence bound to the same semantic contract.");
+
+        var binding = plan.AuthorizationBinding
+            ?? throw new InvalidOperationException(
+                "Executable semantic plans require an authorization binding.");
+        binding.EnsureMatches(_contract, authorizationEvidence);
+
+        // Final authorization check immediately before provider execution. This is
+        // intentionally after cache lookup and provider-plan construction so a
+        // previously valid artifact cannot bypass the current authority state.
+        var currentAuthority = _executionAuthorizationAuthorityResolver is null
+            ? null
+            : await _executionAuthorizationAuthorityResolver(authorizationEvidence, cancellationToken);
+        await _executionAuthorizationRevalidator.ValidateAsync(
+            _contract, authorizationEvidence, currentAuthority, cancellationToken);
 
         context.EnsureWithinDeadline();
         var startedAt = DateTimeOffset.UtcNow;
@@ -384,8 +444,7 @@ public sealed class FoundgineEngine : IFoundgine
 
         var intentFingerprint = ExecutionEvidenceFactory.Hash(
             $"intent-v{_versions.IntentVersion}|{JsonSerializer.Serialize(request)}");
-        var authorizationFingerprint = ExecutionEvidenceFactory.Hash(
-            SemanticPlanFingerprint.Create(plan));
+        var authorizationFingerprint = binding.AuthorizationFingerprint;
         var evidence = result.Evidence with
         {
             PlanFingerprint = SemanticPlanFingerprint.Create(plan),

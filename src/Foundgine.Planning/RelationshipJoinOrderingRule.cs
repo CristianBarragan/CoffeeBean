@@ -48,7 +48,7 @@ public sealed class RelationshipJoinOrderingRule : IPlanRewriteRule
 
         var changed = false;
         var root = Rewrite(plan.Root, ref changed);
-        return changed ? new SemanticPlan(root, plan.RequiredSecurityInvariants) : plan;
+        return changed ? new SemanticPlan(root, plan.RequiredSecurityInvariants, plan.AuthorizationBinding) : plan;
     }
 
     private static SemanticPlanNode Rewrite(SemanticPlanNode node, ref bool changed)

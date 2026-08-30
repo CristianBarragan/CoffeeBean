@@ -1,3 +1,4 @@
+using Foundgine.Semantics.Authorization;
 using Foundgine.Execution;
 using Foundgine.Planning;
 using Foundgine.Semantics;
@@ -45,7 +46,7 @@ public sealed class CacheModelAndPredicatePenetrationTests
     [Fact]
     public void Unknown_security_obligation_cannot_be_normalized_into_a_known_one()
     {
-        var ir = new ExecutionIR(
+        var ir = Foundgine.Testing.ExecutionIRTestFactory.Create(
             new ExecutionIRNode(1, ExecutionOperation.Scan, new Foundgine.Abstractions.EntityId(1),
                 [new Foundgine.Abstractions.FieldId(1)], null, null, []),
             ["security.unknown"]);
@@ -66,3 +67,5 @@ public sealed class CacheModelAndPredicatePenetrationTests
 
     private sealed record TestPlan(string Name) : ProviderPlan("test");
 }
+
+

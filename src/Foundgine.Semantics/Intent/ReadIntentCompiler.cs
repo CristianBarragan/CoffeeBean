@@ -1,5 +1,9 @@
-using Foundgine.Abstractions;
+﻿using Foundgine.Abstractions;
 using Foundgine.Semantics.Query;
+using Foundgine.Semantics.IR;
+using Foundgine.Semantics.IR.Graph;
+using Foundgine.Semantics.Resolution;
+using Foundgine.Semantics.Security.Execution;
 
 namespace Foundgine.Semantics.Intent;
 
@@ -10,10 +14,62 @@ namespace Foundgine.Semantics.Intent;
 /// </summary>
 public sealed class ReadIntentCompiler
 {
-    private readonly SemanticModel _model;
+    private readonly SemanticModel? _model;
+    private readonly SemanticContractSnapshot? _contract;
 
     public ReadIntentCompiler(SemanticModel model) =>
         _model = model ?? throw new ArgumentNullException(nameof(model));
+
+    public ReadIntentCompiler(SemanticContractSnapshot contract) =>
+        _contract = contract ?? throw new ArgumentNullException(nameof(contract));
+
+    /// <summary>
+    /// Compiles a dynamic read intent against the frozen runtime contract and
+    /// lowers it to the same canonical operation graph consumed by the planner.
+    /// </summary>
+    public SemanticOperationGraph CompileOperationGraph(ReadIntent intent, SecurityResourceLimits? limits = null)
+    {
+        ArgumentNullException.ThrowIfNull(intent);
+        var request = Compile(intent);
+        var contract = _contract ?? (_model ?? throw new InvalidOperationException("No semantic contract is configured.")).Freeze().CreateSnapshot();
+        var graph = new SemanticRequestResolver(contract).Resolve(request);
+        var operationGraph = SemanticOperationGraph.Create(SemanticOperationCompiler.Compile(graph));
+        SemanticOperationGraphSafetyValidator.Validate(operationGraph, limits ?? new SecurityResourceLimits());
+        return operationGraph;
+    }
+
+    /// <summary>Creates a contract-bound dynamic intent document.</summary>
+    public SemanticIntentDocument CreateDocument(ReadIntent intent)
+    {
+        ArgumentNullException.ThrowIfNull(intent);
+        return new SemanticIntentDocument(ContractFingerprint, intent).Validate();
+    }
+
+    /// <summary>Resolves a contract-bound intent document and rejects stale contracts before resolution.</summary>
+    public SemanticIntentResolution ResolveDocument(SemanticIntentDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        document.Validate();
+
+        if (!string.Equals(document.ContractFingerprint, ContractFingerprint, StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                $"Semantic intent document is bound to contract '{document.ContractFingerprint}', but the resolver uses '{ContractFingerprint}'.");
+
+        var request = Compile(document.Intent);
+        return new SemanticIntentResolution(document, request, ContractFingerprint);
+    }
+
+    /// <summary>Resolves a document directly to the canonical operation graph.</summary>
+    public SemanticOperationGraph ResolveDocumentGraph(SemanticIntentDocument document)
+    {
+        var resolution = ResolveDocument(document);
+        var contract = _contract ?? (_model ?? throw new InvalidOperationException("No semantic contract is configured.")).Freeze().CreateSnapshot();
+        var graph = new SemanticRequestResolver(contract).Resolve(resolution.Request);
+        return SemanticOperationGraph.Create(SemanticOperationCompiler.Compile(graph));
+    }
+
+    public string ContractFingerprint =>
+        _contract?.ContractFingerprint ?? (_model ?? throw new InvalidOperationException("No semantic contract is configured.")).Freeze().ContractFingerprint;
 
     public SemanticRequest Compile(ReadIntent intent)
     {
@@ -57,7 +113,7 @@ public sealed class ReadIntentCompiler
         // layer sees every hop, so tenant/field/relationship policies cannot be
         // bypassed by using a convenient alias such as Customer.transactions.
         IReadOnlyList<SemanticSelection> children = compiledChildren
-            .Select(child => CompileSelection(_model.Get(path[^1].Target), child))
+            .Select(child => CompileSelection(GetEntity(path[^1].Target), child))
             .ToArray();
 
         for (var i = path.Count - 1; i >= 0; i--)
@@ -99,7 +155,7 @@ public sealed class ReadIntentCompiler
             foreach (var relationship in relationshipPath)
             {
                 path.Add(relationship.Id);
-                entity = _model.Get(relationship.Target);
+                entity = GetEntity(relationship.Target);
             }
         }
 
@@ -114,14 +170,27 @@ public sealed class ReadIntentCompiler
             order.Aggregate);
     }
 
-    private SemanticEntity FindEntity(string name) =>
-        _model.Entities.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase))
-        ?? throw Invalid($"Unknown entity '{name}'.");
+    private SemanticEntity FindEntity(string name)
+    {
+        if (_contract is not null)
+            return _contract.TryResolveEntity(name, out var entity)
+                ? entity
+                : throw Invalid($"Unknown entity '{name}'.");
+
+        return _model!.Entities.FirstOrDefault(x =>
+            string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
+            x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)))
+            ?? throw Invalid($"Unknown entity '{name}'.");
+    }
+
+    private SemanticEntity GetEntity(EntityId id) =>
+        _contract?.Get(id) ?? _model!.Get(id);
 
     private static SemanticField FindField(SemanticEntity entity, string name)
     {
         var field = entity.Fields.FirstOrDefault(x =>
-            string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+            string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
+            x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)));
         if (field is not null)
             return field;
 
@@ -133,11 +202,22 @@ public sealed class ReadIntentCompiler
 
     private IReadOnlyList<SemanticRelationship> ResolveRelationshipPath(SemanticEntity entity, string name)
     {
-        var direct = entity.Relationships.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+        var direct = entity.Relationships.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) || x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)));
         if (direct is not null)
             return [direct];
 
-        if (_model.TryGetTraversal(entity.Id, name, out var traversal))
+        SemanticTraversal? traversal = null;
+
+        if (_contract is not null)
+        {
+            _contract.TryGetTraversal(entity.Id, name, out traversal);
+        }
+        else
+        {
+            _model!.TryGetTraversal(entity.Id, name, out traversal);
+        }
+
+        if (traversal is not null)
         {
             var current = entity;
             var result = new List<SemanticRelationship>(traversal.Path.Count);
@@ -146,7 +226,7 @@ public sealed class ReadIntentCompiler
                 var relationship = current.Relationships.FirstOrDefault(x => x.Id == relationshipId)
                     ?? throw Invalid($"Traversal '{name}' contains relationship '{relationshipId}' that is not defined on '{current.Name}'.");
                 result.Add(relationship);
-                current = _model.Get(relationship.Target);
+                current = GetEntity(relationship.Target);
             }
             return result;
         }
@@ -167,7 +247,7 @@ public sealed class ReadIntentCompiler
         }
 
         SemanticFilterExpression predicate = CompileFilter(
-            _model.Get(path[^1].Target),
+            GetEntity(path[^1].Target),
             filter.Predicate);
 
         for (var i = path.Count - 1; i >= 0; i--)
@@ -182,3 +262,4 @@ public sealed class ReadIntentCompiler
     private static InvalidOperationException Invalid(string message) =>
         new($"Invalid read intent: {message}");
 }
+
