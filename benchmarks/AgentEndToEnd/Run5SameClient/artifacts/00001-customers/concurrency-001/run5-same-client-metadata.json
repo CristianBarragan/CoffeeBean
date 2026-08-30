@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "utc": "2026-08-30T04:28:12.6481802+00:00",
+  "utc": "2026-08-30T03:55:26.2940947+00:00",
   "runs": 1,
   "warmups": 1,
   "customers": 1,
@@ -15,7 +15,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 82.3147,
+      "WallMs": 67.7189,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -26,7 +26,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 12.992,
+      "WallMs": 13.636,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,

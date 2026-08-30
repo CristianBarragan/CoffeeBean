@@ -1,1027 +1,886 @@
-using namespace System.Globalization
-
-[CmdletBinding()]
-param(
-    [ValidateSet("replay", "live")]
-    [string]$Mode = "replay",
-
-    [int]$Warmups = 5,
-    [int]$Runs = 30,
-
-    [string]$CustomerCounts = "10,100,1000,10000",
-    [string]$Concurrency = "8,16,32,64",
-
-    [switch]$SkipRun1,
-    [switch]$SkipRun2,
-    [switch]$SkipRun3,
-    [switch]$SkipRun4,
-    [switch]$SkipRun5,
-    [switch]$SkipRun5SameClient,
-    [switch]$SkipGuardRail,
-
-    [switch]$Publish,
-    [switch]$ContinueOnError,
-    [switch]$FailFast
-)
-
 $ErrorActionPreference = "Stop"
 
-# ---------------------------------------------------------------------------
-# Suite execution policy
-# ---------------------------------------------------------------------------
-#
-# The suite is intended to execute every independent benchmark.
-#
-# By default:
-#   - a benchmark failure is recorded
-#   - later benchmarks continue
-#
-# With -FailFast:
-#   - the first benchmark failure terminates the suite
-#
-# IMPORTANT:
-# The smoke/guard phase is an execution/readiness gate. It must not confuse
-# a benchmark's own comparison/assertion exit code with the Run5SameClient
-# semantic guard itself.
-#
-# ---------------------------------------------------------------------------
+$ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoRoot = (Resolve-Path (Join-Path $ScriptRoot "..\..")).Path
 
-$ContinueOnError = $true
+Write-Host ""
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host " Foundgine Agent End-to-End Benchmark Suite" -ForegroundColor Cyan
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Script root : $ScriptRoot" -ForegroundColor Gray
+Write-Host "Repo root   : $RepoRoot" -ForegroundColor Gray
+Write-Host ""
 
-if ($FailFast) {
-    $ContinueOnError = $false
-}
-
-$Root = $PSScriptRoot
-
-$Run1 = Join-Path $Root "Run1"
-$Run2 = Join-Path $Root "Run2"
-$Run3 = Join-Path $Root "Run3"
-$Run4 = Join-Path $Root "Run4"
-$Run5 = Join-Path $Root "Run5"
-$Run5SameClient = Join-Path $Root "Run5SameClient"
-
-$Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-
-$SuiteLogDir = Join-Path `
-    $Root `
-    "artifacts\all-runs\$Timestamp"
-
-New-Item `
-    -ItemType Directory `
-    -Force `
-    -Path $SuiteLogDir |
-    Out-Null
-
-
-# ---------------------------------------------------------------------------
+# ------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
-
-function Write-Section {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Text
-    )
-
-    Write-Host ""
-    Write-Host ("=" * 72)
-    Write-Host $Text
-    Write-Host ("=" * 72)
-}
-
+# ------------------------------------------------------------
 
 function Invoke-BenchmarkScript {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$Name,
+        [string] $Path,
 
-        [Parameter(Mandatory = $true)]
-        [string]$WorkingDirectory,
-
-        [Parameter(Mandatory = $true)]
-        [string]$Script,
-
-        [string[]]$Arguments = @(),
-
-        # When true, a non-zero child exit code is considered an execution
-        # failure. This is used by the full matrix.
-        #
-        # For the smoke guard we deliberately distinguish execution/readiness
-        # from benchmark comparison exit codes.
-        [switch]$RequireZeroExitCode
+        [string[]] $Arguments = @()
     )
 
-    $scriptPath = Join-Path $WorkingDirectory $Script
-    $log = Join-Path $SuiteLogDir "$Name.log"
-
-    if (-not (Test-Path $scriptPath)) {
-        throw "$Name script not found: $scriptPath"
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw "Benchmark script was not found: $Path"
     }
 
+    $resolvedPath = (Resolve-Path -LiteralPath $Path).Path
+    $scriptDirectory = Split-Path -Parent $resolvedPath
+
     Write-Host ""
-    Write-Host "[$Name] Working directory: $WorkingDirectory"
-    Write-Host "[$Name] Script:            $scriptPath"
-    Write-Host "[$Name] Log:               $log"
-    Write-Host "[$Name] Command:           powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`" $($Arguments -join ' ')"
+    Write-Host "============================================================" -ForegroundColor DarkCyan
+    Write-Host " Running: $resolvedPath" -ForegroundColor DarkCyan
+    Write-Host " Working directory: $scriptDirectory" -ForegroundColor DarkCyan
+    Write-Host "============================================================" -ForegroundColor DarkCyan
     Write-Host ""
 
-    Push-Location $WorkingDirectory
+    Push-Location $scriptDirectory
 
     try {
+        & powershell.exe `
+            -NoLogo `
+            -NoProfile `
+            -NonInteractive `
+            -ExecutionPolicy Bypass `
+            -File $resolvedPath `
+            @Arguments
 
-        $previousEap = $ErrorActionPreference
-
-        # Child PowerShell output can contain stderr records which should be
-        # streamed rather than converted into terminating errors by the
-        # parent's ErrorActionPreference.
-        $ErrorActionPreference = "Continue"
-
-        $exitCode = 0
-
-        try {
-
-            & powershell.exe `
-                -NoProfile `
-                -ExecutionPolicy Bypass `
-                -File $scriptPath `
-                @Arguments `
-                2>&1 |
-                ForEach-Object {
-
-                    $line = $_.ToString()
-
-                    Write-Host $line
-
-                    [System.IO.File]::AppendAllText(
-                        $log,
-                        $line + [Environment]::NewLine
-                    )
-                }
-
-            $exitCode = $LASTEXITCODE
-
-            if ($null -eq $exitCode) {
-                $exitCode = 0
-            }
-        }
-        finally {
-            $ErrorActionPreference = $previousEap
-        }
-
-        Write-Host ""
-        Write-Host "[$Name] Child exit code: $exitCode"
-
-        # -------------------------------------------------------------------
-        # Strict mode
-        # -------------------------------------------------------------------
-
-        if ($RequireZeroExitCode -and $exitCode -ne 0) {
-
-            Write-Host ""
-            Write-Host "[$Name] FAILED with exit code $exitCode." `
-                -ForegroundColor Red
-
-            Write-Host "[$Name] See: $log" `
-                -ForegroundColor DarkYellow
-
-            if (-not $ContinueOnError) {
-                throw "$Name failed with exit code $exitCode. See $log"
-            }
-
-            return [pscustomobject]@{
-                Success  = $false
-                ExitCode = $exitCode
-                Name     = $Name
-                Log      = $log
-            }
-        }
-
-        # -------------------------------------------------------------------
-        # Execution-only mode
-        # -------------------------------------------------------------------
-        #
-        # The process reached completion. A non-zero exit code is preserved
-        # diagnostically but does not automatically fail the orchestration
-        # guard.
-        # -------------------------------------------------------------------
-
-        if ($exitCode -ne 0) {
-
-            Write-Host ""
-            Write-Host "[$Name] completed with non-zero exit code $exitCode." `
-                -ForegroundColor DarkYellow
-
-            Write-Host "[$Name] Treating this as diagnostic during smoke execution." `
-                -ForegroundColor DarkYellow
-
-            Write-Host "[$Name] See: $log" `
-                -ForegroundColor DarkYellow
-        }
-        else {
-
-            Write-Host ""
-            Write-Host "[$Name] completed successfully." `
-                -ForegroundColor Green
-        }
-
-        return [pscustomobject]@{
-            Success  = $true
-            ExitCode = $exitCode
-            Name     = $Name
-            Log      = $log
-        }
-    }
-    catch {
-
-        Write-Host ""
-        Write-Host "[$Name] FAILED: $($_.Exception.Message)" `
-            -ForegroundColor Red
-
-        Write-Host "[$Name] See: $log" `
-            -ForegroundColor DarkYellow
-
-        if (-not $ContinueOnError) {
-            throw
-        }
-
-        return [pscustomobject]@{
-            Success  = $false
-            ExitCode = -1
-            Name     = $Name
-            Log      = $log
-        }
+        $exitCode = $LASTEXITCODE
     }
     finally {
-
         Pop-Location
     }
+
+    if ($exitCode -ne 0) {
+        throw "Benchmark script failed: $resolvedPath (exit code $exitCode)"
+    }
+
+    Write-Host ""
+    Write-Host "Completed successfully: $resolvedPath" -ForegroundColor Green
+    Write-Host ""
 }
 
+function Get-JsonPropertyValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        $Object,
 
-# ---------------------------------------------------------------------------
-# Remove stale benchmark build output
-# ---------------------------------------------------------------------------
-
-function Remove-StaleBenchmarkBuildOutput {
-
-    $roots = @(
-        $Root,
-        (Join-Path $Root '..\CoffeeBeanery.Performance')
+        [Parameter(Mandatory = $true)]
+        [string[]] $Names
     )
 
-    foreach ($path in $roots) {
+    if ($null -eq $Object) {
+        return $null
+    }
 
-        if (-not (Test-Path $path)) {
-            continue
-        }
+    foreach ($name in $Names) {
 
-        Get-ChildItem `
-            -LiteralPath $path `
-            -Recurse `
-            -Directory `
-            -Force `
-            -ErrorAction SilentlyContinue |
+        $property = $Object.PSObject.Properties |
             Where-Object {
-                $_.Name -in @('bin', 'obj')
+                $_.Name -ieq $name
             } |
-            Sort-Object FullName -Descending |
-            ForEach-Object {
+            Select-Object -First 1
 
-                Write-Host `
-                    "[clean] Removing $($_.FullName)" `
-                    -ForegroundColor DarkGray
+        if ($null -ne $property) {
+            return $property.Value
+        }
+    }
 
-                Remove-Item `
-                    -LiteralPath $_.FullName `
-                    -Recurse `
-                    -Force `
-                    -ErrorAction SilentlyContinue
-            }
+    return $null
+}
+
+function Convert-ToDoubleSafe {
+    param(
+        $Value
+    )
+
+    if ($null -eq $Value) {
+        return $null
+    }
+
+    try {
+        return [double]$Value
+    }
+    catch {
+        return $null
     }
 }
 
-
-# ---------------------------------------------------------------------------
-# Start
-# ---------------------------------------------------------------------------
-
-Write-Section "Foundgine Agent End-to-End Benchmark Suite"
-
-Write-Host "Root:            $Root"
-Write-Host "Mode:            $Mode"
-Write-Host "Warmups:         $Warmups"
-Write-Host "Measured runs:   $Runs"
-Write-Host "Customers:       $CustomerCounts"
-Write-Host "Concurrency:     $Concurrency"
-Write-Host "Publish:         $Publish"
-Write-Host "Continue errors: $ContinueOnError"
-Write-Host "Fail fast:       $FailFast"
-Write-Host "Suite logs:      $SuiteLogDir"
-
-
-# ---------------------------------------------------------------------------
-# Clean stale output BEFORE anything is built
-# ---------------------------------------------------------------------------
-
-Write-Section "CLEAN - stale benchmark build output"
-
-Remove-StaleBenchmarkBuildOutput
-
-
-# ---------------------------------------------------------------------------
-# Guard rail
-# ---------------------------------------------------------------------------
-
-Write-Section `
-    "GUARD RAIL - 1 customer / 1 concurrency / 1 warmup / 1 measured run"
-
-
-$results = [ordered]@{}
-
-
-if (-not $SkipGuardRail) {
-
-    Write-Host `
-        "The full benchmark suite will NOT start until the smoke suite passes." `
-        -ForegroundColor Yellow
-
-    Write-Host `
-        "Customers: 1 | Concurrency: 1 | Warmups: 1 | Measured: 1" `
-        -ForegroundColor Yellow
-
-    Write-Host ""
-
-    $guardResults = [ordered]@{}
-
-    $guardArgsBase = @(
-        "-CustomerCounts", "1",
-        "-Concurrency", "1",
-        "-Runs", "1",
-        "-Warmups", "1"
+function Find-Run5ResultsDirectory {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Run5Root
     )
 
+    $standardCandidates = @(
+        (Join-Path $Run5Root "results"),
+        (Join-Path $Run5Root "Results"),
+        (Join-Path $Run5Root "output"),
+        (Join-Path $Run5Root "Output"),
+        (Join-Path $Run5Root "artifacts"),
+        (Join-Path $Run5Root "Artifacts")
+    )
 
-    # -----------------------------------------------------------------------
-    # Run 1 smoke
-    # -----------------------------------------------------------------------
-
-    if (-not $SkipRun1) {
-
-        Write-Section "GUARD - RUN 1"
-
-        $guardResults.Run1 =
-            Invoke-BenchmarkScript `
-                -Name "GuardRail-Run1" `
-                -WorkingDirectory $Run1 `
-                -Script "run-agent-benchmark.ps1" `
-                -Arguments (@("-Mode", $Mode) + $guardArgsBase)
+    foreach ($candidate in $standardCandidates) {
+        if (Test-Path -LiteralPath $candidate -PathType Container) {
+            return (Resolve-Path -LiteralPath $candidate).Path
+        }
     }
 
+    $candidate = Get-ChildItem `
+        -LiteralPath $Run5Root `
+        -Directory `
+        -Recurse `
+        -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Name -match "^(results|output|artifacts)$"
+        } |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
 
-    # -----------------------------------------------------------------------
-    # Run 2 smoke
-    # -----------------------------------------------------------------------
-
-    if (-not $SkipRun2) {
-
-        Write-Section "GUARD - RUN 2"
-
-        $guardResults.Run2 =
-            Invoke-BenchmarkScript `
-                -Name "GuardRail-Run2" `
-                -WorkingDirectory $Run2 `
-                -Script "run-agent-benchmark.ps1" `
-                -Arguments (@("-Mode", $Mode) + $guardArgsBase)
+    if ($null -ne $candidate) {
+        return $candidate.FullName
     }
 
+    return $null
+}
 
-    # -----------------------------------------------------------------------
-    # Run 3 smoke
-    # -----------------------------------------------------------------------
+# ------------------------------------------------------------
+# Run5SameClient guard rail
+#
+# HARD REQUIREMENTS:
+#
+#   1. EF Core completed
+#   2. Foundgine completed
+#   3. Logical operation count is equivalent
+#   4. Foundgine uses fewer MCP calls
+#
+# Payload is diagnostic only.
+# ------------------------------------------------------------
 
-    if (-not $SkipRun3) {
-
-        Write-Section "GUARD - RUN 3"
-
-        $guardResults.Run3 =
-            Invoke-BenchmarkScript `
-                -Name "GuardRail-Run3" `
-                -WorkingDirectory $Run3 `
-                -Script "run-agent-benchmark.ps1" `
-                -Arguments (@("-Mode", $Mode) + $guardArgsBase)
-    }
-
-
-    # -----------------------------------------------------------------------
-    # Run 4 smoke
-    # -----------------------------------------------------------------------
-
-    if (-not $SkipRun4) {
-
-        Write-Section "GUARD - RUN 4"
-
-        $guardResults.Run4 =
-            Invoke-BenchmarkScript `
-                -Name "GuardRail-Run4" `
-                -WorkingDirectory $Run4 `
-                -Script "run-agent-benchmark.ps1" `
-                -Arguments (@("-Mode", "both") + $guardArgsBase)
-    }
-
-
-    # -----------------------------------------------------------------------
-    # Run 5 smoke
-    # -----------------------------------------------------------------------
-
-    if (-not $SkipRun5) {
-
-        Write-Section "GUARD - RUN 5"
-
-        $guardResults.Run5 =
-            Invoke-BenchmarkScript `
-                -Name "GuardRail-Run5" `
-                -WorkingDirectory $Run5 `
-                -Script "run-agent-benchmark.ps1" `
-                -Arguments $guardArgsBase
-    }
-
-
-    # -----------------------------------------------------------------------
-    # Run 5 Same Client smoke
-    # -----------------------------------------------------------------------
-
-    if (-not $SkipRun5SameClient) {
-
-        Write-Section "GUARD - RUN 5 SAME CLIENT"
-
-        $guardResults.Run5SameClient =
-            Invoke-BenchmarkScript `
-                -Name "GuardRail-Run5SameClient" `
-                -WorkingDirectory $Run5SameClient `
-                -Script "run-agent-benchmark.ps1" `
-                -Arguments $guardArgsBase
-    }
-
-
-    # -----------------------------------------------------------------------
-    # Print smoke execution results
-    # -----------------------------------------------------------------------
+function Test-Run5SameClientGuardRail {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $ResultsDirectory
+    )
 
     Write-Host ""
-    Write-Host "Guard rail execution results:" `
-        -ForegroundColor Cyan
-
+    Write-Host "============================================================" -ForegroundColor Yellow
+    Write-Host " [GuardRail-Run5SameClient]" -ForegroundColor Yellow
+    Write-Host "============================================================" -ForegroundColor Yellow
     Write-Host ""
 
-    foreach ($entry in $guardResults.GetEnumerator()) {
+    if (-not (Test-Path -LiteralPath $ResultsDirectory -PathType Container)) {
+        throw "Run5SameClient results directory was not found: $ResultsDirectory"
+    }
 
-        $value = $entry.Value
+    $resolvedResults = (Resolve-Path -LiteralPath $ResultsDirectory).Path
 
-        if ($null -eq $value) {
+    Write-Host "Results directory:" -ForegroundColor Gray
+    Write-Host "  $resolvedResults" -ForegroundColor Gray
+    Write-Host ""
 
-            Write-Host `
-                ("  {0,-20} UNKNOWN" -f $entry.Key) `
-                -ForegroundColor Red
+    # --------------------------------------------------------
+    # Only inspect JSON files containing Run5 benchmark data.
+    # Do not accidentally consume unrelated JSON files.
+    # --------------------------------------------------------
 
+    $jsonFiles = @(
+        Get-ChildItem `
+            -LiteralPath $resolvedResults `
+            -Filter "*.json" `
+            -File `
+            -Recurse `
+            -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending
+    )
+
+    if ($jsonFiles.Count -eq 0) {
+        throw "No Run5SameClient JSON result files were found in: $resolvedResults"
+    }
+
+    Write-Host "Found $($jsonFiles.Count) JSON result file(s)." -ForegroundColor Gray
+    Write-Host ""
+
+    $records = @()
+
+    foreach ($file in $jsonFiles) {
+
+        try {
+            $jsonText = Get-Content `
+                -LiteralPath $file.FullName `
+                -Raw `
+                -ErrorAction Stop
+
+            $json = $jsonText | ConvertFrom-Json -ErrorAction Stop
+        }
+        catch {
+            Write-Host "Skipping invalid JSON: $($file.FullName)" -ForegroundColor DarkYellow
             continue
         }
 
-        if ($value -is [bool]) {
+        $implementation = Get-JsonPropertyValue `
+            -Object $json `
+            -Names @(
+                "Implementation",
+                "implementation",
+                "Mode",
+                "mode",
+                "Provider",
+                "provider",
+                "Name",
+                "name"
+            )
 
-            $success = $value
-            $exitCode = "n/a"
+        $implementationText = if ($null -ne $implementation) {
+            "$implementation"
         }
         else {
-
-            $success = $value.Success
-            $exitCode = $value.ExitCode
+            ""
         }
 
-        $status = if ($success) {
-            "PASS"
-        }
-        else {
-            "FAIL"
-        }
+        $calls = Get-JsonPropertyValue `
+            -Object $json `
+            -Names @(
+                "McpCalls",
+                "mcpCalls",
+                "ToolCalls",
+                "toolCalls",
+                "McpToolCalls",
+                "mcpToolCalls",
+                "TotalMcpCalls",
+                "totalMcpCalls",
+                "TotalToolCalls",
+                "totalToolCalls"
+            )
 
-        $color = if ($success) {
-            "Green"
-        }
-        else {
-            "Red"
-        }
+        $operations = Get-JsonPropertyValue `
+            -Object $json `
+            -Names @(
+                "LogicalOperations",
+                "logicalOperations",
+                "LogicalOperationCount",
+                "logicalOperationCount",
+                "Operations",
+                "operations",
+                "OperationCount",
+                "operationCount",
+                "TotalLogicalOperations",
+                "totalLogicalOperations"
+            )
 
-        Write-Host `
-            ("  {0,-20} {1,-5} ExitCode={2}" -f `
-                $entry.Key,
-                $status,
-                $exitCode) `
-            -ForegroundColor $color
+        $payload = Get-JsonPropertyValue `
+            -Object $json `
+            -Names @(
+                "TotalTaskPayload",
+                "totalTaskPayload",
+                "TaskPayloadBytes",
+                "taskPayloadBytes",
+                "TotalPayloadBytes",
+                "totalPayloadBytes",
+                "PayloadBytes",
+                "payloadBytes"
+            )
+
+        $callsValue = Convert-ToDoubleSafe $calls
+        $operationsValue = Convert-ToDoubleSafe $operations
+        $payloadValue = Convert-ToDoubleSafe $payload
+
+        if ($null -ne $callsValue -or
+            $null -ne $operationsValue -or
+            $null -ne $payloadValue) {
+
+            $records += [PSCustomObject]@{
+                File           = $file.FullName
+                Implementation = $implementationText
+                Calls          = $callsValue
+                Operations     = $operationsValue
+                Payload        = $payloadValue
+            }
+        }
     }
 
+    if ($records.Count -eq 0) {
+        throw "JSON files were found, but none contained recognizable Run5 benchmark measurements."
+    }
 
-    # -----------------------------------------------------------------------
-    # Smoke gate
-    # -----------------------------------------------------------------------
-    #
-    # IMPORTANT:
-    #
-    # The smoke wrappers above are execution/readiness checks.
-    #
-    # We do NOT use their benchmark comparison exit code as the semantic
-    # guard. Their logs preserve the exit code for diagnostics.
-    #
-    # A benchmark that genuinely cannot execute is represented by Success
-    # = false and will fail the gate.
-    #
-    # Run5SameClient performs the actual hard semantic guard:
-    #
-    #   logical operations equivalent
-    #   Foundgine uses fewer MCP calls
-    #
-    # Its own guard-rail failure is therefore still fatal.
-    # -----------------------------------------------------------------------
+    Write-Host "Recognized benchmark records:" -ForegroundColor Gray
+    Write-Host ""
 
-    $executionFailures = @(
-        $guardResults.GetEnumerator() |
-            Where-Object {
-                $null -eq $_.Value -or
-                (
-                    $_.Value -isnot [bool] -and
-                    $_.Value.PSObject.Properties.Name -contains "Success" -and
-                    -not $_.Value.Success
-                )
-            }
+    foreach ($record in $records) {
+
+        Write-Host ("  {0}" -f $record.File) -ForegroundColor DarkGray
+
+        if ($record.Implementation) {
+            Write-Host ("    Implementation : {0}" -f $record.Implementation)
+        }
+
+        if ($null -ne $record.Calls) {
+            Write-Host ("    MCP calls      : {0:N2}" -f $record.Calls)
+        }
+
+        if ($null -ne $record.Operations) {
+            Write-Host ("    Logical ops    : {0:N2}" -f $record.Operations)
+        }
+
+        if ($null -ne $record.Payload) {
+            Write-Host ("    Payload        : {0:N0} bytes" -f $record.Payload)
+        }
+
+        Write-Host ""
+    }
+
+    # --------------------------------------------------------
+    # Identify EF Core and Foundgine.
+    # --------------------------------------------------------
+
+    $efRecords = @(
+        $records |
+        Where-Object {
+            $_.Implementation -match "EF\s*Core|EntityFramework|Conventional"
+        }
     )
 
+    $foundgineRecords = @(
+        $records |
+        Where-Object {
+            $_.Implementation -match "Foundgine|Semantic"
+        }
+    )
 
-    if ($executionFailures.Count -gt 0) {
+    # --------------------------------------------------------
+    # Fallback: inspect serialized JSON text.
+    # --------------------------------------------------------
 
+    if ($efRecords.Count -eq 0 -or $foundgineRecords.Count -eq 0) {
+
+        Write-Host "Implementation metadata was incomplete." -ForegroundColor DarkYellow
+        Write-Host "Running fallback recognition..." -ForegroundColor DarkYellow
         Write-Host ""
-        Write-Host "============================================================" `
-            -ForegroundColor Red
 
-        Write-Host " GUARD RAIL EXECUTION FAILED" `
-            -ForegroundColor Red
+        foreach ($file in $jsonFiles) {
 
-        Write-Host "============================================================" `
-            -ForegroundColor Red
-
-        Write-Host ""
-
-        foreach ($failure in $executionFailures) {
-
-            $value = $failure.Value
-
-            if ($null -eq $value) {
-
-                Write-Host `
-                    "  FAIL: $($failure.Key) | no result returned" `
-                    -ForegroundColor Red
-
+            try {
+                $text = Get-Content `
+                    -LiteralPath $file.FullName `
+                    -Raw `
+                    -ErrorAction Stop
+            }
+            catch {
                 continue
             }
 
-            Write-Host `
-                "  FAIL: $($failure.Key) | ExitCode=$($value.ExitCode) | Log=$($value.Log)" `
-                -ForegroundColor Red
+            if ($efRecords.Count -eq 0 -and
+                $text -match '(?is)"EF\s*Core".{0,2000}?"(?:McpCalls|ToolCalls|McpToolCalls|TotalMcpCalls)"\s*:\s*(\d+(?:\.\d+)?)') {
+
+                $efRecords += [PSCustomObject]@{
+                    File           = $file.FullName
+                    Implementation = "EF Core"
+                    Calls          = [double]$Matches[1]
+                    Operations     = $null
+                    Payload        = $null
+                }
+            }
+
+            if ($foundgineRecords.Count -eq 0 -and
+                $text -match '(?is)"Foundgine".{0,2000}?"(?:McpCalls|ToolCalls|McpToolCalls|TotalMcpCalls)"\s*:\s*(\d+(?:\.\d+)?)') {
+
+                $foundgineRecords += [PSCustomObject]@{
+                    File           = $file.FullName
+                    Implementation = "Foundgine"
+                    Calls          = [double]$Matches[1]
+                    Operations     = $null
+                    Payload        = $null
+                }
+            }
+        }
+    }
+
+    # --------------------------------------------------------
+    # Select actual records.
+    #
+    # Prefer records that have ALL required measurements.
+    # --------------------------------------------------------
+
+    $efRecord = $efRecords |
+        Where-Object {
+            $null -ne $_.Calls -and
+            $null -ne $_.Operations
+        } |
+        Sort-Object File |
+        Select-Object -First 1
+
+    if ($null -eq $efRecord) {
+        $efRecord = $efRecords |
+            Where-Object {
+                $null -ne $_.Calls
+            } |
+            Select-Object -First 1
+    }
+
+    $foundgineRecord = $foundgineRecords |
+        Where-Object {
+            $null -ne $_.Calls -and
+            $null -ne $_.Operations
+        } |
+        Sort-Object File |
+        Select-Object -First 1
+
+    if ($null -eq $foundgineRecord) {
+        $foundgineRecord = $foundgineRecords |
+            Where-Object {
+                $null -ne $_.Calls
+            } |
+            Select-Object -First 1
+    }
+
+    # --------------------------------------------------------
+    # Aggregate measurements if the JSON layout stores
+    # implementation data separately.
+    # --------------------------------------------------------
+
+    $efCoreCalls = $null
+    $foundgineCalls = $null
+
+    $efCoreOperations = $null
+    $foundgineOperations = $null
+
+    $efCorePayload = $null
+    $foundginePayload = $null
+
+    if ($null -ne $efRecord) {
+        $efCoreCalls = $efRecord.Calls
+        $efCoreOperations = $efRecord.Operations
+        $efCorePayload = $efRecord.Payload
+    }
+
+    if ($null -ne $foundgineRecord) {
+        $foundgineCalls = $foundgineRecord.Calls
+        $foundgineOperations = $foundgineRecord.Operations
+        $foundginePayload = $foundgineRecord.Payload
+    }
+
+    # --------------------------------------------------------
+    # Last-resort recursive summary search.
+    # --------------------------------------------------------
+
+    foreach ($file in $jsonFiles) {
+
+        if ($null -ne $efCoreCalls -and
+            $null -ne $efCoreOperations -and
+            $null -ne $foundgineCalls -and
+            $null -ne $foundgineOperations) {
+            break
+        }
+
+        try {
+            $text = Get-Content `
+                -LiteralPath $file.FullName `
+                -Raw `
+                -ErrorAction Stop
+        }
+        catch {
+            continue
+        }
+
+        if ($null -eq $efCoreCalls) {
+            if ($text -match '(?is)"EF\s*Core".{0,5000}?"(?:McpCalls|ToolCalls|McpToolCalls|TotalMcpCalls)"\s*:\s*(\d+(?:\.\d+)?)') {
+                $efCoreCalls = [double]$Matches[1]
+            }
+        }
+
+        if ($null -eq $foundgineCalls) {
+            if ($text -match '(?is)"Foundgine".{0,5000}?"(?:McpCalls|ToolCalls|McpToolCalls|TotalMcpCalls)"\s*:\s*(\d+(?:\.\d+)?)') {
+                $foundgineCalls = [double]$Matches[1]
+            }
+        }
+
+        if ($null -eq $efCoreOperations) {
+            if ($text -match '(?is)"EF\s*Core".{0,5000}?"(?:LogicalOperations|LogicalOperationCount|Operations|OperationCount)"\s*:\s*(\d+(?:\.\d+)?)') {
+                $efCoreOperations = [double]$Matches[1]
+            }
+        }
+
+        if ($null -eq $foundgineOperations) {
+            if ($text -match '(?is)"Foundgine".{0,5000}?"(?:LogicalOperations|LogicalOperationCount|Operations|OperationCount)"\s*:\s*(\d+(?:\.\d+)?)') {
+                $foundgineOperations = [double]$Matches[1]
+            }
+        }
+
+        if ($null -eq $efCorePayload) {
+            if ($text -match '(?is)"EF\s*Core".{0,5000}?"(?:TotalTaskPayload|TaskPayloadBytes|TotalPayloadBytes|PayloadBytes)"\s*:\s*(\d+(?:\.\d+)?)') {
+                $efCorePayload = [double]$Matches[1]
+            }
+        }
+
+        if ($null -eq $foundginePayload) {
+            if ($text -match '(?is)"Foundgine".{0,5000}?"(?:TotalTaskPayload|TaskPayloadBytes|TotalPayloadBytes|PayloadBytes)"\s*:\s*(\d+(?:\.\d+)?)') {
+                $foundginePayload = [double]$Matches[1]
+            }
+        }
+    }
+
+    # --------------------------------------------------------
+    # Print observed values.
+    # --------------------------------------------------------
+
+    Write-Host ""
+    Write-Host "Observed benchmark values:" -ForegroundColor White
+    Write-Host ""
+
+    if ($null -ne $efCoreCalls) {
+        Write-Host ("  EF Core MCP calls:       {0:N2}" -f $efCoreCalls)
+    }
+    else {
+        Write-Host "  EF Core MCP calls:       <not found>" -ForegroundColor Red
+    }
+
+    if ($null -ne $foundgineCalls) {
+        Write-Host ("  Foundgine MCP calls:     {0:N2}" -f $foundgineCalls)
+    }
+    else {
+        Write-Host "  Foundgine MCP calls:     <not found>" -ForegroundColor Red
+    }
+
+    if ($null -ne $efCoreOperations) {
+        Write-Host ("  EF Core logical ops:     {0:N2}" -f $efCoreOperations)
+    }
+    else {
+        Write-Host "  EF Core logical ops:     <not found>" -ForegroundColor Red
+    }
+
+    if ($null -ne $foundgineOperations) {
+        Write-Host ("  Foundgine logical ops:   {0:N2}" -f $foundgineOperations)
+    }
+    else {
+        Write-Host "  Foundgine logical ops:   <not found>" -ForegroundColor Red
+    }
+
+    Write-Host ""
+
+    # --------------------------------------------------------
+    # Required measurements.
+    # --------------------------------------------------------
+
+    $missingRequired = @()
+
+    if ($null -eq $efCoreCalls) {
+        $missingRequired += "EF Core MCP calls"
+    }
+
+    if ($null -eq $foundgineCalls) {
+        $missingRequired += "Foundgine MCP calls"
+    }
+
+    if ($null -eq $efCoreOperations) {
+        $missingRequired += "EF Core logical operations"
+    }
+
+    if ($null -eq $foundgineOperations) {
+        $missingRequired += "Foundgine logical operations"
+    }
+
+    if ($missingRequired.Count -gt 0) {
+
+        Write-Host "Guard rail could not be evaluated." -ForegroundColor Red
+        Write-Host ""
+
+        foreach ($item in $missingRequired) {
+            Write-Host "  MISSING: $item" -ForegroundColor Red
         }
 
         Write-Host ""
 
-        throw `
-            "Benchmark guard rail FAILED because one or more smoke benchmarks could not execute."
+        throw "Benchmark guard rail FAILED because required measurements were unavailable."
     }
 
+    # --------------------------------------------------------
+    # Logical equivalence.
+    # --------------------------------------------------------
 
-    # -----------------------------------------------------------------------
-    # IMPORTANT:
-    #
-    # Run5SameClient's own script contains the hard comparison guard.
-    #
-    # If it completed, its internal guard passed.
-    #
-    # This is the actual architecture guard:
-    #
-    #   same logical work
-    #   fewer MCP calls
-    #
-    # Payload size remains diagnostic.
-    # -----------------------------------------------------------------------
+    $logicalOperationsMatch =
+        ($efCoreOperations -eq $foundgineOperations)
 
-    if ($guardResults.Contains("Run5SameClient")) {
+    # --------------------------------------------------------
+    # Call reduction.
+    # --------------------------------------------------------
 
-        $sameClientResult = $guardResults.Run5SameClient
+    $callReduction = 0
 
-        if ($null -eq $sameClientResult) {
-
-            throw `
-                "Run5SameClient did not return an execution result."
-        }
-
-        if ($sameClientResult -isnot [bool] -and
-            -not $sameClientResult.Success) {
-
-            throw `
-                "Run5SameClient failed to execute. See $($sameClientResult.Log)"
-        }
+    if ($efCoreCalls -gt 0) {
+        $callReduction =
+            (($efCoreCalls - $foundgineCalls) / $efCoreCalls) * 100
     }
 
+    $fewerCalls =
+        ($foundgineCalls -lt $efCoreCalls)
+
+    # --------------------------------------------------------
+    # Payload diagnostics.
+    # --------------------------------------------------------
+
+    $payloadReduction = $null
+
+    if ($null -ne $efCorePayload -and
+        $null -ne $foundginePayload -and
+        $efCorePayload -ne 0) {
+
+        $payloadReduction =
+            (($efCorePayload - $foundginePayload) /
+                $efCorePayload) * 100
+    }
+
+    Write-Host "Run5SameClient comparison:" -ForegroundColor Cyan
+    Write-Host ""
+
+    Write-Host ("Tool/MCP calls per task: EF Core={0:N2}; Foundgine={1:N2}" -f `
+        $efCoreCalls,
+        $foundgineCalls)
+
+    Write-Host ("Logical operations per task: EF Core={0:N2}; Foundgine={1:N2}" -f `
+        $efCoreOperations,
+        $foundgineOperations)
+
+    Write-Host ("Call reduction: {0:N1}%" -f $callReduction)
 
     Write-Host ""
-    Write-Host "============================================================" `
-        -ForegroundColor Green
 
-    Write-Host " GUARD RAIL PASSED" `
-        -ForegroundColor Green
+    if ($null -ne $efCorePayload -and
+        $null -ne $foundginePayload) {
 
-    Write-Host "============================================================" `
-        -ForegroundColor Green
+        if ($efCoreCalls -gt 0) {
+            $averageEfCorePayload =
+                $efCorePayload / $efCoreCalls
+        }
+        else {
+            $averageEfCorePayload = 0
+        }
+
+        if ($foundgineCalls -gt 0) {
+            $averageFoundginePayload =
+                $foundginePayload / $foundgineCalls
+        }
+        else {
+            $averageFoundginePayload = 0
+        }
+
+        $averagePayloadDelta = 0
+
+        if ($averageEfCorePayload -ne 0) {
+            $averagePayloadDelta =
+                (($averageFoundginePayload - $averageEfCorePayload) /
+                    $averageEfCorePayload) * 100
+        }
+
+        Write-Host ("Average MCP payload: EF Core={0:N0} bytes; Foundgine={1:N0} bytes" -f `
+            $averageEfCorePayload,
+            $averageFoundginePayload)
+
+        Write-Host ("Average MCP payload delta: {0:N1}%" -f `
+            $averagePayloadDelta)
+
+        Write-Host ("Total task payload: EF Core={0:N0} bytes; Foundgine={1:N0} bytes" -f `
+            $efCorePayload,
+            $foundginePayload)
+
+        Write-Host ("Total task payload reduction: {0:N1}%" -f `
+            $payloadReduction)
+
+        Write-Host ""
+        Write-Host "NOTE: Payload size is diagnostic only." -ForegroundColor DarkYellow
+        Write-Host "      It does NOT determine guard-rail success." -ForegroundColor DarkYellow
+        Write-Host "      Foundgine intentionally trades protocol calls for richer semantic requests." -ForegroundColor DarkYellow
+        Write-Host ""
+    }
+
+    # --------------------------------------------------------
+    # HARD GUARD RAIL
+    # --------------------------------------------------------
+
+    $guardRailPassed =
+        $logicalOperationsMatch -and
+        $fewerCalls
+
+    Write-Host "Guard-rail checks:" -ForegroundColor Cyan
+    Write-Host ""
+
+    if ($logicalOperationsMatch) {
+        Write-Host "  PASS  Logical operation equivalence" -ForegroundColor Green
+    }
+    else {
+        Write-Host "  FAIL  Logical operation equivalence" -ForegroundColor Red
+    }
+
+    if ($fewerCalls) {
+        Write-Host "  PASS  Foundgine uses fewer MCP calls" -ForegroundColor Green
+    }
+    else {
+        Write-Host "  FAIL  Foundgine uses fewer MCP calls" -ForegroundColor Red
+    }
 
     Write-Host ""
 
-    Write-Host `
-        "Smoke execution completed for all selected benchmark implementations." `
-        -ForegroundColor Green
+    if (-not $guardRailPassed) {
+        throw "Benchmark guard rail FAILED. Full performance matrix was not started."
+    }
 
-    Write-Host `
-        "Run5SameClient semantic guard passed." `
-        -ForegroundColor Green
-
-    Write-Host `
-        "Starting full benchmark matrix." `
-        -ForegroundColor Green
-
+    Write-Host "[GuardRail-Run5SameClient] completed successfully." -ForegroundColor Green
     Write-Host ""
+
+    return $true
+}
+
+# ============================================================
+# RUN5
+# ============================================================
+
+$Run5SameClientRoot =
+    Join-Path $ScriptRoot "Run5SameClient"
+
+if (-not (Test-Path -LiteralPath $Run5SameClientRoot -PathType Container)) {
+    throw "Run5SameClient directory was not found: $Run5SameClientRoot"
+}
+
+$Run5SameClientRoot =
+    (Resolve-Path -LiteralPath $Run5SameClientRoot).Path
+
+Write-Host "Run5SameClient root:" -ForegroundColor Gray
+Write-Host "  $Run5SameClientRoot" -ForegroundColor Gray
+Write-Host ""
+
+# ------------------------------------------------------------
+# Locate benchmark script.
+# ------------------------------------------------------------
+
+$Run5SameClientScriptCandidates = @(
+    (Join-Path $Run5SameClientRoot "run-run5-same-client.ps1"),
+    (Join-Path $Run5SameClientRoot "run5-same-client.ps1"),
+    (Join-Path $Run5SameClientRoot "run-run5.ps1")
+)
+
+$Run5SameClientScript = $Run5SameClientScriptCandidates |
+    Where-Object {
+        Test-Path -LiteralPath $_ -PathType Leaf
+    } |
+    Select-Object -First 1
+
+if ($null -eq $Run5SameClientScript) {
+
+    $Run5SameClientScript = Get-ChildItem `
+        -LiteralPath $Run5SameClientRoot `
+        -Filter "*.ps1" `
+        -File `
+        -Recurse `
+        -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Name -match "run.*5|same.*client"
+        } |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1 |
+        ForEach-Object {
+            $_.FullName
+        }
+}
+
+if ($null -eq $Run5SameClientScript) {
+    throw "Could not locate the Run5SameClient benchmark script."
+}
+
+Write-Host "Run5SameClient script:" -ForegroundColor Gray
+Write-Host "  $Run5SameClientScript" -ForegroundColor Gray
+Write-Host ""
+
+# ------------------------------------------------------------
+# IMPORTANT:
+#
+# Do NOT resolve results before executing Run5.
+# Existing results may be stale.
+# ------------------------------------------------------------
+
+$beforeRun = Get-Date
+
+Invoke-BenchmarkScript `
+    -Path $Run5SameClientScript
+
+# ------------------------------------------------------------
+# Discover results AFTER benchmark execution.
+# ------------------------------------------------------------
+
+$Run5SameClientResults =
+    Find-Run5ResultsDirectory `
+        -Run5Root $Run5SameClientRoot
+
+if ($null -eq $Run5SameClientResults) {
+    throw "Run5SameClient completed but no results directory could be located."
+}
+
+Write-Host "Run5SameClient results:" -ForegroundColor Gray
+Write-Host "  $Run5SameClientResults" -ForegroundColor Gray
+Write-Host ""
+
+# ------------------------------------------------------------
+# Guard rail
+# ------------------------------------------------------------
+
+Test-Run5SameClientGuardRail `
+    -ResultsDirectory $Run5SameClientResults
+
+# ============================================================
+# FULL PERFORMANCE MATRIX
+# ============================================================
+
+Write-Host ""
+Write-Host "============================================================" -ForegroundColor Green
+Write-Host " Guard rail passed." -ForegroundColor Green
+Write-Host " Starting full performance matrix." -ForegroundColor Green
+Write-Host "============================================================" -ForegroundColor Green
+Write-Host ""
+
+$FullMatrixCandidates = @(
+    (Join-Path $ScriptRoot "run-agent-end-to-end-performance.ps1"),
+    (Join-Path $ScriptRoot "run-performance-matrix.ps1"),
+    (Join-Path $ScriptRoot "run-full-performance-matrix.ps1")
+)
+
+$FullMatrixScript = $FullMatrixCandidates |
+    Where-Object {
+        Test-Path -LiteralPath $_ -PathType Leaf
+    } |
+    Select-Object -First 1
+
+if ($null -eq $FullMatrixScript) {
+
+    $FullMatrixScript = Get-ChildItem `
+        -LiteralPath $ScriptRoot `
+        -Filter "*.ps1" `
+        -File `
+        -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Name -match "performance.*(matrix|end.to.end)|full.*matrix"
+        } |
+        Select-Object -First 1 |
+        ForEach-Object {
+            $_.FullName
+        }
+}
+
+if ($null -ne $FullMatrixScript) {
+
+    Invoke-BenchmarkScript `
+        -Path $FullMatrixScript
 }
 else {
 
-    Write-Host ""
-    Write-Host `
-        "WARNING: benchmark guard rail skipped by -SkipGuardRail." `
-        -ForegroundColor Yellow
+    Write-Host "No separate full performance matrix script was found." -ForegroundColor DarkYellow
+    Write-Host "The Run5 guard rail itself passed successfully." -ForegroundColor Yellow
 }
-
-
-# ---------------------------------------------------------------------------
-# Run 1
-# ---------------------------------------------------------------------------
-
-if (-not $SkipRun1) {
-
-    Write-Section "RUN 1 - Agent End-to-End baseline"
-
-    $args = @(
-        "-Mode", $Mode,
-        "-CustomerCounts", $CustomerCounts,
-        "-Concurrency", $Concurrency,
-        "-Runs", $Runs.ToString(),
-        "-Warmups", $Warmups.ToString()
-    )
-
-    $results.Run1 =
-        Invoke-BenchmarkScript `
-            -Name "Run1" `
-            -WorkingDirectory $Run1 `
-            -Script "run-agent-benchmark.ps1" `
-            -Arguments $args `
-            -RequireZeroExitCode
-}
-
-
-# ---------------------------------------------------------------------------
-# Run 2
-# ---------------------------------------------------------------------------
-
-if (-not $SkipRun2) {
-
-    Write-Section "RUN 2 - Agent scalability / customer tiers"
-
-    $args = @(
-        "-Mode", $Mode,
-        "-CustomerCounts", $CustomerCounts,
-        "-Concurrency", $Concurrency,
-        "-Runs", $Runs.ToString(),
-        "-Warmups", $Warmups.ToString()
-    )
-
-    $results.Run2 =
-        Invoke-BenchmarkScript `
-            -Name "Run2" `
-            -WorkingDirectory $Run2 `
-            -Script "run-agent-benchmark.ps1" `
-            -Arguments $args `
-            -RequireZeroExitCode
-}
-
-
-# ---------------------------------------------------------------------------
-# Run 3
-# ---------------------------------------------------------------------------
-
-if (-not $SkipRun3) {
-
-    Write-Section "RUN 3 - Agent cost / efficiency benchmark"
-
-    $args = @(
-        "-Mode", $Mode,
-        "-CustomerCounts", $CustomerCounts,
-        "-Concurrency", $Concurrency,
-        "-Runs", $Runs.ToString(),
-        "-Warmups", $Warmups.ToString()
-    )
-
-    $results.Run3 =
-        Invoke-BenchmarkScript `
-            -Name "Run3" `
-            -WorkingDirectory $Run3 `
-            -Script "run-agent-benchmark.ps1" `
-            -Arguments $args `
-            -RequireZeroExitCode
-}
-
-
-# ---------------------------------------------------------------------------
-# Run 4
-# ---------------------------------------------------------------------------
-
-if (-not $SkipRun4) {
-
-    Write-Section "RUN 4 - MCP + Foundgine vs Hot Chocolate + EF Core"
-
-    $args = @(
-        "-Mode", "both",
-        "-CustomerCounts", $CustomerCounts,
-        "-Concurrency", $Concurrency,
-        "-Runs", $Runs.ToString(),
-        "-Warmups", $Warmups.ToString()
-    )
-
-    $results.Run4 =
-        Invoke-BenchmarkScript `
-            -Name "Run4" `
-            -WorkingDirectory $Run4 `
-            -Script "run-agent-benchmark.ps1" `
-            -Arguments $args `
-            -RequireZeroExitCode
-}
-
-
-# ---------------------------------------------------------------------------
-# Run 5
-# ---------------------------------------------------------------------------
-
-if (-not $SkipRun5) {
-
-    Write-Section `
-        "RUN 5 - High-assurance TransferFunds: MCP + EF Core vs Foundgine"
-
-    $args = @(
-        "-CustomerCounts", $CustomerCounts,
-        "-Concurrency", $Concurrency,
-        "-Runs", $Runs.ToString(),
-        "-Warmups", $Warmups.ToString()
-    )
-
-    $results.Run5 =
-        Invoke-BenchmarkScript `
-            -Name "Run5" `
-            -WorkingDirectory $Run5 `
-            -Script "run-agent-benchmark.ps1" `
-            -Arguments $args `
-            -RequireZeroExitCode
-}
-
-
-# ---------------------------------------------------------------------------
-# Run 5 Same Client
-# ---------------------------------------------------------------------------
-
-if (-not $SkipRun5SameClient) {
-
-    Write-Section `
-        "RUN 5 Same Client - identical Run 5 client path"
-
-    $args = @(
-        "-CustomerCounts", $CustomerCounts,
-        "-Concurrency", $Concurrency,
-        "-Runs", $Runs.ToString(),
-        "-Warmups", $Warmups.ToString()
-    )
-
-    $results.Run5SameClient =
-        Invoke-BenchmarkScript `
-            -Name "Run5SameClient" `
-            -WorkingDirectory $Run5SameClient `
-            -Script "run-agent-benchmark.ps1" `
-            -Arguments $args `
-            -RequireZeroExitCode
-}
-
-
-# ---------------------------------------------------------------------------
-# Publish
-# ---------------------------------------------------------------------------
-
-if ($Publish) {
-
-    Write-Section "PUBLISH - Consolidate all benchmark reports"
-
-    $publish = Join-Path `
-        $Root `
-        "publish-all-reports.ps1"
-
-    if (-not (Test-Path $publish)) {
-
-        throw `
-            "Common publisher not found: $publish"
-    }
-
-    Push-Location $Root
-
-    try {
-
-        $publishExitCode = 0
-
-        & powershell.exe `
-            -NoProfile `
-            -ExecutionPolicy Bypass `
-            -File $publish `
-            *>&1 |
-            Tee-Object `
-                -FilePath (Join-Path `
-                    $SuiteLogDir `
-                    "publish-all-reports.log")
-
-        $publishExitCode = $LASTEXITCODE
-
-        if ($publishExitCode -ne 0) {
-
-            throw `
-                "publish-all-reports.ps1 failed with exit code $publishExitCode"
-        }
-    }
-    finally {
-
-        Pop-Location
-    }
-}
-
-
-# ---------------------------------------------------------------------------
-# Suite summary
-# ---------------------------------------------------------------------------
-
-Write-Section "SUITE COMPLETE"
-
-
-foreach ($entry in $results.GetEnumerator()) {
-
-    $value = $entry.Value
-
-    if ($null -eq $value) {
-
-        Write-Host `
-            ("{0,-20} FAIL" -f $entry.Key) `
-            -ForegroundColor Red
-
-        continue
-    }
-
-    if ($value -is [bool]) {
-
-        $success = $value
-    }
-    elseif ($value.PSObject.Properties.Name -contains "Success") {
-
-        $success = [bool]$value.Success
-    }
-    else {
-
-        $success = $false
-    }
-
-    if ($success) {
-
-        Write-Host `
-            ("{0,-20} PASS" -f $entry.Key) `
-            -ForegroundColor Green
-    }
-    else {
-
-        Write-Host `
-            ("{0,-20} FAIL" -f $entry.Key) `
-            -ForegroundColor Red
-    }
-}
-
 
 Write-Host ""
-Write-Host "Suite logs: $SuiteLogDir"
-
-
-# ---------------------------------------------------------------------------
-# Persist suite summary
-# ---------------------------------------------------------------------------
-
-$summary = [ordered]@{
-
-    timestampUtc =
-        [DateTime]::UtcNow.ToString(
-            [CultureInfo]::InvariantCulture.DateTimeFormat.SortableDateTimePattern
-        )
-
-    mode =
-        $Mode
-
-    warmups =
-        $Warmups
-
-    runs =
-        $Runs
-
-    customerCounts =
-        $CustomerCounts
-
-    concurrency =
-        $Concurrency
-
-    publish =
-        [bool]$Publish
-
-    results =
-        $results
-}
-
-
-$summaryJson =
-    $summary |
-    ConvertTo-Json -Depth 10
-
-
-$summaryPath =
-    Join-Path `
-        $SuiteLogDir `
-        "suite-summary.json"
-
-
-Set-Content `
-    -Path $summaryPath `
-    -Value $summaryJson `
-    -Encoding UTF8
-
-
-# ---------------------------------------------------------------------------
-# Final exit status
-# ---------------------------------------------------------------------------
-#
-# At this point the suite itself has completed.
-#
-# A benchmark that genuinely failed during the full matrix still causes the
-# process to return 1.
-#
-# Non-zero exit codes observed during the smoke execution are preserved in
-# the guard logs but do not prevent the matrix from starting.
-# ---------------------------------------------------------------------------
-
-$failedResults = @(
-    $results.GetEnumerator() |
-        Where-Object {
-
-            $value = $_.Value
-
-            if ($null -eq $value) {
-                return $true
-            }
-
-            if ($value -is [bool]) {
-                return (-not $value)
-            }
-
-            if ($value.PSObject.Properties.Name -contains "Success") {
-                return (-not [bool]$value.Success)
-            }
-
-            return $true
-        }
-)
-
-
-if ($failedResults.Count -gt 0) {
-
-    Write-Host ""
-    Write-Host `
-        "One or more full benchmark runs failed." `
-        -ForegroundColor Red
-
-    exit 1
-}
-
-
+Write-Host "============================================================" -ForegroundColor Green
+Write-Host " Agent benchmark suite completed." -ForegroundColor Green
+Write-Host "============================================================" -ForegroundColor Green
 Write-Host ""
-Write-Host `
-    "All selected benchmark runs completed successfully." `
-    -ForegroundColor Green
-
-exit 0

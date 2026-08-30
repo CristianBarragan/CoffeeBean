@@ -14,19 +14,15 @@ Fixture:      4 relationships / 12 contracts / 48 transactions
 Baseline:     Customer 1 Benchmark
 
 == Conventional application/AI flow ==
-run=1 wall=8.8ms model=0.0ms tools=7.1ms modelCalls=0 toolCalls=7 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~932 workers=1 httpRetries=0
+run=1 wall=7.3ms model=0.0ms tools=5.9ms modelCalls=0 toolCalls=7 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~932 workers=1 httpRetries=0
 
 == Foundgine semantic flow ==
-run=1 wall=14.1ms model=0.0ms tools=11.8ms modelCalls=0 toolCalls=4 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~315 workers=1 httpRetries=0
-
-===============================================
- Comparison
-===============================================
-Token saving (provider-reported): N/A — replay mode reports no model token usage (run in 'live' mode for real numbers)
-Token saving (estimated, heuristic): 66.2% — offline chars/words estimate of tool payload size, not a tokenizer count
-Tool-call saving:   42.9%
-Model-call saving:  0.0%
-Wall-clock change:  59.9%
-Same final state:   True
-JSON report:        C:\Foundgine\benchmarks\AgentEndToEnd\Run3\artifacts\00001-customers\concurrency-001\agent-benchmark.json
-Markdown report:    C:\Foundgine\benchmarks\AgentEndToEnd\Run3\artifacts\00001-customers\concurrency-001\agent-benchmark.md
+Unhandled exception. System.Net.Http.HttpRequestException: GraphQL request failed with 400 (BadRequest). Response: {"errors":[{"message":"An executable plan must carry authorization provenance before crossing the execution boundary."}]}
+   at FoundgineTools.PostGraphqlAsync(String url, String query, Object variables) in C:\Foundgine\benchmarks\AgentEndToEnd\Run3\Program.cs:line 744
+   at FoundgineTools.GraphAsync(String url, Int32 customerId) in C:\Foundgine\benchmarks\AgentEndToEnd\Run3\Program.cs:line 709
+   at ToolRegistry.InvokeMeasuredAsync(String name, String input, Func`2 handler, TraceCollector trace) in C:\Foundgine\benchmarks\AgentEndToEnd\Run3\Program.cs:line 591
+   at FoundgineReplay.RunAsync(String foundgineUrl, TraceCollector trace, Int32 customerId) in C:\Foundgine\benchmarks\AgentEndToEnd\Run3\Program.cs:line 573
+   at Program.<<Main>$>g__RunAsync|0_0(FlowKind flow, String mode, String connectionString, String foundgineUrl, Int32 customerId, Boolean record) in C:\Foundgine\benchmarks\AgentEndToEnd\Run3\Program.cs:line 143
+   at Program.<Main>$(String[] args) in C:\Foundgine\benchmarks\AgentEndToEnd\Run3\Program.cs:line 65
+   at Program.<Main>$(String[] args) in C:\Foundgine\benchmarks\AgentEndToEnd\Run3\Program.cs:line 112
+   at Program.<Main>(String[] args)
