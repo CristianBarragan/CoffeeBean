@@ -1,0 +1,869 @@
+
+============================================
+ Foundgine Agent End-to-End Performance Run
+============================================
+Mode:                    replay
+Customer tiers:          10, 100, 1000, 10000
+Concurrency:             8, 16, 32, 64
+Runs per tier:           30, 30, 30, 30
+Warmups per flow:        5
+Relationships/customer:  4
+Contracts/relationship:  3
+Transactions/contract:   4
+Reports:                 C:\Foundgine\benchmarks\AgentEndToEnd\Run1\artifacts
+
+Restoring benchmark projects...
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+Removing benchmark containers and PostgreSQL volume...
+Removing benchmark containers and PostgreSQL volume...
+Starting PostgreSQL 17 benchmark container on host port 16124...
+ Network foundgine-agent-e2e-run1_default Creating 
+ Network foundgine-agent-e2e-run1_default Created 
+ Volume foundgine-agent-e2e-run1_agent-e2e-postgres-data Creating 
+ Volume foundgine-agent-e2e-run1_agent-e2e-postgres-data Created 
+ Container foundgine-agent-e2e-run1-postgres-1 Creating 
+ Container foundgine-agent-e2e-run1-postgres-1 Created 
+ Container foundgine-agent-e2e-run1-postgres-1 Starting 
+ Container foundgine-agent-e2e-run1-postgres-1 Started 
+Waiting for PostgreSQL...
+Seeding fixture: 10 customers ...
+Seeding 10 customers, 40 relationships, 120 contracts and 480 transactions...
+Seeded: 10 customers, 40 relationships, 120 contracts, 480 transactions.
+Benchmark graph for Customer 1: 4 relationships -> 12 contracts -> 48 transactions.
+Customer 1 is the deterministic benchmark target.
+Building and starting Foundgine warm benchmark API...
+ Image foundgine-agent-e2e-run1-foundgine-warm Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 622B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.18kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:9.0
+#3 DONE 0.2s
+
+#4 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:9.0
+#4 DONE 0.2s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [build 1/5] FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:f190d2dd9eef2899c91ac323caa0bd2b39334a5400ba93013e5199da39dad940
+#6 resolve mcr.microsoft.com/dotnet/sdk:9.0@sha256:f190d2dd9eef2899c91ac323caa0bd2b39334a5400ba93013e5199da39dad940 0.0s done
+#6 DONE 0.0s
+
+#7 [stage-1 1/4] FROM mcr.microsoft.com/dotnet/aspnet:9.0@sha256:b1201ee0ccf9a22c06844982296c1be40d5ff9c7685dc002729f204e63fb1730
+#7 resolve mcr.microsoft.com/dotnet/aspnet:9.0@sha256:b1201ee0ccf9a22c06844982296c1be40d5ff9c7685dc002729f204e63fb1730 0.0s done
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 2.72MB 0.2s done
+#8 DONE 0.2s
+
+#9 [build 2/5] WORKDIR /src
+#9 CACHED
+
+#10 [build 3/5] COPY . .
+#10 DONE 1.0s
+
+#11 [build 4/5] RUN dotnet restore     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj
+#11 0.768   Determining projects to restore...
+#11 1.898   Restored /src/src/Foundgine.Planning/Foundgine.Planning.csproj (in 142 ms).
+#11 1.898   Restored /src/src/Foundgine.Metadata/Foundgine.Metadata.csproj (in 142 ms).
+#11 1.898   Restored /src/src/Foundgine.Semantics/Foundgine.Semantics.csproj (in 142 ms).
+#11 1.898   Restored /src/src/Foundgine.Execution/Foundgine.Execution.csproj (in 142 ms).
+#11 1.913   Restored /src/src/Foundgine.Abstractions/Foundgine.Abstractions.csproj (in 2 ms).
+#11 3.538   Restored /src/src/Foundgine.Sql/Foundgine.Sql.csproj (in 1.63 sec).
+#11 3.538   Restored /src/src/Foundgine/Foundgine.csproj (in 1.82 sec).
+#11 3.540   Restored /src/src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj (in 1.83 sec).
+#11 3.541   Restored /src/src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj (in 1.83 sec).
+#11 3.541   Restored /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj (in 1.83 sec).
+#11 DONE 3.7s
+
+#12 [build 5/5] RUN dotnet publish     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj     -c Release     -o /app/publish
+#12 0.759   Determining projects to restore...
+#12 1.750   All projects are up-to-date for restore.
+#12 4.289   Foundgine.Abstractions -> /src/src/Foundgine.Abstractions/bin/Release/net9.0/Foundgine.Abstractions.dll
+#12 5.498   Foundgine.Semantics -> /src/src/Foundgine.Semantics/bin/Release/net9.0/Foundgine.Semantics.dll
+#12 5.914   Foundgine.Metadata -> /src/src/Foundgine.Metadata/bin/Release/net9.0/Foundgine.Metadata.dll
+#12 6.072   Foundgine.Planning -> /src/src/Foundgine.Planning/bin/Release/net9.0/Foundgine.Planning.dll
+#12 6.511   Foundgine.Execution -> /src/src/Foundgine.Execution/bin/Release/net9.0/Foundgine.Execution.dll
+#12 6.852   Foundgine -> /src/src/Foundgine/bin/Release/net9.0/Foundgine.dll
+#12 7.259   Foundgine.Sql -> /src/src/Foundgine.Sql/bin/Release/net9.0/Foundgine.Sql.dll
+#12 7.403   Foundgine.GraphQL.HotChocolate -> /src/src/Foundgine.GraphQL.HotChocolate/bin/Release/net9.0/Foundgine.GraphQL.HotChocolate.dll
+#12 7.854   Foundgine.GraphQL.HotChocolate.Mutations -> /src/src/Foundgine.GraphQL.HotChocolate.Mutations/bin/Release/net9.0/Foundgine.GraphQL.HotChocolate.Mutations.dll
+#12 8.695   Foundgine.CoffeeBeanery.BenchmarkApi -> /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/bin/Release/net9.0/Foundgine.CoffeeBeanery.BenchmarkApi.dll
+#12 8.758   Foundgine.CoffeeBeanery.BenchmarkApi -> /app/publish/
+#12 DONE 8.9s
+
+#13 [stage-1 2/4] RUN apt-get update     && apt-get install -y --no-install-recommends curl     && rm -rf /var/lib/apt/lists/*
+#13 CACHED
+
+#14 [stage-1 3/4] WORKDIR /app
+#14 CACHED
+
+#15 [stage-1 4/4] COPY --from=build /app/publish .
+#15 CACHED
+
+#16 exporting to image
+#16 exporting layers done
+#16 exporting manifest sha256:58ca8c7df6465e210acf0b5b2d5caa57cdf7dde8ec28daf7a81127e3fc3ec687 done
+#16 exporting config sha256:a16d8be053617227211b462cb1b61767a6d4f389b75ebadae13e6cd3b4f6e790 done
+#16 exporting attestation manifest sha256:4266b22848dd32520f442ad434bcb1209148e4abfb949f7438c61c44cb8c8f5e 0.0s done
+#16 exporting manifest list sha256:d6d0b564f5cdfb261395771194f309333b06157ddfddf556daa5679ca6d3750b 0.0s done
+#16 naming to docker.io/library/foundgine-agent-e2e-run1-foundgine-warm:latest done
+#16 unpacking to docker.io/library/foundgine-agent-e2e-run1-foundgine-warm:latest 0.0s done
+#16 DONE 0.1s
+
+#17 resolving provenance for metadata file
+#17 DONE 0.0s
+ Image foundgine-agent-e2e-run1-foundgine-warm Built 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Creating 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Created 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Starting 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Started 
+Waiting for http://localhost:4302/health/ready ...
+
+>>> Concurrency tier: 8
+
+============================================
+ Agent benchmark: 10 customers / 30 runs
+============================================
+===============================================
+ Foundgine / Agent End-to-End Benchmark
+===============================================
+Scenario:     customer-exposure-review
+Mode:         replay
+Warmups:      5
+Measured:     30
+Customer count: 10
+Concurrency:  8
+Targets:      1, 2, 3, 4, 5, 6, 7, 8
+Threshold:    48,000
+
+Fixture:      4 relationships / 12 contracts / 48 transactions
+Baseline:     Customer 1 Benchmark
+
+== Conventional application/AI flow ==
+run=1 wall=15.6ms model=0.0ms tools=98.0ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=2 wall=11.3ms model=0.0ms tools=71.0ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=3 wall=13.7ms model=0.0ms tools=82.4ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=4 wall=13.7ms model=0.0ms tools=81.1ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=5 wall=12.6ms model=0.0ms tools=71.6ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=6 wall=12.7ms model=0.0ms tools=77.4ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=7 wall=12.3ms model=0.0ms tools=73.0ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=8 wall=13.0ms model=0.0ms tools=80.0ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=9 wall=11.3ms model=0.0ms tools=67.3ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=10 wall=14.0ms model=0.0ms tools=83.6ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=11 wall=13.9ms model=0.0ms tools=81.5ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=12 wall=12.4ms model=0.0ms tools=75.9ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=13 wall=13.9ms model=0.0ms tools=85.1ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=14 wall=13.2ms model=0.0ms tools=79.6ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=15 wall=14.5ms model=0.0ms tools=88.6ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=16 wall=13.6ms model=0.0ms tools=82.1ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=17 wall=14.6ms model=0.0ms tools=81.2ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=18 wall=14.5ms model=0.0ms tools=89.3ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=19 wall=13.7ms model=0.0ms tools=85.0ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=20 wall=12.5ms model=0.0ms tools=72.5ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=21 wall=12.8ms model=0.0ms tools=77.3ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=22 wall=12.8ms model=0.0ms tools=77.6ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=23 wall=13.8ms model=0.0ms tools=87.8ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=24 wall=14.0ms model=0.0ms tools=86.3ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=25 wall=13.4ms model=0.0ms tools=82.1ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=26 wall=13.5ms model=0.0ms tools=78.2ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=27 wall=15.6ms model=0.0ms tools=91.8ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=28 wall=13.0ms model=0.0ms tools=78.5ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=29 wall=13.1ms model=0.0ms tools=83.4ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=30 wall=13.7ms model=0.0ms tools=81.9ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+
+== Foundgine semantic flow ==
+run=1 wall=16.3ms model=0.0ms tools=99.0ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=2 wall=15.8ms model=0.0ms tools=91.2ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=3 wall=18.4ms model=0.0ms tools=108.4ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=4 wall=15.7ms model=0.0ms tools=99.9ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=5 wall=15.3ms model=0.0ms tools=97.6ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=6 wall=18.2ms model=0.0ms tools=117.6ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=7 wall=14.6ms model=0.0ms tools=87.7ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=8 wall=17.0ms model=0.0ms tools=105.4ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=9 wall=18.4ms model=0.0ms tools=114.9ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=10 wall=16.4ms model=0.0ms tools=100.8ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=11 wall=15.2ms model=0.0ms tools=92.9ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=12 wall=14.9ms model=0.0ms tools=85.5ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=13 wall=16.5ms model=0.0ms tools=107.2ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=14 wall=14.2ms model=0.0ms tools=88.6ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=15 wall=16.3ms model=0.0ms tools=97.1ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=16 wall=15.0ms model=0.0ms tools=91.2ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=17 wall=16.4ms model=0.0ms tools=104.6ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=18 wall=14.6ms model=0.0ms tools=91.8ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=19 wall=19.0ms model=0.0ms tools=107.1ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=20 wall=18.8ms model=0.0ms tools=118.1ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=21 wall=13.3ms model=0.0ms tools=82.4ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=22 wall=21.3ms model=0.0ms tools=119.6ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=23 wall=17.3ms model=0.0ms tools=105.0ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=24 wall=18.8ms model=0.0ms tools=116.4ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=25 wall=14.8ms model=0.0ms tools=91.2ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=26 wall=16.5ms model=0.0ms tools=96.4ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=27 wall=16.7ms model=0.0ms tools=107.4ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=28 wall=19.1ms model=0.0ms tools=114.1ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=29 wall=19.8ms model=0.0ms tools=119.0ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=30 wall=16.2ms model=0.0ms tools=97.2ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+
+===============================================
+ Comparison
+===============================================
+Token saving (provider-reported): N/A â?" replay mode reports no model token usage (run in 'live' mode for real numbers)
+Token saving (estimated, heuristic): 66.7% â?" offline chars/words estimate of tool payload size, not a tokenizer count
+Tool-call saving:   42.9%
+Model-call saving:  0.0%
+Wall-clock change:  24.4%
+Same final state:   True
+JSON report:        C:\Foundgine\benchmarks\AgentEndToEnd\Run1\artifacts\00010-customers\concurrency-008\agent-benchmark.json
+Markdown report:    C:\Foundgine\benchmarks\AgentEndToEnd\Run1\artifacts\00010-customers\concurrency-008\agent-benchmark.md
+
+>>> Concurrency tier: 16 (skipped: exceeds customer count 10)
+
+>>> Concurrency tier: 32 (skipped: exceeds customer count 10)
+
+>>> Concurrency tier: 64 (skipped: exceeds customer count 10)
+Removing benchmark containers and PostgreSQL volume...
+Starting PostgreSQL 17 benchmark container on host port 57766...
+ Network foundgine-agent-e2e-run1_default Creating 
+ Network foundgine-agent-e2e-run1_default Created 
+ Volume foundgine-agent-e2e-run1_agent-e2e-postgres-data Creating 
+ Volume foundgine-agent-e2e-run1_agent-e2e-postgres-data Created 
+ Container foundgine-agent-e2e-run1-postgres-1 Creating 
+ Container foundgine-agent-e2e-run1-postgres-1 Created 
+ Container foundgine-agent-e2e-run1-postgres-1 Starting 
+ Container foundgine-agent-e2e-run1-postgres-1 Started 
+Waiting for PostgreSQL...
+Seeding fixture: 100 customers ...
+Seeding 100 customers, 400 relationships, 1,200 contracts and 4,800 transactions...
+Seeded: 100 customers, 400 relationships, 1,200 contracts, 4,800 transactions.
+Benchmark graph for Customer 1: 4 relationships -> 12 contracts -> 48 transactions.
+Customer 1 is the deterministic benchmark target.
+Building and starting Foundgine warm benchmark API...
+ Image foundgine-agent-e2e-run1-foundgine-warm Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 622B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.18kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:9.0
+#3 DONE 0.2s
+
+#4 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:9.0
+#4 DONE 0.2s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [stage-1 1/4] FROM mcr.microsoft.com/dotnet/aspnet:9.0@sha256:b1201ee0ccf9a22c06844982296c1be40d5ff9c7685dc002729f204e63fb1730
+#6 resolve mcr.microsoft.com/dotnet/aspnet:9.0@sha256:b1201ee0ccf9a22c06844982296c1be40d5ff9c7685dc002729f204e63fb1730 0.0s done
+#6 DONE 0.0s
+
+#7 [build 1/5] FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:f190d2dd9eef2899c91ac323caa0bd2b39334a5400ba93013e5199da39dad940
+#7 resolve mcr.microsoft.com/dotnet/sdk:9.0@sha256:f190d2dd9eef2899c91ac323caa0bd2b39334a5400ba93013e5199da39dad940 0.0s done
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 8.78MB 0.2s done
+#8 DONE 0.2s
+
+#9 [build 2/5] WORKDIR /src
+#9 CACHED
+
+#10 [build 3/5] COPY . .
+#10 DONE 1.0s
+
+#11 [build 4/5] RUN dotnet restore     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj
+#11 0.748   Determining projects to restore...
+#11 1.847   Restored /src/src/Foundgine.Semantics/Foundgine.Semantics.csproj (in 129 ms).
+#11 1.847   Restored /src/src/Foundgine.Abstractions/Foundgine.Abstractions.csproj (in 116 ms).
+#11 1.847   Restored /src/src/Foundgine.Execution/Foundgine.Execution.csproj (in 129 ms).
+#11 1.847   Restored /src/src/Foundgine.Planning/Foundgine.Planning.csproj (in 129 ms).
+#11 1.847   Restored /src/src/Foundgine.Metadata/Foundgine.Metadata.csproj (in 129 ms).
+#11 3.461   Restored /src/src/Foundgine.Sql/Foundgine.Sql.csproj (in 1.78 sec).
+#11 3.461   Restored /src/src/Foundgine/Foundgine.csproj (in 1.61 sec).
+#11 3.465   Restored /src/src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj (in 1.61 sec).
+#11 3.465   Restored /src/src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj (in 1.79 sec).
+#11 3.465   Restored /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj (in 1.79 sec).
+#11 DONE 3.6s
+
+#12 [build 5/5] RUN dotnet publish     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj     -c Release     -o /app/publish
+#12 0.818   Determining projects to restore...
+#12 1.913   All projects are up-to-date for restore.
+#12 4.589   Foundgine.Abstractions -> /src/src/Foundgine.Abstractions/bin/Release/net9.0/Foundgine.Abstractions.dll
+#12 5.910   Foundgine.Semantics -> /src/src/Foundgine.Semantics/bin/Release/net9.0/Foundgine.Semantics.dll
+#12 6.369   Foundgine.Metadata -> /src/src/Foundgine.Metadata/bin/Release/net9.0/Foundgine.Metadata.dll
+#12 6.527   Foundgine.Planning -> /src/src/Foundgine.Planning/bin/Release/net9.0/Foundgine.Planning.dll
+#12 7.020   Foundgine.Execution -> /src/src/Foundgine.Execution/bin/Release/net9.0/Foundgine.Execution.dll
+#12 7.536   Foundgine -> /src/src/Foundgine/bin/Release/net9.0/Foundgine.dll
+#12 7.840   Foundgine.Sql -> /src/src/Foundgine.Sql/bin/Release/net9.0/Foundgine.Sql.dll
+#12 8.044   Foundgine.GraphQL.HotChocolate -> /src/src/Foundgine.GraphQL.HotChocolate/bin/Release/net9.0/Foundgine.GraphQL.HotChocolate.dll
+#12 8.454   Foundgine.GraphQL.HotChocolate.Mutations -> /src/src/Foundgine.GraphQL.HotChocolate.Mutations/bin/Release/net9.0/Foundgine.GraphQL.HotChocolate.Mutations.dll
+#12 9.339   Foundgine.CoffeeBeanery.BenchmarkApi -> /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/bin/Release/net9.0/Foundgine.CoffeeBeanery.BenchmarkApi.dll
+#12 9.401   Foundgine.CoffeeBeanery.BenchmarkApi -> /app/publish/
+#12 DONE 9.5s
+
+#13 [stage-1 3/4] WORKDIR /app
+#13 CACHED
+
+#14 [stage-1 2/4] RUN apt-get update     && apt-get install -y --no-install-recommends curl     && rm -rf /var/lib/apt/lists/*
+#14 CACHED
+
+#15 [stage-1 4/4] COPY --from=build /app/publish .
+#15 CACHED
+
+#16 exporting to image
+#16 exporting layers done
+#16 exporting manifest sha256:58ca8c7df6465e210acf0b5b2d5caa57cdf7dde8ec28daf7a81127e3fc3ec687 done
+#16 exporting config sha256:a16d8be053617227211b462cb1b61767a6d4f389b75ebadae13e6cd3b4f6e790 done
+#16 exporting attestation manifest sha256:5ae99bea45cf09fc230aaacc3dd6f624f3a8d04eba4ca37c319c7b1ac0c4278d 0.0s done
+#16 exporting manifest list sha256:09c621ce9822f743b22fea423abe0d66bbd17eb5a2bca18408d82d59bfdcca4b 0.0s done
+#16 naming to docker.io/library/foundgine-agent-e2e-run1-foundgine-warm:latest
+#16 naming to docker.io/library/foundgine-agent-e2e-run1-foundgine-warm:latest done
+#16 unpacking to docker.io/library/foundgine-agent-e2e-run1-foundgine-warm:latest 0.0s done
+#16 DONE 0.1s
+
+#17 resolving provenance for metadata file
+#17 DONE 0.0s
+ Image foundgine-agent-e2e-run1-foundgine-warm Built 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Creating 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Created 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Starting 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Started 
+Waiting for http://localhost:4302/health/ready ...
+
+>>> Concurrency tier: 64
+
+============================================
+ Agent benchmark: 100 customers / 30 runs
+============================================
+===============================================
+ Foundgine / Agent End-to-End Benchmark
+===============================================
+Scenario:     customer-exposure-review
+Mode:         replay
+Warmups:      5
+Measured:     30
+Customer count: 100
+Concurrency:  64
+Targets:      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64
+Threshold:    48,000
+
+Fixture:      4 relationships / 12 contracts / 48 transactions
+Baseline:     Customer 1 Benchmark
+
+== Conventional application/AI flow ==
+run=1 wall=65.1ms model=0.0ms tools=2740.6ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=2 wall=67.5ms model=0.0ms tools=2724.8ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=3 wall=65.4ms model=0.0ms tools=2686.6ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=4 wall=68.6ms model=0.0ms tools=3030.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=5 wall=74.3ms model=0.0ms tools=3388.8ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=6 wall=79.0ms model=0.0ms tools=3471.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=7 wall=71.4ms model=0.0ms tools=3058.8ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=8 wall=78.2ms model=0.0ms tools=3098.5ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=9 wall=71.1ms model=0.0ms tools=3038.8ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=10 wall=69.8ms model=0.0ms tools=2945.3ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=11 wall=66.5ms model=0.0ms tools=2750.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=12 wall=77.3ms model=0.0ms tools=3063.3ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=13 wall=69.0ms model=0.0ms tools=2954.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=14 wall=71.1ms model=0.0ms tools=2973.9ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=15 wall=61.4ms model=0.0ms tools=2645.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=16 wall=66.8ms model=0.0ms tools=2990.1ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=17 wall=70.5ms model=0.0ms tools=3117.4ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=18 wall=60.6ms model=0.0ms tools=2607.6ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=19 wall=58.8ms model=0.0ms tools=2457.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=20 wall=60.9ms model=0.0ms tools=2622.3ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=21 wall=65.0ms model=0.0ms tools=2682.9ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=22 wall=64.8ms model=0.0ms tools=2871.9ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=23 wall=63.3ms model=0.0ms tools=2600.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=24 wall=75.5ms model=0.0ms tools=3110.5ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=25 wall=74.6ms model=0.0ms tools=3190.4ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=26 wall=75.9ms model=0.0ms tools=3335.3ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=27 wall=81.1ms model=0.0ms tools=3304.9ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=28 wall=77.1ms model=0.0ms tools=3143.4ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=29 wall=92.2ms model=0.0ms tools=4316.2ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=30 wall=80.4ms model=0.0ms tools=3454.5ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+
+== Foundgine semantic flow ==
+run=1 wall=78.7ms model=0.0ms tools=3659.4ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=2 wall=87.0ms model=0.0ms tools=4163.8ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=3 wall=89.4ms model=0.0ms tools=3979.4ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=4 wall=102.8ms model=0.0ms tools=5060.7ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=5 wall=84.3ms model=0.0ms tools=4023.5ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=6 wall=89.3ms model=0.0ms tools=4228.1ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=7 wall=89.0ms model=0.0ms tools=4228.6ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=8 wall=81.3ms model=0.0ms tools=3889.6ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=9 wall=79.9ms model=0.0ms tools=3719.1ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=10 wall=84.4ms model=0.0ms tools=4073.2ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=11 wall=79.7ms model=0.0ms tools=3848.7ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=12 wall=76.2ms model=0.0ms tools=3644.7ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=13 wall=73.3ms model=0.0ms tools=3375.9ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=14 wall=69.4ms model=0.0ms tools=3011.0ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=15 wall=94.9ms model=0.0ms tools=4571.4ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=16 wall=83.2ms model=0.0ms tools=3798.3ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=17 wall=78.5ms model=0.0ms tools=3722.1ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=18 wall=85.4ms model=0.0ms tools=4177.2ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=19 wall=70.8ms model=0.0ms tools=3326.5ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=20 wall=76.5ms model=0.0ms tools=3338.4ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=21 wall=81.7ms model=0.0ms tools=3786.4ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=22 wall=88.0ms model=0.0ms tools=4132.8ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=23 wall=89.4ms model=0.0ms tools=3805.9ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=24 wall=73.1ms model=0.0ms tools=3260.8ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=25 wall=72.8ms model=0.0ms tools=3163.8ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=26 wall=72.5ms model=0.0ms tools=3254.8ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=27 wall=87.3ms model=0.0ms tools=3996.1ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=28 wall=73.5ms model=0.0ms tools=3122.9ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=29 wall=72.4ms model=0.0ms tools=3078.9ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=30 wall=93.0ms model=0.0ms tools=4266.5ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+
+===============================================
+ Comparison
+===============================================
+Token saving (provider-reported): N/A â?" replay mode reports no model token usage (run in 'live' mode for real numbers)
+Token saving (estimated, heuristic): 67.2% â?" offline chars/words estimate of tool payload size, not a tokenizer count
+Tool-call saving:   42.9%
+Model-call saving:  0.0%
+Wall-clock change:  15.8%
+Same final state:   True
+JSON report:        C:\Foundgine\benchmarks\AgentEndToEnd\Run1\artifacts\00100-customers\concurrency-064\agent-benchmark.json
+Markdown report:    C:\Foundgine\benchmarks\AgentEndToEnd\Run1\artifacts\00100-customers\concurrency-064\agent-benchmark.md
+Removing benchmark containers and PostgreSQL volume...
+Starting PostgreSQL 17 benchmark container on host port 57942...
+ Network foundgine-agent-e2e-run1_default Creating 
+ Network foundgine-agent-e2e-run1_default Created 
+ Volume foundgine-agent-e2e-run1_agent-e2e-postgres-data Creating 
+ Volume foundgine-agent-e2e-run1_agent-e2e-postgres-data Created 
+ Container foundgine-agent-e2e-run1-postgres-1 Creating 
+ Container foundgine-agent-e2e-run1-postgres-1 Created 
+ Container foundgine-agent-e2e-run1-postgres-1 Starting 
+ Container foundgine-agent-e2e-run1-postgres-1 Started 
+Waiting for PostgreSQL...
+Seeding fixture: 1000 customers ...
+Seeding 1,000 customers, 4,000 relationships, 12,000 contracts and 48,000 transactions...
+Seeded: 1,000 customers, 4,000 relationships, 12,000 contracts, 48,000 transactions.
+Benchmark graph for Customer 1: 4 relationships -> 12 contracts -> 48 transactions.
+Customer 1 is the deterministic benchmark target.
+Building and starting Foundgine warm benchmark API...
+ Image foundgine-agent-e2e-run1-foundgine-warm Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 622B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.18kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:9.0
+#3 ...
+
+#4 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:9.0
+#4 DONE 0.2s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:9.0
+#3 DONE 0.2s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [build 1/5] FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:f190d2dd9eef2899c91ac323caa0bd2b39334a5400ba93013e5199da39dad940
+#6 resolve mcr.microsoft.com/dotnet/sdk:9.0@sha256:f190d2dd9eef2899c91ac323caa0bd2b39334a5400ba93013e5199da39dad940 0.0s done
+#6 DONE 0.0s
+
+#7 [stage-1 1/4] FROM mcr.microsoft.com/dotnet/aspnet:9.0@sha256:b1201ee0ccf9a22c06844982296c1be40d5ff9c7685dc002729f204e63fb1730
+#7 resolve mcr.microsoft.com/dotnet/aspnet:9.0@sha256:b1201ee0ccf9a22c06844982296c1be40d5ff9c7685dc002729f204e63fb1730 0.0s done
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 287.13kB 0.1s done
+#8 DONE 0.2s
+
+#9 [build 2/5] WORKDIR /src
+#9 CACHED
+
+#10 [build 3/5] COPY . .
+#10 DONE 0.9s
+
+#11 [build 4/5] RUN dotnet restore     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj
+#11 0.758   Determining projects to restore...
+#11 1.802   Restored /src/src/Foundgine.Abstractions/Foundgine.Abstractions.csproj (in 126 ms).
+#11 1.802   Restored /src/src/Foundgine.Semantics/Foundgine.Semantics.csproj (in 137 ms).
+#11 1.802   Restored /src/src/Foundgine.Metadata/Foundgine.Metadata.csproj (in 137 ms).
+#11 1.802   Restored /src/src/Foundgine.Planning/Foundgine.Planning.csproj (in 137 ms).
+#11 1.809   Restored /src/src/Foundgine.Execution/Foundgine.Execution.csproj (in 2 ms).
+#11 3.729   Restored /src/src/Foundgine/Foundgine.csproj (in 1.92 sec).
+#11 3.730   Restored /src/src/Foundgine.Sql/Foundgine.Sql.csproj (in 2.1 sec).
+#11 3.731   Restored /src/src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj (in 2.1 sec).
+#11 3.731   Restored /src/src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj (in 2.1 sec).
+#11 3.733   Restored /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj (in 2.1 sec).
+#11 DONE 3.8s
+
+#12 [build 5/5] RUN dotnet publish     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj     -c Release     -o /app/publish
+#12 0.807   Determining projects to restore...
+#12 1.805   All projects are up-to-date for restore.
+#12 4.368   Foundgine.Abstractions -> /src/src/Foundgine.Abstractions/bin/Release/net9.0/Foundgine.Abstractions.dll
+#12 5.720   Foundgine.Semantics -> /src/src/Foundgine.Semantics/bin/Release/net9.0/Foundgine.Semantics.dll
+#12 6.223   Foundgine.Metadata -> /src/src/Foundgine.Metadata/bin/Release/net9.0/Foundgine.Metadata.dll
+#12 6.399   Foundgine.Planning -> /src/src/Foundgine.Planning/bin/Release/net9.0/Foundgine.Planning.dll
+#12 6.864   Foundgine.Execution -> /src/src/Foundgine.Execution/bin/Release/net9.0/Foundgine.Execution.dll
+#12 7.168   Foundgine -> /src/src/Foundgine/bin/Release/net9.0/Foundgine.dll
+#12 7.728   Foundgine.Sql -> /src/src/Foundgine.Sql/bin/Release/net9.0/Foundgine.Sql.dll
+#12 7.845   Foundgine.GraphQL.HotChocolate -> /src/src/Foundgine.GraphQL.HotChocolate/bin/Release/net9.0/Foundgine.GraphQL.HotChocolate.dll
+#12 8.271   Foundgine.GraphQL.HotChocolate.Mutations -> /src/src/Foundgine.GraphQL.HotChocolate.Mutations/bin/Release/net9.0/Foundgine.GraphQL.HotChocolate.Mutations.dll
+#12 9.049   Foundgine.CoffeeBeanery.BenchmarkApi -> /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/bin/Release/net9.0/Foundgine.CoffeeBeanery.BenchmarkApi.dll
+#12 9.113   Foundgine.CoffeeBeanery.BenchmarkApi -> /app/publish/
+#12 DONE 9.2s
+
+#13 [stage-1 3/4] WORKDIR /app
+#13 CACHED
+
+#14 [stage-1 2/4] RUN apt-get update     && apt-get install -y --no-install-recommends curl     && rm -rf /var/lib/apt/lists/*
+#14 CACHED
+
+#15 [stage-1 4/4] COPY --from=build /app/publish .
+#15 CACHED
+
+#16 exporting to image
+#16 exporting layers done
+#16 exporting manifest sha256:58ca8c7df6465e210acf0b5b2d5caa57cdf7dde8ec28daf7a81127e3fc3ec687 done
+#16 exporting config sha256:a16d8be053617227211b462cb1b61767a6d4f389b75ebadae13e6cd3b4f6e790 done
+#16 exporting attestation manifest sha256:55f9c30cd4f4e7de13c2f02f4b887008ac7b081482e461fb9b67b65359b51c43 0.0s done
+#16 exporting manifest list sha256:086c2ad77b31bf1934cacb9134d9b7ccb325a3b2bcb73b78070f93cd27df0fb8 0.0s done
+#16 naming to docker.io/library/foundgine-agent-e2e-run1-foundgine-warm:latest
+#16 naming to docker.io/library/foundgine-agent-e2e-run1-foundgine-warm:latest done
+#16 unpacking to docker.io/library/foundgine-agent-e2e-run1-foundgine-warm:latest done
+#16 DONE 0.1s
+
+#17 resolving provenance for metadata file
+#17 DONE 0.0s
+ Image foundgine-agent-e2e-run1-foundgine-warm Built 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Creating 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Created 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Starting 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Started 
+Waiting for http://localhost:4302/health/ready ...
+
+>>> Concurrency tier: 64
+
+============================================
+ Agent benchmark: 1000 customers / 30 runs
+============================================
+===============================================
+ Foundgine / Agent End-to-End Benchmark
+===============================================
+Scenario:     customer-exposure-review
+Mode:         replay
+Warmups:      5
+Measured:     30
+Customer count: 1000
+Concurrency:  64
+Targets:      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64
+Threshold:    48,000
+
+Fixture:      4 relationships / 12 contracts / 48 transactions
+Baseline:     Customer 1 Benchmark
+
+== Conventional application/AI flow ==
+run=1 wall=81.9ms model=0.0ms tools=3469.5ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=2 wall=66.8ms model=0.0ms tools=2824.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=3 wall=68.9ms model=0.0ms tools=3056.2ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=4 wall=65.1ms model=0.0ms tools=2699.2ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=5 wall=63.8ms model=0.0ms tools=2700.6ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=6 wall=74.1ms model=0.0ms tools=3168.9ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=7 wall=66.8ms model=0.0ms tools=2848.7ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=8 wall=64.4ms model=0.0ms tools=2736.8ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=9 wall=66.2ms model=0.0ms tools=2735.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=10 wall=61.5ms model=0.0ms tools=2724.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=11 wall=63.5ms model=0.0ms tools=2516.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=12 wall=66.3ms model=0.0ms tools=2673.1ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=13 wall=60.5ms model=0.0ms tools=2577.8ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=14 wall=71.3ms model=0.0ms tools=3020.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=15 wall=70.6ms model=0.0ms tools=3002.2ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=16 wall=67.9ms model=0.0ms tools=2555.4ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=17 wall=63.6ms model=0.0ms tools=2590.8ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=18 wall=61.7ms model=0.0ms tools=2417.2ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=19 wall=61.9ms model=0.0ms tools=2590.8ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=20 wall=64.7ms model=0.0ms tools=2811.9ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=21 wall=57.7ms model=0.0ms tools=2525.1ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=22 wall=61.6ms model=0.0ms tools=2532.4ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=23 wall=56.2ms model=0.0ms tools=2326.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=24 wall=66.8ms model=0.0ms tools=2833.4ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=25 wall=74.0ms model=0.0ms tools=3200.7ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=26 wall=70.6ms model=0.0ms tools=3110.5ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=27 wall=65.5ms model=0.0ms tools=2830.2ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=28 wall=57.4ms model=0.0ms tools=2396.8ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=29 wall=58.9ms model=0.0ms tools=2499.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=30 wall=59.6ms model=0.0ms tools=2610.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+
+== Foundgine semantic flow ==
+run=1 wall=139.6ms model=0.0ms tools=6559.7ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=2 wall=101.9ms model=0.0ms tools=4644.1ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=3 wall=102.3ms model=0.0ms tools=4398.2ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=4 wall=127.0ms model=0.0ms tools=5847.7ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=5 wall=107.7ms model=0.0ms tools=5181.3ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=6 wall=82.4ms model=0.0ms tools=3962.2ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=7 wall=86.8ms model=0.0ms tools=4294.0ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=8 wall=88.4ms model=0.0ms tools=4115.2ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=9 wall=75.6ms model=0.0ms tools=3448.3ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=10 wall=92.4ms model=0.0ms tools=4260.4ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=11 wall=78.9ms model=0.0ms tools=3629.0ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=12 wall=93.0ms model=0.0ms tools=4444.1ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=13 wall=97.4ms model=0.0ms tools=4726.2ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=14 wall=92.3ms model=0.0ms tools=4384.6ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=15 wall=95.7ms model=0.0ms tools=4380.7ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=16 wall=78.8ms model=0.0ms tools=3556.3ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=17 wall=80.6ms model=0.0ms tools=3655.7ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=18 wall=88.1ms model=0.0ms tools=4160.8ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=19 wall=81.0ms model=0.0ms tools=3504.3ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=20 wall=87.8ms model=0.0ms tools=4087.6ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=21 wall=88.5ms model=0.0ms tools=4052.1ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=22 wall=98.5ms model=0.0ms tools=4795.9ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=23 wall=94.4ms model=0.0ms tools=3986.5ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=24 wall=84.0ms model=0.0ms tools=3785.6ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=25 wall=79.5ms model=0.0ms tools=3628.1ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=26 wall=79.4ms model=0.0ms tools=3627.2ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=27 wall=76.7ms model=0.0ms tools=3320.2ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=28 wall=76.7ms model=0.0ms tools=3559.8ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=29 wall=70.3ms model=0.0ms tools=3132.7ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=30 wall=69.7ms model=0.0ms tools=3013.2ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+
+===============================================
+ Comparison
+===============================================
+Token saving (provider-reported): N/A â?" replay mode reports no model token usage (run in 'live' mode for real numbers)
+Token saving (estimated, heuristic): 67.2% â?" offline chars/words estimate of tool payload size, not a tokenizer count
+Tool-call saving:   42.9%
+Model-call saving:  0.0%
+Wall-clock change:  37.5%
+Same final state:   True
+JSON report:        C:\Foundgine\benchmarks\AgentEndToEnd\Run1\artifacts\01000-customers\concurrency-064\agent-benchmark.json
+Markdown report:    C:\Foundgine\benchmarks\AgentEndToEnd\Run1\artifacts\01000-customers\concurrency-064\agent-benchmark.md
+Removing benchmark containers and PostgreSQL volume...
+Starting PostgreSQL 17 benchmark container on host port 35061...
+ Network foundgine-agent-e2e-run1_default Creating 
+ Network foundgine-agent-e2e-run1_default Created 
+ Volume foundgine-agent-e2e-run1_agent-e2e-postgres-data Creating 
+ Volume foundgine-agent-e2e-run1_agent-e2e-postgres-data Created 
+ Container foundgine-agent-e2e-run1-postgres-1 Creating 
+ Container foundgine-agent-e2e-run1-postgres-1 Created 
+ Container foundgine-agent-e2e-run1-postgres-1 Starting 
+ Container foundgine-agent-e2e-run1-postgres-1 Started 
+Waiting for PostgreSQL...
+Seeding fixture: 10000 customers ...
+Seeding 10,000 customers, 40,000 relationships, 120,000 contracts and 480,000 transactions...
+Seeded: 10,000 customers, 40,000 relationships, 120,000 contracts, 480,000 transactions.
+Benchmark graph for Customer 1: 4 relationships -> 12 contracts -> 48 transactions.
+Customer 1 is the deterministic benchmark target.
+Building and starting Foundgine warm benchmark API...
+ Image foundgine-agent-e2e-run1-foundgine-warm Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 622B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.18kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:9.0
+#3 ...
+
+#4 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:9.0
+#4 DONE 0.2s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:9.0
+#3 DONE 0.2s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [build 1/5] FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:f190d2dd9eef2899c91ac323caa0bd2b39334a5400ba93013e5199da39dad940
+#6 resolve mcr.microsoft.com/dotnet/sdk:9.0@sha256:f190d2dd9eef2899c91ac323caa0bd2b39334a5400ba93013e5199da39dad940 0.0s done
+#6 DONE 0.0s
+
+#7 [stage-1 1/4] FROM mcr.microsoft.com/dotnet/aspnet:9.0@sha256:b1201ee0ccf9a22c06844982296c1be40d5ff9c7685dc002729f204e63fb1730
+#7 resolve mcr.microsoft.com/dotnet/aspnet:9.0@sha256:b1201ee0ccf9a22c06844982296c1be40d5ff9c7685dc002729f204e63fb1730 0.0s done
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 1.89MB 0.2s done
+#8 DONE 0.2s
+
+#9 [build 2/5] WORKDIR /src
+#9 CACHED
+
+#10 [build 3/5] COPY . .
+#10 DONE 1.9s
+
+#11 [build 4/5] RUN dotnet restore     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj
+#11 0.816   Determining projects to restore...
+#11 2.158   Restored /src/src/Foundgine.Planning/Foundgine.Planning.csproj (in 137 ms).
+#11 2.158   Restored /src/src/Foundgine.Metadata/Foundgine.Metadata.csproj (in 137 ms).
+#11 2.158   Restored /src/src/Foundgine.Sql/Foundgine.Sql.csproj (in 137 ms).
+#11 2.158   Restored /src/src/Foundgine.Abstractions/Foundgine.Abstractions.csproj (in 126 ms).
+#11 2.158   Restored /src/src/Foundgine.Semantics/Foundgine.Semantics.csproj (in 137 ms).
+#11 2.174   Restored /src/src/Foundgine.Execution/Foundgine.Execution.csproj (in 11 ms).
+#11 3.916   Restored /src/src/Foundgine/Foundgine.csproj (in 1.74 sec).
+#11 3.918   Restored /src/src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj (in 1.95 sec).
+#11 3.919   Restored /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj (in 1.95 sec).
+#11 3.919   Restored /src/src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj (in 1.95 sec).
+#11 DONE 4.0s
+
+#12 [build 5/5] RUN dotnet publish     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj     -c Release     -o /app/publish
+#12 0.805   Determining projects to restore...
+#12 1.814   All projects are up-to-date for restore.
+#12 4.534   Foundgine.Abstractions -> /src/src/Foundgine.Abstractions/bin/Release/net9.0/Foundgine.Abstractions.dll
+#12 5.531   Foundgine.Semantics -> /src/src/Foundgine.Semantics/bin/Release/net9.0/Foundgine.Semantics.dll
+#12 6.096   Foundgine.Metadata -> /src/src/Foundgine.Metadata/bin/Release/net9.0/Foundgine.Metadata.dll
+#12 6.413   Foundgine.Planning -> /src/src/Foundgine.Planning/bin/Release/net9.0/Foundgine.Planning.dll
+#12 6.890   Foundgine.Execution -> /src/src/Foundgine.Execution/bin/Release/net9.0/Foundgine.Execution.dll
+#12 7.856   Foundgine -> /src/src/Foundgine/bin/Release/net9.0/Foundgine.dll
+#12 7.882   Foundgine.Sql -> /src/src/Foundgine.Sql/bin/Release/net9.0/Foundgine.Sql.dll
+#12 8.336   Foundgine.GraphQL.HotChocolate -> /src/src/Foundgine.GraphQL.HotChocolate/bin/Release/net9.0/Foundgine.GraphQL.HotChocolate.dll
+#12 8.826   Foundgine.GraphQL.HotChocolate.Mutations -> /src/src/Foundgine.GraphQL.HotChocolate.Mutations/bin/Release/net9.0/Foundgine.GraphQL.HotChocolate.Mutations.dll
+#12 9.748   Foundgine.CoffeeBeanery.BenchmarkApi -> /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/bin/Release/net9.0/Foundgine.CoffeeBeanery.BenchmarkApi.dll
+#12 9.801   Foundgine.CoffeeBeanery.BenchmarkApi -> /app/publish/
+#12 DONE 9.9s
+
+#13 [stage-1 2/4] RUN apt-get update     && apt-get install -y --no-install-recommends curl     && rm -rf /var/lib/apt/lists/*
+#13 CACHED
+
+#14 [stage-1 3/4] WORKDIR /app
+#14 CACHED
+
+#15 [stage-1 4/4] COPY --from=build /app/publish .
+#15 DONE 0.0s
+
+#16 exporting to image
+#16 exporting layers
+#16 exporting layers 0.2s done
+#16 exporting manifest sha256:b7777e89cef0fb0aaf132ee065cc38f898a7954a69664189b30f89537e792028 0.0s done
+#16 exporting config sha256:e8b975b6a924fa5e86770025954524313aa34f5abc33ffce5e7cac63ca76f4cc 0.0s done
+#16 exporting attestation manifest sha256:49e107d3909a0df6fd7bfca0bd7a87d1670f971c10261204aac4ca36afb9af99 0.0s done
+#16 exporting manifest list sha256:01e1bff794c981ccd39083c56979f71079f2130bbb2c4f8b5f0c21447e69e706 0.0s done
+#16 naming to docker.io/library/foundgine-agent-e2e-run1-foundgine-warm:latest done
+#16 unpacking to docker.io/library/foundgine-agent-e2e-run1-foundgine-warm:latest 0.0s done
+#16 DONE 0.3s
+
+#17 resolving provenance for metadata file
+#17 DONE 0.0s
+ Image foundgine-agent-e2e-run1-foundgine-warm Built 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Creating 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Created 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Starting 
+ Container foundgine-agent-e2e-run1-foundgine-warm-1 Started 
+Waiting for http://localhost:4302/health/ready ...
+
+>>> Concurrency tier: 64
+
+============================================
+ Agent benchmark: 10000 customers / 30 runs
+============================================
+===============================================
+ Foundgine / Agent End-to-End Benchmark
+===============================================
+Scenario:     customer-exposure-review
+Mode:         replay
+Warmups:      5
+Measured:     30
+Customer count: 10000
+Concurrency:  64
+Targets:      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64
+Threshold:    48,000
+
+Fixture:      4 relationships / 12 contracts / 48 transactions
+Baseline:     Customer 1 Benchmark
+
+== Conventional application/AI flow ==
+run=1 wall=95.2ms model=0.0ms tools=4248.5ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=2 wall=92.4ms model=0.0ms tools=3635.9ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=3 wall=79.5ms model=0.0ms tools=3343.4ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=4 wall=102.4ms model=0.0ms tools=4376.4ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=5 wall=118.3ms model=0.0ms tools=5329.8ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=6 wall=83.1ms model=0.0ms tools=3105.5ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=7 wall=91.2ms model=0.0ms tools=4283.8ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=8 wall=98.2ms model=0.0ms tools=3963.3ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=9 wall=73.0ms model=0.0ms tools=2995.7ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=10 wall=83.7ms model=0.0ms tools=3206.4ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=11 wall=77.5ms model=0.0ms tools=3162.5ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=12 wall=81.5ms model=0.0ms tools=3373.5ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=13 wall=94.4ms model=0.0ms tools=4027.3ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=14 wall=127.7ms model=0.0ms tools=4600.6ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=15 wall=151.2ms model=0.0ms tools=6128.9ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=16 wall=167.5ms model=0.0ms tools=7070.5ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=17 wall=74.0ms model=0.0ms tools=3086.3ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=18 wall=113.7ms model=0.0ms tools=4650.6ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=19 wall=131.4ms model=0.0ms tools=5041.6ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=20 wall=351.7ms model=0.0ms tools=15029.8ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=21 wall=226.3ms model=0.0ms tools=9421.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=22 wall=91.6ms model=0.0ms tools=3706.1ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=23 wall=110.4ms model=0.0ms tools=5193.1ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=24 wall=95.1ms model=0.0ms tools=3973.1ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=25 wall=102.0ms model=0.0ms tools=4153.5ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=26 wall=89.0ms model=0.0ms tools=3533.5ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=27 wall=86.3ms model=0.0ms tools=3679.2ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=28 wall=77.6ms model=0.0ms tools=3333.9ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=29 wall=78.3ms model=0.0ms tools=3309.0ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+run=30 wall=67.4ms model=0.0ms tools=2893.8ms modelCalls=0 toolCalls=448 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~61713 workers=64 httpRetries=0
+
+== Foundgine semantic flow ==
+run=1 wall=270.9ms model=0.0ms tools=13057.1ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=2 wall=273.7ms model=0.0ms tools=12189.4ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=3 wall=333.4ms model=0.0ms tools=16100.6ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=4 wall=264.1ms model=0.0ms tools=12412.7ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=5 wall=236.1ms model=0.0ms tools=11865.5ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=6 wall=259.9ms model=0.0ms tools=13123.3ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=7 wall=333.5ms model=0.0ms tools=16293.0ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=8 wall=265.0ms model=0.0ms tools=12430.4ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=9 wall=243.7ms model=0.0ms tools=11639.1ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=10 wall=261.5ms model=0.0ms tools=12626.0ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=11 wall=256.2ms model=0.0ms tools=12137.0ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=12 wall=280.8ms model=0.0ms tools=13157.2ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=13 wall=282.4ms model=0.0ms tools=13388.9ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=14 wall=228.7ms model=0.0ms tools=11364.6ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=15 wall=233.4ms model=0.0ms tools=11074.5ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=16 wall=234.5ms model=0.0ms tools=11208.9ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=17 wall=231.1ms model=0.0ms tools=10962.3ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=18 wall=245.3ms model=0.0ms tools=10796.6ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=19 wall=241.1ms model=0.0ms tools=11591.1ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=20 wall=242.5ms model=0.0ms tools=11416.9ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=21 wall=249.3ms model=0.0ms tools=11283.9ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=22 wall=230.8ms model=0.0ms tools=11368.1ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=23 wall=250.9ms model=0.0ms tools=12308.8ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=24 wall=245.9ms model=0.0ms tools=11672.1ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=25 wall=224.6ms model=0.0ms tools=10963.2ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=26 wall=249.2ms model=0.0ms tools=11640.7ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=27 wall=242.7ms model=0.0ms tools=11853.8ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=28 wall=225.5ms model=0.0ms tools=10208.9ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=29 wall=236.2ms model=0.0ms tools=11868.6ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+run=30 wall=232.3ms model=0.0ms tools=10146.6ms modelCalls=0 toolCalls=256 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~20215 workers=64 httpRetries=0
+
+===============================================
+ Comparison
+===============================================
+Token saving (provider-reported): N/A â?" replay mode reports no model token usage (run in 'live' mode for real numbers)
+Token saving (estimated, heuristic): 67.2% â?" offline chars/words estimate of tool payload size, not a tokenizer count
+Tool-call saving:   42.9%
+Model-call saving:  0.0%
+Wall-clock change:  129.7%
+Same final state:   True
+JSON report:        C:\Foundgine\benchmarks\AgentEndToEnd\Run1\artifacts\10000-customers\concurrency-064\agent-benchmark.json
+Markdown report:    C:\Foundgine\benchmarks\AgentEndToEnd\Run1\artifacts\10000-customers\concurrency-064\agent-benchmark.md
+
+============================================
+ Agent end-to-end benchmark completed
+============================================
+Reports written to: C:\Foundgine\benchmarks\AgentEndToEnd\Run1\artifacts
+Removing benchmark containers and PostgreSQL volume...

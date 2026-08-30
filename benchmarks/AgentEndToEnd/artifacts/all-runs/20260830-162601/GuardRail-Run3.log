@@ -1,0 +1,177 @@
+
+============================================
+ Foundgine Agent End-to-End Performance Run
+============================================
+Mode:                    replay
+Customer tiers:          1
+Concurrency:             1
+Runs per tier:           1
+Warmups per flow:        1
+Relationships/customer:  4
+Contracts/relationship:  3
+Transactions/contract:   4
+Reports:                 C:\Foundgine\benchmarks\AgentEndToEnd\Run3\artifacts
+
+Restoring benchmark projects...
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Determining projects to restore...
+  Restored C:\Foundgine\benchmarks\AgentEndToEnd\Run3\Foundgine.AgentEndToEnd.Run3.csproj (in 159 ms).
+  1 of 2 projects are up-to-date for restore.
+Removing benchmark containers and PostgreSQL volume...
+Removing benchmark containers and PostgreSQL volume...
+Starting PostgreSQL 17 benchmark container on host port 47155...
+ Network foundgine-agent-e2e-run3_default Creating 
+ Network foundgine-agent-e2e-run3_default Created 
+ Volume foundgine-agent-e2e-run3_agent-e2e-postgres-data Creating 
+ Volume foundgine-agent-e2e-run3_agent-e2e-postgres-data Created 
+ Container foundgine-agent-e2e-run3-postgres-1 Creating 
+ Container foundgine-agent-e2e-run3-postgres-1 Created 
+ Container foundgine-agent-e2e-run3-postgres-1 Starting 
+ Container foundgine-agent-e2e-run3-postgres-1 Started 
+Waiting for PostgreSQL...
+Seeding fixture: 1 customers ...
+Seeding 1 customers, 4 relationships, 12 contracts and 48 transactions...
+Seeded: 1 customers, 4 relationships, 12 contracts, 48 transactions.
+Benchmark graph for Customer 1: 4 relationships -> 12 contracts -> 48 transactions.
+Customer 1 is the deterministic benchmark target.
+Building and starting Foundgine warm benchmark API...
+ Image foundgine-agent-e2e-run3-foundgine-warm Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 622B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.18kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:9.0
+#3 DONE 0.2s
+
+#4 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:9.0
+#4 DONE 0.2s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [stage-1 1/4] FROM mcr.microsoft.com/dotnet/aspnet:9.0@sha256:b1201ee0ccf9a22c06844982296c1be40d5ff9c7685dc002729f204e63fb1730
+#6 resolve mcr.microsoft.com/dotnet/aspnet:9.0@sha256:b1201ee0ccf9a22c06844982296c1be40d5ff9c7685dc002729f204e63fb1730 0.0s done
+#6 DONE 0.0s
+
+#7 [build 1/5] FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:f190d2dd9eef2899c91ac323caa0bd2b39334a5400ba93013e5199da39dad940
+#7 resolve mcr.microsoft.com/dotnet/sdk:9.0@sha256:f190d2dd9eef2899c91ac323caa0bd2b39334a5400ba93013e5199da39dad940 0.0s done
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 2.56MB 0.2s done
+#8 DONE 0.2s
+
+#9 [build 2/5] WORKDIR /src
+#9 CACHED
+
+#10 [build 3/5] COPY . .
+#10 DONE 0.7s
+
+#11 [build 4/5] RUN dotnet restore     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj
+#11 0.946   Determining projects to restore...
+#11 2.047   Restored /src/src/Foundgine.Semantics/Foundgine.Semantics.csproj (in 111 ms).
+#11 2.047   Restored /src/src/Foundgine.Execution/Foundgine.Execution.csproj (in 111 ms).
+#11 2.047   Restored /src/src/Foundgine.Metadata/Foundgine.Metadata.csproj (in 111 ms).
+#11 2.047   Restored /src/src/Foundgine.Abstractions/Foundgine.Abstractions.csproj (in 98 ms).
+#11 2.053   Restored /src/src/Foundgine.Planning/Foundgine.Planning.csproj (in 1 ms).
+#11 3.880   Restored /src/src/Foundgine/Foundgine.csproj (in 1.97 sec).
+#11 3.880   Restored /src/src/Foundgine.Sql/Foundgine.Sql.csproj (in 1.83 sec).
+#11 3.881   Restored /src/src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj (in 1.97 sec).
+#11 3.881   Restored /src/src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj (in 1.97 sec).
+#11 3.882   Restored /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj (in 1.97 sec).
+#11 DONE 4.0s
+
+#12 [build 5/5] RUN dotnet publish     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj     -c Release     -o /app/publish
+#12 0.781   Determining projects to restore...
+#12 1.702   All projects are up-to-date for restore.
+#12 3.944   Foundgine.Abstractions -> /src/src/Foundgine.Abstractions/bin/Release/net9.0/Foundgine.Abstractions.dll
+#12 5.140   Foundgine.Semantics -> /src/src/Foundgine.Semantics/bin/Release/net9.0/Foundgine.Semantics.dll
+#12 5.567   Foundgine.Metadata -> /src/src/Foundgine.Metadata/bin/Release/net9.0/Foundgine.Metadata.dll
+#12 5.702   Foundgine.Planning -> /src/src/Foundgine.Planning/bin/Release/net9.0/Foundgine.Planning.dll
+#12 6.126   Foundgine.Execution -> /src/src/Foundgine.Execution/bin/Release/net9.0/Foundgine.Execution.dll
+#12 6.964   Foundgine -> /src/src/Foundgine/bin/Release/net9.0/Foundgine.dll
+#12 6.993   Foundgine.Sql -> /src/src/Foundgine.Sql/bin/Release/net9.0/Foundgine.Sql.dll
+#12 7.404   Foundgine.GraphQL.HotChocolate -> /src/src/Foundgine.GraphQL.HotChocolate/bin/Release/net9.0/Foundgine.GraphQL.HotChocolate.dll
+#12 7.818   Foundgine.GraphQL.HotChocolate.Mutations -> /src/src/Foundgine.GraphQL.HotChocolate.Mutations/bin/Release/net9.0/Foundgine.GraphQL.HotChocolate.Mutations.dll
+#12 8.725   Foundgine.CoffeeBeanery.BenchmarkApi -> /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/bin/Release/net9.0/Foundgine.CoffeeBeanery.BenchmarkApi.dll
+#12 8.784   Foundgine.CoffeeBeanery.BenchmarkApi -> /app/publish/
+#12 DONE 8.9s
+
+#13 [stage-1 3/4] WORKDIR /app
+#13 CACHED
+
+#14 [stage-1 2/4] RUN apt-get update     && apt-get install -y --no-install-recommends curl     && rm -rf /var/lib/apt/lists/*
+#14 CACHED
+
+#15 [stage-1 4/4] COPY --from=build /app/publish .
+#15 CACHED
+
+#16 exporting to image
+#16 exporting layers done
+#16 exporting manifest sha256:ee6d0f8070c12b76540b83ade68d392766f867a720eb346d24a2688de4fdfc44 0.0s done
+#16 exporting config sha256:6c9bec1d7057ca03986117a0c91c6b10ae6c135cb7e53da1efcf502267d7e743 0.0s done
+#16 exporting attestation manifest sha256:03823964a47f28ddd36623eea0cb63ff4b03bed3c134cf562729633866621221 0.0s done
+#16 exporting manifest list sha256:26922d5634c331780f6dece76237824213e5481301e6615fc6ce509d1a875fc8 0.0s done
+#16 naming to docker.io/library/foundgine-agent-e2e-run3-foundgine-warm:latest
+#16 naming to docker.io/library/foundgine-agent-e2e-run3-foundgine-warm:latest done
+#16 unpacking to docker.io/library/foundgine-agent-e2e-run3-foundgine-warm:latest 0.0s done
+#16 DONE 0.1s
+
+#17 resolving provenance for metadata file
+#17 DONE 0.0s
+ Image foundgine-agent-e2e-run3-foundgine-warm Built 
+ Container foundgine-agent-e2e-run3-foundgine-warm-1 Creating 
+ Container foundgine-agent-e2e-run3-foundgine-warm-1 Created 
+ Container foundgine-agent-e2e-run3-foundgine-warm-1 Starting 
+ Container foundgine-agent-e2e-run3-foundgine-warm-1 Started 
+Waiting for http://localhost:4302/health/ready ...
+
+>>> Concurrency tier: 1
+
+============================================
+ Agent benchmark: 1 customers / 1 runs
+============================================
+===============================================
+ Foundgine / Agent End-to-End Benchmark
+===============================================
+Scenario:     customer-exposure-review
+Mode:         replay
+Warmups:      1
+Measured:     1
+Customer count: 1
+Concurrency:  1
+Targets:      1
+Threshold:    48,000
+
+Fixture:      4 relationships / 12 contracts / 48 transactions
+Baseline:     Customer 1 Benchmark
+
+== Conventional application/AI flow ==
+run=1 wall=8.8ms model=0.0ms tools=7.1ms modelCalls=0 toolCalls=7 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~932 workers=1 httpRetries=0
+
+== Foundgine semantic flow ==
+run=1 wall=14.1ms model=0.0ms tools=11.8ms modelCalls=0 toolCalls=4 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~315 workers=1 httpRetries=0
+
+===============================================
+ Comparison
+===============================================
+Token saving (provider-reported): N/A â?" replay mode reports no model token usage (run in 'live' mode for real numbers)
+Token saving (estimated, heuristic): 66.2% â?" offline chars/words estimate of tool payload size, not a tokenizer count
+Tool-call saving:   42.9%
+Model-call saving:  0.0%
+Wall-clock change:  59.9%
+Same final state:   True
+JSON report:        C:\Foundgine\benchmarks\AgentEndToEnd\Run3\artifacts\00001-customers\concurrency-001\agent-benchmark.json
+Markdown report:    C:\Foundgine\benchmarks\AgentEndToEnd\Run3\artifacts\00001-customers\concurrency-001\agent-benchmark.md
+
+============================================
+ Agent end-to-end benchmark completed
+============================================
+Reports written to: C:\Foundgine\benchmarks\AgentEndToEnd\Run3\artifacts
+Removing benchmark containers and PostgreSQL volume...

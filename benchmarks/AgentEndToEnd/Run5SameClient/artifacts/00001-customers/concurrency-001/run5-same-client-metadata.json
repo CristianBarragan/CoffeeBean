@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 2,
+  "utc": "2026-08-30T04:28:12.6481802+00:00",
+  "runs": 1,
+  "warmups": 1,
+  "customers": 1,
+  "concurrency": 1,
+  "batchSize": 8,
+  "client": "Original Run5 HttpClient \u002B manual JSON-RPC MCP transport, unchanged",
+  "scenario": "Same client performs the same logical transfer task against conventional EF Core and Foundgine; only execution capability differs.",
+  "conventional": "batchSize individual transfer_funds MCP calls",
+  "foundgine": "one transfer_funds_batch MCP call containing batchSize logical transfers",
+  "correctness": "Each task contains the same number of logical transfers; final-state correctness must be verified separately by the fixture/DB contract.",
+  "samples": [
+    {
+      "implementation": "MCP \u002B EF Core (same client, individual calls)",
+      "Success": true,
+      "WallMs": 82.3147,
+      "InputBytes": 3184,
+      "OutputBytes": 1984,
+      "ToolCalls": 8,
+      "LogicalOps": 8,
+      "TotalPayloadBytes": 5168,
+      "error": null
+    },
+    {
+      "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
+      "Success": true,
+      "WallMs": 12.992,
+      "InputBytes": 1802,
+      "OutputBytes": 10330,
+      "ToolCalls": 1,
+      "LogicalOps": 8,
+      "TotalPayloadBytes": 12132,
+      "error": null
+    }
+  ]
+}

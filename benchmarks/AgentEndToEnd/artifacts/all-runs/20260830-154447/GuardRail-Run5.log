@@ -1,0 +1,7 @@
+Run 5 customer tiers must be: 10,100,1000,10000.
+At C:\Foundgine\benchmarks\AgentEndToEnd\Run5\run-run5.ps1:27 char:5
++     throw 'Run 5 customer tiers must be: 10,100,1000,10000.'
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Run 5 customer ...100,1000,10000.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Run 5 customer tiers must be: 10,100,1000,10000.
+ 

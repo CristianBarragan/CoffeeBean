@@ -1,0 +1,205 @@
+
+============================================
+ Foundgine Agent End-to-End Performance Run
+============================================
+Mode:                    replay
+Customer tiers:          10, 100, 1000, 10000
+Concurrency:             8, 16, 32, 64
+Runs per tier:           30, 30, 30, 30
+Warmups per flow:        5
+Relationships/customer:  4
+Contracts/relationship:  3
+Transactions/contract:   4
+Reports:                 C:\Foundgine\benchmarks\AgentEndToEnd\Run2\artifacts
+
+Restoring benchmark projects...
+  Determining projects to restore...
+  Restored C:\Foundgine\benchmarks\CoffeeBeanery.Performance\CoffeeBeanery.Database\CoffeeBeanery.Database.csproj (in 223 ms).
+  Determining projects to restore...
+  Restored C:\Foundgine\benchmarks\AgentEndToEnd\Run2\Foundgine.AgentEndToEnd.csproj (in 734 ms).
+Removing benchmark containers and PostgreSQL volume...
+Removing benchmark containers and PostgreSQL volume...
+Starting PostgreSQL 17 benchmark container on host port 47972...
+ Network foundgine-agent-e2e_default Creating 
+ Network foundgine-agent-e2e_default Created 
+ Volume foundgine-agent-e2e_agent-e2e-postgres-data Creating 
+ Volume foundgine-agent-e2e_agent-e2e-postgres-data Created 
+ Container foundgine-agent-e2e-postgres-1 Creating 
+ Container foundgine-agent-e2e-postgres-1 Created 
+ Container foundgine-agent-e2e-postgres-1 Starting 
+ Container foundgine-agent-e2e-postgres-1 Started 
+Waiting for PostgreSQL...
+Seeding fixture: 10 customers ...
+Seeding 10 customers, 40 relationships, 120 contracts and 480 transactions...
+Seeded: 10 customers, 40 relationships, 120 contracts, 480 transactions.
+Benchmark graph for Customer 1: 4 relationships -> 12 contracts -> 48 transactions.
+Customer 1 is the deterministic benchmark target.
+Building and starting Foundgine warm benchmark API...
+ Image foundgine-agent-e2e-foundgine-warm Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 612B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.18kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:9.0
+#3 ...
+
+#4 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:9.0
+#4 DONE 0.3s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:9.0
+#3 DONE 0.3s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 2B done
+#5 DONE 0.0s
+
+#6 [stage-1 1/4] FROM mcr.microsoft.com/dotnet/aspnet:9.0@sha256:b1201ee0ccf9a22c06844982296c1be40d5ff9c7685dc002729f204e63fb1730
+#6 resolve mcr.microsoft.com/dotnet/aspnet:9.0@sha256:b1201ee0ccf9a22c06844982296c1be40d5ff9c7685dc002729f204e63fb1730 0.0s done
+#6 DONE 0.0s
+
+#7 [build 1/5] FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:f190d2dd9eef2899c91ac323caa0bd2b39334a5400ba93013e5199da39dad940
+#7 resolve mcr.microsoft.com/dotnet/sdk:9.0@sha256:f190d2dd9eef2899c91ac323caa0bd2b39334a5400ba93013e5199da39dad940 0.0s done
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 2.07MB 0.2s done
+#8 DONE 0.3s
+
+#9 [build 2/5] WORKDIR /src
+#9 CACHED
+
+#10 [build 3/5] COPY . .
+#10 DONE 0.4s
+
+#11 [build 4/5] RUN dotnet restore     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj
+#11 0.596   Determining projects to restore...
+#11 0.600   Skipping project "/src/src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" because it was not found.
+#11 0.600   Skipping project "/src/src/Foundgine.Execution/Foundgine.Execution.csproj" because it was not found.
+#11 0.600   Skipping project "/src/src/Foundgine.Metadata/Foundgine.Metadata.csproj" because it was not found.
+#11 0.600   Skipping project "/src/src/Foundgine.Planning/Foundgine.Planning.csproj" because it was not found.
+#11 0.600   Skipping project "/src/src/Foundgine.Semantics/Foundgine.Semantics.csproj" because it was not found.
+#11 0.600   Skipping project "/src/src/Foundgine.Sql/Foundgine.Sql.csproj" because it was not found.
+#11 0.600   Skipping project "/src/src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" because it was not found.
+#11 0.600   Skipping project "/src/src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj" because it was not found.
+#11 0.602   Skipping project "/src/src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" because it was not found.
+#11 0.602   Skipping project "/src/src/Foundgine.Execution/Foundgine.Execution.csproj" because it was not found.
+#11 0.602   Skipping project "/src/src/Foundgine.Metadata/Foundgine.Metadata.csproj" because it was not found.
+#11 0.602   Skipping project "/src/src/Foundgine.Planning/Foundgine.Planning.csproj" because it was not found.
+#11 0.602   Skipping project "/src/src/Foundgine.Semantics/Foundgine.Semantics.csproj" because it was not found.
+#11 0.602   Skipping project "/src/src/Foundgine.Sql/Foundgine.Sql.csproj" because it was not found.
+#11 0.602   Skipping project "/src/src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" because it was not found.
+#11 0.602   Skipping project "/src/src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj" because it was not found.
+#11 2.649   Restored /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj (in 1.83 sec).
+#11 DONE 2.7s
+
+#12 [build 5/5] RUN dotnet publish     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj     -c Release     -o /app/publish
+#12 0.873   Determining projects to restore...
+#12 0.878   Skipping project "/src/src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" because it was not found.
+#12 0.878   Skipping project "/src/src/Foundgine.Execution/Foundgine.Execution.csproj" because it was not found.
+#12 0.878   Skipping project "/src/src/Foundgine.Metadata/Foundgine.Metadata.csproj" because it was not found.
+#12 0.878   Skipping project "/src/src/Foundgine.Planning/Foundgine.Planning.csproj" because it was not found.
+#12 0.878   Skipping project "/src/src/Foundgine.Semantics/Foundgine.Semantics.csproj" because it was not found.
+#12 0.878   Skipping project "/src/src/Foundgine.Sql/Foundgine.Sql.csproj" because it was not found.
+#12 0.878   Skipping project "/src/src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" because it was not found.
+#12 0.878   Skipping project "/src/src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj" because it was not found.
+#12 0.881   Skipping project "/src/src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" because it was not found.
+#12 0.881   Skipping project "/src/src/Foundgine.Execution/Foundgine.Execution.csproj" because it was not found.
+#12 0.881   Skipping project "/src/src/Foundgine.Metadata/Foundgine.Metadata.csproj" because it was not found.
+#12 0.881   Skipping project "/src/src/Foundgine.Planning/Foundgine.Planning.csproj" because it was not found.
+#12 0.881   Skipping project "/src/src/Foundgine.Semantics/Foundgine.Semantics.csproj" because it was not found.
+#12 0.881   Skipping project "/src/src/Foundgine.Sql/Foundgine.Sql.csproj" because it was not found.
+#12 0.881   Skipping project "/src/src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" because it was not found.
+#12 0.881   Skipping project "/src/src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj" because it was not found.
+#12 1.269   All projects are up-to-date for restore.
+#12 1.637 /usr/share/dotnet/sdk/9.0.317/Microsoft.Common.CurrentVersion.targets(2189,5): warning MSB9008: The referenced project ../../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj does not exist. [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs(1,17): error CS0234: The type or namespace name 'Abstractions' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs(2,17): error CS0234: The type or namespace name 'Metadata' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(1,17): error CS0234: The type or namespace name 'Abstractions' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(2,17): error CS0234: The type or namespace name 'Semantics' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/GraphQLResultShaper.cs(1,17): error CS0234: The type or namespace name 'Abstractions' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/GraphQLResultShaper.cs(2,17): error CS0234: The type or namespace name 'Execution' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/GraphQLResultShaper.cs(3,17): error CS0234: The type or namespace name 'GraphQL' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/GraphQLResultShaper.cs(4,17): error CS0234: The type or namespace name 'Semantics' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/GraphQLResultShaper.cs(5,17): error CS0234: The type or namespace name 'Semantics' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/GraphQLResultShaper.cs(6,17): error CS0234: The type or namespace name 'Planning' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(13,36): error CS0234: The type or namespace name 'Execution' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(2,17): error CS0234: The type or namespace name 'Execution' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(3,17): error CS0234: The type or namespace name 'Execution' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(4,17): error CS0234: The type or namespace name 'GraphQL' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(5,17): error CS0234: The type or namespace name 'Metadata' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(6,17): error CS0234: The type or namespace name 'Planning' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(7,17): error CS0234: The type or namespace name 'Planning' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(8,17): error CS0234: The type or namespace name 'Semantics' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(9,17): error CS0234: The type or namespace name 'Semantics' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(10,17): error CS0234: The type or namespace name 'Sql' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(11,17): error CS0234: The type or namespace name 'Sql' does not exist in the namespace 'Foundgine' (are you missing an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(193,47): error CS0246: The type or namespace name 'IProviderPlanCache' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs(8,21): error CS0246: The type or namespace name 'MetadataRegistry' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/GraphQLResultShaper.cs(13,9): error CS0246: The type or namespace name 'GraphQLQueryAdaptation' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/GraphQLResultShaper.cs(14,9): error CS0246: The type or namespace name 'SemanticModel' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/GraphQLResultShaper.cs(15,9): error CS0246: The type or namespace name 'ExecutionResult' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/GraphQLResultShaper.cs(16,9): error CS0246: The type or namespace name 'SemanticPlan' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/GraphQLResultShaper.cs(32,37): error CS0246: The type or namespace name 'SemanticResultNode' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/GraphQLResultShaper.cs(32,62): error CS0246: The type or namespace name 'GraphQLResultShape' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(17,21): error CS0246: The type or namespace name 'SemanticModel' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(8,30): error CS0246: The type or namespace name 'EntityId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(9,30): error CS0246: The type or namespace name 'EntityId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs(77,9): error CS0246: The type or namespace name 'EntityId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs(76,20): error CS0246: The type or namespace name 'EntityMetadata' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(10,30): error CS0246: The type or namespace name 'EntityId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(11,30): error CS0246: The type or namespace name 'EntityId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(197,40): error CS0246: The type or namespace name 'ProviderPlan' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(13,30): error CS0246: The type or namespace name 'RelationshipId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(14,30): error CS0246: The type or namespace name 'RelationshipId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(15,30): error CS0246: The type or namespace name 'RelationshipId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs(105,9): error CS0246: The type or namespace name 'RelationshipId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs(106,9): error CS0246: The type or namespace name 'EntityId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs(107,9): error CS0246: The type or namespace name 'EntityId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs(104,20): error CS0246: The type or namespace name 'RelationshipMetadata' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(203,33): error CS0246: The type or namespace name 'ProviderPlan' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+#12 ERROR: process "/bin/sh -c dotnet publish     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj     -c Release     -o /app/publish" did not complete successfully: exit code: 1
+------
+ > [build 5/5] RUN dotnet publish     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj     -c Release     -o /app/publish:
+3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(11,30): error CS0246: The type or namespace name 'EntityId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(197,40): error CS0246: The type or namespace name 'ProviderPlan' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(13,30): error CS0246: The type or namespace name 'RelationshipId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(14,30): error CS0246: The type or namespace name 'RelationshipId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeanerySemanticModel.cs(15,30): error CS0246: The type or namespace name 'RelationshipId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs(105,9): error CS0246: The type or namespace name 'RelationshipId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs(106,9): error CS0246: The type or namespace name 'EntityId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs(107,9): error CS0246: The type or namespace name 'EntityId' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/CoffeeBeaneryMetadata.cs(104,20): error CS0246: The type or namespace name 'RelationshipMetadata' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+3.575 /src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Program.cs(203,33): error CS0246: The type or namespace name 'ProviderPlan' could not be found (are you missing a using directive or an assembly reference?) [/src/benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj]
+------
+Dockerfile:10
+System.Management.Automation.RemoteException
+--------------------
+System.Management.Automation.RemoteException
+   9 |     
+System.Management.Automation.RemoteException
+  10 | >>> RUN dotnet publish \
+System.Management.Automation.RemoteException
+  11 | >>>     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj \
+System.Management.Automation.RemoteException
+  12 | >>>     -c Release \
+System.Management.Automation.RemoteException
+  13 | >>>     -o /app/publish
+System.Management.Automation.RemoteException
+  14 |     
+System.Management.Automation.RemoteException
+--------------------
+System.Management.Automation.RemoteException
+failed to solve: process "/bin/sh -c dotnet publish     benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj     -c Release     -o /app/publish" did not complete successfully: exit code: 1
+System.Management.Automation.RemoteException
+Removing benchmark containers and PostgreSQL volume...
+docker compose failed with exit code 1. Arguments: build foundgine-warm
+At C:\Foundgine\benchmarks\AgentEndToEnd\Run2\run-agent-end-to-end.ps1:124 char:9
++         throw "docker compose failed with exit code $LASTEXITCODE. Ar ...
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (docker compose ... foundgine-warm:String) [], RuntimeException
+    + FullyQualifiedErrorId : docker compose failed with exit code 1. Arguments: build foundgine-warm
+ 

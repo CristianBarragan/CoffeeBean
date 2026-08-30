@@ -1,0 +1,19 @@
+Scenario: customer-exposure-review-query-mutation-query-mutation
+Mode: replay; concurrency=1; warmups=1; runs=1; fixtureCustomer=1
+Fixture: relationships=4, contracts=12, transactions=48, exposure=48,240.00
+Conventional run=1: concurrency=1 workers=1 success=1 failed=0 rps=63.0 avgWall=15.9ms p50=15.9ms p95=15.9ms p99=15.9 maxWall=15.9ms toolCalls/flow=9.0 estToolInputTokens=61 estToolOutputTokens=783 estContextLoadTokens=1150 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Foundgine run=1: concurrency=1 workers=1 success=1 failed=0 rps=54.0 avgWall=18.5ms p50=18.5ms p95=18.5ms p99=18.5 maxWall=18.5ms toolCalls/flow=6.0 estToolInputTokens=33 estToolOutputTokens=156 estContextLoadTokens=502 providerTokens=N/A activeHttpPeak=1 httpRetries=0
+
+Concurrency: 1
+Estimated context-load saving: 56.3%
+Estimated tokens/run — Conventional: input=61, output=783, context=1150
+Estimated tokens/run — Foundgine:    input=33, output=156, context=502
+Provider input-token saving: N/A — replay mode
+Provider total-token saving: N/A — replay mode
+Agent/tool round-trip saving: 33.3%
+Agent/tool payload saving: 77.8%
+Tool-call saving: 33.3%
+Expected final state verified: True
+Verification failures: 0
+Expected state: C:\Foundgine\benchmarks\AgentEndToEnd\Run2\artifacts\00001-customers\concurrency-001\expected-state.json
+Reports: C:\Foundgine\benchmarks\AgentEndToEnd\Run2\artifacts\00001-customers\concurrency-001\agent-benchmark.json; C:\Foundgine\benchmarks\AgentEndToEnd\Run2\artifacts\00001-customers\concurrency-001\agent-benchmark.md

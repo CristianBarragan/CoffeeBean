@@ -1,0 +1,7 @@
+Run 4 uses the Run 2 customer tiers: 10,100,1000,10000.
+At C:\Foundgine\benchmarks\AgentEndToEnd\Run4\run-run4.ps1:20 char:89
++ ... 000,10000'){throw 'Run 4 uses the Run 2 customer tiers: 10,100,1000,1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Run 4 uses the ...100,1000,10000.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Run 4 uses the Run 2 customer tiers: 10,100,1000,10000.
+ 

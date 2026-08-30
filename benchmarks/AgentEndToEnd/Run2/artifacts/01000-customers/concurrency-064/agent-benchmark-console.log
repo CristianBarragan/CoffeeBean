@@ -1,0 +1,107 @@
+Scenario: customer-exposure-review-query-mutation-query-mutation
+Mode: replay; concurrency=64; warmups=5; runs=30; fixtureCustomer=1
+Fixture: relationships=4, contracts=12, transactions=48, exposure=48,240.00
+Conventional run=1: concurrency=64 workers=64 success=64 failed=0 rps=647.4 avgWall=81.8ms p50=86.1ms p95=96.0ms p99=98.3 maxWall=98.9ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=2: concurrency=64 workers=64 success=64 failed=0 rps=642.9 avgWall=79.1ms p50=79.4ms p95=96.1ms p99=97.6 maxWall=99.6ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=3: concurrency=64 workers=64 success=64 failed=0 rps=619.9 avgWall=85.1ms p50=85.9ms p95=100.6ms p99=102.8 maxWall=103.2ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=4: concurrency=64 workers=64 success=64 failed=0 rps=692.2 avgWall=77.4ms p50=79.2ms p95=90.0ms p99=91.4 maxWall=92.5ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=5: concurrency=64 workers=64 success=64 failed=0 rps=670.1 avgWall=78.2ms p50=80.1ms p95=94.2ms p99=95.4 maxWall=95.5ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=6: concurrency=64 workers=64 success=64 failed=0 rps=657.0 avgWall=83.3ms p50=84.3ms p95=94.5ms p99=96.5 maxWall=97.4ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=7: concurrency=64 workers=64 success=64 failed=0 rps=605.0 avgWall=84.9ms p50=85.3ms p95=102.6ms p99=105.7 maxWall=105.8ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=8: concurrency=64 workers=64 success=64 failed=0 rps=677.6 avgWall=78.4ms p50=78.7ms p95=91.6ms p99=94.2 maxWall=94.5ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=9: concurrency=64 workers=64 success=64 failed=0 rps=681.5 avgWall=76.7ms p50=79.1ms p95=90.3ms p99=93.8 maxWall=93.9ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=10: concurrency=64 workers=64 success=64 failed=0 rps=722.8 avgWall=75.0ms p50=77.9ms p95=86.6ms p99=88.2 maxWall=88.5ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=11: concurrency=64 workers=64 success=64 failed=0 rps=695.0 avgWall=73.7ms p50=73.7ms p95=89.6ms p99=91.6 maxWall=92.1ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=12: concurrency=64 workers=64 success=64 failed=0 rps=688.5 avgWall=76.7ms p50=78.2ms p95=88.6ms p99=92.1 maxWall=92.9ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=13: concurrency=64 workers=64 success=64 failed=0 rps=678.2 avgWall=78.3ms p50=79.2ms p95=92.2ms p99=93.5 maxWall=94.4ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=14: concurrency=64 workers=64 success=64 failed=0 rps=673.5 avgWall=79.6ms p50=83.5ms p95=93.0ms p99=94.0 maxWall=95.0ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=15: concurrency=64 workers=64 success=64 failed=0 rps=726.3 avgWall=72.4ms p50=72.9ms p95=84.6ms p99=88.0 maxWall=88.1ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=16: concurrency=64 workers=64 success=64 failed=0 rps=718.0 avgWall=74.8ms p50=76.2ms p95=86.8ms p99=88.6 maxWall=89.1ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=17: concurrency=64 workers=64 success=64 failed=0 rps=573.0 avgWall=90.3ms p50=94.9ms p95=108.0ms p99=110.6 maxWall=111.7ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=18: concurrency=64 workers=64 success=64 failed=0 rps=697.6 avgWall=75.7ms p50=77.5ms p95=89.0ms p99=91.6 maxWall=91.7ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=19: concurrency=64 workers=64 success=64 failed=0 rps=694.2 avgWall=78.2ms p50=80.2ms p95=87.9ms p99=90.7 maxWall=92.2ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=20: concurrency=64 workers=64 success=64 failed=0 rps=706.2 avgWall=75.1ms p50=75.9ms p95=88.3ms p99=89.7 maxWall=90.6ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=21: concurrency=64 workers=64 success=64 failed=0 rps=695.2 avgWall=75.0ms p50=74.7ms p95=88.1ms p99=89.8 maxWall=92.1ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=22: concurrency=64 workers=64 success=64 failed=0 rps=705.1 avgWall=77.0ms p50=78.6ms p95=87.9ms p99=90.1 maxWall=90.8ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=23: concurrency=64 workers=64 success=64 failed=0 rps=695.5 avgWall=79.2ms p50=81.1ms p95=89.5ms p99=91.3 maxWall=92.0ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=24: concurrency=64 workers=64 success=64 failed=0 rps=653.6 avgWall=85.0ms p50=87.5ms p95=95.6ms p99=97.7 maxWall=97.9ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=25: concurrency=64 workers=64 success=64 failed=0 rps=652.8 avgWall=80.8ms p50=85.8ms p95=97.2ms p99=97.9 maxWall=98.0ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=26: concurrency=64 workers=64 success=64 failed=0 rps=680.4 avgWall=78.4ms p50=78.2ms p95=91.9ms p99=94.1 maxWall=94.1ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=27: concurrency=64 workers=64 success=64 failed=0 rps=621.9 avgWall=87.8ms p50=88.9ms p95=101.8ms p99=102.8 maxWall=102.9ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=28: concurrency=64 workers=64 success=64 failed=0 rps=677.9 avgWall=78.8ms p50=82.3ms p95=91.4ms p99=93.7 maxWall=94.4ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=29: concurrency=64 workers=64 success=64 failed=0 rps=653.6 avgWall=78.1ms p50=79.3ms p95=96.4ms p99=97.5 maxWall=97.9ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Conventional run=30: concurrency=64 workers=64 success=64 failed=0 rps=640.8 avgWall=84.4ms p50=85.1ms p95=94.3ms p99=97.7 maxWall=99.9ms toolCalls/flow=9.0 estToolInputTokens=63 estToolOutputTokens=814 estContextLoadTokens=1184 providerTokens=N/A activeHttpPeak=0 httpRetries=0
+Foundgine run=1: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=3.1ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=5.1ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=37 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=2: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=2.9ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=8.4ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=50 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=3: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=6.2ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=9.9ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=57 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=4: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=3.8ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=8.8ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=64 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=5: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=4.5ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=6.7ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=46 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=6: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=3.1ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=7.4ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=44 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=7: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=2.8ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=4.6ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=40 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=8: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=5.9ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=8.0ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=56 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=9: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=3.0ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=6.5ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=53 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=10: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=2.6ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=4.2ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=33 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=11: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=3.7ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=6.7ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=42 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=12: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=2.7ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=4.8ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=44 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=13: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=9.5ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=16.1ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=64 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=14: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=4.3ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=7.8ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=53 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=15: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=2.5ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=4.2ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=46 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=16: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=3.5ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=6.3ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=54 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=17: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=5.0ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=8.0ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=59 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=18: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=3.4ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=5.5ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=56 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=19: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=3.7ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=8.0ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=54 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=20: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=3.8ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=5.5ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=62 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=21: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=4.5ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=8.1ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=50 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=22: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=2.7ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=4.2ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=51 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=23: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=4.3ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=8.5ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=47 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=24: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=2.9ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=4.6ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=48 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=25: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=2.8ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=5.0ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=56 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=26: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=4.5ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=6.9ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=62 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=27: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=4.0ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=8.2ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=47 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=28: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=2.9ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=4.3ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=57 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=29: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=3.6ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=8.5ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=36 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+Foundgine run=30: concurrency=64 workers=64 success=0 failed=64 rps=0.0 avgWall=3.1ms p50=0.0ms p95=0.0ms p99=0.0 maxWall=7.7ms toolCalls/flow=1.0 estToolInputTokens=1 estToolOutputTokens=42 estContextLoadTokens=357 providerTokens=N/A activeHttpPeak=55 httpRetries=0
+  error=HttpRequest count=64 sample="Response status code does not indicate success: 400 (Bad Request)."
+
+Concurrency: 64
+Estimated context-load saving: 69.9%
+Estimated tokens/run — Conventional: input=63, output=814, context=1184
+Estimated tokens/run — Foundgine:    input=1, output=42, context=357
+Provider input-token saving: N/A — replay mode
+Provider total-token saving: N/A — replay mode
+Agent/tool round-trip saving: 88.9%
+Agent/tool payload saving: 95.2%
+Tool-call saving: 88.9%
+Expected final state verified: False
+Verification failures: 1920
+Expected state: C:\Foundgine\benchmarks\AgentEndToEnd\Run2\artifacts\01000-customers\concurrency-064\expected-state.json
+Reports: C:\Foundgine\benchmarks\AgentEndToEnd\Run2\artifacts\01000-customers\concurrency-064\agent-benchmark.json; C:\Foundgine\benchmarks\AgentEndToEnd\Run2\artifacts\01000-customers\concurrency-064\agent-benchmark.md

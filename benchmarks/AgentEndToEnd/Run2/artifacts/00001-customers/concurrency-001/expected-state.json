@@ -1,0 +1,33 @@
+[
+  {
+    "CustomerId": 1,
+    "Baseline": {
+      "CustomerId": 1,
+      "CustomerKey": "a41c0fea-0a7b-5282-bc1e-84d3df2a1f35",
+      "FullName": "Customer 1 Benchmark",
+      "RelationshipCount": 4,
+      "ContractCount": 12,
+      "TransactionCount": 48,
+      "Exposure": 48240
+    },
+    "Intermediate": {
+      "CustomerId": 1,
+      "CustomerKey": "a41c0fea-0a7b-5282-bc1e-84d3df2a1f35",
+      "FullName": "Customer 1 Benchmark | Reviewed",
+      "RelationshipCount": 4,
+      "ContractCount": 12,
+      "TransactionCount": 48,
+      "Exposure": 48240
+    },
+    "Expected": {
+      "CustomerId": 1,
+      "CustomerKey": "a41c0fea-0a7b-5282-bc1e-84d3df2a1f35",
+      "FullName": "Customer 1 Benchmark | Reviewed | Remediation Complete",
+      "RelationshipCount": 4,
+      "ContractCount": 12,
+      "TransactionCount": 48,
+      "Exposure": 48240
+    },
+    "ReviewRuleApplied": true
+  }
+]

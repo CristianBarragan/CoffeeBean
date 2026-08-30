@@ -1,0 +1,100 @@
+{
+  "GeneratedAtUtc": "2026-08-30T04:27:33.8322399+00:00",
+  "Scenario": "customer-exposure-review",
+  "Mode": "replay",
+  "Configuration": {
+    "Runs": 1,
+    "Warmups": 1,
+    "CustomerId": 1,
+    "ExposureThreshold": 48000,
+    "BaselineFullName": "Customer 1 Benchmark",
+    "ReviewedFullName": "Customer 1 Benchmark | Reviewed",
+    "CustomerCount": 1,
+    "Concurrency": 1
+  },
+  "Fixture": {
+    "CustomerId": 1,
+    "CustomerKey": "a41c0fea-0a7b-5282-bc1e-84d3df2a1f35",
+    "FullName": "Customer 1 Benchmark",
+    "RelationshipCount": 4,
+    "ContractCount": 12,
+    "TransactionCount": 48,
+    "Exposure": 48240
+  },
+  "Results": [
+    {
+      "Run": 1,
+      "Flow": "Conventional application/AI flow",
+      "WallClockMs": 8.8372,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 7.1441,
+      "ModelCalls": 0,
+      "ToolCalls": 7,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 36,
+      "EstimatedToolOutputTokens": 712,
+      "EstimatedContextLoadTokens": 932,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": null
+    },
+    {
+      "Run": 1,
+      "Flow": "Foundgine semantic flow",
+      "WallClockMs": 14.1277,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 11.849400000000001,
+      "ModelCalls": 0,
+      "ToolCalls": 4,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 19,
+      "EstimatedToolOutputTokens": 112,
+      "EstimatedContextLoadTokens": 315,
+      "FinalState": "{\u0022CustomerId\u0022:1,\u0022CustomerKey\u0022:\u0022a41c0fea-0a7b-5282-bc1e-84d3df2a1f35\u0022,\u0022FullName\u0022:\u0022Customer 1 Benchmark | Reviewed\u0022,\u0022RelationshipCount\u0022:4,\u0022ContractCount\u0022:12,\u0022TransactionCount\u0022:48,\u0022Exposure\u0022:48240}",
+      "Trace": null
+    }
+  ],
+  "Comparison": {
+    "Conventional": {
+      "WallClockMs": 8.8372,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 7.1441,
+      "ModelCalls": 0,
+      "ToolCalls": 7,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 36,
+      "EstimatedToolOutputTokens": 712,
+      "EstimatedContextLoadTokens": 932
+    },
+    "Foundgine": {
+      "WallClockMs": 14.1277,
+      "ModelTimeMs": 0,
+      "ToolTimeMs": 11.849400000000001,
+      "ModelCalls": 0,
+      "ToolCalls": 4,
+      "InputTokens": 0,
+      "OutputTokens": 0,
+      "TotalTokens": 0,
+      "CachedInputTokens": 0,
+      "EstimatedToolInputTokens": 19,
+      "EstimatedToolOutputTokens": 112,
+      "EstimatedContextLoadTokens": 315
+    },
+    "InputTokenSavingPercent": 0,
+    "TotalTokenSavingPercent": 0,
+    "ToolCallSavingPercent": 42.857142857142854,
+    "ModelCallSavingPercent": 0,
+    "WallClockChangePercent": 59.86624722762869,
+    "EstimatedContextLoadSavingPercent": 66.20171673819742,
+    "HasProviderTokenData": false,
+    "SameFinalState": true
+  }
+}

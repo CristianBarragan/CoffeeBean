@@ -1,0 +1,90 @@
+===============================================
+ Foundgine / Agent End-to-End Benchmark
+===============================================
+Scenario:     customer-exposure-review
+Mode:         replay
+Warmups:      5
+Measured:     30
+Customer count: 10
+Concurrency:  8
+Targets:      1, 2, 3, 4, 5, 6, 7, 8
+Threshold:    48,000
+
+Fixture:      4 relationships / 12 contracts / 48 transactions
+Baseline:     Customer 1 Benchmark
+
+== Conventional application/AI flow ==
+run=1 wall=15.6ms model=0.0ms tools=98.0ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=2 wall=11.3ms model=0.0ms tools=71.0ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=3 wall=13.7ms model=0.0ms tools=82.4ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=4 wall=13.7ms model=0.0ms tools=81.1ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=5 wall=12.6ms model=0.0ms tools=71.6ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=6 wall=12.7ms model=0.0ms tools=77.4ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=7 wall=12.3ms model=0.0ms tools=73.0ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=8 wall=13.0ms model=0.0ms tools=80.0ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=9 wall=11.3ms model=0.0ms tools=67.3ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=10 wall=14.0ms model=0.0ms tools=83.6ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=11 wall=13.9ms model=0.0ms tools=81.5ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=12 wall=12.4ms model=0.0ms tools=75.9ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=13 wall=13.9ms model=0.0ms tools=85.1ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=14 wall=13.2ms model=0.0ms tools=79.6ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=15 wall=14.5ms model=0.0ms tools=88.6ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=16 wall=13.6ms model=0.0ms tools=82.1ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=17 wall=14.6ms model=0.0ms tools=81.2ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=18 wall=14.5ms model=0.0ms tools=89.3ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=19 wall=13.7ms model=0.0ms tools=85.0ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=20 wall=12.5ms model=0.0ms tools=72.5ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=21 wall=12.8ms model=0.0ms tools=77.3ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=22 wall=12.8ms model=0.0ms tools=77.6ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=23 wall=13.8ms model=0.0ms tools=87.8ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=24 wall=14.0ms model=0.0ms tools=86.3ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=25 wall=13.4ms model=0.0ms tools=82.1ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=26 wall=13.5ms model=0.0ms tools=78.2ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=27 wall=15.6ms model=0.0ms tools=91.8ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=28 wall=13.0ms model=0.0ms tools=78.5ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=29 wall=13.1ms model=0.0ms tools=83.4ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+run=30 wall=13.7ms model=0.0ms tools=81.9ms modelCalls=0 toolCalls=56 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~7568 workers=8 httpRetries=0
+
+== Foundgine semantic flow ==
+run=1 wall=16.3ms model=0.0ms tools=99.0ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=2 wall=15.8ms model=0.0ms tools=91.2ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=3 wall=18.4ms model=0.0ms tools=108.4ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=4 wall=15.7ms model=0.0ms tools=99.9ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=5 wall=15.3ms model=0.0ms tools=97.6ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=6 wall=18.2ms model=0.0ms tools=117.6ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=7 wall=14.6ms model=0.0ms tools=87.7ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=8 wall=17.0ms model=0.0ms tools=105.4ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=9 wall=18.4ms model=0.0ms tools=114.9ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=10 wall=16.4ms model=0.0ms tools=100.8ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=11 wall=15.2ms model=0.0ms tools=92.9ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=12 wall=14.9ms model=0.0ms tools=85.5ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=13 wall=16.5ms model=0.0ms tools=107.2ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=14 wall=14.2ms model=0.0ms tools=88.6ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=15 wall=16.3ms model=0.0ms tools=97.1ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=16 wall=15.0ms model=0.0ms tools=91.2ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=17 wall=16.4ms model=0.0ms tools=104.6ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=18 wall=14.6ms model=0.0ms tools=91.8ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=19 wall=19.0ms model=0.0ms tools=107.1ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=20 wall=18.8ms model=0.0ms tools=118.1ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=21 wall=13.3ms model=0.0ms tools=82.4ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=22 wall=21.3ms model=0.0ms tools=119.6ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=23 wall=17.3ms model=0.0ms tools=105.0ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=24 wall=18.8ms model=0.0ms tools=116.4ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=25 wall=14.8ms model=0.0ms tools=91.2ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=26 wall=16.5ms model=0.0ms tools=96.4ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=27 wall=16.7ms model=0.0ms tools=107.4ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=28 wall=19.1ms model=0.0ms tools=114.1ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=29 wall=19.8ms model=0.0ms tools=119.0ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+run=30 wall=16.2ms model=0.0ms tools=97.2ms modelCalls=0 toolCalls=32 inputTokens=0 outputTokens=0 totalTokens=0 estContextLoadTokens~2520 workers=8 httpRetries=0
+
+===============================================
+ Comparison
+===============================================
+Token saving (provider-reported): N/A — replay mode reports no model token usage (run in 'live' mode for real numbers)
+Token saving (estimated, heuristic): 66.7% — offline chars/words estimate of tool payload size, not a tokenizer count
+Tool-call saving:   42.9%
+Model-call saving:  0.0%
+Wall-clock change:  24.4%
+Same final state:   True
+JSON report:        C:\Foundgine\benchmarks\AgentEndToEnd\Run1\artifacts\00010-customers\concurrency-008\agent-benchmark.json
+Markdown report:    C:\Foundgine\benchmarks\AgentEndToEnd\Run1\artifacts\00010-customers\concurrency-008\agent-benchmark.md
