@@ -6,7 +6,7 @@
 # [Foundgine.io](https://cristianbarragan.github.io/Foundgine/docs-site/index.html)
 
 [![NuGet Version](https://img.shields.io/nuget/v/Foundgine?label=NuGet%20Version)](https://www.nuget.org/packages/Foundgine/)
-[![NuGet Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fcristianbarragan.github.io%2FFoundgine%2Fdocs-site%2Fassets%2Ffoundgine-nuget-downloads.json&label=NuGet%20Downloads)](https://www.nuget.org/packages?q=Foundgine)
+[![NuGet Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fcristianbarragan.github.io%2FFoundgine%2Fdocs-site%2Fassets%2Ffoundgine-nuget-downloads.json)](https://www.nuget.org/packages?q=Foundgine)
 [![Unit Tests](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=unit-tests&label=Unit%20Tests)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
 [![Integration Tests](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=integration-tests&label=Integration%20Tests)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
 [![Performance](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=benchmark-build&label=Performance)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
@@ -144,6 +144,11 @@ Evidence
 
 ### Retrieval is a parallel candidate-discovery stage
 
+<p align="center"><img src="docs/assets/retrieval-strategy-boundary.svg" alt="Foundgine.Sql RetrievalStrategy boundary: Relational, Fuzzy (pg_trgm), FullText (tsvector), Search/BM25 (pg_search, optional), GraphSimilarity (Apache AGE, optional), and Vector (reserved, always throws NotSupportedException on this boundary). All strategies converge on ranked candidates and provenance, then ordinary semantic resolution and authorization." width="100%"></p>
+
+<details>
+<summary>Text version</summary>
+
 ```text
                     Retrieval
                        │
@@ -166,7 +171,9 @@ Evidence
                   Authorization
 ```
 
-Search and graph mechanisms are therefore **not alternate authorization or execution paths**. They are retrieval strategies that help resolve ambiguous references.
+</details>
+
+Search and graph mechanisms are therefore **not alternate authorization or execution paths**. They are retrieval strategies that help resolve ambiguous references. (Token-level `pgvector` similarity for free-form lexical grounding is a separate, parallel boundary — see [`docs/LEXICAL-GROUNDING.md`](docs/LEXICAL-GROUNDING.md).)
 
 ### The security-preserving lifecycle
 
@@ -365,12 +372,14 @@ Writes are where this matters most, because the cost of a wrong authorization de
 | `Foundgine.GraphQL.HotChocolate.Mutations` | GraphQL mutation adapter |
 | `Foundgine.GraphQL.HotChocolate.MutationExecution` | Secure GraphQL mutation execution |
 | `Foundgine.Security.Authority` | Optional authority/recovery control-plane infrastructure |
+| `Foundgine.Elasticsearch` | Optional lexical-grounding candidate source (Elasticsearch BM25/fuzzy) |
+| `Foundgine.Postgres.Vector` | Optional lexical-grounding candidate source (pgvector cosine/L2/inner-product) |
 
 All packages target .NET 9 except the Roslyn generator, which targets `netstandard2.0`.
 
 ### Minimum footprint
 
-17 packages looks like a lot, but a basic application only ever installs two of them explicitly:
+20 packages looks like a lot, but a basic application only ever installs two of them explicitly:
 
 - `Foundgine` — the facade;
 - one provider — `Foundgine.Sql` or `Foundgine.InMemory`.
@@ -380,6 +389,7 @@ All packages target .NET 9 except the Roslyn generator, which targets `netstanda
 - `Foundgine.Aot` / `Foundgine.Aot.Generator` — only needed for attribute-driven, source-generated metadata instead of runtime discovery.
 - `Foundgine.Intent.Json`, `Foundgine.MCP`, `Foundgine.AI`, `Foundgine.GraphQL.HotChocolate*` — one package per caller-facing interface, so a project that only exposes GraphQL doesn't pull in Hot Chocolate's, MCP's, or Microsoft.Extensions.AI's dependency trees for interfaces it never uses.
 - `Foundgine.Security.Authority` — a substantial, independently-versioned recovery/control-plane subsystem (warrants, quorum, witnesses) that the large majority of applications will never need.
+- `Foundgine.Elasticsearch` / `Foundgine.Postgres.Vector` — only needed for approximate lexical grounding of free-form language (see [Lexical grounding](docs/LEXICAL-GROUNDING.md)); a deployment picks one, both, or neither without affecting the core resolution/authorization boundary.
 
 If you're only trying it out: `Foundgine` + `Foundgine.InMemory` is the entire footprint.
 

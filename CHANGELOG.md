@@ -1,3 +1,14 @@
+
+## Unreleased — lexical grounding
+
+- Added provider-neutral semantic lexical candidate retrieval across Entity, Node, Relationship, Traversal, Field, Value, and Operation kinds.
+- Added graph-constrained lexical path resolution with highest-score-first root selection and backtracking.
+- Added a frozen-contract semantic lexicon projection suitable for Elasticsearch/OpenSearch indexing.
+- Added optional `Foundgine.Elasticsearch` HTTP integration for lexicon indexing and ranked candidate retrieval.
+- Added Supply Chain `bought` / `purchased` / `ordered` aliases for the existing `Customer.Orders` relationship.
+- Added `PostgresVectorE2ETests` — a real PostgreSQL 17 + pgvector physical proof of the full lexical grounding pipeline (semantic contract → lexicon projection → embedding → pgvector index → nearest-neighbor retrieval → graph-constrained resolution via `SemanticLexicalResolver`), plus an `EnsureSchemaAsync` idempotency test. Gated behind `FOUNDGINE_POSTGRES_CONNECTION_STRING` like the rest of `Foundgine.E2E.Tests`.
+- Switched `docker-compose.postgres.yml` from `postgres:17-alpine` to `pgvector/pgvector:pg17` (a drop-in-compatible PostgreSQL 17 image with pgvector preinstalled) since `CREATE EXTENSION vector` isn't satisfiable on a vanilla image.
+- Added `CREATE EXTENSION IF NOT EXISTS vector;` to `postgres-init.sql` as a safety net alongside `PgVectorSemanticLexiconIndexClient.EnsureSchemaAsync`'s own extension creation.
 ## [1.1.7] - 2026-08-30
 ## Documentation — Canonical architecture lifecycle
 

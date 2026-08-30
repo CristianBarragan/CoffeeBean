@@ -2,6 +2,14 @@
 -- This file is executed by PostgreSQL's docker-entrypoint only when the
 -- database cluster is initialized. Tests MUST NOT create/drop schemas/tables.
 
+-- Safety net for Foundgine.Postgres.Vector's E2E tests (PostgresVectorE2ETests),
+-- which call CREATE EXTENSION vector themselves via
+-- PgVectorSemanticLexiconIndexClient.EnsureSchemaAsync. Creating it here too
+-- means the extension is available immediately on a fresh cluster even if a
+-- test runs before EnsureSchemaAsync does, and requires the pgvector/pgvector
+-- image (a vanilla postgres:17 image cannot satisfy this statement).
+CREATE EXTENSION IF NOT EXISTS vector;
+
 CREATE SCHEMA IF NOT EXISTS fg_mutation;
 CREATE SCHEMA IF NOT EXISTS fg_query;
 CREATE SCHEMA IF NOT EXISTS fg_stateful;

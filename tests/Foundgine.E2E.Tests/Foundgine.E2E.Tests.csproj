@@ -19,6 +19,7 @@
     <ProjectReference Include="../../src/Foundgine.Aot/Foundgine.Aot.csproj" />
     <ProjectReference Include="../../src/Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
     <ProjectReference Include="../../src/Foundgine.Sql/Foundgine.Sql.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Postgres.Vector/Foundgine.Postgres.Vector.csproj" />
     <ProjectReference Include="../../src/Foundgine.InMemory/Foundgine.InMemory.csproj" />
     <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" />
     <ProjectReference Include="../../src/Foundgine.Intent.Json/Foundgine.Intent.Json.csproj" />

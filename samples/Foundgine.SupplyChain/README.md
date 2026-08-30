@@ -105,3 +105,13 @@ The generated handles carry the compact IDs internally, but those IDs are not pa
 The sample is intentionally wired to the Foundgine projects under `../../../src` instead of published Foundgine NuGet packages. This makes the sample build against the exact source tree in this repository, including the AOT source generator and current runtime changes.
 
 For the hands-on walkthrough, see [TUTORIAL.md](TUTORIAL.md). It is the current source-tree getting-started guide and no longer contains the obsolete `0.5.x` package-install instructions.
+
+## Lexical grounding
+
+The sample's `Customer.Orders` relationship is also exposed with lexical aliases
+such as `bought`, `purchased`, and `ordered`. These aliases are retrieval hints;
+they do not change the stable relationship identity.
+
+Foundgine's optional Elasticsearch integration can project the frozen semantic
+contract into a lexical index. Domain values such as `Nike` or `Shoes` are
+separate value documents and are not invented from the structural schema.

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Foundgine.Elasticsearch</PackageId>
+    <Description>Elasticsearch lexical candidate retrieval and semantic lexicon indexing for Foundgine.</Description>
+    <PackageTags>elasticsearch;semantic-search;lexical-grounding;foundgine</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RootNamespace>Foundgine.Elasticsearch</RootNamespace>
+    <AssemblyName>Foundgine.Elasticsearch</AssemblyName>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
+    <ProjectReference Include="../Foundgine.Semantics/Foundgine.Semantics.csproj" />
+  </ItemGroup>
+</Project>
