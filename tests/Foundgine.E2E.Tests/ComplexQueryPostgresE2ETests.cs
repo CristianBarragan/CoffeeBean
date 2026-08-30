@@ -203,7 +203,7 @@ public sealed class ComplexQueryPostgresE2ETests
 
     internal static SqlPlan Compile(SemanticModel model, IMetadataProvider metadata, SemanticRequest request)
     {
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
         var execution = new Planner().Plan(authorized);
         return new SqlCompiler(metadata).Compile(execution);
@@ -467,3 +467,4 @@ public sealed class ComplexQueryPostgresE2ETests
         public List<PlanNodeStats> Nodes { get; } = new();
     }
 }
+

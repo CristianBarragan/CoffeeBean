@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Foundgine.Aot;
 
 namespace Foundgine.Aot.Generator;
 
@@ -18,6 +19,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     private const string ModelEntityMapAttribute = "Foundgine.Aot.FoundgineModelEntityMapAttribute";
     private const string ConversionAttribute = "Foundgine.Aot.FoundgineConversionAttribute";
     private const string AuthorizationAttribute = "Foundgine.Aot.FoundgineAuthorizationAttribute";
+    private const string SemanticDimensionAttribute = "Foundgine.Aot.FoundgineSemanticDimensionAttribute";
+    private const string EventAttribute = "Foundgine.Aot.FoundgineEventAttribute";
 
 #pragma warning disable RS1032 // Diagnostic messages are intentionally defined as source strings.
 #pragma warning disable RS2008 // Release tracking is not required until diagnostic IDs are stabilized.
@@ -74,6 +77,14 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         "FGMETA007",
         "Relationship key must be a scalar property",
         "Relationship '{0}.{1}' uses '{2}' as a key, but that property is itself a relationship navigation. Relationship keys must reference scalar properties.",
+        "Foundgine.Metadata",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor InvalidIdentityDeclaration = new(
+        "FGMETA008",
+        "Invalid Foundgine identity declaration",
+        "{0}",
         "Foundgine.Metadata",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -154,14 +165,24 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 return;
             }
 
-            var generated = Emit(
-                spc,
-                entities,
-                models,
-                conversions,
-                authorizations,
-                connectionMaps,
-                modelEntityMaps);
+            string? generated;
+            try
+            {
+                generated = Emit(
+                    spc,
+                    entities,
+                    models,
+                    conversions,
+                    authorizations,
+                    connectionMaps,
+                    modelEntityMaps);
+            }
+            catch (Exception ex) when (ex is ArgumentOutOfRangeException or InvalidOperationException)
+            {
+                spc.ReportDiagnostic(
+                    Diagnostic.Create(InvalidIdentityDeclaration, Location.None, ex.Message));
+                return;
+            }
 
             if (generated is not null)
                 spc.AddSource("Foundgine.GeneratedMetadata.g.cs", generated);
@@ -186,6 +207,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         if (!ValidateRelationships(spc, ordered))
             return null;
 
+        var relationshipIds = AllocateRelationshipIds(ordered);
         var modelIds = AllocateModelIds(models);
         var connectionIds = AllocateConnectionIds(models);
         var modelEntityMap = BuildModelEntityMap(modelEntityMaps);
@@ -250,9 +272,9 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                         a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
                 .ToArray();
 
-            var fieldIds = AllocateSequentialFieldIds(entity);
+            var fieldIds = AllocateFieldIds(entity);
 
-            var columnIds = fieldIds;
+            var columnIds = AllocateColumnIds(entity, storageName);
 
             sb.AppendLine("        registry.Register(new EntityMetadata(");
             sb.AppendLine($"            new EntityId({entityId}),");
@@ -270,7 +292,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                     ?? p.Name;
 
                 var id =
-                    GetNamedUShort(field, "Id")
+                    GetNamedULong(field, "ColumnId")
                     ?? columnIds[entity.ToDisplayString() + "." + p.Name];
 
                 sb.AppendLine(
@@ -279,6 +301,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
             sb.AppendLine("            },");
             sb.AppendLine($"            StorageName: \"{Escape(storageName)}\",");
+            sb.AppendLine($"            Aliases: {FormatAliases(entity)},");
 
             var primaryKey = scalar.FirstOrDefault(
                 p => GetNamedBool(
@@ -290,7 +313,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 var pkField = GetAttribute(primaryKey, FieldAttribute);
 
                 var pkId =
-                    GetNamedUShort(pkField, "Id")
+                    GetNamedULong(pkField, "ColumnId")
                     ?? columnIds[
                         entity.ToDisplayString() + "." + primaryKey.Name];
 
@@ -310,7 +333,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                     ?? p.Name;
 
                 var fieldId =
-                    GetNamedUShort(field, "Id")
+                    GetNamedULong(field, "Id")
                     ?? fieldIds[
                         entity.ToDisplayString() + "." + p.Name];
 
@@ -320,15 +343,57 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                     ?? p.Name;
 
                 var colId =
-                    GetNamedUShort(field, "Id")
+                    GetNamedULong(field, "ColumnId")
                     ?? columnIds[
                         entity.ToDisplayString() + "." + p.Name];
 
+                var dimensionAttribute =
+                    GetAttribute(p, SemanticDimensionAttribute);
+
+                var dimension =
+                    dimensionAttribute is null
+                        ? null
+                        : GetCtorString(dimensionAttribute, 0);
+
+                var isIndexed =
+                    GetNamedBool(field, "Index");
+
                 sb.AppendLine(
-                    $"                new FieldMetadata(new FieldId({fieldId}), \"{Escape(fieldName)}\", typeof({p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), new ColumnReference(new EntityId({entityId}), new ColumnId({colId}))),");
+                    $"                new FieldMetadata(new FieldId({fieldId}), \"{Escape(fieldName)}\", typeof({p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), new ColumnReference(new EntityId({entityId}), new ColumnId({colId})), Dimension: {ToNullableString(dimension)}, IsIndexed: {(isIndexed ? "true" : "false")}, Aliases: {FormatAliases(p)}),");
             }
 
-            sb.AppendLine("            }));");
+            sb.AppendLine("            },");
+
+            var eventAttribute = GetAttribute(entity, EventAttribute);
+
+            if (eventAttribute is not null)
+            {
+                var occurredAtField = GetCtorString(eventAttribute, 0);
+
+                var occurredAtProperty =
+                    occurredAtField is null
+                        ? null
+                        : scalar.FirstOrDefault(
+                            p => p.Name == occurredAtField);
+
+                if (occurredAtProperty is not null)
+                {
+                    var occurredAtColId =
+                        columnIds[
+                            entity.ToDisplayString() + "." + occurredAtProperty.Name];
+
+                    sb.AppendLine(
+                        $"            IsEvent: true, TemporalColumn: new ColumnReference(new EntityId({entityId}), new ColumnId({occurredAtColId}))));");
+                }
+                else
+                {
+                    sb.AppendLine("            IsEvent: true));");
+                }
+            }
+            else
+            {
+                sb.AppendLine("            IsEvent: false));");
+            }
         }
 
         foreach (var entity in ordered)
@@ -351,8 +416,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 var relKey = entity.ToDisplayString() + "." + p.Name;
 
                 var id =
-                    GetNamedUShort(rel, "Id")
-                    ?? AllocateIds(new[] { relKey })[relKey];
+                    GetNamedULong(rel, "Id")
+                    ?? relationshipIds[relKey];
 
                 var name =
                     GetNamedString(rel, "Name")
@@ -384,14 +449,12 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 var fkId = ResolveColumnId(
                     fkOwner,
                     fk,
-                    entityIds,
-                    fieldIds: null);
+                    entityIds);
 
                 var principalId = ResolveColumnId(
                     principalOwner,
                     pk,
-                    entityIds,
-                    fieldIds: null);
+                    entityIds);
 
                 // SourceKey/TargetKey always describe the key on each side
                 // of the semantic relationship, regardless of which side
@@ -411,7 +474,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                         : fkId;
 
                 sb.AppendLine(
-                    $"        registry.Register(new RelationshipMetadata(new RelationshipId({id}), new EntityId({sourceId}), new EntityId({targetId}), \"{Escape(name)}\", new ColumnReference(new EntityId({sourceKeyEntity}), new ColumnId({sourceKeyColumn})), new ColumnReference(new EntityId({targetKeyEntity}), new ColumnId({targetKeyColumn})), {IsCollectionExpression(p.Type)}));");
+                    $"        registry.Register(new RelationshipMetadata(new RelationshipId({id}), new EntityId({sourceId}), new EntityId({targetId}), \"{Escape(name)}\", new ColumnReference(new EntityId({sourceKeyEntity}), new ColumnId({sourceKeyColumn})), new ColumnReference(new EntityId({targetKeyEntity}), new ColumnId({targetKeyColumn})), {IsCollectionExpression(p.Type)}, Aliases: {FormatAliases(p)}));");
             }
         }
 
@@ -444,7 +507,11 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 authorization,
                 AuthorizationAttribute);
 
-            var connectionId = GetConstructorUShort(attribute, 0);
+            var explicitId = GetNamedULong(attribute, "Id");
+            if (explicitId.HasValue)
+                explicitId = GeneratorSemanticIdentity.ValidateExplicitId(explicitId.Value, "authorization");
+
+            var connectionId = GetConstructorULong(attribute, 0);
 
             if (connectionId is null)
                 continue;
@@ -471,8 +538,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 continue;
 
             var id =
-                GetNamedUShort(attribute, "Id")
-                ?? connectionId.Value;
+                explicitId
+                ?? GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.AuthorizationKey(authorization.ContainingType.ToDisplayString(), authorization.Name));
 
             var name =
                 GetNamedString(attribute, "Name")
@@ -519,7 +586,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 }
 
                 var connectionId =
-                    GetNamedUShort(connection, "Id")
+                    GetNamedULong(connection, "Id")
                     ?? connectionIds[key];
 
                 var name =
@@ -610,10 +677,13 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         StringBuilder sb,
         ImmutableArray<INamedTypeSymbol> models,
         Dictionary<string, INamedTypeSymbol> modelEntityMap,
-        Dictionary<string, ushort> entityIds)
+        Dictionary<string, ulong> entityIds)
     {
         sb.AppendLine("public static class GeneratedSemanticModel");
         sb.AppendLine("{");
+        sb.AppendLine("    /// <summary>Canonical fingerprint of the semantic contract discovered from generated metadata.</summary>");
+        sb.AppendLine("    public static string ContractFingerprint => GeneratedMetadata.Registry.Discover().ContractFingerprint;");
+        sb.AppendLine();
 
         foreach (var model in models.OrderBy(
                      x => x.ToDisplayString(),
@@ -663,8 +733,10 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             sb.AppendLine(
                 $"        public static readonly EntityId Entity = new({entityId});");
 
+            var fieldIds = AllocateFieldIds(entity);
+
             var fieldMembers =
-                new List<(string Identifier, ushort FieldId, string SemanticName)>();
+                new List<(string Identifier, ulong FieldId, string SemanticName)>();
 
             var usedIdentifiers =
                 new HashSet<string>(StringComparer.Ordinal)
@@ -690,9 +762,13 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                         FieldAttribute);
 
                 var fieldId =
-                    GetNamedUShort(field, "Id");
+                    fieldIds.TryGetValue(
+                        entityProperty.ToDisplayString(),
+                        out var generatedFieldId)
+                        ? generatedFieldId
+                        : 0UL;
 
-                if (fieldId is null)
+                if (fieldId == 0)
                     continue;
 
                 var identifier =
@@ -705,12 +781,12 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 fieldMembers.Add(
                     (
                         identifier,
-                        fieldId.Value,
+                        fieldId,
                         property.Name));
 
                 sb.AppendLine(
                     $"        public static readonly GeneratedSemanticField {identifier} = " +
-                    $"new(Entity, new FieldId({fieldId.Value}), \"{Escape(property.Name)}\");");
+                    $"new(Entity, new FieldId({fieldId}), \"{Escape(property.Name)}\");");
             }
 
             sb.AppendLine(
@@ -1346,7 +1422,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 : null;
     }
 
-    private static ushort? GetConstructorUShort(
+    private static ulong? GetConstructorULong(
         AttributeData? attribute,
         int index)
     {
@@ -1357,23 +1433,15 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             return null;
         }
 
-        var value =
-            attribute.ConstructorArguments[index].Value;
+        var value = attribute.ConstructorArguments[index].Value;
 
         return value switch
         {
-            ushort ushortValue =>
-                ushortValue,
-
-            short shortValue
-                when shortValue >= 0 =>
-                (ushort)shortValue,
-
-            int intValue
-                when intValue >= 0 &&
-                     intValue <= ushort.MaxValue =>
-                (ushort)intValue,
-
+            ulong ulongValue when ulongValue != 0 => ulongValue,
+            uint uintValue when uintValue != 0 => uintValue,
+            ushort ushortValue when ushortValue != 0 => ushortValue,
+            int intValue when intValue > 0 => (ulong)intValue,
+            long longValue when longValue > 0 => (ulong)longValue,
             _ => null
         };
     }
@@ -1383,172 +1451,157 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             ? "null"
             : $"\"{Escape(value)}\"";
 
-    private static Dictionary<string, ushort> AllocateModelIds(
+    private static Dictionary<string, ulong> AllocateModelIds(
         IReadOnlyList<INamedTypeSymbol> models)
     {
-        var result =
-            new Dictionary<string, ushort>(
-                StringComparer.Ordinal);
+        var result = new Dictionary<string, ulong>(StringComparer.Ordinal);
+        var used = new HashSet<ulong>();
 
-        var used = new HashSet<ushort>();
-
-        foreach (var model in models.OrderBy(
-                     x => x.ToDisplayString(),
-                     StringComparer.Ordinal))
+        foreach (var model in models.OrderBy(x => x.ToDisplayString(), StringComparer.Ordinal))
         {
-            var explicitId =
-                GetNamedUShort(
-                    GetAttribute(model, ModelAttribute),
-                    "Id");
-
+            var attribute = GetAttribute(model, ModelAttribute);
+            var explicitId = GetNamedULong(attribute, "Id");
             if (explicitId.HasValue)
             {
+                explicitId = GeneratorSemanticIdentity.ValidateExplicitId(explicitId.Value, "model");
                 if (!used.Add(explicitId.Value))
-                {
-                    throw new InvalidOperationException(
-                        $"Duplicate Foundgine model ID {explicitId.Value}.");
-                }
-
-                result[model.ToDisplayString()] =
-                    explicitId.Value;
+                    throw new InvalidOperationException($"Duplicate Foundgine model ID {explicitId.Value}.");
+                result[model.ToDisplayString()] = explicitId.Value;
             }
         }
 
-        foreach (var model in models.OrderBy(
-                     x => x.ToDisplayString(),
-                     StringComparer.Ordinal))
+        foreach (var model in models.OrderBy(x => x.ToDisplayString(), StringComparer.Ordinal))
         {
-            if (result.ContainsKey(model.ToDisplayString()))
-                continue;
-
-            var candidate =
-                StableHash(
-                    "model:" + model.ToDisplayString());
-
-            while (candidate == 0 ||
-                   !used.Add(candidate))
-            {
-                candidate =
-                    candidate == ushort.MaxValue
-                        ? (ushort)1
-                        : (ushort)(candidate + 1);
-            }
-
-            result[model.ToDisplayString()] =
-                candidate;
+            var clrKey = model.ToDisplayString();
+            if (result.ContainsKey(clrKey)) continue;
+            var semanticName = GetNamedString(GetAttribute(model, ModelAttribute), "Name") ?? model.Name;
+            var candidate = GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.ModelKey(semanticName));
+            if (!used.Add(candidate))
+                throw new InvalidOperationException($"Model identity collision for '{semanticName}' (ID {candidate}).");
+            result[clrKey] = candidate;
         }
-
         return result;
     }
 
-    private static Dictionary<string, ushort> AllocateConnectionIds(
+    private static Dictionary<string, ulong> AllocateConnectionIds(
         IReadOnlyList<INamedTypeSymbol> models)
     {
-        var keys = models
-            .SelectMany(
-                model => model.GetMembers()
-                    .OfType<IPropertySymbol>()
-                    .Where(
-                        p => GetAttribute(
-                            p,
-                            ConnectionAttribute) is not null)
-                    .Select(
-                        p => model.ToDisplayString() +
-                             "." +
-                             p.Name))
+        var result = new Dictionary<string, ulong>(StringComparer.Ordinal);
+        var used = new HashSet<ulong>();
+
+        var declarations = models.SelectMany(model => model.GetMembers()
+            .OfType<IPropertySymbol>()
+            .Where(p => GetAttribute(p, ConnectionAttribute) is not null)
+            .Select(p =>
+            {
+                var attribute = GetAttribute(p, ConnectionAttribute);
+                var name = GetNamedString(attribute, "Name") ?? p.Name;
+                return (Key: model.ToDisplayString() + "." + p.Name,
+                        ModelName: GetNamedString(GetAttribute(model, ModelAttribute), "Name") ?? model.Name,
+                        ConnectionName: name,
+                        Attribute: attribute);
+            }))
+            .OrderBy(x => x.Key, StringComparer.Ordinal)
             .ToArray();
 
-        return AllocateIds(
-                keys.Select(
-                    x => "connection:" + x)
-                    .ToArray())
-            .ToDictionary(
-                x => x.Key.Substring("connection:".Length),
-                x => x.Value,
-                StringComparer.Ordinal);
+        foreach (var (key, _, _, attribute) in declarations)
+        {
+            var explicitId = GetNamedULong(attribute, "Id");
+            if (explicitId.HasValue)
+            {
+                explicitId = GeneratorSemanticIdentity.ValidateExplicitId(explicitId.Value, "connection");
+                if (!used.Add(explicitId.Value))
+                    throw new InvalidOperationException($"Duplicate Foundgine connection ID {explicitId.Value}.");
+                result[key] = explicitId.Value;
+            }
+        }
+
+        foreach (var (key, modelName, connectionName, _) in declarations)
+        {
+            if (result.ContainsKey(key)) continue;
+            var candidate = GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.ConnectionKey(modelName, connectionName));
+            if (!used.Add(candidate))
+                throw new InvalidOperationException($"Connection identity collision for '{modelName}.{connectionName}' (ID {candidate}).");
+            result[key] = candidate;
+        }
+        return result;
     }
 
-    private static Dictionary<string, ushort> AllocateEntityIds(
+    /// <summary>
+    /// Assigns relationship identities from a stable hash of the semantic
+    /// entity and relationship name ("Entity.Relationship"), independent of
+    /// declaration order and CLR metadata layout.
+    /// This is what lets relationship authors omit <c>[FoundgineRelationship(..., Id = ...)]</c> entirely:
+    /// the identity is derived from the declaration itself, so it survives
+    /// reordering, module merges and new relationships being added elsewhere
+    /// without renumbering anything. Explicit ids are honored first (and
+    /// reserved against collision) so existing manually-numbered
+    /// relationships keep their identity; every other relationship is then
+    /// hash-allocated. Hash collisions are treated as generator errors rather
+    /// than resolved by probing, because probing would make identity depend on
+    /// the set and ordering of unrelated declarations.
+    /// </summary>
+    private static Dictionary<string, ulong> AllocateRelationshipIds(
         IReadOnlyList<INamedTypeSymbol> entities)
     {
+        var declarations = entities
+            .SelectMany(entity => entity.GetMembers()
+                .OfType<IPropertySymbol>()
+                .Where(p => GetAttribute(p, RelationshipAttribute) is not null)
+                .Select(p =>
+                {
+                    var attribute = GetAttribute(p, RelationshipAttribute);
+                    var relationshipName =
+                        GetNamedString(attribute, "Name")
+                        ?? p.Name;
+                    var semanticKey =
+                        GetEntityName(entity) + "." + relationshipName;
+
+                    return (
+                        Key: entity.ToDisplayString() + "." + p.Name,
+                        SemanticKey: semanticKey,
+                        Attribute: attribute);
+                }))
+            .OrderBy(x => x.Key, StringComparer.Ordinal)
+            .ToArray();
+
         var result =
-            new Dictionary<string, ushort>(
+            new Dictionary<string, ulong>(
                 StringComparer.Ordinal);
 
-        var used = new HashSet<ushort>();
+        var used = new HashSet<ulong>();
 
-        foreach (var entity in entities.OrderBy(
-                     x => x.ToDisplayString(),
-                     StringComparer.Ordinal))
+        foreach (var (key, _, attribute) in declarations)
         {
             var explicitId =
-                GetNamedUShort(
-                    GetAttribute(entity, EntityAttribute),
-                    "Id");
+                GetNamedULong(attribute, "Id");
+            if (explicitId.HasValue)
+                explicitId = GeneratorSemanticIdentity.ValidateExplicitId(explicitId.Value, "relationship");
 
             if (explicitId.HasValue)
             {
                 if (!used.Add(explicitId.Value))
                 {
                     throw new InvalidOperationException(
-                        $"Duplicate Foundgine entity ID {explicitId.Value}.");
+                        $"Duplicate Foundgine relationship ID {explicitId.Value}.");
                 }
 
-                result[entity.ToDisplayString()] =
-                    explicitId.Value;
+                result[key] = explicitId.Value;
             }
         }
 
-        foreach (var entity in entities.OrderBy(
-                     x => x.ToDisplayString(),
-                     StringComparer.Ordinal))
+        foreach (var (key, semanticKey, _) in declarations)
         {
-            if (result.ContainsKey(entity.ToDisplayString()))
+            if (result.ContainsKey(key))
                 continue;
 
             var candidate =
-                StableHash(
-                    entity.ToDisplayString());
+                GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.RelationshipNamespace + ":" + semanticKey);
 
-            while (candidate == 0 ||
-                   !used.Add(candidate))
+            if (candidate == 0 || !used.Add(candidate))
             {
-                candidate =
-                    candidate == ushort.MaxValue
-                        ? (ushort)1
-                        : (ushort)(candidate + 1);
-            }
-
-            result[entity.ToDisplayString()] =
-                candidate;
-        }
-
-        return result;
-    }
-
-    private static Dictionary<string, ushort> AllocateIds(
-        IReadOnlyList<string> keys)
-    {
-        var used = new HashSet<ushort>();
-
-        var result =
-            new Dictionary<string, ushort>(
-                StringComparer.Ordinal);
-
-        foreach (var key in keys.OrderBy(
-                     x => x,
-                     StringComparer.Ordinal))
-        {
-            var candidate =
-                StableHash(key);
-
-            while (candidate == 0 ||
-                   !used.Add(candidate))
-            {
-                candidate =
-                    candidate == ushort.MaxValue
-                        ? (ushort)1
-                        : (ushort)(candidate + 1);
+                throw new InvalidOperationException(
+                    $"Relationship identity collision for '{key}' (ID {candidate}).");
             }
 
             result[key] = candidate;
@@ -1558,22 +1611,76 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    /// Assigns field/column identities for an entity's scalar properties in
-    /// declaration order, starting at 1 and skipping any values already
-    /// claimed by an explicit <c>[FoundgineField(Id = ...)]</c> on the same
-    /// entity. Unlike <see cref="AllocateIds"/> (used for globally-scoped
-    /// identities such as entities, models and relationships, where a stable
-    /// hash avoids cross-declaration collisions), field identities are only
-    /// ever compared within a single entity, so a small deterministic
-    /// ordinal is preferable: it keeps generated identities readable and
-    /// matches the declaration-order convention entity authors already rely
-    /// on for explicit IDs (e.g. the primary key is conventionally 1).
-    /// This is a pure function of the entity's own declared properties, so
-    /// it can be safely recomputed from any call site (e.g. when resolving a
-    /// relationship's foreign-key column) and always agrees with the ids
-    /// emitted for that entity's <c>FieldMetadata</c> list.
+    /// Assigns stable semantic entity identities from the canonical entity name.
+    /// Identity is independent of declaration order and therefore survives
+    /// adding, removing, or reordering unrelated entities. Explicit legacy ids
+    /// remain supported for compatibility. Hash collisions are generator errors
+    /// rather than resolved by probing because probing would make identity depend
+    /// on unrelated entities.
     /// </summary>
-    private static Dictionary<string, ushort> AllocateSequentialFieldIds(
+    private static Dictionary<string, ulong> AllocateEntityIds(
+        IReadOnlyList<INamedTypeSymbol> entities)
+    {
+        var result = new Dictionary<string, ulong>(StringComparer.Ordinal);
+        var used = new HashSet<ulong>();
+        var semanticNames = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var entity in entities.OrderBy(
+                     x => x.ToDisplayString(), StringComparer.Ordinal))
+        {
+            var semanticName = GetEntityName(entity);
+            if (!semanticNames.Add(semanticName))
+                throw new InvalidOperationException(
+                    $"Duplicate Foundgine semantic entity name '{semanticName}'. Module composition requires unique semantic entity names.");
+
+            var explicitId =
+                GetNamedULong(
+                    GetAttribute(entity, EntityAttribute),
+                    "Id");
+            if (explicitId.HasValue)
+                explicitId = GeneratorSemanticIdentity.ValidateExplicitId(explicitId.Value, "entity");
+
+            if (explicitId.HasValue)
+            {
+                if (!used.Add(explicitId.Value))
+                    throw new InvalidOperationException(
+                        $"Duplicate Foundgine entity ID {explicitId.Value}.");
+
+                result[entity.ToDisplayString()] = explicitId.Value;
+            }
+        }
+
+        foreach (var entity in entities.OrderBy(
+                     x => x.ToDisplayString(), StringComparer.Ordinal))
+        {
+            var clrKey = entity.ToDisplayString();
+            if (result.ContainsKey(clrKey))
+                continue;
+
+            var semanticName = GetEntityName(entity);
+            var candidate = GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.EntityKey(semanticName));
+
+            if (candidate == 0 || !used.Add(candidate))
+                throw new InvalidOperationException(
+                    $"Entity identity collision for '{semanticName}' (ID {candidate}).");
+
+            result[clrKey] = candidate;
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Assigns stable semantic field identities from the entity semantic name
+    /// and field semantic name. Field identity is independent of declaration
+    /// order and therefore survives adding, removing, or reordering unrelated
+    /// fields. Explicit legacy ids remain supported for compatibility.
+    /// Hash collisions are treated as generator errors rather than resolved by
+    /// probing, because probing would make identity depend on unrelated fields.
+    /// Column identity is deliberately allocated separately: a semantic field
+    /// id must never implicitly become a physical column id.
+    /// </summary>
+    private static Dictionary<string, ulong> AllocateFieldIds(
         INamedTypeSymbol entity)
     {
         var scalar = entity.GetMembers()
@@ -1586,60 +1693,97 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                     a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
             .ToArray();
 
-        var used = new HashSet<ushort>();
+        var result = new Dictionary<string, ulong>(StringComparer.Ordinal);
+        var used = new HashSet<ulong>();
 
         foreach (var property in scalar)
         {
-            var explicitId =
-                GetNamedUShort(
-                    GetAttribute(property, FieldAttribute),
-                    "Id");
+            var attribute = GetAttribute(property, FieldAttribute);
+            var explicitId = GetNamedULong(attribute, "Id");
+            if (explicitId.HasValue)
+                explicitId = GeneratorSemanticIdentity.ValidateExplicitId(explicitId.Value, "field");
+            if (!explicitId.HasValue)
+                continue;
 
+            if (!used.Add(explicitId.Value))
+                throw new InvalidOperationException(
+                    $"Duplicate Foundgine field ID {explicitId.Value} on '{entity.ToDisplayString()}'.");
+
+            result[entity.ToDisplayString() + "." + property.Name] = explicitId.Value;
+        }
+
+        foreach (var property in scalar.OrderBy(p => p.Name, StringComparer.Ordinal))
+        {
+            var key = entity.ToDisplayString() + "." + property.Name;
+            if (result.ContainsKey(key))
+                continue;
+
+            var attribute = GetAttribute(property, FieldAttribute);
+            var fieldName = GetNamedString(attribute, "Name") ?? property.Name;
+            var semanticKey = GetEntityName(entity) + "." + fieldName;
+            var candidate = GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.FieldNamespace + ":" + semanticKey);
+
+            if (candidate == 0 || !used.Add(candidate))
+                throw new InvalidOperationException(
+                    $"Field identity collision for '{key}' (ID {candidate}).");
+
+            result[key] = candidate;
+        }
+
+        return result;
+    }
+
+    /// <summary>Allocates physical column identities independently from semantic FieldId values.</summary>
+    private static Dictionary<string, ulong> AllocateColumnIds(
+        INamedTypeSymbol entity,
+        string storageName)
+    {
+        var scalar = entity.GetMembers()
+            .OfType<IPropertySymbol>()
+            .Where(p =>
+                p.DeclaredAccessibility == Accessibility.Public &&
+                !p.IsStatic)
+            .Where(p => p.GetAttributes().All(
+                a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
+            .ToArray();
+
+        var used = new HashSet<ulong>();
+        foreach (var property in scalar)
+        {
+            var explicitId = GetNamedULong(GetAttribute(property, FieldAttribute), "ColumnId");
+            if (explicitId.HasValue)
+                explicitId = GeneratorSemanticIdentity.ValidateExplicitId(explicitId.Value, "column");
             if (explicitId.HasValue)
                 used.Add(explicitId.Value);
         }
 
-        var result =
-            new Dictionary<string, ushort>(
-                StringComparer.Ordinal);
-
-        ushort next = 1;
-
+        var result = new Dictionary<string, ulong>(StringComparer.Ordinal);
         foreach (var property in scalar)
         {
             var key = entity.ToDisplayString() + "." + property.Name;
-
-            var explicitId =
-                GetNamedUShort(
-                    GetAttribute(property, FieldAttribute),
-                    "Id");
-
+            var explicitId = GetNamedULong(GetAttribute(property, FieldAttribute), "ColumnId");
             if (explicitId.HasValue)
             {
                 result[key] = explicitId.Value;
                 continue;
             }
 
-            while (next == 0 || !used.Add(next))
-                next = next == ushort.MaxValue ? (ushort)1 : (ushort)(next + 1);
+            var field = GetAttribute(property, FieldAttribute);
+            var columnName =
+                GetNamedString(field, "StorageName")
+                ?? GetNamedString(field, "Name")
+                ?? property.Name;
+            var canonicalKey = "column:" + storageName + "." + columnName;
+            var candidate = GeneratorSemanticIdentity.Hash(canonicalKey);
 
-            result[key] = next;
+            if (candidate == 0 || !used.Add(candidate))
+                throw new InvalidOperationException(
+                    $"Column identity collision for '{canonicalKey}' (ID {candidate}).");
+
+            result[key] = candidate;
         }
 
         return result;
-    }
-
-    private static ushort StableHash(string value)
-    {
-        uint hash = 2166136261;
-
-        foreach (var c in value)
-        {
-            hash ^= c;
-            hash *= 16777619;
-        }
-
-        return (ushort)(hash ^ (hash >> 16));
     }
 
     private static AttributeData? GetAttribute(
@@ -1649,6 +1793,22 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             .FirstOrDefault(
                 a => a.AttributeClass?.ToDisplayString() ==
                      fullName);
+
+    private static string FormatAliases(ISymbol symbol)
+    {
+        var aliases = symbol.GetAttributes()
+            .Where(a => a.AttributeClass?.ToDisplayString() == "Foundgine.Aot.FoundgineAliasAttribute")
+            .Select(a => a.ConstructorArguments.Length == 1 ? a.ConstructorArguments[0].Value as string : null)
+            .Where(a => !string.IsNullOrWhiteSpace(a))
+            .Select(a => a!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (aliases.Length == 0)
+            return "null";
+
+        return "new string[] { " + string.Join(", ", aliases.Select(a => $"\"{Escape(a)}\"")) + " }";
+    }
 
     private static string GetEntityName(
         INamedTypeSymbol type) =>
@@ -1672,20 +1832,31 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             .Value
             .Value as string;
 
-    private static ushort? GetNamedUShort(
+    private static ulong? GetNamedULong(
         AttributeData? attribute,
         string name)
     {
-        var value =
-            attribute?
-                .NamedArguments
-                .FirstOrDefault(x => x.Key == name)
-                .Value
-                .Value;
+        if (attribute is null)
+            return null;
 
-        return value is ushort u && u != 0
-            ? u
-            : null;
+        var argument = attribute.NamedArguments
+            .FirstOrDefault(x => x.Key == name);
+
+        if (argument.Key is null)
+            return null;
+
+        var value = argument.Value.Value;
+
+        return value switch
+        {
+            ulong ulongValue => ulongValue,
+            uint uintValue => uintValue,
+            ushort ushortValue => ushortValue,
+            byte byteValue => byteValue,
+            int intValue when intValue >= 0 => (ulong)intValue,
+            long longValue when longValue >= 0 => (ulong)longValue,
+            _ => null
+        };
     }
 
     private static bool GetNamedBool(
@@ -1713,11 +1884,10 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 as INamedTypeSymbol
             : null;
 
-    private static ushort ResolveColumnId(
+    private static ulong ResolveColumnId(
         INamedTypeSymbol entity,
         string propertyName,
-        Dictionary<string, ushort> _,
-        Dictionary<string, ushort>? fieldIds)
+        Dictionary<string, ulong> _)
     {
         var property =
             entity.GetMembers(propertyName)
@@ -1733,7 +1903,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 FieldAttribute);
 
         var explicitId =
-            GetNamedUShort(field, "Id");
+            GetNamedULong(field, "ColumnId");
 
         if (explicitId.HasValue)
             return explicitId.Value;
@@ -1743,13 +1913,11 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             "." +
             property.Name;
 
-        if (fieldIds is not null &&
-            fieldIds.TryGetValue(key, out var existingId))
-        {
-            return existingId;
-        }
-
-        return AllocateSequentialFieldIds(entity)[key];
+        // Physical column identity is intentionally independent from the
+        // semantic FieldId. ColumnId is derived from the physical storage
+        // identity (table/storage name + column name), not declaration order.
+        var storageName = GetEntityStorageName(entity) ?? GetEntityName(entity);
+        return AllocateColumnIds(entity, storageName)[key];
     }
 
     private static string Escape(string value) =>
@@ -2019,3 +2187,4 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         return "false";
     }
 }
+

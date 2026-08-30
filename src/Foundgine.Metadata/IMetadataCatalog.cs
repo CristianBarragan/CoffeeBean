@@ -8,5 +8,6 @@ namespace Foundgine.Metadata;
 public interface IMetadataCatalog : IMetadataProvider
 {
     IEnumerable<EntityMetadata> Entities { get; }
+
     IEnumerable<RelationshipMetadata> Relationships { get; }
 }

@@ -297,6 +297,7 @@ public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProvi
         }
 
         var compiledPlan = new SqlPlan(sql.ToString(), bindings, parameters, pagination, authorization);
+        ExecutionIRBoundary.BindProviderPlan(ir, compiledPlan);
         if (ir.RequiredSecurityInvariants.Count > 0)
             SqlSecurityConformance.EnsureSatisfied(ir, compiledPlan);
 

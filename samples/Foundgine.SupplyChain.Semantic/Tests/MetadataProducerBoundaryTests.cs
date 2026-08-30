@@ -12,8 +12,8 @@ public sealed class MetadataProducerBoundaryTests
     {
         IMetadataCatalog catalog = SupplyChainMetadataProducer.Catalog;
 
-        Assert.Equal(15, catalog.Entities.Count());
-        Assert.Equal(13, catalog.Relationships.Count());
+        Assert.Equal(17, catalog.Entities.Count());
+        Assert.Equal(15, catalog.Relationships.Count());
         Assert.Contains(catalog.Entities, entity => entity.Name == "Product");
         Assert.Contains(catalog.Entities, entity => entity.Name == "ComplianceIncident");
 

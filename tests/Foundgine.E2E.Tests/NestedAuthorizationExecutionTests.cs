@@ -37,7 +37,10 @@ public sealed class NestedAuthorizationExecutionTests
             childAuthorization);
 
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(graph);
-        var plan = new Planner().Plan(authorized);
+        var plan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sql = new SqlCompiler(BankingRelationalMetadata.Build()).Compile(plan);
 
         Assert.Contains("@auth", sql.CommandText, StringComparison.OrdinalIgnoreCase);
@@ -76,7 +79,10 @@ public sealed class NestedAuthorizationExecutionTests
             childAuthorization);
 
         var plan = new Planner().Plan(
-            new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(graph));
+            new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(graph)) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sql = new SqlCompiler(BankingRelationalMetadata.Build()).Compile(plan);
 
         await using var connection = new SqliteConnection("Data Source=:memory:");

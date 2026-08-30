@@ -43,9 +43,12 @@ public sealed class FoundgineSqlPipelineTests
                     ])
             ]);
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var executionPlan = new Planner().Plan(authorized);
+        var executionPlan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sqlPlan = new SqlCompiler(metadata).Compile(executionPlan);
 
         Assert.Contains("SELECT", sqlPlan.CommandText, StringComparison.OrdinalIgnoreCase);
@@ -89,9 +92,12 @@ public sealed class FoundgineSqlPipelineTests
                     Foundgine.Semantics.Query.SemanticSortDirection.Desc)],
                 Limit: 1));
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var executionPlan = new Planner().Plan(authorized);
+        var executionPlan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sqlPlan = new SqlCompiler(metadata).Compile(executionPlan);
 
         Assert.Contains(" WHERE ", sqlPlan.CommandText, StringComparison.OrdinalIgnoreCase);
@@ -130,10 +136,13 @@ public sealed class FoundgineSqlPipelineTests
                 ])
             ]);
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(
             new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var plan = new Planner().Plan(authorized);
+        var plan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sqlPlan = new SqlCompiler(metadata).Compile(plan);
 
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -185,3 +194,4 @@ public sealed class FoundgineSqlPipelineTests
         await command.ExecuteNonQueryAsync();
     }
 }
+

@@ -1,4 +1,4 @@
-using Foundgine.Abstractions;
+﻿using Foundgine.Abstractions;
 using Foundgine.Semantics;
 
 namespace Foundgine.Metadata;
@@ -29,7 +29,8 @@ public static class SemanticModelDiscovery
                 .Select(field => new SemanticField(
                     field.Id,
                     field.Name,
-                    field.ClrType))
+                    field.ClrType,
+                    Aliases: field.Aliases?.Select(a => new SemanticAlias(a)).ToArray()))
                 .ToArray();
 
             var primary = item.PrimaryKey is null
@@ -46,9 +47,10 @@ public static class SemanticModelDiscovery
             entities[item.EntityId] = new SemanticEntity(
                 item.EntityId,
                 item.Name,
-                new SemanticIdentity(primary.Id, primary.Name),
+                new Foundgine.Semantics.SemanticFieldIdentity(primary.Id, primary.Name),
                 fields,
-                [])
+                [],
+                item.Aliases?.Select(a => new SemanticAlias(a)).ToArray())
             {
                 ModelType = item.ClrType
             };
@@ -69,7 +71,8 @@ public static class SemanticModelDiscovery
                 relationship.Id,
                 relationship.Name,
                 relationship.Target,
-                relationship.IsCollection ? RelationshipCardinality.Many : RelationshipCardinality.One));
+                relationship.IsCollection ? RelationshipCardinality.Many : RelationshipCardinality.One,
+                relationship.Aliases?.Select(a => new SemanticAlias(a)).ToArray()));
 
             entities[relationship.Source] = source with
             {
@@ -88,3 +91,7 @@ public static class SemanticModelDiscovery
     public static SemanticModelBuilder FromMetadata(this IMetadataCatalog metadata) =>
         new SemanticModelBuilder().Import(metadata.Discover());
 }
+
+
+
+

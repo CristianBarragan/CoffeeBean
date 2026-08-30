@@ -1,4 +1,4 @@
-using Foundgine.Metadata;
+﻿using Foundgine.Metadata;
 using Foundgine.Abstractions;
 using Foundgine.Semantics;
 using Xunit;
@@ -58,29 +58,56 @@ public sealed class SemanticModelTests
 
         var entity = model.Get(product);
 
-        Assert.Equal(new FieldId(1), entity.Identity.FieldId);
+        Assert.Equal(FieldId.Create("Product", "Id"), entity.Identity.FieldId);
         Assert.Equal("Id", entity.Identity.Name);
         Assert.Collection(
             entity.Fields,
             field =>
             {
-                Assert.Equal(new FieldId(2), field.Id);
+                Assert.Equal(FieldId.Create("Product", "Sku"), field.Id);
                 Assert.Equal("Sku", field.Name);
                 Assert.Equal(typeof(string), field.ClrType);
             },
             field =>
             {
-                Assert.Equal(new FieldId(3), field.Id);
+                Assert.Equal(FieldId.Create("Product", "Name"), field.Id);
                 Assert.Equal("Name", field.Name);
                 Assert.Equal(typeof(string), field.ClrType);
             },
             field =>
             {
-                Assert.Equal(new FieldId(4), field.Id);
+                Assert.Equal(FieldId.Create("Product", "Price"), field.Id);
                 Assert.Equal("Price", field.Name);
                 Assert.Equal(typeof(decimal), field.ClrType);
             });
     }
+
+    [Fact]
+    public void Typed_manual_field_ids_are_stable_when_field_declaration_order_changes()
+    {
+        var first = new SemanticModelBuilder()
+            .Entity<TestProduct>(new EntityId(103), "Product", e => e
+                .Identity(x => x.Id)
+                .Field(x => x.Sku)
+                .Field(x => x.Name)
+                .Field(x => x.Price))
+            .Build();
+
+        var reordered = new SemanticModelBuilder()
+            .Entity<TestProduct>(new EntityId(104), "Product", e => e
+                .Identity(x => x.Id)
+                .Field(x => x.Price)
+                .Field(x => x.Name)
+                .Field(x => x.Sku))
+            .Build();
+
+        var firstName = first.Get(new EntityId(103)).Fields.Single(x => x.Name == "Name");
+        var reorderedName = reordered.Get(new EntityId(104)).Fields.Single(x => x.Name == "Name");
+
+        Assert.Equal(firstName.Id, reorderedName.Id);
+        Assert.Equal(FieldId.Create("Product", "Name"), firstName.Id);
+    }
+
 
     [Fact]
     public void Typed_manual_selectors_use_model_properties_not_storage_entity_properties()
@@ -111,7 +138,7 @@ public sealed class SemanticModelTests
 
         var entity = model.Get(component);
 
-        Assert.Equal(new FieldId(1), entity.Identity.FieldId);
+        Assert.Equal(FieldId.Create("ProductComponent", "Id"), entity.Identity.FieldId);
         Assert.Equal("Id", entity.Identity.Name);
         Assert.Equal("ParentProductId", entity.Fields[0].Name);
         Assert.Equal(typeof(int), entity.Fields[0].ClrType);
@@ -297,4 +324,82 @@ public sealed class SemanticModelTests
         Assert.Equal(customer.Id, account.ParentId);
         Assert.Equal(account.Id, transaction.ParentId);
     }
+    [Fact]
+    public void Entity_ids_are_deterministic_and_order_independent()
+    {
+        var customer = EntityId.Create("Customer");
+        var account = EntityId.Create("Account");
+
+        Assert.Equal(customer, EntityId.Create("Customer"));
+        Assert.Equal(account, EntityId.Create("Account"));
+        Assert.NotEqual(customer, account);
+    }
+
+
+
+    [Fact]
+    public void Snapshot_requires_an_explicitly_frozen_model()
+    {
+        var model = new SemanticModelBuilder()
+            .Entity<TestCustomer>(new EntityId(301), "Customer", e => e.Identity(x => x.Id))
+            .Build();
+
+        Assert.Throws<InvalidOperationException>(() => model.CreateSnapshot());
+    }
+
+    [Fact]
+    public void Snapshot_preserves_fingerprint_and_is_independent_of_model_state()
+    {
+        var customer = new EntityId(302);
+        var order = new EntityId(303);
+        var model = new SemanticModelBuilder()
+            .Entity<TestCustomer>(customer, "Customer", e => e
+                .Identity(x => x.Id)
+                .Field(x => x.Name))
+            .Entity<TestOrder>(order, "Order", e => e.Identity(x => x.Id))
+            .Relationship<TestCustomer, TestOrder>(
+                customer,
+                new RelationshipId(302),
+                "ordersRelationship",
+                x => x.Id,
+                order,
+                x => x.Id,
+                RelationshipCardinality.Many)
+            .Traversal(customer, "orders", new RelationshipId(302))
+            .Build()
+            .Freeze();
+
+        var snapshot = model.CreateSnapshot();
+
+        Assert.Equal(model.ContractFingerprint, snapshot.ContractFingerprint);
+        Assert.Equal("Customer", snapshot.Get(customer).Name);
+        Assert.Equal("Name", Assert.Single(snapshot.Get(customer).Fields, x => x.Name == "Name").Name);
+        Assert.Equal(order, snapshot.GetTraversal(customer, "orders").Target);
+        Assert.Throws<NotSupportedException>(() => ((IList<SemanticTraversal>)snapshot.Traversals)[0] = null!);
+    }
+
+    [Fact]
+    public void Snapshot_defensively_copies_nested_collections()
+    {
+        var customer = new EntityId(304);
+        var model = new SemanticModelBuilder()
+            .Entity<TestCustomer>(customer, "Customer", e => e
+                .Identity(x => x.Id)
+                .Field(x => x.Name)
+                .FieldAlias(x => x.Name, "display")
+                .Constraint(x => x.Name, SemanticConstraint.Pattern(".+")))
+            .Build()
+            .Freeze();
+
+        var snapshot = model.CreateSnapshot();
+        var entity = snapshot.Get(customer);
+        var field = Assert.Single(entity.Fields);
+
+        Assert.Throws<NotSupportedException>(() => ((IList<SemanticField>)entity.Fields).Clear());
+        Assert.Throws<NotSupportedException>(() => ((IList<SemanticAlias>)field.Aliases!)[0] = new SemanticAlias("changed"));
+        Assert.Throws<NotSupportedException>(() => ((IList<SemanticConstraint>)field.Constraints!)[0] = SemanticConstraint.Pattern("changed"));
+    }
+
 }
+
+

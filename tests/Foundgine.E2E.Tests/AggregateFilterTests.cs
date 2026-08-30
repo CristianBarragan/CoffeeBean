@@ -39,9 +39,12 @@ public sealed class AggregateFilterTests
                     SemanticAggregateFilterOperator.Gte,
                     2)));
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var plan = new SqlCompiler(metadata).Compile(new Planner().Plan(authorized));
+        var plan = new SqlCompiler(metadata).Compile(new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        });
 
         Assert.Contains("COUNT(*)", plan.CommandText, StringComparison.Ordinal);
         Assert.Contains(">= @p0", plan.CommandText, StringComparison.Ordinal);
@@ -73,9 +76,12 @@ public sealed class AggregateFilterTests
                     SemanticAggregateFilterOperator.Gt,
                     100d)));
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var plan = new SqlCompiler(metadata).Compile(new Planner().Plan(authorized));
+        var plan = new SqlCompiler(metadata).Compile(new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        });
         var result = await new SqlExecutionProvider(connection).ExecuteAsync(plan, new ExecutionContext());
 
         Assert.Single(result.Rows);
@@ -143,3 +149,4 @@ public sealed class AggregateFilterTests
         await command.ExecuteNonQueryAsync();
     }
 }
+

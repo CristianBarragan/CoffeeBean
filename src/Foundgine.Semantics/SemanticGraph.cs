@@ -125,6 +125,24 @@ public sealed record SemanticGraphNode(
     int? ParentId,
     AuthorizationPredicate? Authorization = null)
 {
+    /// <summary>Stable semantic annotations supplied by intent or semantic configuration.</summary>
+    public IReadOnlyDictionary<string, string> SemanticAnnotations { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Provenance for how this node was traversed from the root.</summary>
+    public SemanticTraversalOrigin? TraversalOrigin { get; init; }
+
+    /// <summary>Provenance identifying the intent operation that created the node.</summary>
+    public SemanticIntentOrigin? IntentOrigin { get; init; }
+
+    /// <summary>Cardinality expected by the intent/planner at this node.</summary>
+    public SemanticExpectedCardinality ExpectedCardinality { get; init; } = SemanticExpectedCardinality.Unknown;
+
+    /// <summary>Whether the path can legally produce a null target.</summary>
+    public bool IsNullablePath { get; init; }
+
+    /// <summary>Provider-neutral semantic constraints relevant to this node.</summary>
+    public IReadOnlyList<SemanticConstraint> SemanticConstraints { get; init; } = [];
     /// <summary>
     /// Fields selected for this entity in the request. These are semantic
     /// field identities only; no provider/storage information is carried.

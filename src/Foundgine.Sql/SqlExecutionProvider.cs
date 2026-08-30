@@ -29,6 +29,9 @@ public sealed class SqlExecutionProvider : IExecutionProvider
         ArgumentNullException.ThrowIfNull(plan);
         if (plan is not SqlPlan sqlPlan)
             throw new ArgumentException("The SQL provider requires a SqlPlan.", nameof(plan));
+        if (sqlPlan.AuthorizationBinding is null)
+            throw new InvalidOperationException(
+                "The SQL provider refuses to execute a provider plan without authorization provenance.");
 
         var stopwatch = Stopwatch.StartNew();
 

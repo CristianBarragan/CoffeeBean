@@ -13,7 +13,7 @@ public sealed class SemanticModelTests
     {
         var model = SupplyChainSemanticModel.Build();
 
-        Assert.Equal(15, model.Entities.Count);
+        Assert.Equal(17, model.Entities.Count);
         var product = model.Get(SupplyChainSemanticModel.Product);
         Assert.Equal("Product", product.Name);
         Assert.Contains(product.Relationships, r => r.Name == "components");
@@ -43,9 +43,9 @@ public sealed class MetadataBackedAuthoringTests
     {
         var model = SupplyChainSemanticModel.Build();
 
-        Assert.Equal(15, model.Entities.Count);
-        Assert.Equal(15, SupplyChainSemanticModel.Metadata.Entities.Count());
-        Assert.Equal(13, SupplyChainSemanticModel.Metadata.Relationships.Count());
+        Assert.Equal(17, model.Entities.Count);
+        Assert.Equal(17, SupplyChainSemanticModel.Metadata.Entities.Count());
+        Assert.Equal(15, SupplyChainSemanticModel.Metadata.Relationships.Count());
 
         Assert.Equal("Product", model.Get(SupplyChainSemanticModel.Product).Name);
         Assert.Equal("PurchaseOrder", model.Get(SupplyChainSemanticModel.PurchaseOrder).Name);

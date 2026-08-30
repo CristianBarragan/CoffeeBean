@@ -51,14 +51,17 @@ public sealed class UntrustedIntentSafetyTests
         var model = BankingModel.Build();
         var intent = new JsonReadIntentAdapter().Parse(json);
         var request = new ReadIntentCompiler(model).Compile(intent);
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new DenyBalancePolicy()).Authorize(resolved);
 
         Assert.Single(authorized.Nodes);
         Assert.Equal(new[] { new FieldId(1) }, authorized.Nodes[0].Fields);
         Assert.DoesNotContain(new FieldId(3), authorized.Nodes[0].Fields);
 
-        var plan = new Planner().Plan(authorized);
+        var plan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var sql = new SqlCompiler(BankingRelationalMetadata.Build()).Compile(plan);
 
         Assert.DoesNotContain("Balance", sql.CommandText, StringComparison.OrdinalIgnoreCase);
@@ -77,7 +80,7 @@ public sealed class UntrustedIntentSafetyTests
         var model = BankingModel.Build();
         var intent = new JsonReadIntentAdapter().Parse(json);
         var request = new ReadIntentCompiler(model).Compile(intent);
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
 
         var exception = Assert.Throws<SemanticAuthorizationException>(
             () => new SemanticAuthorizer(new DenyAccountPolicy()).Authorize(resolved));
@@ -96,3 +99,4 @@ public sealed class UntrustedIntentSafetyTests
         public override bool CanAccessEntity(EntityId entityId) => entityId != BankingModel.Account;
     }
 }
+

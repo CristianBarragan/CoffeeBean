@@ -7,6 +7,7 @@
     <RootNamespace>Foundgine.GraphQL.HotChocolate</RootNamespace>
     <AssemblyName>Foundgine.GraphQL.HotChocolate.Execution</AssemblyName>
     <IsPackable>true</IsPackable>
+    <TargetFramework>net9.0</TargetFramework>
     <PackageReleaseNotes>1.1.0: Adds the secure FoundgineHotChocolateQueryExecutor as a separate execution package so the pure GraphQL adapter remains independent of Foundgine.Execution. Requires a host-supplied ISecurityExecutionContextProvider.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>

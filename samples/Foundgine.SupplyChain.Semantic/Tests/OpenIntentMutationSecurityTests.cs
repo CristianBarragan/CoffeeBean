@@ -1,4 +1,4 @@
-using Foundgine.Abstractions;
+﻿using Foundgine.Abstractions;
 using Foundgine.Semantics.Mutation;
 using Foundgine.Semantics.Query;
 using Foundgine.SupplyChain.Semantic.Semantics;
@@ -30,7 +30,7 @@ public sealed class OpenIntentMutationSecurityTests
                 .Return("Id", "PurchaseOrderId")
             .Create("Shipment", "shipment")
                 .SetFrom("PurchaseOrderId", "order", "Id")
-                .Set("ExpectedArrival", new DateOnly(2026, 9, 5))
+                .Set("ExpectedArrival", new DateTime(2026, 9, 5))
                 .Set("Status", "Planned")
                 .Set("Quantity", 100m)
                 .Return("Id", "PurchaseOrderId")
@@ -41,7 +41,10 @@ public sealed class OpenIntentMutationSecurityTests
         Assert.Equal(3, plan.Operations.Count);
         Assert.Equal(2, plan.Dependencies.Count);
         Assert.All(plan.Dependencies, dependency => Assert.Equal(0, int.Parse(dependency.FromOperationId)));
-        Assert.All(plan.Dependencies, dependency => Assert.Equal(2, dependency.TargetField.Value));
+        var purchaseOrderLineId = model.ResolveEntity("PurchaseOrderLine").Fields.Single(x => x.Name == "PurchaseOrderId").Id;
+        var shipmentPurchaseOrderId = model.ResolveEntity("Shipment").Fields.Single(x => x.Name == "PurchaseOrderId").Id;
+        Assert.All(plan.Dependencies, dependency => Assert.Contains(
+            dependency.TargetField, new[] { purchaseOrderLineId, shipmentPurchaseOrderId }));
     }
 
     [Fact]
@@ -124,3 +127,5 @@ public sealed class OpenIntentMutationSecurityTests
         Assert.Equal(42, filter.Value);
     }
 }
+
+

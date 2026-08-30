@@ -1,3 +1,4 @@
+using Foundgine.Semantics.Authorization;
 using Foundgine.Execution;
 using Foundgine.Execution.Security;
 using Foundgine.Planning;
@@ -136,7 +137,7 @@ public sealed class SecurityAdversarialContractTests
     [Fact]
     public void Proofless_provider_plan_is_rejected_at_execution_boundary()
     {
-        var ir = new ExecutionIR(
+        var ir = Foundgine.Testing.ExecutionIRTestFactory.Create(
             new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [], null, null, []),
             [SecurityInvariantIds.AuthorizationRequired]);
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -154,7 +155,7 @@ public sealed class SecurityAdversarialContractTests
             []);
         var plan = new UnprovedPlan { SecurityProof = proof };
 
-        var ir = new ExecutionIR(
+        var ir = Foundgine.Testing.ExecutionIRTestFactory.Create(
             new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [], null, null, []),
             [SecurityInvariantIds.TenantIsolation]);
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -200,3 +201,5 @@ public sealed class SecurityAdversarialContractTests
 
     private sealed record UnprovedPlan() : ProviderPlan("adversarial-provider");
 }
+
+

@@ -67,6 +67,11 @@ public static class FoundgineServiceCollectionExtensions
             throw new InvalidOperationException(
                 "Foundgine requires a SemanticModel or structural metadata via UseMetadata().");
 
+        // Cross the construction/trust boundary once during application startup.
+        // Runtime consumers receive the immutable snapshot rather than the
+        // builder/lifecycle representation.
+        var contract = options.Model.Freeze().CreateSnapshot();
+
         if (options.AuthorizationPolicy is null && options.AuthorizationConfiguration is not null)
         {
             options.AuthorizationPolicy = new ConfiguredSemanticAuthorizationPolicy(
@@ -79,8 +84,11 @@ public static class FoundgineServiceCollectionExtensions
                 "Foundgine requires an ISemanticAuthorizationPolicy or configured authorization.");
 
         services.AddSingleton(options);
+        services.AddSingleton(contract);
+        services.AddSingleton<ISemanticContractProvider>(new SemanticContractProvider(contract));
         services.AddSingleton<IFoundgine>(serviceProvider => new FoundgineEngine(
             serviceProvider.GetRequiredService<FoundgineOptions>(),
+            serviceProvider.GetRequiredService<SemanticContractSnapshot>(),
             serviceProvider.GetRequiredService<IProviderPlanCompiler>(),
             serviceProvider.GetRequiredService<IExecutionProvider>()));
 

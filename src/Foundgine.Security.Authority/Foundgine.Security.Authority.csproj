@@ -7,6 +7,7 @@
     <RootNamespace>Foundgine.Security.Authority</RootNamespace>
     <AssemblyName>Foundgine.Security.Authority</AssemblyName>
     <IsPackable>true</IsPackable>
+    <TargetFramework>net9.0</TargetFramework>
     <PackageReleaseNotes>1.1.1: Authority/recovery infrastructure is explicitly separated from the Foundgine semantic execution core. GraphQL secure query execution is provided by Foundgine.GraphQL.HotChocolate.Execution. The Supply Chain reference sample is source-integrated against this release line. 1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0. 0.5.0: New packaged authorization recovery control-plane library, extracted from the PostgreSQL sample. Provides provider-agnostic witness quorum, credential lifecycle, journal reconciliation, and failover primitives. 0.4.0: The underlying authorization recovery/security implementation existed in the PostgreSQL reference sample; 0.5.0 is the first standalone NuGet package for the provider-agnostic portion.</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>

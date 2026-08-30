@@ -26,7 +26,9 @@ public sealed class ExecutionIRTests
             null,
             new[] { child });
 
-        var plan = new SemanticPlan(root);
+        var plan = new SemanticPlan(
+            root,
+            AuthorizationBinding: new SemanticPlanAuthorizationBinding("test-contract", "test-authorization"));
 
         var ir = ExecutionIRCompiler.Compile(plan);
 
@@ -50,7 +52,8 @@ public sealed class ExecutionIRTests
                 new EntityId(1),
                 new[] { new FieldId(11) },
                 null,
-                Array.Empty<SemanticPlanNode>()));
+                Array.Empty<SemanticPlanNode>()),
+            AuthorizationBinding: new SemanticPlanAuthorizationBinding("test-contract", "test-authorization"));
 
         var ir = ExecutionIRCompiler.Compile(plan);
 

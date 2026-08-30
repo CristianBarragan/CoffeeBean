@@ -19,7 +19,7 @@ public sealed class OpenIntentSupplyChainTests
                 Children: [new ReadSelection(Field: "Status")])]);
 
         var semanticRequest = new ReadIntentCompiler(model).Compile(request);
-        var graph = new Foundgine.Semantics.Resolution.SemanticRequestResolver(model).Resolve(semanticRequest);
+        var graph = new Foundgine.Semantics.Resolution.SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(semanticRequest);
 
         Assert.Equal(4, graph.Nodes.Count);
         Assert.Equal("Product", model.Get(graph.Nodes[0].EntityId).Name);
@@ -47,7 +47,7 @@ public sealed class OpenIntentSupplyChainTests
                 .Return("Id", "PurchaseOrderId")
             .Create("Shipment", "shipment")
                 .SetFrom("PurchaseOrderId", "order", "Id")
-                .Set("ExpectedArrival", new DateOnly(2026, 9, 5))
+                .Set("ExpectedArrival", new DateTime(2026, 9, 5))
                 .Set("Status", "Planned")
                 .Set("Quantity", 25m)
                 .Return("Id", "PurchaseOrderId")
@@ -61,8 +61,11 @@ public sealed class OpenIntentSupplyChainTests
 
         Assert.Equal(4, plan.Operations.Count);
         Assert.Equal(2, plan.Dependencies.Count);
-        Assert.Contains(plan.Dependencies, x => x.ToOperationId == "1" && x.TargetField.Value == 2);
-        Assert.Contains(plan.Dependencies, x => x.ToOperationId == "2" && x.TargetField.Value == 2);
+        var linePurchaseOrderId = model.ResolveEntity("PurchaseOrderLine").Fields.Single(x => x.Name == "PurchaseOrderId").Id;
+        var shipmentPurchaseOrderId = model.ResolveEntity("Shipment").Fields.Single(x => x.Name == "PurchaseOrderId").Id;
+        Assert.Contains(plan.Dependencies, x => x.ToOperationId == "1" && x.TargetField == linePurchaseOrderId);
+        Assert.Contains(plan.Dependencies, x => x.ToOperationId == "2" && x.TargetField == shipmentPurchaseOrderId);
         Assert.IsType<SemanticFieldFilter>(plan.Operations[3].Filter);
     }
 }
+

@@ -1,3 +1,4 @@
+using Foundgine.Planning;
 using Foundgine.Execution;
 using Foundgine.Execution.Security;
 using Foundgine.Semantics.Security;
@@ -19,7 +20,7 @@ public sealed class ProviderExecutableConformanceGateTests
     }
 
     private static ExecutionIR TestIr(string invariant) =>
-        new(
+        Foundgine.Testing.ExecutionIRTestFactory.Create(
             new ExecutionIRNode(
                 1,
                 default,
@@ -121,4 +122,5 @@ public sealed class ProviderExecutableConformanceGateTests
 
     private sealed record DifferentProviderPlan() : ProviderPlan("different-provider");
 }
+
 

@@ -1,9 +1,10 @@
-using Foundgine.Abstractions;
+﻿using Foundgine.Abstractions;
 using Foundgine.Execution;
 using Foundgine.Execution.Security;
 using Foundgine.Planning;
 using Foundgine.Semantics;
 using Foundgine.Semantics.Security;
+using Foundgine.Testing;
 using Xunit;
 
 namespace Foundgine.Security.Tests.Penetration;
@@ -70,7 +71,7 @@ public sealed class PlanIntegrityPenetrationTests
         Assert.Contains("Unknown required security invariant", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static ExecutionIR CreateIr(string invariant) => new(
+    private static ExecutionIR CreateIr(string invariant) => ExecutionIRTestFactory.Create(
         new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, []),
         [invariant]);
 
@@ -91,3 +92,5 @@ public sealed class PlanIntegrityPenetrationTests
             new(plan.Provider, ir.RequiredSecurityInvariants, ir.RequiredSecurityInvariants, []);
     }
 }
+
+

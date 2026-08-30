@@ -36,9 +36,12 @@ public sealed class AggregateRelationshipFilterPushdownTests
             [new SemanticSelection(new FieldId(1), null, [])],
             new SemanticQueryOptions(Filter: filter));
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var semanticPlan = new Planner().Plan(authorized);
+        var semanticPlan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
         var optimized = new SemanticPlanOptimizer().Optimize(semanticPlan);
         var plan = new SqlCompiler(metadata).Compile(optimized.Plan);
 
@@ -113,3 +116,4 @@ public sealed class AggregateRelationshipFilterPushdownTests
         await command.ExecuteNonQueryAsync();
     }
 }
+

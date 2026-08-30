@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using Foundgine.Aot;
 using Foundgine.Generated;
 using Foundgine.Metadata;
@@ -8,22 +8,25 @@ using Xunit;
 namespace Foundgine.Aot.Tests;
 
 [FoundgineEntity(Id = 1, StorageName = "customers")]
+[FoundgineAlias("Client")]
 public sealed class Customer
 {
     [FoundgineField(Id = 1, StorageName = "id", IsPrimaryKey = true)]
     public int Id { get; init; }
 
     [FoundgineField(Id = 2, StorageName = "name")]
+    [FoundgineAlias("DisplayName")]
     public string Name { get; init; } = string.Empty;
 
     [FoundgineRelationship(typeof(Account), "CustomerId", "Id", Id = 1, Name = "Accounts")]
+    [FoundgineAlias("CustomerAccounts")]
     public IReadOnlyList<Account> Accounts { get; init; } = [];
 }
 
 [FoundgineEntity(Id = 2, StorageName = "accounts")]
 public sealed class Account
 {
-    [FoundgineField(Id = 1, StorageName = "id")]
+    [FoundgineField(Id = 1, StorageName = "id", IsPrimaryKey = true)]
     public int Id { get; init; }
 
     [FoundgineField(Id = 2, StorageName = "customer_id")]
@@ -129,18 +132,110 @@ internal static class DecoupledSchemaMap
 {
 }
 
+
+[FoundgineEntity(Id = 30, StorageName = "implicit_columns")]
+public sealed class ImplicitColumnIdentityEntity
+{
+    [FoundgineField(Id = 301, ColumnId = 401, StorageName = "id", IsPrimaryKey = true)]
+    public int Id { get; init; }
+
+    [FoundgineField(Id = 302, ColumnId = 402, StorageName = "value")]
+    public string Value { get; init; } = string.Empty;
+}
+
+// Distinct from ImplicitColumnIdentityEntity above: that entity declares
+// explicit ColumnId values (to test FieldId/ColumnId independence). This
+// entity declares no explicit ColumnId at all, so its column ids must be
+// derived from the stable content hash of (storage name, column name),
+// independent of declaration order.
+[FoundgineEntity(Id = 31, StorageName = "implicit_columns")]
+public sealed class StableColumnIdEntity
+{
+    [FoundgineField(StorageName = "id", IsPrimaryKey = true)]
+    public int Id { get; init; }
+
+    [FoundgineField(StorageName = "value")]
+    public string Value { get; init; } = string.Empty;
+}
+
+
+
+[FoundgineEntity(StorageName = "identity_regression_parents")]
+public sealed class IdentityRegressionParent
+{
+    [FoundgineField(StorageName = "id", IsPrimaryKey = true)]
+    public int Id { get; init; }
+
+    [FoundgineRelationship(typeof(IdentityRegressionChild), "ParentId", "Id")]
+    public IReadOnlyList<IdentityRegressionChild> Children { get; init; } = [];
+}
+
+[FoundgineEntity(StorageName = "identity_regression_children")]
+public sealed class IdentityRegressionChild
+{
+    [FoundgineField(StorageName = "id", IsPrimaryKey = true)]
+    public int Id { get; init; }
+
+    [FoundgineField(StorageName = "parent_id")]
+    public int ParentId { get; init; }
+}
+
 public sealed class GeneratedMetadataTests
 {
+    [Fact]
+    public void Generated_semantic_contract_fingerprint_matches_runtime_discovery()
+    {
+        var model = GeneratedMetadata.Registry.Discover();
+
+        Assert.Equal(model.ContractFingerprint, GeneratedSemanticModel.ContractFingerprint);
+        Assert.True(Foundgine.Semantics.SemanticContractAttestation.Matches(
+            model, GeneratedSemanticModel.ContractFingerprint));
+    }
+
+    [Fact]
+    public void Aot_aliases_reach_semantic_model_discovery_and_preserve_ids()
+    {
+        var model = GeneratedMetadata.Registry.Discover();
+        var customer = model.ResolveEntity("Client");
+
+        Assert.Equal(new EntityId(1), customer.Id);
+        Assert.Equal("Customer", customer.Name);
+        Assert.Equal(["Client"], customer.EffectiveAliases.Select(x => x.Name));
+        Assert.Equal(["DisplayName"], customer.Fields.Single(x => x.Id == new FieldId(2)).EffectiveAliases.Select(x => x.Name));
+        Assert.Equal(["CustomerAccounts"], customer.Relationships.Single(x => x.Id == new RelationshipId(1)).EffectiveAliases.Select(x => x.Name));
+    }
+
+    [Fact]
+    public void Explicit_field_id_and_column_id_remain_independent()
+    {
+        var entity = GeneratedMetadata.Registry.GetEntity(new EntityId(30));
+        Assert.Equal(new FieldId(301), entity.EffectiveFields.Single(x => x.Name == "Id").Id);
+        Assert.Equal(new ColumnId(401), entity.EffectiveFields.Single(x => x.Name == "Id").Column!.ColumnId);
+        Assert.Equal(new FieldId(302), entity.EffectiveFields.Single(x => x.Name == "Value").Id);
+        Assert.Equal(new ColumnId(402), entity.EffectiveFields.Single(x => x.Name == "Value").Column!.ColumnId);
+    }
+
     [Fact]
     public void Generator_emits_entities_and_storage_mappings()
     {
         var customer = GeneratedMetadata.Registry.GetEntity(new EntityId(1));
         Assert.Equal("Customer", customer.Name);
         Assert.Equal("customers", customer.EffectiveStorageName);
-        Assert.Equal("id", customer.Columns.Single(x => x.Id == new ColumnId(1)).EffectiveStorageName);
-        Assert.Equal("name", customer.Columns.Single(x => x.Id == new ColumnId(2)).EffectiveStorageName);
-        Assert.Equal(new ColumnId(1), customer.EffectiveFields.Single(x => x.Id == new FieldId(1)).Column!.ColumnId);
-        Assert.Equal(new ColumnId(1), customer.PrimaryKey!.ColumnId);
+        Assert.Equal("id", customer.Columns.Single(x => x.EffectiveStorageName == "id").EffectiveStorageName);
+        Assert.Equal("name", customer.Columns.Single(x => x.EffectiveStorageName == "name").EffectiveStorageName);
+        Assert.Equal(customer.Columns.Single(x => x.EffectiveStorageName == "id").Id, customer.EffectiveFields.Single(x => x.Name == "Id").Column!.ColumnId);
+        Assert.Equal(customer.Columns.Single(x => x.EffectiveStorageName == "id").Id, customer.PrimaryKey!.ColumnId);
+    }
+
+    [Fact]
+    public void Generator_propagates_aot_aliases_without_changing_identity()
+    {
+        var customer = GeneratedMetadata.Registry.GetEntity(new EntityId(1));
+        Assert.Equal(["Client"], customer.Aliases);
+        Assert.Equal(["DisplayName"], customer.EffectiveFields.Single(x => x.Id == new FieldId(2)).Aliases);
+
+        var relationship = GeneratedMetadata.Registry.GetRelationship(new RelationshipId(1));
+        Assert.Equal(["CustomerAccounts"], relationship.Aliases);
     }
 
     [Fact]
@@ -150,9 +245,9 @@ public sealed class GeneratedMetadataTests
         Assert.Equal(new EntityId(1), relationship.Source);
         Assert.Equal(new EntityId(2), relationship.Target);
         Assert.Equal(new EntityId(1), relationship.SourceKey.EntityId);
-        Assert.Equal(new ColumnId(1), relationship.SourceKey.ColumnId);
+        Assert.Equal(GeneratedMetadata.Registry.GetEntity(new EntityId(1)).Columns.Single(x => x.EffectiveStorageName == "id").Id, relationship.SourceKey.ColumnId);
         Assert.Equal(new EntityId(2), relationship.TargetKey.EntityId);
-        Assert.Equal(new ColumnId(2), relationship.TargetKey.ColumnId);
+        Assert.Equal(GeneratedMetadata.Registry.GetEntity(new EntityId(2)).Columns.Single(x => x.EffectiveStorageName == "customer_id").Id, relationship.TargetKey.ColumnId);
     }
 
     [Fact]
@@ -162,9 +257,9 @@ public sealed class GeneratedMetadataTests
         Assert.Equal(new EntityId(2), relationship.Source);
         Assert.Equal(new EntityId(1), relationship.Target);
         Assert.Equal(new EntityId(2), relationship.SourceKey.EntityId);
-        Assert.Equal(new ColumnId(2), relationship.SourceKey.ColumnId);
+        Assert.Equal(GeneratedMetadata.Registry.GetEntity(new EntityId(2)).Columns.Single(x => x.EffectiveStorageName == "customer_id").Id, relationship.SourceKey.ColumnId);
         Assert.Equal(new EntityId(1), relationship.TargetKey.EntityId);
-        Assert.Equal(new ColumnId(1), relationship.TargetKey.ColumnId);
+        Assert.Equal(GeneratedMetadata.Registry.GetEntity(new EntityId(1)).Columns.Single(x => x.EffectiveStorageName == "id").Id, relationship.TargetKey.ColumnId);
     }
 
     [Fact]
@@ -279,4 +374,44 @@ public sealed class GeneratedMetadataTests
         Assert.Contains(nameof(ProductConversions.ToContractType), conversion!.Method);
     }
 
+    [Fact]
+    public void Generator_derives_stable_physical_column_ids_without_declaration_order()
+    {
+        var entity = GeneratedMetadata.Registry.GetEntity(new EntityId(31));
+
+        Assert.Equal(SemanticIdentity.Hash(SemanticIdentity.ColumnKey("implicit_columns", "id")),
+            entity.Columns.Single(x => x.EffectiveStorageName == "id").Id.Value);
+        Assert.Equal(SemanticIdentity.Hash(SemanticIdentity.ColumnKey("implicit_columns", "value")),
+            entity.Columns.Single(x => x.EffectiveStorageName == "value").Id.Value);
+    }
+
+
+
+    [Fact]
+    public void Aot_generated_automatic_ids_match_runtime_canonical_identity()
+    {
+        var parent = GeneratedMetadata.Registry.GetEntity(
+            EntityId.Create("IdentityRegressionParent"));
+
+        Assert.Equal(
+            SemanticIdentity.Hash(SemanticIdentity.EntityKey("IdentityRegressionParent")),
+            parent.EntityId.Value);
+
+        Assert.Equal(
+            SemanticIdentity.Hash(SemanticIdentity.FieldKey("IdentityRegressionParent", "Id")),
+            parent.EffectiveFields.Single(x => x.Name == "Id").Id.Value);
+
+        Assert.Equal(
+            SemanticIdentity.Hash(SemanticIdentity.ColumnKey("identity_regression_parents", "id")),
+            parent.Columns.Single(x => x.EffectiveStorageName == "id").Id.Value);
+
+        var relationship = GeneratedMetadata.Registry.GetRelationship(
+            RelationshipId.Create("IdentityRegressionParent", "Children"));
+
+        Assert.Equal(
+            SemanticIdentity.Hash(SemanticIdentity.RelationshipKey("IdentityRegressionParent", "Children")),
+            relationship.Id.Value);
+    }
 }
+
+

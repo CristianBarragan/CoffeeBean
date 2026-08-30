@@ -57,9 +57,12 @@ public sealed class AotSqlPipelineTests
                 ])
             ]);
 
-        var resolved = new SemanticRequestResolver(model).Resolve(request);
+        var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);
-        var plan = new Planner().Plan(authorized);
+        var plan = new Planner().Plan(authorized) with
+        {
+            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+        };
 
         // The AOT path must not require hand-built relational metadata.
         var sqlPlan = new SqlCompiler(GeneratedMetadata.Registry).Compile(plan);
@@ -117,3 +120,4 @@ public sealed class AotSqlPipelineTests
         await command.ExecuteNonQueryAsync();
     }
 }
+

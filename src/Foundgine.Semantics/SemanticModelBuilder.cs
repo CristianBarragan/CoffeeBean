@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Reflection;
 using Foundgine.Abstractions;
 
@@ -12,8 +12,31 @@ namespace Foundgine.Semantics;
 public sealed class SemanticModelBuilder
 {
     private readonly Dictionary<EntityId, SemanticEntity> _entities = new();
-    private readonly Dictionary<EntityId, Type> _entityModelTypes = new();
     private readonly List<SemanticTraversal> _traversals = [];
+    private bool _requireTypedEntities;
+
+    /// <summary>
+    /// Opts into strict typed-entity mode. Once enabled:
+    /// <list type="bullet">
+    /// <item>the untyped <see cref="Entity(EntityId, string, Action{SemanticEntityBuilder})"/>
+    /// overload throws instead of registering an entity - the typed
+    /// <see cref="Entity{TModel}"/> overload becomes the only way to add one;</item>
+    /// <item>the domain model type passed to <see cref="Entity{TModel}"/> must be
+    /// decorated with <see cref="SemanticEntityAttribute"/>, so a type can only
+    /// back a semantic entity if it was deliberately opted in.</item>
+    /// </list>
+    /// This is off by default: a lot of legitimate usage (ad hoc test fixtures,
+    /// metadata-only entities with no CLR model behind them) has no domain type
+    /// to bind to, so making the untyped builder unconditionally internal would
+    /// break that usage. Applications that want the stronger guarantee - that
+    /// semantic fields can never drift from real, deliberately-exposed CLR
+    /// properties - opt in here.
+    /// </summary>
+    public SemanticModelBuilder RequireTypedEntities()
+    {
+        _requireTypedEntities = true;
+        return this;
+    }
 
     /// <summary>
     /// Registers a semantic entity whose fields can be authored against the
@@ -31,10 +54,17 @@ public sealed class SemanticModelBuilder
         if (_entities.ContainsKey(id))
             throw new InvalidOperationException($"Semantic entity '{id}' is already registered.");
 
+        if (_requireTypedEntities && typeof(TModel).GetCustomAttribute<SemanticEntityAttribute>() is null)
+        {
+            throw new InvalidOperationException(
+                $"Semantic entity '{name}' targets model type '{typeof(TModel).FullName}', but this model requires typed entities (RequireTypedEntities()) and that type is not marked [SemanticEntity].");
+        }
+
         var builder = new SemanticEntityBuilder<TModel>(id, name);
         configure(builder);
-        _entities.Add(id, builder.Build());
-        _entityModelTypes.Add(id, typeof(TModel));
+        var entity = builder.Build();
+        ValidateEntityAliases(entity);
+        _entities.Add(id, entity);
         return this;
     }
 
@@ -44,6 +74,22 @@ public sealed class SemanticModelBuilder
     /// application/domain models; the selectors therefore cannot accidentally
     /// reference the wrong model, semantic metadata, or provider entity type.
     /// </summary>
+    /// <summary>Declares a relationship with a deterministic identity derived from its source entity and name.</summary>
+    public SemanticModelBuilder Relationship<TFromModel, TToModel>(
+        EntityId fromEntity,
+        string name,
+        Expression<Func<TFromModel, object?>> fromProperty,
+        EntityId toEntity,
+        Expression<Func<TToModel, object?>> toProperty,
+        RelationshipCardinality cardinality)
+    {
+        var source = _entities.TryGetValue(fromEntity, out var entity) ? entity : null;
+        if (source is null)
+            throw new InvalidOperationException($"Source semantic entity '{fromEntity}' must be registered before declaring relationship '{name}'.");
+
+        return Relationship(fromEntity, RelationshipId.Create(source.Name, name), name, fromProperty, toEntity, toProperty, cardinality);
+    }
+
     public SemanticModelBuilder Relationship<TFromModel, TToModel>(
         EntityId fromEntity,
         RelationshipId id,
@@ -60,12 +106,6 @@ public sealed class SemanticModelBuilder
 
         if (!_entities.ContainsKey(toEntity))
             throw new InvalidOperationException($"Target semantic entity '{toEntity}' must be registered before declaring relationship '{name}'.");
-
-        if (_entityModelTypes.TryGetValue(fromEntity, out var registeredFrom) && registeredFrom != typeof(TFromModel))
-            throw new ArgumentException($"Semantic entity '{source.Name}' is registered for model type '{registeredFrom.FullName}', not '{typeof(TFromModel).FullName}'.", nameof(fromEntity));
-
-        if (_entityModelTypes.TryGetValue(toEntity, out var registeredTo) && registeredTo != typeof(TToModel))
-            throw new ArgumentException($"Semantic entity '{toEntity}' is registered for model type '{registeredTo.FullName}', not '{typeof(TToModel).FullName}'.", nameof(toEntity));
 
         var from = GetProperty(fromProperty, typeof(TFromModel));
         var to = GetProperty(toProperty, typeof(TToModel));
@@ -101,6 +141,45 @@ public sealed class SemanticModelBuilder
 
         _traversals.AddRange(model.Traversals);
         return this;
+    }
+
+    /// <summary>
+    /// Defense-in-depth check that a semantic entity's declared fields still
+    /// correspond to real properties on its CLR model type. Entities built
+    /// through <see cref="Entity{TModel}"/> already satisfy this by
+    /// construction (fields are only ever added from a validated property
+    /// selector), so this is a safety net against a future refactor
+    /// weakening that guarantee rather than something expected to fire today.
+    /// It is intentionally only run for <see cref="Entity{TModel}"/>, not for
+    /// <see cref="Import"/>: an imported <see cref="SemanticModel"/> may have
+    /// been produced by AOT metadata discovery, where a declared field name
+    /// legitimately need not equal the CLR property name (e.g. a
+    /// <c>[FoundgineField(Name = ...)]</c> override), so the same strict
+    /// check would be a false positive there.
+    /// </summary>
+    private static void ValidateFieldsMatchModelType(SemanticEntity entity)
+    {
+        if (entity.ModelType is null)
+            return;
+
+        var properties = entity.ModelType
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var field in entity.Fields)
+        {
+            if (!properties.TryGetValue(field.Name, out var property))
+            {
+                throw new InvalidOperationException(
+                    $"Semantic entity '{entity.Name}' declares field '{field.Name}', but model type '{entity.ModelType.FullName}' has no matching public property.");
+            }
+
+            if (property.PropertyType != field.ClrType)
+            {
+                throw new InvalidOperationException(
+                    $"Semantic entity '{entity.Name}' field '{field.Name}' is typed as '{field.ClrType.Name}', but model type '{entity.ModelType.FullName}' declares '{field.Name}' as '{property.PropertyType.Name}'.");
+            }
+        }
     }
 
     /// <summary>
@@ -179,6 +258,7 @@ public sealed class SemanticModelBuilder
         return this;
     }
 
+#pragma warning disable CS0618
     public SemanticModelBuilder Entity(
         EntityId id,
         string name,
@@ -187,12 +267,20 @@ public sealed class SemanticModelBuilder
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(configure);
 
+        if (_requireTypedEntities)
+        {
+            throw new InvalidOperationException(
+                $"Semantic entity '{name}' was declared with the untyped builder, but this model requires typed entities (RequireTypedEntities()). Use Entity<TModel>(...) instead so fields are validated against a real domain model type.");
+        }
+
         if (_entities.ContainsKey(id))
             throw new InvalidOperationException($"Semantic entity '{id}' is already registered.");
 
         var builder = new SemanticEntityBuilder(id, name);
         configure(builder);
-        _entities.Add(id, builder.Build());
+        var entity = builder.Build();
+        ValidateEntityAliases(entity);
+        _entities.Add(id, entity);
         return this;
     }
 
@@ -223,10 +311,16 @@ public sealed class SemanticModelBuilder
 
     public SemanticModel Build()
     {
+        // Relationship identities have composition-wide semantics.
+        // Validate them before local duplicate checks so independently
+        // composed declarations are reconciled by identity first.
+        ValidateGlobalRelationshipIdentities();
+
         foreach (var entity in _entities.Values)
         {
             ValidateUniqueFields(entity);
             ValidateUniqueRelationships(entity);
+            ValidateFieldConstraints(entity);
 
             foreach (var relationship in entity.Relationships)
             {
@@ -247,6 +341,31 @@ public sealed class SemanticModelBuilder
         return new SemanticModel(_entities, _traversals);
     }
 
+    private static void ValidateFieldConstraints(SemanticEntity entity)
+    {
+        foreach (var field in entity.Fields)
+        {
+            foreach (var constraint in field.EffectiveConstraints)
+            {
+                switch (constraint.Kind)
+                {
+                    case SemanticConstraintKind.Range when constraint.Minimum is null && constraint.Maximum is null:
+                        throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' declares a Range constraint without a minimum or maximum.");
+                    case SemanticConstraintKind.Range when constraint.Minimum is not null && constraint.Maximum is not null && constraint.Minimum > constraint.Maximum:
+                        throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' declares an invalid Range constraint: minimum exceeds maximum.");
+                    case SemanticConstraintKind.Pattern when string.IsNullOrWhiteSpace(constraint.Value):
+                        throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' declares a Pattern constraint without a pattern.");
+                    case SemanticConstraintKind.Currency when string.IsNullOrWhiteSpace(constraint.Value):
+                        throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' declares a Currency constraint without a currency code.");
+                    case SemanticConstraintKind.CountryCode when string.IsNullOrWhiteSpace(constraint.Value):
+                        throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' declares a CountryCode constraint without a country code.");
+                    case SemanticConstraintKind.Temporal when string.IsNullOrWhiteSpace(constraint.Value):
+                        throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' declares a Temporal constraint without semantics.");
+                }
+            }
+        }
+    }
+
     private static void ValidateUniqueFields(SemanticEntity entity)
     {
         if (entity.Fields.GroupBy(field => field.Id).Any(group => group.Count() > 1))
@@ -264,4 +383,62 @@ public sealed class SemanticModelBuilder
         if (entity.Relationships.GroupBy(relationship => relationship.Name, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > 1))
             throw new InvalidOperationException($"Semantic entity '{entity.Name}' contains duplicate relationship names.");
     }
+
+    /// <summary>
+    /// Relationship identities are globally scoped by their canonical semantic
+    /// key, not merely unique within an entity. A 64-bit hash has a theoretical
+    /// collision domain, so composition must fail closed if two different
+    /// semantic relationships ever resolve to the same identity. This also
+    /// protects independently authored modules during Import().
+    /// </summary>
+    private void ValidateGlobalRelationshipIdentities()
+    {
+        var seen = new Dictionary<RelationshipId, (EntityId Source, string EntityName, string RelationshipName, EntityId Target, RelationshipCardinality Cardinality)>();
+
+        foreach (var entity in _entities.Values)
+        {
+            foreach (var relationship in entity.Relationships)
+            {
+                if (seen.TryGetValue(relationship.Id, out var existing))
+                {
+                    var sameCanonicalKey =
+                        string.Equals(existing.EntityName, entity.Name, StringComparison.Ordinal) &&
+                        string.Equals(existing.RelationshipName, relationship.Name, StringComparison.Ordinal);
+
+                    if (!sameCanonicalKey)
+                    {
+                        throw new InvalidOperationException(
+                            $"Relationship identity collision: '{relationship.Id}' is used by '{existing.EntityName}.{existing.RelationshipName}' and '{entity.Name}.{relationship.Name}'. Relationship identities must be globally unique across composed semantic modules.");
+                    }
+
+                    if (existing.Target != relationship.Target || existing.Cardinality != relationship.Cardinality)
+                    {
+                        throw new InvalidOperationException(
+                            $"Relationship identity conflict: '{entity.Name}.{relationship.Name}' resolves to '{relationship.Target}' ({relationship.Cardinality}), but the same canonical relationship was already declared as '{existing.Target}' ({existing.Cardinality}). Composed modules must agree on the target entity and cardinality for an existing relationship identity.");
+                    }
+
+                    continue;
+                }
+
+                seen.Add(relationship.Id, (entity.Id, entity.Name, relationship.Name, relationship.Target, relationship.Cardinality));
+            }
+        }
+    }
+    private void ValidateEntityAliases(SemanticEntity entity)
+    {
+        var localNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { entity.Name };
+        foreach (var alias in entity.EffectiveAliases)
+        {
+            if (!localNames.Add(alias.Name))
+                throw new InvalidOperationException($"Semantic entity alias '{alias.Name}' duplicates the canonical entity name or another alias on '{entity.Name}'.");
+            if (_entities.Values.Any(x =>
+                string.Equals(x.Name, alias.Name, StringComparison.OrdinalIgnoreCase) ||
+                x.EffectiveAliases.Any(a => string.Equals(a.Name, alias.Name, StringComparison.OrdinalIgnoreCase))))
+                throw new InvalidOperationException($"Semantic entity alias '{alias.Name}' conflicts with an existing semantic entity name or alias.");
+        }
+    }
+
+
 }
+
+
