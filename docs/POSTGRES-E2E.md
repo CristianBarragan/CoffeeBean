@@ -11,11 +11,6 @@ CI always supplies that connection string.
 
 PostgreSQL retrieval is a branch inside the canonical semantic lifecycle, not a second pipeline:
 
-<p align="center"><img src="assets/retrieval-strategy-boundary.svg" alt="Foundgine.Sql RetrievalStrategy boundary: Relational, Fuzzy (pg_trgm), FullText (tsvector), Search/BM25 (pg_search, optional), GraphSimilarity (Apache AGE, optional), and Vector (reserved, always throws NotSupportedException on this boundary). All strategies converge on ranked candidates and provenance, then ordinary semantic resolution and authorization." width="100%"></p>
-
-<details>
-<summary>Text version</summary>
-
 ```text
 Semantic Operation Graph
           ↓
@@ -35,13 +30,6 @@ Relational Fuzzy  FullText   BM25      AGE
                     ↓
                   Plan
 ```
-
-</details>
-
-Note that this `RetrievalStrategy` boundary is separate from the
-`ISemanticLexicalCandidateSource` boundary that `Foundgine.Postgres.Vector`
-implements (see [LEXICAL-GROUNDING.md](LEXICAL-GROUNDING.md)) — `Vector` stays
-reserved/unimplemented here on purpose.
 
 No retrieval strategy grants authority or bypasses semantic authorization.
 
@@ -116,8 +104,6 @@ The PostgreSQL tests are the physical database proof for:
 - batched mutation execution;
 - real PostgreSQL execution;
 - the pgvector-backed lexical grounding pipeline — semantic contract → lexicon projection → embedding → pgvector index → nearest-neighbor retrieval → graph-constrained resolution (`PostgresVectorE2ETests`).
-
-<p align="center"><img src="assets/pgvector-e2e-pipeline.svg" alt="PostgresVectorE2ETests sequence: build a semantic contract, project it through SemanticLexiconProjection, embed entries, index them into pgvector via PgVectorSemanticLexiconIndexClient, retrieve ranked candidates via PgVectorSemanticLexicalCandidateSource, and resolve a two-token expression through SemanticLexicalResolver." width="100%"></p>
 
 The tests that need a database are deliberately skipped when no connection string exists. This keeps ordinary local tests easy to run.
 

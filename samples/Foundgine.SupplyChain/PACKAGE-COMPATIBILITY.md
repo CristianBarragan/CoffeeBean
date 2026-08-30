@@ -18,4 +18,4 @@ Key source dependencies include:
 - `src/Foundgine.Sql`
 - `src/Foundgine.MCP`
 
-The current release line is **Foundgine 1.1.7**. When this sample is copied outside the repository, the source references should be replaced with `1.1.7` package references (or a later compatible release).
+The current release line is **Foundgine 1.1.9**. When this sample is copied outside the repository, the source references should be replaced with `1.1.9` package references (or a later compatible release).

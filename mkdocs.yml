@@ -28,8 +28,10 @@ nav:
   - Home: README.md
   - Getting started: GETTING-STARTED.md
   - Layer setup: LAYER-SETUP.md
+  - What Foundgine is designed for: APPLICATION-CATEGORIES.md
   - Architecture: ARCHITECTURE.md
   - Lexical grounding: LEXICAL-GROUNDING.md
+  - Grounding decisions: GROUNDING-DECISIONS.md
   - Product identity: PRODUCT-IDENTITY.md
   - Provider independence: PROVIDER-INDEPENDENCE.md
   - Security: SECURITY.md

@@ -63,7 +63,10 @@ public sealed class SupplyChainMcpTools(SemanticModel model)
     /// Validates a raw, client-supplied claim dictionary. This is the only
     /// place claims cross from "whatever the MCP caller sent" into
     /// "something a policy is allowed to consider" — see
-    /// <see cref="ClientClaimsValidator"/> for the fail-closed rules.
+    /// <see>
+    ///     <cref>ClientClaimsValidator</cref>
+    /// </see>
+    /// for the fail-closed rules.
     /// Identity/tenant/role are never taken from <paramref name="claims"/>;
     /// they always come from <c>Authenticate(actor, token)</c>.
     /// </summary>
@@ -194,7 +197,10 @@ public sealed class SupplyChainMcpTools(SemanticModel model)
     /// A raw claim set tried to assert identity or privilege directly
     /// (role, tenant, admin flags, ...). This is rejected before
     /// authentication's own tenant/role is even consulted, and the whole
-    /// call fails closed — see <see cref="ClientClaimsValidator"/>.
+    /// call fails closed — see <see>
+    ///     <cref>ClientClaimsValidator</cref>
+    /// </see>
+    /// .
     /// </summary>
     private static object ClaimSpoofingError(ClaimsValidationResult result) => new
     {

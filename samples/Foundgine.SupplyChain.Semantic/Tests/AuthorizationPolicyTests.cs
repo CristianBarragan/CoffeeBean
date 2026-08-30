@@ -26,7 +26,10 @@ public sealed class AuthorizationPolicyTests
 }
 
 /// <summary>
-/// Unit coverage for <see cref="ClientClaimsValidator"/> in isolation, plus
+/// Unit coverage for <see>
+///     <cref>ClientClaimsValidator</cref>
+/// </see>
+/// in isolation, plus
 /// coverage of how <see cref="ConfiguredSemanticAuthorizationPolicy"/> consumes only
 /// the validated, accepted claims that come out of it. These are the same
 /// scenarios the MCP adversarial client exercises end-to-end; the unit tests

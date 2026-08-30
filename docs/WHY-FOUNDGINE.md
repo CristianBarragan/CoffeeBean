@@ -170,4 +170,4 @@ That rule is more important than any individual adapter or provider. It is what 
 
 ---
 
-Next: [Architecture](ARCHITECTURE.md)
+Next: [What Foundgine is designed for](APPLICATION-CATEGORIES.md)

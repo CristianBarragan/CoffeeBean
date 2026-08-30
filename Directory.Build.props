@@ -7,7 +7,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
     <!-- Common NuGet metadata. Individual packages override PackageId/Description. -->
-    <VersionPrefix>1.1.7</VersionPrefix>
+    <VersionPrefix>1.1.9</VersionPrefix>
 
     <!--
       Nothing is packable by default. Only the library projects under src/
@@ -39,3 +39,4 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 </Project>
+

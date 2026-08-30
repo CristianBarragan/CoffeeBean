@@ -80,6 +80,18 @@ The application still defines what each capability means and who may use it. Wha
 
 > **Callers describe what they want. The application defines what exists and what is allowed. Foundgine determines how the authorized meaning executes.**
 
+### What Foundgine is designed for
+
+Foundgine's value grows with the number of distinct callers that would otherwise reimplement authorization and query construction, how consequential a wrong authorization decision would be, and how much of the caller's input is free-form language rather than a fixed shape. See [What Foundgine is designed for](docs/APPLICATION-CATEGORIES.md) for the full what/how/where breakdown and the categories of applications the samples in this repository prove it against:
+
+| Category | Proven by |
+|---|---|
+| Multi-transport enterprise backends (GraphQL + MCP + JSON over one hardened core) | `samples/Foundgine.SupplyChain*` |
+| AI-agent tool execution boundaries | `samples/Foundgine.Agent.OpenAI`, `samples/Foundgine.SupplyChain`'s MCP surface |
+| High-assurance mutation workflows | `samples/Foundgine.HighAssurance.Banking`, `samples/Foundgine.HighAssurance.Postgres` |
+| Composite / cross-domain application models | `samples/Foundgine.CoffeeBeanery.ProductComposite` |
+| Free-form / natural-language query surfaces | `Foundgine.Elasticsearch`, `Foundgine.Postgres.Vector`, [lexical grounding](docs/LEXICAL-GROUNDING.md) |
+
 ## Open intent
 
 Foundgine does not require a predefined method for every possible query.
@@ -144,11 +156,6 @@ Evidence
 
 ### Retrieval is a parallel candidate-discovery stage
 
-<p align="center"><img src="docs/assets/retrieval-strategy-boundary.svg" alt="Foundgine.Sql RetrievalStrategy boundary: Relational, Fuzzy (pg_trgm), FullText (tsvector), Search/BM25 (pg_search, optional), GraphSimilarity (Apache AGE, optional), and Vector (reserved, always throws NotSupportedException on this boundary). All strategies converge on ranked candidates and provenance, then ordinary semantic resolution and authorization." width="100%"></p>
-
-<details>
-<summary>Text version</summary>
-
 ```text
                     Retrieval
                        │
@@ -171,9 +178,37 @@ Evidence
                   Authorization
 ```
 
-</details>
+Search and graph mechanisms are therefore **not alternate authorization or execution paths**. They are retrieval strategies that help resolve ambiguous references.
 
-Search and graph mechanisms are therefore **not alternate authorization or execution paths**. They are retrieval strategies that help resolve ambiguous references. (Token-level `pgvector` similarity for free-form lexical grounding is a separate, parallel boundary — see [`docs/LEXICAL-GROUNDING.md`](docs/LEXICAL-GROUNDING.md).)
+### Grounding decisions: ambiguity as a first-class result
+
+A graph-constrained path answers "is this mapping legal," not "is this mapping what the caller meant." A candidate that fits the semantic graph is not automatically the meaning the user intended, and a resolver that always returns the top-scored candidate will occasionally authorize and execute a confidently wrong interpretation — a perfectly authorized misunderstanding.
+
+Given a schema where `Customer` has both an account-enabled flag and an order history, the expression `active customers` is genuinely ambiguous: it can legally mean "account currently enabled" or "ordered recently," and neither the graph nor a retrieval score can tell those apart. `SemanticLexicalResolver.Ground` treats that as a first-class result instead of silently picking one:
+
+```csharp
+var decision = resolver.Ground("active customers");
+
+switch (decision.Outcome)
+{
+    case GroundingOutcome.Committed:
+        // A single interpretation — or several that agree on meaning and only
+        // differ in bridging route or evidence — proceed to authorization/planning.
+        break;
+
+    case GroundingOutcome.RequiresClarification:
+        // decision.CompetingInterpretations lists every semantically distinct
+        // reading still in contention, e.g. Customer.AccountEnabled vs.
+        // Customer.HasRecentOrder. Ask, don't guess.
+        break;
+
+    case GroundingOutcome.Unresolved:
+        // decision.Reason names the token with no legal candidate at all.
+        break;
+}
+```
+
+The key distinction `Ground` makes is between two candidates that are genuinely different *meanings* (different field, value, relationship, or root entity) versus two candidates that are different *evidence for the same meaning* (the same relationship proposed by two retrieval sources, or reached via two bridging routes). Only the first case can produce `RequiresClarification`; the second collapses into one committed interpretation, so duplicate or multi-source retrieval evidence never masquerades as ambiguity. See [Grounding decisions](docs/GROUNDING-DECISIONS.md) for the full explanation and a worked example against a real semantic contract.
 
 ### The security-preserving lifecycle
 
@@ -405,11 +440,11 @@ Start with:
 - `samples/Foundgine.HighAssurance.Postgres`
 - `samples/Foundgine.Agent.OpenAI`
 
-The SupplyChain samples are also useful as architecture tests: they show how API, application, domain, metadata/AOT, semantics, authorization, planning, and PostgreSQL execution fit together.
+The SupplyChain samples are also useful as architecture tests: they show how API, application, domain, metadata/AOT, semantics, authorization, planning, and PostgreSQL execution fit together. `samples/Foundgine.SupplyChain.Semantic/Tests/Grounding` is a worked [grounding-decision](docs/GROUNDING-DECISIONS.md) case study against that same real semantic contract — a materially ambiguous business term (`active supplier`) that Foundgine refuses to resolve silently, next to a case of duplicate retrieval evidence that it correctly does not treat as ambiguous.
 
 ## Documentation
 
-The docs are meant to be read in order, each page linking to the next: start at [`docs/GETTING-STARTED.md`](docs/GETTING-STARTED.md) and follow the "Next" link at the bottom of each page, or use the full list in [`docs/README.md`](docs/README.md).
+The docs are meant to be read in order, each page linking to the next: start at [`docs/GETTING-STARTED.md`](docs/GETTING-STARTED.md) and follow the "Next" link at the bottom of each page, or use the full list in [`docs/README.md`](docs/README.md). Two pages worth calling out directly: [What Foundgine is designed for](docs/APPLICATION-CATEGORIES.md) (the what/how/where and the application categories) and [Grounding decisions](docs/GROUNDING-DECISIONS.md) (telling a competing meaning apart from routing noise in free-form language).
 
 Every project under `src/` has its own package-level README describing its responsibility, API boundary, security considerations, and relationship to the rest of Foundgine.
 
@@ -425,6 +460,6 @@ PostgreSQL integration testing is documented in [`docs/POSTGRES-E2E.md`](docs/PO
 
 ## Current release line
 
-The repository is on **1.1.7** and targets **.NET 9**.
+The repository is on **1.1.9** and targets **.NET 9**.
 
 Foundgine is licensed under the MIT license.

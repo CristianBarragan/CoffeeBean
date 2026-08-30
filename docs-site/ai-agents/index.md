@@ -48,6 +48,8 @@ Authentication, identity, tenant context and model orchestration remain host res
 
 Foundgine is not a general autonomous-agent framework. Model selection, memory, orchestration, deployment and autonomous behavior belong to the surrounding application.
 
+The same restraint applies when an agent's input is free-form language: Foundgine will tell an agent when its own words were ambiguous against the semantic contract (see [Grounding decisions](../../docs/GROUNDING-DECISIONS.md)) rather than letting the model's confidence stand in for a correct interpretation. See [What Foundgine is designed for](../../docs/APPLICATION-CATEGORIES.md) for how the agent-tool category relates to the others.
+
 ## Next
 
 Read [Packages](../packages/index.html) next.
