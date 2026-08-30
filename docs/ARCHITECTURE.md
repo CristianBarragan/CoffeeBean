@@ -308,11 +308,6 @@ The existence of both providers is an architectural test: the logical plan canno
 
 Semantic resolution sometimes needs ranked candidates for an ambiguous reference — a name that doesn't exactly match, a fuzzy search term, or a "find things related to this" request. `Foundgine.Sql` answers that through PostgreSQL mechanisms selected per request, all behind the same provider-neutral `RetrievalStrategy` contract:
 
-<p align="center"><img src="assets/retrieval-strategy-boundary.svg" alt="Foundgine.Sql RetrievalStrategy boundary: Relational, Fuzzy (pg_trgm), FullText (tsvector), Search/BM25 (pg_search, optional), GraphSimilarity (Apache AGE, optional), and Vector (reserved, always throws NotSupportedException on this boundary). All strategies converge on ranked candidates and provenance, then ordinary semantic resolution and authorization." width="100%"></p>
-
-<details>
-<summary>Text version</summary>
-
 ```text
 Semantic candidate request
           ↓
@@ -329,8 +324,6 @@ Semantic candidate request
           ↓
    Semantic resolution / authorization (unchanged)
 ```
-
-</details>
 
 `Fuzzy` and `FullText` use PostgreSQL's built-in `pg_trgm` and `tsvector`/`websearch_to_tsquery`. `Search` and `GraphSimilarity` are optional and require the `pg_search` and Apache AGE extensions respectively — `GraphSimilarity` runs a Cypher query through AGE over a semantic relationship (for example, finding suppliers similar to a given one by shared purchase-order neighbors) and returns ranked candidates, the same shape as any other strategy. `Vector` is not implemented on this per-field `IApproximateCandidateSource` boundary; token-level vector retrieval instead lives in `Foundgine.Postgres.Vector`, a `pgvector`-backed implementation of the separate `ISemanticLexicalCandidateSource` boundary used by lexical grounding (see below and [`LEXICAL-GROUNDING.md`](LEXICAL-GROUNDING.md)).
 
@@ -495,11 +488,6 @@ boundary. Each token may be searched against every semantic kind (entity, node,
 relationship, traversal, field, value, or operation). The highest retrieval
 score is the first hypothesis, not truth.
 
-<p align="center"><img src="assets/lexical-grounding-flow.svg" alt="Foundgine lexical grounding flow: natural language, tokenization, candidate retrieval via ISemanticLexicalCandidateSource (Elasticsearch BM25 or pgvector similarity), ranked candidates, highest-scoring root candidate, semantic-contract validation, neighbour-constrained graph walk with backtracking, canonical semantic interpretation, authorization, planning/execution." width="100%"></p>
-
-<details>
-<summary>Text version</summary>
-
 ```text
 Token
   ↓
@@ -518,8 +506,6 @@ backtrack if the candidate cannot form a complete path
 canonical semantic interpretation
 ```
 
-</details>
-
 The semantic graph is authoritative for topology. Approximate retrieval scores
 never authorize a path and are never treated as probabilities. Database/provider
 execution begins only after semantic resolution and authorization.
@@ -527,3 +513,20 @@ execution begins only after semantic resolution and authorization.
 interchangeable implementations of `ISemanticLexicalCandidateSource`; the
 semantic layer depends on neither directly, and a deployment may use one,
 the other, or both.
+
+### A legal path is not necessarily the intended one
+
+"Canonical semantic interpretation" above still only answers *is this
+mapping legal*. It does not answer *is this mapping what the caller meant*,
+and those can come apart: a single expression can be structurally valid
+against two different fields, values, relationships, or root entities at
+once, and retrieval score alone cannot break that tie in a principled way.
+
+`SemanticLexicalResolver.Ground` inserts one more decision between
+"canonical semantic interpretation" and authorization: it groups candidate
+paths by what they actually mean (ignoring score and bridging route), and
+only commits automatically when either one meaning dominates or the
+remaining candidates all agree on that meaning. When two or more distinct
+meanings remain within confidence range of each other, it returns
+`GroundingOutcome.RequiresClarification` instead of authorizing whichever
+one happened to score highest — see [Grounding decisions](GROUNDING-DECISIONS.md).

@@ -2,7 +2,7 @@
 
 ## Canonical identity
 
-**Current release line: 1.1.7**
+**Current release line: 1.1.9**
 
 **Foundgine is a semantic execution layer for .NET.**
 

@@ -145,4 +145,4 @@ The application therefore does not need to predict every future query or mutatio
 
 ---
 
-Next: [Authorization](AUTHORIZATION.md)
+Next: [Lexical grounding](LEXICAL-GROUNDING.md)

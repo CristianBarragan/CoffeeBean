@@ -6,7 +6,15 @@ public enum SemanticLexicalResolutionOutcome : byte
 {
     Resolved,
     Ambiguous,
-    Unresolved
+    Unresolved,
+
+    /// <summary>A configured resource limit (token count, paths explored,
+    /// elapsed search time, or retrieval time) stopped grounding before it
+    /// could prove there was only one legal interpretation — or the
+    /// caller-supplied <see cref="System.Threading.CancellationToken"/> was
+    /// cancelled. Callers must treat this the same as a stop signal, not as
+    /// "resolved to the best candidate found so far."</summary>
+    BudgetExceeded
 }
 
 /// <summary>One selected lexical interpretation and its graph path.</summary>

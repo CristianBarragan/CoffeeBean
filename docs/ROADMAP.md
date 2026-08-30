@@ -88,7 +88,17 @@ Potential areas include:
 - improved operation canonicalization;
 - more precise working-vs-output projection semantics;
 - broader provider-aware planning evidence;
-- stronger mutation ergonomics.
+- stronger mutation ergonomics;
+- a temporal candidate kind for lexical grounding (relative/absolute date
+  expressions such as "last summer"), so an expression combining a
+  temporal reference with an otherwise-resolvable entity/field no longer
+  has to fail closed as a whole — see
+  [Lexical grounding](LEXICAL-GROUNDING.md#adversarial-examples-where-this-gets-hard);
+- named value-threshold declarations in the semantic model (e.g. an
+  `AccountTier` field or a `HighValueAccount` flag) so domain concepts
+  like "big accounts" can be represented in the contract instead of
+  requiring the lexical layer to infer a business-specific cutoff, which
+  it deliberately does not do today.
 
 These should be introduced only when they solve a demonstrated application problem.
 

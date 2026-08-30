@@ -66,6 +66,12 @@ Retrieval mechanisms such as `pg_trgm`, full-text search, optional BM25 and opti
 
 JSON, GraphQL, MCP and AI integrations translate caller requests into Foundgine operations. They do not become the authority over execution.
 
+## Lexical grounding and grounding decisions
+
+Free-form language is resolved through a provider-neutral candidate boundary (`Foundgine.Elasticsearch`, `Foundgine.Postgres.Vector`): every token is scored across semantic kinds, and the highest score is a hypothesis, not truth — the semantic graph decides whether a path is legal.
+
+A legal path is not automatically the intended one, though: the same expression can be structurally valid against two different meanings at once (a different field, value, relationship, or root entity), and retrieval score alone can't break that tie safely. `SemanticLexicalResolver.Ground` returns a `GroundingDecision` that tells competing *meanings* apart from duplicate *evidence for the same meaning*, and requires clarification instead of silently authorizing the top-scored candidate when two or more meanings remain genuinely tied. See [Grounding decisions](../../docs/GROUNDING-DECISIONS.md).
+
 ## Next
 
 Read [How it works](../how-it-works/index.html) next.

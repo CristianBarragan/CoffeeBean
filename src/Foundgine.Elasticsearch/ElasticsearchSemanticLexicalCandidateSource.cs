@@ -31,6 +31,14 @@ public sealed class ElasticsearchSemanticLexicalCandidateSource : ISemanticLexic
         return RetrieveAsync(request, CancellationToken.None).GetAwaiter().GetResult();
     }
 
+    public IReadOnlyList<SemanticLexicalCandidate> Retrieve(
+        SemanticLexicalRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return RetrieveAsync(request, cancellationToken).GetAwaiter().GetResult();
+    }
+
     public async Task<IReadOnlyList<SemanticLexicalCandidate>> RetrieveAsync(
         SemanticLexicalRequest request,
         CancellationToken cancellationToken = default)

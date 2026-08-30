@@ -204,6 +204,6 @@ Do not infer from these capabilities that Foundgine is a universal provider, aut
 
 ## Current release line
 
-1.1.7, targeting .NET 9.
+1.1.9, targeting .NET 9.
 
 When documentation and code disagree, active source and tests win.
