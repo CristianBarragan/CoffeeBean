@@ -7,7 +7,17 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
     <!-- Common NuGet metadata. Individual packages override PackageId/Description. -->
-    <VersionPrefix>1.1.6</VersionPrefix>
+    <VersionPrefix>1.1.7</VersionPrefix>
+
+    <!--
+      Nothing is packable by default. Only the library projects under src/
+      are real, publishable NuGet packages; they opt back in explicitly
+      with <IsPackable>true</IsPackable> alongside their <PackageId>.
+      This prevents benchmark/sample/test Exe projects (e.g. the three
+      unrelated projects all named "Database") from being picked up by
+      `dotnet pack Foundgine.sln` and pushed to nuget.org by accident.
+    -->
+    <IsPackable>false</IsPackable>
     <Authors>Foundgine</Authors>
     <Company>Foundgine</Company>
     <Copyright>Copyright © 2026 Foundgine</Copyright>

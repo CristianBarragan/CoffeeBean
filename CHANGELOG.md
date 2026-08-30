@@ -1,3 +1,9 @@
+## [1.1.7] - 2026-08-30
+
+### Fixed
+- **Removed a duplicate `SemanticIdentity` type that shadowed the real one in tests.** `Foundgine.Semantics` contained an unrelated, unused `record SemanticIdentity(FieldId FieldId, string Name)` that shared its name with the canonical `static class SemanticIdentity` in `Foundgine.Abstractions`. Because `Foundgine.Semantics.Tests` is nested under the `Foundgine.Semantics` namespace, unqualified `SemanticIdentity` references resolved to the enclosing-namespace record instead of the intended `using`-imported class, breaking `SemanticIdentityTests`. The dead record has been deleted.
+- **Stopped benchmark/sample `Exe` projects from being packed and published as NuGet packages.** `Foundgine.sln` includes several non-library `OutputType=Exe` projects — including three unrelated projects all literally named `Database` plus `CoffeeBeanery.Database` and `CoffeeBeanery.LoadTest` — that had no `IsPackable` setting and were picked up by `dotnet pack Foundgine.sln` during release, producing spurious `.nupkg` files with generic/colliding package IDs (causing the `1.1.6` release publish step to fail with `403 Forbidden` on the ownerless `Database` package ID, after `CoffeeBeanery.Database`/`CoffeeBeanery.LoadTest` had already leaked out as accidental publishes in an earlier release). `Directory.Build.props` now defaults `IsPackable` to `false` repo-wide; only the 17 intentional library projects under `src/` opt back in explicitly alongside their `PackageId`.
+
 ## [1.1.6] - 2026-08-30
 
 ### Added
