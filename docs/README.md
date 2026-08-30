@@ -1,42 +1,45 @@
-# Documentation
+# Foundgine documentation
 
-These documents describe the current Foundgine 1.1.0 release.
+This directory contains the **current** Foundgine documentation for the 1.1.7 release line.
 
-Use these pages in this order.
+The repository itself is the source of truth. Documentation describes implemented architecture and tested behavior; it does not use old release notes or historical benchmark snapshots as current product guidance.
 
 ## Start here
 
-1. [Getting started](GETTING-STARTED.md)
-2. [Architecture](ARCHITECTURE.md)
-3. [Testing](TESTING.md)
-4. [PostgreSQL E2E](POSTGRES-E2E.md)
-5. [Current status](CURRENT-STATUS.md)
-6. [Release 1.0.0](RELEASE-1.0.0.md)
-7. [Release 1.1.0](RELEASE-1.1.0.md)
+1. [Getting started](GETTING-STARTED.md) — build the repository and run the main sample.
+2. [Why Foundgine](WHY-FOUNDGINE.md) — understand the problem and product boundary.
+3. [Architecture](ARCHITECTURE.md) — understand the semantic-to-provider pipeline.
+4. [Open Intent API](OPEN-INTENT-API.md) — understand typed, dynamic, JSON, MCP, and agent-facing intent.
+5. [Authorization](AUTHORIZATION.md) — understand semantic authorization and conditional policies.
+6. [Security](SECURITY.md) — understand the security boundaries and fail-closed rules.
 
-## Understand the product
+## Build the mental model
 
-- [Why Foundgine](WHY-FOUNDGINE.md)
-- [Security](SECURITY.md)
-- [AI agent integration](AI-AGENT.md)
-
-## Work on the implementation
-
-- [Authorization](AUTHORIZATION.md)
+- [Metadata → Semantics](METADATA-TO-SEMANTICS.md)
+- [Mapping and Connections](MAPPING.md)
+- [AOT](AOT.md)
 - [Runtime](RUNTIME.md)
 - [Public API](PUBLIC-API.md)
-- [Mapping and connections](MAPPING.md)
-- [Migration](MIGRATION.md)
-- [AOT](AOT.md)
+- [AI agents](AI-AGENT.md)
 
-## Roadmap and history
+## Provider and testing documentation
 
+- [PostgreSQL E2E](POSTGRES-E2E.md)
+- [Testing](TESTING.md)
+
+## Project direction
+
+- [Current status](CURRENT-STATUS.md)
 - [Roadmap](ROADMAP.md)
-- [Release 0.5.0](RELEASE-0.5.0.md)
-- [Release 0.4.0](RELEASE-0.4.0.md)
-- [Release 0.3.0](RELEASE-0.3.0.md)
-- [Security invariant history](security/CHANGELOG.md)
+- [Migration](MIGRATION.md)
 
-When current code and historical notes disagree, use the code and current tests as the source of truth.
+## Documentation rules
 
-- [NuGet Package Release Matrix](PACKAGE-RELEASE-MATRIX.md) — package-by-package release notes and history.
+The documentation follows four rules:
+
+1. **Current code wins.** If prose disagrees with source or tests, the source/tests are authoritative.
+2. **Implemented and planned are separated.** A planned feature is not documented as a shipped capability.
+3. **Transport and provider boundaries stay explicit.** GraphQL, MCP, JSON, AI, and SQL are adapters/providers around the semantic core.
+4. **Historical material stays out of the active guide.** Release notes, old benchmark runs, and implementation diaries are not part of the current documentation set.
+
+Package-specific architecture and usage guidance lives in the `README.md` of every project under `src/`.

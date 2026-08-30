@@ -1,108 +1,207 @@
 # Public API
 
-Foundgine exposes a deliberately small application-facing facade. Applications should normally obtain `IFoundgine` through dependency injection:
+Foundgine's public API is organized around a small common path with explicit advanced boundaries.
+
+## Common application surface
+
+The normal application entry point is `IFoundgine`.
+
+For reads, the main authoring surface is:
 
 ```csharp
-services.AddFoundgine(semanticModel, authorizationPolicy);
-
-var foundgine = services.BuildServiceProvider()
-    .GetRequiredService<IFoundgine>();
-
-var result = await foundgine.ExecuteAsync(request, context);
+foundgine.Query<Customer>()
 ```
 
-The concrete `FoundgineEngine` is an internal orchestration implementation. Application code should use the stable `IFoundgine` contract.
+or:
 
-The facade owns the pipeline:
+```csharp
+foundgine.Query("Customer")
+```
+
+The typed and dynamic forms converge on `ReadIntent`.
+
+## Typed query API
+
+`TypedQuery<T>` supports:
 
 ```text
-SemanticRequest
-    ↓
-Resolution
-    ↓
-Authorization
-    ↓
-Planning
-    ↓
-Provider compilation
-    ↓
-Execution
+Select
+Include
+Where
+OrderBy
+Take
+Skip
+After
+WithSecurity
+ToIntent
+ExecuteAsync
 ```
 
-It also exposes semantic capability discovery:
+The current typed filter compiler supports direct property comparisons:
 
 ```csharp
-var capabilities = foundgine.DescribeCapabilities();
+x => x.Id == id
+x => x.Name != name
+x => x.TenantId == tenantId && x.IsActive == true
 ```
 
-This gives callers a provider-independent description of readable/writable
-entities, fields, and relationships. It is useful for API tooling and AI
-agents that need to construct valid intent, but it is never treated as an
-authorization cache. Execution evaluates the policy again.
+More complex semantic predicate algebra belongs in the semantic/planning layers rather than being silently interpreted by the typed convenience API.
 
-Applications and adapters should not need to manually orchestrate those steps.
+## Dynamic query API
 
-## Boundary
-
-The public facade does not depend on SQL, GraphQL, or a specific database provider.
-
-Provider-specific setup remains outside the core:
+`DynamicQuery` supports:
 
 ```text
-Application
-    ↓
-FoundgineEngine
-    ↓
-provider contract
-    ↓
-SQL / other provider
+Select
+Include
+Where
+WhereRelated
+AndWhere
+OrWhere
+OrderBy
+OrderByPath
+Take
+Skip
+After
+WithSecurity
+ToIntent
+ExecuteAsync
 ```
 
-This keeps the internal semantic/planning architecture available without making it the application developer's daily API.
+Dynamic names are still resolved against the semantic model.
 
-## What remains intentionally public
+## Semantic intent
 
-- `SemanticRequest` as the protocol-neutral request model.
-- `ExecutionContext` for runtime values.
-- `ExecutionResult` and `ExecutionEvidence` for results and verification.
+The canonical read request is `ReadIntent`.
 
-Internal planning and provider contracts remain implementation boundaries.
+It represents caller intent without binding it to:
 
-## Future extensions
+- SQL;
+- GraphQL;
+- MCP;
+- a specific provider.
 
-Claims/roles and cache options should be added to the execution boundary only after their invariants are proven. They should not leak into the semantic model.
+## Mutation API
 
+`IFoundgineMutations` is the runtime boundary for mutations.
 
-## Dependency injection
-
-The recommended application-facing registration is:
+`SemanticMutationIntentBuilder` is the open authoring surface:
 
 ```csharp
-services.AddFoundgine(semanticModel, authorizationPolicy);
+var graph = new SemanticMutationIntentBuilder(model)
+    .Create("Order", "order")
+        .Set("CustomerId", customerId)
+        .Return("Id")
+    .Build();
 ```
 
-Provider adapters register the provider-neutral services separately. Application configuration normally only needs the semantic model and authorization policy:
+The builder is not an authorization mechanism.
 
-```csharp
-services.AddSingleton<IProviderPlanCompiler>(compiler);
-services.AddSingleton<IExecutionProvider>(provider);
+## Application configuration
+
+`FoundgineOptions` supports:
+
+- `Model`;
+- `Metadata`;
+- semantic configuration;
+- authorization configuration/policy;
+- provider plan cache;
+- security warrant services;
+- security resource limits;
+- execution-time authorization revalidation;
+- mutation schema/provider.
+
+Use `AddFoundgine(...)` for normal DI composition.
+
+## Lower-level APIs
+
+Advanced integrations can consume:
+
+- `Foundgine.Semantics`;
+- `Foundgine.Planning`;
+- `Foundgine.Execution`;
+- `Foundgine.Metadata`;
+- provider packages.
+
+These expose more of the architecture intentionally.
+
+The lower-level APIs are useful for:
+
+- custom providers;
+- custom transport adapters;
+- advanced planning;
+- tests;
+- tooling.
+
+## API layering rule
+
+Prefer the highest-level API that solves the application problem.
+
+```text
+ordinary application
+       ↓
+Foundgine
+
+custom intent adapter
+       ↓
+Foundgine.Semantics
+
+custom planner/provider
+       ↓
+Planning + Execution
+
+custom physical provider
+       ↓
+Execution + provider package
 ```
 
-Application code consumes the stable `IFoundgine` contract:
+Do not make application code depend on provider internals merely to construct a query.
 
-```csharp
-var foundgine = services.BuildServiceProvider().GetRequiredService<IFoundgine>();
-var result = await foundgine.ExecuteAsync(request, context);
+## Security-sensitive APIs
+
+The following concepts should remain explicit rather than hidden:
+
+- `SecurityExecutionContext`;
+- `ISecurityExecutionContextProvider`;
+- authorization policy;
+- warrant validation;
+- replay protection;
+- provider security conformance;
+- mutation approval/execution boundary.
+
+The public API must not make it easier to accidentally replace trusted context with request data.
+
+## Versioning
+
+The repository is currently on the 1.1.7 release line.
+
+The most stable conceptual contracts are:
+
+```text
+semantic identity
+semantic model
+ReadIntent
+provider-independent plan
+execution/provider boundary
 ```
 
-This keeps provider construction at the infrastructure edge while hiding
-resolution, authorization, planning and provider compilation from normal
-application code.
+When changing these, update the affected adapter/provider tests rather than adding compatibility shims that blur the architecture.
 
-The lower-level orchestration constructor is internal and is reserved for
-Foundgine adapters and tests.
+## Where the implementation lives
 
-
-## Open intent authoring
-
-See [Open Intent API](OPEN-INTENT-API.md) for the typed and dynamic query surfaces and their shared semantic pipeline.
+| Area | Package |
+|---|---|
+| Facade | `Foundgine` |
+| Contracts/IDs | `Foundgine.Abstractions` |
+| Semantics | `Foundgine.Semantics` |
+| Metadata | `Foundgine.Metadata` |
+| Planning | `Foundgine.Planning` |
+| Execution | `Foundgine.Execution` |
+| SQL | `Foundgine.Sql` |
+| InMemory | `Foundgine.InMemory` |
+| AOT | `Foundgine.Aot`, `Foundgine.Aot.Generator` |
+| JSON | `Foundgine.Intent.Json` |
+| GraphQL | `Foundgine.GraphQL.HotChocolate*` |
+| MCP | `Foundgine.MCP` |
+| AI | `Foundgine.AI` |
+| Authority recovery | `Foundgine.Security.Authority` |

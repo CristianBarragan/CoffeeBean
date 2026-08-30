@@ -1,105 +1,343 @@
 # Foundgine.Semantics
 
-Provider-independent application meaning.
+`Foundgine.Semantics` is the provider-independent meaning layer of Foundgine.
 
-Owns:
+It defines the application's semantic model, open intent, resolution, semantic validation, authorization, relationship traversal, mutation meaning, security context contracts, capability discovery, and semantic execution inputs.
 
-- semantic entities and relationships;
-- semantic requests and graphs;
-- request resolution;
-- authorization;
-- query controls.
+It does not know SQL, GraphQL, PostgreSQL, MCP, or any other transport/provider implementation.
 
-It does not know GraphQL, SQL, or a database.
+## The semantic boundary
 
+```text
+External intent
+      ↓
+Resolve
+      ↓
+Validate
+      ↓
+Normalize
+      ↓
+Canonical semantic operation
+      ↓
+Authorize
+      ↓
+Planning
+```
 
-## Mutation Semantic IR
+The semantic layer is where a request becomes meaningful in the application's vocabulary.
 
-Mutation semantics are represented under `Mutation/` using semantic entity, field and relationship identities. Physical columns and provider mutation plans remain outside the semantic layer.
+## What the semantic model represents
 
-## Semantic pipeline
+A `SemanticModel` describes entities and their relationships using semantic identities.
 
-The semantic layer now treats resolution as a correctness boundary rather than
-just name lookup:
+A semantic entity can contain:
 
-`Resolve → Validate → Normalize → Canonical Semantic IR → Authorization → Planning`
+- `EntityId`;
+- public semantic name;
+- primary identity;
+- semantic fields;
+- relationships;
+- aliases;
+- optional CLR model type.
 
-`SemanticType` and `SemanticFieldCapabilities` describe provider-independent
-meaning, and semantic value validation rejects incompatible scalar/list values
-before planning. `SemanticQueryOptionsValidator` rejects invalid pagination controls,
-and cursor resolution adds the root identity as a deterministic tie-breaker.
-`SemanticGraphValidator` proves relationship/target consistency before the graph
-is compiled. The existing `ClrType` remains available as a compatibility bridge
-for provider adapters; new semantic code should prefer `EffectiveSemanticType`.
+A semantic field can carry provider-independent type and capability information.
 
-Authorization remains deliberately separate from request resolution. The engine
-validates the request's security context against the resolved semantic operation,
-then applies authorization before secured planning. This keeps security as an
-authoritative semantic invariant without making the resolver responsible for
-transport-specific warrant verification.
-## Manual semantic authoring
+Relationships carry:
 
-Manual semantic models can be strongly typed against the application/domain model. For example:
+- `RelationshipId`;
+- semantic name;
+- target entity;
+- cardinality;
+- aliases.
+
+## Building a model
+
+Manual authoring is supported:
 
 ```csharp
-new SemanticModelBuilder()
-    .Entity<Product>(productId, "Product", e => e
+var model = new SemanticModelBuilder()
+    .Entity<Customer>(customerId, "Customer", entity => entity
         .Identity(x => x.Id)
-        .Field(x => x.Sku)
-        .Field(x => x.Name));
-```
-
-The selector parameter `x` is the `Product` model type. It is not the semantic entity builder, an EF entity metadata type, or provider metadata. Foundgine derives the semantic field name and CLR type from the selected model property and assigns the entity-local field identity. The older `Field(new FieldId(...), name, typeof(...))` overload remains available for low-level/manual construction and compatibility.
-
-Relationships can use the same strongly typed approach on both sides. The generic arguments are explicitly `<fromEntity, toModel>`, while each selector is compiled against its corresponding domain model:
-
-```csharp
-new SemanticModelBuilder()
-    .Relationship<Product, ProductComponent>(
-        Product, new RelationshipId(1), "components",
-        product => product.Id,
-        Component, component => component.ParentProductId,
-        RelationshipCardinality.Many);
-```
-
-Foundgine validates that both selectors are direct properties and that their CLR types match. `product => product.Id` is rooted in `Product`; `component => component.ParentProductId` is rooted in `ProductComponent`. This is deliberately separate from EF entity metadata or semantic-builder properties.
-
-
-## Authorization configuration
-
-Authorization primitives belong to Foundgine, while applications provide only policy configuration and actor context. `SemanticAuthorizationConfiguration` and `ConfiguredSemanticAuthorizationPolicy` are provider-neutral and can be reused by query, dynamic intent, MCP, GraphQL, and mutation paths.
-
-```csharp
-var configuration = new SemanticAuthorizationConfiguration()
-    .AddEntityRule((ctx, entity, operation) => /* application rule */ true)
-    .AddFieldRule((ctx, entity, field, operation) => /* application rule */ true)
-    .AddRelationshipRule((ctx, entity, relationship, operation) => /* application rule */ true);
-
-var policy = new ConfiguredSemanticAuthorizationPolicy(
-    configuration,
-    new SemanticAuthorizationContext(tenantId, role, claims));
-```
-
-Rules are evaluated after open intent is resolved. Logical traversals are expanded into their complete semantic relationship path before authorization, so a convenient path such as `Customer -> transactions` cannot bypass policy on intermediate entities or relationships.
-
-Attributes such as `SemanticPolicyAttribute`, `SemanticEntityAttribute`, and `SemanticFieldAttribute` are optional Foundgine primitives. Configuration is preferred when security or semantic meaning is application policy rather than domain-model metadata.
-
-## Structural discovery and application configuration
-
-Foundgine keeps four concerns separate:
-
-- **Metadata** describes what exists: entities, fields, identities and direct relationships.
-- **Semantic configuration** describes application meaning that structural metadata cannot infer, such as a logical traversal.
-- **Authorization** describes what an actor may exercise.
-- **Intent** describes what the caller wants.
-
-When structural metadata is available, applications can start with `SemanticModelBuilder.FromMetadata(...)` and add only semantic meaning. Logical traversals can be configured by semantic names, avoiding dependencies on generated numeric identities:
-
-```csharp
-var model = SemanticModelBuilder
-    .FromMetadata(metadata)
-    .Traversal("Customer", "transactions", "relationships", "contract", "transactions")
+        .Field(x => x.Id)
+        .Field(x => x.Name)
+        .Field(x => x.TenantId))
+    .Entity<Order>(orderId, "Order", entity => entity
+        .Identity(x => x.Id)
+        .Field(x => x.Id)
+        .Field(x => x.CustomerId))
+    .Relationship<Customer, Order>(
+        customerId,
+        "orders",
+        customer => customer.Id,
+        orderId,
+        order => order.CustomerId,
+        RelationshipCardinality.Many)
     .Build();
 ```
 
-The named traversal is expanded into its underlying relationship path before authorization and planning. No shortcut capability is granted merely because the traversal has a convenient caller-facing name.
+Typed field selectors are rooted in the declared CLR model type. They are not selectors over provider metadata.
+
+## Strict typed mode
+
+`RequireTypedEntities()` opts into a stronger authoring rule.
+
+When enabled:
+
+- the untyped entity registration path is rejected;
+- typed entities must use a CLR model explicitly marked with `SemanticEntityAttribute`.
+
+This is useful when an application wants to prevent semantic fields from drifting away from deliberately exposed domain/application model types.
+
+## Structural discovery
+
+When `Foundgine.Metadata` is available:
+
+```csharp
+var model = metadata
+    .FromMetadata()
+    .Traversal(
+        "Customer",
+        "transactions",
+        "customerRelationships",
+        "contract",
+        "transactions")
+    .Build();
+```
+
+Structural metadata supplies ordinary entities, fields, primary identities, and direct relationships. Semantic configuration supplies meaning that cannot safely be inferred from storage facts.
+
+## Logical traversals
+
+Foundgine supports semantic traversals that hide intermediate relationships from the caller.
+
+For example:
+
+```text
+Customer
+  → CustomerRelationship
+      → Contract
+          → Transaction
+```
+
+can be exposed as:
+
+```text
+Customer.transactions
+```
+
+Resolution expands the traversal to the real path before authorization and planning.
+
+This is a security property as well as a convenience:
+
+```text
+Customer.transactions
+        ↓
+Customer
+  ↓
+CustomerRelationship
+  ↓
+Contract
+  ↓
+Transaction
+        ↓
+authorize every required node/edge
+```
+
+A logical shortcut can never tunnel through a denied intermediate entity.
+
+## Open read intent
+
+The semantic read model supports:
+
+- entity selection;
+- field selection;
+- relationship selection;
+- field filters;
+- logical AND/OR filters;
+- relationship quantifiers;
+- ordering;
+- relationship-path ordering;
+- limit/offset;
+- cursor pagination;
+- aggregate-aware ordering;
+- semantic aliases.
+
+Typed and dynamic query builders both produce the same `ReadIntent`.
+
+## Semantic validation
+
+Resolution is a correctness boundary, not merely a name lookup.
+
+The semantic layer validates:
+
+- referenced entities;
+- referenced fields;
+- relationship targets;
+- field capabilities;
+- scalar/list value compatibility;
+- query controls;
+- pagination combinations;
+- relationship topology;
+- aggregate semantics.
+
+`SemanticGraphValidator` verifies graph consistency before planning.
+
+Invalid input should fail before a provider receives it.
+
+## Types and values
+
+`SemanticType` expresses provider-independent meaning.
+
+`SemanticValue` provides a canonical semantic value representation while compatibility constructors can still accept ordinary CLR values.
+
+The semantic layer can therefore validate a request without knowing whether the provider eventually represents a value as a PostgreSQL parameter, an in-memory object, or another physical representation.
+
+## Query controls
+
+`SemanticQueryOptionsValidator` protects the execution boundary from malformed pagination and ordering combinations.
+
+Cursor pagination also uses the root identity as a deterministic tie-breaker when necessary, making page traversal stable when the requested ordering is not unique.
+
+## Authorization
+
+Authorization is part of semantic execution, but identity/authentication remains host-owned.
+
+The policy can reason about:
+
+- entity read/write;
+- field read/write;
+- relationship read/write;
+- conditional predicates;
+- named operations/capabilities.
+
+Conditional authorization is represented provider-independently. A predicate can survive into planning and be lowered by the provider.
+
+The important distinction is:
+
+```text
+Capability discovery = advisory description
+Authorization = authoritative decision
+```
+
+A capability snapshot must never be treated as a reusable authorization token.
+
+## Security execution context
+
+`SecurityExecutionContext` carries host-established execution authority into the semantic request.
+
+`ISecurityExecutionContextProvider` lets transport adapters obtain that context from the application host.
+
+The semantic layer does not invent identity from GraphQL, MCP, JSON, or AI payloads.
+
+## Security warrants
+
+The security namespaces provide contracts and helpers for warrant-backed execution, including:
+
+- trusted key resolution;
+- issuer validation;
+- replay protection;
+- revocation/delegation support;
+- execution-time security context.
+
+These facilities remain provider-independent. A database-specific implementation belongs in the provider layer.
+
+## Mutation semantics
+
+Mutation semantics are represented separately from read execution.
+
+The mutation model includes:
+
+```text
+SemanticMutationOperationGraph
+  ├── entity identity
+  ├── field identity
+  ├── relationship identity
+  ├── values
+  ├── generated-value references
+  └── requested result fields
+```
+
+The semantic mutation graph does not contain SQL columns or provider-specific transaction operations.
+
+`SemanticMutationIntentBuilder` provides an open authoring surface:
+
+```csharp
+var graph = new SemanticMutationIntentBuilder(model)
+    .Create("PurchaseOrder", "order")
+        .Set("SupplierId", supplierId)
+        .Return("Id")
+    .Create("PurchaseOrderLine", "line")
+        .SetFrom("PurchaseOrderId", "order", "Id")
+        .Set("Quantity", 25m)
+        .Return("Id", "PurchaseOrderId")
+    .Build();
+```
+
+The builder creates meaning. Planning and execution decide how that meaning is performed.
+
+## Candidate resolution and retrieval
+
+The resolver can use candidate-source contracts for ambiguous names and references.
+
+The semantic abstraction distinguishes:
+
+- exact/normal candidate sources;
+- approximate retrieval;
+- advanced retrieval;
+- provenance/evidence.
+
+Provider-specific retrieval can therefore contribute evidence without becoming the authority over semantic resolution.
+
+`Foundgine.Sql` supplies a PostgreSQL retrieval implementation for this boundary.
+
+## Semantic contracts and snapshots
+
+`SemanticContractSnapshot` represents an immutable runtime contract.
+
+The application should build/configure the semantic model during startup and execute requests against the frozen contract.
+
+This supports:
+
+- deterministic versioning;
+- concurrent reuse;
+- plan/cache identity;
+- safer request processing.
+
+## What does not belong here
+
+Do not add:
+
+- SQL generation;
+- SQL parameters;
+- GraphQL AST nodes;
+- Hot Chocolate execution objects;
+- PostgreSQL-specific operators;
+- database connection management;
+- LLM calls.
+
+Those are adapter/provider responsibilities.
+
+## Related packages
+
+| Package | Role |
+|---|---|
+| `Foundgine.Abstractions` | Shared identities/contracts |
+| `Foundgine.Metadata` | Structural discovery |
+| `Foundgine.Planning` | Provider-independent planning and rewrites |
+| `Foundgine.Execution` | Provider execution boundary |
+| `Foundgine.Intent.Json` | JSON transport adapter |
+| `Foundgine.GraphQL.HotChocolate` | GraphQL translation |
+| `Foundgine.MCP` | MCP transport |
+| `Foundgine.AI` | Microsoft.Extensions.AI integration |
+
+## Architectural rule
+
+The semantic layer answers:
+
+> **What does this request mean, and is this actor allowed to express that meaning?**
+
+It must not answer:
+
+> **How do I write the SQL?**
+
+That distinction is the foundation of Foundgine's provider independence.

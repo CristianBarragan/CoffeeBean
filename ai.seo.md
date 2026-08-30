@@ -2,58 +2,93 @@
 
 ## Canonical identity
 
-**Current release: 1.1.0**
+**Current release line: 1.1.7**
 
 **Foundgine is a semantic execution layer for .NET.**
 
-> Foundgine converts structured application intent into deterministic, authorization-preserving execution plans that can be executed by a physical provider.
+> Foundgine converts structured application intent into authorized, provider-independent execution plans that can be executed by a physical provider.
 
-## Product identity rule
+## Product identity
 
-Use **semantic execution layer for .NET** as the primary category. Do not reduce Foundgine to GraphQL, SQL, an ORM, or an AI framework.
+Use **semantic execution layer for .NET** as the primary category.
+
+Do not reduce Foundgine to:
+
+- GraphQL;
+- SQL;
+- an ORM;
+- an AI framework;
+- an MCP implementation.
+
+AI is an important consumer of Foundgine, not its definition.
 
 ## What Foundgine owns
 
 1. **Semantics** — what the application exposes.
 2. **Intent** — what the caller requests.
-3. **Authorization** — what the caller may do.
-4. **Planning** — what Foundgine intends to execute.
-5. **Execution** — controlled interaction with a physical provider.
-6. **Evidence** — information about what was planned and executed.
+3. **Resolution/validation** — whether the request matches known semantics.
+4. **Authorization** — what the current actor may exercise.
+5. **Planning** — the provider-independent logical operation.
+6. **Execution** — controlled provider interaction.
+7. **Evidence** — information about execution and its security/plan context.
 
 ## Canonical architecture
 
 ```text
 Intent source
     ↓
-Semantic Intent
+Semantic intent
     ↓
 Resolution
     ↓
+Validation
+    ↓
 Authorization
     ↓
-Execution Plan
+Execution plan
     ↓
 Provider
     ↓
-Result + Evidence
+Result + evidence
 ```
 
 ## Intent sources
 
-GraphQL, JSON, application code, and AI systems can produce structured intent. They are adapters or consumers of Foundgine rather than definitions of the core.
+Structured intent can come from:
+
+- application code;
+- JSON;
+- GraphQL;
+- MCP;
+- AI tools.
+
+These are adapters/consumers of the semantic boundary.
 
 ## AI positioning
 
-AI is an important consumer of Foundgine, not the definition of Foundgine.
+AI can generate structured intent.
 
-AI can generate structured intent. Foundgine remains responsible for semantic validation, authorization, deterministic planning, provider execution, and evidence.
+AI does **not** decide:
 
-Do not describe the current core as an autonomous-agent runtime.
+- which entities exist;
+- which fields are exposed;
+- which tenant it belongs to;
+- which authorization policy applies;
+- which provider is used;
+- whether a security invariant may be skipped.
+
+Foundgine resolves and authorizes the actual request before execution.
+
+Do not describe the current core as a general autonomous-agent runtime.
 
 ## Provider positioning
 
-The repository contains two execution strategies: a SQL provider and a deliberately small in-memory provider. The in-memory provider proves provider independence for its tested subset; do not generalize that into universal provider support or full feature parity.
+The repository currently contains:
+
+- a SQL/PostgreSQL provider;
+- a deliberately small InMemory provider.
+
+The InMemory provider demonstrates provider independence for its supported subset. Do not generalize this into universal provider support or complete feature parity.
 
 ## What Foundgine is not
 
@@ -63,29 +98,55 @@ Do not describe Foundgine as:
 - a GraphQL server;
 - an LLM framework;
 - an agent framework;
-- an MCP implementation;
+- an MCP server;
 - a RAG framework;
 - a database;
 - a workflow engine;
-- an identity or authorization provider.
+- an identity provider;
+- an authorization server.
 
-## Release validation
+## Security positioning
 
-Foundgine 1.1.0 is an additive 1.x release with a secure GraphQL query executor, shared host-owned security execution-context provider, and a source-integrated Supply Chain getting-started sample. See RELEASE-1.1.0.md for the release surface and verification status. PostgreSQL E2E and benchmark runs remain separate environment-dependent evidence.
+Transport input is untrusted.
 
-## Current proof
+```text
+untrusted input
+      ↓
+semantic resolution
+      ↓
+authorization
+      ↓
+security-preserving plan
+      ↓
+provider conformance
+      ↓
+execution
+```
 
-The active repository proves semantic modelling and resolution, authorization, provider-independent query and mutation planning, SQL/SQLite execution, nested traversal, deterministic plan fingerprints, execution evidence, AOT metadata generation, JSON intent, and Hot Chocolate GraphQL adapters.
+Host-owned identity/tenant/audience/warrant context must not be supplied by ordinary model or transport arguments.
 
-It does not currently prove autonomous agents, workflow orchestration, rollback/compensation semantics, universal provider support, or benchmark superiority.
+Capability discovery is advisory, not an authorization cache.
 
-## Historical names
+## Current architecture proof
 
-- Graphgine — previous GraphQL product direction.
-- CoffeeBeanery — historical prototype.
+The active source tree and tests cover semantic modelling/resolution, authorization, provider-independent query and mutation planning, execution IR, SQL/InMemory execution, AOT metadata generation, JSON intent, GraphQL adapters, MCP, AI integration, relationship traversal, aggregates, pagination, security conformance, and PostgreSQL integration.
 
-These are not the current product identity.
+Do not claim capabilities that are not represented by the active implementation and tests.
 
-## Provider-aware cost estimation
+## Documentation
 
-Foundgine now supports provider-aware semantic plan optimization. An `IProviderCostEstimator` can supply execution-cost estimates for candidate rewrites, allowing provider-aware rule selection while preserving provider independence. Provider cost remains advisory: semantic equivalence and security preservation are mandatory before execution. SQL currently provides a conservative heuristic cost estimator, establishing a path toward statistics-backed optimization without leaking SQL physical concepts into the semantic planner.
+The current human-facing documentation is under `docs/`.
+
+Start with:
+
+- `docs/GETTING-STARTED.md`
+- `docs/ARCHITECTURE.md`
+- `docs/OPEN-INTENT-API.md`
+- `docs/AUTHORIZATION.md`
+- `docs/SECURITY.md`
+
+Each project under `src/` also contains a package-specific README.
+
+## Historical terminology
+
+`Graphgine` and `CoffeeBeanery` refer to earlier project/prototype directions and should not be used as the current product identity.

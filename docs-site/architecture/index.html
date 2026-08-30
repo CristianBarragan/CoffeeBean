@@ -1,139 +1,40 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Foundgine Architecture | Semantic Execution for .NET</title>
-  <meta name="description" content="The Foundgine execution pipeline: semantic model, resolution, authorization, planning, rewriting and optimization, provider compilation, and execution evidence.">
-  <link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/architecture/">
-  <meta property="og:title" content="Foundgine Architecture | Semantic Execution for .NET">
-  <meta property="og:description" content="How multiple callers share one provider-independent execution model.">
-  <meta property="og:type" content="article">
-  <meta property="og:url" content="https://cristianbarragan.github.io/Foundgine/architecture/">
-  <meta property="og:site_name" content="Foundgine">
-  <meta property="og:image" content="https://cristianbarragan.github.io/Foundgine/Foundgine.webp">
-  <meta property="og:image:width" content="1280">
-  <meta property="og:image:height" content="320">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Foundgine Architecture | Semantic Execution for .NET">
-  <meta name="twitter:description" content="How multiple callers share one provider-independent execution model.">
-  <meta name="twitter:image" content="https://cristianbarragan.github.io/Foundgine/Foundgine.webp">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Foundgine Architecture","description":"The Foundgine execution pipeline: semantic model, resolution, authorization, planning, rewriting and optimization, provider compilation, and execution evidence.","url":"https://cristianbarragan.github.io/Foundgine/architecture/","author":{"@type":"Organization","name":"Foundgine"}}</script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
-  <link rel="stylesheet" href="../assets/style.css">
-</head>
-<body>
-  <header class="site-header"><div class="site-header-inner"><a class="brand" href="../index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a><button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation"><span></span><span></span><span></span></button><nav id="site-nav" class="site-nav" aria-label="Primary navigation"><a href="../what-is-foundgine.html">What is it</a><a href="../getting-started/index.html">Getting started</a><a href="../ai-agents/index.html">AI agents</a><a href="index.html" class="nav-current">Architecture</a><a href="../how-it-works/index.html">How it works</a><div class="nav-item has-submenu"><span class="nav-item-row"><a href="../samples/index.html" class="nav-parent-link">Samples</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-samples" aria-label="Show Samples pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-samples"><a href="../samples/index.html">Overview</a><a href="../samples/semantic/index.html">Semantic Execution</a><a href="../samples/pentest/index.html">Security PenTest</a></div></div><div class="nav-item has-submenu"><span class="nav-item-row"><a href="../agent-benchmark/index.html" class="nav-parent-link">Agent benchmark</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-agent-benchmark" aria-label="Show Agent benchmark pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-agent-benchmark"><a href="../agent-benchmark/index.html">Overview</a><a href="../agent-benchmark/run-1/index.html">Run 1 · Baseline</a><a href="../agent-benchmark/run-2/index.html">Run 2 · Scalability</a><a href="../agent-benchmark/run-3/index.html">Run 3 · Efficiency</a><a href="../agent-benchmark/run-4/index.html">Run 4 · Execution architecture</a><a href="../agent-benchmark/run-5/index.html">Run 5 · High-assurance TransferFunds</a><a href="../agent-benchmark/run-5b/index.html">Run 5b · Individual vs batch</a><a href="../agent-benchmark/supply-chain/index.html">Supply Chain E2E</a></div></div><a href="https://github.com/cristianbarragan/Foundgine" target="_blank" rel="noopener">GitHub</a></nav></div></header>
-
-  <div class="page has-toc">
-    <main class="article">
-      <nav class="breadcrumbs"><a href="../index.html">Foundgine</a> / Architecture</nav>
-      <span class="eyebrow">Technical research</span>
-      <h1>Foundgine Architecture</h1>
-
-      <h2 id="pipeline">Core execution pipeline</h2>
-      <div class="rail" role="img" aria-label="Pipeline: Intent, Semantic Model, Resolution, Authorization, Plan, Rewrite and Optimize, Provider Compilation, Execution, Result and Evidence">
-        <div class="rail-step"><span class="dot"></span>Intent</div>
-        <div class="rail-connector"></div>
-        <div class="rail-step"><span class="dot"></span>Semantic Model</div>
-        <div class="rail-connector"></div>
-        <div class="rail-step"><span class="dot"></span>Resolution</div>
-        <div class="rail-connector"></div>
-        <div class="rail-step"><span class="dot"></span>Authorization</div>
-        <div class="rail-connector"></div>
-        <div class="rail-step is-current"><span class="dot"></span>Plan</div>
-        <div class="rail-connector"></div>
-        <div class="rail-step"><span class="dot"></span>Rewrite / Optimize</div>
-        <div class="rail-connector"></div>
-        <div class="rail-step"><span class="dot"></span>Provider Compilation</div>
-        <div class="rail-connector"></div>
-        <div class="rail-step"><span class="dot"></span>Execution</div>
-        <div class="rail-connector"></div>
-        <div class="rail-step"><span class="dot"></span>Result + Evidence</div>
-      </div>
-
-      <h2 id="separation">Separation of concerns</h2>
-
-      <h3>Semantic model</h3>
-      <p>Defines the application-facing capabilities. As of 1.1.5, a semantic model can be produced two ways: authored by hand, or discovered from structural metadata via <code>SemanticModel.Discover(...)</code> / <code>SemanticModelBuilder.FromMetadata(...)</code> against an <code>IMetadataCatalog</code> — with entities, fields, identities, CLR types, collection shape, and direct relationships inferred automatically, leaving only semantic enrichment (policies, traversals, capabilities) to be added by the application. <code>FoundgineOptions.UseMetadata()</code> makes this the preferred application setup path.</p>
-
-      <h3>Intent</h3>
-      <p>Describes what the caller wants without binding it directly to a physical provider.</p>
-
-      <h3>Authorization</h3>
-      <p>Determines which parts of the requested operation are permitted and can contribute predicates or constraints to the execution plan.</p>
-
-      <h3>Planner</h3>
-      <p>Builds a provider-independent representation of the requested operation.</p>
-
-      <h3>Rewriting and optimization</h3>
-      <p>Transforms the plan while preserving semantics and authorization constraints.</p>
-
-      <h3>Provider</h3>
-      <p>Compiles and executes the plan against a concrete backend.</p>
-
-      <h2 id="metadata-contract">Compile-time relationship metadata contract</h2>
-      <p>Since 1.1.5, relationship metadata produced for Foundgine is validated at compile time, not just discovered. Relationship targets must resolve to discovered Foundgine entities, navigation-property targets must match the declared relationship target, foreign-key and principal-key properties must exist as unambiguous scalar properties with matching CLR types, and any violation reports a deterministic <code>FGMETA001</code>–<code>FGMETA007</code> diagnostic instead of emitting a broken generated registry.</p>
-
-      <h2 id="multiple-callers">Multiple callers, one execution model</h2>
-      <div class="converge">
-        <div class="converge-row">
-          <span class="converge-chip">REST/API</span>
-          <span class="converge-chip">GraphQL</span>
-          <span class="converge-chip">JSON</span>
-          <span class="converge-chip">AI Agent</span>
-          <span class="converge-chip">Automation</span>
-        </div>
-        <div class="converge-arrow">↓</div>
-        <div class="converge-chip" style="font-family:var(--font-mono);">Semantic Intent</div>
-        <div class="converge-arrow">↓</div>
-        <div class="converge-core">Foundgine Planner</div>
-        <div class="converge-arrow">↓</div>
-        <div class="converge-row">
-          <span class="converge-chip">SQL</span>
-          <span class="converge-chip">InMemory</span>
-          <span class="converge-chip">Future providers</span>
-        </div>
-      </div>
-      <p>The goal is to avoid implementing separate execution semantics for every interface.</p>
-
-      <h2 id="why-plan-matters">Why the intermediate plan matters</h2>
-      <p>The plan is the architectural boundary between semantic intent and physical execution. It gives the runtime a place to:</p>
-      <ul>
-        <li>preserve authorization constraints</li>
-        <li>validate dependencies</li>
-        <li>rewrite operations</li>
-        <li>estimate cost</li>
-        <li>reason about provider capabilities</li>
-        <li>optimize execution</li>
-        <li>produce execution evidence</li>
-      </ul>
-      <p>This is the core mechanism that allows multiple input surfaces and providers to share execution semantics.</p>
-
-      <nav class="sitenav">
-        <a href="../index.html">Home</a> ·
-        <a href="../what-is-foundgine.html">What is Foundgine?</a> ·
-        <a href="../ai-agents/index.html">AI agents</a> ·
-        <a href="../how-it-works/index.html">How it works</a>
-      </nav>
-    </main>
-
-    <aside class="toc">
-      <div class="toc-label">On this page</div>
-      <ol>
-        <li><a href="#pipeline">Core execution pipeline</a></li>
-        <li><a href="#separation">Separation of concerns</a></li>
-        <li><a href="#multiple-callers">Multiple callers</a></li>
-        <li><a href="#why-plan-matters">Why the plan matters</a></li>
-      </ol>
-    </aside>
-  </div>
-
-  <footer class="site-footer">Foundgine · actively evolving · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer>
-  <script src="../assets/toc.js"></script>
-<script src="../assets/site-nav.js"></script>
-</body>
-</html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Foundgine Architecture | Semantic Execution for .NET</title><meta name="description" content="The Foundgine architecture: semantic modelling, intent resolution, authorization, planning, execution IR, provider compilation and execution evidence."><link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/../">
+<meta property="og:title" content="Foundgine Architecture | Semantic Execution for .NET"><meta property="og:description" content="The Foundgine architecture: semantic modelling, intent resolution, authorization, planning, execution IR, provider compilation and execution evidence."><meta property="og:type" content="website"><meta property="og:url" content="https://cristianbarragan.github.io/Foundgine/../"><meta property="og:site_name" content="Foundgine"><meta property="og:image" content="https://cristianbarragan.github.io/Foundgine/Foundgine.webp"><meta property="og:image:width" content="1280"><meta property="og:image:height" content="320">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Foundgine Architecture | Semantic Execution for .NET"><meta name="twitter:description" content="The Foundgine architecture: semantic modelling, intent resolution, authorization, planning, execution IR, provider compilation and execution evidence."><meta name="twitter:image" content="https://cristianbarragan.github.io/Foundgine/Foundgine.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Foundgine Architecture | Semantic Execution for .NET","description":"The Foundgine architecture: semantic modelling, intent resolution, authorization, planning, execution IR, provider compilation and execution evidence.","url":"https://cristianbarragan.github.io/Foundgine/../","author":{"@type":"Organization","name":"Foundgine"}}</script>
+</head><body><header class="site-header"><div class="site-header-inner"><a class="brand" href="../index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a><button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation"><span></span><span></span><span></span></button><nav id="site-nav" class="site-nav" aria-label="Primary navigation">
+<a href="../what-is-foundgine.html">What is it</a>
+<a href="../getting-started/index.html">Getting started</a>
+<a href="../ai-agents/index.html">AI agents</a>
+<a href="../architecture/index.html" class="nav-current" aria-current="page">Architecture</a>
+<a href="../how-it-works/index.html">How it works</a>
+<div class="nav-item has-submenu"><span class="nav-item-row"><a href="../samples/index.html" class="nav-parent-link">Samples</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-samples" aria-label="Show Samples pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-samples"><a href="../samples/index.html">Overview</a><a href="../samples/semantic/index.html">Semantic Execution</a><a href="../samples/pentest/index.html">Security PenTest</a></div></div>
+<div class="nav-item has-submenu"><span class="nav-item-row"><a href="../agent-benchmark/index.html" class="nav-parent-link">Evidence</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-evidence" aria-label="Show evidence pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-evidence"><a href="../agent-benchmark/index.html">Evidence</a><a href="../performance/index.html">Performance</a><a href="../agent-benchmark/supply-chain/index.html">Supply Chain E2E</a></div></div>
+<a href="../security/index.html">Security</a><a href="../packages/index.html">Packages</a>
+<a href="https://github.com/cristianbarragan/Foundgine" target="_blank" rel="noopener">GitHub</a>
+</nav></div></header>
+<div class="page has-toc"><main class="article"><span class="eyebrow">System architecture</span><h1>Architecture</h1><p class="subtitle">The architecture is intentionally layered. Meaning is separated from planning; planning is separated from physical provider execution; transports are adapters rather than authorities.</p>
+<h2>Core pipeline</h2><div class="rail"><div class="rail-step"><span class="dot"></span>Intent</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Resolve</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Authorize</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Plan</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Rewrite</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Compile</div><div class="rail-connector"></div><div class="rail-step"><span class="dot"></span>Execute</div></div>
+<h2>Semantic layer</h2><p><code>Foundgine.Semantics</code> owns application meaning: entities, fields, relationships, typed and dynamic intent, resolution, validation, semantic capabilities and authorization. It remains provider-independent.</p>
+<h2>Metadata layer</h2><p><code>Foundgine.Metadata</code> describes structural facts that can be discovered or produced by AOT generation. It bridges CLR/storage structure into the semantic model without turning semantic code into reflection or ORM code.</p>
+<h2>Planning layer</h2><p><code>Foundgine.Planning</code> converts an authorized semantic operation into a provider-independent plan and then into <code>ExecutionIR</code>. Filters, ordering, pagination, traversal and aggregation remain logical. Physical joins, indexes and SQL constructs are provider decisions.</p>
+<h2>Execution layer</h2><p><code>Foundgine.Execution</code> is the final provider boundary. It verifies execution/security obligations, compiles or dispatches provider work, materializes results and can produce execution evidence.</p>
+<h2>Providers</h2><table><thead><tr><th>Provider</th><th>Role</th></tr></thead><tbody><tr><td><code>Foundgine.Sql</code></td><td>Parameterized SQL execution, PostgreSQL retrieval, SQL authorization lowering and mutation compilation.</td></tr><tr><td><code>Foundgine.InMemory</code></td><td>Small non-SQL provider used to demonstrate provider independence and support deterministic tests/examples.</td></tr></tbody></table>
+<h2>Adapters</h2><table><thead><tr><th>Adapter</th><th>Role</th></tr></thead><tbody><tr><td>GraphQL</td><td>Translates Hot Chocolate requests into Foundgine operations and uses secure host-owned execution boundaries.</td></tr><tr><td>JSON</td><td>Parses structured read intent with explicit complexity limits.</td></tr><tr><td>MCP</td><td>Exposes capability discovery, read intent and mutation workflows through Model Context Protocol.</td></tr><tr><td>AI</td><td>Integrates with Microsoft.Extensions.AI and exposes Foundgine operations as model tools.</td></tr></tbody></table>
+<h2>Why the intermediate plan matters</h2><p>The plan is where authorization can be preserved while optimization and provider capability reasoning occur. A provider can optimize physical execution without changing the application's semantic contract.</p>
+<h2>Security invariant</h2><pre>Untrusted intent
+      ↓
+semantic resolution
+      ↓
+authorization
+      ↓
+security-preserving plan
+      ↓
+provider conformance
+      ↓
+execution</pre><p>Capability discovery is descriptive. It never replaces authorization.</p></main><aside class="toc"><div class="toc-label">On this page</div><ol><li><a href="#overview">Overview</a></li><li><a href="#architecture">Architecture</a></li><li><a href="#usage">Usage</a></li><li><a href="#boundaries">Boundaries</a></li></ol></aside></div><footer class="site-footer">Foundgine 1.1.7 · .NET 9 · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer><script src="../assets/site-nav.js"></script></body></html>

@@ -1,195 +1,322 @@
 # Architecture
 
-Foundgine is a **semantic execution layer**. Its central boundary is between structured application intent and physical execution.
+Foundgine is a semantic execution layer between application intent and physical execution.
+
+The central architectural rule is:
+
+> **Callers describe intent. The semantic model defines meaning. Authorization determines authority. Planning defines logical execution. Providers define physical execution.**
 
 ## Canonical pipeline
 
 ```text
-                         INTENT SOURCES
-              GraphQL · JSON · AI · application code
-                                │
-                                ▼
-                         Semantic Intent
-                                │
-                                ▼
-                            Resolution
-                                │
-                                ▼
-                           Authorization
-                                │
-                                ▼
-                         Execution Plan
-                                │
-                   ┌────────────┼────────────┐
-                   ▼            ▼            ▼
-                  SQL                     InMemory
-                   │                         │
-                   └────────────┬────────────┘
-                                ▼
-                         Result + Evidence
-```
-
-The pipeline has six canonical concepts:
-
-| Concept | Meaning |
-|---|---|
-| **Semantic Model** | What the application exposes |
-| **Intent** | What the caller requests |
-| **Authorization** | What the caller is allowed to do |
-| **Execution Plan** | What Foundgine intends to execute |
-| **Provider** | What physically executes the plan |
-| **Evidence** | What happened and why |
-
-These terms are deliberately kept stable. New features should fit one of these concepts rather than introduce another overlapping model.
-
-## The fundamental boundary
-
-```text
-Intent adapters
-
-GraphQL ─┐
-JSON ────┤
-AI ──────┤
-Code ────┘
-    │
-    ▼
-┌───────────────────────────────┐
-│           Foundgine           │
-│                               │
-│ Semantic model                │
-│ Intent                        │
-│ Resolution                    │
-│ Authorization                 │
-│ Planning                      │
-│ Execution contracts           │
-│ Evidence                      │
-└───────────────┬───────────────┘
-                │
-                ▼
-       Physical execution
-
-SQL / EF / REST / other providers
-```
-
-### Core dependency rule
-
-> **Foundgine Core must never depend on the transport used to express intent or the provider used to execute it.**
-
-Therefore the semantic/planning/execution core must not take dependencies on GraphQL, Hot Chocolate, SQL, EF Core, OpenAI, MCP, or another transport/provider implementation.
-
-Adapters and providers depend on Foundgine contracts; the core does not depend on those adapters and providers.
-
-## Semantics
-
-The semantic model describes application-facing meaning: entities, fields, relationships, connections, and capabilities.
-
-It is not a second ORM entity model. Storage metadata remains responsible for physical facts such as tables, columns, keys, and foreign keys.
-
-A Foundgine connection represents a known semantic traversal between application-facing models. It should only exist when that application-facing connection provides meaning beyond merely reproducing a storage foreign key.
-
-## Intent
-
-Intent describes the requested operation independently of the transport that produced it.
-
-For example:
-
-```text
-Read Customer
-  ├── fields: id, name
-  └── traverse: contracts
-```
-
-A GraphQL AST or JSON document is therefore an input representation, not the canonical semantic representation.
-
-## Authorization
-
-Authorization is part of planning and execution semantics, not merely a preliminary boolean check.
-
-```text
-Request
-   ↓
+Caller / transport
+       ↓
+Intent
+       ↓
+Semantic model
+       ↓
 Resolve
-   ↓
+       ↓
+Validate
+       ↓
+Normalize
+       ↓
 Authorize
-   ↓
-Authorization constraints attached to plan
-   ↓
+       ↓
+Security-preserving plan optimization
+       ↓
+Execution plan / ExecutionIR
+       ↓
+Provider compilation
+       ↓
 Provider execution
+       ↓
+Result + evidence
 ```
 
-This preserves authorization semantics across the provider boundary.
+The layers are deliberately separate.
 
-## Planning
+## Layer 1 — Intent
 
-Planning turns authorized semantic intent into a provider-independent execution plan.
+Intent is what the caller wants.
 
-The plan should describe logical operations rather than SQL syntax or provider-specific APIs.
+Supported entry surfaces include:
 
-The long-term semantic algebra is intentionally small:
+- typed fluent C#;
+- dynamic fluent C#;
+- JSON;
+- GraphQL adapters;
+- MCP;
+- Microsoft.Extensions.AI tool integration;
+- semantic mutation builders.
+
+Intent is untrusted input.
+
+## Layer 2 — Semantics
+
+`Foundgine.Semantics` defines application meaning:
 
 ```text
-Read
-Filter
-Project
-Traverse
-Aggregate
-Order
-Page
-Mutate
-Bind
-Return
+Entity
+ ├── fields
+ ├── identity
+ └── relationships
 ```
 
-Providers remain responsible for translating those operations into physical work.
+It also defines request graphs, filters, ordering, pagination, logical traversals, mutation semantics, capability descriptions, and security context contracts.
 
-## Execution
+The semantic model is not the database schema.
 
-Execution coordinates the provider boundary and result materialization.
+## Layer 3 — Metadata
 
-The repository contains two deliberately different execution strategies: `Foundgine.Sql` for SQL execution and `Foundgine.InMemory` for direct CLR-backed execution. The in-memory provider is intentionally limited and exists primarily to prove that the logical execution plan is not SQL in disguise.
+`Foundgine.Metadata` describes structural facts:
 
-Provider parity is not claimed: the in-memory provider supports only the subset covered by its tests. A future production provider should be judged by whether it can consume the same logical plan without changing the semantic core.
+```text
+entities
+fields
+primary keys
+columns
+direct relationships
+model mappings
+connections
+conversions
+```
+
+Metadata can be generated by `Foundgine.Aot.Generator`.
+
+The important distinction is:
+
+```text
+Metadata = what structurally exists
+Semantics = what the application means/exposes
+```
+
+## Layer 4 — Authorization
+
+Authorization is applied to resolved semantic meaning.
+
+The policy can constrain:
+
+- entities;
+- fields;
+- relationships;
+- read/write operations;
+- conditional resource predicates.
+
+Authorization is not a GraphQL concern, SQL concern, or AI concern.
+
+A transport can help construct intent but cannot grant authority.
+
+## Layer 5 — Planning
+
+`Foundgine.Planning` turns authorized semantic operations into a provider-independent logical plan.
+
+A read plan contains topology such as:
+
+```text
+Scan
+  ↓
+Traverse
+  ↓
+TraverseConnection
+```
+
+and semantic clauses such as filtering, ordering and pagination.
+
+The plan must not contain SQL.
+
+## Layer 6 — Rewriting and optimization
+
+The planner can apply conservative rewrites.
+
+A rewrite must preserve:
+
+```text
+semantic meaning
++
+authorization
++
+required security invariants
+```
+
+Where aggregate semantics or provider capabilities matter, explicit proof/capability gates are used.
+
+Provider cost estimates are advisory only.
+
+## Layer 7 — Execution
+
+`Foundgine.Execution` is the physical execution boundary.
+
+It provides:
+
+- `ExecutionIR`;
+- provider compiler contracts;
+- provider execution contracts;
+- result materialization;
+- execution evidence;
+- provider security conformance;
+- execution-time authorization revalidation;
+- mutation execution coordination.
+
+## Layer 8 — Providers
+
+Current providers include:
+
+```text
+Foundgine.Sql
+Foundgine.InMemory
+```
+
+SQL lowers the plan into parameterized SQL and executes through ADO.NET.
+
+InMemory executes a deliberately limited subset over CLR-backed rows.
+
+The existence of both providers is an architectural test: the logical plan cannot depend on SQL-specific concepts.
+
+## Transport adapters
+
+Transport packages remain thin:
+
+```text
+GraphQL → semantic request
+JSON    → semantic request
+MCP     → semantic request
+AI      → semantic tool calls / semantic request
+```
+
+They do not become alternate planners.
+
+## Security context
+
+Authority is host-owned.
+
+```text
+Authentication / trusted host
+            ↓
+SecurityExecutionContext
+            ↓
+semantic execution
+```
+
+GraphQL variables, JSON properties, MCP arguments, and model-generated tool arguments must not be treated as authoritative identity/tenant/warrant material.
+
+## Logical traversal
+
+A semantic traversal can hide intermediate edges:
+
+```text
+Customer
+  → CustomerRelationship
+  → Contract
+  → Transaction
+```
+
+as:
+
+```text
+Customer.transactions
+```
+
+Resolution expands the path before authorization.
+
+This prevents a shortcut from bypassing a denied intermediate entity or relationship.
+
+## Mutations
+
+Mutation semantics have their own algebra because writes require dependency, generated-value, approval, and security handling.
+
+```text
+Semantic mutation graph
+       ↓
+Mutation plan
+       ↓
+dependency levels
+       ↓
+security/conformance gate
+       ↓
+provider execution
+```
+
+GraphQL mutation translation, MCP mutation tools, and direct mutation authoring all converge on this boundary.
 
 ## AOT
 
-AOT is used to make stable topology and metadata available at compile time:
+The AOT architecture moves stable topology into compilation:
 
 ```text
-Application model + relationships + connections
-                         ↓
-                    AOT generator
-                         ↓
-                 generated metadata
-                         ↓
-                      runtime
+Foundgine.Aot declarations
+        ↓
+Foundgine.Aot.Generator
+        ↓
+generated metadata
+        ↓
+metadata/semantic discovery
+        ↓
+runtime
 ```
 
-This reduces the need for runtime reflection-heavy discovery and makes the semantic topology explicit and inspectable.
+This reduces runtime discovery work and supports Native AOT-friendly metadata handling.
 
-## AI boundary
+It does not make arbitrary provider/application dependencies automatically Native-AOT compatible.
 
-AI is an intent source, not a core dependency.
+## Optional authority recovery
+
+`Foundgine.Security.Authority` is deliberately outside the core.
 
 ```text
-AI
- ↓ structured intent
-Foundgine
- ↓ authorization + planning + execution
-Provider
+authority/recovery subsystem
+            ↓
+validated authority context
+            ↓
+Foundgine semantic execution
 ```
 
-The core should not contain LLM clients, prompts, conversations, agent loops, model orchestration, or MCP implementation details.
+Applications that do not need a distributed authorization authority/recovery control plane do not need this package.
+
+## Dependency direction
+
+The intended package structure is:
+
+```text
+                  Foundgine.Abstractions
+                         ▲
+                         │
+             ┌───────────┼────────────┐
+             │           │            │
+          Metadata    Semantics     AOT
+             │           │
+             └──────┬────┘
+                    ▼
+                Planning
+                    │
+                    ▼
+                Execution
+                 /     \
+                ▼       ▼
+              SQL     InMemory
+
+Adapters
+  ├── JSON
+  ├── GraphQL
+  ├── MCP
+  └── AI
+        │
+        ▼
+     Foundgine
+```
+
+The exact project-reference graph contains additional supporting dependencies, but this is the architectural direction.
 
 ## What Foundgine is not
 
-Foundgine deliberately does not try to become:
+Foundgine is not intended to be:
 
 - an ORM;
 - a GraphQL server;
-- an LLM or agent framework;
-- an identity or authorization provider;
+- an AI agent framework;
+- an authorization server;
 - a workflow engine;
-- a database;
-- a runtime entity-mapping framework.
+- a database engine;
+- a generic SQL builder.
 
-Those systems can integrate with Foundgine at the boundaries.
+Its purpose is the boundary between semantic intent and controlled execution.

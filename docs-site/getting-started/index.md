@@ -1,188 +1,83 @@
-> Source content for [`index.html`](index.html), the page actually served on the site. Edit this file, then regenerate the HTML page and `llms-full.md`.
-
 # Get started with Foundgine
 
-Run the `Foundgine.SupplyChain` sample end to end, then walk through it layer by layer — MCP boundary, application use cases, domain and AOT metadata, semantic model, and PostgreSQL execution. This page follows [GUIDE.md](https://github.com/cristianbarragan/Foundgine/blob/main/samples/Foundgine.SupplyChain/GUIDE.md) in the sample.
+The canonical `Foundgine.SupplyChain` sample is the fastest way to understand the architecture in a real application.
 
-## What you'll run
-
-The sample is a small supply-chain domain exposed to agents over MCP: customers, orders, order lines, products, suppliers, categories, inventory positions, warehouses, shipments and carriers.
+## What you will run
 
 ```text
 Agent / MCP client
-        ↓
-Api
-        ↓
-Application
-        ↓
-Domain + Semantics
-        ↓
-Foundgine Planning / Execution
-        ↓
+      ↓
+API
+      ↓
+Application capability
+      ↓
+Domain + AOT metadata
+      ↓
+Semantics
+      ↓
+Planning / ExecutionIR
+      ↓
 Foundgine.Sql
-        ↓
+      ↓
 PostgreSQL
 ```
 
-Source: `samples/Foundgine.SupplyChain` in the repository. It is deliberately separate from `benchmarks/AgentEndToEnd/SupplyChain`, which stays fixed as a benchmark workload while this sample is free to evolve as the recommended reference architecture.
-
-## 1. Prerequisites
+## Prerequisites
 
 - .NET 9 SDK
-- Docker (for PostgreSQL, and optionally to build the API image)
-- A clone of the [Foundgine repository](https://github.com/cristianbarragan/Foundgine)
+- Docker / Docker Compose
+- a clone of the Foundgine repository
 
-The sample references the Foundgine `src/` projects directly rather than the published NuGet packages, so it always builds against the exact source in the repository, including the current AOT source generator. If you copy the sample outside the repository, switch those `ProjectReference` entries to the published `Foundgine.*` NuGet packages — see `PACKAGE-COMPATIBILITY.md` in the sample folder.
+## Start PostgreSQL
 
-## 2. Start PostgreSQL
+Use the repository's supplied PostgreSQL Compose configuration.
 
-```powershell
-cd samples/Foundgine.SupplyChain
-docker compose up --build
+```bash
+docker compose -f docker-compose.postgres.yml up -d
 ```
 
-This starts PostgreSQL on `localhost:4429` **and** the API container on `localhost:4422`, with `SupplyChainConnectionString` already wired to the containerized database. If you want to run the API this way, skip straight to the health check below — step 3 is only needed if you'd rather run the API locally (e.g. to attach a debugger) instead of in a container.
+## Run the sample
 
-If you only want the database, start just that service instead:
+The exact command and configuration are maintained in `samples/Foundgine.SupplyChain/GUIDE.md`. The important part of the exercise is following one request through the layers rather than memorizing a command sequence.
 
-```powershell
-docker compose up postgres --build
-```
+## Layer-by-layer
 
-## 3. Run the API
+### API
 
-Skip this step if you already ran the full `docker compose up --build` above — the API is already running on port 4422.
+Transport handling only. It should not construct SQL or become the authorization authority.
 
-Otherwise, with just PostgreSQL running (`docker compose up postgres --build`), run the API locally on the same port so the rest of this guide's URLs stay correct:
+### Application
 
-```powershell
-dotnet run --project samples/Foundgine.SupplyChain/Api/Foundgine.SupplyChain.Api.csproj --urls http://localhost:4422
-```
+Business capabilities and use-case orchestration. This is where application ownership of the operation remains visible.
 
-Check that it's up:
+### Domain
 
-```powershell
-curl http://localhost:4422/health
-curl http://localhost:4422/health/ready
-```
+Domain types and business concepts.
 
-The MCP endpoint is `http://localhost:4422/mcp`, exposing: `describe_capabilities`, `get_my_orders`, `get_order`, `get_shipment`, `list_products`, `list_customers`, `get_product`, `get_inventory`, `list_suppliers`, `update_inventory`, `create_shipment`, `update_shipment`, `place_order`, `cancel_order` — each a thin adapter over `SupplyChainApplication`.
+### AOT metadata
 
-Every tool call requires both an `actor` and a `token` — a caller has to prove it actually controls the identity it claims, not just name one. `SupplyChainApplication` checks capability authorization for every call before it reaches the semantic layer; see [How it works](../how-it-works/index.html) for the full authorization → planning → execution path, and the repository's `security/pentest/` suite for how that boundary is tested.
+`Foundgine.Aot.Generator` turns compile-time declarations into generated metadata, reducing runtime discovery and supporting Native AOT-friendly applications.
 
-## 4. Walk the architecture layer by layer
+### Semantics
 
-### Layer 1 — API layer (`Api`)
+Structural metadata becomes application meaning: semantic entities, fields, relationships, capabilities and authorization.
 
-`Api/Program.cs` is deliberately small: it creates the ASP.NET host, registers the application/infrastructure composition roots, enables the Foundgine MCP adapter, and maps `/mcp` and health endpoints. No SQL, business rules, semantic definitions or authorization policy live here.
+### Planning
 
-```text
-MCP request
-    ↓
-SupplyChainMcpTools
-    ↓
-SupplyChainApplication
-```
+Semantic operations become provider-independent plans and `ExecutionIR`. Physical SQL is not part of this layer.
 
-### Layer 2 — Application layer (`Application`)
+### Execution / provider
 
-Defines the use-case boundary through `ISupplyChainQueries` and `ISupplyChainMutations`. `SupplyChainApplication` performs capability authorization before delegating to the appropriate port.
+`Foundgine.Execution` owns the final execution boundary. `Foundgine.Sql` lowers the work to parameterized SQL and executes it through ADO.NET/PostgreSQL.
 
-```text
-protocol
-   ↓
-application capability
-   ↓
-use-case contract
-   ↓
-provider implementation
-```
+### MCP
 
-### Layer 3 — Domain layer (`Domain`)
+MCP exposes capabilities to an external caller. It remains an adapter; host-owned identity and authorization stay outside the protocol.
 
-Two intentionally different, unrelated CLR representations of the same business concepts:
+### Testing
 
-- **Storage records** — `*ERP` types decorated with `FoundgineEntity`/`FoundgineField`/`FoundgineRelationship`, carrying both semantic and physical names (e.g. `SalesOrder` stores as table `orders`).
-- **Application models** — `Customer`, `SalesOrder`, `SalesOrderLine`, `CatalogProduct`, `InventoryPosition` and friends, named for the business vocabulary. The model does not reference the ERP type. Model/entity mappings and connection targets live in the separate schema-bound `Domain/Mappings.cs` declarations.
+The repository tests each seam independently, then composes them into PostgreSQL and end-to-end scenarios.
 
-### Layer 4 — AOT layer (generated metadata)
+## Next
 
-`Foundgine.Aot` attributes on the Domain types are compiled by `Foundgine.Aot.Generator`, which emits `Foundgine.Generated.GeneratedMetadata`, consumed through `SupplyChainSemanticModel.Metadata`.
-
-```text
-AOT declarations
-      ↓
-Foundgine.Aot.Generator
-      ↓
-GeneratedMetadata
-      ↓
-IMetadataProvider
-      ↓
-Planner / SqlCompiler
-```
-
-### Layer 5 — Semantic layer (`Semantics`)
-
-`SupplyChainSemanticModel` holds stable semantic IDs for entities and relationships, used by semantic operations instead of raw database table names.
-
-### Layer 6 — Query repository (`Infrastructure/Queries`)
-
-Builds a semantic operation rather than a SQL string:
-
-```text
-GetOrders(customerId)
-       ↓
-SemanticReadNode(SalesOrder)
-       ↓
-SupplyChainSemanticFields.SalesOrder.CustomerId.Eq(customerId)
-       ↓
-Foundgine Planner
-       ↓
-Execution plan
-       ↓
-Foundgine.Sql.SqlCompiler
-       ↓
-SqlPlan
-       ↓
-SqlExecutionProvider
-       ↓
-PostgreSQL
-```
-
-### Layer 7 — Mutation repository (`Infrastructure/Mutations`)
-
-Simple mutations follow the same semantic path:
-
-```text
-SemanticMutationBuilder.Update
-       ↓
-MutationPlanner
-       ↓
-SqlMutationCompiler
-       ↓
-SqlMutationExecutionProvider
-       ↓
-PostgreSQL
-```
-
-### Layer 8 — High-assurance mutations
-
-`place_order` and `cancel_order` carry invariants that are currently PostgreSQL-specific — idempotency/replay protection, advisory transaction locking, `FOR UPDATE SKIP LOCKED`, inventory reservation races, atomic order + allocation + inventory changes, and cancellation inventory restoration — so they keep explicit parameterized SQL rather than a generic repository abstraction.
-
-### Layer 9 — MCP layer
-
-`SupplyChainMcpTools` contains only protocol adapters — a tool like `get_order` invokes the application capability directly without knowing how an order is stored or queried.
-
-### Layer 10 — Testing layer (`Tests`)
-
-The seam for validating each layer independently: capability authorization, AOT metadata, semantic plans, SQL compilation, PostgreSQL integration, MCP contracts, then full agent-facing E2E benchmark tests.
-
-**The key dependency rule:** API → Application → Semantic intent → Foundgine planning → Provider — never API → SQL repository → PostgreSQL directly.
-
-## 5. Next steps
-
-- **Build it from scratch.** [TUTORIAL.md](https://github.com/cristianbarragan/Foundgine/blob/main/samples/Foundgine.SupplyChain/TUTORIAL.md) starts from an empty solution and ends at this same sample.
-- **Read the full layer-by-layer guide.** [GUIDE.md](https://github.com/cristianbarragan/Foundgine/blob/main/samples/Foundgine.SupplyChain/GUIDE.md) is the source for this page.
-- **See how a request actually executes.** The [How it works](../how-it-works/index.html) page follows structured intent through authorization, planning and execution.
-- **Look at the evidence.** The [Agent Benchmark](../agent-benchmark/index.html) page includes a dedicated Supply Chain end-to-end report.
-- **Explore the other samples.** Once you're comfortable with this canonical layout, see [Samples](../samples/index.html) for `Foundgine.SupplyChain.Semantic` (recursive relationships, authorization invariants, complex fulfillment planning) and `Foundgine.SupplyChain.PenTest` (a GraphQL/MCP transport security-regression harness).
+Read [How it works](../how-it-works/index.html), then [Architecture](../architecture/index.html), and finally the [advanced semantic sample](../samples/semantic/index.html).

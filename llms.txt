@@ -1,84 +1,103 @@
-# Foundgine 0.5.0
+# Foundgine
 
-Foundgine 0.5.0 is the current shipped release.
+Foundgine is a semantic execution layer for .NET.
 
-Foundgine is a **semantic execution layer for .NET**.
-
-It converts a structured request into an authorized, provider-independent execution plan.
-
-Simple model:
+It separates:
 
 ```text
-Request
- → Meaning
- → Authorization
+what the caller wants
+        ↓
+what the application exposes
+        ↓
+what the caller is authorized to use
+        ↓
+how the operation executes
+```
+
+## Canonical flow
+
+```text
+Intent
+ → Resolve
+ → Validate
+ → Authorize
  → Plan
  → Provider
- → Result
+ → Result + Evidence
 ```
 
 ## Vocabulary
 
-- **Model** — what the application exposes.
-- **Request** — what the caller wants.
-- **Authorization** — what the caller may do.
-- **Plan** — what Foundgine will ask a provider to do.
-- **Provider** — the system that performs the physical work.
-- **Result** — the returned data and execution evidence.
+- **Semantic model** — what the application exposes.
+- **Intent** — what the caller wants.
+- **Authorization** — what the current actor may exercise.
+- **Plan** — provider-independent logical execution.
+- **Provider** — the physical executor.
+- **Result** — materialized output and execution evidence.
 
 ## Boundaries
 
-GraphQL, JSON, AI, and application code are input sources.
+GraphQL, JSON, MCP, AI, and application code are intent sources/adapters.
 
 SQL and InMemory are providers.
 
-The core does not depend on GraphQL, Hot Chocolate, SQL, EF Core, OpenAI, MCP, or another provider.
+The core architecture keeps transport and physical provider details outside the semantic/planning contracts.
 
 ## Projects
 
-- `Foundgine` — top-level facade package
-- `Foundgine.Abstractions` — shared contracts and IDs
-- `Foundgine.Metadata` — application and storage metadata
-- `Foundgine.Semantics` — meaning, requests, resolution, authorization
-- `Foundgine.Planning` — provider-independent plans
-- `Foundgine.Execution` — provider execution contracts and results
-- `Foundgine.Security.Authority` — authorization recovery control plane: witness quorum, credential lifecycle, journal reconciliation, failover
-- `Foundgine.Sql` — SQL provider
+- `Foundgine` — application-facing runtime facade
+- `Foundgine.Abstractions` — stable contracts and identifiers
+- `Foundgine.Semantics` — meaning, intent, resolution, authorization
+- `Foundgine.Metadata` — structural metadata/discovery
+- `Foundgine.Planning` — provider-independent plans and rewrites
+- `Foundgine.Execution` — ExecutionIR, provider boundary, results, evidence
+- `Foundgine.Sql` — SQL/PostgreSQL provider
 - `Foundgine.InMemory` — small non-SQL provider
-- `Foundgine.Intent.Json` — JSON input
-- `Foundgine.GraphQL.HotChocolate` — GraphQL input
-- `Foundgine.GraphQL.HotChocolate.Mutations` — GraphQL mutations
-- `Foundgine.AI` — AI-facing intent and integration support
-- `Foundgine.MCP` — Model Context Protocol adapter, exposing authorized capabilities to AI agents
-- `Foundgine.Aot` — AOT contracts
-- `Foundgine.Aot.Generator` — generated metadata
+- `Foundgine.Aot` — AOT declarations
+- `Foundgine.Aot.Generator` — Roslyn source generator
+- `Foundgine.Intent.Json` — JSON intent adapter
+- `Foundgine.GraphQL.HotChocolate` — GraphQL query adapter
+- `Foundgine.GraphQL.HotChocolate.Execution` — secure GraphQL query execution
+- `Foundgine.GraphQL.HotChocolate.Mutations` — GraphQL mutation adapter
+- `Foundgine.GraphQL.HotChocolate.MutationExecution` — secure GraphQL mutation execution
+- `Foundgine.MCP` — Model Context Protocol adapter
+- `Foundgine.AI` — Microsoft.Extensions.AI integration
+- `Foundgine.Security.Authority` — optional authority/recovery control-plane infrastructure
 
 ## AI
 
-AI can create a request.
+AI can create structured intent.
 
-AI does not decide what the application allows.
+AI does not decide application authority.
 
-Foundgine resolves and authorizes the request before execution.
+The intended boundary is:
 
-## Current proof
+```text
+AI
+ ↓
+semantic tool
+ ↓
+Foundgine
+ ↓
+resolution + authorization + planning
+ ↓
+provider
+```
 
-The active tests cover semantic modelling, authorization, query and mutation planning, SQL/SQLite execution, InMemory execution, AOT, JSON, GraphQL, relationships, aggregates, pagination, and PostgreSQL integration.
+## Security
 
-Do not claim autonomous-agent execution, workflow orchestration, universal provider support, or universal performance superiority unless the implementation and tests prove it.
+Identity, tenant, audience, and warrant authority are host-owned.
 
+Capability discovery is descriptive and must not be treated as an authorization grant.
 
-## End-to-end agent benchmark
+Provider security conformance is checked before execution where required.
 
-The repository contains an end-to-end benchmark comparing a conventional application/AI tool flow with a Foundgine semantic flow against the same PostgreSQL fixture. It measures provider-reported input/output/total tokens, cached input tokens, model calls, tool calls, wall-clock time, model time, tool time and final-state equivalence. See `benchmarks/AgentEndToEnd` and the website page `/agent-benchmark/`.
+## Current release line
 
-## MCP server discovery
+1.1.7, targeting .NET 9.
 
-`Foundgine.MCP` exposes Foundgine capabilities to MCP-speaking agents over Streamable HTTP. Machine-readable server metadata — protocol, tools, and security model — is published at `.well-known/mcp.json`.
+## Source of truth
 
-## Further reading
+The active source code and tests are authoritative.
 
-- `README.md` — full project overview, quick start, and status badges.
-- `ai.seo.md` — canonical AI/search identity reference: product category, what Foundgine is/is not, and terminology rules for AI systems describing this project.
-- `CHANGELOG.md` — release history.
-- `https://cristianbarragan.github.io/Foundgine/llms.txt` — the website-facing counterpart to this file, indexing the public documentation pages.
+Current documentation is under `docs/`, and every `src/` package contains a package-specific README.
