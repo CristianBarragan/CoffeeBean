@@ -2,8 +2,19 @@
 
 ## Core pipeline
 
-```text
-Intent → Resolve → Authorize → Plan → Rewrite/Optimize → Provider Compilation → Execution → Result + Evidence
+```plantuml
+@startuml
+start
+:Intent;
+:Resolve;
+:Authorize;
+:Plan;
+:Rewrite/Optimize;
+:Provider Compilation;
+:Execution;
+:Result + Evidence;
+stop
+@enduml
 ```
 
 ## Semantic model
@@ -32,28 +43,22 @@ Structural facts can be discovered from application declarations and AOT-generat
 
 The semantic operation graph is the canonical security object for a resolved request. Authorization evaluates the complete graph before provider-specific planning begins.
 
-```text
-Intent
-  ↓
-Semantic Operation Graph
-  ↓
-Validate + resource limits
-  ↓
-Authorize against semantic contract
-  ↓
-Authorized Graph + Evidence
-  ↓
-Semantic Plan + AuthorizationBinding
-  ↓
-Security-preserving rewrites
-  ↓
-ExecutionIR
-  ↓
-Provider Plan + Security Proof
-  ↓
-Final execution gate
-  ↓
-Execute
+```plantuml
+@startuml
+start
+:Intent;
+:Semantic Operation Graph;
+:Validate + resource limits;
+:Authorize against semantic contract;
+:Authorized Graph + Evidence;
+:Semantic Plan + AuthorizationBinding;
+:Security-preserving rewrites;
+:ExecutionIR;
+:Provider Plan + Security Proof;
+:Final execution gate;
+:Execute;
+stop
+@enduml
 ```
 
 `SemanticPlanAuthorizationBinding` records the exact semantic contract fingerprint and authorization-decision fingerprint that produced the plan. Rewrites must preserve that binding. `ExecutionIR` and the provider plan inherit it, while the final security gate checks the exact provider artifact against the exact execution IR.

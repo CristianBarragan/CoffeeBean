@@ -47,6 +47,7 @@ $env:SUPPLY_CHAIN_SEED="20260823"
 ```
 
 The runner starts PostgreSQL and the Foundgine MCP service, seeds the graph, executes a stochastic agent workload, and writes `reports/supply-chain-report.json` and `reports/supply-chain-report.md`.
+It then runs the existing `Foundgine.SupplyChain.PenTest` GraphQL and MCP penetration-test cases against the **same PostgreSQL instance** and merges their xUnit TRX timings into the same JSON/Markdown report. This avoids maintaining a second copy of the security scenarios while making every PenTest case measurable in the E2E evidence.
 
 ## Publish the report to the website
 
@@ -63,20 +64,18 @@ This copies the JSON and Markdown report to `docs-site/assets/agent-benchmark/su
 
 The Supply Chain benchmark is deliberately the **end of the story**, not the beginning. It takes the lower-level guarantees already tested by the repository and places them in a realistic agent-facing business workflow:
 
-```text
-Unit semantics / planning / authorization tests
-                    ↓
-       PostgreSQL integration tests
-                    ↓
-     Authorization penetration tests
-                    ↓
- Adversarial semantic-input penetration tests
-                    ↓
-       Performance smoke / benchmark
-                    ↓
-     Supply Chain agent-facing E2E
-                    ↓
-       Agent → MCP → Foundgine → PostgreSQL
+```plantuml
+@startuml
+start
+:Unit semantics / planning / authorization tests;
+:PostgreSQL integration tests;
+:Authorization penetration tests;
+:Adversarial semantic-input penetration tests;
+:Performance smoke / benchmark;
+:Supply Chain agent-facing E2E;
+:Agent → MCP → Foundgine → PostgreSQL;
+stop
+@enduml
 ```
 
 The benchmark therefore answers a different question from a raw throughput test: **can an application expose useful business capabilities to an agent without handing the agent authority over the application's data-access and execution rules?**

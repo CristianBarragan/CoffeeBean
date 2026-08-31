@@ -8,18 +8,20 @@ This page is intentionally short: it describes the current architectural state r
 
 The active source tree contains the following layers:
 
-```text
-Foundgine.Abstractions
-        ↓
-Foundgine.Semantics
-        ↓
-Foundgine.Planning
-        ↓
-Foundgine.Execution
-        ↓
-Providers
-  ├── Foundgine.Sql
-  └── Foundgine.InMemory
+```plantuml
+@startmindmap
+* Foundgine.Abstractions
+* ↓
+* Foundgine.Semantics
+* ↓
+* Foundgine.Planning
+* ↓
+* Foundgine.Execution
+* ↓
+* Providers
+** Foundgine.Sql
+** Foundgine.InMemory
+@endmindmap
 ```
 
 Around that core are:
@@ -130,18 +132,17 @@ Hot Chocolate adapters translate GraphQL into Foundgine semantic operations. Ded
 
 The security model is based on these invariants:
 
-```text
-untrusted intent
-      ↓
-semantic resolution
-      ↓
-authorization
-      ↓
-security-preserving plan
-      ↓
-provider conformance
-      ↓
-execution
+```plantuml
+@startuml
+start
+:untrusted intent;
+:semantic resolution;
+:authorization;
+:security-preserving plan;
+:provider conformance;
+:execution;
+stop
+@enduml
 ```
 
 Capability discovery is advisory.

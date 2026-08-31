@@ -6,18 +6,17 @@ It provides the attributes and small generated-metadata helper types used by app
 
 ## AOT architecture
 
-```text
-Application/domain declarations
-        ↓
-Foundgine.Aot attributes
-        ↓
-Foundgine.Aot.Generator
-        ↓
-generated metadata
-        ↓
-Foundgine.Metadata / Semantics
-        ↓
-Planning / Execution
+```plantuml
+@startuml
+start
+:Application/domain declarations;
+:Foundgine.Aot attributes;
+:Foundgine.Aot.Generator;
+:generated metadata;
+:Foundgine.Metadata / Semantics;
+:Planning / Execution;
+stop
+@enduml
 ```
 
 The goal is to move stable structural knowledge into compile time rather than requiring runtime reflection-driven discovery.

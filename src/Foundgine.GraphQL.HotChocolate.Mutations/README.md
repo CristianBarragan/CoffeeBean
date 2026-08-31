@@ -6,18 +6,17 @@ It translates GraphQL mutation input and requested result selections into Foundg
 
 ## Boundary
 
-```text
-GraphQL mutation
-      ↓
-HotChocolateMutationAdapter
-      ↓
-NestedMutationIntent / SemanticMutationOperationGraph
-      ↓
-Foundgine mutation planner
-      ↓
-authorization + security gate
-      ↓
-provider
+```plantuml
+@startuml
+start
+:GraphQL mutation;
+:HotChocolateMutationAdapter;
+:NestedMutationIntent / SemanticMutationOperationGraph;
+:Foundgine mutation planner;
+:authorization + security gate;
+:provider;
+stop
+@enduml
 ```
 
 The adapter is intentionally not an execution boundary.
@@ -73,15 +72,17 @@ That executor obtains the host-owned `ISecurityExecutionContextProvider` and rou
 
 Keeping the adapter pure gives Foundgine one mutation security lifecycle across transports:
 
-```text
-GraphQL
-JSON/MCP/other transport
-      │
-      ▼
-semantic mutation graph
-      │
-      ▼
-same mutation authorization/execution boundary
+```plantuml
+@startmindmap
+* GraphQL
+* JSON/MCP/other transport
+* │
+* ▼
+* semantic mutation graph
+* │
+* ▼
+* same mutation authorization/execution boundary
+@endmindmap
 ```
 
 This prevents GraphQL from growing a second authorization implementation.

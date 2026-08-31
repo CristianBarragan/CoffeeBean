@@ -6,20 +6,18 @@ The package exists so GraphQL translation and Foundgine execution remain separat
 
 ## Boundary
 
-```text
-GraphQL
-  ↓
-Foundgine.GraphQL.HotChocolate
-  ↓
-SemanticRequest
-  ↓
-FoundgineHotChocolateQueryExecutor
-  ↓
-host-owned security context
-  ↓
-Foundgine execution
-  ↓
-provider
+```plantuml
+@startuml
+start
+:GraphQL;
+:Foundgine.GraphQL.HotChocolate;
+:SemanticRequest;
+:FoundgineHotChocolateQueryExecutor;
+:host-owned security context;
+:Foundgine execution;
+:provider;
+stop
+@enduml
 ```
 
 ## `FoundgineHotChocolateQueryExecutor`
@@ -62,14 +60,15 @@ warrant = ...
 
 The executor therefore obtains authority from the host-owned context provider.
 
-```text
-authenticated request
-       ↓
-ISecurityExecutionContextProvider
-       ↓
-executor
-       ↓
-semantic execution
+```plantuml
+@startuml
+start
+:authenticated request;
+:ISecurityExecutionContextProvider;
+:executor;
+:semantic execution;
+stop
+@enduml
 ```
 
 ## Execution responsibilities
@@ -88,14 +87,15 @@ It does not implement SQL or provider execution itself.
 
 Use it when your application wants a secure, standard query path:
 
-```text
-ASP.NET + Hot Chocolate
-        ↓
-Foundgine.GraphQL.HotChocolate.Execution
-        ↓
-Foundgine
-        ↓
-provider
+```plantuml
+@startuml
+start
+:ASP.NET + Hot Chocolate;
+:Foundgine.GraphQL.HotChocolate.Execution;
+:Foundgine;
+:provider;
+stop
+@enduml
 ```
 
 ## Do not use the adapter alone as a security boundary

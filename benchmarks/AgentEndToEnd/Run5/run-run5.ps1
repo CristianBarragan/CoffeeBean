@@ -1,8 +1,8 @@
 [CmdletBinding()]
 param(
-    [int[]]$CustomerCounts = @(10,100,1000,10000),
-    [int[]]$Concurrency = @(8,16,32,64),
-    [int[]]$RunsPerTier = @(30,30,30,30),
+    [string]$CustomerCounts = '10,100,1000,10000',
+    [string]$Concurrency = '8,16,32,64',
+    [string]$RunsPerTier = '30,30,30,30',
     [int]$Warmups = 5,
     [switch]$Publish
 )
@@ -13,21 +13,31 @@ $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 Set-StrictMode -Version Latest
 
-$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..\..')
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '../../..')
 $ComposeFile = Join-Path $PSScriptRoot 'docker-compose.yml'
 $Project = 'foundgine-run5'
-$DbProject = Join-Path $PSScriptRoot 'Database\Database.csproj'
+$DbProject = Join-Path $PSScriptRoot 'Database/Database.csproj'
 $Report = Join-Path $PSScriptRoot 'artifacts'
 New-Item -ItemType Directory -Force -Path $Report | Out-Null
+$customerCountsArray = @($CustomerCounts -split ',' | ForEach-Object { [int]$_.Trim() })
+$concurrencyArray = @($Concurrency -split ',' | ForEach-Object { [int]$_.Trim() })
+$runsPerTier = @($RunsPerTier -split ',' | ForEach-Object { [int]$_.Trim() })
 
-if ($CustomerCounts.Count -ne $RunsPerTier.Count) {
+
+if ($customerCountsArray.Count -ne $runsPerTier.Count) {
     throw 'CustomerCounts and RunsPerTier must have the same number of entries.'
 }
-if ($CustomerCounts.Count -ne 4 -or ($CustomerCounts -join ',') -ne '10,100,1000,10000') {
-    throw 'Run 5 customer tiers must be: 10,100,1000,10000.'
-}
-if (($Concurrency -join ',') -ne '8,16,32,64') {
-    throw 'Run 5 concurrency tiers must be: 8,16,32,64.'
+# A single 1-customer/concurrency-1 tier is the CI smoke-test override
+# (see run-all-agent-benchmarks.ps1 -Smoke) - exempt it from the fixed
+# tier matrix below, which otherwise still governs real benchmark runs.
+$isSmokeOverride = ($customerCountsArray.Count -eq 1 -and $customerCountsArray[0] -eq 1 -and $concurrencyArray.Count -eq 1 -and $concurrencyArray[0] -eq 1)
+if (-not $isSmokeOverride) {
+    if ($customerCountsArray.Count -ne 4 -or ($customerCountsArray -join ',') -ne '10,100,1000,10000') {
+        throw 'Run 5 customer tiers must be: 10,100,1000,10000.'
+    }
+    if (($concurrencyArray -join ',') -ne '8,16,32,64') {
+        throw 'Run 5 concurrency tiers must be: 8,16,32,64.'
+    }
 }
 
 function Get-FreeTcpPort {
@@ -69,9 +79,9 @@ try {
     Compose @('down','-v','--remove-orphans')
     Compose @('build','mcp-efcore','mcp-foundgine')
 
-    for ($index = 0; $index -lt $CustomerCounts.Count; $index++) {
-        $customerCount = $CustomerCounts[$index]
-        $runsForTier = $RunsPerTier[$index]
+    for ($index = 0; $index -lt $customerCountsArray.Count; $index++) {
+        $customerCount = $customerCountsArray[$index]
+        $runsForTier = $runsPerTier[$index]
         $tier = '{0:D5}-customers' -f $customerCount
         $tierRoot = Join-Path $Report $tier
         New-Item -ItemType Directory -Force -Path $tierRoot | Out-Null
@@ -128,7 +138,7 @@ try {
         Wait-Http 'http://localhost:4411/health/ready'
         Wait-Http 'http://localhost:4412/health/ready'
 
-        foreach ($c in $Concurrency) {
+        foreach ($c in $concurrencyArray) {
             $runDir = Join-Path $tierRoot ('concurrency-{0:D3}' -f $c)
             New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 
@@ -137,11 +147,12 @@ try {
             $env:RUN5_RUNS = $runsForTier.ToString()
             $env:RUN5_WARMUPS = $Warmups.ToString()
             $env:RUN5_REPORT_DIRECTORY = $runDir
+            $env:RUN5_BATCH_SIZE = '8'
             $env:RUN5_EFCORE_MCP_URL = 'http://localhost:4411/mcp'
             $env:RUN5_MCP_URL = 'http://localhost:4412/mcp'
 
             Write-Host "Run 5: customers=$customerCount concurrency=$c runs=$runsForTier warmups=$Warmups"
-            & dotnet run --project (Join-Path $PSScriptRoot 'Runner\Runner.csproj') -c Release
+            & dotnet run --project (Join-Path $PSScriptRoot 'Runner/Runner.csproj') -c Release
             if ($LASTEXITCODE -ne 0) {
                 throw "Run 5 failed for $customerCount customers at concurrency $c (exit code $LASTEXITCODE)"
             }

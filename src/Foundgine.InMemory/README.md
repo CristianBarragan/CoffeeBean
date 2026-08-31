@@ -18,18 +18,17 @@ It is **not** intended to replace a production database provider.
 
 ## Architecture
 
-```text
-Semantic intent
-      ↓
-Foundgine.Planning
-      ↓
-ExecutionIR
-      ↓
-Foundgine.InMemory
-      ↓
-CLR-backed rows
-      ↓
-ExecutionResult
+```plantuml
+@startuml
+start
+:Semantic intent;
+:Foundgine.Planning;
+:ExecutionIR;
+:Foundgine.InMemory;
+:CLR-backed rows;
+:ExecutionResult;
+stop
+@enduml
 ```
 
 The same logical plan can therefore be sent to SQL or InMemory.
@@ -77,15 +76,19 @@ Without a second provider, it is easy for a logical plan to accidentally contain
 
 The intended proof is:
 
-```text
-                 Semantic plan
-                      │
-              ┌───────┴───────┐
-              ▼               ▼
-           InMemory           SQL
-              │               │
-              ▼               ▼
-          CLR rows        PostgreSQL
+```plantuml
+@startuml
+start
+:Semantic plan;
+fork
+  :InMemory;
+  :CLR rows;
+fork again
+  :SQL;
+  :PostgreSQL;
+end fork
+stop
+@enduml
 ```
 
 If the plan can only be executed by SQL because it contains table names, SQL aliases, or SQL-specific operations, the abstraction boundary has failed.
@@ -114,12 +117,12 @@ It does not provide:
 
 Use it when a test needs to validate:
 
-```text
-intent
-→ resolution
-→ authorization
-→ planning
-→ execution
+```plantuml
+@startuml
+start
+:intent → resolution → authorization → planning → execution;
+stop
+@enduml
 ```
 
 without bringing up PostgreSQL.

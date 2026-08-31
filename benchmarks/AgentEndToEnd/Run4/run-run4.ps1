@@ -10,15 +10,21 @@ $ErrorActionPreference='Stop'
 # promotion off so only actual non-zero exit codes are treated as failures.
 $PSNativeCommandUseErrorActionPreference = $false
 Set-StrictMode -Version Latest
-$RepoRoot=Resolve-Path (Join-Path $PSScriptRoot '..\..\..')
+$RepoRoot=Resolve-Path (Join-Path $PSScriptRoot '../../..')
 $ComposeFile=Join-Path $PSScriptRoot 'docker-compose.yml'; $Project='foundgine-run4'
-$DbProject=Join-Path $RepoRoot 'benchmarks\CoffeeBeanery.Performance\CoffeeBeanery.Database\CoffeeBeanery.Database.csproj'
-$MetricsScript=Join-Path $RepoRoot 'benchmarks\AgentEndToEnd\scripts\docker-metrics.ps1'
-$MetricsSummary=Join-Path $RepoRoot 'benchmarks\AgentEndToEnd\scripts\summarize-docker-metrics.ps1'
+$DbProject=Join-Path $RepoRoot 'benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/CoffeeBeanery.Database.csproj'
+$MetricsScript=Join-Path $RepoRoot 'benchmarks/AgentEndToEnd/scripts/docker-metrics.ps1'
+$MetricsSummary=Join-Path $RepoRoot 'benchmarks/AgentEndToEnd/scripts/summarize-docker-metrics.ps1'
 $Report=Join-Path $PSScriptRoot 'artifacts'; New-Item -ItemType Directory -Force -Path $Report | Out-Null
 if($CustomerCounts.Count -ne $RunsPerTier.Count){throw 'CustomerCounts and RunsPerTier must have the same number of entries.'}
-if($CustomerCounts.Count -ne 4 -or ($CustomerCounts -join ',') -ne '10,100,1000,10000'){throw 'Run 4 uses the Run 2 customer tiers: 10,100,1000,10000.'}
-if(($Concurrency -join ',') -ne '8,16,32,64'){throw 'Run 4 uses the Run 2 concurrency tiers: 8,16,32,64.'}
+# A single 1-customer/concurrency-1 tier is the CI smoke-test override
+# (see run-all-agent-benchmarks.ps1 -Smoke) - exempt it from the fixed
+# tier matrix below, which otherwise still governs real benchmark runs.
+$isSmokeOverride = ($CustomerCounts.Count -eq 1 -and $CustomerCounts[0] -eq 1 -and $Concurrency.Count -eq 1 -and $Concurrency[0] -eq 1)
+if (-not $isSmokeOverride) {
+    if($CustomerCounts.Count -ne 4 -or ($CustomerCounts -join ',') -ne '10,100,1000,10000'){throw 'Run 4 uses the Run 2 customer tiers: 10,100,1000,10000.'}
+    if(($Concurrency -join ',') -ne '8,16,32,64'){throw 'Run 4 uses the Run 2 concurrency tiers: 8,16,32,64.'}
+}
 $script:PostgresHostPort=$null
 $script:ConnectionString=$null
 function Get-FreeTcpPort { $listener=[System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback,0); try { $listener.Start(); return $listener.LocalEndpoint.Port } finally { $listener.Stop() } }
@@ -98,7 +104,7 @@ try {
       Remove-Item $stop -Force -ErrorAction SilentlyContinue
       $hostCmd=(Get-Command powershell -ErrorAction SilentlyContinue)
       if($null -eq $hostCmd){$hostCmd=(Get-Command pwsh -ErrorAction Stop)}
-      $metrics=Start-Process -FilePath $hostCmd.Source -ArgumentList @('-NoProfile','-File',$MetricsScript,'-ComposeFile',$ComposeFile,'-ProjectName',$Project,'-Services','postgres','graphql-ef','mcp-foundgine','-OutputCsv',$csv,'-StopFile',$stop,'-IntervalMs','1000') -PassThru
+      $metrics=Start-Process -FilePath $hostCmd.Source -ArgumentList @('-NoProfile','-File',$MetricsScript,'-ComposeFile',$ComposeFile,'-ProjectName',$Project,'-Services','postgres,graphql-ef,mcp-foundgine','-OutputCsv',$csv,'-StopFile',$stop,'-IntervalMs','1000') -PassThru
       try {
         $env:RUN4_MODE=$Mode
         $env:RUN4_RUNS=$runsForTier.ToString()
@@ -109,7 +115,7 @@ try {
         $env:RUN4_GRAPHQL_URL='http://localhost:4401/graphql'
         $env:RUN4_MCP_URL='http://localhost:4402/mcp'
         Write-Host "Run 4: customers=$customerCount concurrency=$c runs=$runsForTier warmups=$Warmups"
-        & dotnet run --project (Join-Path $PSScriptRoot 'Runner\Runner.csproj') -c Release -- $Mode
+        & dotnet run --project (Join-Path $PSScriptRoot 'Runner/Runner.csproj') -c Release -- $Mode
         if($LASTEXITCODE -ne 0){throw "Run 4 failed for $customerCount customers at concurrency $c (exit code $LASTEXITCODE)"}
       }
       finally {

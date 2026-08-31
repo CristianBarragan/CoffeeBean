@@ -6,25 +6,27 @@ It takes a provider-independent plan, verifies the execution security contract, 
 
 ## Boundary
 
-```text
-Intent
-  ↓
-Semantic model
-  ↓
-Authorization
-  ↓
-Semantic plan
-  ↓
-ExecutionIR
-  ↓
-Foundgine.Execution
-  ├── security verification
-  ├── provider compilation
-  ├── provider execution
-  ├── result materialization
-  └── execution evidence
-  ↓
-Result
+```plantuml
+@startmindmap
+* Intent
+* ↓
+* Semantic model
+* ↓
+* Authorization
+* ↓
+* Semantic plan
+* ↓
+* ExecutionIR
+* ↓
+* Foundgine.Execution
+** security verification
+** provider compilation
+** provider execution
+** result materialization
+** execution evidence
+* ↓
+* Result
+@endmindmap
 ```
 
 This package is deliberately below semantics/planning and above physical providers.
@@ -43,9 +45,12 @@ Compiles provider-independent execution IR/plans into a provider-specific plan.
 
 Examples:
 
-```text
-ExecutionIR → SqlPlan
-ExecutionIR → InMemoryPlan
+```plantuml
+@startuml
+start
+:ExecutionIR → SqlPlan ExecutionIR → InMemoryPlan;
+stop
+@enduml
 ```
 
 ### Mutation provider contracts
@@ -91,14 +96,15 @@ The objective is to prevent a provider from executing a plan whose required secu
 
 Conceptually:
 
-```text
-Plan requirements
-      ↓
-Provider security capabilities
-      ↓
-Conformance
-      ↓
-execute only if satisfied
+```plantuml
+@startuml
+start
+:Plan requirements;
+:Provider security capabilities;
+:Conformance;
+:execute only if satisfied;
+stop
+@enduml
 ```
 
 ## Execution context
@@ -154,12 +160,14 @@ Evidence should describe what happened; it is not itself an authorization grant.
 
 The security invariant is:
 
-```text
-authorize current request
-       ↓
-cache/compile provider plan
-       ↓
-execute with current execution context
+```plantuml
+@startuml
+start
+:authorize current request;
+:cache/compile provider plan;
+:execute with current execution context;
+stop
+@enduml
 ```
 
 A cached plan must retain the semantics required to enforce conditional authorization.
@@ -168,16 +176,16 @@ A cached plan must retain the semantics required to enforce conditional authoriz
 
 Mutation execution includes explicit dependency and level concepts.
 
-```text
-Mutation graph
-      ↓
-dependency graph
-      ↓
-dependency levels
-      ↓
-provider execution
-      ↓
-materialized mutation result
+```plantuml
+@startuml
+start
+:Mutation graph;
+:dependency graph;
+:dependency levels;
+:provider execution;
+:materialized mutation result;
+stop
+@enduml
 ```
 
 This allows generated-value dependencies to flow between operations without exposing provider-specific correlation mechanics to the semantic layer.
@@ -188,14 +196,14 @@ Providers can declare/evaluate the security invariants they preserve.
 
 This makes provider selection part of the security contract:
 
-```text
-required invariants
-        vs
-provider guarantees
-        ↓
-conformance result
-        ↓
-execute / reject
+```plantuml
+@startuml
+start
+:required invariants vs provider guarantees;
+:conformance result;
+:execute / reject;
+stop
+@enduml
 ```
 
 A provider should fail closed when it cannot satisfy required invariants.

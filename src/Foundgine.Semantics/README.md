@@ -8,20 +8,18 @@ It does not know SQL, GraphQL, PostgreSQL, MCP, or any other transport/provider 
 
 ## The semantic boundary
 
-```text
-External intent
-      ↓
-Resolve
-      ↓
-Validate
-      ↓
-Normalize
-      ↓
-Canonical semantic operation
-      ↓
-Authorize
-      ↓
-Planning
+```plantuml
+@startuml
+start
+:External intent;
+:Resolve;
+:Validate;
+:Normalize;
+:Canonical semantic operation;
+:Authorize;
+:Planning;
+stop
+@enduml
 ```
 
 The semantic layer is where a request becomes meaningful in the application's vocabulary.
@@ -112,11 +110,12 @@ Foundgine supports semantic traversals that hide intermediate relationships from
 
 For example:
 
-```text
-Customer
-  → CustomerRelationship
-      → Contract
-          → Transaction
+```plantuml
+@startuml
+start
+:Customer → CustomerRelationship → Contract → Transaction;
+stop
+@enduml
 ```
 
 can be exposed as:
@@ -129,18 +128,17 @@ Resolution expands the traversal to the real path before authorization and plann
 
 This is a security property as well as a convenience:
 
-```text
-Customer.transactions
-        ↓
-Customer
-  ↓
-CustomerRelationship
-  ↓
-Contract
-  ↓
-Transaction
-        ↓
-authorize every required node/edge
+```plantuml
+@startuml
+start
+:Customer.transactions;
+:Customer;
+:CustomerRelationship;
+:Contract;
+:Transaction;
+:authorize every required node/edge;
+stop
+@enduml
 ```
 
 A logical shortcut can never tunnel through a denied intermediate entity.
@@ -225,16 +223,16 @@ A capability snapshot must never be treated as a reusable authorization token.
 
 The operation graph is the point where semantic topology becomes one security object. Authorization evaluates the complete graph and returns immutable evidence. Planning then binds the resulting plan to the exact contract and authorization decision.
 
-```text
-SemanticOperationGraph
-        ↓
-AuthorizedGraph + Evidence
-        ↓
-SemanticPlan
-        ↓
-AuthorizationBinding
-        ↓
-ExecutionIR
+```plantuml
+@startuml
+start
+:SemanticOperationGraph;
+:AuthorizedGraph + Evidence;
+:SemanticPlan;
+:AuthorizationBinding;
+:ExecutionIR;
+stop
+@enduml
 ```
 
 The binding is provenance rather than authority. It prevents an authorized plan from being transplanted to a different semantic contract or authorization decision, while leaving request-specific authority in the trusted execution context.
@@ -265,14 +263,16 @@ Mutation semantics are represented separately from read execution.
 
 The mutation model includes:
 
-```text
-SemanticMutationOperationGraph
-  ├── entity identity
-  ├── field identity
-  ├── relationship identity
-  ├── values
-  ├── generated-value references
-  └── requested result fields
+```plantuml
+@startmindmap
+* SemanticMutationOperationGraph
+** entity identity
+** field identity
+** relationship identity
+** values
+** generated-value references
+** requested result fields
+@endmindmap
 ```
 
 The semantic mutation graph does not contain SQL columns or provider-specific transaction operations.

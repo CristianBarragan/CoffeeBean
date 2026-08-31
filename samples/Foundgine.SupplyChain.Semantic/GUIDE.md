@@ -5,18 +5,17 @@ complex supply-chain domain.
 
 ## Pipeline
 
-```text
-Structural metadata
-      ↓
-SemanticModel.Discover()
-      ↓
-small SupplyChain semantic enrichment
-      ↓
-SupplyChain authorization
-      ↓
-open intent
-      ↓
-resolution / planning
+```plantuml
+@startuml
+start
+:Structural metadata;
+:SemanticModel.Discover();
+:small SupplyChain semantic enrichment;
+:SupplyChain authorization;
+:open intent;
+:resolution / planning;
+stop
+@enduml
 ```
 
 ### Metadata = what exists

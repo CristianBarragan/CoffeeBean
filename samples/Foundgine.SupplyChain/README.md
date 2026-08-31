@@ -6,20 +6,18 @@ This sample intentionally lives under `samples/` and is separate from `benchmark
 
 ## Architecture
 
-```text
-Agent / MCP client
-        ↓
-Api
-        ↓
-Application
-        ↓
-Domain + Foundgine configuration
-        ↓
-Foundgine Planning / Execution
-        ↓
-Foundgine.Sql
-        ↓
-PostgreSQL
+```plantuml
+@startuml
+start
+:Agent / MCP client;
+:Api;
+:Application;
+:Domain + Foundgine configuration;
+:Foundgine Planning / Execution;
+:Foundgine.Sql;
+:PostgreSQL;
+stop
+@enduml
 ```
 
 ### Projects
@@ -55,12 +53,12 @@ External dependencies remain `ModelContextProtocol.AspNetCore` and `Npgsql`.
 
 The application models and persistence entities are separate CLR contracts. The physical entities use the `ERP` suffix:
 
-```text
-Customer             → CustomerERP
-SalesOrder           → SalesOrderERP
-SalesOrderLine       → SalesOrderLineERP
-CatalogProduct       → CatalogProductERP
-InventoryPosition    → InventoryPositionERP
+```plantuml
+@startuml
+start
+:Customer             → CustomerERP SalesOrder           → SalesOrderERP SalesOrderLine       → SalesOrderLineERP CatalogProduct       → CatalogProductERP InventoryPosition    → InventoryPositionERP;
+stop
+@enduml
 ```
 
 The model does not inherit from or reuse the ERP entity. Relationships and storage mappings are expressed through Foundgine metadata, while application code uses the generated semantic handles.

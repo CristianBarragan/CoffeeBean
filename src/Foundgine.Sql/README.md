@@ -6,17 +6,19 @@ It lowers provider-independent execution IR/plans into parameterized SQL and exe
 
 ## Responsibility
 
-```text
-SemanticPlan / ExecutionIR
-          ↓
-      Foundgine.Sql
-          ├── SQL compilation
-          ├── SQL authorization lowering
-          ├── parameter binding
-          ├── provider security conformance
-          └── ADO.NET execution
-          ↓
-       PostgreSQL / SQL database
+```plantuml
+@startmindmap
+* SemanticPlan / ExecutionIR
+* ↓
+* Foundgine.Sql
+**** SQL compilation
+**** SQL authorization lowering
+**** parameter binding
+**** provider security conformance
+**** ADO.NET execution
+* ↓
+* PostgreSQL / SQL database
+@endmindmap
 ```
 
 The package owns physical SQL concerns.
@@ -27,14 +29,15 @@ The package owns physical SQL concerns.
 
 The compiler uses structural metadata for physical correspondence:
 
-```text
-Semantic Entity/Field
-        ↓
-metadata mapping
-        ↓
-table/column
-        ↓
-parameterized SQL
+```plantuml
+@startuml
+start
+:Semantic Entity/Field;
+:metadata mapping;
+:table/column;
+:parameterized SQL;
+stop
+@enduml
 ```
 
 External names are not treated as raw SQL identifiers.
@@ -78,16 +81,16 @@ Retrieval is grounding/evidence, not authorization. Final semantic resolution, a
 
 The intended flow is:
 
-```text
-semantic authorization predicate
-        ↓
-logical execution plan
-        ↓
-ExecutionIR
-        ↓
-SqlAuthorizationWriter
-        ↓
-parameterized SQL
+```plantuml
+@startuml
+start
+:semantic authorization predicate;
+:logical execution plan;
+:ExecutionIR;
+:SqlAuthorizationWriter;
+:parameterized SQL;
+stop
+@enduml
 ```
 
 Authorization context values remain runtime parameters.
@@ -190,18 +193,17 @@ It does not:
 
 ## Recommended PostgreSQL stack
 
-```text
-Foundgine
-   ↓
-Foundgine.Semantics
-   ↓
-Foundgine.Planning
-   ↓
-Foundgine.Execution
-   ↓
-Foundgine.Sql
-   ↓
-Npgsql / PostgreSQL
+```plantuml
+@startuml
+start
+:Foundgine;
+:Foundgine.Semantics;
+:Foundgine.Planning;
+:Foundgine.Execution;
+:Foundgine.Sql;
+:Npgsql / PostgreSQL;
+stop
+@enduml
 ```
 
 Structural metadata normally comes from `Foundgine.Metadata`, optionally generated through the AOT pipeline.

@@ -66,9 +66,31 @@ Console.WriteLine();
 Console.WriteLine($"Tool/MCP calls per task: EF Core={conventional.AverageCallsPerTask:F2}; Foundgine={foundgine.AverageCallsPerTask:F2}");
 Console.WriteLine($"Logical operations per task: EF Core={conventional.AverageLogicalOpsPerTask:F2}; Foundgine={foundgine.AverageLogicalOpsPerTask:F2}");
 Console.WriteLine($"Call reduction: {(1 - foundgine.AverageCallsPerTask / conventional.AverageCallsPerTask) * 100:F1}%");
-Console.WriteLine($"Input payload reduction: {(1 - foundgine.AverageInputBytesPerCall / conventional.AverageInputBytesPerCall) * 100:F1}% (average bytes per MCP call, not total task payload)");
+var averageInputPayloadPerCallChange =
+    conventional.AverageInputBytesPerCall == 0
+        ? 0
+        : (foundgine.AverageInputBytesPerCall / conventional.AverageInputBytesPerCall - 1) * 100;
+
+var totalTaskPayloadChange =
+    conventional.AverageTotalPayloadBytes == 0
+        ? 0
+        : (foundgine.AverageTotalPayloadBytes / conventional.AverageTotalPayloadBytes - 1) * 100;
+
+var conventionalPayloadPerLogicalOp =
+    conventional.AverageLogicalOpsPerTask == 0
+        ? 0
+        : conventional.AverageTotalPayloadBytes / conventional.AverageLogicalOpsPerTask;
+
+var foundginePayloadPerLogicalOp =
+    foundgine.AverageLogicalOpsPerTask == 0
+        ? 0
+        : foundgine.AverageTotalPayloadBytes / foundgine.AverageLogicalOpsPerTask;
+
+Console.WriteLine($"Average input payload per MCP call change: {averageInputPayloadPerCallChange:+0.0;-0.0;0.0}% (Foundgine batch calls are intentionally larger)");
 Console.WriteLine($"Total task payload: EF Core={conventional.AverageTotalPayloadBytes:F0} bytes; Foundgine={foundgine.AverageTotalPayloadBytes:F0} bytes");
-Console.WriteLine($"Total task payload reduction: {(1 - foundgine.AverageTotalPayloadBytes / conventional.AverageTotalPayloadBytes) * 100:F1}%");
+Console.WriteLine($"Total task payload change: {totalTaskPayloadChange:+0.0;-0.0;0.0}% (not a reduction metric)");
+Console.WriteLine($"Payload per logical operation: EF Core={conventionalPayloadPerLogicalOp:F0} bytes; Foundgine={foundginePayloadPerLogicalOp:F0} bytes");
+Console.WriteLine($"Payload per logical operation change: {(conventionalPayloadPerLogicalOp == 0 ? 0 : (foundginePayloadPerLogicalOp / conventionalPayloadPerLogicalOp - 1) * 100):+0.0;-0.0;0.0}%");
 
 if (!string.IsNullOrWhiteSpace(reportDirectory))
 {

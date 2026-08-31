@@ -6,18 +6,17 @@ It translates Hot Chocolate GraphQL syntax into provider-independent Foundgine s
 
 ## Boundary
 
-```text
-GraphQL request
-      ↓
-HotChocolateSemanticAdapter
-      ↓
-SemanticRequest
-      ↓
-Foundgine
-      ↓
-provider
-      ↓
-GraphQL result shape
+```plantuml
+@startuml
+start
+:GraphQL request;
+:HotChocolateSemanticAdapter;
+:SemanticRequest;
+:Foundgine;
+:provider;
+:GraphQL result shape;
+stop
+@enduml
 ```
 
 This package handles GraphQL syntax. It does not own semantic planning or physical execution.
@@ -55,16 +54,16 @@ The host establishes security context before execution.
 
 For example:
 
-```text
-ASP.NET authentication
-        ↓
-host security context
-        ↓
-GraphQL adapter
-        ↓
-SemanticRequest
-        ↓
-Foundgine authorization
+```plantuml
+@startuml
+start
+:ASP.NET authentication;
+:host security context;
+:GraphQL adapter;
+:SemanticRequest;
+:Foundgine authorization;
+stop
+@enduml
 ```
 
 ## Secure execution package

@@ -74,3 +74,19 @@ The report is written as `run5-same-client-metadata.json`.
 This test does **not** claim that batching is free. It measures the effect of giving the same client a semantic batch capability at the MCP boundary.
 
 It is complementary to the original Run 5 throughput benchmark.
+
+
+## Payload interpretation
+
+A batch call is expected to have a larger individual MCP request because it
+carries multiple logical operations in one request. Therefore a negative value
+must not be described as a "payload reduction".
+
+The runner reports:
+
+1. average payload per MCP call;
+2. total payload per logical task;
+3. payload per logical operation.
+
+The primary batching signal is MCP/tool-call reduction. The payload metrics are
+supporting measurements and make the cost of carrying the larger batch explicit.

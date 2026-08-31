@@ -111,14 +111,15 @@ Metadata supplies structural facts. Semantic configuration supplies application 
 
 For compile-time metadata, use `Foundgine.Aot` declarations with the `Foundgine.Aot.Generator`.
 
-```text
-attributes
-   ↓
-source generator
-   ↓
-generated metadata
-   ↓
-metadata/semantic model
+```plantuml
+@startuml
+start
+:attributes;
+:source generator;
+:generated metadata;
+:metadata/semantic model;
+stop
+@enduml
 ```
 
 See [AOT.md](AOT.md).
@@ -165,16 +166,16 @@ Do not allow MCP arguments to choose tenant, identity, warrant, or provider cred
 
 The model can call semantic tools:
 
-```text
-LLM
- ↓
-Foundgine.AI
- ↓
-Foundgine
- ↓
-authorization + planning
- ↓
-provider
+```plantuml
+@startuml
+start
+:LLM;
+:Foundgine.AI;
+:Foundgine;
+:authorization + planning;
+:provider;
+stop
+@enduml
 ```
 
 The model is an untrusted producer of intent.

@@ -24,30 +24,30 @@ try {
     Write-Host "MCP URL:     $env:SUPPLY_CHAIN_MCP_URL"
     Write-Host ""
 
-    Write-Host "[1/6] Checking Docker..." -ForegroundColor Yellow
+    Write-Host "[1/8] Checking Docker..." -ForegroundColor Yellow
     docker --version
     docker compose version
 
     Write-Host ""
-    Write-Host "[2/6] Stopping previous Supply Chain containers..." -ForegroundColor Yellow
+    Write-Host "[2/8] Stopping previous Supply Chain containers..." -ForegroundColor Yellow
     docker compose -f $compose down -v --remove-orphans
     if ($LASTEXITCODE -ne 0) { throw "Failed to stop previous Supply Chain containers (exit code $LASTEXITCODE)." }
 
     Write-Host ""
-    Write-Host "[3/6] Building and starting PostgreSQL + Foundgine MCP..." -ForegroundColor Yellow
+    Write-Host "[3/8] Building and starting PostgreSQL + Foundgine MCP..." -ForegroundColor Yellow
     docker compose -f $compose up -d --build postgres mcp-foundgine
     if ($LASTEXITCODE -ne 0) { throw "Docker Compose failed to build/start Supply Chain services (exit code $LASTEXITCODE)." }
 
     Write-Host ""
-    Write-Host "[4/6] Current container state..." -ForegroundColor Yellow
+    Write-Host "[4/8] Current container state..." -ForegroundColor Yellow
     docker compose -f $compose ps
 
     Write-Host ""
-    Write-Host "[5/6] Seeding PostgreSQL..." -ForegroundColor Yellow
+    Write-Host "[5/8] Seeding PostgreSQL..." -ForegroundColor Yellow
 
     $env:SupplyChainConnectionString = "Host=localhost;Port=4429;Database=foundgine_supply_chain;Username=benchmark;Password=benchmark"
 
-    dotnet restore .\Database\Database.csproj
+    dotnet restore Database/Database.csproj
     if ($LASTEXITCODE -ne 0) { throw "Database restore failed with exit code $LASTEXITCODE." }
 
     dotnet run `
@@ -60,9 +60,9 @@ try {
     }
 
     Write-Host ""
-    Write-Host "[6/6] Starting AI agent..." -ForegroundColor Yellow
+    Write-Host "[6/8] Starting AI agent..." -ForegroundColor Yellow
 
-    dotnet restore .\Agent\Agent.csproj
+    dotnet restore Agent/Agent.csproj
     if ($LASTEXITCODE -ne 0) { throw "Agent restore failed with exit code $LASTEXITCODE." }
 
     dotnet run `
@@ -74,6 +74,39 @@ try {
         throw "Agent failed with exit code $LASTEXITCODE."
     }
 
+    Write-Host ""
+    Write-Host "[7/8] Running Supply Chain PenTest regression cases against the benchmark PostgreSQL..." -ForegroundColor Yellow
+    $pentestProject = Join-Path $root "../../../samples/Foundgine.SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj"
+    $pentestResults = Join-Path $env:SUPPLY_CHAIN_REPORT_DIRECTORY "supply-chain-pentest.trx"
+    $env:FOUNDGINE_SUPPLYCHAIN_PENTEST = "1"
+
+    dotnet restore $pentestProject
+    if ($LASTEXITCODE -ne 0) { throw "Supply Chain PenTest restore failed with exit code $LASTEXITCODE." }
+
+    $pentestTimer = [System.Diagnostics.Stopwatch]::StartNew()
+    dotnet test $pentestProject `
+        -c Release `
+        --no-restore `
+        --filter "FullyQualifiedName~GraphPenetrationTests|FullyQualifiedName~McpPenetrationTests" `
+        --results-directory $env:SUPPLY_CHAIN_REPORT_DIRECTORY `
+        --logger "trx;LogFileName=supply-chain-pentest.trx"
+    $pentestExitCode = $LASTEXITCODE
+    $pentestTimer.Stop()
+
+    # Always merge the measured TRX results into the already-generated E2E report
+    # before surfacing a test failure. This leaves one report containing both the
+    # stochastic agent workload and the deterministic security regression cases.
+    & (Join-Path $root "merge-supply-chain-pentest-report.ps1") `
+        -ReportPath (Join-Path $env:SUPPLY_CHAIN_REPORT_DIRECTORY "supply-chain-report.json") `
+        -PentestResultsPath $pentestResults `
+        -SuiteDurationMs ([Math]::Round($pentestTimer.Elapsed.TotalMilliseconds, 1))
+
+    if ($pentestExitCode -ne 0) {
+        throw "Supply Chain PenTest failed with exit code $pentestExitCode."
+    }
+
+    Write-Host ""
+    Write-Host "[8/8] Supply Chain E2E + PenTest measurement complete." -ForegroundColor Green
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Green
     Write-Host " Supply Chain E2E PASSED" -ForegroundColor Green

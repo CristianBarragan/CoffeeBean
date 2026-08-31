@@ -41,10 +41,13 @@ A batch of 50 means one HTTP request represents 50 independent logical mutations
 
 The combined workload is one measured client operation:
 
-```text
-real upsert
-    ↓
-exact same top-50/full-graph select
+```plantuml
+@startuml
+start
+:real upsert;
+:exact same top-50/full-graph select;
+stop
+@enduml
 ```
 
 The stopwatch spans both HTTP calls. The upsert targets existing deterministic customers using `CustomerKey` as the conflict identity. This prevents the workload from degenerating into repeated inserts and ensures the following select reads the same graph shape as the standalone query benchmark.
@@ -57,20 +60,18 @@ The current warm Foundgine configuration caches the **provider execution plan**.
 
 That distinction matters:
 
-```text
-request
-  ↓
-semantic resolution
-  ↓
-authorization
-  ↓
-provider-plan cache
-  ↓
-PostgreSQL
-  ↓
-result shaping
-  ↓
-transport
+```plantuml
+@startuml
+start
+:request;
+:semantic resolution;
+:authorization;
+:provider-plan cache;
+:PostgreSQL;
+:result shaping;
+:transport;
+stop
+@enduml
 ```
 
 The next cache experiments should add a **result cache** and measure hit rate, hit/miss latency, CPU, memory and PostgreSQL load. A result-cache hit can potentially avoid database execution and much of the downstream materialization cost, which is a fundamentally different optimization from caching the provider plan.

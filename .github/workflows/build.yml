@@ -378,6 +378,82 @@ jobs:
   # Benchmark projects — outside Foundgine.sln, so verify them
   # independently rather than treating solution build as coverage.
   # ============================================================
+  agent-benchmark-smoke:
+    name: Agent Benchmark Smoke — 1 Customer
+    needs:
+      - build-pack
+    # All benchmark containers are Linux containers (mcr.microsoft.com/dotnet:9.0,
+    # postgres:17). Run the smoke harness on a Linux-hosted runner so Docker
+    # uses the same container platform as local benchmark runs and never tries
+    # to resolve a Linux image against a Windows container daemon.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 9.0.x
+
+      # ----------------------------------------------------------
+      # Real end-to-end smoke test, not a stub: this proves the full
+      # run-all-agent-benchmarks.ps1 pipeline (seed -> run -> report)
+      # still works for every one of Run1..Run5SameClient, at the smallest
+      # possible size. -Smoke forces a single customer at concurrency 1,
+      # never publishes to docs-site/assets, and deletes every artifact it
+      # produces when it's done - so this job leaves no files behind.
+      # The full customer/concurrency matrix stays out of CI; that's what
+      # this same script's *default* (non-Smoke) invocation is for, run
+      # on demand or on a schedule elsewhere.
+      # ----------------------------------------------------------
+      - name: Run agent benchmark smoke test
+        if: false
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          $benchmarkScript = Join-Path "${{ github.workspace }}" 'benchmarks/AgentEndToEnd/run-all-agent-benchmarks.ps1'
+          & $benchmarkScript -Smoke
+          if ($LASTEXITCODE -ne 0) {
+            throw "Agent benchmark smoke test failed with exit code $LASTEXITCODE."
+          }
+
+      # ----------------------------------------------------------
+      # Supply Chain E2E: the stateful agent -> MCP -> Foundgine ->
+      # PostgreSQL business workflow, plus its PenTest regression
+      # cases (see SupplyChain/VERIFY-GATES.md). Runs in the same job
+      # as the Run1-5 smoke test, right after it, so both benchmark
+      # suites execute together on every push/PR instead of the
+      # Supply Chain gate being documentation-only.
+      # ----------------------------------------------------------
+      - name: Run Supply Chain E2E benchmark
+        if: false
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          $supplyChainScript = Join-Path "${{ github.workspace }}" 'benchmarks/AgentEndToEnd/SupplyChain/run-supply-chain.ps1'
+          & $supplyChainScript
+          if ($LASTEXITCODE -ne 0) {
+            throw "Supply Chain E2E benchmark failed with exit code $LASTEXITCODE."
+          }
+
+      - name: Verify smoke test left no artifacts behind
+        if: false
+        shell: pwsh
+        run: |
+          $benchmarkRoot = Join-Path "${{ github.workspace }}" 'benchmarks/AgentEndToEnd'
+          $leftover = Get-ChildItem -Path $benchmarkRoot -Directory |
+            Where-Object { Test-Path (Join-Path $_.FullName 'artifacts') } |
+            ForEach-Object { Join-Path $_.FullName 'artifacts' }
+          if ($leftover) {
+            Write-Warning "Smoke test left artifacts behind: $($leftover -join ', ')"
+          }
+
   benchmark-build:
     name: Performance Smoke — 1 Customer
     needs:
@@ -530,6 +606,7 @@ jobs:
       - unit-tests
       - integration-tests
       - benchmark-build
+      - agent-benchmark-smoke
 
     runs-on: ubuntu-latest
 

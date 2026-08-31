@@ -6,28 +6,22 @@ approximate retrieval provider only proposes candidates.
 
 ## Canonical flow
 
-```text
-Natural language
-      ↓
-Tokenization
-      ↓
-Candidate retrieval (for every token × semantic kind)
-      ↓
-Ranked lexical candidates
-      ↓
-Highest-scoring root candidate
-      ↓
-Semantic-contract validation
-      ↓
-Neighbour-constrained graph walk
-      ↓
-Backtracking when a candidate cannot form a valid path
-      ↓
-Canonical semantic interpretation
-      ↓
-Authorization
-      ↓
-Planning / execution
+```plantuml
+@startuml
+start
+:Natural language;
+:Tokenization;
+:Candidate retrieval (for every token × semantic kind);
+:Ranked lexical candidates;
+:Highest-scoring root candidate;
+:Semantic-contract validation;
+:Neighbour-constrained graph walk;
+:Backtracking when a candidate cannot form a valid path;
+:Canonical semantic interpretation;
+:Authorization;
+:Planning / execution;
+stop
+@enduml
 ```
 
 For each token, the retrieval boundary can consider:
@@ -84,12 +78,14 @@ either one, or combine candidates from both before handing them to
 
 Given:
 
-```text
-Customer
-  └─ Orders → SalesOrder
-                └─ Lines → SalesOrderLine
-                              └─ Product → CatalogProduct
-                                              └─ Category → Category
+```plantuml
+@startmindmap
+* Customer
+* └─ Orders → SalesOrder
+* └─ Lines → SalesOrderLine
+* └─ Product → CatalogProduct
+* └─ Category → Category
+@endmindmap
 ```
 
 and a lexical expression:
@@ -100,24 +96,22 @@ bought nike shoes
 
 Elasticsearch can return candidates such as:
 
-```text
-bought → Orders                    0.98
-nike   → CatalogProduct.Name=...   0.99
-shoes  → Category.Name=...         0.97
+```plantuml
+@startuml
+start
+:bought → Orders                    0.98 nike   → CatalogProduct.Name=...   0.99 shoes  → Category.Name=...         0.97;
+stop
+@enduml
 ```
 
 Foundgine then validates the path:
 
-```text
-Customer
-  → Orders
-  → SalesOrder
-  → Lines
-  → SalesOrderLine
-  → Product
-  → CatalogProduct
-  → Category
-  → Category.Name
+```plantuml
+@startuml
+start
+:Customer → Orders → SalesOrder → Lines → SalesOrderLine → Product → CatalogProduct → Category → Category.Name;
+stop
+@enduml
 ```
 
 The database is queried only after this semantic interpretation has been
@@ -200,8 +194,14 @@ token — returns `GroundingOutcome.BudgetExceeded` (`Committed = null`,
 `CompetingInterpretations` empty), never a partial answer built from
 whatever the search happened to find before it was cut off:
 
-```text
-GroundingOutcome.BudgetExceeded → no committed interpretation → no execution
+```plantuml
+@startuml
+start
+:GroundingOutcome.BudgetExceeded;
+:no committed interpretation;
+:no execution;
+stop
+@enduml
 ```
 
 This is a deliberate design choice, not an incidental one: a search
