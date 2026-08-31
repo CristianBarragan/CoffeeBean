@@ -30,7 +30,7 @@ A caller submits structured intent. Foundgine resolves that intent against an ap
 
 ## **Walkthrough: from natural language to authorized execution**
 
-**See the complete walkthrough:** [**From Natural Language to Authorized Execution**](docs-site/walkthrough/index.html)
+**See the complete walkthrough:** [**From Natural Language to Authorized Execution**](https://cristianbarragan.github.io/Foundgine/docs-site/walkthrough/index.html)
 
 > **Example request:** **“show me overdue purchase orders from our top supplier in Texas”**
 >
