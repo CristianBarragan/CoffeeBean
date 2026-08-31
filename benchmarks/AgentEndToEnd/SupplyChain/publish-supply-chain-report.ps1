@@ -28,6 +28,16 @@ $manifest = [ordered]@{
     failures = $report.summary.failures
     unexpectedUnauthorizedSuccesses = $report.summary.unexpectedSuccesses
     averageLatencyMs = $report.summary.avgLatencyMs
+    securityPenTest = if ($report.securityPenTest) {
+        [ordered]@{
+            total = $report.securityPenTest.summary.total
+            passed = $report.securityPenTest.summary.passed
+            failed = $report.securityPenTest.summary.failed
+            skipped = $report.securityPenTest.summary.skipped
+            suiteDurationMs = $report.securityPenTest.suiteDurationMs
+            averageCaseDurationMs = $report.securityPenTest.summary.averageCaseDurationMs
+        }
+    } else { $null }
 }
 $manifest | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $assetDir "publish-manifest.json") -Encoding utf8
 

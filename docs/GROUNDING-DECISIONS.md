@@ -191,16 +191,16 @@ actually were instead of only signalling that a tie existed.
 
 ## Where this fits in the canonical lifecycle
 
-```text
-Lexical retrieval
-      ↓
-Candidate meanings (graph-constrained paths)
-      ↓
-Grounding decision   ← this stage
-      ↓
-Authorization
-      ↓
-Planning / execution
+```plantuml
+@startuml
+start
+:Lexical retrieval;
+:Candidate meanings (graph-constrained paths);
+:Grounding decision   ← this stage;
+:Authorization;
+:Planning / execution;
+stop
+@enduml
 ```
 
 Grounding is not a replacement for authorization, planning, or provider

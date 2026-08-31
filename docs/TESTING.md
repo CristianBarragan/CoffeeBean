@@ -121,13 +121,12 @@ For provider tests, exact SQL assertions are appropriate where SQL generation it
 
 A strong Foundgine test generally follows:
 
-```text
-intent
- → resolve
- → authorize
- → plan
- → provider
- → result
+```plantuml
+@startuml
+start
+:intent → resolve → authorize → plan → provider → result;
+stop
+@enduml
 ```
 
 This is more valuable than testing an internal helper in isolation when the helper's only purpose is to support the pipeline.

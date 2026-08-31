@@ -1,335 +1,114 @@
 # Foundgine 1.1.9 — Website full context
 
-The public website explains the current architecture and deliberately excludes historical milestone/release material.
+Foundgine is a **programmable semantic execution platform for .NET**. It creates an application-controlled boundary between structured caller intent and physical execution.
 
+## Canonical lifecycle
 
----
-
-## what-is-foundgine.md
-
-# What Is Foundgine?
-
-Foundgine is a programmable semantic execution platform for .NET. It separates caller intent from application authority and physical execution.
-
-## The problem
-
-Applications increasingly have many callers: APIs, GraphQL, automation, internal services and AI agents. Without a common execution boundary, each caller can duplicate validation, authorization, orchestration and data access.
-
-## The Foundgine model
-
-```text
-Caller
-  ↓
-Intent
-  ↓
-Semantic Model
-  ↓
-Resolution + Validation
-  ↓
-Authorization
-  ↓
-Provider-independent Plan
-  ↓
-Provider
-  ↓
-Result + Evidence
+```plantuml
+@startuml
+start
+:Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence;
+stop
+@enduml
 ```
 
-## Semantic versus persistence models
+Retrieval is candidate discovery, not authorization.
 
-A persistence model describes storage. A semantic model describes what the application intentionally exposes. They can differ in fields, relationships, capabilities and authorization.
+## Core vocabulary
 
-## Why it matters for AI
+- **Semantic model** — application-defined meaning: entities, fields, identities, relationships, aliases and capabilities.
+- **Intent** — what the caller requests, independently of physical SQL/provider operations.
+- **Retrieval** — candidate discovery plus evidence; never an authorization decision.
+- **Resolution** — selects and validates the intended semantic meaning.
+- **Authorization** — determines what the current trusted execution context may exercise.
+- **Plan** — provider-independent logical execution.
+- **ExecutionIR** — the controlled intermediate execution representation at the provider boundary.
+- **Provider** — physical execution implementation.
+- **Evidence** — execution/security/plan context such as receipts and fingerprints.
 
-An AI model can propose structured intent without becoming the authority over database schema, tenants, credentials or business invariants. Foundgine re-evaluates the request inside the application-controlled semantic and authorization boundary.
+## Adapters and providers
 
-## What Foundgine is not
+Intent can originate from application code, JSON, GraphQL, MCP or AI tools. These are adapters/consumers of the semantic boundary.
 
-Foundgine is not an ORM replacement, database, GraphQL server, identity provider, authorization server, workflow engine or general autonomous-agent framework.
+Current providers include `Foundgine.Sql` for SQL/PostgreSQL and a deliberately limited `Foundgine.InMemory` provider. PostgreSQL retrieval includes relational lookup, `pg_trgm`, native full text, optional `pg_search`/BM25 and optional Apache AGE graph similarity. Vector retrieval is not currently implemented.
 
+## AI
 
----
+AI may generate structured intent. It does not decide application authority, tenant identity, exposed semantics, credentials, policy or whether security invariants may be skipped.
 
-## getting-started/index.md
-
-# Get started with Foundgine
-
-The canonical `Foundgine.SupplyChain` sample is the fastest way to understand the architecture in a real application.
-
-## What you will run
-
-```text
-Agent / MCP client
-      ↓
-API
-      ↓
-Application capability
-      ↓
-Domain + AOT metadata
-      ↓
-Semantics
-      ↓
-Planning / ExecutionIR
-      ↓
-Foundgine.Sql
-      ↓
-PostgreSQL
+```plantuml
+@startuml
+start
+:AI;
+:semantic capability / intent;
+:Foundgine;
+:resolve;
+:authorize;
+:plan;
+:provider;
+stop
+@enduml
 ```
 
-## Prerequisites
+## MCP
 
-- .NET 9 SDK
-- Docker / Docker Compose
-- a clone of the Foundgine repository
-
-## Start PostgreSQL
-
-Use the repository's supplied PostgreSQL Compose configuration.
-
-```bash
-docker compose -f docker-compose.postgres.yml up -d
-```
-
-## Run the sample
-
-The exact command and configuration are maintained in `samples/Foundgine.SupplyChain/GUIDE.md`. The important part of the exercise is following one request through the layers rather than memorizing a command sequence.
-
-## Layer-by-layer
-
-### API
-
-Transport handling only. It should not construct SQL or become the authorization authority.
-
-### Application
-
-Business capabilities and use-case orchestration. This is where application ownership of the operation remains visible.
-
-### Domain
-
-Domain types and business concepts.
-
-### AOT metadata
-
-`Foundgine.Aot.Generator` turns compile-time declarations into generated metadata, reducing runtime discovery and supporting Native AOT-friendly applications.
-
-### Semantics
-
-Structural metadata becomes application meaning: semantic entities, fields, relationships, capabilities and authorization.
-
-### Planning
-
-Semantic operations become provider-independent plans and `ExecutionIR`. Physical SQL is not part of this layer.
-
-### Execution / provider
-
-`Foundgine.Execution` owns the final execution boundary. `Foundgine.Sql` lowers the work to parameterized SQL and executes it through ADO.NET/PostgreSQL.
-
-### MCP
-
-MCP exposes capabilities to an external caller. It remains an adapter; host-owned identity and authorization stay outside the protocol.
-
-### Testing
-
-The repository tests each seam independently, then composes them into PostgreSQL and end-to-end scenarios.
-
-## Next
-
-Read [How it works](how-it-works/index.html), then [Architecture](architecture/index.html), and finally the [advanced semantic sample](samples/semantic/index.html).
-
-
----
-
-## ai-agents/index.md
-
-# AI Agents with Foundgine
-
-Foundgine gives an AI agent a controlled application capability surface without giving the model database authority.
-
-## Intended boundary
-
-```text
-AI agent
-  ↓
-capability discovery / structured intent
-  ↓
-Foundgine
-  ├─ resolve
-  ├─ validate
-  ├─ authorize
-  ├─ plan
-  └─ execute
-  ↓
-provider
-```
-
-## Capability discovery is not authorization
-
-Capability descriptions help a model construct valid intent. The server resolves and authorizes every actual request again.
+`Foundgine.MCP` is a transport/capability adapter. Discovery is advisory. The host supplies trusted security context and every actual request is resolved and authorized.
 
 ## Security
 
-Authentication, identity, tenant context and model orchestration remain host responsibilities. Foundgine enforces semantic authorization and preserves security constraints into planning/execution.
+The core security boundary is:
 
-## Foundgine.AI
-
-`Foundgine.AI` integrates with `Microsoft.Extensions.AI`, exposing Foundgine operations as model tools without hard-coding a model provider.
-
-## What is outside the core guarantee
-
-Foundgine is not a general autonomous-agent framework. Model selection, memory, orchestration, deployment and autonomous behavior belong to the surrounding application.
-
-
----
-
-## architecture/index.md
-
-# Foundgine Architecture
-
-## Core pipeline
-
-```text
-Intent → Resolve → Authorize → Plan → Rewrite/Optimize → Provider Compilation → Execution → Result + Evidence
+```plantuml
+@startuml
+start
+:untrusted input;
+:semantic resolution;
+:authorization;
+:security-preserving plan;
+:provider conformance;
+:execution;
+stop
+@enduml
 ```
 
-## Semantic model
+Identity, tenant, audience, secrets and other authority remain host-owned.
 
-Application-facing meaning: entities, fields, relationships, capabilities and authorization. It is provider-independent.
+## Current evidence
 
-## Metadata
+The `Foundgine.SupplyChain` sample and AgentEndToEnd benchmark demonstrate an agent-facing business workload through MCP, semantic execution, authorization, ExecutionIR and PostgreSQL. The associated PenTest suite contains 14 deterministic cases: 7 MCP and 7 GraphQL. Benchmark pages separate measured performance from modeled efficiency estimates.
 
-Structural facts can be discovered from application declarations and AOT-generated metadata without making semantic code depend on runtime reflection.
+## Packages
 
-## Planning
+- `Foundgine` — runtime facade
+- `Foundgine.Abstractions` — stable contracts and identifiers
+- `Foundgine.Metadata` — structural metadata
+- `Foundgine.Semantics` — meaning, intent, resolution, authorization
+- `Foundgine.Planning` — provider-independent planning and safe rewrites
+- `Foundgine.Execution` — ExecutionIR, provider boundary, results and evidence
+- `Foundgine.Sql` — SQL/PostgreSQL provider
+- `Foundgine.InMemory` — limited non-SQL provider
+- `Foundgine.Aot` / `Foundgine.Aot.Generator` — AOT declarations and source generation
+- `Foundgine.Intent.Json` — JSON intent adapter
+- `Foundgine.GraphQL.HotChocolate*` — GraphQL adapters/execution boundaries
+- `Foundgine.MCP` — MCP adapter
+- `Foundgine.AI` — `Microsoft.Extensions.AI` integration
+- `Foundgine.Security.Authority` — optional authority/recovery control-plane infrastructure
 
-`Foundgine.Planning` produces provider-independent plans and `ExecutionIR`. Logical filters, ordering, pagination, traversal and aggregation stay logical; physical execution choices belong to providers.
+## Current release
 
-## Execution
+**1.1.9 · .NET 9**
 
-`Foundgine.Execution` is the provider boundary for compilation/dispatch, security conformance, materialization and execution evidence.
+For implementation truth, use the active source tree, tests, `docs/CURRENT-STATUS.md`, and package READMEs.
 
-## Providers
+## Website navigation
 
-`Foundgine.Sql` provides SQL/PostgreSQL execution. `Foundgine.InMemory` provides a small non-SQL implementation for provider-independence testing.
-
-## Adapters
-
-JSON, GraphQL, MCP and AI integrations translate caller requests into Foundgine operations. They do not become the authority over execution.
-
-
----
-
-## performance/index.md
-
-# Performance and benchmark evidence
-
-Foundgine performance claims are scoped to explicit workloads. The benchmark suite separates measured RPS, latency, tool calls and success/failure counts from estimated context metrics.
-
-The strongest current agent-facing evidence concerns reduced tool coordination and semantic batching. The TransferFunds run intentionally records a concurrency limitation rather than hiding it; the same-client follow-up isolates request shape and demonstrates the benefit of one semantic batch call.
-
-PostgreSQL query measurements are also workload-specific and should not be treated as a universal comparison against every ORM, schema or hardware configuration.
-
-
----
-
-## samples/semantic/authorization.md
-
-# SupplyChain semantic authorization cases
-
-The SupplyChain sample is deliberately a mixed authorization laboratory. It demonstrates six independent policy boundaries and exercises them through an MCP client that treats every request as untrusted.
-
-## 1. Entity policy
-
-Entity policy answers whether the semantic resource itself is available. `ComplianceIncident` is visible to analysts and supply-chain managers, but not customers.
-
-## 2. Field policy
-
-Field policy narrows an otherwise readable entity. `InventoryLot.Quarantined` is operationally sensitive and `Supplier.RiskScore` is restricted to analyst/manager roles.
-
-## 3. Relationship policy
-
-Relationship policy controls traversal. Even if the source entity is readable, a denied relationship removes the child subtree. `Supplier.incidents` is restricted.
-
-## 4. Conditional policy
-
-Tenant-owned resources use a provider-independent predicate:
-
-```text
-resource.TenantId == context.TenantId
-```
-
-The predicate is semantic IR and must survive planning and provider lowering. The caller cannot replace it with a predicate supplied in the request.
-
-## 5. Write policy
-
-Writes are opt-in. A role that can read an entity is not automatically allowed to mutate it. Inventory writes require an operational role in this sample.
-
-## 6. Named operation policy
-
-Coarse write access can be refined by a domain operation name. `inventory.reconcile` is manager-only even though a warehouse operator may perform ordinary inventory updates.
-
-## Capability discovery
-
-`describe_capabilities` exposes a safe description of allowed, denied and conditional capabilities. It is not a credential. The server re-evaluates the policy for every actual tool call.
-
-## 7. Client-supplied claims
-
-`read_entity`, `write_entity`, and `policy_probe` accept an optional, untrusted `claims` dictionary from the caller itself, separate from the server-derived `actor`/`token` identity. A fail-closed `ClientClaimsValidator` is the only path a claim can take into the policy:
-
-- Reserved identity keys (`role`, `tenant`, `tenantId`, `actor`, `isAdmin`, `admin`, `permissions`, `capabilities`, `scopes`) are never accepted — presence alone fails the whole request closed, even if the value matches reality.
-- Recognized keys (`scope`, `warehouse`, `max_rows`, `reason`, `change_ticket`, `not_after`) are validated per-key; a malformed value is rejected individually.
-- Unrecognized keys are dropped individually and reported back, without blocking the rest of the call.
-- Evidence (`reason`, `change_ticket`) paired with an expired `not_after` is rejected as stale.
-
-Only the accepted claims ever reach `SupplyChainAuthorizationPolicy`, and each one can only narrow what the role already allows: `scope=read-only` self-restricts writes for that call, `warehouse=<id>` ANDs an extra resource predicate onto the tenant predicate, and `reason`/`change_ticket` add a required evidence gate on top of the existing manager-only check for `inventory.reconcile`. Nothing a claim asserts can widen access.
-
-## MCP adversarial matrix
-
-| Attempt | Expected |
-|---|---|
-| Cross-tenant read | Denied / conditional predicate retained |
-| Restricted field | Denied |
-| Restricted relationship | Denied |
-| Analyst mutation | Denied |
-| Operator `inventory.reconcile` | Denied |
-| Customer inventory write | Denied |
-| Authorized operator inventory update | Allowed |
-| Claim: `role`/`tenant` injection | Denied — call fails closed |
-| Claim: missing/malformed/expired reconcile evidence | Denied |
-| Claim: self-imposed `scope=read-only` | Allowed — honored, restricts the call |
-| Claim: `warehouse=<id>` scoping | Allowed — honored, narrows the result set |
-| Claim: unrecognized key | Allowed — dropped individually, call proceeds |
-| Claim: valid reconcile evidence | Allowed — honored alongside the role check |
-
-The client is intentionally protocol-level and small so the security demonstration does not depend on a model provider. It is an adversarial caller, not a trusted test harness.
-
-
----
-
-## packages/index.md
-
-# Foundgine packages
-
-The website package catalog is generated from the current source package boundaries. See `index.html` for the complete interactive/static page.
-
-
----
-
-## Package catalog
-
-The complete package map is available at `/packages/`; every source package also has a package-level README under `src/`.
-
----
-
-## security/index.md
-
-# Foundgine Security
-
-Foundgine treats intent as untrusted and carries authorization constraints into planning and provider execution. Authentication and identity lifecycle remain host-owned.
-
-## Invariant
-
-```text
-Intent → Resolve → Authorize → Security-preserving Plan → Provider Conformance → Execute
-```
-
-Capability discovery is descriptive, not authorization. Caller-supplied claims cannot widen authority. Optional `Foundgine.Security.Authority` infrastructure is outside the core execution boundary.
+- `/` — Foundgine landing page
+- `/case-studies/supply-chain/` — featured Supply Chain case study with capabilities and benchmark evidence
+- `/agent-benchmark/supply-chain/` — live/published Supply Chain E2E benchmark report
+- `/samples/semantic/` — advanced semantic execution sample
+- `/samples/pentest/` — security penetration-test sample
+- `/architecture/` — architecture and lifecycle
+- `/walkthrough/` — one natural-language request traced through every layer, with concrete values at each step
+- `/ai-agents/` — AI/agent boundary
+- `/security/` — security model
+- `/packages/` — package map

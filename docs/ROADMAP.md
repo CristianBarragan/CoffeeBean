@@ -44,12 +44,14 @@ Make it easier to implement and compose providers without leaking provider detai
 
 A new provider should primarily need:
 
-```text
-logical plan / ExecutionIR
-        ↓
-provider compiler
-        ↓
-provider execution
+```plantuml
+@startuml
+start
+:logical plan / ExecutionIR;
+:provider compiler;
+:provider execution;
+stop
+@enduml
 ```
 
 with explicit security conformance.

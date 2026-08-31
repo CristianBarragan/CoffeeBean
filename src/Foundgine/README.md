@@ -8,34 +8,32 @@ It gives an application one entry point for turning open, structured intent into
 
 Foundgine separates:
 
-```text
-What the caller wants
-        ↓
-What the application exposes
-        ↓
-What this caller may use
-        ↓
-How the operation should execute
-        ↓
-Which provider executes it
+```plantuml
+@startuml
+start
+:What the caller wants;
+:What the application exposes;
+:What this caller may use;
+:How the operation should execute;
+:Which provider executes it;
+stop
+@enduml
 ```
 
 The public runtime pipeline is:
 
-```text
-ReadIntent / MutationIntent
-        ↓
-Semantic resolution + validation
-        ↓
-Authorization
-        ↓
-Provider-independent plan
-        ↓
-Execution boundary
-        ↓
-Provider
-        ↓
-ExecutionResult
+```plantuml
+@startuml
+start
+:ReadIntent / MutationIntent;
+:Semantic resolution + validation;
+:Authorization;
+:Provider-independent plan;
+:Execution boundary;
+:Provider;
+:ExecutionResult;
+stop
+@enduml
 ```
 
 The transport does not need to know SQL, and the provider does not need to know GraphQL.
@@ -160,18 +158,20 @@ Invalid limits and offsets are rejected at the authoring/semantic validation bou
 
 Foundgine does not require an application to predefine a method for every future query.
 
-```text
-Application API
-GraphQL
-JSON
-MCP
-AI
-   │
-   ▼
-ReadIntent
-   │
-   ▼
-same semantic pipeline
+```plantuml
+@startmindmap
+* Application API
+* GraphQL
+* JSON
+* MCP
+* AI
+* │
+* ▼
+* ReadIntent
+* │
+* ▼
+* same semantic pipeline
+@endmindmap
 ```
 
 This is particularly useful for agent and integration scenarios, where the set of useful questions is discovered at runtime.
@@ -229,14 +229,15 @@ For high-assurance writes, use the `IFoundgineMutations` execution path rather t
 
 The security rule is important:
 
-```text
-resolve request
-      ↓
-authorize request
-      ↓
-cache/compile provider plan
-      ↓
-execute with current context
+```plantuml
+@startuml
+start
+:resolve request;
+:authorize request;
+:cache/compile provider plan;
+:execute with current context;
+stop
+@enduml
 ```
 
 A cache must never turn an authorization predicate into an authorization-free plan.
@@ -271,13 +272,15 @@ Those concerns belong to surrounding packages or the application.
 
 For a typical PostgreSQL application:
 
-```text
-Foundgine
-├── Foundgine.Semantics
-├── Foundgine.Metadata
-├── Foundgine.Planning
-├── Foundgine.Execution
-└── Foundgine.Sql
+```plantuml
+@startmindmap
+* Foundgine
+** Foundgine.Semantics
+** Foundgine.Metadata
+** Foundgine.Planning
+** Foundgine.Execution
+** Foundgine.Sql
+@endmindmap
 ```
 
 Add only the adapters you actually expose:

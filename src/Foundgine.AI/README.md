@@ -6,24 +6,26 @@ The package gives an AI/LLM caller a controlled tool surface over Foundgine sema
 
 ## Core boundary
 
-```text
-LLM / Agent
-     │
-     │ tool call
-     ▼
-Foundgine.AI
-     │
-     ▼
-IFoundgine
-     │
-     ├── semantic resolution
-     ├── validation
-     ├── authorization
-     ├── planning
-     └── execution
-     │
-     ▼
-Provider
+```plantuml
+@startmindmap
+* LLM / Agent
+* │
+* │ tool call
+* ▼
+* Foundgine.AI
+* │
+* ▼
+* IFoundgine
+* │
+*** semantic resolution
+*** validation
+*** authorization
+*** planning
+*** execution
+* │
+* ▼
+* Provider
+@endmindmap
 ```
 
 The model produces intent.
@@ -67,16 +69,16 @@ Capability discovery describes the semantic contract available to the current ex
 
 This distinction is critical:
 
-```text
-capability contract
-      ↓
-helps the model construct valid intent
-      ↓
-Foundgine resolves the intent
-      ↓
-authorization runs again
-      ↓
-execution
+```plantuml
+@startuml
+start
+:capability contract;
+:helps the model construct valid intent;
+:Foundgine resolves the intent;
+:authorization runs again;
+:execution;
+stop
+@enduml
 ```
 
 An LLM must never be trusted because it previously saw a capability description.
@@ -87,20 +89,18 @@ An LLM must never be trusted because it previously saw a capability description.
 
 Conceptually:
 
-```text
-user request
-    ↓
-IChatClient
-    ↓
-model chooses tool
-    ↓
-FoundgineAiToolset
-    ↓
-Foundgine
-    ↓
-tool result
-    ↓
-model
+```plantuml
+@startuml
+start
+:user request;
+:IChatClient;
+:model chooses tool;
+:FoundgineAiToolset;
+:Foundgine;
+:tool result;
+:model;
+stop
+@enduml
 ```
 
 The loop is bounded so a model cannot make unbounded tool calls.
@@ -115,25 +115,27 @@ The execution context factory should obtain its values from the trusted host/app
 
 Good:
 
-```text
-HTTP authentication
-      ↓
-application session
-      ↓
-ExecutionContext
-      ↓
-FoundgineAiToolset
+```plantuml
+@startuml
+start
+:HTTP authentication;
+:application session;
+:ExecutionContext;
+:FoundgineAiToolset;
+stop
+@enduml
 ```
 
 Bad:
 
-```text
-LLM tool arguments
-      ↓
-tenant = "other-tenant"
-role = "admin"
-      ↓
-database
+```plantuml
+@startuml
+start
+:LLM tool arguments;
+:tenant = "other-tenant" role = "admin";
+:database;
+stop
+@enduml
 ```
 
 Never make ordinary model-generated arguments the source of tenant, identity, warrant, or provider credentials.
@@ -168,26 +170,49 @@ The limit is not an authorization control. The application still needs normal ra
 
 Failures remain explicit across the boundary:
 
-```text
-invalid capability
-      ↓
-tool error
+```plantuml
+@startuml
+start
+:invalid capability;
+:tool error;
+stop
+@enduml
+```
 
-invalid semantic intent
-      ↓
-resolution/validation error
+```plantuml
+@startuml
+start
+:invalid semantic intent;
+:resolution/validation error;
+stop
+@enduml
+```
 
-unauthorized intent
-      ↓
-authorization failure
+```plantuml
+@startuml
+start
+:unauthorized intent;
+:authorization failure;
+stop
+@enduml
+```
 
-provider failure
-      ↓
-execution/provider error
+```plantuml
+@startuml
+start
+:provider failure;
+:execution/provider error;
+stop
+@enduml
+```
 
-iteration budget exhausted
-      ↓
-agent loop terminates
+```plantuml
+@startuml
+start
+:iteration budget exhausted;
+:agent loop terminates;
+stop
+@enduml
 ```
 
 Do not convert authorization failures into successful empty data.
@@ -220,14 +245,28 @@ The host remains responsible for:
 
 Avoid:
 
-```text
-LLM → SQL → database credentials
+```plantuml
+@startuml
+start
+:LLM;
+:SQL;
+:database credentials;
+stop
+@enduml
 ```
 
 Prefer:
 
-```text
-LLM → semantic intent → Foundgine → authorized plan → provider
+```plantuml
+@startuml
+start
+:LLM;
+:semantic intent;
+:Foundgine;
+:authorized plan;
+:provider;
+stop
+@enduml
 ```
 
 The model can ask for:
@@ -244,22 +283,28 @@ It cannot decide to bypass the semantic model and issue arbitrary SQL.
 
 MCP and AI are separate adapters.
 
-```text
-AI / Microsoft.Extensions.AI
-            │
-            ▼
-       Foundgine.AI
-            │
-            ▼
-        Foundgine
+```plantuml
+@startmindmap
+* AI / Microsoft.Extensions.AI
+* │
+* ▼
+* Foundgine.AI
+* │
+* ▼
+* Foundgine
+@endmindmap
+```
 
-MCP client
-    │
-    ▼
-Foundgine.MCP
-    │
-    ▼
-Foundgine
+```plantuml
+@startmindmap
+* MCP client
+* │
+* ▼
+* Foundgine.MCP
+* │
+* ▼
+* Foundgine
+@endmindmap
 ```
 
 They converge on the same semantic execution boundary.

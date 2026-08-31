@@ -1,2 +1,9 @@
 [CmdletBinding()]param([string]$CustomerCounts='10,100,1000,10000',[string]$Concurrency='8,16,32,64',[int]$Warmups=5,[int]$Runs=30,[switch]$Publish)
-$cc=$CustomerCounts-split','|%{[int]$_.Trim()};$co=$Concurrency-split','|%{[int]$_.Trim()};$r=@($cc|%{$Runs});& (Join-Path $PSScriptRoot 'run-run5.ps1') -CustomerCounts $cc -Concurrency $co -RunsPerTier $r -Warmups $Warmups -Publish:$Publish;if(!$?){exit 1};exit 0
+$runsPerTier = (($CustomerCounts -split ',') | ForEach-Object { $Runs }) -join ','
+& (Join-Path $PSScriptRoot 'run-run5.ps1') `
+    -CustomerCounts $CustomerCounts `
+    -Concurrency $Concurrency `
+    -RunsPerTier $runsPerTier `
+    -Warmups $Warmups `
+    -Publish:$Publish
+if(!$?){exit 1};exit 0

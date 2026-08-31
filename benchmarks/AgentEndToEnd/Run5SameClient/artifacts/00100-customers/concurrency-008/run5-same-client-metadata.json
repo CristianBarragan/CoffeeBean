@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "utc": "2026-08-30T03:04:49.0484923+00:00",
+  "utc": "2026-08-31T02:21:39.7928147+00:00",
   "runs": 30,
   "warmups": 5,
   "customers": 100,
@@ -15,7 +15,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 103.803,
+      "WallMs": 116.3008,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -26,7 +26,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 95.3754,
+      "WallMs": 118.5928,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -37,7 +37,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 95.2985,
+      "WallMs": 119.492,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -48,7 +48,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 94.5999,
+      "WallMs": 116.7772,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -59,7 +59,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 95.2552,
+      "WallMs": 119.1996,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -70,7 +70,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 96.0941,
+      "WallMs": 116.6439,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -81,7 +81,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 96.0607,
+      "WallMs": 118.9087,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -92,7 +92,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 95.1129,
+      "WallMs": 115.29,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -103,7 +103,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 111.7839,
+      "WallMs": 103.507,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -114,7 +114,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 107.1017,
+      "WallMs": 102.9561,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -125,7 +125,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 110.7697,
+      "WallMs": 105.9356,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -136,7 +136,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 112.6853,
+      "WallMs": 103.2833,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -147,7 +147,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 104.9314,
+      "WallMs": 103.1834,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -158,7 +158,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 107.831,
+      "WallMs": 102.4175,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -169,7 +169,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 106.0108,
+      "WallMs": 105.0001,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -180,7 +180,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 105.8251,
+      "WallMs": 102.2719,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -191,7 +191,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 76.5967,
+      "WallMs": 104.3014,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -202,7 +202,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 78.8614,
+      "WallMs": 104.0388,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -213,7 +213,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 77.1636,
+      "WallMs": 105.1881,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -224,7 +224,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 77.1152,
+      "WallMs": 103.2302,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -235,7 +235,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 77.0766,
+      "WallMs": 103.8839,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -246,7 +246,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 77.9577,
+      "WallMs": 100.0794,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -257,7 +257,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 78.6085,
+      "WallMs": 103.5897,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -268,7 +268,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 76.7761,
+      "WallMs": 99.8361,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -279,7 +279,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 101.6301,
+      "WallMs": 107.3098,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -290,7 +290,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 104.2643,
+      "WallMs": 99.9902,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -301,7 +301,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 101.3965,
+      "WallMs": 104.5495,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -312,7 +312,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 104.1347,
+      "WallMs": 95.9097,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -323,7 +323,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 104.3188,
+      "WallMs": 102.046,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -334,7 +334,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 104.7537,
+      "WallMs": 105.9477,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -345,7 +345,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 104.0771,
+      "WallMs": 98.5019,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -356,7 +356,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 103.9658,
+      "WallMs": 101.7531,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -367,7 +367,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 77.1925,
+      "WallMs": 107.0953,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -378,7 +378,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 108.2918,
+      "WallMs": 108.8464,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -389,7 +389,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 76.9423,
+      "WallMs": 106.6942,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -400,7 +400,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 75.3301,
+      "WallMs": 106.4671,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -411,7 +411,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 75.9559,
+      "WallMs": 107.8235,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -422,7 +422,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 79.4363,
+      "WallMs": 108.6847,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -433,7 +433,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 107.4363,
+      "WallMs": 108.5632,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -444,7 +444,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 74.2867,
+      "WallMs": 106.5224,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -455,7 +455,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 74.558,
+      "WallMs": 116.4943,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -466,7 +466,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 75.1604,
+      "WallMs": 123.7757,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -477,7 +477,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 74.3362,
+      "WallMs": 117.0805,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -488,7 +488,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 75.7504,
+      "WallMs": 122.7823,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -499,7 +499,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 75.0461,
+      "WallMs": 115.1513,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -510,7 +510,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 75.6701,
+      "WallMs": 123.1855,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -521,7 +521,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 72.9301,
+      "WallMs": 114.7485,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -532,7 +532,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 74.0391,
+      "WallMs": 114.5749,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -543,7 +543,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 79.3572,
+      "WallMs": 101.7861,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -554,7 +554,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 79.0686,
+      "WallMs": 100.8091,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -565,7 +565,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 78.2178,
+      "WallMs": 101.5921,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -576,7 +576,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 78.9239,
+      "WallMs": 98.0854,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -587,7 +587,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 78.8639,
+      "WallMs": 99.401,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -598,7 +598,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 78.8436,
+      "WallMs": 100.5958,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -609,7 +609,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 79.4039,
+      "WallMs": 101.2938,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -620,7 +620,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 106.8815,
+      "WallMs": 93.9463,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -631,7 +631,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 77.971,
+      "WallMs": 92.0972,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -642,7 +642,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 77.7666,
+      "WallMs": 95.9474,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -653,7 +653,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 74.075,
+      "WallMs": 94.9998,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -664,7 +664,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 74.6048,
+      "WallMs": 93.6129,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -675,7 +675,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 80.4131,
+      "WallMs": 92.5345,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -686,7 +686,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 79.7834,
+      "WallMs": 94.8317,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -697,7 +697,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 74.0675,
+      "WallMs": 93.3182,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -708,7 +708,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 76.8765,
+      "WallMs": 95.71,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -719,7 +719,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 102.3371,
+      "WallMs": 103.8872,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -730,7 +730,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 102.1446,
+      "WallMs": 97.2154,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -741,7 +741,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 102.0787,
+      "WallMs": 96.8235,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -752,7 +752,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 102.2718,
+      "WallMs": 101.7397,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -763,7 +763,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 102.0174,
+      "WallMs": 96.7351,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -774,7 +774,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 101.9388,
+      "WallMs": 97.3006,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -785,7 +785,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 101.596,
+      "WallMs": 95.1914,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -796,7 +796,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 102.016,
+      "WallMs": 95.0946,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -807,7 +807,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 87.3372,
+      "WallMs": 101.5539,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -818,7 +818,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 80.1394,
+      "WallMs": 100.2856,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -829,7 +829,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 78.4608,
+      "WallMs": 99.4546,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -840,7 +840,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 79.0376,
+      "WallMs": 100.1878,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -851,7 +851,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 80.084,
+      "WallMs": 96.3025,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -862,7 +862,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 80.8483,
+      "WallMs": 99.8576,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -873,7 +873,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 78.9171,
+      "WallMs": 96.0205,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -884,7 +884,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 78.8713,
+      "WallMs": 99.6968,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -895,7 +895,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 108.6611,
+      "WallMs": 103.6798,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -906,7 +906,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 108.9208,
+      "WallMs": 100.3046,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -917,7 +917,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 80.1728,
+      "WallMs": 99.093,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -928,7 +928,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 108.7094,
+      "WallMs": 102.2012,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -939,7 +939,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 108.2517,
+      "WallMs": 105.9983,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -950,7 +950,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 108.6078,
+      "WallMs": 98.0256,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -961,7 +961,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 113.066,
+      "WallMs": 98.4476,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -972,7 +972,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 115.3611,
+      "WallMs": 98.6538,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -983,7 +983,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 82.7898,
+      "WallMs": 92.6595,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -994,7 +994,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 74.7147,
+      "WallMs": 90.9379,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1005,7 +1005,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 74.6021,
+      "WallMs": 94.4036,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1016,7 +1016,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 74.569,
+      "WallMs": 89.9671,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1027,7 +1027,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 75.5726,
+      "WallMs": 90.4636,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1038,7 +1038,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 74.4752,
+      "WallMs": 92.1059,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1049,7 +1049,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 73.6536,
+      "WallMs": 92.0029,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1060,7 +1060,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 76.0535,
+      "WallMs": 91.5398,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1071,7 +1071,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 82.3042,
+      "WallMs": 95.7122,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1082,7 +1082,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 85.6369,
+      "WallMs": 97.6725,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1093,7 +1093,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 86.8122,
+      "WallMs": 102.3756,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1104,7 +1104,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 87.8426,
+      "WallMs": 102.553,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1115,7 +1115,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 83.6722,
+      "WallMs": 92.6739,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1126,7 +1126,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 88.7041,
+      "WallMs": 89.6825,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1137,7 +1137,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 79.7618,
+      "WallMs": 92.5595,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1148,7 +1148,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 77.1277,
+      "WallMs": 96.3253,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1159,7 +1159,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 81.8891,
+      "WallMs": 86.2038,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1170,7 +1170,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 80.8465,
+      "WallMs": 84.8971,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1181,7 +1181,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 80.7849,
+      "WallMs": 84.6975,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1192,7 +1192,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 80.8554,
+      "WallMs": 84.5812,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1203,7 +1203,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 79.9487,
+      "WallMs": 85.501,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1214,7 +1214,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 80.6421,
+      "WallMs": 83.2816,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1225,7 +1225,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 80.6006,
+      "WallMs": 85.2108,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1236,7 +1236,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 80.5258,
+      "WallMs": 84.9821,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1247,7 +1247,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 99.5297,
+      "WallMs": 105.6151,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1258,7 +1258,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 99.3377,
+      "WallMs": 105.4564,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1269,7 +1269,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 95.6597,
+      "WallMs": 110.3314,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1280,7 +1280,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 100.1928,
+      "WallMs": 104.2709,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1291,7 +1291,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 104.3296,
+      "WallMs": 103.2024,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1302,7 +1302,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 105.1296,
+      "WallMs": 105.1161,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1313,7 +1313,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 94.5114,
+      "WallMs": 103.0331,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1324,7 +1324,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 95.4278,
+      "WallMs": 110.5814,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1335,7 +1335,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 85.3102,
+      "WallMs": 100.7397,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1346,7 +1346,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 85.0721,
+      "WallMs": 110.7305,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1357,7 +1357,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 85.0757,
+      "WallMs": 110.6168,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1368,7 +1368,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 85.1874,
+      "WallMs": 105.2747,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1379,7 +1379,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 85.0987,
+      "WallMs": 110.1779,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1390,7 +1390,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 84.2092,
+      "WallMs": 112.8018,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1401,7 +1401,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 84.9707,
+      "WallMs": 106.4405,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1412,7 +1412,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 85.3876,
+      "WallMs": 102.728,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1423,7 +1423,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 103.8925,
+      "WallMs": 110.1237,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1434,7 +1434,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 107.1551,
+      "WallMs": 108.5652,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1445,7 +1445,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 107.0732,
+      "WallMs": 107.2748,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1456,7 +1456,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 106.7769,
+      "WallMs": 110.5792,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1467,7 +1467,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 106.0683,
+      "WallMs": 106.1244,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1478,7 +1478,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 118.2223,
+      "WallMs": 105.8518,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1489,7 +1489,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 110.8932,
+      "WallMs": 103.2775,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1500,7 +1500,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 106.5684,
+      "WallMs": 100.8172,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1511,7 +1511,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 103.9643,
+      "WallMs": 102.527,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1522,7 +1522,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 108.412,
+      "WallMs": 99.637,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1533,7 +1533,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 111.0926,
+      "WallMs": 96.4781,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1544,7 +1544,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 107.1189,
+      "WallMs": 96.6326,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1555,7 +1555,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 111.7975,
+      "WallMs": 92.4125,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1566,7 +1566,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 103.5812,
+      "WallMs": 96.1949,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1577,7 +1577,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 103.5786,
+      "WallMs": 91.3576,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1588,7 +1588,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 103.4993,
+      "WallMs": 90.3026,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1599,7 +1599,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 90.5269,
+      "WallMs": 92.5243,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1610,7 +1610,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 84.4085,
+      "WallMs": 96.5683,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1621,7 +1621,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 88.0214,
+      "WallMs": 92.0941,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1632,7 +1632,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 85.2829,
+      "WallMs": 97.3852,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1643,7 +1643,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 89.2155,
+      "WallMs": 101.3692,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1654,7 +1654,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 85.7725,
+      "WallMs": 91.7986,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1665,7 +1665,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 99.6437,
+      "WallMs": 93.6211,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1676,7 +1676,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 86.4509,
+      "WallMs": 90.8963,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1687,7 +1687,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 101.7197,
+      "WallMs": 98.0849,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1698,7 +1698,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 98.075,
+      "WallMs": 108.3636,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1709,7 +1709,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 99.5831,
+      "WallMs": 103.0319,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1720,7 +1720,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 100.4287,
+      "WallMs": 90.5347,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1731,7 +1731,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 104.832,
+      "WallMs": 116.5106,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1742,7 +1742,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 106.0942,
+      "WallMs": 109.6639,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1753,7 +1753,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 99.6642,
+      "WallMs": 103.7412,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1764,7 +1764,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 98.5392,
+      "WallMs": 109.0297,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1775,7 +1775,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 87.3991,
+      "WallMs": 83.7881,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1786,7 +1786,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 91.0405,
+      "WallMs": 80.9901,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1797,7 +1797,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 90.0838,
+      "WallMs": 80.8919,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1808,7 +1808,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 86.7021,
+      "WallMs": 81.5338,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1819,7 +1819,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 88.2827,
+      "WallMs": 81.2296,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1830,7 +1830,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 86.5576,
+      "WallMs": 80.6628,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1841,7 +1841,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 90.6,
+      "WallMs": 81.3915,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1852,7 +1852,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 83.3229,
+      "WallMs": 81.8861,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1863,7 +1863,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 82.93,
+      "WallMs": 89.1166,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1874,7 +1874,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 86.4208,
+      "WallMs": 91.2603,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1885,7 +1885,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 88.3423,
+      "WallMs": 91.9928,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1896,7 +1896,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 89.4761,
+      "WallMs": 91.8825,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1907,7 +1907,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 87.2586,
+      "WallMs": 93.7926,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1918,7 +1918,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 87.5713,
+      "WallMs": 92.6926,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1929,7 +1929,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 90.041,
+      "WallMs": 91.7192,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1940,7 +1940,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 83.0942,
+      "WallMs": 91.6714,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1951,7 +1951,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 123.809,
+      "WallMs": 94.4998,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1962,7 +1962,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 125.0576,
+      "WallMs": 99.0463,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1973,7 +1973,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 126.6478,
+      "WallMs": 102.0047,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1984,7 +1984,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 130.4789,
+      "WallMs": 96.8502,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -1995,7 +1995,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 126.5297,
+      "WallMs": 93.7772,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2006,7 +2006,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 127.5423,
+      "WallMs": 93.644,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2017,7 +2017,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 128.8892,
+      "WallMs": 96.4157,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2028,7 +2028,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 128.9614,
+      "WallMs": 93.4492,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2039,7 +2039,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 134.9338,
+      "WallMs": 88.6139,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2050,7 +2050,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 134.7543,
+      "WallMs": 88.423,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2061,7 +2061,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 134.5595,
+      "WallMs": 88.9954,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2072,7 +2072,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 134.6661,
+      "WallMs": 90.3124,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2083,7 +2083,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 134.282,
+      "WallMs": 86.9463,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2094,7 +2094,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 138.0662,
+      "WallMs": 87.6715,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2105,7 +2105,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 142.2306,
+      "WallMs": 90.0622,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2116,7 +2116,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 142.9538,
+      "WallMs": 87.4563,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2127,7 +2127,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 78.7879,
+      "WallMs": 96.8657,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2138,7 +2138,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 78.6224,
+      "WallMs": 99.2338,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2149,7 +2149,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 82.1463,
+      "WallMs": 105.6789,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2160,7 +2160,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 82.9786,
+      "WallMs": 98.9536,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2171,7 +2171,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 85.7602,
+      "WallMs": 96.0777,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2182,7 +2182,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 78.4385,
+      "WallMs": 98.6123,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2193,7 +2193,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 79.7297,
+      "WallMs": 101.5702,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2204,7 +2204,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 78.3164,
+      "WallMs": 95.7398,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2215,7 +2215,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 87.913,
+      "WallMs": 99.6704,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2226,7 +2226,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 90.5373,
+      "WallMs": 105.6442,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2237,7 +2237,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 83.3678,
+      "WallMs": 103.0642,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2248,7 +2248,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 87.6458,
+      "WallMs": 109.6527,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2259,7 +2259,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 86.9136,
+      "WallMs": 113.7925,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2270,7 +2270,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 91.1827,
+      "WallMs": 108.3418,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2281,7 +2281,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 91.1207,
+      "WallMs": 104.9974,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2292,7 +2292,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 79.5941,
+      "WallMs": 105.1141,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2303,7 +2303,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 112.1201,
+      "WallMs": 91.9875,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2314,7 +2314,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 111.9918,
+      "WallMs": 90.675,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2325,7 +2325,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 83.5634,
+      "WallMs": 90.6794,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2336,7 +2336,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 111.8491,
+      "WallMs": 92.7609,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2347,7 +2347,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 111.7485,
+      "WallMs": 92.6955,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2358,7 +2358,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 111.6945,
+      "WallMs": 88.4483,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2369,7 +2369,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 111.6989,
+      "WallMs": 89.2576,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2380,7 +2380,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 111.5079,
+      "WallMs": 91.3722,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2391,7 +2391,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 92.5196,
+      "WallMs": 87.5124,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2402,7 +2402,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 93.2235,
+      "WallMs": 87.2391,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2413,7 +2413,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 92.3217,
+      "WallMs": 92.5702,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2424,7 +2424,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 89.373,
+      "WallMs": 86.0665,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2435,7 +2435,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 93.2036,
+      "WallMs": 87.1423,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2446,7 +2446,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 91.0642,
+      "WallMs": 89.7241,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2457,7 +2457,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 93.7132,
+      "WallMs": 93.3522,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2468,7 +2468,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 93.1807,
+      "WallMs": 92.9918,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2479,7 +2479,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 82.6719,
+      "WallMs": 91.9494,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2490,7 +2490,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 82.5935,
+      "WallMs": 92.7502,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2501,7 +2501,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 82.4986,
+      "WallMs": 95.1041,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2512,7 +2512,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 81.7071,
+      "WallMs": 90.7537,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2523,7 +2523,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 81.6767,
+      "WallMs": 98.3701,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2534,7 +2534,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 81.641,
+      "WallMs": 92.5268,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2545,7 +2545,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 80.5959,
+      "WallMs": 97.4613,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2556,7 +2556,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 81.5342,
+      "WallMs": 95.6813,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2567,7 +2567,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 117.8524,
+      "WallMs": 92.2901,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2578,7 +2578,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 115.5048,
+      "WallMs": 93.9243,
       "InputBytes": 3184,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2589,7 +2589,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 118.488,
+      "WallMs": 96.6942,
       "InputBytes": 3185,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2600,7 +2600,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 119.4895,
+      "WallMs": 99.3911,
       "InputBytes": 3186,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2611,7 +2611,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 116.4234,
+      "WallMs": 94.7056,
       "InputBytes": 3187,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2622,7 +2622,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 114.2759,
+      "WallMs": 92.708,
       "InputBytes": 3188,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2633,7 +2633,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 116.097,
+      "WallMs": 97.4204,
       "InputBytes": 3189,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2644,7 +2644,7 @@
     {
       "implementation": "MCP \u002B EF Core (same client, individual calls)",
       "Success": true,
-      "WallMs": 115.0862,
+      "WallMs": 94.5574,
       "InputBytes": 3190,
       "OutputBytes": 1984,
       "ToolCalls": 8,
@@ -2655,7 +2655,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 10.1915,
+      "WallMs": 12.4685,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2666,7 +2666,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 25.178,
+      "WallMs": 15.9176,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2677,7 +2677,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 28.2455,
+      "WallMs": 27.4683,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2688,7 +2688,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 15.974,
+      "WallMs": 34.9618,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2699,7 +2699,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 18.6741,
+      "WallMs": 23.5163,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2710,7 +2710,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.9721,
+      "WallMs": 8.0213,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2721,7 +2721,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 30.793,
+      "WallMs": 31.0429,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2732,7 +2732,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 21.4339,
+      "WallMs": 19.3783,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2743,7 +2743,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.941,
+      "WallMs": 12.2626,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2754,7 +2754,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 18.4403,
+      "WallMs": 23.4556,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2765,7 +2765,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 12.5292,
+      "WallMs": 15.8051,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2776,7 +2776,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 24.3235,
+      "WallMs": 31.0956,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2787,7 +2787,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 15.3579,
+      "WallMs": 8.0281,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2798,7 +2798,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.337,
+      "WallMs": 19.4479,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2809,7 +2809,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 21.0702,
+      "WallMs": 34.8574,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2820,7 +2820,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 31.0221,
+      "WallMs": 26.933,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2831,7 +2831,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 16.1921,
+      "WallMs": 8.5435,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2842,7 +2842,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 24.9029,
+      "WallMs": 41.9603,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2853,7 +2853,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 30.5574,
+      "WallMs": 12.5317,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2864,7 +2864,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 13.2892,
+      "WallMs": 16.0117,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2875,7 +2875,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 33.1516,
+      "WallMs": 20.6231,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2886,7 +2886,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 19.1423,
+      "WallMs": 36.8915,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2897,7 +2897,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 22.2452,
+      "WallMs": 32.2925,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2908,7 +2908,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 27.3352,
+      "WallMs": 27.3661,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2919,7 +2919,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.1098,
+      "WallMs": 13.2996,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2930,7 +2930,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 18.0041,
+      "WallMs": 16.65,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2941,7 +2941,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.196,
+      "WallMs": 33.2765,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2952,7 +2952,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 21.2294,
+      "WallMs": 8.4373,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2963,7 +2963,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 27.031,
+      "WallMs": 29.5548,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2974,7 +2974,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 23.6221,
+      "WallMs": 36.7324,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2985,7 +2985,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 14.8971,
+      "WallMs": 26.3126,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -2996,7 +2996,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 11.9545,
+      "WallMs": 22.3776,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3007,7 +3007,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 10.3536,
+      "WallMs": 16.346,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3018,7 +3018,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 19.3023,
+      "WallMs": 30.9583,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3029,7 +3029,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 22.0468,
+      "WallMs": 19.8238,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3040,7 +3040,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 13.1873,
+      "WallMs": 7.6196,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3051,7 +3051,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 55.0869,
+      "WallMs": 11.426,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3062,7 +3062,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 16.1114,
+      "WallMs": 33.5962,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3073,7 +3073,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.8808,
+      "WallMs": 22.7762,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3084,7 +3084,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 57.9641,
+      "WallMs": 26.1648,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3095,7 +3095,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 7.9705,
+      "WallMs": 15.7759,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3106,7 +3106,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 16.453,
+      "WallMs": 30.1046,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3117,7 +3117,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 12.5501,
+      "WallMs": 8.0605,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3128,7 +3128,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 22.9779,
+      "WallMs": 21.9768,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3139,7 +3139,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 19.5265,
+      "WallMs": 17.8953,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3150,7 +3150,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 31.7455,
+      "WallMs": 36.9145,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3161,7 +3161,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 26.4773,
+      "WallMs": 25.4865,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3172,7 +3172,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 29.5128,
+      "WallMs": 32.5993,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3183,7 +3183,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 11.1955,
+      "WallMs": 11.4,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3194,7 +3194,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 14.1086,
+      "WallMs": 7.9067,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3205,7 +3205,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 28.8976,
+      "WallMs": 24.5127,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3216,7 +3216,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 7.008,
+      "WallMs": 17.2423,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3227,7 +3227,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 24.7582,
+      "WallMs": 27.4446,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3238,7 +3238,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 30.4515,
+      "WallMs": 13.4754,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3249,7 +3249,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 17.388,
+      "WallMs": 20.5646,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3260,7 +3260,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 20.5589,
+      "WallMs": 31.1295,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3271,7 +3271,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.7106,
+      "WallMs": 7.9571,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3282,7 +3282,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 24.2686,
+      "WallMs": 21.1724,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3293,7 +3293,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 12.6255,
+      "WallMs": 17.2175,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3304,7 +3304,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 26.8613,
+      "WallMs": 28.0745,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3315,7 +3315,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 16.1493,
+      "WallMs": 14.0999,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3326,7 +3326,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 18.3098,
+      "WallMs": 10.3299,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3337,7 +3337,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.2619,
+      "WallMs": 31.0276,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3348,7 +3348,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 20.8209,
+      "WallMs": 24.249,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3359,7 +3359,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 10.0889,
+      "WallMs": 11.1258,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3370,7 +3370,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 21.8407,
+      "WallMs": 27.6987,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3381,7 +3381,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 18.4365,
+      "WallMs": 17.7163,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3392,7 +3392,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 27.3696,
+      "WallMs": 7.984,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3403,7 +3403,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 15.842,
+      "WallMs": 13.5745,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3414,7 +3414,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 24.7062,
+      "WallMs": 30.0799,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3425,7 +3425,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 7.1139,
+      "WallMs": 23.8,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3436,7 +3436,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 12.8306,
+      "WallMs": 20.588,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3447,7 +3447,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 7.1533,
+      "WallMs": 10.6806,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3458,7 +3458,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 21.8689,
+      "WallMs": 7.202,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3469,7 +3469,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 15.5612,
+      "WallMs": 13.9289,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3480,7 +3480,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 12.5854,
+      "WallMs": 20.5542,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3491,7 +3491,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 25.4533,
+      "WallMs": 30.2146,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3502,7 +3502,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.5736,
+      "WallMs": 27.1254,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3513,7 +3513,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 27.4779,
+      "WallMs": 17.21,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3524,7 +3524,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 18.3845,
+      "WallMs": 23.5742,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3535,7 +3535,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 11.7291,
+      "WallMs": 14.8802,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3546,7 +3546,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 20.1605,
+      "WallMs": 29.6564,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3557,7 +3557,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 28.8774,
+      "WallMs": 33.2344,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3568,7 +3568,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.0073,
+      "WallMs": 21.6313,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3579,7 +3579,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 22.9588,
+      "WallMs": 18.2834,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3590,7 +3590,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 25.6032,
+      "WallMs": 37.2946,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3601,7 +3601,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 14.2836,
+      "WallMs": 25.3311,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3612,7 +3612,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 16.7692,
+      "WallMs": 40.1922,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3623,7 +3623,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.7167,
+      "WallMs": 11.0343,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3634,7 +3634,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 15.3037,
+      "WallMs": 20.8369,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3645,7 +3645,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.6774,
+      "WallMs": 30.2975,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3656,7 +3656,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 26.4756,
+      "WallMs": 17.8565,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3667,7 +3667,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 12.3543,
+      "WallMs": 27.3387,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3678,7 +3678,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 23.4247,
+      "WallMs": 13.4739,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3689,7 +3689,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 20.521,
+      "WallMs": 23.932,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3700,7 +3700,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 17.7835,
+      "WallMs": 7.0763,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3711,7 +3711,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.0829,
+      "WallMs": 7.8037,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3722,7 +3722,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 25.8051,
+      "WallMs": 17.2822,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3733,7 +3733,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 14.3806,
+      "WallMs": 10.6415,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3744,7 +3744,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.3944,
+      "WallMs": 13.8351,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3755,7 +3755,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 20.1604,
+      "WallMs": 20.3593,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3766,7 +3766,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 17.1169,
+      "WallMs": 23.93,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3777,7 +3777,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 11.216,
+      "WallMs": 30.8428,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3788,7 +3788,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 22.7191,
+      "WallMs": 28.1051,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3799,7 +3799,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 7.0206,
+      "WallMs": 7.3889,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3810,7 +3810,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 12.5767,
+      "WallMs": 21.2478,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3821,7 +3821,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.4725,
+      "WallMs": 13.7208,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3832,7 +3832,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 25.869,
+      "WallMs": 17.0624,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3843,7 +3843,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 17.6848,
+      "WallMs": 10.0342,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3854,7 +3854,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 20.3167,
+      "WallMs": 27.2239,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3865,7 +3865,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 14.5397,
+      "WallMs": 30.033,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3876,7 +3876,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 23.0414,
+      "WallMs": 23.8973,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3887,7 +3887,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.3281,
+      "WallMs": 10.4224,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3898,7 +3898,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 10.4499,
+      "WallMs": 23.0624,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3909,7 +3909,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 25.3322,
+      "WallMs": 6.806,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3920,7 +3920,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 28.1533,
+      "WallMs": 13.0569,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3931,7 +3931,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 13.2305,
+      "WallMs": 16.3511,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3942,7 +3942,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 17.5235,
+      "WallMs": 18.9074,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3953,7 +3953,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 21.7051,
+      "WallMs": 28.4339,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3964,7 +3964,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 30.6684,
+      "WallMs": 25.3828,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3975,7 +3975,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.2524,
+      "WallMs": 6.8858,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3986,7 +3986,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 20.2491,
+      "WallMs": 13.5555,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -3997,7 +3997,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 11.0866,
+      "WallMs": 9.7297,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4008,7 +4008,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 15.3067,
+      "WallMs": 25.955,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4019,7 +4019,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.2402,
+      "WallMs": 23.1242,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4030,7 +4030,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 22.5725,
+      "WallMs": 29.7306,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4041,7 +4041,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 17.0131,
+      "WallMs": 19.8445,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4052,7 +4052,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 24.8791,
+      "WallMs": 16.7501,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4063,7 +4063,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 8.8813,
+      "WallMs": 10.1508,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4074,7 +4074,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 21.7189,
+      "WallMs": 15.9536,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4085,7 +4085,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 13.7541,
+      "WallMs": 7.0779,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4096,7 +4096,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 10.9758,
+      "WallMs": 12.9358,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4107,7 +4107,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.1258,
+      "WallMs": 21.69,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4118,7 +4118,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 18.8348,
+      "WallMs": 18.7208,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4129,7 +4129,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 16.1395,
+      "WallMs": 28.2452,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4140,7 +4140,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 23.48,
+      "WallMs": 24.9342,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4151,7 +4151,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.3042,
+      "WallMs": 10.9094,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4162,7 +4162,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 11.9898,
+      "WallMs": 23.3285,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4173,7 +4173,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 26.8656,
+      "WallMs": 13.1765,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4184,7 +4184,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 17.9477,
+      "WallMs": 6.9003,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4195,7 +4195,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 14.9518,
+      "WallMs": 26.4367,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4206,7 +4206,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 5.9845,
+      "WallMs": 19.5069,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4217,7 +4217,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 20.8712,
+      "WallMs": 29.3846,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4228,7 +4228,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 23.7783,
+      "WallMs": 16.4219,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4239,7 +4239,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.6299,
+      "WallMs": 14.1714,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4250,7 +4250,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.5098,
+      "WallMs": 31.3873,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4261,7 +4261,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 17.339,
+      "WallMs": 28.062,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4272,7 +4272,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 26.1654,
+      "WallMs": 24.7335,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4283,7 +4283,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 22.9899,
+      "WallMs": 7.0201,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4294,7 +4294,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 19.9536,
+      "WallMs": 10.4355,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4305,7 +4305,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 11.862,
+      "WallMs": 20.5296,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4316,7 +4316,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 14.4102,
+      "WallMs": 16.7075,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4327,7 +4327,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.3445,
+      "WallMs": 10.8253,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4338,7 +4338,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 15.2384,
+      "WallMs": 7.2279,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4349,7 +4349,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 11.9186,
+      "WallMs": 20.6904,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4360,7 +4360,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 20.8408,
+      "WallMs": 30.4457,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4371,7 +4371,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 17.6529,
+      "WallMs": 13.3284,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4382,7 +4382,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 23.3824,
+      "WallMs": 27.3759,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4393,7 +4393,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 26.1048,
+      "WallMs": 16.5372,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4404,7 +4404,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.5232,
+      "WallMs": 23.4322,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4415,7 +4415,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 35.7171,
+      "WallMs": 17.1893,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4426,7 +4426,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 51.8785,
+      "WallMs": 23.2884,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4437,7 +4437,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 46.0995,
+      "WallMs": 32.2513,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4448,7 +4448,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 49.1212,
+      "WallMs": 29.435,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4459,7 +4459,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 43.2716,
+      "WallMs": 12.2833,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4470,7 +4470,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 37.9855,
+      "WallMs": 19.2811,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4481,7 +4481,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 40.7455,
+      "WallMs": 25.8324,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4492,7 +4492,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 54.0776,
+      "WallMs": 34.8858,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4503,7 +4503,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 17.2686,
+      "WallMs": 9.6852,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4514,7 +4514,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 32.4227,
+      "WallMs": 24.6708,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4525,7 +4525,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 22.0743,
+      "WallMs": 18.8569,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4536,7 +4536,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 19.8973,
+      "WallMs": 12.467,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4547,7 +4547,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 29.7737,
+      "WallMs": 21.5405,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4558,7 +4558,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 27.1766,
+      "WallMs": 6.3261,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4569,7 +4569,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 14.5291,
+      "WallMs": 27.6101,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4580,7 +4580,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 24.3447,
+      "WallMs": 15.0428,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4591,7 +4591,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 11.333,
+      "WallMs": 9.335,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4602,7 +4602,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 13.5462,
+      "WallMs": 12.2763,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4613,7 +4613,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 24.3007,
+      "WallMs": 6.2837,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4624,7 +4624,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 16.2349,
+      "WallMs": 28.924,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4635,7 +4635,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 21.1383,
+      "WallMs": 15.1869,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4646,7 +4646,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 18.7557,
+      "WallMs": 21.6886,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4657,7 +4657,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.1889,
+      "WallMs": 19.0861,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4668,7 +4668,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 8.9214,
+      "WallMs": 26.1066,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4679,7 +4679,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.7224,
+      "WallMs": 7.1127,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4690,7 +4690,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 12.3354,
+      "WallMs": 9.7665,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4701,7 +4701,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.7886,
+      "WallMs": 27.6071,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4712,7 +4712,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 14.8832,
+      "WallMs": 15.4372,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4723,7 +4723,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 20.0222,
+      "WallMs": 19.636,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4734,7 +4734,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 22.6081,
+      "WallMs": 29.651,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4745,7 +4745,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 17.0159,
+      "WallMs": 12.5926,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4756,7 +4756,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 24.9956,
+      "WallMs": 22.4108,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4767,7 +4767,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 5.9871,
+      "WallMs": 10.3221,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4778,7 +4778,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 15.9152,
+      "WallMs": 28.7916,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4789,7 +4789,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 13.3567,
+      "WallMs": 19.2433,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4800,7 +4800,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 8.4465,
+      "WallMs": 22.6767,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4811,7 +4811,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 10.9544,
+      "WallMs": 12.6689,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4822,7 +4822,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 23.5435,
+      "WallMs": 25.1436,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4833,7 +4833,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 18.2887,
+      "WallMs": 6.6714,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4844,7 +4844,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 20.9681,
+      "WallMs": 15.3077,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4855,7 +4855,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 8.4684,
+      "WallMs": 10.3546,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4866,7 +4866,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 13.4688,
+      "WallMs": 20.5858,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4877,7 +4877,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 20.9312,
+      "WallMs": 27.4398,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4888,7 +4888,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 15.8031,
+      "WallMs": 23.8597,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4899,7 +4899,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.6501,
+      "WallMs": 30.2627,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4910,7 +4910,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 10.4407,
+      "WallMs": 16.4297,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4921,7 +4921,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 18.5768,
+      "WallMs": 6.4852,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4932,7 +4932,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 23.2936,
+      "WallMs": 13.2699,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4943,7 +4943,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.0539,
+      "WallMs": 7.0499,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4954,7 +4954,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 11.2445,
+      "WallMs": 22.924,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4965,7 +4965,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 5.7767,
+      "WallMs": 16.9611,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4976,7 +4976,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 23.7021,
+      "WallMs": 25.6895,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4987,7 +4987,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 21.0626,
+      "WallMs": 28.882,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -4998,7 +4998,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 13.6187,
+      "WallMs": 13.2178,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5009,7 +5009,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 18.6151,
+      "WallMs": 10.0845,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5020,7 +5020,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 15.9748,
+      "WallMs": 19.6145,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5031,7 +5031,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 8.6674,
+      "WallMs": 9.8067,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5042,7 +5042,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 13.708,
+      "WallMs": 15.6383,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5053,7 +5053,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 49.2083,
+      "WallMs": 12.6185,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5064,7 +5064,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 10.8517,
+      "WallMs": 24.4751,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5075,7 +5075,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 46.2392,
+      "WallMs": 6.6161,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5086,7 +5086,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 52.1362,
+      "WallMs": 26.9631,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5097,7 +5097,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 5.6173,
+      "WallMs": 18.1602,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5108,7 +5108,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 54.9536,
+      "WallMs": 21.0233,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5119,7 +5119,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 9.1092,
+      "WallMs": 7.5708,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5130,7 +5130,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 23.1052,
+      "WallMs": 13.1843,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5141,7 +5141,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 20.5306,
+      "WallMs": 10.0914,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5152,7 +5152,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 10.7395,
+      "WallMs": 21.0927,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5163,7 +5163,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 15.6228,
+      "WallMs": 27.4702,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5174,7 +5174,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 13.2737,
+      "WallMs": 23.9892,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5185,7 +5185,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 6.2483,
+      "WallMs": 15.0989,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5196,7 +5196,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 17.8889,
+      "WallMs": 17.8509,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5207,7 +5207,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 5.8368,
+      "WallMs": 9.4634,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5218,7 +5218,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 8.7443,
+      "WallMs": 15.3883,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5229,7 +5229,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 11.227,
+      "WallMs": 6.2302,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5240,7 +5240,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 17.7071,
+      "WallMs": 11.953,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5251,7 +5251,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 13.9311,
+      "WallMs": 23.6315,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5262,7 +5262,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 19.5829,
+      "WallMs": 17.6,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5273,7 +5273,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 21.989,
+      "WallMs": 20.4403,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,
@@ -5284,7 +5284,7 @@
     {
       "implementation": "MCP \u002B Foundgine (same client, semantic batch)",
       "Success": true,
-      "WallMs": 24.5089,
+      "WallMs": 26.2021,
       "InputBytes": 1802,
       "OutputBytes": 10330,
       "ToolCalls": 1,

@@ -6,24 +6,20 @@ It exists to ensure GraphQL writes use the same canonical mutation security and 
 
 ## Boundary
 
-```text
-GraphQL payload
-      ↓
-Hot Chocolate mutation adapter
-      ↓
-SemanticMutationOperationGraph
-      ↓
-host-owned security context
-      ↓
-warrant / tenant / audience / resource checks
-      ↓
-semantic mutation authorization
-      ↓
-security-invariant certification
-      ↓
-IFoundgineMutations
-      ↓
-provider
+```plantuml
+@startuml
+start
+:GraphQL payload;
+:Hot Chocolate mutation adapter;
+:SemanticMutationOperationGraph;
+:host-owned security context;
+:warrant / tenant / audience / resource checks;
+:semantic mutation authorization;
+:security-invariant certification;
+:IFoundgineMutations;
+:provider;
+stop
+@enduml
 ```
 
 ## `FoundgineHotChocolateMutationExecutor`
@@ -73,17 +69,22 @@ This package makes the secure composition explicit.
 
 The desired architecture is:
 
-```text
-GraphQL ─┐
-MCP ─────┤
-JSON ────┤
-Code ────┘
-     ↓
-SemanticMutationOperationGraph
-     ↓
-IFoundgineMutations
-     ↓
-same authorization/security/execution boundary
+```plantuml
+@startuml
+card GraphQL
+card MCP
+card JSON
+card Code
+card "SemanticMutationOperationGraph" as Graph
+card "IFoundgineMutations" as Mutations
+card "same authorization/security/execution boundary" as Boundary
+GraphQL --> Graph
+MCP --> Graph
+JSON --> Graph
+Code --> Graph
+Graph --> Mutations
+Mutations --> Boundary
+@enduml
 ```
 
 ## High-assurance controls

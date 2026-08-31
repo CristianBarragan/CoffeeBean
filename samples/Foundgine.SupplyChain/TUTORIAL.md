@@ -9,31 +9,28 @@ It is intentionally wired to `src/` with `ProjectReference` entries so the sampl
 
 The request path is:
 
-```text
-MCP client
-   ↓
-Api
-   ↓
-Application
-   ↓
-Domain + generated semantics
-   ↓
-Foundgine Planning / Execution
-   ↓
-Foundgine.Sql
-   ↓
-PostgreSQL
+```plantuml
+@startuml
+start
+:MCP client;
+:Api;
+:Application;
+:Domain + generated semantics;
+:Foundgine Planning / Execution;
+:Foundgine.Sql;
+:PostgreSQL;
+stop
+@enduml
 ```
 
 The sample also demonstrates the separation between application models and persistence entities:
 
-```text
-Customer              → CustomerERP
-SalesOrder            → SalesOrderERP
-SalesOrderLine        → SalesOrderLineERP
-CatalogProduct        → CatalogProductERP
-InventoryPosition     → InventoryPositionERP
-...
+```plantuml
+@startuml
+start
+:Customer              → CustomerERP SalesOrder            → SalesOrderERP SalesOrderLine        → SalesOrderLineERP CatalogProduct        → CatalogProductERP InventoryPosition     → InventoryPositionERP ...;
+stop
+@enduml
 ```
 
 The application model does not inherit from, reference, or reuse the ERP CLR type. The persistence model is free to use storage names such as `customer_id`, `order_items`, and `shipping_status` without leaking those details into the semantic vocabulary.
@@ -42,28 +39,30 @@ The application model does not inherit from, reference, or reuse the ERP CLR typ
 
 The sample is already part of the main solution:
 
-```text
-samples/Foundgine.SupplyChain/
-├── Domain/
-│   ├── Models.cs
-│   ├── StorageModels.cs
-│   └── Foundgine.SupplyChain.Domain.csproj
-├── Application/\n│   └── SupplyChainSemanticConfiguration.cs
-│   ├── SupplyChainSemanticModel.cs
-│   └── Foundgine.SupplyChain.Application.csproj
-├── Application/
-│   ├── Contracts.cs
-│   ├── Authorization.cs
-│   ├── SupplyChainApplication.cs
-│   └── Foundgine.SupplyChain.Application.csproj
-├── Infrastructure/
-│   ├── Queries/
-│   ├── Mutations/
-│   └── Foundgine.SupplyChain.Infrastructure.csproj
-├── Api/
-│   ├── Program.cs
-│   └── Foundgine.SupplyChain.Api.csproj
-└── Tests/
+```plantuml
+@startmindmap
+* samples/Foundgine.SupplyChain/
+** Domain/
+** Models.cs
+** StorageModels.cs
+** Foundgine.SupplyChain.Domain.csproj
+** Application/\n│   └── SupplyChainSemanticConfiguration.cs
+** SupplyChainSemanticModel.cs
+** Foundgine.SupplyChain.Application.csproj
+** Application/
+** Contracts.cs
+** Authorization.cs
+** SupplyChainApplication.cs
+** Foundgine.SupplyChain.Application.csproj
+** Infrastructure/
+** Queries/
+** Mutations/
+** Foundgine.SupplyChain.Infrastructure.csproj
+** Api/
+** Program.cs
+** Foundgine.SupplyChain.Api.csproj
+** Tests/
+@endmindmap
 ```
 
 Unlike the old package-based tutorial, there is no separate `Entities` project and no separate `Model` project. `Domain` owns the two CLR representations while keeping them completely separate types.
@@ -253,20 +252,18 @@ There is no SQL string in the normal query path.
 
 The repository passes the operation to `SemanticSqlQueryExecutor`:
 
-```text
-SemanticOperation
-      ↓
-Planner
-      ↓
-Semantic plan
-      ↓
-SqlCompiler
-      ↓
-SqlPlan
-      ↓
-SqlExecutionProvider
-      ↓
-PostgreSQL
+```plantuml
+@startuml
+start
+:SemanticOperation;
+:Planner;
+:Semantic plan;
+:SqlCompiler;
+:SqlPlan;
+:SqlExecutionProvider;
+:PostgreSQL;
+stop
+@enduml
 ```
 
 ## 8. Relationship traversal
@@ -295,16 +292,16 @@ The same pattern is used for shipment ownership checks and other graph traversal
 
 The flow is:
 
-```text
-MCP tool
-   ↓
-SupplyChainApplication
-   ↓
-Capability authorization
-   ↓
-SupplyChainQueries / SupplyChainMutations
-   ↓
-semantic execution
+```plantuml
+@startuml
+start
+:MCP tool;
+:SupplyChainApplication;
+:Capability authorization;
+:SupplyChainQueries / SupplyChainMutations;
+:semantic execution;
+stop
+@enduml
 ```
 
 This keeps transport concerns out of the domain and infrastructure layers.

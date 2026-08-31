@@ -4,8 +4,17 @@ Foundgine treats intent as untrusted and carries authorization constraints into 
 
 ## Invariant
 
-```text
-Intent → Resolve → Authorize → Security-preserving Plan → Provider Conformance → Execute
+```plantuml
+@startuml
+start
+:Intent;
+:Resolve;
+:Authorize;
+:Security-preserving Plan;
+:Provider Conformance;
+:Execute;
+stop
+@enduml
 ```
 
 Capability discovery is descriptive, not authorization. Caller-supplied claims cannot widen authority. Optional `Foundgine.Security.Authority` infrastructure is outside the core execution boundary.

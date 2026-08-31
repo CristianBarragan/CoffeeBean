@@ -4,22 +4,19 @@ The canonical `Foundgine.SupplyChain` sample is the fastest way to understand th
 
 ## What you will run
 
-```text
-Agent / MCP client
-      ↓
-API
-      ↓
-Application capability
-      ↓
-Domain + AOT metadata
-      ↓
-Semantics
-      ↓
-Planning / ExecutionIR
-      ↓
-Foundgine.Sql
-      ↓
-PostgreSQL
+```plantuml
+@startuml
+start
+:Agent / MCP client;
+:API;
+:Application capability;
+:Domain + AOT metadata;
+:Semantics;
+:Planning / ExecutionIR;
+:Foundgine.Sql;
+:PostgreSQL;
+stop
+@enduml
 ```
 
 ## Prerequisites

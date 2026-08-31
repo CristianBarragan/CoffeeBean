@@ -4,22 +4,19 @@ Foundgine treats external intent as untrusted input.
 
 The fundamental rule is:
 
-```text
-Input
-  ↓
-Parse
-  ↓
-Resolve
-  ↓
-Validate
-  ↓
-Authorize
-  ↓
-Plan
-  ↓
-Provider security conformance
-  ↓
-Execute
+```plantuml
+@startuml
+start
+:Input;
+:Parse;
+:Resolve;
+:Validate;
+:Authorize;
+:Plan;
+:Provider security conformance;
+:Execute;
+stop
+@enduml
 ```
 
 No transport adapter should bypass the semantic/security boundary.
@@ -29,24 +26,20 @@ No transport adapter should bypass the semantic/security boundary.
 
 Foundgine's security story follows one lifecycle rather than separate transport-specific paths:
 
-```text
-Caller → Intent → Semantic Model → Operation Graph
-                                      ↓
-                                  Retrieval
-                                      ↓
-                                  Resolution
-                                      ↓
-                                Authorization
-                                      ↓
-                                Plan Binding
-                                      ↓
-                                Execution IR
-                                      ↓
-                                  Provider
-                                      ↓
-                                  Execution
-                                      ↓
-                                  Evidence
+```plantuml
+@startuml
+start
+:Caller → Intent → Semantic Model → Operation Graph;
+:Retrieval;
+:Resolution;
+:Authorization;
+:Plan Binding;
+:Execution IR;
+:Provider;
+:Execution;
+:Evidence;
+stop
+@enduml
 ```
 
 **Retrieval is never authorization.** Fuzzy, full-text, BM25 and Apache AGE graph retrieval may return candidates and evidence, but every candidate is still resolved and authorized before execution.
@@ -139,18 +132,17 @@ time rather than becoming an alternate source of authority.
 
 The safe lifecycle is:
 
-```text
-request
-  ↓
-resolve + validate
-  ↓
-authorize
-  ↓
-create/bind plan
-  ↓
-cache or compile provider plan
-  ↓
-execute with current trusted context
+```plantuml
+@startuml
+start
+:request;
+:resolve + validate;
+:authorize;
+:create/bind plan;
+:cache or compile provider plan;
+:execute with current trusted context;
+stop
+@enduml
 ```
 
 A cache hit must never skip semantic resolution or authorization, and provider
@@ -160,11 +152,12 @@ conformance must still be satisfied before execution.
 
 A logical traversal can hide intermediate entities:
 
-```text
-Customer
-  → CustomerRelationship
-  → Contract
-  → Transaction
+```plantuml
+@startuml
+start
+:Customer → CustomerRelationship → Contract → Transaction;
+stop
+@enduml
 ```
 
 Authorization sees the expanded path.
@@ -182,16 +175,16 @@ A traversal is not a security shortcut.
 
 Capability discovery exists so dynamic callers and AI agents can construct valid intent.
 
-```text
-capability description
-        ↓
-caller constructs intent
-        ↓
-Foundgine resolves
-        ↓
-authorization
-        ↓
-execution
+```plantuml
+@startuml
+start
+:capability description;
+:caller constructs intent;
+:Foundgine resolves;
+:authorization;
+:execution;
+stop
+@enduml
 ```
 
 A capability document is not an authorization token.
@@ -208,14 +201,16 @@ A provider can execute valid SQL and still violate Foundgine's security contract
 
 Foundgine therefore carries required security invariants into execution and checks provider conformance.
 
-```text
-plan requirements
-      ↓
-provider guarantees
-      ↓
-conformance
-   ├── satisfied → execute
-   └── missing   → reject
+```plantuml
+@startmindmap
+* plan requirements
+* ↓
+* provider guarantees
+* ↓
+* conformance
+** satisfied → execute
+** missing   → reject
+@endmindmap
 ```
 
 ## GraphQL
@@ -240,14 +235,15 @@ MCP tool arguments are untrusted.
 
 The MCP host should obtain security context from authenticated session/request state.
 
-```text
-MCP request
-    ↓
-host authentication
-    ↓
-ISecurityExecutionContextProvider
-    ↓
-Foundgine
+```plantuml
+@startuml
+start
+:MCP request;
+:host authentication;
+:ISecurityExecutionContextProvider;
+:Foundgine;
+stop
+@enduml
 ```
 
 Do not allow an agent to select its own tenant or authorization role.
@@ -258,22 +254,28 @@ An LLM is an untrusted producer of intent.
 
 Avoid:
 
-```text
-LLM → SQL → database credentials
+```plantuml
+@startuml
+start
+:LLM;
+:SQL;
+:database credentials;
+stop
+@enduml
 ```
 
 Use:
 
-```text
-LLM
- ↓
-semantic tool
- ↓
-Foundgine
- ↓
-authorization
- ↓
-provider
+```plantuml
+@startuml
+start
+:LLM;
+:semantic tool;
+:Foundgine;
+:authorization;
+:provider;
+stop
+@enduml
 ```
 
 The application remains responsible for authentication, model credentials, rate limits, quotas, and prompt/application policy.
@@ -290,16 +292,16 @@ Writes have stronger security requirements than reads.
 
 The mutation path can include:
 
-```text
-semantic authorization
-      ↓
-security invariants
-      ↓
-approval / plan binding where configured
-      ↓
-revalidation
-      ↓
-provider execution
+```plantuml
+@startuml
+start
+:semantic authorization;
+:security invariants;
+:approval / plan binding where configured;
+:revalidation;
+:provider execution;
+stop
+@enduml
 ```
 
 A mutation builder is an authoring tool, not an authorization mechanism.
@@ -310,18 +312,17 @@ Caching must never cache away authorization.
 
 The safe conceptual model is:
 
-```text
-current request
-    ↓
-resolve
-    ↓
-authorize
-    ↓
-reuse/compile plan shape
-    ↓
-bind current runtime context
-    ↓
-execute
+```plantuml
+@startuml
+start
+:current request;
+:resolve;
+:authorize;
+:reuse/compile plan shape;
+:bind current runtime context;
+:execute;
+stop
+@enduml
 ```
 
 ## Authority recovery

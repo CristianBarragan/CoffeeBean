@@ -6,28 +6,22 @@ It is **compile-time infrastructure**, not a runtime query engine.
 
 ## Pipeline
 
-```text
-Application source
-      │
-      │ Foundgine.Aot declarations
-      ▼
-┌───────────────────────────┐
-│ Foundgine.Aot.Generator   │
-│                           │
-│ discover declarations     │
-│ validate topology         │
-│ allocate stable IDs       │
-│ build metadata            │
-│ emit source               │
-└────────────┬──────────────┘
-             ▼
-   GeneratedMetadata.g.cs
-             │
-             ▼
- Foundgine runtime contracts
-             │
-             ▼
- Metadata → Semantics → Plan → Execute
+```plantuml
+@startuml
+start
+:Application source\n(Foundgine.Aot declarations);
+partition "Foundgine.Aot.Generator" {
+  :discover declarations;
+  :validate topology;
+  :allocate stable IDs;
+  :build metadata;
+  :emit source;
+}
+:GeneratedMetadata.g.cs;
+:Foundgine runtime contracts;
+:Metadata → Semantics → Plan → Execute;
+stop
+@enduml
 ```
 
 ## Why a source generator?
@@ -90,10 +84,13 @@ The generator therefore uses deterministic semantic inputs where an identity is 
 
 For example:
 
-```text
-semantic name + stable scope
-          ↓
-deterministic identity
+```plantuml
+@startuml
+start
+:semantic name + stable scope;
+:deterministic identity;
+stop
+@enduml
 ```
 
 Do not use line number, property position, or file ordering as a long-lived identity unless the contract explicitly says that it is positional.
@@ -118,12 +115,14 @@ A semantic connection is likewise a declaration of reachable topology.
 
 This distinction is important:
 
-```text
-generator
-  ↓
-known graph
-  ↓
-runtime can traverse known graph
+```plantuml
+@startuml
+start
+:generator;
+:known graph;
+:runtime can traverse known graph;
+stop
+@enduml
 ```
 
 Runtime execution does not need to inspect a navigation property and invoke it as an object graph.

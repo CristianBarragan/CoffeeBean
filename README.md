@@ -54,26 +54,29 @@ Foundgine centralizes those concerns without making GraphQL, AI, MCP, or a datab
 
 This matters most where a single caller can reach many capabilities at once — an AI agent with a set of tools is the clearest case. In a typical stack, each tool is free to implement its own authorization, tenant filtering, and validation on the way to the database:
 
-```text
-Agent
- ├── Tool A → its own auth / filtering / query logic
- ├── Tool B → its own auth / filtering / query logic
- ├── Tool C → its own auth / filtering / query logic
- └── Tool D → its own auth / filtering / query logic
+```plantuml
+@startmindmap
+* Agent
+** Tool A → its own auth / filtering / query logic
+** Tool B → its own auth / filtering / query logic
+** Tool C → its own auth / filtering / query logic
+** Tool D → its own auth / filtering / query logic
+@endmindmap
 ```
 
 An agent with 50 tools can end up with 50 separate execution and security surfaces, each only as safe as the developer who wrote that one tool.
 
 Foundgine gives every capability the same path instead:
 
-```text
-Agent
- ↓
-Capability (structured intent)
- ↓
-Foundgine — one semantic + authorization boundary
- ↓
-Execution plan → provider
+```plantuml
+@startuml
+start
+:Agent;
+:Capability (structured intent);
+:Foundgine — one semantic + authorization boundary;
+:Execution plan → provider;
+stop
+@enduml
 ```
 
 The application still defines what each capability means and who may use it. What Foundgine removes is the need for every tool, endpoint, or adapter to reimplement that decision on its own.
@@ -128,54 +131,49 @@ The diagram above is the **canonical Foundgine architecture**. Every interface a
 
 ### Canonical semantic lifecycle
 
-```text
-Caller
-  ↓
-Intent
-  ↓
-Semantic Model
-  ↓
-Semantic Operation Graph
-  ↓
-Retrieval
-  ↓
-Resolution
-  ↓
-Authorization
-  ↓
-Plan Binding
-  ↓
-Execution IR
-  ↓
-Provider
-  ↓
-Execution
-  ↓
-Evidence
+```plantuml
+@startuml
+start
+:Caller;
+:Intent;
+:Semantic Model;
+:Semantic Operation Graph;
+:Retrieval;
+:Resolution;
+:Authorization;
+:Plan Binding;
+:Execution IR;
+:Provider;
+:Execution;
+:Evidence;
+stop
+@enduml
 ```
 
 ### Retrieval is a parallel candidate-discovery stage
 
-```text
-                    Retrieval
-                       │
-       ┌───────────────┼───────────────┐
-       ▼               ▼               ▼
-   Relational       Fuzzy          FullText
-   structured      pg_trgm         tsvector
-       │               │               │
-       ▼               ▼               ▼
-     BM25          AGE Graph        Other
-   pg_search       Apache AGE      strategies
-       └───────────────┬───────────────┘
-                       ▼
-              Candidates + Evidence
-                       │
-                       ▼
-                  Resolution
-                       │
-                       ▼
-                  Authorization
+```plantuml
+@startuml
+start
+:Retrieval;
+fork
+  :Relational\n(structured);
+fork again
+  :Fuzzy\n(pg_trgm);
+fork again
+  :FullText\n(tsvector);
+fork again
+  :BM25\n(pg_search);
+fork again
+  :AGE Graph\n(Apache AGE);
+fork again
+  :Other strategies;
+end fork
+:Candidates + Evidence;
+:Resolution;
+:Authorization;
+stop
+@enduml
 ```
 
 Search and graph mechanisms are therefore **not alternate authorization or execution paths**. They are retrieval strategies that help resolve ambiguous references.
@@ -214,29 +212,23 @@ The key distinction `Ground` makes is between two candidates that are genuinely 
 
 The central execution artifact is the semantic operation graph. It is resolved and authorized before planning, then carried forward through immutable provenance binding into execution:
 
-```text
-Intent
-  ↓
-Semantic Operation Graph
-  ↓
-Validate + bound complexity
-  ↓
-Authorize against semantic contract
-  ↓
-Authorized Graph + Evidence
-  ↓
-Provider-independent Plan
-  │  └─ AuthorizationBinding
-  ↓
-Security-preserving optimization
-  ↓
-ExecutionIR
-  ↓
-Provider Plan + Security Proof
-  ↓
-Final Execution Gate
-  ↓
-Execute
+```plantuml
+@startuml
+start
+:Intent;
+:Semantic Operation Graph;
+:Validate + bound complexity;
+:Authorize against semantic contract;
+:Authorized Graph + Evidence;
+:Provider-independent Plan;
+note right: AuthorizationBinding
+:Security-preserving optimization;
+:ExecutionIR;
+:Provider Plan + Security Proof;
+:Final Execution Gate;
+:Execute;
+stop
+@enduml
 ```
 
 The key invariant is simple: **an executable provider artifact must remain traceably bound to the semantic contract and authorization decision that produced it.** Optimization may change the execution shape, but it cannot detach or weaken that security provenance.
@@ -247,11 +239,13 @@ The SQL provider isn't limited to relational access: the same semantic candidate
 
 The semantic model describes application meaning:
 
-```text
-Customer
- ├── Id
- ├── Name
- └── transactions
+```plantuml
+@startmindmap
+* Customer
+** Id
+** Name
+** transactions
+@endmindmap
 ```
 
 It does not have to be identical to the physical persistence model.
@@ -281,20 +275,18 @@ The execution layer converts the logical plan into provider execution while enfo
 
 Foundgine treats transport input as untrusted.
 
-```text
-untrusted intent
-      ↓
-resolve
-      ↓
-validate
-      ↓
-authorize
-      ↓
-security-preserving plan
-      ↓
-provider conformance
-      ↓
-execute
+```plantuml
+@startuml
+start
+:untrusted intent;
+:resolve;
+:validate;
+:authorize;
+:security-preserving plan;
+:provider conformance;
+:execute;
+stop
+@enduml
 ```
 
 Identity, tenant, audience, and warrant authority come from the host/security boundary rather than model-generated or transport arguments.
@@ -351,16 +343,16 @@ These adapters translate their input into the Foundgine semantic boundary. They 
 
 `Foundgine.Aot` and `Foundgine.Aot.Generator` move stable metadata discovery into compilation:
 
-```text
-AOT declarations
-      ↓
-Roslyn generator
-      ↓
-generated metadata
-      ↓
-semantic model
-      ↓
-runtime
+```plantuml
+@startuml
+start
+:AOT declarations;
+:Roslyn generator;
+:generated metadata;
+:semantic model;
+:runtime;
+stop
+@enduml
 ```
 
 This is designed for Native-AOT-friendly metadata discovery. It does not make arbitrary application/provider dependencies automatically AOT-compatible.
@@ -369,16 +361,16 @@ This is designed for Native-AOT-friendly metadata discovery. It does not make ar
 
 Mutations use a separate semantic/planning/execution path because writes require explicit dependencies and stronger security guarantees.
 
-```text
-Semantic mutation graph
-        ↓
-Mutation plan
-        ↓
-Dependency levels
-        ↓
-Security/conformance
-        ↓
-Provider execution
+```plantuml
+@startuml
+start
+:Semantic mutation graph;
+:Mutation plan;
+:Dependency levels;
+:Security/conformance;
+:Provider execution;
+stop
+@enduml
 ```
 
 All mutation transports should converge on this boundary.
@@ -441,6 +433,14 @@ Start with:
 - `samples/Foundgine.Agent.OpenAI`
 
 The SupplyChain samples are also useful as architecture tests: they show how API, application, domain, metadata/AOT, semantics, authorization, planning, and PostgreSQL execution fit together. `samples/Foundgine.SupplyChain.Semantic/Tests/Grounding` is a worked [grounding-decision](docs/GROUNDING-DECISIONS.md) case study against that same real semantic contract — a materially ambiguous business term (`active supplier`) that Foundgine refuses to resolve silently, next to a case of duplicate retrieval evidence that it correctly does not treat as ambiguous.
+
+## Benchmarks
+
+`benchmarks/AgentEndToEnd` measures an agent completing the same business request two ways against the same PostgreSQL fixture: a **conventional** agent that discovers a physical data surface and writes its own relationship/query/update tools, versus a **Foundgine** agent that uses a semantic capability, an authorized graph operation, and a semantic mutation. Both flows reset to the same baseline before every measured run, so the comparison is of the same request, same fixture, same correctness assertion — only the execution boundary differs. `Run1` through `Run5SameClient` sweep customer count and concurrency; token/tool/wall-clock accounting is described in [`benchmarks/AgentEndToEnd/README.md`](benchmarks/AgentEndToEnd/README.md).
+
+`benchmarks/AgentEndToEnd/SupplyChain` runs the same idea against the stateful Supply Chain sample — agent → MCP → Foundgine → PostgreSQL — plus the deterministic `GraphPenetrationTests`/`McpPenetrationTests` security regression cases described in `SupplyChain/VERIFY-GATES.md`. Unlike Run1–5, there's no conventional counterpart here to diff against, so its report's `efficiencyEstimate` is a **modeled**, not measured, reduction estimate.
+
+CI runs a smoke-sized version of both suites on every push/PR (`agent-benchmark-smoke`, ubuntu-latest, single customer/concurrency-1) so the full seed → run → report pipeline — and the Supply Chain E2E + PenTest gate — stay proven working, without the full customer/concurrency matrix running on every commit. Full-size runs are on-demand or scheduled elsewhere; see `run-all-agent-benchmarks.ps1 -IncludeSupplyChain -IncludeSemanticPipeline` for the complete suite. Published results, when available, live under `docs-site/assets/agent-benchmark`.
 
 ## Documentation
 

@@ -23,22 +23,19 @@ workflow engine, or an autonomous agent framework. See
 At a glance, every caller — application code, GraphQL, JSON, MCP, an AI
 agent — converges on the same pipeline:
 
-```text
-Caller
-  ↓
-Intent
-  ↓
-Semantic Model        (what the application exposes)
-  ↓
-Resolution            (including lexical grounding, for free-form language)
-  ↓
-Authorization         (what this caller may do)
-  ↓
-Provider-independent Plan
-  ↓
-Provider execution
-  ↓
-Result + Evidence
+```plantuml
+@startuml
+start
+:Caller;
+:Intent;
+:Semantic Model        (what the application exposes);
+:Resolution            (including lexical grounding, for free-form language);
+:Authorization         (what this caller may do);
+:Provider-independent Plan;
+:Provider execution;
+:Result + Evidence;
+stop
+@enduml
 ```
 
 The application defines what exists and what is allowed once. Every
@@ -49,12 +46,22 @@ it. See [Architecture](ARCHITECTURE.md) for the full lifecycle.
 
 Foundgine sits **below the transport, above the provider**:
 
-```text
-   GraphQL ─┐
-   JSON ────┤
-   MCP ─────┤──▶ Foundgine ──▶ Foundgine.Sql / Foundgine.InMemory / ...
-   AI ──────┤
-   Code ────┘
+```plantuml
+@startuml
+card GraphQL
+card JSON
+card MCP
+card AI
+card Code
+card Foundgine
+card "Foundgine.Sql / Foundgine.InMemory / ..." as Provider
+GraphQL --> Foundgine
+JSON --> Foundgine
+MCP --> Foundgine
+AI --> Foundgine
+Code --> Foundgine
+Foundgine --> Provider
+@enduml
 ```
 
 Concretely, that means:

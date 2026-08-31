@@ -1,209 +1,113 @@
-# Foundgine — AI context
+# Foundgine 1.1.9
 
-Foundgine is a semantic execution layer for .NET.
+Foundgine is a **programmable semantic execution platform for .NET**. It creates an application-controlled boundary between structured caller intent and physical execution.
 
-Its purpose is to create a stable boundary between structured application intent and physical execution.
+## Canonical lifecycle
 
-## Core model
-
-```text
-Caller
-  ↓
-Intent
-  ↓
-Semantic Model
-  ↓
-Resolution + Validation
-  ↓
-Authorization
-  ↓
-Provider-independent Plan
-  ↓
-Execution
-  ↓
-Provider
-  ↓
-Result + Evidence
+```plantuml
+@startuml
+start
+:Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence;
+stop
+@enduml
 ```
 
-## Core concepts
+Retrieval is candidate discovery, not authorization.
 
-**Semantic model** describes application-facing entities, fields, identities, relationships, aliases, capabilities, and logical traversals.
+## Core vocabulary
 
-**Intent** describes what the caller wants without directly naming SQL operations.
+- **Semantic model** — application-defined meaning: entities, fields, identities, relationships, aliases and capabilities.
+- **Intent** — what the caller requests, independently of physical SQL/provider operations.
+- **Retrieval** — candidate discovery plus evidence; never an authorization decision.
+- **Resolution** — selects and validates the intended semantic meaning.
+- **Authorization** — determines what the current trusted execution context may exercise.
+- **Plan** — provider-independent logical execution.
+- **ExecutionIR** — the controlled intermediate execution representation at the provider boundary.
+- **Provider** — physical execution implementation.
+- **Evidence** — execution/security/plan context such as receipts and fingerprints.
 
-**Authorization** determines what the current execution context may exercise.
+## Adapters and providers
 
-**Plan** describes logical execution independently of SQL/provider details.
+Intent can originate from application code, JSON, GraphQL, MCP or AI tools. These are adapters/consumers of the semantic boundary.
 
-**Provider** performs physical execution.
+Current providers include `Foundgine.Sql` for SQL/PostgreSQL and a deliberately limited `Foundgine.InMemory` provider. PostgreSQL retrieval includes relational lookup, `pg_trgm`, native full text, optional `pg_search`/BM25 and optional Apache AGE graph similarity. Vector retrieval is not currently implemented.
 
-**Evidence** describes what was planned/executed and relevant execution/security context.
+## AI
 
-## Package architecture
+AI may generate structured intent. It does not decide application authority, tenant identity, exposed semantics, credentials, policy or whether security invariants may be skipped.
 
-`Foundgine.Abstractions` contains stable cross-layer identifiers and contracts.
-
-`Foundgine.Metadata` describes structural metadata such as entities, fields, columns, keys, and direct relationships.
-
-`Foundgine.Semantics` owns semantic meaning, open intent, resolution, validation, authorization, security context, logical traversal, and mutation semantics.
-
-`Foundgine.Planning` creates provider-independent read/mutation plans and applies conservative security-preserving rewrites.
-
-`Foundgine.Execution` provides ExecutionIR, provider compilation/execution contracts, result materialization, evidence, security conformance, and mutation execution coordination.
-
-`Foundgine.Sql` lowers plans to parameterized SQL and implements PostgreSQL-specific query/retrieval/mutation functionality.
-
-`Foundgine.InMemory` executes a deliberately limited subset over CLR-backed rows to prove provider independence.
-
-`Foundgine.Aot` and `Foundgine.Aot.Generator` provide compile-time metadata declarations and generation.
-
-`Foundgine.Intent.Json` translates structured JSON into semantic read intent.
-
-`Foundgine.GraphQL.HotChocolate*` translates GraphQL and provides separate secure query/mutation execution boundaries.
-
-`Foundgine.MCP` exposes semantic capabilities and intent through MCP.
-
-`Foundgine.AI` exposes Foundgine as Microsoft.Extensions.AI tools and provides a bounded function-calling helper.
-
-`Foundgine.Security.Authority` contains optional authority/recovery control-plane infrastructure and is outside the core semantic execution path.
-
-## Open intent
-
-Foundgine supports both typed and dynamic intent.
-
-Typed:
-
-```csharp
-foundgine
-    .Query<Customer>()
-    .Select(c => new { c.Id, c.Name });
+```plantuml
+@startuml
+start
+:AI;
+:semantic capability / intent;
+:Foundgine;
+:resolve;
+:authorize;
+:plan;
+:provider;
+stop
+@enduml
 ```
 
-Dynamic:
+## MCP
 
-```csharp
-foundgine
-    .Query("Customer")
-    .Select("Id", "Name");
+`Foundgine.MCP` is a transport/capability adapter. Discovery is advisory. The host supplies trusted security context and every actual request is resolved and authorized.
+
+## Security
+
+The core security boundary is:
+
+```plantuml
+@startuml
+start
+:untrusted input;
+:semantic resolution;
+:authorization;
+:security-preserving plan;
+:provider conformance;
+:execution;
+stop
+@enduml
 ```
 
-Both become semantic intent and use the same resolution/authorization/planning/execution pipeline.
+Identity, tenant, audience, secrets and other authority remain host-owned.
 
-## Logical traversals
+## Current evidence
 
-A logical traversal may hide intermediate relationships:
+The `Foundgine.SupplyChain` sample and AgentEndToEnd benchmark demonstrate an agent-facing business workload through MCP, semantic execution, authorization, ExecutionIR and PostgreSQL. The associated PenTest suite contains 14 deterministic cases: 7 MCP and 7 GraphQL. Benchmark pages separate measured performance from modeled efficiency estimates.
 
-```text
-Customer
-  → CustomerRelationship
-  → Contract
-  → Transaction
-```
+## Packages
 
-and expose:
+- `Foundgine` — runtime facade
+- `Foundgine.Abstractions` — stable contracts and identifiers
+- `Foundgine.Metadata` — structural metadata
+- `Foundgine.Semantics` — meaning, intent, resolution, authorization
+- `Foundgine.Planning` — provider-independent planning and safe rewrites
+- `Foundgine.Execution` — ExecutionIR, provider boundary, results and evidence
+- `Foundgine.Sql` — SQL/PostgreSQL provider
+- `Foundgine.InMemory` — limited non-SQL provider
+- `Foundgine.Aot` / `Foundgine.Aot.Generator` — AOT declarations and source generation
+- `Foundgine.Intent.Json` — JSON intent adapter
+- `Foundgine.GraphQL.HotChocolate*` — GraphQL adapters/execution boundaries
+- `Foundgine.MCP` — MCP adapter
+- `Foundgine.AI` — `Microsoft.Extensions.AI` integration
+- `Foundgine.Security.Authority` — optional authority/recovery control-plane infrastructure
 
-```text
-Customer.transactions
-```
+## Current release
 
-Resolution expands the path before authorization.
+**1.1.9 · .NET 9**
 
-Therefore a denied intermediate entity/relationship cannot be bypassed by a logical shortcut.
+For implementation truth, use the active source tree, tests, `docs/CURRENT-STATUS.md`, and package READMEs.
 
-## Authorization
+## Website navigation
 
-Authorization can apply to:
-
-- entities;
-- fields;
-- relationships;
-- read/write operations;
-- conditional predicates.
-
-Conditional predicates remain part of execution semantics and can be lowered by providers.
-
-Capability discovery is advisory.
-
-## AI boundary
-
-AI is an untrusted producer of intent.
-
-Preferred:
-
-```text
-AI
- ↓
-semantic intent
- ↓
-Foundgine
- ↓
-authorization
- ↓
-plan
- ↓
-provider
-```
-
-Avoid:
-
-```text
-LLM
- ↓
-generated SQL
- ↓
-database credentials
-```
-
-The host owns identity, tenant, audience, authority, secrets, model credentials, rate limits, and application policy.
-
-## MCP boundary
-
-MCP is a transport adapter.
-
-The host provides trusted security context. Tool arguments must not be treated as authority.
-
-Read capability discovery and query execution converge on Foundgine. Optional mutation tools use the same canonical mutation execution boundary.
-
-## GraphQL boundary
-
-GraphQL is a syntax adapter.
-
-The secure execution packages require a host-owned security execution context and route requests through Foundgine's normal execution boundary.
-
-## Provider security
-
-Providers can declare/evaluate the security invariants they preserve.
-
-Execution should proceed only when required invariants are satisfied.
-
-Unknown or missing guarantees must fail closed.
-
-## Current scope
-
-The repository currently demonstrates:
-
-- semantic modelling and resolution;
-- open typed/dynamic intent;
-- semantic authorization;
-- logical traversals;
-- provider-independent query and mutation planning;
-- execution IR;
-- security-preserving rewrites;
-- SQL/PostgreSQL execution;
-- InMemory execution;
-- AOT metadata generation;
-- JSON intent;
-- GraphQL adapters;
-- MCP integration;
-- Microsoft.Extensions.AI integration;
-- execution evidence;
-- PostgreSQL integration tests.
-
-Do not infer from these capabilities that Foundgine is a universal provider, autonomous-agent framework, workflow engine, ORM replacement, or authorization server.
-
-## Current release line
-
-1.1.9, targeting .NET 9.
-
-When documentation and code disagree, active source and tests win.
+- `/` — Foundgine landing page
+- `/case-studies/supply-chain/` — featured Supply Chain case study with capabilities and benchmark evidence
+- `/agent-benchmark/supply-chain/` — live/published Supply Chain E2E benchmark report
+- `/samples/semantic/` — advanced semantic execution sample
+- `/samples/pentest/` — security penetration-test sample
+- `/architecture/` — architecture and lifecycle
+- `/ai-agents/` — AI/agent boundary
+- `/security/` — security model
+- `/packages/` — package map
