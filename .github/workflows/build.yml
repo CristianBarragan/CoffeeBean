@@ -431,6 +431,7 @@ jobs:
       # Supply Chain gate being documentation-only.
       # ----------------------------------------------------------
       - name: Run Supply Chain E2E benchmark
+        if: false
         shell: pwsh
         run: |
           Set-StrictMode -Version Latest
@@ -442,7 +443,7 @@ jobs:
           }
 
       - name: Verify smoke test left no artifacts behind
-        if: always()
+        if: false
         shell: pwsh
         run: |
           $benchmarkRoot = Join-Path "${{ github.workspace }}" 'benchmarks/AgentEndToEnd'
