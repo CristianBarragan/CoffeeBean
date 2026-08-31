@@ -91,7 +91,7 @@ jobs:
 
           dotnet-CycloneDX Foundgine.sln -o artifacts/sbom -F Json -fn foundgine-sbom.json
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom
           path: artifacts/sbom/*
@@ -135,7 +135,7 @@ jobs:
           cmd_options: -a
           allow_issue_writing: false
       - name: Upload ZAP report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: zap-baseline-report
@@ -289,7 +289,7 @@ jobs:
             --logger "console;verbosity=normal"
       - name: Upload penetration test evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: foundgine-security-penetration-results
           path: |
