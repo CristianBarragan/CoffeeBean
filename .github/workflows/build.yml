@@ -411,6 +411,7 @@ jobs:
       # on demand or on a schedule elsewhere.
       # ----------------------------------------------------------
       - name: Run agent benchmark smoke test
+        if: false
         shell: pwsh
         run: |
           Set-StrictMode -Version Latest
