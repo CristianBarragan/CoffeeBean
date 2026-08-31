@@ -19,24 +19,51 @@ $Project = 'foundgine-run5'
 $DbProject = Join-Path $PSScriptRoot 'Database/Database.csproj'
 $Report = Join-Path $PSScriptRoot 'artifacts'
 New-Item -ItemType Directory -Force -Path $Report | Out-Null
+# Guard every input before splitting: an empty/whitespace string still
+# produces a one-element array from -split (e.g. @('')), which would then
+# fail [int] casting with a confusing error rather than a clear one here.
+if ([string]::IsNullOrWhiteSpace($CustomerCounts)) { throw 'CustomerCounts must not be empty.' }
+if ([string]::IsNullOrWhiteSpace($Concurrency)) { throw 'Concurrency must not be empty.' }
+if ([string]::IsNullOrWhiteSpace($RunsPerTier)) { throw 'RunsPerTier must not be empty.' }
+
 $customerCountsArray = @($CustomerCounts -split ',' | ForEach-Object { [int]$_.Trim() })
 $concurrencyArray = @($Concurrency -split ',' | ForEach-Object { [int]$_.Trim() })
-$runsPerTier = @($RunsPerTier -split ',' | ForEach-Object { [int]$_.Trim() })
+# NOTE: this cannot be named $runsPerTier. PowerShell variables are
+# case-insensitive, so $runsPerTier and the [string]$RunsPerTier parameter
+# above are literally the same variable slot. That slot carries the
+# parameter's declared [string] type constraint for the rest of the
+# script's scope, so assigning an int[] to it doesn't produce an array -
+# PowerShell silently converts the array back to a (space-joined) string
+# to satisfy the constraint. Every later ".Count" access on it then hits a
+# System.String under Set-StrictMode and throws "The property 'Count'
+# cannot be found on this object" - which is exactly what happened here,
+# on every invocation regardless of tier count. Using a distinct name
+# avoids colliding with the typed parameter.
+$runsPerTierArray = @($RunsPerTier -split ',' | ForEach-Object { [int]$_.Trim() })
 
-
-if ($customerCountsArray.Count -ne $runsPerTier.Count) {
+# @() always yields a real array, but guard explicitly anyway so a future
+# refactor that drops the @() wrapper fails with a clear message here
+# instead of a bare "'Count' cannot be found" further down the script.
+if ($null -eq $customerCountsArray -or $null -eq $runsPerTierArray -or $null -eq $concurrencyArray) {
+    throw 'Failed to parse CustomerCounts/Concurrency/RunsPerTier into arrays.'
+}
+if ($customerCountsArray.Count -ne $runsPerTierArray.Count) {
     throw 'CustomerCounts and RunsPerTier must have the same number of entries.'
 }
-# A single 1-customer/concurrency-1 tier is the CI smoke-test override
-# (see run-all-agent-benchmarks.ps1 -Smoke) - exempt it from the fixed
-# tier matrix below, which otherwise still governs real benchmark runs.
-$isSmokeOverride = ($customerCountsArray.Count -eq 1 -and $customerCountsArray[0] -eq 1 -and $concurrencyArray.Count -eq 1 -and $concurrencyArray[0] -eq 1)
-if (-not $isSmokeOverride) {
+# Any single customer-tier / single-concurrency override (e.g. -Smoke's 1/1,
+# or an ad-hoc lightweight run like -CustomerCounts 1 -Concurrency 8) is a
+# deliberate one-off and is exempt from the fixed tier matrix below, which
+# otherwise governs real (multi-tier) benchmark runs. Previously this only
+# exempted the literal 1-customer/concurrency-1 -Smoke shape, so any other
+# single-tier override incorrectly fell through to the full-matrix
+# assertion below and failed.
+$isSingleTierOverride = ($customerCountsArray.Count -eq 1 -and $concurrencyArray.Count -eq 1)
+if (-not $isSingleTierOverride) {
     if ($customerCountsArray.Count -ne 4 -or ($customerCountsArray -join ',') -ne '10,100,1000,10000') {
-        throw 'Run 5 customer tiers must be: 10,100,1000,10000.'
+        throw 'Run 5 (multi-tier) requires the same customer tiers as Run 2: 10,100,1000,10000.'
     }
     if (($concurrencyArray -join ',') -ne '8,16,32,64') {
-        throw 'Run 5 concurrency tiers must be: 8,16,32,64.'
+        throw 'Run 5 (multi-tier) requires the same concurrency tiers as Run 2: 8,16,32,64.'
     }
 }
 
@@ -75,13 +102,36 @@ function Wait-Http([string]$Url, [int]$TimeoutSeconds = 180) {
     throw "Endpoint did not become ready: $Url"
 }
 
+function Wait-Tcp([string]$HostName, [int]$Port, [int]$TimeoutSeconds = 60) {
+    # The docker-exec pg_isready loop below only proves Postgres is ready
+    # *inside* the container. It doesn't prove the host-published port
+    # ($HostName:$Port, the exact endpoint the .NET seeder's Npgsql
+    # connection uses) is accepting external connections yet - there can be
+    # a short lag between "container reports healthy" and the host-side
+    # port-forward accepting traffic (see the matching fix in
+    # Run4/run-run4.ps1, which hit this as an Npgsql connect timeout).
+    # Probe the real external endpoint directly before handing off to dotnet.
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $client = [System.Net.Sockets.TcpClient]::new()
+            try {
+                $connectTask = $client.ConnectAsync($HostName, $Port)
+                if ($connectTask.Wait(2000) -and $client.Connected) { return }
+            } finally { $client.Dispose() }
+        } catch {}
+        Start-Sleep -Milliseconds 500
+    }
+    throw "Postgres host port did not accept connections: ${HostName}:${Port}"
+}
+
 try {
     Compose @('down','-v','--remove-orphans')
     Compose @('build','mcp-efcore','mcp-foundgine')
 
     for ($index = 0; $index -lt $customerCountsArray.Count; $index++) {
         $customerCount = $customerCountsArray[$index]
-        $runsForTier = $runsPerTier[$index]
+        $runsForTier = $runsPerTierArray[$index]
         $tier = '{0:D5}-customers' -f $customerCount
         $tierRoot = Join-Path $Report $tier
         New-Item -ItemType Directory -Force -Path $tierRoot | Out-Null
@@ -121,6 +171,7 @@ try {
             Compose @('logs','postgres')
             throw "PostgreSQL did not become ready for $customerCount customers."
         }
+        Wait-Tcp -HostName 'localhost' -Port $postgresHostPort -TimeoutSeconds 60
 
         & dotnet run --project $DbProject --configuration Release
         if ($LASTEXITCODE -ne 0) {

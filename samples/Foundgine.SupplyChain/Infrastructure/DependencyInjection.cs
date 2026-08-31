@@ -23,11 +23,21 @@ public static class DependencyInjection
         services.AddSingleton(
             SupplyChainSemanticConfiguration.Metadata);
 
-        services.AddSingleton(
-            SupplyChainSemanticConfiguration.Model);
+        // SupplyChainSemanticConfiguration.Model is built but not frozen -
+        // CreateSnapshot() intentionally never freezes implicitly (see
+        // SemanticModel.CreateSnapshot()), so every other place in this
+        // codebase that turns a model into a trusted contract snapshot calls
+        // .Freeze() first. This call site was the one place that didn't,
+        // which is why AddSupplyChainInfrastructure blew up with
+        // "The semantic model must be frozen before it can be used as a
+        // trusted semantic contract." as soon as anything tried to build a
+        // WebApplicationFactory host for the PenTest suite.
+        var frozenModel = SupplyChainSemanticConfiguration.Model.Freeze();
+
+        services.AddSingleton(frozenModel);
 
         services.AddSingleton(
-            SupplyChainSemanticConfiguration.Model.CreateSnapshot());
+            frozenModel.CreateSnapshot());
 
         services.AddSingleton<Planner>();
 

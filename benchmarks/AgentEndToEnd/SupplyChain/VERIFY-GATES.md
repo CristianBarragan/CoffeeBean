@@ -10,10 +10,10 @@ The Supply Chain E2E is the **application-level story**. It sits on top of the r
 | PostgreSQL integration tests | Real provider behavior and end-to-end database semantics | `integration-tests` |
 | Authorization penetration tests | High-assurance authorization cannot be bypassed through the real PostgreSQL path | `security-penetration` |
 | Adversarial semantic-input tests | Hostile model input and replay/corpus cases remain inside the semantic security boundary | `security-adversarial` |
-| Performance smoke test | The benchmark stack can seed, start, execute real traffic and finish without errors | `benchmark-build` |
-| Supply Chain E2E | Stateful agent → MCP → Foundgine → PostgreSQL business workflow | `SupplyChain/run-supply-chain.ps1` |
+| Performance smoke test | The benchmark stack can seed, start, execute real traffic and finish without errors | `benchmark-build-hotchocolate`, `benchmark-build-foundgine` |
+| Agent benchmark smoke + Supply Chain E2E | Run1-5 agent benchmark pipeline, plus the stateful agent → MCP → Foundgine → PostgreSQL business workflow | `agent-benchmark-smoke` |
 
-The GitHub Actions release gate requires the unit, integration, authorization penetration, adversarial security and performance jobs before NuGet publication. The Supply Chain E2E is an additional product benchmark and is intentionally kept separate from the core solution test gate.
+The GitHub Actions release gate requires the unit, integration, authorization penetration, adversarial security, performance and agent-benchmark-smoke jobs (which now also runs the Supply Chain E2E benchmark on every push/PR) before NuGet publication.
 
 ## Local verification
 

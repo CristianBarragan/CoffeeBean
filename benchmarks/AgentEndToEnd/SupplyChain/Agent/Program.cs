@@ -402,6 +402,9 @@ internal static class Program
             measuredFoundgine = new
             {
                 toolCalls = succeeded.Count,
+                // One MCP round trip per successful capability call: the
+                // agent sends one request and gets back a completed result.
+                roundTrips = succeeded.Count,
                 totalEstimatedContextLoadTokens =
                     totalFoundgineContextTokens,
                 avgEstimatedContextLoadTokensPerCall =
@@ -417,6 +420,16 @@ internal static class Program
 
                 estimatedToolCalls =
                     modeledConventionalToolCalls,
+
+                // Same figure as estimatedToolCalls, named for the
+                // "how many round trips would this take without Foundgine"
+                // question specifically: discover -> authorize -> execute
+                // -> verify, one round trip each, per successful capability.
+                estimatedRoundTrips =
+                    modeledConventionalToolCalls,
+
+                roundTripsPerCapability =
+                    ModeledConventionalStepsPerCapability,
 
                 estimatedContextLoadTokens =
                     modeledConventionalContextTokens
