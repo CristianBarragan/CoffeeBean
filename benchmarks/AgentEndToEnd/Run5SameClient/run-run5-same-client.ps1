@@ -13,10 +13,10 @@ $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 Set-StrictMode -Version Latest
 
-$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..\..')
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '../../..')
 $ComposeFile = Join-Path $PSScriptRoot 'docker-compose.yml'
 $Project = 'foundgine-run5-same-client'
-$DbProject = Join-Path $PSScriptRoot 'Database\Database.csproj'
+$DbProject = Join-Path $PSScriptRoot 'Database/Database.csproj'
 $Report = Join-Path $PSScriptRoot 'artifacts'
 New-Item -ItemType Directory -Force -Path $Report | Out-Null
 
@@ -147,7 +147,7 @@ try {
             $env:RUN5_MCP_URL = 'http://localhost:4412/mcp'
 
             Write-Host "Run 5 Same Client: customers=$customerCount concurrency=$c runs=$runsForTier warmups=$Warmups"
-            & dotnet run --project (Join-Path $PSScriptRoot 'Runner\Runner.csproj') -c Release
+            & dotnet run --project (Join-Path $PSScriptRoot 'Runner/Runner.csproj') -c Release
             if ($LASTEXITCODE -ne 0) {
                 throw "Run 5 Same Client failed for $customerCount customers at concurrency $c (exit code $LASTEXITCODE)"
             }

@@ -6,20 +6,18 @@ It exposes Foundgine capabilities and provider-neutral intent as MCP tools while
 
 ## Boundary
 
-```text
-MCP client / AI agent
-          ↓
-     Foundgine.MCP
-          ↓
-       Foundgine
-          ↓
- Semantic resolution
-          ↓
- Authorization
-          ↓
- Planning
-          ↓
- Provider execution
+```plantuml
+@startuml
+start
+:MCP client / AI agent;
+:Foundgine.MCP;
+:Foundgine;
+:Semantic resolution;
+:Authorization;
+:Planning;
+:Provider execution;
+stop
+@enduml
 ```
 
 MCP is a transport adapter. It is not a second execution architecture.
@@ -82,12 +80,14 @@ provider
 
 Instead:
 
-```text
-authenticated host/session
-          ↓
-ISecurityExecutionContextProvider
-          ↓
-Foundgine
+```plantuml
+@startuml
+start
+:authenticated host/session;
+:ISecurityExecutionContextProvider;
+:Foundgine;
+stop
+@enduml
 ```
 
 This prevents an agent from escalating itself by changing ordinary JSON arguments.
@@ -98,16 +98,16 @@ This prevents an agent from escalating itself by changing ordinary JSON argument
 
 Discovery is advisory.
 
-```text
-discover capabilities
-        ↓
-agent chooses valid intent
-        ↓
-Foundgine resolves again
-        ↓
-authorization is evaluated again
-        ↓
-execute
+```plantuml
+@startuml
+start
+:discover capabilities;
+:agent chooses valid intent;
+:Foundgine resolves again;
+:authorization is evaluated again;
+:execute;
+stop
+@enduml
 ```
 
 Receiving a capability does not create a durable authorization grant.
@@ -126,16 +126,16 @@ It also does not bypass semantic validation.
 
 The workflow includes:
 
-```text
-mutation intent
-      ↓
-dry run
-      ↓
-plan/inspection
-      ↓
-approval
-      ↓
-exact-plan execution
+```plantuml
+@startuml
+start
+:mutation intent;
+:dry run;
+:plan/inspection;
+:approval;
+:exact-plan execution;
+stop
+@enduml
 ```
 
 The final execution path still uses `IFoundgineMutations`.
@@ -181,15 +181,17 @@ It does not:
 
 ## Recommended architecture
 
-```text
-ASP.NET / MCP host
-   ├── authentication
-   ├── request/session context
-   └── Foundgine.MCP
-          ↓
-       Foundgine
-          ↓
-       PostgreSQL
+```plantuml
+@startmindmap
+* ASP.NET / MCP host
+** authentication
+** request/session context
+** Foundgine.MCP
+* ↓
+* Foundgine
+* ↓
+* PostgreSQL
+@endmindmap
 ```
 
 Keep the application-specific actor/tenant mapping outside the MCP adapter.

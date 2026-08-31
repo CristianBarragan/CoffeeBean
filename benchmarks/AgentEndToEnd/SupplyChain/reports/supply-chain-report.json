@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "utc": "2026-08-23T05:44:22.631983+00:00",
+  "schemaVersion": 2,
+  "utc": "2026-08-31T03:28:57.0695966+00:00",
   "seed": 20260823,
   "steps": 25,
   "customers": 5,
@@ -9,8 +9,29 @@
     "success": 25,
     "failures": 0,
     "expectedAllowed": 16,
-    "unexpectedSuccesses": 9,
-    "avgLatencyMs": 43.248852
+    "unexpectedUnauthorizedSuccesses": 9,
+    "avgLatencyMs": 16.708676000000004
+  },
+  "efficiencyEstimate": {
+    "method": "Standalone heuristic (chars/4 vs words*1.3, same as Run1/Program.cs TokenEstimator) applied to this run\u0027s actual MCP request/response payloads. No conventional flow was executed for comparison, so the conventional side is MODELED, not measured.",
+    "measuredFoundgine": {
+      "toolCalls": 25,
+      "totalEstimatedContextLoadTokens": 1773,
+      "avgEstimatedContextLoadTokensPerCall": 70.9
+    },
+    "modeledConventional": {
+      "stepsPerCapabilityMultiplier": 4,
+      "estimatedToolCalls": 100,
+      "estimatedContextLoadTokens": 7092
+    },
+    "modeledToolCallReductionPercent": 75,
+    "modeledContextLoadReductionPercent": 75,
+    "caveats": [
+      "MODELED, not measured: no conventional REST/GraphQL flow was actually executed for this workload.",
+      "The 4x step multiplier (discover/authorize/execute/verify) mirrors the choreography measured directly in Run1; it is not re-derived from this workload.",
+      "Token counts are a payload-size heuristic, not a real tokenizer or provider-reported count.",
+      "For a measured comparison, see the AgentEndToEnd Run1-5 reports, which execute both flows against the same fixture."
+    ]
   },
   "records": [
     {
@@ -19,11 +40,13 @@
       "Capability": "list_suppliers",
       "ExpectedAllowed": false,
       "Success": true,
-      "LatencyMs": 445.9634,
+      "LatencyMs": 226.4995,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
       "ResponseBytes": 198,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022customer5\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027list_suppliers\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u00229ec30dedb6de4cc0ba80911ae4c42fdf\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 2,
@@ -31,11 +54,13 @@
       "Capability": "update_shipment",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 64.3132,
+      "LatencyMs": 20.2265,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
       "ResponseBytes": 199,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022carol\u0022,\u0022shipmentId\u0022:1,\u0022status\u0022:\u0022Out for Delivery\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027update_shipment\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u0022878fd1ad7acd4fec806a8ebfcdbe683b\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 3,
@@ -43,11 +68,13 @@
       "Capability": "get_inventory",
       "ExpectedAllowed": false,
       "Success": true,
-      "LatencyMs": 10.6984,
+      "LatencyMs": 4.923,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
       "ResponseBytes": 197,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022customer4\u0022,\u0022productId\u0022:2}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027get_inventory\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u00222ee73bc7567b4e7689d2c0fe55648bc0\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 4,
@@ -55,11 +82,13 @@
       "Capability": "get_my_orders",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 212.5894,
+      "LatencyMs": 9.2937,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
-      "ResponseBytes": 231,
-      "Error": null
+      "ResponseBytes": 197,
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022admin\u0022,\u0022customerId\u0022:1}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027get_my_orders\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u00222f98cb1ebd8340ef87d0495134119a58\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 5,
@@ -67,11 +96,13 @@
       "Capability": "cancel_order",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 38.3529,
+      "LatencyMs": 11.5566,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
       "ResponseBytes": 196,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022bob\u0022,\u0022customerId\u0022:2,\u0022orderId\u0022:2}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027cancel_order\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u0022b76d414f96554d12a8a02c4cee5ac1ec\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 6,
@@ -79,11 +110,13 @@
       "Capability": "get_inventory",
       "ExpectedAllowed": false,
       "Success": true,
-      "LatencyMs": 12.0416,
+      "LatencyMs": 3.2796,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
       "ResponseBytes": 197,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022alice\u0022,\u0022productId\u0022:7}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027get_inventory\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u002205e24cb3e4dd4d339e4f4290f7dfe87e\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 7,
@@ -91,11 +124,13 @@
       "Capability": "update_shipment",
       "ExpectedAllowed": false,
       "Success": true,
-      "LatencyMs": 8.5832,
+      "LatencyMs": 3.2157,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
       "ResponseBytes": 199,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022bob\u0022,\u0022shipmentId\u0022:6,\u0022status\u0022:\u0022Out for Delivery\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027update_shipment\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u0022b7defe58c2ab4af68191a126179f7a19\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 8,
@@ -103,11 +138,13 @@
       "Capability": "list_customers",
       "ExpectedAllowed": false,
       "Success": true,
-      "LatencyMs": 7.6351,
+      "LatencyMs": 2.8928,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
       "ResponseBytes": 198,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022customer3\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027list_customers\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u00229c9b7bf9df644a3b8554c227b49ae151\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 9,
@@ -115,11 +152,13 @@
       "Capability": "get_my_orders",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 8.8795,
+      "LatencyMs": 3.6669,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
-      "ResponseBytes": 231,
-      "Error": null
+      "ResponseBytes": 197,
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022alice\u0022,\u0022customerId\u0022:1}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027get_my_orders\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u00229969170a071d43048dc5211bf0465634\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 10,
@@ -127,11 +166,13 @@
       "Capability": "place_order",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 58.5681,
+      "LatencyMs": 24.4029,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
-      "ResponseBytes": 313,
-      "Error": null
+      "ResponseBytes": 195,
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022bob\u0022,\u0022customerId\u0022:5,\u0022lines\u0022:[{\u0022productId\u0022:3,\u0022quantity\u0022:1}],\u0022idempotencyKey\u0022:\u0022agent-20260823-9-ebbb4d84c723423f8938f39d2bb2e564\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027place_order\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u0022908e9c90dfac4dd5bbea2f42af1b5669\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 11,
@@ -139,11 +180,13 @@
       "Capability": "list_suppliers",
       "ExpectedAllowed": false,
       "Success": true,
-      "LatencyMs": 6.4994,
+      "LatencyMs": 2.8838,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
       "ResponseBytes": 198,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022alice\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027list_suppliers\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u00228fe7850887c345a69198e51e8493febf\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 12,
@@ -151,11 +194,13 @@
       "Capability": "list_suppliers",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 23.4114,
+      "LatencyMs": 19.1497,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
       "ResponseBytes": 583,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022dave\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022{\\u0022suppliers\\u0022:[{\\u0022supplier_id\\u0022:1,\\u0022supplier_name\\u0022:\\u0022Acme Industrial\\u0022,\\u0022email\\u0022:\\u0022acme.industrial@example.test\\u0022},{\\u0022supplier_id\\u0022:2,\\u0022supplier_name\\u0022:\\u0022Globex Components\\u0022,\\u0022email\\u0022:\\u0022globex.components@example.test\\u0022},{\\u0022supplier_id\\u0022:3,\\u0022supplier_name\\u0022:\\u0022Northstar Supply\\u0022,\\u0022email\\u0022:\\u0022northstar.supply@example.test\\u0022}]}\u0022}]},\u0022id\u0022:\u00221527a19785d1460b87bc916bf39be97e\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 13,
@@ -163,11 +208,13 @@
       "Capability": "place_order",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 20.1765,
+      "LatencyMs": 9.5852,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
-      "ResponseBytes": 314,
-      "Error": null
+      "ResponseBytes": 195,
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022admin\u0022,\u0022customerId\u0022:4,\u0022lines\u0022:[{\u0022productId\u0022:4,\u0022quantity\u0022:3}],\u0022idempotencyKey\u0022:\u0022agent-20260823-12-85bba276a645444c9438de982b8d6904\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027place_order\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u0022d0d45b6c1ba541ed96dae76ce11b3e80\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 14,
@@ -175,11 +222,13 @@
       "Capability": "get_order",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 11.4894,
+      "LatencyMs": 5.2666,
       "OrdersBefore": 0,
       "OrdersAfter": 0,
       "ResponseBytes": 193,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022bob\u0022,\u0022customerId\u0022:5,\u0022orderId\u0022:2}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027get_order\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u0022ad4efb29ffb14e6fb7d02189e07093b2\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 15,
@@ -187,11 +236,13 @@
       "Capability": "place_order",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 20.5893,
+      "LatencyMs": 8.6799,
       "OrdersBefore": 0,
       "OrdersAfter": 1,
-      "ResponseBytes": 314,
-      "Error": null
+      "ResponseBytes": 195,
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022alice\u0022,\u0022customerId\u0022:1,\u0022lines\u0022:[{\u0022productId\u0022:7,\u0022quantity\u0022:2}],\u0022idempotencyKey\u0022:\u0022agent-20260823-14-fd6a3a81e19645c8b6566770c89a2524\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027place_order\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u0022deda38d18ae04313b26f3bf391d1fffc\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 16,
@@ -199,11 +250,13 @@
       "Capability": "list_suppliers",
       "ExpectedAllowed": false,
       "Success": true,
-      "LatencyMs": 7.0925,
+      "LatencyMs": 3.5975,
       "OrdersBefore": 1,
       "OrdersAfter": 1,
       "ResponseBytes": 198,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022alice\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027list_suppliers\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u0022285183f3dce74cd087c7d8e44a19984d\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 17,
@@ -211,11 +264,13 @@
       "Capability": "cancel_order",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 10.0836,
+      "LatencyMs": 4.6146,
       "OrdersBefore": 1,
       "OrdersAfter": 1,
       "ResponseBytes": 196,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022admin\u0022,\u0022customerId\u0022:2,\u0022orderId\u0022:5}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027cancel_order\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u002209b2f607c67f47e296b5ac99ca9e5cd1\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 18,
@@ -223,11 +278,13 @@
       "Capability": "create_shipment",
       "ExpectedAllowed": false,
       "Success": true,
-      "LatencyMs": 14.2695,
+      "LatencyMs": 4.0628,
       "OrdersBefore": 1,
       "OrdersAfter": 1,
       "ResponseBytes": 199,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022customer4\u0022,\u0022orderId\u0022:6,\u0022carrierId\u0022:2,\u0022warehouseId\u0022:2,\u0022trackingNumber\u0022:\u0022TRK-20260823-17\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027create_shipment\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u00221b7083ad0c4a48e196599dc8332feb7c\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 19,
@@ -235,11 +292,13 @@
       "Capability": "get_order",
       "ExpectedAllowed": false,
       "Success": true,
-      "LatencyMs": 6.3856,
+      "LatencyMs": 3.5873,
       "OrdersBefore": 1,
       "OrdersAfter": 1,
       "ResponseBytes": 193,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022dave\u0022,\u0022customerId\u0022:1,\u0022orderId\u0022:12}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027get_order\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u00222c15a24e1b354e88b67c86826dd82151\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 20,
@@ -247,11 +306,13 @@
       "Capability": "get_order",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 7.7413,
+      "LatencyMs": 8.5162,
       "OrdersBefore": 1,
       "OrdersAfter": 1,
       "ResponseBytes": 193,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022customer5\u0022,\u0022customerId\u0022:5,\u0022orderId\u0022:18}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027get_order\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u00227d54afa9986c454fa0cd4282163753e7\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 21,
@@ -259,11 +320,13 @@
       "Capability": "place_order",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 18.9485,
+      "LatencyMs": 8.9182,
       "OrdersBefore": 1,
       "OrdersAfter": 1,
-      "ResponseBytes": 313,
-      "Error": null
+      "ResponseBytes": 195,
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022admin\u0022,\u0022customerId\u0022:5,\u0022lines\u0022:[{\u0022productId\u0022:5,\u0022quantity\u0022:2}],\u0022idempotencyKey\u0022:\u0022agent-20260823-20-749153bb1792415e9699e1a54ece713e\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027place_order\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u00228498481ca1624361b1769943bfbb9202\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 22,
@@ -271,11 +334,13 @@
       "Capability": "place_order",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 17.3289,
+      "LatencyMs": 8.068,
       "OrdersBefore": 1,
       "OrdersAfter": 2,
-      "ResponseBytes": 314,
-      "Error": null
+      "ResponseBytes": 195,
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022customer4\u0022,\u0022customerId\u0022:4,\u0022lines\u0022:[{\u0022productId\u0022:8,\u0022quantity\u0022:2}],\u0022idempotencyKey\u0022:\u0022agent-20260823-21-840b3e8b877044ae908fd954f370cdbc\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027place_order\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u0022b94dedd0ea1f46babf48a1e3da8c7662\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 23,
@@ -283,11 +348,13 @@
       "Capability": "create_shipment",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 13.143,
+      "LatencyMs": 6.9123,
       "OrdersBefore": 1,
       "OrdersAfter": 1,
       "ResponseBytes": 361,
-      "Error": null
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022carol\u0022,\u0022orderId\u0022:4,\u0022carrierId\u0022:2,\u0022warehouseId\u0022:1,\u0022trackingNumber\u0022:\u0022TRK-20260823-22\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022{\\u0022shipment\\u0022:{\\u0022shipment_id\\u0022:1,\\u0022order_id\\u0022:4,\\u0022carrier_id\\u0022:2,\\u0022warehouse_id\\u0022:1,\\u0022tracking_number\\u0022:\\u0022TRK-20260823-22\\u0022,\\u0022shipping_status\\u0022:\\u0022In Transit\\u0022}}\u0022}]},\u0022id\u0022:\u0022b8a4b30ca28646bba43d0997f89d4151\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 24,
@@ -295,11 +362,13 @@
       "Capability": "get_my_orders",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 19.8127,
+      "LatencyMs": 5.8424,
       "OrdersBefore": 2,
       "OrdersAfter": 2,
-      "ResponseBytes": 598,
-      "Error": null
+      "ResponseBytes": 197,
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022customer4\u0022,\u0022customerId\u0022:4}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027get_my_orders\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u002223ca2545f6474c0abe877e7eaf456958\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     },
     {
       "Step": 25,
@@ -307,11 +376,13 @@
       "Capability": "place_order",
       "ExpectedAllowed": true,
       "Success": true,
-      "LatencyMs": 16.6249,
+      "LatencyMs": 8.0752,
       "OrdersBefore": 0,
       "OrdersAfter": 1,
-      "ResponseBytes": 313,
-      "Error": null
+      "ResponseBytes": 195,
+      "Error": null,
+      "RequestText": "{\u0022actor\u0022:\u0022customer3\u0022,\u0022customerId\u0022:3,\u0022lines\u0022:[{\u0022productId\u0022:3,\u0022quantity\u0022:1}],\u0022idempotencyKey\u0022:\u0022agent-20260823-24-e7263543f2cb4f3298759e3a31bc0016\u0022}",
+      "ResponseText": "event: message\ndata: {\u0022result\u0022:{\u0022content\u0022:[{\u0022type\u0022:\u0022text\u0022,\u0022text\u0022:\u0022An error occurred invoking \\u0027place_order\\u0027.\u0022}],\u0022isError\u0022:true},\u0022id\u0022:\u0022f3894acdf9e64a4794f8476a038fb477\u0022,\u0022jsonrpc\u0022:\u00222.0\u0022}\n\n"
     }
   ]
 }

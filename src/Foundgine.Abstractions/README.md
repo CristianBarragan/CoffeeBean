@@ -28,14 +28,16 @@ The package contains the foundational identities and contracts used throughout t
 
 Foundgine uses explicit identities for different semantic/storage concepts:
 
-```text
-ModelId
-  ├── EntityId
-  ├── FieldId
-  ├── RelationshipId
-  ├── ConnectionId
-  ├── ColumnId
-  └── AuthorizationId
+```plantuml
+@startmindmap
+* ModelId
+** EntityId
+** FieldId
+** RelationshipId
+** ConnectionId
+** ColumnId
+** AuthorizationId
+@endmindmap
 ```
 
 These are deliberately different types. A relationship identifier must not accidentally be used where a database column identifier is expected.
@@ -75,17 +77,20 @@ If a type needs SQL, GraphQL, Hot Chocolate, PostgreSQL, MCP, Microsoft.Extensio
 
 The dependency direction is intentionally one-way:
 
-```text
-Foundgine.Abstractions
-        ▲
-        │
-  shared contracts
-        │
- ┌──────┼────────┬──────────┐
- │      │        │          │
-Semantics Metadata Planning Execution
- │      │        │          │
- └──────┴────────┴──────────┘
+```plantuml
+@startuml
+card "Foundgine.Abstractions" as Abstractions
+card "shared contracts" as Contracts
+card Semantics
+card Metadata
+card Planning
+card Execution
+Abstractions --> Contracts
+Contracts <-- Semantics
+Contracts <-- Metadata
+Contracts <-- Planning
+Contracts <-- Execution
+@enduml
 ```
 
 The arrows represent dependency on the stable vocabulary, not execution flow.

@@ -2,20 +2,22 @@
 
 Foundgine's AOT path moves stable domain knowledge out of the request path.
 
-```text
-Storage entities + EF relationship model
-                    │
-                    ├── physical/storage metadata
-                    │
-Domain models ───────┤
-                    │
-                    └── semantic connections
-                            ↓
-                       AOT compiler
-                            ↓
-                  generated metadata / graph
-                            ↓
-                         runtime
+```plantuml
+@startuml
+card "Storage entities + EF relationship model" as Storage
+card "Domain models" as Domain
+card "physical/storage metadata" as Phys
+card "semantic connections" as Sem
+card "AOT compiler" as Compiler
+card "generated metadata / graph" as Meta
+card "runtime" as Runtime
+Storage --> Phys
+Storage --> Sem
+Domain --> Sem
+Sem --> Compiler
+Compiler --> Meta
+Meta --> Runtime
+@enduml
 ```
 
 ## Important boundary
@@ -46,9 +48,11 @@ The property is a declaration of topology. Foundgine never evaluates it and neve
 
 The generator emits:
 
-```text
-Product
-  └── Contract → Contract entity
+```plantuml
+@startmindmap
+* Product
+** Contract → Contract entity
+@endmindmap
 ```
 
 Relational key details remain on the storage side. This is intentional: a connection says **what may be visited**, while EF/entity metadata says **how the storage relationship exists**.
@@ -61,16 +65,16 @@ Special conversions such as `ProductType → ContractType` should therefore be r
 
 ## Runtime goal
 
-```text
-request
-  ↓
-known model/connection graph
-  ↓
-traversal + planning
-  ↓
-provider
-  ↓
-EF / SQL / other source
+```plantuml
+@startuml
+start
+:request;
+:known model/connection graph;
+:traversal + planning;
+:provider;
+:EF / SQL / other source;
+stop
+@enduml
 ```
 
 The expensive discovery work belongs in AOT. Runtime should bind request-specific values and execute the already-known topology.

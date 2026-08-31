@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Seman
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Semantic.Mcp.Client", "McpClient\Foundgine.SupplyChain.Semantic.Mcp.Client.csproj", "{31000000-0000-0000-0000-000000000004}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.SupplyChain.Semantic.Benchmarks", "Benchmarks\Foundgine.SupplyChain.Semantic.Benchmarks.csproj", "{31000000-0000-0000-0000-000000000005}"
+EndProject
 Global
  GlobalSection(SolutionConfigurationPlatforms) = preSolution
   Debug|Any CPU = Debug|Any CPU
@@ -32,5 +34,9 @@ Global
   {31000000-0000-0000-0000-000000000004}.Debug|Any CPU.Build.0 = Debug|Any CPU
   {31000000-0000-0000-0000-000000000004}.Release|Any CPU.ActiveCfg = Release|Any CPU
   {31000000-0000-0000-0000-000000000004}.Release|Any CPU.Build.0 = Release|Any CPU
+  {31000000-0000-0000-0000-000000000005}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+  {31000000-0000-0000-0000-000000000005}.Debug|Any CPU.Build.0 = Debug|Any CPU
+  {31000000-0000-0000-0000-000000000005}.Release|Any CPU.ActiveCfg = Release|Any CPU
+  {31000000-0000-0000-0000-000000000005}.Release|Any CPU.Build.0 = Release|Any CPU
  EndGlobalSection
 EndGlobal

@@ -1,18 +1,49 @@
 [CmdletBinding()]
-param([string]$Destination)
-$ErrorActionPreference='Stop'
-foreach($run in @('Run1','Run2','Run3','Run4','Run5','Run5SameClient')) {
-    $script=Join-Path $PSScriptRoot "$run\publish-report.ps1"
-    if (-not (Test-Path -LiteralPath $script)) {
-        throw "Publish script not found for $run: $script"
+param(
+    [string]$Destination
+)
+
+$ErrorActionPreference = 'Stop'
+
+foreach ($run in @(
+    'Run1',
+    'Run2',
+    'Run3',
+    'Run4',
+    'Run5',
+    'Run5SameClient'
+)) {
+    $script = Join-Path $PSScriptRoot "$run\publish-report.ps1"
+
+    if (-not (Test-Path -LiteralPath $script -PathType Leaf)) {
+        throw "Publish script not found for $run`: $script"
     }
+
     try {
         & $script -Destination $Destination
-        if (-not $?) { throw "Publish script returned failure for $run." }
-    } catch {
+
+        if (-not $?) {
+            throw "Publish script returned failure for $run."
+        }
+    }
+    catch {
         throw "Failed to publish $run. $($_.Exception.Message)"
     }
 }
-& (Join-Path $PSScriptRoot 'build-benchmark-matrix.ps1') -Destination (Join-Path ((Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path) 'docs-site\assets\agent-benchmark\benchmark-matrix.json')
-if (-not $?) { throw 'Failed to build benchmark matrix.' }
-Write-Host 'All benchmark reports and the interactive benchmark matrix are published.' -ForegroundColor Green
+
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+
+$matrixDestination = Join-Path `
+    $repoRoot `
+    'docs-site\assets\agent-benchmark\benchmark-matrix.json'
+
+& (Join-Path $PSScriptRoot 'build-benchmark-matrix.ps1') `
+    -Destination $matrixDestination
+
+if (-not $?) {
+    throw 'Failed to build benchmark matrix.'
+}
+
+Write-Host ''
+Write-Host 'All benchmark reports and the interactive benchmark matrix are published.' `
+    -ForegroundColor Green

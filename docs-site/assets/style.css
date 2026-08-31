@@ -1040,3 +1040,10 @@ footer.site-footer {
   .site-header-inner nav.site-nav .nav-item.is-open .submenu { display: flex; }
   .site-header-inner nav.site-nav .submenu a { padding: .6rem .5rem; border-top: 0; }
 }
+
+
+/* Featured walkthrough */
+.walkthrough-highlight { margin: 2.5rem 0; padding: 2rem; border: 2px solid currentColor; border-radius: 14px; }
+.walkthrough-highlight .eyebrow { display: block; margin-bottom: .75rem; font-weight: 700; }
+.walkthrough-highlight h2 { margin-top: 0; }
+.walkthrough-highlight p { max-width: 70ch; }

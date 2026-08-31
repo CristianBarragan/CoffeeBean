@@ -6,20 +6,18 @@ The planner is deliberately **logical**. It describes what must be executed with
 
 ## Planning pipeline
 
-```text
-Semantic request
-      ↓
-Resolved semantic operation
-      ↓
-Authorization
-      ↓
-Semantic plan
-      ↓
-Security-preserving rewrites
-      ↓
-Execution IR
-      ↓
-Provider compiler
+```plantuml
+@startuml
+start
+:Semantic request;
+:Resolved semantic operation;
+:Authorization;
+:Semantic plan;
+:Security-preserving rewrites;
+:Execution IR;
+:Provider compiler;
+stop
+@enduml
 ```
 
 The planner is therefore the boundary between application meaning and physical execution.
@@ -28,22 +26,24 @@ The planner is therefore the boundary between application meaning and physical e
 
 Planning starts from an authorized semantic operation, not from raw transport input. When the planner is given a trusted `SemanticContractSnapshot` and `SemanticAuthorizationResult`, it validates contract membership, builds the provider-independent plan, and attaches `SemanticPlanAuthorizationBinding`.
 
-```text
-SemanticOperationGraph
-        ↓
- authorization
-        ↓
-AuthorizedGraph + Evidence
-        ↓
-      Planner
-        ↓
-   SemanticPlan
-        │
-        └── AuthorizationBinding
-        ↓
- security-preserving rewrites
-        ↓
-   ExecutionIR
+```plantuml
+@startmindmap
+* SemanticOperationGraph
+* ↓
+* authorization
+* ↓
+* AuthorizedGraph + Evidence
+* ↓
+* Planner
+* ↓
+* SemanticPlan
+* │
+**** AuthorizationBinding
+* ↓
+* security-preserving rewrites
+* ↓
+* ExecutionIR
+@endmindmap
 ```
 
 The binding records the exact contract fingerprint and authorization fingerprint. It is immutable provenance connecting the logical plan to the security decision that permitted it.
@@ -54,16 +54,18 @@ The binding records the exact contract fingerprint and authorization fingerprint
 
 The core read representation is a tree of semantic plan nodes:
 
-```text
-SemanticPlan
-└── SemanticPlanNode
-    ├── Operation
-    ├── Entity
-    ├── Projection
-    ├── Navigation
-    ├── Query clauses
-    ├── Authorization
-    └── Children
+```plantuml
+@startmindmap
+* SemanticPlan
+** SemanticPlanNode
+*** Operation
+*** Entity
+*** Projection
+*** Navigation
+*** Query clauses
+*** Authorization
+*** Children
+@endmindmap
 ```
 
 The current logical operations are intentionally small:
@@ -139,20 +141,15 @@ The optimizer uses explicit proof records around accepted rewrites.
 
 Conceptually:
 
-```text
-Before
-  ↓
-candidate rewrite
-  ↓
-semantic equivalence proof
-  +
-authorization preservation proof
-  +
-aggregate/cardinality/null legality where required
-  +
-provider capability where required
-  ↓
-After
+```plantuml
+@startuml
+start
+:Before;
+:candidate rewrite;
+:semantic equivalence proof + authorization preservation proof + aggregate/cardinality/null legality where required + provider capability where required;
+:After;
+stop
+@enduml
 ```
 
 A rewrite that cannot prove its obligations should be rejected.
@@ -206,16 +203,16 @@ Foundgine therefore models aggregate legality and provider capability separately
 
 `IProviderCostEstimator` allows a provider to supply advisory cost estimates.
 
-```text
-logical rewrite candidates
-          ↓
-provider cost estimate
-          ↓
-candidate selection
-          ↓
-semantic/security proof
-          ↓
-accepted rewrite
+```plantuml
+@startuml
+start
+:logical rewrite candidates;
+:provider cost estimate;
+:candidate selection;
+:semantic/security proof;
+:accepted rewrite;
+stop
+@enduml
 ```
 
 Cost is advisory. A cheap estimate never overrides semantic correctness or security.
@@ -228,13 +225,15 @@ Read and mutation planning use separate algebras.
 
 Mutation concepts include:
 
-```text
-MutationPlan
-  └── MutationOperation
-       ├── Create
-       ├── Update
-       ├── Delete
-       └── Upsert
+```plantuml
+@startmindmap
+* MutationPlan
+** MutationOperation
+*** Create
+*** Update
+*** Delete
+*** Upsert
+@endmindmap
 ```
 
 Dependencies between operations are explicit.
@@ -257,14 +256,20 @@ A planner can be used by:
 
 A provider should consume the logical plan and lower it into its own representation.
 
-```text
-Foundgine.Planning
-        │
-        ▼
-ProviderPlanCompiler
-   ┌────┼────┐
-   ▼    ▼    ▼
- SQL  Memory Future
+```plantuml
+@startuml
+start
+:Foundgine.Planning;
+:ProviderPlanCompiler;
+fork
+  :SQL;
+fork again
+  :Memory;
+fork again
+  :Future;
+end fork
+stop
+@enduml
 ```
 
 ## Execution IR
@@ -273,12 +278,14 @@ The current architecture also has a canonical `ExecutionIR` boundary.
 
 The logical plan can be lowered to execution IR before provider compilation:
 
-```text
-SemanticPlan
-    ↓
-ExecutionIR
-    ↓
-Provider compiler
+```plantuml
+@startuml
+start
+:SemanticPlan;
+:ExecutionIR;
+:Provider compiler;
+stop
+@enduml
 ```
 
 This gives execution/security gates a stable representation without moving SQL into the planner.

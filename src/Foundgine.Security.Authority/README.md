@@ -8,16 +8,16 @@ It is deliberately **outside Foundgine's core semantic execution boundary**.
 
 Foundgine core consumes validated security execution context:
 
-```text
-External identity / authority system
-            ↓
-   validated security context
-            ↓
-        Foundgine
-            ↓
-   semantic authorization
-            ↓
-        execution
+```plantuml
+@startuml
+start
+:External identity / authority system;
+:validated security context;
+:Foundgine;
+:semantic authorization;
+:execution;
+stop
+@enduml
 ```
 
 This package concerns the system that may produce, publish, recover, reconcile, or rotate that authority.
@@ -62,20 +62,22 @@ The recovery/control-plane implementation covers concerns such as:
 
 ## Conceptual model
 
-```text
-                 Authority
-                    │
-        ┌───────────┼───────────┐
-        ▼           ▼           ▼
-     Witnesses   Credentials   Journal
-        │           │           │
-        └───────────┼───────────┘
-                    ↓
-             recovered state
-                    ↓
-          validated authority context
-                    ↓
-                Foundgine
+```plantuml
+@startuml
+start
+:Authority;
+fork
+  :Witnesses;
+fork again
+  :Credentials;
+fork again
+  :Journal;
+end fork
+:recovered state;
+:validated authority context;
+:Foundgine;
+stop
+@enduml
 ```
 
 The exact control-plane topology is application/deployment specific.
@@ -92,14 +94,15 @@ Recovery proposers/witnesses and authority publication can have explicit lifecyc
 
 The package models concerns such as:
 
-```text
-issue
-  ↓
-active
-  ↓
-rotate
-  ↓
-revoke / retire
+```plantuml
+@startuml
+start
+:issue;
+:active;
+:rotate;
+:revoke / retire;
+stop
+@enduml
 ```
 
 Credential state is tied to recovery/control-plane evidence rather than being a semantic execution concern.
@@ -137,15 +140,28 @@ This package does not replace `ISemanticAuthorizationPolicy`.
 
 The separation is:
 
-```text
-Authority package
-  → establishes trusted authority/evidence
+```plantuml
+@startuml
+start
+:Authority package → establishes trusted authority/evidence;
+stop
+@enduml
+```
 
-Foundgine.Semantics
-  → evaluates semantic authorization policy
+```plantuml
+@startuml
+start
+:Foundgine.Semantics → evaluates semantic authorization policy;
+stop
+@enduml
+```
 
-Foundgine.Execution
-  → enforces execution security invariants
+```plantuml
+@startuml
+start
+:Foundgine.Execution → enforces execution security invariants;
+stop
+@enduml
 ```
 
 ## What does not belong here

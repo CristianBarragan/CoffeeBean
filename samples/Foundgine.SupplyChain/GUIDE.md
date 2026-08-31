@@ -8,12 +8,14 @@ This guide explains the sample as an application architecture, not as a benchmar
 
 The API does **not** contain SQL, business rules, semantic definitions or authorization policy.
 
-```text
-MCP request
-    ↓
-SupplyChainMcpTools
-    ↓
-SupplyChainApplication
+```plantuml
+@startuml
+start
+:MCP request;
+:SupplyChainMcpTools;
+:SupplyChainApplication;
+stop
+@enduml
 ```
 
 ## 2. Application layer — `Application`
@@ -24,14 +26,15 @@ The application layer defines the use-case boundary through `ISupplyChainQueries
 
 This gives us:
 
-```text
-protocol
-   ↓
-application capability
-   ↓
-use-case contract
-   ↓
-provider implementation
+```plantuml
+@startuml
+start
+:protocol;
+:application capability;
+:use-case contract;
+:provider implementation;
+stop
+@enduml
 ```
 
 Changing MCP to another transport does not require changing the use cases.
@@ -85,16 +88,16 @@ The generator emits `Foundgine.Generated.GeneratedMetadata`.
 
 The sample consumes the generated registry through `SupplyChainSemanticModel.Metadata`.
 
-```text
-AOT declarations
-      ↓
-Foundgine.Aot.Generator
-      ↓
-GeneratedMetadata
-      ↓
-IMetadataProvider
-      ↓
-Planner / SqlCompiler
+```plantuml
+@startuml
+start
+:AOT declarations;
+:Foundgine.Aot.Generator;
+:GeneratedMetadata;
+:IMetadataProvider;
+:Planner / SqlCompiler;
+stop
+@enduml
 ```
 
 The important architectural point is that runtime does not need to rediscover the storage metadata graph.
@@ -124,24 +127,20 @@ A query repository creates a semantic operation.
 
 Example flow:
 
-```text
-GetOrders(customerId)
-       ↓
-SemanticReadNode(SalesOrder)
-       ↓
-GeneratedSemanticModel.SalesOrder.CustomerId.Eq(customerId)
-       ↓
-Foundgine Planner
-       ↓
-Execution plan
-       ↓
-Foundgine.Sql.SqlCompiler
-       ↓
-SqlPlan
-       ↓
-SqlExecutionProvider
-       ↓
-PostgreSQL
+```plantuml
+@startuml
+start
+:GetOrders(customerId);
+:SemanticReadNode(SalesOrder);
+:GeneratedSemanticModel.SalesOrder.CustomerId.Eq(customerId);
+:Foundgine Planner;
+:Execution plan;
+:Foundgine.Sql.SqlCompiler;
+:SqlPlan;
+:SqlExecutionProvider;
+:PostgreSQL;
+stop
+@enduml
 ```
 
 There is no repository-level SQL string for the normal query path.
@@ -154,16 +153,16 @@ Simple mutations follow the same semantic path.
 
 For example `UpdateInventory` becomes:
 
-```text
-SemanticMutationBuilder.Update
-       ↓
-MutationPlanner
-       ↓
-SqlMutationCompiler
-       ↓
-SqlMutationExecutionProvider
-       ↓
-PostgreSQL
+```plantuml
+@startuml
+start
+:SemanticMutationBuilder.Update;
+:MutationPlanner;
+:SqlMutationCompiler;
+:SqlMutationExecutionProvider;
+:PostgreSQL;
+stop
+@enduml
 ```
 
 This is the preferred path for future mutations that can be represented by Foundgine's mutation IR.
@@ -213,26 +212,28 @@ The existing `benchmarks/AgentEndToEnd/SupplyChain` remains untouched and contin
 
 The key dependency rule is:
 
-```text
-API
- ↓
-Application
- ↓
-Semantic intent
- ↓
-Foundgine planning
- ↓
-Provider
+```plantuml
+@startuml
+start
+:API;
+:Application;
+:Semantic intent;
+:Foundgine planning;
+:Provider;
+stop
+@enduml
 ```
 
 Not:
 
-```text
-API
- ↓
-SQL repository
- ↓
-PostgreSQL
+```plantuml
+@startuml
+start
+:API;
+:SQL repository;
+:PostgreSQL;
+stop
+@enduml
 ```
 
 That means future changes such as:

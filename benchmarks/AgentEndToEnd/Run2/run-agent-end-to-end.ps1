@@ -72,12 +72,12 @@ $Concurrency = @($Concurrency) |
         }
     }
 
-$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..\..')
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '../../..')
 $ComposeFile = Join-Path $PSScriptRoot 'docker-compose.yml'
-$DatabaseProject = Join-Path $RepoRoot 'benchmarks\CoffeeBeanery.Performance\CoffeeBeanery.Database\CoffeeBeanery.Database.csproj'
-$BenchmarkProject = Join-Path $RepoRoot 'benchmarks\AgentEndToEnd\Run2\Foundgine.AgentEndToEnd.csproj'
-$MetricsScript = Join-Path $RepoRoot 'benchmarks\AgentEndToEnd\scripts\docker-metrics.ps1'
-$MetricsSummaryScript = Join-Path $RepoRoot 'benchmarks\AgentEndToEnd\scripts\summarize-docker-metrics.ps1'
+$DatabaseProject = Join-Path $RepoRoot 'benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/CoffeeBeanery.Database.csproj'
+$BenchmarkProject = Join-Path $RepoRoot 'benchmarks/AgentEndToEnd/Run2/Foundgine.AgentEndToEnd.csproj'
+$MetricsScript = Join-Path $RepoRoot 'benchmarks/AgentEndToEnd/scripts/docker-metrics.ps1'
+$MetricsSummaryScript = Join-Path $RepoRoot 'benchmarks/AgentEndToEnd/scripts/summarize-docker-metrics.ps1'
 $ComposeProjectName = 'foundgine-agent-e2e'
 
 function Restore-BenchmarkProjects {
@@ -265,7 +265,7 @@ function Run-AgentBenchmark {
     $metricsJson = Join-Path $tierDirectory 'docker-metrics-summary.json'
     $metricsStop = Join-Path $tierDirectory '.docker-metrics.stop'
     Remove-Item $metricsStop -Force -ErrorAction SilentlyContinue
-    $metricsProcess = Start-Process -FilePath $PowerShellHost -ArgumentList @('-NoProfile','-File',$MetricsScript,'-ComposeFile',$ComposeFile,'-ProjectName',$ComposeProjectName,'-Services','postgres','foundgine-warm','-OutputCsv',$metricsCsv,'-StopFile',$metricsStop,'-IntervalMs','1000') -PassThru -WindowStyle Hidden
+    $metricsProcess = Start-Process -FilePath $PowerShellHost -ArgumentList @('-NoProfile','-File',$MetricsScript,'-ComposeFile',$ComposeFile,'-ProjectName',$ComposeProjectName,'-Services','postgres,foundgine-warm','-OutputCsv',$metricsCsv,'-StopFile',$metricsStop,'-IntervalMs','1000') -PassThru
 
     Write-Host ''
     Write-Host '============================================'
@@ -282,13 +282,12 @@ function Run-AgentBenchmark {
     $env:FOUNDGINE_GRAPHQL_URL = $FoundgineUrl
     $env:BankingConnectionString = $script:ConnectionString
 
-    # Capture stdout/stderr through cmd.exe so PowerShell's $ErrorActionPreference
-    # cannot turn dotnet stderr into a NativeCommandError before we can inspect the
-    # actual benchmark exit code and console output.
+    # Capture stdout/stderr without cmd.exe so this runner works on both
+    # Windows and Linux-hosted GitHub runners. PowerShell's redirection keeps
+    # stderr in the same log while the native process exit code remains
+    # available through $LASTEXITCODE.
     $logPath = Join-Path $tierDirectory 'agent-benchmark-console.log'
-    $quotedProject = '"' + $BenchmarkProject.Replace('"', '\"') + '"'
-    $cmd = "dotnet run --project $quotedProject --configuration Release --no-restore > `"$logPath`" 2>&1"
-    cmd.exe /d /s /c $cmd | Out-Null
+    & dotnet run --project $BenchmarkProject --configuration Release --no-restore *> $logPath
     $exitCode = $LASTEXITCODE
 
     if (Test-Path $logPath) {

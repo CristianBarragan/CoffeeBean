@@ -10,18 +10,15 @@ It does not decide what a caller may do and it does not execute a request.
 
 Foundgine deliberately separates structural facts from application meaning:
 
-```text
-Metadata
-  = what exists
-        ↓
-Semantics
-  = what it means / what is exposed
-        ↓
-Authorization
-  = what this caller may exercise
-        ↓
-Planning
-  = how the authorized meaning can execute
+```plantuml
+@startuml
+start
+:Metadata = what exists;
+:Semantics = what it means / what is exposed;
+:Authorization = what this caller may exercise;
+:Planning = how the authorized meaning can execute;
+stop
+@enduml
 ```
 
 This prevents database schema details from becoming the semantic API by accident.
@@ -110,12 +107,14 @@ A semantic model may be derived from metadata, but the semantic layer should not
 
 The dependency is therefore:
 
-```text
-Foundgine.Metadata
-        │
-        └── creates/feeds
-                ↓
-        Foundgine.Semantics
+```plantuml
+@startmindmap
+* Foundgine.Metadata
+* │
+**** creates/feeds
+* ↓
+* Foundgine.Semantics
+@endmindmap
 ```
 
 The reverse dependency would make application meaning unnecessarily coupled to storage discovery.
@@ -142,8 +141,13 @@ This is physical/structural knowledge.
 
 A logical semantic traversal such as:
 
-```text
-Customer → transactions
+```plantuml
+@startuml
+start
+:Customer;
+:transactions;
+stop
+@enduml
 ```
 
 may be several direct relationships long. Configure that meaning in `Foundgine.Semantics`, not in the structural metadata catalog.
@@ -188,30 +192,30 @@ Poor candidates:
 
 That gives applications a choice:
 
-```text
-Runtime metadata registry
-        OR
-Generated metadata
-        ↓
-IMetadataProvider / IMetadataCatalog
+```plantuml
+@startuml
+start
+:Runtime metadata registry OR Generated metadata;
+:IMetadataProvider / IMetadataCatalog;
+stop
+@enduml
 ```
 
 The rest of Foundgine does not need a different semantic architecture for generated metadata.
 
 ## Typical flow
 
-```text
-Domain / storage declarations
-        ↓
-metadata producer
-        ↓
-IMetadataCatalog
-        ↓
-SemanticModel.Discover()
-        ↓
-semantic enrichment
-        ↓
-authorization + planning
+```plantuml
+@startuml
+start
+:Domain / storage declarations;
+:metadata producer;
+:IMetadataCatalog;
+:SemanticModel.Discover();
+:semantic enrichment;
+:authorization + planning;
+stop
+@enduml
 ```
 
 ## Related packages

@@ -32,17 +32,23 @@ Discovery does **not** grant authorization or invent business capabilities.
 
 A configured traversal such as:
 
-```text
-Customer → transactions
+```plantuml
+@startuml
+start
+:Customer;
+:transactions;
+stop
+@enduml
 ```
 
 can expand to:
 
-```text
-Customer
-  → CustomerRelationship
-  → Contract
-  → Transaction
+```plantuml
+@startuml
+start
+:Customer → CustomerRelationship → Contract → Transaction;
+stop
+@enduml
 ```
 
 The expanded relationship path remains part of the semantic graph. Authorization and planning therefore see the real dependencies rather than an opaque shortcut.

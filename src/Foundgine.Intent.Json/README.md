@@ -6,20 +6,18 @@ It converts a structured JSON request into the same provider-independent `ReadIn
 
 ## Boundary
 
-```text
-JSON
-  ↓
-JsonReadIntentAdapter
-  ↓
-ReadIntent
-  ↓
-Foundgine.Semantics
-  ↓
-Authorization
-  ↓
-Planning
-  ↓
-Execution
+```plantuml
+@startuml
+start
+:JSON;
+:JsonReadIntentAdapter;
+:ReadIntent;
+:Foundgine.Semantics;
+:Authorization;
+:Planning;
+:Execution;
+stop
+@enduml
 ```
 
 The adapter stops at semantic intent.

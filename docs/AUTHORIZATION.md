@@ -5,27 +5,30 @@ transport-specific check around execution.
 
 The model has four important boundaries:
 
-```text
-Entity access
-    ↓
-Field access
-    ↓
-Relationship access
-    ↓
-Conditional predicate
+```plantuml
+@startuml
+start
+:Entity access;
+:Field access;
+:Relationship access;
+:Conditional predicate;
+stop
+@enduml
 ```
 
 A policy can therefore describe a domain such as:
 
-```text
-Employee
- ├── readable
- ├── writable
- └── fields
-      ├── Name       read/write
-      ├── Email      read/write
-      ├── Salary     denied
-      └── TenantId   conditional
+```plantuml
+@startmindmap
+* Employee
+** readable
+** writable
+** fields
+*** Name       read/write
+*** Email      read/write
+*** Salary     denied
+*** TenantId   conditional
+@endmindmap
 ```
 
 
@@ -33,16 +36,16 @@ Employee
 
 Authorization is stage 7 of the canonical lifecycle: **Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence**. Retrieval can discover candidates, but authorization evaluates the resolved operation graph under the trusted semantic contract.
 
-```text
-Semantic Operation Graph
-        ↓
-     Resolution
-        ↓
-   Authorization
-        ↓
-   Plan Binding
-        ↓
-  Execution IR
+```plantuml
+@startuml
+start
+:Semantic Operation Graph;
+:Resolution;
+:Authorization;
+:Plan Binding;
+:Execution IR;
+stop
+@enduml
 ```
 
 A retrieval result, capability description, or caller-supplied claim never becomes authority merely because it helped construct intent.
@@ -51,26 +54,23 @@ A retrieval result, capability description, or caller-supplied claim never becom
 
 Authorization applies to the complete resolved semantic operation graph. The graph is validated before policy evaluation and the resulting decision is captured as immutable evidence.
 
-```text
-resolved operation graph
-        ↓
-contract validation + resource limits
-        ↓
-authorization
-   ┌────┴────┐
- deny       allow
-  ↓           ↓
-reject   evidence + authorized graph
-              ↓
-             plan
-              ↓
-     authorization binding
-              ↓
-        execution IR
-              ↓
-       provider artifact
-              ↓
-         final gate
+```plantuml
+@startuml
+start
+:resolved operation graph;
+:contract validation + resource limits;
+if (authorization) then (allow)
+  :evidence + authorized graph;
+  :plan;
+  :authorization binding;
+  :execution IR;
+  :provider artifact;
+  :final gate;
+else (deny)
+  :reject;
+  stop
+endif
+@enduml
 ```
 
 The plan binding contains two identities:
@@ -96,10 +96,12 @@ Expression<Func<UserContext, Employee, bool>> CanReadEmployee =>
 
 The generator/policy layer can represent the condition as:
 
-```text
-Equal
-├── MemberAccess(resource, TenantId)
-└── MemberAccess(context, TenantId)
+```plantuml
+@startmindmap
+* Equal
+** MemberAccess(resource, TenantId)
+** MemberAccess(context, TenantId)
+@endmindmap
 ```
 
 The expression tree is not retained and is never compiled or invoked by the
@@ -118,18 +120,17 @@ Foundgine also exposes a provider-independent capability description through
 This is intended for callers that need to understand what they can ask for,
 including AI agents:
 
-```text
-Claims / Roles / Application identity
-                ↓
-        Authorization policy
-                ↓
-        Semantic capabilities
-                ↓
-       Agent builds valid intent
-                ↓
-        Authorization again
-                ↓
-        Execution plan
+```plantuml
+@startuml
+start
+:Claims / Roles / Application identity;
+:Authorization policy;
+:Semantic capabilities;
+:Agent builds valid intent;
+:Authorization again;
+:Execution plan;
+stop
+@enduml
 ```
 
 Capability discovery is **descriptive, not authoritative**. An agent or API
@@ -170,14 +171,13 @@ into an authorization-free cached plan.
 
 The intended model is:
 
-```text
-cacheable plan shape
-        +
-retained authorization predicate
-        +
-current execution context
-        ↓
-safe provider execution
+```plantuml
+@startuml
+start
+:cacheable plan shape + retained authorization predicate + current execution context;
+:safe provider execution;
+stop
+@enduml
 ```
 
 Claims, roles, identity providers, and policy administration are deliberately

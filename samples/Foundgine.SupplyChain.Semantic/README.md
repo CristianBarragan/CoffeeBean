@@ -4,20 +4,18 @@ This sample is the architectural proving ground for Foundgine's **Metadata → S
 
 ## Architecture
 
-```text
-AOT structural metadata producer
-        ↓
-Foundgine.Generated.GeneratedMetadata
-        ↓
-SemanticModel.Discover()
-        ↓
-SupplyChain semantic enrichment
-        ↓
-SupplyChain authorization configuration
-        ↓
-Open intent
-        ↓
-Resolution / planning / execution
+```plantuml
+@startuml
+start
+:AOT structural metadata producer;
+:Foundgine.Generated.GeneratedMetadata;
+:SemanticModel.Discover();
+:SupplyChain semantic enrichment;
+:SupplyChain authorization configuration;
+:Open intent;
+:Resolution / planning / execution;
+stop
+@enduml
 ```
 
 The sample deliberately keeps structural truth out of `SupplyChainSemanticModel`.
@@ -72,20 +70,23 @@ and adds the one genuinely logical concept that cannot be inferred from storage:
 
 The caller therefore sees:
 
-```text
-Product → shipments
+```plantuml
+@startuml
+start
+:Product;
+:shipments;
+stop
+@enduml
 ```
 
 while resolution expands it into:
 
-```text
-Product
-  ↓ purchaseOrderLines
-PurchaseOrderLine
-  ↓ purchaseOrder
-PurchaseOrder
-  ↓ shipments
-Shipment
+```plantuml
+@startuml
+start
+:Product ↓ purchaseOrderLines PurchaseOrderLine ↓ purchaseOrder PurchaseOrder ↓ shipments Shipment;
+stop
+@enduml
 ```
 
 Every physical relationship remains visible to authorization and planning.

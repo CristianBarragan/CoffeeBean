@@ -31,20 +31,18 @@ That produces duplicated semantics and inconsistent security boundaries.
 
 Foundgine establishes one pipeline:
 
-```text
-Intent source
-    ↓
-Semantic Intent
-    ↓
-Resolution
-    ↓
-Authorization
-    ↓
-Execution Plan
-    ↓
-Provider
-    ↓
-Result + Evidence
+```plantuml
+@startuml
+start
+:Intent source;
+:Semantic Intent;
+:Resolution;
+:Authorization;
+:Execution Plan;
+:Provider;
+:Result + Evidence;
+stop
+@enduml
 ```
 
 The intent source describes **what is requested**.
@@ -61,12 +59,14 @@ The provider determines **how that operation is physically executed**.
 
 The case where duplicated semantics is most costly is a single caller with many capabilities — an AI agent with a set of tools is the clearest example. If each tool independently implements its own authorization, tenant filtering, and query construction:
 
-```text
-Agent
- ├── Tool A → its own auth / filtering / query logic
- ├── Tool B → its own auth / filtering / query logic
- ├── Tool C → its own auth / filtering / query logic
- └── Tool D → its own auth / filtering / query logic
+```plantuml
+@startmindmap
+* Agent
+** Tool A → its own auth / filtering / query logic
+** Tool B → its own auth / filtering / query logic
+** Tool C → its own auth / filtering / query logic
+** Tool D → its own auth / filtering / query logic
+@endmindmap
 ```
 
 then an agent with 50 tools has up to 50 independent execution and security surfaces, each only as correct as the person who wrote that one tool. Routing every capability through the same semantic and authorization boundary instead means there is one place where "is this request meaningful, and is this caller allowed to make it" gets answered, no matter which tool or transport the request came through.
@@ -79,11 +79,20 @@ None of those should become the authority for application semantics or execution
 
 For example:
 
-```text
-GraphQL ─┐
-JSON ────┤
-AI ──────┤ → Foundgine → provider
-Code ────┘
+```plantuml
+@startuml
+card GraphQL
+card JSON
+card AI
+card Code
+card Foundgine
+card provider
+GraphQL --> Foundgine
+JSON --> Foundgine
+AI --> Foundgine
+Code --> Foundgine
+Foundgine --> provider
+@enduml
 ```
 
 The same semantic and authorization pipeline can therefore be reused regardless of how intent entered the application.
@@ -100,16 +109,16 @@ Application objects ↔ database
 
 Foundgine maps structured intent to executable operations:
 
-```text
-Intent
-  ↓
-Semantic model
-  ↓
-Authorization
-  ↓
-Execution plan
-  ↓
-Provider
+```plantuml
+@startuml
+start
+:Intent;
+:Semantic model;
+:Authorization;
+:Execution plan;
+:Provider;
+stop
+@enduml
 ```
 
 Foundgine does not try to replace object persistence, change tracking, migrations, lazy loading, or identity maps.
@@ -122,17 +131,19 @@ AI can generate intent, but generated intent should not become generated authori
 
 The desired boundary is:
 
-```text
-AI
- │
- │ structured intent
- ▼
-Foundgine
- │
- ├── resolve against known semantics
- ├── authorize using runtime context
- ├── compile a deterministic plan
- └── execute through a controlled provider
+```plantuml
+@startmindmap
+* AI
+* │
+* │ structured intent
+* ▼
+* Foundgine
+* │
+** resolve against known semantics
+** authorize using runtime context
+** compile a deterministic plan
+** execute through a controlled provider
+@endmindmap
 ```
 
 The model can request an operation. Foundgine decides whether that operation is meaningful and authorized and controls how it reaches the provider.
