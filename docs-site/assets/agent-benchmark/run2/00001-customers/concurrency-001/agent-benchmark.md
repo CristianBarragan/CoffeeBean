@@ -11,8 +11,8 @@ Concurrency: `1`; runs: `1` measured / `1` warmups; fixture customer `1`
 - Agent/tool payload saving: **95.0%**
 - Tool-call saving: **88.9%**
 - Model-call saving: **0.0%**
-- Provider-reported input-token saving: **N/A — replay mode**
-- Provider-reported total-token saving: **N/A — replay mode**
+- Provider-reported input-token saving: **Not measured (replay mode)**
+- Provider-reported total-token saving: **Not measured (replay mode)**
 - Expected final state verified: **False**
 - Verification failures: **1**
 
