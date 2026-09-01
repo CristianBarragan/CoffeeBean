@@ -11,11 +11,12 @@
       "finding": "The semantic flow reduced tool calls from 7 to 4 and estimated context load from 932 to 534 tokens (42.7% lower), while reaching the same final state. The trade-off was higher wall-clock time: 12.69 ms conventional versus 24.25 ms Foundgine (+91.1%). The early result therefore supports an agent-work reduction, not a latency claim.",
       "meaning": "Foundgine was already changing the shape of the agent interaction before optimization: fewer application-level steps and less estimated context, but with execution overhead that later runs needed to investigate.",
       "metrics": {
-        "toolCalls": "7 → 4",
-        "context": "932 → 534 est. tokens",
-        "wall": "12.69 → 24.25 ms",
+        "toolCalls": "7 \u2192 4",
+        "context": "932 \u2192 534 est. tokens",
+        "wall": "12.69 \u2192 24.25 ms",
         "sameState": "True"
-      }
+      },
+      "aggregateFile": "run1-aggregate.json"
     },
     {
       "id": "2",
@@ -28,11 +29,12 @@
       "finding": "The conventional path used 9 tool calls versus 6 for Foundgine, a one-third reduction, and estimated context load was about 26.5% lower. The published cells reported 100% request success. Latency was mixed: for example, at 10,000 customers/C64 the conventional path averaged 98.3 ms versus 131.2 ms for Foundgine. The run therefore shows that agent-work compression persisted, while execution speed remained workload-dependent.",
       "meaning": "Run 2 established an important distinction: fewer agent interactions do not automatically mean lower end-to-end latency. The benchmark needs to measure both dimensions independently.",
       "metrics": {
-        "toolCalls": "9 → 6",
+        "toolCalls": "9 \u2192 6",
         "context": "~26.5% lower estimated context",
         "success": "100% published success",
-        "example": "10k/C64: 98.3 → 131.2 ms"
-      }
+        "example": "10k/C64: 98.3 \u2192 131.2 ms"
+      },
+      "aggregateFile": "run2-aggregate.json"
     },
     {
       "id": "3",
@@ -45,11 +47,30 @@
       "finding": "The conventional flow used 56 tool calls versus 32 for Foundgine (42.9% fewer), and estimated context load fell from 7,568 to 4,364 tokens (42.3% lower). Average wall-clock time was almost flat: 14.64 ms versus 15.16 ms (+3.6%). Both flows reached the same final state.",
       "meaning": "Run 3 is where the efficiency story becomes more compelling: the amount of agent-side work falls materially without the large latency penalty seen in Run 1.",
       "metrics": {
-        "toolCalls": "56 → 32",
-        "context": "7,568 → 4,364 est. tokens",
-        "wall": "14.64 → 15.16 ms",
+        "toolCalls": "56 \u2192 32",
+        "context": "7,568 \u2192 4,364 est. tokens",
+        "wall": "14.64 \u2192 15.16 ms",
         "sameState": "True"
-      }
+      },
+      "aggregateFile": "run3-aggregate.json"
+    },
+    {
+      "id": "4",
+      "title": "Measure graph execution at scale: can semantic traversal stay fast?",
+      "short": "Graph execution / scalability",
+      "date": "18 August 2026",
+      "status": "published",
+      "story": "Run 4 measures the agent-facing customer-exposure workflow across four customer tiers and four concurrency levels, comparing the conventional GraphQL + Hot Chocolate + EF Core path with MCP + Foundgine.",
+      "why": "Run 4 isolates graph execution performance after the earlier runs established the agent-work reduction. It asks whether semantic graph execution can scale while preserving the same customer-exposure result.",
+      "finding": "Across the published 4 \u00d7 4 workload/concurrency matrix, Foundgine sustained materially higher agent-flow throughput than the conventional GraphQL + Hot Chocolate + EF Core path. At 10 customers/C8, the published RPS was about 1,488 versus 302 (4.94\u00d7). The Run 4 aggregate contains 32 rows covering all 16 cells and both implementations, with the agent-only samples used for the comparison.",
+      "meaning": "Run 4 is the performance/scalability result for the semantic graph path. Unlike Runs 1\u20133, this experiment is a full workload/concurrency matrix and should be read independently from the later high-assurance mutation benchmarks.",
+      "metrics": {
+        "matrix": "4 \u00d7 4 workload/concurrency",
+        "example": "10/C8: ~302 \u2192 ~1,488 RPS",
+        "agentSamples": "Agent-only samples",
+        "implementations": "GraphQL + Hot Chocolate + EF vs MCP + Foundgine"
+      },
+      "aggregateFile": "run4-aggregate.json"
     },
     {
       "id": "5",
@@ -57,17 +78,18 @@
       "short": "High-Assurance Postgres / TransferFunds",
       "date": "18 August 2026",
       "status": "published",
-      "story": "Run 5 asks a different architectural question. The operation is a high-assurance TransferFunds capability with tenant isolation, ownership, authorization revalidation, frozen-account checks, available-funds and daily-limit checks, idempotency, audit evidence and an atomic transaction. Both paths expose the same capability through MCP. The conventional path uses a purpose-built MCP tool backed by EF Core; the Foundgine path uses MCP + Foundgine High-Assurance Postgres. MCP is the common agent-facing protocol — the experiment changes what happens behind MCP.",
+      "story": "Run 5 asks a different architectural question. The operation is a high-assurance TransferFunds capability with tenant isolation, ownership, authorization revalidation, frozen-account checks, available-funds and daily-limit checks, idempotency, audit evidence and an atomic transaction. Both paths expose the same capability through MCP. The conventional path uses a purpose-built MCP tool backed by EF Core; the Foundgine path uses MCP + Foundgine High-Assurance Postgres. MCP is the common agent-facing protocol \u2014 the experiment changes what happens behind MCP.",
       "why": "This is the test of whether semantic execution is useful beyond graph reads. The interesting comparison is not 'which endpoint is faster?' but whether an agent can consume a business capability without every capability becoming another handcrafted endpoint and orchestration contract.",
-      "finding": "Foundgine delivered higher logical-transfer throughput in every published Run 5 cell after applying the runner's native batch accounting. Across the 16 workload/concurrency cells it sustained about 2.02–3.87× the MCP + EF Core logical RPS (mean about 3.00×). At 10,000 customers/C64 it averaged about 3,633 logical transfers/s versus 1,638 for MCP + EF Core (2.22×). The Foundgine MCP request itself had higher wall time there (about 89.8 ms versus 33.3 ms) because one Foundgine request carries 8 logical transfers while the EF Core request carries one; raw request latency is therefore not an apples-to-apples per-transfer latency comparison. Zero failures were recorded in the published cells.",
+      "finding": "Foundgine delivered higher logical-transfer throughput in every published Run 5 cell after applying the runner's native batch accounting. Across the 16 workload/concurrency cells it sustained about 2.02\u20133.87\u00d7 the MCP + EF Core logical RPS (mean about 3.00\u00d7). At 10,000 customers/C64 it averaged about 3,633 logical transfers/s versus 1,638 for MCP + EF Core (2.22\u00d7). The Foundgine MCP request itself had higher wall time there (about 89.8 ms versus 33.3 ms) because one Foundgine request carries 8 logical transfers while the EF Core request carries one; raw request latency is therefore not an apples-to-apples per-transfer latency comparison. Zero failures were recorded in the published cells.",
       "meaning": "Run 5 shows the important distinction between request latency and business-operation throughput. The Foundgine path batches eight TransferFunds operations into one set-based request, so a batch request can take longer while still completing substantially more logical transfers per second. The website should compare logical RPS for throughput and label raw wall time as per MCP request, not as equivalent per-transfer latency.",
       "metrics": {
         "toolCalls": "EF Core: 1 call/transfer; Foundgine: 1 call/8-transfer batch",
-        "rps": "Foundgine ~2.02×–3.87× logical RPS (mean ~3.00×)",
+        "rps": "Foundgine ~2.02\u00d7\u20133.87\u00d7 logical RPS (mean ~3.00\u00d7)",
         "c64": "10k/C64: 1,638 vs 3,633 logical transfers/s",
         "wallC64": "per MCP request: 33.3 vs 89.8 ms (1 op vs 8-op batch)",
         "failures": "0 published"
-      }
+      },
+      "aggregateFile": "run5-aggregate.json"
     },
     {
       "id": "5b",
@@ -77,15 +99,16 @@
       "status": "published",
       "story": "Run 5b is a controlled follow-up to Run 5. It reuses the exact Run 5 HttpClient and manual JSON-RPC MCP transport, unchanged, against both endpoints, so the client itself cannot explain any difference. The only thing that changes is the shape of the request: the conventional path sends batchSize individual transfer_funds MCP calls, while Foundgine sends one transfer_funds_batch MCP call carrying the same batchSize logical transfers. The matrix repeats the same 4 workload tiers (10, 100, 1,000, 10,000 customers) and 4 concurrency levels (8, 16, 32, 64) as Run 5, with 5 warmups and 30 measured runs per cell.",
       "why": "Run 5 found that the Foundgine path hit a scalability cliff at concurrency 64. Before treating that as a property of the execution architecture, the benchmark needed to rule out a simpler explanation: an artifact of how many separate requests each path was making at the transport layer. Holding the client fixed and only changing individual-call versus batch-call shape isolates that variable directly.",
-      "finding": "Using the same client on both sides and reconstructing throughput with the runner's correct slowest-worker-per-iteration method, Foundgine's single semantic batch call outperformed the conventional path in every one of the 16 published cells. The corrected RPS advantage ranges from about 2.19× to 3.79× (mean 2.86×). At 10,000 customers/C64, Foundgine averaged about 3,570 logical transfers/s versus 1,582, with average task wall time 92 ms versus 308 ms. Tool calls remain 8 → 1 per task, and the published samples contain zero failures.",
+      "finding": "Using the same client on both sides and reconstructing throughput with the runner's correct slowest-worker-per-iteration method, Foundgine's single semantic batch call outperformed the conventional path in every one of the 16 published cells. The corrected RPS advantage ranges from about 2.19\u00d7 to 3.79\u00d7 (mean 2.86\u00d7). At 10,000 customers/C64, Foundgine averaged about 3,570 logical transfers/s versus 1,582, with average task wall time 92 ms versus 308 ms. Tool calls remain 8 \u2192 1 per task, and the published samples contain zero failures.",
       "meaning": "Run 5b confirms the batch-call advantage with the client held constant, but its published RPS must be computed at the concurrent-iteration boundary rather than by averaging per-task instantaneous rates. The aggregate and matrix builders now use that same methodology, preventing optimistic throughput inflation from stragglers.",
       "metrics": {
-        "toolCalls": "8 → 1 per task",
-        "rps": "~2.19×–3.79× higher (mean ~2.86×)",
+        "toolCalls": "8 \u2192 1 per task",
+        "rps": "~2.19\u00d7\u20133.79\u00d7 higher (mean ~2.86\u00d7)",
         "c64": "10k/C64: 1,582 vs 3,570 logical transfers/s",
         "wallC64": "308 vs 92 ms/task",
         "failures": "0 published"
-      }
+      },
+      "aggregateFile": "run5b-aggregate.json"
     }
   ]
 }
