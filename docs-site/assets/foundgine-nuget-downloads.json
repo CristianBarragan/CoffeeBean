@@ -1,40 +1,40 @@
 {
   "schemaVersion": 1,
   "label": "NuGet Downloads",
-  "message": "31,804",
+  "message": "34,741",
   "color": "blue",
-  "generatedAt": "2026-09-01T05:16:31.7727497Z",
-  "totalDownloads": 31804,
+  "generatedAt": "2026-09-01T11:44:15.9678829Z",
+  "totalDownloads": 34741,
   "packageCount": 29,
   "packages": [
     {
       "id": "Foundgine",
-      "downloads": 1735,
+      "downloads": 1838,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.Abstractions",
-      "downloads": 3675,
+      "downloads": 4046,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.Agent.OpenAI",
-      "downloads": 981,
+      "downloads": 989,
       "version": "1.1.5"
     },
     {
       "id": "Foundgine.AI",
-      "downloads": 1206,
+      "downloads": 1212,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.Aot",
-      "downloads": 1375,
+      "downloads": 1447,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.Authorization",
-      "downloads": 400,
+      "downloads": 526,
       "version": "1.1.1"
     },
     {
@@ -44,112 +44,112 @@
     },
     {
       "id": "Foundgine.CoffeeBeanery.ProductComposite",
-      "downloads": 813,
+      "downloads": 892,
       "version": "1.1.5"
     },
     {
       "id": "Foundgine.Elasticsearch",
-      "downloads": 66,
+      "downloads": 72,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.Execution",
-      "downloads": 2469,
+      "downloads": 2655,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.GraphQL.HotChocolate",
-      "downloads": 1393,
+      "downloads": 1498,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.GraphQL.HotChocolate.Execution",
-      "downloads": 409,
+      "downloads": 415,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.GraphQL.HotChocolate.MutationExecution",
-      "downloads": 300,
+      "downloads": 314,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.GraphQL.HotChocolate.Mutations",
-      "downloads": 1138,
+      "downloads": 1473,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.HighAssurance.Postgres",
-      "downloads": 583,
+      "downloads": 585,
       "version": "1.1.5"
     },
     {
       "id": "Foundgine.InMemory",
-      "downloads": 1421,
+      "downloads": 1437,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.Intent.Json",
-      "downloads": 1591,
+      "downloads": 1922,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.MCP",
-      "downloads": 1044,
+      "downloads": 1056,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.Metadata",
-      "downloads": 2164,
+      "downloads": 2357,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.Planning",
-      "downloads": 2577,
+      "downloads": 2772,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.Postgres.Vector",
-      "downloads": 67,
+      "downloads": 73,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.Security.Authority",
-      "downloads": 297,
+      "downloads": 306,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.Semantics",
-      "downloads": 3278,
+      "downloads": 3643,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.Sql",
-      "downloads": 1222,
+      "downloads": 1333,
       "version": "1.1.9"
     },
     {
       "id": "Foundgine.SupplyChain.Application",
-      "downloads": 313,
+      "downloads": 486,
       "version": "1.1.5"
     },
     {
       "id": "Foundgine.SupplyChain.Domain",
-      "downloads": 384,
+      "downloads": 439,
       "version": "1.1.5"
     },
     {
       "id": "Foundgine.SupplyChain.Infrastructure",
-      "downloads": 315,
+      "downloads": 321,
       "version": "1.1.5"
     },
     {
       "id": "Foundgine.SupplyChain.Semantic",
-      "downloads": 176,
+      "downloads": 180,
       "version": "1.1.5"
     },
     {
       "id": "Foundgine.SupplyChain.Semantics",
-      "downloads": 303,
+      "downloads": 345,
       "version": "1.1.4"
     }
   ]
