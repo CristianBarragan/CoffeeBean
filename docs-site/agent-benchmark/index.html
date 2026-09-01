@@ -3,24 +3,24 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Agent Benchmark — Five experiments, one execution boundary | Foundgine</title>
-<meta name="description" content="Six end-to-end agent benchmark runs: baseline, scalability, efficiency, graph execution performance, and high-assurance TransferFunds execution through MCP.">
+<meta name="description" content="Five end-to-end agent benchmark runs: baseline, scalability, efficiency, graph execution performance, and high-assurance TransferFunds execution through MCP.">
 <link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/agent-benchmark/">
 <meta property="og:type" content="article"><meta property="og:title" content="Foundgine Agent Benchmark — controlled experiments"><meta property="og:description" content="Controlled experiments examining agent work, scalability, efficiency and high-assurance business capabilities."><meta property="og:url" content="https://cristianbarragan.github.io/Foundgine/agent-benchmark/"><meta property="og:site_name" content="Foundgine">
 <meta property="og:image" content="https://cristianbarragan.github.io/Foundgine/Foundgine.webp"><meta property="og:image:width" content="1280"><meta property="og:image:height" content="320">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Foundgine Agent Benchmark"><meta name="twitter:description" content="Explore the six benchmark experiments and the evidence behind each result."><meta name="twitter:image" content="https://cristianbarragan.github.io/Foundgine/Foundgine.webp">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Foundgine Agent Benchmark"><meta name="twitter:description" content="Explore the five benchmark experiments and the evidence behind each result."><meta name="twitter:image" content="https://cristianbarragan.github.io/Foundgine/Foundgine.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/style.css?v=20260828-2">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Foundgine Agent Benchmark","description":"Five end-to-end benchmark experiments examining agent work, scalability, efficiency, graph execution and high-assurance business capability execution.","url":"https://cristianbarragan.github.io/Foundgine/agent-benchmark/","author":{"@type":"Organization","name":"Foundgine"}}</script>
 </head>
 <body>
-<header class="site-header"><div class="site-header-inner"><a class="brand" href="../index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a><button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation"><span></span><span></span><span></span></button><nav id="site-nav" class="site-nav"><a href="../what-is-foundgine.html">What is it</a><a href="../getting-started/index.html">Getting started</a><a href="../ai-agents/index.html">AI agents</a><a href="../architecture/index.html">Architecture</a><a href="../security/index.html">Security</a><a href="../packages/index.html">Packages</a><a href="../how-it-works/index.html">How it works</a><a href="../walkthrough/index.html">Walkthrough</a><div class="nav-item has-submenu"><span class="nav-item-row"><a href="../samples/index.html" class="nav-parent-link">Samples</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-samples" aria-label="Show Samples pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-samples"><a href="../samples/index.html">Overview</a><a href="../samples/semantic/index.html">Semantic Execution</a><a href="../samples/pentest/index.html">Security PenTest</a></div></div><div class="nav-item has-submenu"><span class="nav-item-row"><a href="../agent-benchmark/index.html" class="nav-parent-link nav-current" aria-current="page">Evidence</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-agent-benchmark" aria-label="Show Agent benchmark pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-agent-benchmark"><a href="../agent-benchmark/index.html" class="nav-current" aria-current="page">Overview</a><a href="../agent-benchmark/run-1/index.html">Run 1 · Baseline</a><a href="../agent-benchmark/run-2/index.html">Run 2 · Scalability</a><a href="../agent-benchmark/run-3/index.html">Run 3 · Efficiency</a><a href="../agent-benchmark/run-4/index.html">Run 4 · Protocol / agent</a><a href="../agent-benchmark/run-5/index.html">Run 5 · High-assurance TransferFunds</a><a href="../agent-benchmark/run-5b/index.html">Run 5b · Individual vs batch</a><a href="../agent-benchmark/supply-chain/index.html">Supply Chain E2E</a></div></div><a href="https://github.com/cristianbarragan/Foundgine" target="_blank" rel="noopener">GitHub</a></nav></div></header>
+<header class="site-header"><div class="site-header-inner"><a class="brand" href="../index.html"><svg class="brand-mark" width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><g stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"><line x1="6" y1="6" x2="6" y2="26"/><line x1="6" y1="6" x2="14" y2="6"/><line x1="6" y1="26" x2="14" y2="26"/></g><circle cx="24" cy="16" r="4.5" fill="currentColor"/></svg>Foundgine</a><button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation"><span></span><span></span><span></span></button><nav id="site-nav" class="site-nav"><a href="../what-is-foundgine.html">What is it</a><a href="../getting-started/index.html">Getting started</a><a href="../ai-agents/index.html">AI agents</a><a href="../architecture/index.html">Architecture</a><a href="../security/index.html">Security</a><a href="../packages/index.html">Packages</a><a href="../how-it-works/index.html">How it works</a><a href="../walkthrough/index.html">Walkthrough</a><div class="nav-item has-submenu"><span class="nav-item-row"><a href="../samples/index.html" class="nav-parent-link">Samples</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-samples" aria-label="Show Samples pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-samples"><a href="../samples/index.html">Overview</a><a href="../samples/semantic/index.html">Semantic Execution</a><a href="../samples/pentest/index.html">Security PenTest</a></div></div><div class="nav-item has-submenu"><span class="nav-item-row"><a href="../agent-benchmark/index.html" class="nav-parent-link nav-current" aria-current="page">Evidence</a><button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="submenu-agent-benchmark" aria-label="Show Agent benchmark pages"><svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><div class="submenu" id="submenu-agent-benchmark"><a href="../agent-benchmark/index.html" class="nav-current" aria-current="page">Overview</a><a href="../agent-benchmark/run-1/index.html">Run 1 · Baseline</a><a href="../agent-benchmark/run-2/index.html">Run 2 · Scalability</a><a href="../agent-benchmark/run-3/index.html">Run 3 · Efficiency</a><a href="../agent-benchmark/run-5/index.html">Run 5 · High-assurance TransferFunds</a><a href="../agent-benchmark/run-5b/index.html">Run 5b · Individual vs batch</a><a href="../agent-benchmark/supply-chain/index.html">Supply Chain E2E</a></div></div><a href="https://github.com/cristianbarragan/Foundgine" target="_blank" rel="noopener">GitHub</a></nav></div></header>
 
 <div class="run-menu-overlay" id="run-menu" aria-hidden="true"><aside class="run-menu" role="dialog" aria-modal="true" aria-labelledby="run-menu-title"><div class="run-menu-head"><div><div class="run-label">Benchmark explorer</div><div class="run-menu-title" id="run-menu-title">Choose the experiment</div></div><button class="run-menu-close" id="run-menu-close" type="button">Close ×</button></div><div class="run-menu-list" id="run-menu-list"></div></aside></div>
 
 <div class="page page-wide"><main class="article article-wide">
 <div class="run-hero">
-<span class="eyebrow">End-to-end evidence · Runs 1–5b · August–September 2026</span>
-<h1>Six experiments. One question: what should the agent execution boundary do?</h1>
+<span class="eyebrow">End-to-end evidence · Runs 1–5 · August 2026</span>
+<h1>Five experiments. One question: what should the agent execution boundary do?</h1>
 <section class="problem-hero benchmark-problem" aria-labelledby="benchmark-problem-title">
 <div class="run-label">Why these experiments exist</div>
 <h2 id="benchmark-problem-title">The problem is not giving an agent an API. It is giving the agent useful capabilities without making the API the execution model.</h2>
@@ -29,7 +29,7 @@
 <blockquote><strong>Read the runs as a progression:</strong> establish the baseline, scale it, measure efficiency, compare execution architectures, then test a high-assurance business capability.</blockquote>
 </section>
 <p class="subtitle">Foundgine is intended to let an agent express a capability while the application remains responsible for semantics, authorization and execution. These runs progressively test that idea — from a small customer workflow to a high-assurance financial mutation.</p>
-<div class="run-actions"><button class="button" id="open-run-menu" type="button">Explore the six runs →</button><a class="button secondary" href="#selected-run">Read the current finding ↓</a></div>
+<div class="run-actions"><button class="button" id="open-run-menu" type="button">Explore the five runs →</button><a class="button secondary" href="#selected-run">Read the current finding ↓</a></div>
 </div>
 
 <section class="benchmark-evidence-frame" id="verification-story" style="margin-top:2rem">
@@ -74,7 +74,7 @@
 <details class="matrix-help" id="matrix-help-wrap" open>
 <summary>What do these controls mean?</summary>
 <dl>
-<div><dt>Run</dt><dd>Which published run (1, 2, 3, 4, 5, 5b) you're looking at. Runs 2, 4, 5 and 5b have a full workload/concurrency grid; Runs 1 and 3 are focused single-scenario experiments, so they show as "no matrix for this run" here — see that run's page for its measured result.</dd></div>
+<div><dt>Run</dt><dd>Which of the five published runs (1, 2, 3, 5, 5b) you're looking at. Runs 2, 5 and 5b have a full workload/concurrency grid; Runs 1 and 3 are single-scenario experiments, so they show as "no matrix for this run" here — see that run's page for its measured result.</dd></div>
 <div><dt>Metric</dt><dd>What each cell shows: an <strong>RPS ratio</strong> (throughput), <strong>average wall time</strong>, <strong>estimated context tokens</strong>, or <strong>tool calls</strong> — always Foundgine compared against the conventional path.</dd></div>
 <div><dt>Customer workload / Concurrency</dt><dd>Filters the grid to one row or column. "All" keeps every published cell visible; the rest are dimmed rather than hidden.</dd></div>
 <div><dt>Reading a cell</dt><dd>A blue left edge means Foundgine wins on the selected metric; amber means the conventional path wins; a dashed grey edge means that metric wasn't recorded for this run. Click any solid cell for the full comparison.</dd></div>
@@ -87,7 +87,7 @@
 <div class="matrix-field" id="matrix-concurrency-field"><label for="matrix-concurrency">Concurrency<select id="matrix-concurrency"><option value="all">All concurrency</option></select></label></div>
 </div></div>
 <div id="matrix-legend-wrap" class="matrix-legend"><span id="legend-conventional"><span class="matrix-dot conventional"></span>Conventional</span><span id="legend-foundgine"><span class="matrix-dot foundgine"></span>Foundgine</span><span><span class="matrix-dot missing"></span>Not measured</span><span id="matrix-status"></span></div>
-<div id="heatmap-wrap" class="heatmap-wrap"><table class="heatmap"><thead><tr><th>Workload \ Concurrency</th><th>C8</th><th>C16</th><th>C32</th><th>C64</th></tr></thead><tbody id="heatmap-body"></tbody></table></div>
+<div id="heatmap-wrap" class="heatmap-wrap"><table class="heatmap"><thead id="heatmap-head"><tr><th>Workload \ Concurrency</th></tr></thead><tbody id="heatmap-body"></tbody></table></div>
 <div id="matrix-empty-state" class="matrix-empty-state" hidden><strong>No matrix for this run.</strong><span>This experiment is a focused agent workflow rather than a 4 × 4 workload/concurrency test.</span></div>
 
 
@@ -137,12 +137,12 @@ function metricPair(c,f,metric){
  const field=METRIC_FIELD[metric], cv=c[field], fv=f[field];
  if(cv==null||fv==null||!isFinite(cv)||!isFinite(fv)||cv===0)return {label:'—',detail:'Not measured in this run',good:false,missing:true};
  if(metric==='rps'){const ratio=fv/cv;return {label:ratio.toFixed(2)+'×',detail:ratio>=1?'Foundgine higher RPS':'Conventional higher RPS',good:ratio>=1};}
- if(metric==='wall'){const ratio=fv/cv;return {label:fmt(ratio,2)+'×',detail:ratio<=1?'Foundgine lower wall time':'Conventional lower wall time',good:ratio<=1};}
+ if(metric==='wall'){const ratio=fv/cv,cpo=opsPerCall(c),fpo=opsPerCall(f);if(cpo!==fpo)return {label:fmt(ratio,2)+'×',detail:`Request wall only · ${fmt(cpo,0)} vs ${fmt(fpo,0)} ops/call`,good:false};return {label:fmt(ratio,2)+'×',detail:ratio<=1?'Foundgine lower wall time':'Conventional lower wall time',good:ratio<=1};}
  if(metric==='tokens'){const cpo=opsPerCall(c),fpo=opsPerCall(f),ratio=(fv/fpo)/(cv/cpo);return {label:fmt(ratio*100,0)+'%',detail:ratio<=1?fmt((1-ratio)*100,1)+'% lower estimated context per operation':fmt((ratio-1)*100,1)+'% higher estimated context per operation',good:ratio<=1};}
  const ratio=fv/cv;return {label:fmt(ratio,2)+'×',detail:ratio<=1?'Fewer Foundgine tool calls':'More Foundgine tool calls',good:ratio<=1};
 }
 function normalizeRows(run){return (state.aggregates[run]||[]).map(x=>({...x,customers:+x.customers,concurrency:+x.concurrency}));}
-function pair(rows,b,c){return {c:rows.find(x=>x.customers===b&&x.concurrency===c&&/^(?:Conventional|MCP \+ EF Core|MCP \+ EF Core Postgres)$/.test(x.implementation)),f:rows.find(x=>x.customers===b&&x.concurrency===c&&/^(?:Foundgine|MCP \+ Foundgine|MCP \+ Foundgine Postgres|MCP \+ Foundgine HighAssurance Postgres.*)$/.test(x.implementation))};}
+function pair(rows,b,c){return {c:rows.find(x=>x.customers===b&&x.concurrency===c&&/^(?:Conventional|MCP \+ EF Core)$/.test(x.implementation)),f:rows.find(x=>x.customers===b&&x.concurrency===c&&/^MCP \+ Foundgine Postgres$|^Foundgine$|^MCP \+ Foundgine$/.test(x.implementation))};}
 function renderMatrix(){
  const run=$('matrix-run').value, rows=normalizeRows(run), metric=$('matrix-metric').value;
  const hasMatrix=rows.length>0;
@@ -161,12 +161,18 @@ function renderMatrix(){
   return;
  }
  const bs=[...new Set(rows.map(x=>x.customers))].sort((a,b)=>a-b), cs=[8,16,32,64].filter(c=>rows.some(x=>x.concurrency===c));
+ // The header row must be built from the same `cs` list the body uses below.
+ // A run whose data doesn't span all four concurrency tiers (e.g. Run 1/Run 3,
+ // which only ever measured C8 and C64) would otherwise render fewer <td>
+ // cells than a static 4-column <th> header expects, and the browser just
+ // slots the real data into the wrong-labelled column positionally.
+ document.getElementById('heatmap-head').innerHTML=`<tr><th>Workload \\ Concurrency</th>${cs.map(c=>`<th>C${c}</th>`).join('')}</tr>`;
  const sb=$('matrix-customers').value==='all'?null:+$('matrix-customers').value, sc=$('matrix-concurrency').value==='all'?null:+$('matrix-concurrency').value;
  $('matrix-customers').innerHTML='<option value="all">All workloads</option>'+bs.map(b=>`<option value="${b}" ${sb===b?'selected':''}>${b.toLocaleString()} customers</option>`).join('');
  $('matrix-concurrency').innerHTML='<option value="all">All concurrency</option>'+cs.map(c=>`<option value="${c}" ${sc===c?'selected':''}>C${c}</option>`).join('');
  const visible=bs.filter(b=>sb===null||b===sb), vcount=visible.reduce((n,b)=>n+cs.filter(c=>sc===null||c===sc).length,0);
  $('legend-conventional').lastChild.textContent=(run==='5'||run==='5b')?'MCP + EF Core':'Conventional'; $('legend-foundgine').lastChild.textContent=(run==='5'||run==='5b')?'MCP + Foundgine':'Foundgine'; $('matrix-status').textContent=`${vcount} visible cells · Run ${run}`;
- $('matrix-heading').textContent=`Run ${run} · ${run==='4'?'4 × 4 protocol/agent execution matrix':run==='5'?'4 × 4 high-assurance mutation matrix':run==='5b'?'4 × 4 same-client individual-vs-batch matrix':'published workload matrix'}`; if(run==='4'){ $('matrix-description').textContent='Run 4 agent mode: GraphQL + Hot Chocolate + EF Core agent flow versus MCP + Foundgine agent flow. Protocol-only measurements are available on the Run 4 page.'; } else if(run==='5'){ $('matrix-description').textContent='Both paths use MCP. Select a workload/concurrency cell to compare the purpose-built MCP + EF Core implementation with MCP + Foundgine High-Assurance Postgres.'; } else if(run==='5b'){ $('matrix-description').textContent='Same client, same logical task on both sides. Select a workload/concurrency cell to compare batchSize individual transfer_funds calls with one transfer_funds_batch call.'; } else { $('matrix-description').textContent='Select one workload/concurrency cell to inspect the conventional and Foundgine measurements for that exact experiment.'; }
+ $('matrix-heading').textContent=`Run ${run} · ${run==='5'?'4 × 4 high-assurance mutation matrix':run==='5b'?'4 × 4 same-client individual-vs-batch matrix':'published scalability matrix'}`; if(run==='5'){ $('matrix-description').textContent='Both paths use MCP. Select a workload/concurrency cell to compare the purpose-built MCP + EF Core implementation with MCP + Foundgine High-Assurance Postgres.'; } else if(run==='5b'){ $('matrix-description').textContent='Same client, same logical task on both sides. Select a workload/concurrency cell to compare batchSize individual transfer_funds calls with one transfer_funds_batch call.'; } else { $('matrix-description').textContent='Select one workload/concurrency cell to inspect the conventional and Foundgine measurements for that exact experiment.'; }
  $('heatmap-body').innerHTML=visible.map(b=>`<tr><th>${b.toLocaleString()} customers</th>${cs.map(c=>{const p=pair(rows,b,c),m=metricPair(p.c,p.f,metric),hidden=(sc!==null&&c!==sc);const cellClass=m.missing?'missing':(m.good?'good':'neutral');return `<td style="opacity:${hidden?.3:1}"><button class="heat-cell ${cellClass}" data-b="${b}" data-c="${c}" type="button" title="${b.toLocaleString()} customers · C${c} · ${m.detail}"><span class="cell-label">C${c}</span><strong>${m.label}</strong><small>${m.detail}</small></button></td>`}).join('')}</tr>`).join('');
  document.querySelectorAll('.heat-cell').forEach(x=>x.onclick=()=>showCell(run,+x.dataset.b,+x.dataset.c));
  if(!window.__benchmarkCellSelected){
@@ -174,7 +180,7 @@ function renderMatrix(){
    $('selected-chart').innerHTML='';
    $('selected-impact').innerHTML='<p>Click a matrix cell above to inspect the benchmark result for one exact workload/concurrency combination.</p>';
  }
- $('matrix-detail').innerHTML=`<table class="impact-table"><thead><tr><th>Workload</th><th>Concurrency</th><th>Implementation</th><th>RPS</th><th>Avg wall</th><th>Estimated context tokens</th><th>Tool calls</th></tr></thead><tbody>${rows.filter(x=>(sb===null||x.customers===sb)&&(sc===null||x.concurrency===sc)).map(r=>`<tr><td>${r.customers.toLocaleString()}</td><td>C${r.concurrency}</td><td><span class="matrix-badge ${/Foundgine/.test(r.implementation)?'foundgine':'conventional'}">${r.implementation}</span></td><td>${r.rps==null?'—':fmt(r.rps,1)}</td><td>${fmt(r.avgWallMs,1)} ms</td><td>${fmt(r.estimatedContextTokens,0)}</td><td>${fmt(r.toolCalls,1)}</td></tr>`).join('')}</tbody></table>`;
+ $('matrix-detail').innerHTML=`<table class="impact-table"><thead><tr><th>Workload</th><th>Concurrency</th><th>Implementation</th><th>RPS</th><th>Avg request/task wall</th><th>Estimated context tokens</th><th>Tool calls</th></tr></thead><tbody>${rows.filter(x=>(sb===null||x.customers===sb)&&(sc===null||x.concurrency===sc)).map(r=>`<tr><td>${r.customers.toLocaleString()}</td><td>C${r.concurrency}</td><td><span class="matrix-badge ${/Foundgine/.test(r.implementation)?'foundgine':'conventional'}">${r.implementation}</span></td><td>${r.rps==null?'—':fmt(r.rps,1)}</td><td>${fmt(r.avgWallMs,1)} ms</td><td>${fmt(r.estimatedContextTokens,0)}</td><td>${fmt(r.toolCalls,1)}</td></tr>`).join('')}</tbody></table>`;
 }
 function showCell(run,b,c){const p=pair(normalizeRows(run),b,c);if(!p.c||!p.f)return; window.__benchmarkCellSelected=true; $('selected-cell-title').textContent=`Run ${run} · ${b.toLocaleString()} customers · C${c}`; const rps=p.c.rps&&p.f.rps;
  const cpo=opsPerCall(p.c),fpo=opsPerCall(p.f),cToken=p.c.estimatedContextTokens/cpo,fToken=p.f.estimatedContextTokens/fpo,batched=(cpo!==1||fpo!==1);
@@ -229,10 +235,20 @@ function closeMenu(){ $('run-menu').classList.remove('is-open');$('run-menu').se
 (async function(){
  loadReductionSummary();
  state.runs=(await fetch('../assets/agent-benchmark/runs.json',{cache:'no-store'}).then(r=>r.json())).runs;
- for(const run of ['1','2','3','4','5','5b']) {
-   const d=await fetch(`../assets/agent-benchmark/run${run}-aggregate.json`,{cache:'no-store'}).then(r=>r.json());
-   state.aggregates[run]=(run==='4'?(d.aggregate||[]).filter(x=>(x.option||'')==='agent'):(d.aggregate||[]));
- }
+ // Fetch every run's aggregate, not a hardcoded subset - Run 1/3/4 were
+ // being silently skipped here even though their aggregate files exist,
+ // which meant their matrix always rendered as "single-scenario" data.
+ // Each run is fetched independently so one missing/unpublished aggregate
+ // file can't take down the rest of the page.
+ await Promise.all(state.runs.map(async r=>{
+  try{
+   const res=await fetch(`../assets/agent-benchmark/run${r.id}-aggregate.json`,{cache:'no-store'});
+   if(!res.ok) throw new Error('HTTP '+res.status);
+   state.aggregates[r.id]=(await res.json()).aggregate;
+  }catch(e){
+   state.aggregates[r.id]=[]; // no published matrix for this run - falls back to the single-scenario view
+  }
+ }));
  const menu=$('run-menu-list'); menu.innerHTML=state.runs.map(r=>`<a class="run-menu-item" href="run-${r.id}/index.html"><span class="run-menu-number">RUN ${r.id}</span><span><strong>${r.title}</strong><span>${r.story}</span></span><span class="run-menu-arrow">→</span></a>`).join('');
  $('open-run-menu').onclick=openMenu;$('run-menu-close').onclick=closeMenu;$('run-menu').onclick=e=>{if(e.target===$('run-menu'))closeMenu();};document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
  const resetMatrixSelection=()=>{window.__benchmarkCellSelected=false;}; $('matrix-run').onchange=()=>{resetMatrixSelection();renderMatrix();};$('matrix-metric').onchange=()=>{resetMatrixSelection();renderMatrix();};$('matrix-customers').onchange=()=>{resetMatrixSelection();renderMatrix();};$('matrix-concurrency').onchange=()=>{resetMatrixSelection();renderMatrix();};

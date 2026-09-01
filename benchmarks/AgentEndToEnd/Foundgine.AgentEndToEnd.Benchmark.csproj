@@ -12,8 +12,8 @@
 
   <ItemGroup>
     <Compile Include="Program.cs" />
-    <PackageReference Include="Npgsql"  />
-    <PackageReference Include="Microsoft.EntityFrameworkCore"  />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.19" />
   </ItemGroup>
 
 </Project>

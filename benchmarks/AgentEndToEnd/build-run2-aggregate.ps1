@@ -39,21 +39,30 @@ foreach ($file in $reportFiles) {
     $customers = Get-CustomerCountFromPath $file.FullName
     $concurrency = [int]$doc.Concurrency
 
+    # Run2's Comparison.WallClockMs is a flat average of individual worker
+    # latency. Throughput must instead use the batch completion time for each
+    # measured iteration: the MAX WallClockMs across its concurrent workers.
+    $maxByFlow = @{ 'Conventional' = @(); 'Foundgine' = @() }
+    foreach ($group in ($doc.Results | Group-Object Run, Flow)) {
+        $items = @($group.Group)
+        $flow = [string]$items[0].Flow
+        $maxByFlow[$flow] += ($items | Measure-Object -Property WallClockMs -Maximum).Maximum
+    }
+
     foreach ($implKey in @('Conventional', 'Foundgine')) {
         $c = $doc.Comparison.$implKey
         if ($null -eq $c) { continue }
 
-        $wall = [double]$c.WallClockMs
-        # Throughput at this concurrency tier: `concurrency` workers each
-        # completing one flow every `wall` ms, running continuously.
-        $rps = if ($wall -gt 0) { $concurrency * 1000.0 / $wall } else { 0 }
+        $maxes = $maxByFlow[$implKey]
+        $avgMaxWall = if ($maxes.Count -gt 0) { ($maxes | Measure-Object -Average).Average } else { 0 }
+        $rps = if ($avgMaxWall -gt 0) { $concurrency * 1000.0 / $avgMaxWall } else { 0 }
 
         $rows += [pscustomobject]@{
             customers              = $customers
             concurrency            = $concurrency
             implementation         = $implKey
             rps                    = $rps
-            avgWallMs              = $wall
+            avgWallMs              = [double]$c.WallClockMs
             p50Ms                  = [double]$c.P50WallClockMs
             p95Ms                  = [double]$c.P95WallClockMs
             p99Ms                  = [double]$c.P99WallClockMs

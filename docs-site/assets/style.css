@@ -927,6 +927,40 @@ footer.site-footer {
 }
 
 
+/* Benchmark matrix controls — Run / Metric / Customer workload / Concurrency.
+   These previously had no styling at all, so they fell back to raw browser
+   defaults: the page's serif body font on the labels, and unstyled native
+   <select> boxes crammed directly against the label text. */
+.matrix-controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:1.1rem 1.4rem}
+.matrix-field{display:flex;flex-direction:column;gap:.4rem;min-width:0}
+.matrix-field label{
+  display:flex;flex-direction:column;gap:.4rem;
+  font-family:var(--font-mono);font-size:.72rem;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+}
+.matrix-field select{
+  appearance:none;-webkit-appearance:none;
+  font-family:var(--font-display);font-size:.92rem;font-weight:500;
+  color:var(--ink);background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:.55rem 2.1rem .55rem .8rem;min-width:11rem;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%235B6577' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 7.5 10 12.5 15 7.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right .65rem center;background-size:1rem;
+  cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease;
+}
+.matrix-field select:hover{border-color:var(--signal)}
+.matrix-field select:focus-visible{outline:none;border-color:var(--signal);box-shadow:0 0 0 3px var(--signal-soft)}
+@media(max-width:620px){
+  .matrix-controls{gap:.9rem}
+  .matrix-field{flex:1 1 100%}
+  .matrix-field select{width:100%}
+}
+@media (prefers-color-scheme: dark){
+  .matrix-field select{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2393A0B4' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 7.5 10 12.5 15 7.5'/%3E%3C/svg%3E");
+  }
+}
+
 /* Benchmark matrix — the matrix is the primary interactive control. */
 .heatmap-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
 .heatmap{width:100%;min-width:720px;border-collapse:separate;border-spacing:0;font-size:.9rem}

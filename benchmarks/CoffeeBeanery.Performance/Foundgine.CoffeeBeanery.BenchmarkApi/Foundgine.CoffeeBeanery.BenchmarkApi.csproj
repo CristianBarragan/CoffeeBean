@@ -6,7 +6,7 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Npgsql"  />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
     <ProjectReference Include="../../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
     <ProjectReference Include="../../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
     <ProjectReference Include="../../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />

@@ -52,23 +52,6 @@
       }
     },
     {
-      "id": "4",
-      "title": "Compare the execution boundary: agent protocol versus protocol-only overhead",
-      "short": "Protocol / agent execution",
-      "date": "18 August 2026",
-      "status": "published",
-      "story": "Run 4 uses the same 4 × 4 workload/concurrency matrix as Run 2, but separates two questions: the full agent flow and the underlying one-request protocol path. Conventional execution is GraphQL + Hot Chocolate + EF Core; Foundgine execution is MCP + Foundgine against the same PostgreSQL fixture.",
-      "why": "Run 4 isolates the protocol and agent orchestration boundary. It measures whether the observed differences come from the number and shape of agent-facing interactions, or simply from GraphQL versus MCP transport/runtime overhead.",
-      "finding": "The published matrix contains both agent-mode and single-request protocol measurements for every workload/concurrency cell. The unified report exposes both variants with RPS, latency percentiles, success/failure, tool calls, estimated context and derived efficiency/cost/energy estimates.",
-      "meaning": "Run 4 is the control needed before interpreting later capability results: it keeps the backend fixture comparable while separating agent choreography from protocol-only execution.",
-      "metrics": {
-        "matrix": "4 workloads × 4 concurrency levels",
-        "agentFlow": "6 GraphQL tool calls → 1 MCP tool call",
-        "protocol": "1 GraphQL request ↔ 1 MCP request",
-        "measurements": "RPS · P50/P95/P99 · success · tokens · estimates"
-      }
-    },
-    {
       "id": "5",
       "title": "Test the capability boundary: high-assurance TransferFunds through the same MCP protocol",
       "short": "High-Assurance Postgres / TransferFunds",
@@ -76,13 +59,13 @@
       "status": "published",
       "story": "Run 5 asks a different architectural question. The operation is a high-assurance TransferFunds capability with tenant isolation, ownership, authorization revalidation, frozen-account checks, available-funds and daily-limit checks, idempotency, audit evidence and an atomic transaction. Both paths expose the same capability through MCP. The conventional path uses a purpose-built MCP tool backed by EF Core; the Foundgine path uses MCP + Foundgine High-Assurance Postgres. MCP is the common agent-facing protocol — the experiment changes what happens behind MCP.",
       "why": "This is the test of whether semantic execution is useful beyond graph reads. The interesting comparison is not 'which endpoint is faster?' but whether an agent can consume a business capability without every capability becoming another handcrafted endpoint and orchestration contract.",
-      "finding": "The result is deliberately mixed. At concurrency 8–32, Foundgine was generally faster in the published samples, reaching about 1.10–1.22× the conventional RPS and lower average wall time. At concurrency 64, the Foundgine path hit a clear scalability cliff: at 10,000 customers/C64 it averaged about 659 RPS versus 1,855 RPS for the conventional MCP + EF Core path, with 68.3 ms versus 29.6 ms average wall time. Both paths used one tool call per flow and recorded zero failures in the published cells.",
-      "meaning": "Run 5 is not a victory lap. It is useful because it exposes the boundary: semantic execution can carry a richer high-assurance capability without increasing the agent tool-call count, but the current Foundgine/Postgres mutation path still has a concurrency problem at C64 that needs engineering work.",
+      "finding": "Foundgine delivered higher logical-transfer throughput in every published Run 5 cell after applying the runner's native batch accounting. Across the 16 workload/concurrency cells it sustained about 2.02–3.87× the MCP + EF Core logical RPS (mean about 3.00×). At 10,000 customers/C64 it averaged about 3,633 logical transfers/s versus 1,638 for MCP + EF Core (2.22×). The Foundgine MCP request itself had higher wall time there (about 89.8 ms versus 33.3 ms) because one Foundgine request carries 8 logical transfers while the EF Core request carries one; raw request latency is therefore not an apples-to-apples per-transfer latency comparison. Zero failures were recorded in the published cells.",
+      "meaning": "Run 5 shows the important distinction between request latency and business-operation throughput. The Foundgine path batches eight TransferFunds operations into one set-based request, so a batch request can take longer while still completing substantially more logical transfers per second. The website should compare logical RPS for throughput and label raw wall time as per MCP request, not as equivalent per-transfer latency.",
       "metrics": {
-        "toolCalls": "1 → 1",
-        "c8to32": "Foundgine ~1.01–1.22× RPS",
-        "c64": "10k/C64: 659 vs 1,855 RPS",
-        "wallC64": "68.3 vs 29.6 ms",
+        "toolCalls": "EF Core: 1 call/transfer; Foundgine: 1 call/8-transfer batch",
+        "rps": "Foundgine ~2.02×–3.87× logical RPS (mean ~3.00×)",
+        "c64": "10k/C64: 1,638 vs 3,633 logical transfers/s",
+        "wallC64": "per MCP request: 33.3 vs 89.8 ms (1 op vs 8-op batch)",
         "failures": "0 published"
       }
     },
@@ -94,14 +77,13 @@
       "status": "published",
       "story": "Run 5b is a controlled follow-up to Run 5. It reuses the exact Run 5 HttpClient and manual JSON-RPC MCP transport, unchanged, against both endpoints, so the client itself cannot explain any difference. The only thing that changes is the shape of the request: the conventional path sends batchSize individual transfer_funds MCP calls, while Foundgine sends one transfer_funds_batch MCP call carrying the same batchSize logical transfers. The matrix repeats the same 4 workload tiers (10, 100, 1,000, 10,000 customers) and 4 concurrency levels (8, 16, 32, 64) as Run 5, with 5 warmups and 30 measured runs per cell.",
       "why": "Run 5 found that the Foundgine path hit a scalability cliff at concurrency 64. Before treating that as a property of the execution architecture, the benchmark needed to rule out a simpler explanation: an artifact of how many separate requests each path was making at the transport layer. Holding the client fixed and only changing individual-call versus batch-call shape isolates that variable directly.",
-      "finding": "With the same client on both sides, Foundgine's single batch call outperformed the conventional path's individual calls at every workload and every concurrency level tested, including C64 — no cliff appeared. Averaged across all 16 workload/concurrency cells, Foundgine sustained about 2.86× the conventional path's RPS (range 2.19×–3.79×). Across the 16 cells, the conventional/Foundgine average-wall-time ratio ranged from 3.4× to 52.0×, with a median of about 4.7×. At 10,000 customers/C64 specifically, Foundgine averaged about 3,570 RPS versus 1,582 RPS for the conventional path, with 91.6 ms versus 308.4 ms average wall time. Tool calls were 8 → 1 per task in every cell (batch size is fixed at 8 regardless of concurrency). Foundgine's total task payload was 1.63×–2.35× larger than the conventional path's despite the 8× fewer calls — the win comes from eliminating round-trips, not from sending fewer bytes. Zero failures across all 960 published samples.",
-      "meaning": "This closes the loop on Run 5's open question: the C64 regression was tied to the specific endpoint under test in Run 5, not to batching or semantic execution generally. When the same client sends one semantic batch call instead of many individual calls, throughput and latency both improve consistently across the full matrix, with no sign of a concurrency cliff. The payload trade-off — more total bytes for fewer round-trips — is the honest cost of this approach and should be weighed against round-trip elimination for a given network.",
+      "finding": "Using the same client on both sides and reconstructing throughput with the runner's correct slowest-worker-per-iteration method, Foundgine's single semantic batch call outperformed the conventional path in every one of the 16 published cells. The corrected RPS advantage ranges from about 2.19× to 3.79× (mean 2.86×). At 10,000 customers/C64, Foundgine averaged about 3,570 logical transfers/s versus 1,582, with average task wall time 92 ms versus 308 ms. Tool calls remain 8 → 1 per task, and the published samples contain zero failures.",
+      "meaning": "Run 5b confirms the batch-call advantage with the client held constant, but its published RPS must be computed at the concurrent-iteration boundary rather than by averaging per-task instantaneous rates. The aggregate and matrix builders now use that same methodology, preventing optimistic throughput inflation from stragglers.",
       "metrics": {
         "toolCalls": "8 → 1 per task",
         "rps": "~2.19×–3.79× higher (mean ~2.86×)",
-        "c64": "10k/C64: 1,582 vs 3,570 RPS",
-        "wallC64": "308.4 vs 91.6 ms",
-        "payload": "1.63×–2.35× more bytes",
+        "c64": "10k/C64: 1,582 vs 3,570 logical transfers/s",
+        "wallC64": "308 vs 92 ms/task",
         "failures": "0 published"
       }
     }
