@@ -1,4 +1,3 @@
-using Foundgine.Testing;
 using Foundgine.MCP;
 using Foundgine.Semantics.Mutation;
 using Foundgine.Semantics.Security.Execution;
@@ -25,13 +24,25 @@ public sealed class McpSecurityExecutionContextProviderTests
         public SecurityExecutionContext? GetSecurityExecutionContext() => context;
     }
 
-
+    private sealed class StubFoundgine : Foundgine.IFoundgine
+    {
+        public Foundgine.Semantics.Authorization.SemanticAuthorizationCapabilities DescribeCapabilities() => throw new NotImplementedException();
+        public Foundgine.Semantics.Capabilities.SemanticCapabilityContract DescribeCapabilityContract() => throw new NotImplementedException();
+        public Foundgine.Semantics.Capabilities.SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security) =>
+            new(1, []);
+        public Foundgine.Semantics.SemanticVersionSet DescribeVersionSet() => throw new NotImplementedException();
+        public Foundgine.DryRunResult DryRun(Foundgine.Semantics.SemanticRequest request) => throw new NotImplementedException();
+        public Foundgine.PlanApproval ApprovePlan(Foundgine.Semantics.SemanticRequest request, string approvedBy) => throw new NotImplementedException();
+        public Task<Foundgine.Execution.ExecutionResult> ExecuteApprovedAsync(Foundgine.PlanApproval approval, Foundgine.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<Foundgine.Execution.ExecutionResult> ExecuteAsync(Foundgine.Semantics.SemanticRequest request, Foundgine.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<Foundgine.Execution.ExecutionResult> ExecuteAsync(Foundgine.Semantics.Intent.ReadIntent intent, Foundgine.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+    }
 
     [Fact]
     public void FoundgineMcpTools_accepts_a_securityContextProvider_directly()
     {
         var context = CreateContext("host-subject", "tenant-1");
-        var tools = new FoundgineMcpTools(new CapabilityOnlyFoundgine(), securityContextProvider: new FixedProvider(context));
+        var tools = new FoundgineMcpTools(new StubFoundgine(), securityContextProvider: new FixedProvider(context));
 
         var json = tools.DescribeCapabilities();
 
@@ -41,7 +52,7 @@ public sealed class McpSecurityExecutionContextProviderTests
     [Fact]
     public void FoundgineMcpTools_throws_when_provider_supplies_no_context()
     {
-        var tools = new FoundgineMcpTools(new CapabilityOnlyFoundgine(), securityContextProvider: new FixedProvider(null));
+        var tools = new FoundgineMcpTools(new StubFoundgine(), securityContextProvider: new FixedProvider(null));
 
         Assert.Throws<UnauthorizedAccessException>(() => tools.DescribeCapabilities());
     }
@@ -52,7 +63,7 @@ public sealed class McpSecurityExecutionContextProviderTests
         var context = CreateContext("host-subject", "tenant-1");
 
         Assert.Throws<ArgumentException>(() => new FoundgineMcpTools(
-            new CapabilityOnlyFoundgine(),
+            new StubFoundgine(),
             securityContextProvider: new FixedProvider(context),
             securityContextFactory: () => context));
     }
@@ -60,7 +71,7 @@ public sealed class McpSecurityExecutionContextProviderTests
     [Fact]
     public void FoundgineMcpTools_defaults_to_no_security_context_when_neither_supplied()
     {
-        var tools = new FoundgineMcpTools(new CapabilityOnlyFoundgine());
+        var tools = new FoundgineMcpTools(new StubFoundgine());
 
         Assert.Throws<UnauthorizedAccessException>(() => tools.DescribeCapabilities());
     }

@@ -7,7 +7,7 @@
     <ProjectReference Include="../../src/Foundgine.Sql/Foundgine.Sql.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="xunit.assert"  />
-    <PackageReference Include="xunit.extensibility.core"  />
+    <PackageReference Include="xunit.assert" Version="2.9.3" />
+    <PackageReference Include="xunit.extensibility.core" Version="2.9.3" />
   </ItemGroup>
 </Project>

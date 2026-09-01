@@ -6,7 +6,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $BenchmarkRoot = $PSScriptRoot
-$RepoRoot = (Resolve-Path (Join-Path $BenchmarkRoot '..\..\..')).Path
+$RepoRoot = (Resolve-Path (Join-Path $BenchmarkRoot '..\..')).Path
 if ([string]::IsNullOrWhiteSpace($DestinationRoot)) {
     $DestinationRoot = Join-Path $RepoRoot 'docs-site\assets\agent-benchmark'
 }
@@ -65,3 +65,15 @@ $manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $manifestPath -En
 Write-Host "Published $Run benchmark artifacts to:" -ForegroundColor Green
 Write-Host "  $destination"
 Write-Host "  Files: $($files.Count)"
+
+# Regenerate the run-level aggregate from the exact raw source that was just
+# published. This prevents the website matrix from drifting away from its raw
+# benchmark evidence.
+$aggregateScriptName = if ($Run -eq 'Run5SameClient') { 'build-run5b-aggregate.ps1' } else { "build-$($Run.ToLowerInvariant())-aggregate.ps1" }
+$aggregateScript = Join-Path $BenchmarkRoot $aggregateScriptName
+if (Test-Path -LiteralPath $aggregateScript -PathType Leaf) {
+    $aggregateName = if ($Run -eq 'Run5SameClient') { 'run5b-aggregate.json' } else { "$($Run.ToLowerInvariant())-aggregate.json" }
+    $aggregateDestination = Join-Path $DestinationRoot $aggregateName
+    & $aggregateScript $source $aggregateDestination
+    if (-not $?) { throw "Failed to regenerate aggregate for $Run." }
+}

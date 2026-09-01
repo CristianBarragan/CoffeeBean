@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Npgsql"  />
-    <PackageReference Include="ModelContextProtocol.AspNetCore"  />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>

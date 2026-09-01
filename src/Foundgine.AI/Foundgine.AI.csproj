@@ -15,7 +15,7 @@
     <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
     <ProjectReference Include="../Foundgine/Foundgine.csproj" />
     <ProjectReference Include="../Foundgine.Intent.Json/Foundgine.Intent.Json.csproj" />
-    <PackageReference Include="Microsoft.Extensions.AI"  />
-    <PackageReference Include="Microsoft.Extensions.AI.Abstractions"  />
+    <PackageReference Include="Microsoft.Extensions.AI" Version="10.9.0" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.9.0" />
   </ItemGroup>
 </Project>

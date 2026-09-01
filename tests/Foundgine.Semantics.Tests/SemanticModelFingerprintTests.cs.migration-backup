@@ -1,0 +1,123 @@
+﻿using Foundgine.Abstractions;
+using Foundgine.Semantics;
+using Xunit;
+
+namespace Foundgine.Semantics.Tests;
+
+public sealed class SemanticModelFingerprintTests
+{
+    [Fact]
+    public void Fingerprint_is_stable_when_declarations_are_reordered()
+    {
+        var first = BuildModel(reordered: false);
+        var second = BuildModel(reordered: true);
+
+        Assert.Equal(first.ContractFingerprint, second.ContractFingerprint);
+    }
+
+    [Fact]
+    public void Fingerprint_changes_when_semantic_contract_changes()
+    {
+        var first = BuildModel(reordered: false);
+        var changed = new SemanticModelBuilder()
+            .Entity<TestProduct>(EntityId.Create("Product"), "Product", e => e
+                .Identity(x => x.Id)
+                .Field(x => x.Name)
+                .Field(x => x.Price, capabilities: SemanticFieldCapabilities.Default | SemanticFieldCapabilities.Writable))
+            .Build();
+
+        Assert.NotEqual(first.ContractFingerprint, changed.ContractFingerprint);
+    }
+
+    [Fact]
+    public void Fingerprint_does_not_depend_on_clr_model_type_identity()
+    {
+        var typed = BuildModel(reordered: false);
+        var untyped = new SemanticModelBuilder()
+            .Entity(EntityId.Create("Product"), "Product", e => e
+                .Identity(FieldId.Create("Product", "Id"), "Id")
+                .Field(FieldId.Create("Product", "Name"), "Name", typeof(string))
+                .Field(FieldId.Create("Product", "Price"), "Price", typeof(decimal)))
+            .Build();
+
+        Assert.Equal(typed.ContractFingerprint, untyped.ContractFingerprint);
+    }
+
+
+    [Fact]
+    public void Semantic_model_version_is_the_contract_fingerprint()
+    {
+        var model = BuildModel(false);
+
+        var version = SemanticVersionSet.For(model);
+
+        Assert.Equal($"sha256:{model.ContractFingerprint}", version.SemanticModelVersion);
+    }
+
+    [Fact]
+    public void Fingerprint_changes_when_alias_changes()
+    {
+        var first = new SemanticModelBuilder()
+            .Entity<TestProduct>(EntityId.Create("Product"), "Product", e => e
+                .Identity(x => x.Id)
+                .Field(x => x.Name)
+                .FieldAlias(FieldId.Create("Product", "Name"), "DisplayName"))
+            .Build();
+        var changed = new SemanticModelBuilder()
+            .Entity<TestProduct>(EntityId.Create("Product"), "Product", e => e
+                .Identity(x => x.Id)
+                .Field(x => x.Name)
+                .FieldAlias(FieldId.Create("Product", "Name"), "ProductName"))
+            .Build();
+
+        Assert.NotEqual(first.ContractFingerprint, changed.ContractFingerprint);
+        Assert.NotEqual(SemanticVersionSet.For(first).SemanticModelVersion, SemanticVersionSet.For(changed).SemanticModelVersion);
+    }
+
+    [Fact]
+    public void Fingerprint_is_lowercase_sha256()
+    {
+        var fingerprint = BuildModel(false).ContractFingerprint;
+
+        Assert.Equal(64, fingerprint.Length);
+        Assert.Matches("^[0-9a-f]{64}$", fingerprint);
+    }
+
+    private static SemanticModel BuildModel(bool reordered) => new SemanticModelBuilder()
+        .Entity<TestProduct>(EntityId.Create("Product"), "Product", e =>
+        {
+            e.Identity(x => x.Id);
+            if (reordered)
+            {
+                e.Field(x => x.Price);
+                e.Field(x => x.Name);
+            }
+            else
+            {
+                e.Field(x => x.Name);
+                e.Field(x => x.Price);
+            }
+        })
+        .Build();
+
+    private sealed class TestProduct
+    {
+        public int Id { get; init; }
+        public string Name { get; init; } = "";
+        public decimal Price { get; init; }
+    }
+
+    private sealed class NullableProduct
+    {
+        public int Id { get; init; }
+        public string? Name { get; init; }
+    }
+
+    private sealed class NonNullableProduct
+    {
+        public int Id { get; init; }
+        public string Name { get; init; } = "";
+    }
+}
+
+

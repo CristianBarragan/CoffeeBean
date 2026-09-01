@@ -59,7 +59,7 @@ Tool definitions and prior tool results are part of the model context, so they a
 
 ## Run it from the repository root
 
-There is a repository-root runner script. `publish-report.ps1` only publishes an existing JSON report; it does **not** run the benchmark.
+There is now a runner script. `publish-report.ps1` only publishes an existing JSON report; it does **not** run the benchmark.
 
 Replay/correctness harness (starts PostgreSQL + Foundgine warm API automatically):
 

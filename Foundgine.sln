@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -185,8 +185,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Sql", "src\Foundg
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Testing", "tests\Foundgine.Testing\Foundgine.Testing.csproj", "{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Aot.Tests", "tests\Foundgine.Aot.Tests\Foundgine.Aot.Tests.csproj", "{DF2728E9-75E4-4F67-B495-42DF10EA4A2A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.E2E.Tests", "tests\Foundgine.E2E.Tests\Foundgine.E2E.Tests.csproj", "{EA302F09-77B2-48CB-BD8F-BF54431ADAC9}"
@@ -210,7 +208,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Semantics.Tests", "tests\Foundgine.Semantics.Tests\Foundgine.Semantics.Tests.csproj", "{E64C2364-1AA8-40AA-9C3B-A5D438C47D12}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Sql.Tests", "tests\Foundgine.Sql.Tests\Foundgine.Sql.Tests.csproj", "{23BC341F-FA37-4FEB-A79B-8BEF67FF7A2C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foundgine.Postgres.Vector.Tests", "tests\Foundgine.Postgres.Vector.Tests\Foundgine.Postgres.Vector.Tests.csproj", "{EBC46044-3576-44E0-9CF4-6C216D68D5C5}"
 EndProject
 Global
@@ -1095,19 +1092,7 @@ Global
 		{EBC46044-3576-44E0-9CF4-6C216D68D5C5}.Release|x64.Build.0 = Release|Any CPU
 		{EBC46044-3576-44E0-9CF4-6C216D68D5C5}.Release|x86.ActiveCfg = Release|Any CPU
 		{EBC46044-3576-44E0-9CF4-6C216D68D5C5}.Release|x86.Build.0 = Release|Any CPU
-		{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21}.Debug|x64.Build.0 = Debug|Any CPU
-		{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21}.Debug|x86.Build.0 = Debug|Any CPU
-		{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21}.Release|x64.ActiveCfg = Release|Any CPU
-		{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21}.Release|x64.Build.0 = Release|Any CPU
-		{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21}.Release|x86.ActiveCfg = Release|Any CPU
-		{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21}.Release|x86.Build.0 = Release|Any CPU
-EndGlobalSection
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
@@ -1210,6 +1195,5 @@ EndGlobalSection
 		{E64C2364-1AA8-40AA-9C3B-A5D438C47D12} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{23BC341F-FA37-4FEB-A79B-8BEF67FF7A2C} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{EBC46044-3576-44E0-9CF4-6C216D68D5C5} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
-		{A7D5C7E1-0D3E-4C3D-B8B5-6C6D7F1D0E21} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
-EndGlobalSection
+	EndGlobalSection
 EndGlobal

@@ -42,16 +42,10 @@ foreach ($file in $metadataFiles) {
     $batchSize = [int]$doc.batchSize
     foreach ($sample in @($doc.samples)) {
         $impl = Get-CanonicalImplementation $sample.implementation
-        # EstimatedInputTokens/EstimatedOutputTokens are measured per MCP
-        # call. For EF Core one call == one transfer, so per-call ==
-        # per-transfer. For Foundgine, one call batches $batchSize transfers
-        # into a single UNNEST request, so the raw per-call token count must
-        # be divided by batchSize to land on the same per-transfer unit as
-        # EF Core (and as rps, which the runner already scales by
-        # batchSize). Without this, Foundgine's token cost looks
-        # ~batchSize times larger than it really is per business
-        # transaction.
-        $divisor = if ($impl -eq 'MCP + Foundgine Postgres') { $batchSize } else { 1 }
+        # Estimated token fields are measured per MCP call. Preserve that
+        # unit in the aggregate and expose logicalOps so the website can
+        # normalize exactly once to per-operation context when comparing a
+        # 1-op EF call with an 8-op Foundgine batch call.
         $raw += [pscustomobject]@{
             customers      = $customers
             concurrency    = $concurrency
@@ -66,8 +60,10 @@ foreach ($file in $metadataFiles) {
             success        = [double]$sample.Success
             failed         = [double]$sample.Failed
             toolCalls      = [double]$sample.ToolCalls
-            estimatedInputTokens  = [double]$sample.EstimatedInputTokens / $divisor
-            estimatedOutputTokens = [double]$sample.EstimatedOutputTokens / $divisor
+            logicalOps       = if ($impl -eq 'MCP + Foundgine Postgres') { $batchSize } else { 1 }
+            batchSize        = $batchSize
+            estimatedInputTokens  = [double]$sample.EstimatedInputTokens
+            estimatedOutputTokens = [double]$sample.EstimatedOutputTokens
         }
     }
 }
@@ -91,6 +87,8 @@ foreach ($group in ($raw | Group-Object customers, concurrency, implementation))
         success                 = (($items | Measure-Object -Property success -Sum).Sum)
         failed                  = (($items | Measure-Object -Property failed -Sum).Sum)
         toolCalls               = & $avg 'toolCalls'
+        logicalOps              = & $avg 'logicalOps'
+        batchSize               = [int]$first.batchSize
         estimatedInputTokens    = $inputTok
         estimatedOutputTokens   = $outputTok
         estimatedContextTokens  = $inputTok + $outputTok

@@ -16,7 +16,7 @@
     <ProjectReference Include="../Foundgine.Execution/Foundgine.Execution.csproj" />
     <ProjectReference Include="../Foundgine.Planning/Foundgine.Planning.csproj" />
     <ProjectReference Include="../Foundgine.Semantics/Foundgine.Semantics.csproj" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions"  />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
     <ProjectReference Include="..\Foundgine.Metadata\Foundgine.Metadata.csproj" />
   </ItemGroup>
 </Project>
