@@ -108,13 +108,25 @@ static async Task<Sample[]> Batch(int concurrency, int customers, Func<int, Task
 static async Task<Sample> One(int customer, Func<int,Task<(int,int)>> action) { var sw=Stopwatch.StartNew(); try { var r=await action(customer); sw.Stop(); return new(true,sw.Elapsed.TotalMilliseconds,r.Item1,r.Item2,null); } catch(Exception ex) { sw.Stop(); return new(false,sw.Elapsed.TotalMilliseconds,0,0,ex.Message); } }
 static async Task<string> PostMcp(HttpClient http,string url,string request)
 {
-    using var msg = new HttpRequestMessage(HttpMethod.Post, url)
+    // HttpRequestMessage can only be sent once - build a fresh instance on
+    // every attempt. Previously a single message was captured in the retry
+    // closure, so a transient failure that triggered a second attempt threw
+    // "The request message was already sent" instead of actually retrying.
+    HttpRequestMessage BuildMessage()
     {
-        Content = new StringContent(request, Encoding.UTF8, "application/json")
-    };
-    msg.Headers.Accept.ParseAdd("application/json, text/event-stream");
-    msg.Headers.TryAddWithoutValidation("MCP-Protocol-Version", "2025-06-18");
-    using var r = await Send(http, () => http.SendAsync(msg));
+        var m = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = new StringContent(request, Encoding.UTF8, "application/json")
+        };
+        m.Headers.Accept.ParseAdd("application/json, text/event-stream");
+        m.Headers.TryAddWithoutValidation("MCP-Protocol-Version", "2025-06-18");
+        return m;
+    }
+    using var r = await Send(http, async () =>
+    {
+        using var msg = BuildMessage();
+        return await http.SendAsync(msg);
+    });
     var b = await r.Content.ReadAsStringAsync();
     if (!r.IsSuccessStatusCode)
         throw new HttpRequestException($"MCP HTTP {(int)r.StatusCode} {r.ReasonPhrase}: {b}");

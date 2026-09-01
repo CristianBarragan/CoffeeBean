@@ -77,15 +77,26 @@ def supply_chain_summary(repo_root: Path):
         report = load_json(candidate)
         if report and "efficiencyEstimate" in report:
             est = report["efficiencyEstimate"]
+            modeled_conventional = est.get("modeledConventional") or {}
+            measured_foundgine = est.get("measuredFoundgine") or {}
             return {
                 "benchmark": "Supply Chain E2E (agent authorization workload)",
                 "kind": "modeled",
                 "sourceFile": str(candidate.relative_to(repo_root)),
                 "method": est.get("method"),
-                "estimatedToolCallReductionPercent": est.get("estimatedToolCallReductionPercent"),
-                "estimatedContextLoadReductionPercent": est.get("estimatedContextLoadReductionPercent"),
-                "measuredFoundgine": est.get("measuredFoundgine"),
-                "modeledConventional": est.get("modeledConventional"),
+                "estimatedToolCallReductionPercent": est.get("modeledToolCallReductionPercent") or est.get("estimatedToolCallReductionPercent"),
+                "estimatedContextLoadReductionPercent": est.get("modeledContextLoadReductionPercent") or est.get("estimatedContextLoadReductionPercent"),
+                # "How many round trips would this take without Foundgine?"
+                # One MCP round trip per successful capability call versus a
+                # modeled discover/authorize/execute/verify choreography.
+                "measuredFoundgineRoundTrips": measured_foundgine.get("roundTrips") or measured_foundgine.get("toolCalls"),
+                "modeledConventionalRoundTrips": modeled_conventional.get("estimatedRoundTrips") or modeled_conventional.get("estimatedToolCalls"),
+                "roundTripsPerCapability": {
+                    "foundgine": 1,
+                    "modeledConventional": modeled_conventional.get("roundTripsPerCapability") or modeled_conventional.get("stepsPerCapabilityMultiplier"),
+                },
+                "measuredFoundgine": measured_foundgine,
+                "modeledConventional": modeled_conventional,
                 "caveats": est.get("caveats"),
             }
     return None

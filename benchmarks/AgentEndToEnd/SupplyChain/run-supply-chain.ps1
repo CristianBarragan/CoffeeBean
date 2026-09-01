@@ -28,6 +28,45 @@ try {
     docker --version
     docker compose version
 
+    function Wait-Tcp([string]$HostName, [int]$Port, [int]$TimeoutSeconds = 60) {
+        # docker compose's depends_on: condition: service_healthy only proves
+        # Postgres is healthy *inside* the container. It doesn't prove the
+        # host-published port ($HostName:$Port, the exact endpoint the .NET
+        # seeder's Npgsql connection uses below) is accepting external
+        # connections yet - see the identical fix in Run4/run-run4.ps1 and
+        # Run5/run-run5.ps1, which hit this as an Npgsql connect timeout.
+        $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+        while ((Get-Date) -lt $deadline) {
+            try {
+                $client = [System.Net.Sockets.TcpClient]::new()
+                try {
+                    $connectTask = $client.ConnectAsync($HostName, $Port)
+                    if ($connectTask.Wait(2000) -and $client.Connected) { return }
+                } finally { $client.Dispose() }
+            } catch {}
+            Start-Sleep -Milliseconds 500
+        }
+        throw "Host port did not accept connections: ${HostName}:${Port}"
+    }
+
+    function Wait-Http([string]$Url, [int]$TimeoutSeconds = 120) {
+        # mcp-foundgine has no healthcheck in docker-compose.yml, so
+        # `docker compose up` returns once its container process has
+        # *started* - not once the ASP.NET app inside is actually accepting
+        # HTTP requests. Without this, the AI agent step below can hit the
+        # MCP endpoint before it's listening.
+        $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+        while ((Get-Date) -lt $deadline) {
+            try {
+                $r = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 5
+                if ($r.StatusCode -ge 200 -and $r.StatusCode -lt 500) { return }
+            } catch {}
+            Start-Sleep -Seconds 2
+        }
+        docker compose -f $compose ps
+        throw "Endpoint did not become ready: $Url"
+    }
+
     Write-Host ""
     Write-Host "[2/8] Stopping previous Supply Chain containers..." -ForegroundColor Yellow
     docker compose -f $compose down -v --remove-orphans
@@ -47,6 +86,8 @@ try {
 
     $env:SupplyChainConnectionString = "Host=localhost;Port=4429;Database=foundgine_supply_chain;Username=benchmark;Password=benchmark"
 
+    Wait-Tcp -HostName 'localhost' -Port 4429 -TimeoutSeconds 60
+
     dotnet restore Database/Database.csproj
     if ($LASTEXITCODE -ne 0) { throw "Database restore failed with exit code $LASTEXITCODE." }
 
@@ -61,6 +102,8 @@ try {
 
     Write-Host ""
     Write-Host "[6/8] Starting AI agent..." -ForegroundColor Yellow
+
+    Wait-Http -Url 'http://localhost:4422/health/ready' -TimeoutSeconds 120
 
     dotnet restore Agent/Agent.csproj
     if ($LASTEXITCODE -ne 0) { throw "Agent restore failed with exit code $LASTEXITCODE." }

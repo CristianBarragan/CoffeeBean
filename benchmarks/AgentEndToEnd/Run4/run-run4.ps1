@@ -16,19 +16,49 @@ $DbProject=Join-Path $RepoRoot 'benchmarks/CoffeeBeanery.Performance/CoffeeBeane
 $MetricsScript=Join-Path $RepoRoot 'benchmarks/AgentEndToEnd/scripts/docker-metrics.ps1'
 $MetricsSummary=Join-Path $RepoRoot 'benchmarks/AgentEndToEnd/scripts/summarize-docker-metrics.ps1'
 $Report=Join-Path $PSScriptRoot 'artifacts'; New-Item -ItemType Directory -Force -Path $Report | Out-Null
-if($CustomerCounts.Count -ne $RunsPerTier.Count){throw 'CustomerCounts and RunsPerTier must have the same number of entries.'}
-# A single 1-customer/concurrency-1 tier is the CI smoke-test override
-# (see run-all-agent-benchmarks.ps1 -Smoke) - exempt it from the fixed
-# tier matrix below, which otherwise still governs real benchmark runs.
-$isSmokeOverride = ($CustomerCounts.Count -eq 1 -and $CustomerCounts[0] -eq 1 -and $Concurrency.Count -eq 1 -and $Concurrency[0] -eq 1)
-if (-not $isSmokeOverride) {
-    if($CustomerCounts.Count -ne 4 -or ($CustomerCounts -join ',') -ne '10,100,1000,10000'){throw 'Run 4 uses the Run 2 customer tiers: 10,100,1000,10000.'}
-    if(($Concurrency -join ',') -ne '8,16,32,64'){throw 'Run 4 uses the Run 2 concurrency tiers: 8,16,32,64.'}
+if($null -eq $CustomerCounts -or $null -eq $RunsPerTier -or $CustomerCounts.Count -ne $RunsPerTier.Count){throw 'CustomerCounts and RunsPerTier must have the same number of entries.'}
+# Any single customer-tier / single-concurrency override (e.g. -Smoke's 1/1,
+# or an ad-hoc lightweight run like -CustomerCounts 1 -Concurrency 8) is a
+# deliberate one-off and is exempt from the fixed tier matrix below, which
+# otherwise governs real (multi-tier) benchmark runs. Previously this only
+# exempted the literal 1-customer/concurrency-1 -Smoke shape, so any other
+# single-tier override (different customer count or different concurrency)
+# incorrectly fell through to the full-matrix assertion below and failed.
+$isSingleTierOverride = ($CustomerCounts.Count -eq 1 -and $Concurrency.Count -eq 1)
+if (-not $isSingleTierOverride) {
+    # This is a required-value check, not a duplication guard: Run 4 is
+    # expected to reuse Run 2's tiers for a real (multi-tier) run, and this
+    # throws only when a multi-tier run supplies something else.
+    if($CustomerCounts.Count -ne 4 -or ($CustomerCounts -join ',') -ne '10,100,1000,10000'){throw 'Run 4 (multi-tier) requires the same customer tiers as Run 2: 10,100,1000,10000.'}
+    if(($Concurrency -join ',') -ne '8,16,32,64'){throw 'Run 4 (multi-tier) requires the same concurrency tiers as Run 2: 8,16,32,64.'}
 }
 $script:PostgresHostPort=$null
 $script:ConnectionString=$null
 function Get-FreeTcpPort { $listener=[System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback,0); try { $listener.Start(); return $listener.LocalEndpoint.Port } finally { $listener.Stop() } }
 function Compose([string[]]$ComposeArgs){ & docker compose -p $Project -f $ComposeFile @ComposeArgs; if($LASTEXITCODE -ne 0){throw "docker compose failed: $($ComposeArgs -join ' ')"} }
+function Wait-Tcp([string]$HostName,[int]$Port,[int]$TimeoutSeconds=60){
+  # docker compose --wait and the docker-exec pg_isready loop above both
+  # check readiness *inside* the container's network namespace. Neither
+  # proves the host-published port ($HostName:$Port, the exact endpoint the
+  # .NET seeder's Npgsql connection uses) is actually accepting external
+  # connections yet - there can be a short lag between "container reports
+  # healthy" and the host-side port-forward/NAT accepting traffic. That gap
+  # is what produced "Failed to connect to 127.0.0.1:<port> ... TimeoutException"
+  # from the seeder even though Postgres was healthy. Probe the real
+  # external endpoint directly before handing off to dotnet.
+  $deadline=(Get-Date).AddSeconds($TimeoutSeconds)
+  while((Get-Date) -lt $deadline){
+    try {
+      $client=[System.Net.Sockets.TcpClient]::new()
+      try {
+        $connectTask=$client.ConnectAsync($HostName,$Port)
+        if($connectTask.Wait(2000) -and $client.Connected){ return }
+      } finally { $client.Dispose() }
+    } catch {}
+    Start-Sleep -Milliseconds 500
+  }
+  throw "Postgres host port did not accept connections: ${HostName}:${Port}"
+}
 function Wait-Http([string]$Url,[int]$TimeoutSeconds=180){
   $deadline=(Get-Date).AddSeconds($TimeoutSeconds)
   while((Get-Date) -lt $deadline){
@@ -72,6 +102,11 @@ try {
       Start-Sleep -Seconds 1
     }
     if(-not $dbReady){ Compose @('ps'); Compose @('logs','postgres'); throw "PostgreSQL did not become ready for $customerCount customers." }
+    # The loop above only confirms Postgres is ready *inside* the container.
+    # Confirm the actual host-published port the seeder will connect to is
+    # live before invoking it, closing the race that produced the Npgsql
+    # "Failed to connect to 127.0.0.1:<port>" TimeoutException.
+    Wait-Tcp -HostName 'localhost' -Port $script:PostgresHostPort -TimeoutSeconds 60
     # NOTE: CoffeeBeanery.Database's Program.cs resolves the connection string
     # from BankingConnectionString (see Run1\run-agent-benchmark.ps1, which sets
     # this exact variable before invoking the same seeder project). Run4 was

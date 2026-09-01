@@ -74,17 +74,17 @@
 <details class="matrix-help" id="matrix-help-wrap" open>
 <summary>What do these controls mean?</summary>
 <dl>
-<div><dt>Run</dt><dd>Which of the three matrix experiments (2, 5, 5b) you're looking at. Each has its own workload/concurrency grid.</dd></div>
+<div><dt>Run</dt><dd>Which of the five published runs (1, 2, 3, 5, 5b) you're looking at. Runs 2, 5 and 5b have a full workload/concurrency grid; Runs 1 and 3 are single-scenario experiments, so they show as "no matrix for this run" here — see that run's page for its measured result.</dd></div>
 <div><dt>Metric</dt><dd>What each cell shows: an <strong>RPS ratio</strong> (throughput), <strong>average wall time</strong>, <strong>estimated context tokens</strong>, or <strong>tool calls</strong> — always Foundgine compared against the conventional path.</dd></div>
 <div><dt>Customer workload / Concurrency</dt><dd>Filters the grid to one row or column. "All" keeps every published cell visible; the rest are dimmed rather than hidden.</dd></div>
 <div><dt>Reading a cell</dt><dd>A blue left edge means Foundgine wins on the selected metric; amber means the conventional path wins; a dashed grey edge means that metric wasn't recorded for this run. Click any solid cell for the full comparison.</dd></div>
 </dl>
 </details>
 <div id="matrix-controls-wrap"><div class="matrix-controls" style="margin-top:1.2rem">
-<div class="matrix-field"><label for="matrix-run">Run<select id="matrix-run"><option value="2">Run 2</option><option value="5">Run 5</option><option value="5b">Run 5b</option></select></label></div>
+<div class="matrix-field"><label for="matrix-run">Run<select id="matrix-run"><option value="1">Run 1</option><option value="2">Run 2</option><option value="3">Run 3</option><option value="5">Run 5</option><option value="5b">Run 5b</option></select></label></div>
 <div class="matrix-field"><label for="matrix-metric">Metric<select id="matrix-metric"><option value="rps">RPS ratio</option><option value="wall">Average wall time</option><option value="tokens">Estimated context tokens (Conventional vs Foundgine)</option><option value="tools">Tool calls</option></select></label></div>
-<div class="matrix-field"><label for="matrix-customers">Customer workload<select id="matrix-customers"><option value="all">All workloads</option></select></label></div>
-<div class="matrix-field"><label for="matrix-concurrency">Concurrency<select id="matrix-concurrency"><option value="all">All concurrency</option></select></label></div>
+<div class="matrix-field" id="matrix-customers-field"><label for="matrix-customers">Customer workload<select id="matrix-customers"><option value="all">All workloads</option></select></label></div>
+<div class="matrix-field" id="matrix-concurrency-field"><label for="matrix-concurrency">Concurrency<select id="matrix-concurrency"><option value="all">All concurrency</option></select></label></div>
 </div></div>
 <div id="matrix-legend-wrap" class="matrix-legend"><span id="legend-conventional"><span class="matrix-dot conventional"></span>Conventional</span><span id="legend-foundgine"><span class="matrix-dot foundgine"></span>Foundgine</span><span><span class="matrix-dot missing"></span>Not measured</span><span id="matrix-status"></span></div>
 <div id="heatmap-wrap" class="heatmap-wrap"><table class="heatmap"><thead><tr><th>Workload \ Concurrency</th><th>C8</th><th>C16</th><th>C32</th><th>C64</th></tr></thead><tbody id="heatmap-body"></tbody></table></div>
@@ -139,13 +139,28 @@ function normalizeRows(run){return (state.aggregates[run]||[]).map(x=>({...x,cus
 function pair(rows,b,c){return {c:rows.find(x=>x.customers===b&&x.concurrency===c&&/^(?:Conventional|MCP \+ EF Core)$/.test(x.implementation)),f:rows.find(x=>x.customers===b&&x.concurrency===c&&/^MCP \+ Foundgine Postgres$|^Foundgine$|^MCP \+ Foundgine$/.test(x.implementation))};}
 function renderMatrix(){
  const run=$('matrix-run').value, rows=normalizeRows(run), metric=$('matrix-metric').value;
+ const hasMatrix=rows.length>0;
+ const frame=document.getElementById('evidence-frame');
+ frame.classList.toggle('run-has-matrix',hasMatrix); frame.classList.toggle('run-no-matrix',!hasMatrix);
+ document.getElementById('matrix-customers-field').hidden=!hasMatrix;
+ document.getElementById('matrix-concurrency-field').hidden=!hasMatrix;
+ document.getElementById('matrix-legend-wrap').hidden=!hasMatrix;
+ document.getElementById('heatmap-wrap').hidden=!hasMatrix;
+ document.getElementById('selected-evidence').hidden=!hasMatrix;
+ document.getElementById('matrix-empty-state').hidden=hasMatrix;
+ if(!hasMatrix){
+  $('matrix-heading').textContent=`Run ${run} · single-scenario agent workflow`;
+  $('matrix-description').textContent=`This run is intentionally reported as a single workflow rather than a workload/concurrency matrix. See the Run ${run} page for its story and measurements.`;
+  $('matrix-status').textContent=`Run ${run}`;
+  return;
+ }
  const bs=[...new Set(rows.map(x=>x.customers))].sort((a,b)=>a-b), cs=[8,16,32,64].filter(c=>rows.some(x=>x.concurrency===c));
  const sb=$('matrix-customers').value==='all'?null:+$('matrix-customers').value, sc=$('matrix-concurrency').value==='all'?null:+$('matrix-concurrency').value;
  $('matrix-customers').innerHTML='<option value="all">All workloads</option>'+bs.map(b=>`<option value="${b}" ${sb===b?'selected':''}>${b.toLocaleString()} customers</option>`).join('');
  $('matrix-concurrency').innerHTML='<option value="all">All concurrency</option>'+cs.map(c=>`<option value="${c}" ${sc===c?'selected':''}>C${c}</option>`).join('');
  const visible=bs.filter(b=>sb===null||b===sb), vcount=visible.reduce((n,b)=>n+cs.filter(c=>sc===null||c===sc).length,0);
  $('legend-conventional').lastChild.textContent=(run==='5'||run==='5b')?'MCP + EF Core':'Conventional'; $('legend-foundgine').lastChild.textContent=(run==='5'||run==='5b')?'MCP + Foundgine':'Foundgine'; $('matrix-status').textContent=`${vcount} visible cells · Run ${run}`;
- $('matrix-heading').textContent=`Run ${run} · ${run==='4'?'4 × 4 execution matrix':run==='5'?'4 × 4 high-assurance mutation matrix':run==='5b'?'4 × 4 same-client individual-vs-batch matrix':'published scalability matrix'}`; if(run==='5'){ $('matrix-description').textContent='Both paths use MCP. Select a workload/concurrency cell to compare the purpose-built MCP + EF Core implementation with MCP + Foundgine High-Assurance Postgres.'; } else if(run==='5b'){ $('matrix-description').textContent='Same client, same logical task on both sides. Select a workload/concurrency cell to compare batchSize individual transfer_funds calls with one transfer_funds_batch call.'; } else if(run==='4'){ $('matrix-description').textContent='Select one workload/concurrency cell to inspect the conventional and Foundgine measurements for that exact experiment.'; }
+ $('matrix-heading').textContent=`Run ${run} · ${run==='5'?'4 × 4 high-assurance mutation matrix':run==='5b'?'4 × 4 same-client individual-vs-batch matrix':'published scalability matrix'}`; if(run==='5'){ $('matrix-description').textContent='Both paths use MCP. Select a workload/concurrency cell to compare the purpose-built MCP + EF Core implementation with MCP + Foundgine High-Assurance Postgres.'; } else if(run==='5b'){ $('matrix-description').textContent='Same client, same logical task on both sides. Select a workload/concurrency cell to compare batchSize individual transfer_funds calls with one transfer_funds_batch call.'; } else { $('matrix-description').textContent='Select one workload/concurrency cell to inspect the conventional and Foundgine measurements for that exact experiment.'; }
  $('heatmap-body').innerHTML=visible.map(b=>`<tr><th>${b.toLocaleString()} customers</th>${cs.map(c=>{const p=pair(rows,b,c),m=metricPair(p.c,p.f,metric),hidden=(sc!==null&&c!==sc);const cellClass=m.missing?'missing':(m.good?'good':'neutral');return `<td style="opacity:${hidden?.3:1}"><button class="heat-cell ${cellClass}" data-b="${b}" data-c="${c}" type="button" title="${b.toLocaleString()} customers · C${c} · ${m.detail}"><span class="cell-label">C${c}</span><strong>${m.label}</strong><small>${m.detail}</small></button></td>`}).join('')}</tr>`).join('');
  document.querySelectorAll('.heat-cell').forEach(x=>x.onclick=()=>showCell(run,+x.dataset.b,+x.dataset.c));
  if(!window.__benchmarkCellSelected){
@@ -168,7 +183,7 @@ function renderRun(runId, shouldScroll=true){
  const prev=state.runs[Math.max(0,state.runs.findIndex(x=>x.id===r.id)-1)], next=state.runs[Math.min(state.runs.length-1,state.runs.findIndex(x=>x.id===r.id)+1)];
  section.innerHTML=`<div class="run-section-head"><div><div class="run-label">Run ${r.id} · ${r.short}</div><h2>${r.title}</h2><p>${r.story}</p></div><span class="run-status">${r.status}</span></div><div class="run-intro-grid"><div class="run-intro-card"><strong>Why this run exists</strong><span>${r.why}</span></div><div class="run-intro-card"><strong>What was compared</strong><span>${r.id==='5'?'MCP + purpose-built EF Core tool versus MCP + Foundgine High-Assurance Postgres. Both use MCP; only the execution architecture changes.':r.id==='5b'?'The same Run 5 HttpClient against both endpoints: batchSize individual transfer_funds MCP calls versus one transfer_funds_batch MCP call.': 'The same customer-exposure-review business process through conventional and semantic agent flows.'}</span></div><div class="run-intro-card"><strong>What to take away</strong><span>${r.meaning}</span></div></div><div class="run-metrics">${Object.entries(r.metrics).map(([k,v])=>`<div class="run-metric"><small>${k.replace(/([A-Z])/g,' $1')}</small><strong>${v}</strong></div>`).join('')}</div><div class="run-finding"><div class="finding-label">Finding</div><p>${r.finding}</p></div><div class="run-nav-row"><a href="#run-${prev.id}" data-run-nav="${prev.id}">← Run ${prev.id}: ${prev.short}</a><a href="#run-${next.id}" data-run-nav="${next.id}">Run ${next.id}: ${next.short} →</a></div>`;
  section.querySelectorAll('[data-run-nav]').forEach(a=>a.onclick=e=>{e.preventDefault();renderRun(a.dataset.run);document.getElementById(`run-${a.dataset.run}`).scrollIntoView({behavior:'smooth',block:'start'});});
- window.__benchmarkCellSelected=false; const hasMatrix=['2','5','5b'].includes(runId); const frame=document.getElementById('evidence-frame'); frame.classList.toggle('run-has-matrix',hasMatrix); frame.classList.toggle('run-no-matrix',!hasMatrix); document.getElementById('matrix-controls-wrap').hidden=!hasMatrix; document.getElementById('matrix-legend-wrap').hidden=!hasMatrix; document.getElementById('heatmap-wrap').hidden=!hasMatrix; document.getElementById('selected-evidence').hidden=!hasMatrix; document.getElementById('matrix-empty-state').hidden=hasMatrix; if(hasMatrix){document.getElementById('matrix-run').value=runId; renderMatrix();} else {document.getElementById('matrix-heading').textContent=`Run ${runId} · single-scenario agent workflow`; document.getElementById('matrix-description').textContent='This run is intentionally reported as a single workflow rather than a workload/concurrency matrix. Use the run page for its story and measurements.';} if(shouldScroll) section.scrollIntoView({behavior:'smooth',block:'start'});
+ window.__benchmarkCellSelected=false; document.getElementById('matrix-run').value=runId; renderMatrix(); if(shouldScroll) section.scrollIntoView({behavior:'smooth',block:'start'});
 }
 async function loadReductionSummary(){
  const statusEl=$('reduction-summary-status'), bodyEl=$('reduction-summary-body');

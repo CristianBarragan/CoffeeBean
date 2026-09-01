@@ -3,6 +3,7 @@ using Foundgine.Execution;
 using Foundgine.MCP;
 using Foundgine.Planning;
 using Foundgine.Semantics;
+using Foundgine.Semantics.Authorization;
 using Foundgine.Semantics.IR;
 using ModelContextProtocol.Server;
 using Npgsql;
@@ -16,7 +17,26 @@ var cs = builder.Configuration["SupplyChainConnectionString"]
     ?? throw new InvalidOperationException("SupplyChainConnectionString is required.");
 
 builder.Services.AddSingleton(NpgsqlDataSource.Create(cs));
+// The unfrozen model is kept registered for anything that still wants it,
+// but everything that needs a trusted contract (below) uses the frozen
+// snapshot - see the comment on the SemanticContractSnapshot registration.
 builder.Services.AddSingleton(SupplyChainSemanticModel.Build());
+builder.Services.AddSingleton(sp =>
+    sp.GetRequiredService<SemanticModel>().Freeze().CreateSnapshot());
+// Actor/capability authorization for this benchmark is handled by
+// SupplyChainAuthorizer.CanExecute at the MCP tool boundary (see
+// SupplyChainMcpTools.Execute) before any of this code runs - that is the
+// real access-control decision. The SemanticAuthorizer registered here is a
+// second, narrower thing: it produces the SemanticAuthorizationResult that
+// Foundgine's planner requires to stamp a plan with authorization
+// provenance before ExecutionIRCompiler will compile it (see
+// ExecutionIRCompiler.Compile). It uses AllowAllSemanticAuthorizationPolicy
+// because entity/field-level access within this fixed benchmark schema
+// isn't the thing being tested here - the actor gate above is - so this
+// step is honestly just "formally bind provenance to a plan for a request
+// that already passed the real authorization check", not a second
+// independent access-control layer.
+builder.Services.AddSingleton(new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()));
 builder.Services.AddSingleton<SupplyChainAuthorizer>();
 builder.Services.AddSingleton<Planner>();
 builder.Services.AddScoped<SupplyChainExecutionService>();
@@ -252,11 +272,19 @@ public sealed class SupplyChainExecutionService
 {
     private readonly NpgsqlDataSource ds;
     private readonly Planner planner;
+    private readonly SemanticAuthorizer authorizer;
+    private readonly SemanticContractSnapshot contract;
 
-    public SupplyChainExecutionService(NpgsqlDataSource ds, Planner planner)
+    public SupplyChainExecutionService(
+        NpgsqlDataSource ds,
+        Planner planner,
+        SemanticAuthorizer authorizer,
+        SemanticContractSnapshot contract)
     {
         this.ds = ds;
         this.planner = planner;
+        this.authorizer = authorizer;
+        this.contract = contract;
     }
 
     public async Task<object> GetOrders(int customerId, CancellationToken ct)
@@ -515,19 +543,32 @@ public sealed class SupplyChainExecutionService
         return new { orderId, status = "Cancelled", restoredInventory = true };
     }
 
-    private SemanticPlan PlanCustomerOrders() => planner.Plan(new SemanticOperation(
+    private SemanticPlan PlanCustomerOrders() => Plan(new SemanticOperation(
         new SemanticReadNode(1, SupplyChainSemanticModel.Customer,
             new[] { new FieldId(1), new FieldId(2), new FieldId(3) }, null, null,
             new[] { new SemanticReadNode(2, SupplyChainSemanticModel.Order,
                 new[] { new FieldId(1), new FieldId(3), new FieldId(4) },
                 SupplyChainSemanticModel.CustomerOrders, null, Array.Empty<SemanticReadNode>()) })));
 
-    private SemanticPlan PlanProduct() => planner.Plan(new SemanticOperation(
+    private SemanticPlan PlanProduct() => Plan(new SemanticOperation(
         new SemanticReadNode(1, SupplyChainSemanticModel.Product,
             new[] { new FieldId(1), new FieldId(2), new FieldId(3), new FieldId(4) },
             null, null, Array.Empty<SemanticReadNode>())));
 
     private SemanticPlan PlanPlaceOrder() => PlanProduct();
+
+    // Authorizes the operation against the trusted contract (see the
+    // AllowAllSemanticAuthorizationPolicy comment in Program.cs's DI setup
+    // for why an allow-all policy is the right thing here) and plans it
+    // through the overload that stamps the resulting SemanticPlan with real
+    // authorization provenance, so ExecutionIRCompiler.Compile below
+    // (called from PlanFingerprint) doesn't hit "An executable plan must
+    // carry authorization provenance before crossing the execution
+    // boundary." The previous code called the bare Plan(SemanticOperation)
+    // overload, which never attaches a binding at all - unconditionally
+    // tripping that guard on every place_order/get_my_orders/get_order call.
+    private SemanticPlan Plan(SemanticOperation operation) =>
+        planner.Plan(contract, authorizer.AuthorizeWithEvidence(contract, operation));
 
     private static string PlanFingerprint(SemanticPlan p) => Hash(JsonSerializer.Serialize(new
     {
