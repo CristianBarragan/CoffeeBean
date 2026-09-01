@@ -31,7 +31,7 @@ foreach ($run in @(
     }
 }
 
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
 
 $matrixDestination = Join-Path `
     $repoRoot `
@@ -44,6 +44,3 @@ if (-not $?) {
     throw 'Failed to build benchmark matrix.'
 }
 
-Write-Host ''
-Write-Host 'All benchmark reports and the interactive benchmark matrix are published.' `
-    -ForegroundColor Green

@@ -6,7 +6,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $BenchmarkRoot = $PSScriptRoot
-$RepoRoot = (Resolve-Path (Join-Path $BenchmarkRoot '..\..')).Path
+$RepoRoot = (Resolve-Path (Join-Path $BenchmarkRoot '..\..\..')).Path
 if ([string]::IsNullOrWhiteSpace($DestinationRoot)) {
     $DestinationRoot = Join-Path $RepoRoot 'docs-site\assets\agent-benchmark'
 }
