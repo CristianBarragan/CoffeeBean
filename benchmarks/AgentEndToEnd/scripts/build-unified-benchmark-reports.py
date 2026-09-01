@@ -106,30 +106,57 @@ def metadata_family(run,kind):
         d=load(os.path.join(dp,fn))
         groups={}
         if kind=="run5":
+            batch_size=int(d.get("batchSize",1) or 1)
             for s in d.get("samples",[]):
-                x={"customers":int(d["customers"]),"concurrency":int(d["concurrency"]),"implementation":s["implementation"],
+                raw_impl=s["implementation"]
+                impl="MCP + Foundgine" if "Foundgine" in raw_impl else "MCP + EF Core"
+                divisor=batch_size if impl=="MCP + Foundgine" else 1
+                x={"customers":int(d["customers"]),"concurrency":int(d["concurrency"]),"implementation":impl,
                    "option":"standard","rps":float(s["Rps"]),"avgWallMs":float(s["AvgWallMs"]),"p50Ms":float(s["P50Ms"]),
                    "p95Ms":float(s["P95Ms"]),"p99Ms":float(s["P99Ms"]),"maxWallMs":float(s["MaxWallMs"]),
                    "success":int(s["Success"]),"failed":int(s["Failed"]),"toolCalls":float(s["ToolCalls"]),
-                   "estimatedInputTokens":float(s["EstimatedInputTokens"]),"estimatedOutputTokens":float(s["EstimatedOutputTokens"]),
-                   "estimatedContextTokens":float(s["EstimatedInputTokens"])+float(s["EstimatedOutputTokens"]),"logicalOps":1}
+                   "estimatedInputTokens":float(s["EstimatedInputTokens"])/divisor,"estimatedOutputTokens":float(s["EstimatedOutputTokens"])/divisor,
+                   "estimatedContextTokens":(float(s["EstimatedInputTokens"])+float(s["EstimatedOutputTokens"])) / divisor,"logicalOps":batch_size if impl=="MCP + Foundgine" else 1}
                 groups.setdefault((x["implementation"],),[]).append(x)
         else:
-            for s in d.get("samples",[]):
-                ib=float(s["InputBytes"]); ob=float(s["OutputBytes"]); pb=float(s["TotalPayloadBytes"]); wall=float(s["WallMs"])
-                x={"customers":int(d["customers"]),"concurrency":int(d["concurrency"]),"implementation":s.get("Implementation",s.get("implementation")),
-                   "option":"same-client","rps":(float(s["LogicalOps"])*1000/wall if wall else 0),"avgWallMs":wall,"p50Ms":wall,"p95Ms":wall,"p99Ms":wall,"maxWallMs":wall,
-                   "success":1 if s["Success"] else 0,"failed":0 if s["Success"] else 1,"toolCalls":float(s["ToolCalls"]),"logicalOps":float(s["LogicalOps"]),
-                   "estimatedInputTokens":ib/4,"estimatedOutputTokens":ob/4,"estimatedContextTokens":pb/4}
-                groups.setdefault((x["implementation"],),[]).append(x)
+            concurrency=int(d["concurrency"])
+            samples=d.get("samples",[])
+            # The raw Run5b metadata stores per-task samples, while the runner's
+            # published RPS is per concurrency batch: total logical operations
+            # completed by the batch divided by its slowest task wall time.
+            # Reconstruct that exact definition from the flattened samples.
+            for impl_idx, impl_name in enumerate(["MCP + EF Core (same client, individual calls)", "MCP + Foundgine (same client, semantic batch)"]):
+                impl_samples=[s for s in samples if s.get("implementation")==impl_name]
+                for i in range(0, len(impl_samples), concurrency):
+                    batch=impl_samples[i:i+concurrency]
+                    if not batch: continue
+                    ok=[s for s in batch if s["Success"]]
+                    wall=max((float(s["WallMs"]) for s in ok), default=0)
+                    batch_rps=(sum(float(s["LogicalOps"]) for s in ok)*1000/wall) if wall else 0
+                    for s in batch:
+                        ib=float(s["InputBytes"]); ob=float(s["OutputBytes"]); pb=float(s["TotalPayloadBytes"]); swall=float(s["WallMs"])
+                        x={"customers":int(d["customers"]),"concurrency":concurrency,"implementation":s.get("Implementation",s.get("implementation")),
+                           "option":"same-client","rps":batch_rps,"avgWallMs":swall,"p50Ms":swall,"p95Ms":swall,"p99Ms":swall,"maxWallMs":swall,
+                           "success":1 if s["Success"] else 0,"failed":0 if s["Success"] else 1,"toolCalls":float(s["ToolCalls"]),"logicalOps":float(s["LogicalOps"]),
+                           "estimatedInputTokens":ib/4,"estimatedOutputTokens":ob/4,"estimatedContextTokens":pb/4}
+                        groups.setdefault((x["implementation"],),[]).append(x)
         for _,v in groups.items():
             x=dict(customers=v[0]["customers"],concurrency=v[0]["concurrency"],implementation=v[0]["implementation"],option=v[0]["option"],samples=len(v))
             for f in ["rps","avgWallMs","p50Ms","p95Ms","p99Ms","toolCalls","logicalOps","estimatedInputTokens","estimatedOutputTokens","estimatedContextTokens"]:
                 x[f]=sum(z[f] for z in v)/len(v)
+            x["p50Ms"]=pct([z["avgWallMs"] for z in v if z["success"]],.5)
+            x["p95Ms"]=pct([z["avgWallMs"] for z in v if z["success"]],.95)
+            x["p99Ms"]=pct([z["avgWallMs"] for z in v if z["success"]],.99)
             x["maxWallMs"]=max(z["maxWallMs"] for z in v);x["success"]=sum(z["success"] for z in v);x["failed"]=sum(z["failed"] for z in v);enrich(x);out.append(x)
     return out
 for run,kind in [("run5","run5"),("run5b","run5-same-client")]:
-    dump(os.path.join(ASSET,f"{run}-aggregate.json"),{"schemaVersion":3,"run":run,"reportType":"measured-comparison","assumptions":ASS,"aggregate":metadata_family(run,kind)})
+    rows=metadata_family(run,kind)
+    # Run 5b's published experiment is explicitly a 4 × 4 matrix. An older
+    # 1-customer/C1 smoke run exists in the raw artifacts, but it is not part
+    # of the declared experiment and must not leak into the public matrix.
+    if run=="run5b":
+        rows=[x for x in rows if x["customers"] in (10,100,1000,10000) and x["concurrency"] in (8,16,32,64)]
+    dump(os.path.join(ASSET,f"{run}-aggregate.json"),{"schemaVersion":3,"run":run,"reportType":"measured-comparison","assumptions":ASS,"aggregate":rows})
 # Canonical matrix: Run 4 uses its agent variant; other runs retain their complete aggregate.
 matrix={"schemaVersion":1,"generatedUtc":datetime.now(timezone.utc).isoformat(),"runs":{}}
 for run in ["run1","run2","run3","run4","run5","run5b"]:
