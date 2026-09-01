@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net9.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <ProjectReference Include="../Application/Foundgine.SupplyChain.Application.csproj" />
+    <ProjectReference Include="../Domain/Foundgine.SupplyChain.Domain.csproj" />
+    <ProjectReference Include="../../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
+    <ProjectReference Include="../../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />
+    <ProjectReference Include="../../../src/Foundgine.Planning/Foundgine.Planning.csproj" />
+    <ProjectReference Include="../../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
+    <ProjectReference Include="../../../src/Foundgine.Sql/Foundgine.Sql.csproj" />
+    <ProjectReference Include="../../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
+  </ItemGroup>
+</Project>

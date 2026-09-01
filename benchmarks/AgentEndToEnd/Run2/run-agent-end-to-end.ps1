@@ -238,16 +238,29 @@ function Seed-Fixture {
 }
 
 function Start-Foundgine {
+    # Dynamically allocate the host port, same as Start-Postgres above.
+    # This container was previously fixed to host port 4302, which meant
+    # back-to-back runs (this loop tears the stack down and restarts it once
+    # per customer tier, and the orchestrator chains Run1 -> Run2 -> Run3
+    # with no gap) could race Docker's release of a just-stopped container's
+    # port binding, failing with a "port already in use"-style startup
+    # error - intermittently, and worse the tighter the gap between teardown
+    # and the next startup.
+    $script:FoundgineHostPort = Get-FreeTcpPort
+    $env:FOUNDGINE_HOST_PORT = $script:FoundgineHostPort.ToString()
+    $script:FoundgineUrl = "http://localhost:$($script:FoundgineHostPort)/graphql/warm"
+    $script:FoundgineReadyUrl = "http://localhost:$($script:FoundgineHostPort)/health/ready"
+
     if (-not $SkipDockerBuild) {
-        Write-Host 'Building and starting Foundgine warm benchmark API...'
+        Write-Host "Building and starting Foundgine warm benchmark API on host port $($script:FoundgineHostPort)..."
         Invoke-Compose -Arguments @('build', 'foundgine-warm')
     }
     else {
-        Write-Host 'Starting Foundgine warm benchmark API without rebuilding...'
+        Write-Host "Starting Foundgine warm benchmark API on host port $($script:FoundgineHostPort) without rebuilding..."
     }
 
     Invoke-Compose -Arguments @('up', '-d', '--no-deps', 'foundgine-warm')
-    Wait-Http -Url $FoundgineReadyUrl
+    Wait-Http -Url $script:FoundgineReadyUrl
 }
 
 function Run-AgentBenchmark {
@@ -348,6 +361,22 @@ Write-Host "Runs per tier:           $($RunsPerTier -join ', ')"
         Seed-Fixture -CustomerCount $customerCount
         Start-Foundgine
         foreach ($concurrency in $Concurrency) {
+            # This scenario is a stateful query->mutate->query->mutate->query
+            # sequence per customer (see STATEFUL-SCENARIO.md). Program.cs
+            # will reuse customer IDs across concurrent workers rather than
+            # crash when concurrency exceeds customer count, but doing so
+            # lets multiple workers race to mutate/verify the SAME customer
+            # row at once, which corrupts the expected-state invariants the
+            # benchmark exists to check. STATEFUL-SCENARIO.md recommends at
+            # least as many isolated customers as the concurrency level (64+,
+            # ideally 128) - skip rather than silently produce an invalid
+            # comparison.
+            if ($concurrency -gt $customerCount) {
+                Write-Host ''
+                Write-Host ">>> Concurrency tier: $concurrency (skipped: exceeds customer count $customerCount; customer IDs would be reused across concurrent workers)"
+                continue
+            }
+
             Write-Host ''
             Write-Host ">>> Concurrency tier: $concurrency"
             Run-AgentBenchmark -CustomerCount $customerCount -Runs $runs -Concurrency $concurrency

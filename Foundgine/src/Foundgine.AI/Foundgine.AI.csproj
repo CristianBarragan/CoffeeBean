@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <PackageId>Foundgine.AI</PackageId>
+    <Description>AI tool integration for Foundgine semantic execution using Microsoft.Extensions.AI.</Description>
+    <PackageTags>ai;llm;microsoft-extensions-ai;ai-tools;semantic-execution;dotnet</PackageTags>
+    <RootNamespace>Foundgine.AI</RootNamespace>
+    <AssemblyName>Foundgine.AI</AssemblyName>
+    <IsPackable>true</IsPackable>
+    <PackageReleaseNotes>1.1.0: Additive release with the host-owned security execution-context provider contract. GraphQL secure query execution is provided by Foundgine.GraphQL.HotChocolate.Execution. The Supply Chain reference sample is source-integrated against this release line. 1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0. 0.5.0: Packaging/documentation cleanup only; no AI adapter runtime capability change. Provides Microsoft.Extensions.AI integration for Foundgine semantic execution.</PackageReleaseNotes>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
+    <ProjectReference Include="../Foundgine/Foundgine.csproj" />
+    <ProjectReference Include="../Foundgine.Intent.Json/Foundgine.Intent.Json.csproj" />
+    <PackageReference Include="Microsoft.Extensions.AI" Version="10.9.0" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.9.0" />
+  </ItemGroup>
+</Project>

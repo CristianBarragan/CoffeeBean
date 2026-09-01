@@ -564,6 +564,19 @@ footer.site-footer {
   padding: 2rem 1.5rem 3rem;
 }
 
+.site-visit-counter {
+  margin-top: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.site-visit-counter strong {
+  color: var(--signal);
+  font-weight: 600;
+}
+
+
 
 /* ---- Execution walkthrough ---- */
 

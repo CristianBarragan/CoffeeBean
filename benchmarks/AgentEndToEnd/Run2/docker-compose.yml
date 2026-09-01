@@ -43,7 +43,7 @@ services:
       ASPNETCORE_URLS: "http://+:4302"
       ASPNETCORE_ENVIRONMENT: Production
     ports:
-      - "4302:4302"
+      - "${FOUNDGINE_HOST_PORT:-0}:4302"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:4302/health/ready || exit 1"]
       interval: 2s

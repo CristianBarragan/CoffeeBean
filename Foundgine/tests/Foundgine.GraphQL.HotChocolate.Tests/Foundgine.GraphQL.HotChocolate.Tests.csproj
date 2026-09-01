@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
+    <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate.Execution/Foundgine.GraphQL.HotChocolate.Execution.csproj" />
+    <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" />
+    <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj" />
+    <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate.MutationExecution/Foundgine.GraphQL.HotChocolate.MutationExecution.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />
+    <ProjectReference Include="../../src/Foundgine/Foundgine.csproj" />
+  </ItemGroup>
+</Project>

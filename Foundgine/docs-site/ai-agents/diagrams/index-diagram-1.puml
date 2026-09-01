@@ -1,0 +1,11 @@
+@startuml
+hide stereotype
+skinparam monochrome true
+skinparam shadowing false
+rectangle "Converted website diagram" as D
+note right of D
+├─ Tool A → its own auth / filtering / query logic
+ ├─ Tool B → its own auth / filtering / query logic
+ └─ Tool C → its own auth / filtering / query logic</pre><p>An agent with dozens of tools can end up with dozens of independent execution and security surfaces, each only as correct as the person who wrote that one tool. Routing every tool through the same semantic and authorization boundary answers "what does this mean, and is this caller allowed to do it" once, consistently, regardless of which tool the model called.</p>
+end note
+@enduml

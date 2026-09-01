@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Foundgine.HighAssurance.Banking</RootNamespace>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
+  </ItemGroup>
+</Project>

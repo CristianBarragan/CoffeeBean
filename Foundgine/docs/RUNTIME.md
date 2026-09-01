@@ -1,0 +1,244 @@
+# Runtime
+
+The Foundgine runtime coordinates semantic requests, planning, provider execution, and results.
+
+
+## Canonical execution lifecycle
+
+Runtime implements the latter half of the canonical lifecycle:
+
+```plantuml
+@startuml
+start
+:Authorization;
+:Plan Binding;
+:Execution IR;
+:Provider;
+:Execution;
+:Evidence;
+stop
+@enduml
+```
+
+The runtime must not accept an unbound execution artifact. The semantic contract and authorization provenance carried by the plan remain verifiable through provider execution.
+
+## Reads
+
+A normal read follows:
+
+```plantuml
+@startuml
+start
+:ReadIntent;
+:semantic resolution;
+:validation / normalization;
+:authorization;
+:semantic plan;
+:ExecutionIR;
+:provider compilation;
+:provider execution;
+:result materialization;
+stop
+@enduml
+```
+
+`IFoundgine.ExecuteAsync(...)` is the application-facing boundary.
+
+## Execution context
+
+Execution is request-scoped.
+
+The context may contain:
+
+- security information;
+- authorization values;
+- provider/request values;
+- runtime controls.
+
+Authority-bearing values must originate from the host.
+
+## Provider boundary
+
+`Foundgine.Execution` separates logical plans from provider plans:
+
+```plantuml
+@startuml
+start
+:ExecutionIR;
+:IProviderPlanCompiler;
+:ProviderPlan;
+:IExecutionProvider;
+stop
+@enduml
+```
+
+This is the point where SQL or another physical representation is allowed.
+
+## Semantic operation lifecycle and plan binding
+
+The runtime consumes a canonical semantic operation graph rather than allowing each adapter to construct its own execution representation.
+
+```plantuml
+@startuml
+start
+:Intent;
+:Resolve into SemanticOperationGraph;
+:Validate graph + resource limits;
+:Authorize graph against SemanticContractSnapshot;
+:Authorization evidence;
+:Plan authorized graph;
+:SemanticPlan.AuthorizationBinding;
+:Security-preserving optimization;
+:ExecutionIR;
+:Provider compilation;
+:Provider plan inherits authorization binding;
+:Provider security proof;
+:Final execution gate;
+:Execute;
+stop
+@enduml
+```
+
+### Binding invariant
+
+`SemanticPlanAuthorizationBinding` is immutable provenance. It contains the fingerprint of the semantic contract and the fingerprint of the authorization decision that produced the plan.
+
+Planner rewrites must preserve the binding exactly. `ExecutionIRCompiler` refuses to create executable IR without authorization provenance, and the execution boundary verifies that the contract and authorization evidence still match. Provider plans inherit the same binding and cannot execute without a matching provider security proof.
+
+The binding is therefore not a cached permission token. It is a tamper-detection/provenance mechanism connecting:
+
+```plantuml
+@startuml
+start
+:semantic meaning;
+:authorization decision;
+:logical plan;
+:execution IR;
+:provider artifact;
+stop
+@enduml
+```
+
+A different contract, different authorization decision, modified execution IR, transplanted provider plan, or unsatisfied provider security proof must fail closed.
+
+### Plan caching
+
+Provider plan caching may reuse compiled physical structure, but it must not turn a plan into an authorization grant. Request-specific authority remains in the trusted execution context, while the cached artifact retains its semantic/authorization provenance and is revalidated at the execution boundary.
+
+A provider plan cache can sit around compilation.
+
+The safe order is:
+
+```plantuml
+@startuml
+start
+:resolve;
+:authorize;
+:cache/compile;
+:execute with current context;
+stop
+@enduml
+```
+
+The cache must not remove runtime authorization predicates.
+
+## Security conformance
+
+Before execution, required security invariants are compared with provider guarantees.
+
+```plantuml
+@startmindmap
+* required invariants
+* ↓
+* provider conformance
+* ↓
+* satisfied?
+** yes → execute
+** no  → reject
+@endmindmap
+```
+
+This protects the semantic contract from a provider that cannot preserve it.
+
+## Results
+
+The runtime distinguishes provider execution from result materialization.
+
+Typical flow:
+
+```plantuml
+@startuml
+start
+:provider rows;
+:MaterializedResult;
+:ExecutionResult;
+:application / adapter;
+stop
+@enduml
+```
+
+Adapters such as GraphQL can then shape the result for their own transport.
+
+## Evidence
+
+Execution evidence/receipts can record the execution outcome and relevant security/plan context.
+
+Evidence is diagnostic/audit information. It is not an authorization grant.
+
+## Mutations
+
+Mutation runtime is intentionally separate from reads.
+
+```plantuml
+@startuml
+start
+:SemanticMutationOperationGraph;
+:MutationPlan;
+:dependency levels;
+:security/conformance checks;
+:provider execution;
+:MutationResult;
+stop
+@enduml
+```
+
+Generated-value dependencies are represented explicitly.
+
+## Cancellation and resource limits
+
+Execution APIs accept cancellation tokens.
+
+Untrusted request complexity is bounded by semantic/security resource limits before expensive provider execution.
+
+Application-level rate limits, quotas, and timeouts remain necessary around Foundgine.
+
+## Runtime non-goals
+
+The runtime does not own:
+
+- authentication;
+- user sessions;
+- database migrations;
+- ORM change tracking;
+- LLM orchestration;
+- GraphQL hosting;
+- MCP transport hosting.
+
+## Custom provider checklist
+
+A provider implementation should prove:
+
+- plan/IR compilation;
+- provider execution;
+- result materialization;
+- cancellation behavior;
+- security conformance;
+- authorization predicate preservation;
+- pagination semantics;
+- mutation dependencies if mutations are supported.
+
+See `Foundgine.Execution/README.md` and `Foundgine.Sql/README.md` for the provider boundary.
+
+---
+
+Next: [AOT](AOT.md)

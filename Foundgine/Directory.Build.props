@@ -1,0 +1,42 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Common NuGet metadata. Individual packages override PackageId/Description. -->
+    <VersionPrefix>1.1.9</VersionPrefix>
+
+    <!--
+      Nothing is packable by default. Only the library projects under src/
+      are real, publishable NuGet packages; they opt back in explicitly
+      with <IsPackable>true</IsPackable> alongside their <PackageId>.
+      This prevents benchmark/sample/test Exe projects (e.g. the three
+      unrelated projects all named "Database") from being picked up by
+      `dotnet pack Foundgine.sln` and pushed to nuget.org by accident.
+    -->
+    <IsPackable>false</IsPackable>
+    <Authors>Foundgine</Authors>
+    <Company>Foundgine</Company>
+    <Copyright>Copyright © 2026 Foundgine</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageTags>semantic-execution;authorization;execution-plan;graphql;ai;dotnet</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/CristianBarragan/Foundgine</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/CristianBarragan/Foundgine</PackageProjectUrl>
+    <PackageReleaseNotes>See CHANGELOG.md.</PackageReleaseNotes>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Public API documentation is generated for NuGet packages; missing XML comments are not a CI error. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+</Project>
+

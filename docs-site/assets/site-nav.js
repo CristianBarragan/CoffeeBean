@@ -112,3 +112,39 @@
     else closeSubmenus();
   });
 })();
+
+// Site-wide visit counter. Independent of the nav-toggle IIFE above (which
+// returns early on pages without a mobile nav toggle) so this always runs,
+// on every page that includes this script. Every page load anywhere on the
+// site hits the same counter key, so the total accrues across the whole
+// site, not just this page.
+(function () {
+  "use strict";
+  var COUNTER_KEY = "foundgine-cristianbarragan-github-io-total-visits";
+  var COUNTER_ENDPOINT = "https://countapi.mileshilliard.com/api/v1/hit/" + COUNTER_KEY;
+
+  function renderWidget(value) {
+    var wrap = document.createElement("div");
+    wrap.className = "site-visit-counter";
+    wrap.innerHTML = "Site visits: <strong>" + Number(value).toLocaleString() + "</strong>";
+    var footer = document.querySelector("footer.site-footer");
+    if (footer) {
+      footer.appendChild(wrap);
+    } else {
+      document.body.appendChild(wrap);
+    }
+  }
+
+  fetch(COUNTER_ENDPOINT, { cache: "no-store" })
+    .then(function (res) {
+      if (!res.ok) throw new Error("counter request failed");
+      return res.json();
+    })
+    .then(function (data) {
+      if (data && data.value != null) renderWidget(data.value);
+    })
+    .catch(function () {
+      // A free third-party counter can go down; never show a broken
+      // widget or error to real visitors. Just omit it silently.
+    });
+})();

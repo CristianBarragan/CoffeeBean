@@ -1,0 +1,246 @@
+# Lexical grounding
+
+Foundgine can resolve free-form language without requiring complete sentences or
+predefined query templates. The semantic contract remains authoritative; an
+approximate retrieval provider only proposes candidates.
+
+## Canonical flow
+
+```plantuml
+@startuml
+start
+:Natural language;
+:Tokenization;
+:Candidate retrieval (for every token × semantic kind);
+:Ranked lexical candidates;
+:Highest-scoring root candidate;
+:Semantic-contract validation;
+:Neighbour-constrained graph walk;
+:Backtracking when a candidate cannot form a valid path;
+:Canonical semantic interpretation;
+:Authorization;
+:Planning / execution;
+stop
+@enduml
+```
+
+For each token, the retrieval boundary can consider:
+
+- Entity
+- Node
+- Relationship
+- Traversal
+- Field
+- Value
+- Operation
+
+The highest retrieval score is the **first hypothesis**, not truth. A lower
+scoring candidate can win if it forms a valid semantic path while the higher
+scoring candidate cannot.
+
+## Elasticsearch
+
+`Foundgine.Elasticsearch` is optional. It projects a frozen
+`SemanticContractSnapshot` through `SemanticLexiconProjection` and retrieves
+ranked candidates through Elasticsearch BM25/fuzzy matching.
+
+The index contains structural documents for entities, nodes, fields and
+relationships. Domain values such as `Nike` and `Shoes` are separate value
+documents because they are data vocabulary, not structural declarations.
+
+Elasticsearch relevance `_score` is never treated as a probability. Foundgine
+combines retrieval relevance with semantic graph compatibility and path
+continuity before accepting an interpretation.
+
+## PostgreSQL (pgvector)
+
+`Foundgine.Postgres.Vector` is optional and implements the same
+`ISemanticLexicalCandidateSource` boundary as `Foundgine.Elasticsearch`. It
+projects a frozen `SemanticContractSnapshot` through the same
+`SemanticLexiconProjection`, embeds each entry with a caller-supplied
+`ISemanticEmbeddingGenerator`, and stores the vectors in a PostgreSQL table
+via the `pgvector` extension. Candidate retrieval ranks by cosine (or L2, or
+inner-product) distance instead of BM25.
+
+pgvector distance is converted to a bounded relevance score the same way
+Elasticsearch's `_score` is used: as a retrieval hypothesis, never a
+probability and never an authorization decision. The projected table is not
+Foundgine's semantic memory — it is a derived, disposable retrieval index.
+Aliases/synonyms, graph neighbors, and embeddings are three separate
+concerns; only the frozen semantic contract is authoritative for the first
+two.
+
+Because both providers implement the same interface, a deployment can run
+either one, or combine candidates from both before handing them to
+`SemanticLexicalResolver`.
+
+## Example
+
+Given:
+
+```plantuml
+@startmindmap
+* Customer
+* └─ Orders → SalesOrder
+* └─ Lines → SalesOrderLine
+* └─ Product → CatalogProduct
+* └─ Category → Category
+@endmindmap
+```
+
+and a lexical expression:
+
+```text
+bought nike shoes
+```
+
+Elasticsearch can return candidates such as:
+
+```plantuml
+@startuml
+start
+:bought → Orders                    0.98 nike   → CatalogProduct.Name=...   0.99 shoes  → Category.Name=...         0.97;
+stop
+@enduml
+```
+
+Foundgine then validates the path:
+
+```plantuml
+@startuml
+start
+:Customer → Orders → SalesOrder → Lines → SalesOrderLine → Product → CatalogProduct → Category → Category.Name;
+stop
+@enduml
+```
+
+The database is queried only after this semantic interpretation has been
+resolved and authorized. It does not decide what the words mean.
+
+## Adversarial examples: where this gets hard
+
+`bought nike shoes` is a demonstration, not evidence that ambiguity is
+solved — every token happens to have exactly one plausible reading. A
+resolver that only had to handle friendly inputs like this would be
+feature theater. The cases below are harder, and Foundgine's behavior on
+each is deliberate rather than best-effort.
+
+**`customers with big accounts`.** There is no candidate kind for a
+business threshold like "big" — it is not a field, value, relationship, or
+entity in the semantic contract unless the domain model has explicitly
+declared one (e.g. a `HighValueAccount` flag or a named `AccountTier`
+value). Without that, retrieval returns zero candidates for the token
+`big`, and grounding reports `GroundingOutcome.Unresolved` with the reason
+naming the exact token that had no candidate. Foundgine does not infer a
+number (`> €10k`? top 10%?) to make the query runnable — inventing a
+threshold the caller never stated would be a worse failure mode than
+refusing. If "big account" is a real business concept, it belongs in the
+semantic contract as a named field or value, not as something the lexical
+layer guesses at query time.
+
+**`Nike customers who bought running shoes last summer`.** `bought`,
+`nike`, and `shoes` resolve the same way as the simple example. `last
+summer` does not: there is currently no temporal candidate kind at all —
+`SemanticLexicalCandidateKind` covers Entity, Node, Relationship,
+Traversal, Field, Value, and Operation, and none of those represents a
+relative date range. Today, a token like `summer` simply returns no
+candidates, and the whole expression fails closed with `Unresolved` rather
+than silently resolving the entity/product/relationship portion and
+dropping the time constraint. That is the correct failure mode — an
+unbounded date range executed silently would be a worse outcome than a
+visible refusal — but it is a real, currently-unimplemented gap, not a
+solved one. See [Roadmap](ROADMAP.md) for temporal grounding as future
+work.
+
+**`active customers`.** Both an enabled account and a customer with a
+recent order are legal, and neither field is more "correct" than the
+other from the graph alone. This is the case `Ground` is built for — see
+[the next section](#when-more-than-one-interpretation-is-legal) and
+[Grounding decisions](GROUNDING-DECISIONS.md) for the full worked example,
+backed by a passing test (`Ground_requires_clarification_when_a_token_maps_to_two_different_fields_with_tied_confidence`
+in `SemanticLexicalResolverTests`).
+
+The useful benchmark for this feature is not "can it resolve a friendly
+expression" — it is "can it correctly refuse an ambiguous or
+under-specified one instead of confidently executing a guess." All three
+examples above are refusals, and each is a distinct kind of refusal:
+missing vocabulary (`big`), missing capability (`last summer`), and
+genuine tied meaning (`active`).
+
+## Complexity bounds
+
+The canonical flow reads as `tokens × semantic kinds × candidates × paths
+× backtracking`, and read naively that is a combinatorial search space.
+`SemanticLexicalResolver` bounds it explicitly, in code, not just in
+philosophy:
+
+| Control | Constructor parameter | Default | What it bounds |
+|---|---|---|---|
+| Tokens per expression | `maxTokens` | 32 | Input size — checked before any retrieval or search runs, since token count is the dominant term in worst-case branching (`candidateLimit ^ tokenCount` before graph-legality pruning). |
+| Candidates per token | `candidateLimit` | 20 | Branching factor at each token. |
+| Bridging hops per transition | `maxBridgeHops` | 4 | Graph depth the BFS will traverse to connect a candidate back to the current entity. |
+| Total search work | `maxPathsExplored` | 5,000 | A single shared budget across every DFS node expansion *and* every bridging-BFS dequeue for one `Ground` call — this is what actually bounds total work regardless of how permissive the candidate source or how densely connected the entity graph is. |
+| Wall-clock ceiling (search) | `timeout` | 250ms | An independent guard against a large in-memory search tree. Starts counting only after candidate retrieval has completed. |
+| Wall-clock ceiling (retrieval) | `retrievalTimeout` | 2s | Candidate retrieval for every token happens entirely before the search-time budget above starts counting — this bounds that separate stage, so a slow or hung candidate source (network partition, slow index) fails closed instead of blocking `Ground` indefinitely. |
+| Cooperative cancellation | `CancellationToken` on `Ground`/`Resolve` | — | Lets a caller abort a specific request, during either retrieval or search, without waiting for a timeout. |
+
+"Maximum backtracking branches" is not a separate, independently tunable
+control: every backtrack is a DFS re-entry, so it consumes the same shared
+`maxPathsExplored` budget as forward search. There is currently no cap on
+backtracking distinct from total search work.
+
+Every one of these fails closed. Hitting any limit — including a cancelled
+token — returns `GroundingOutcome.BudgetExceeded` (`Committed = null`,
+`CompetingInterpretations` empty), never a partial answer built from
+whatever the search happened to find before it was cut off:
+
+```plantuml
+@startuml
+start
+:GroundingOutcome.BudgetExceeded;
+:no committed interpretation;
+:no execution;
+stop
+@enduml
+```
+
+This is a deliberate design choice, not an incidental one: a search
+stopped by a resource limit has not proven there is only one legal
+interpretation, so treating its partial output as if it had would
+reintroduce exactly the "perfectly authorized misunderstanding" that
+`Ground` exists to prevent. `GroundingDecision.BudgetLimit` names which
+control fired (`MaxTokens`, `MaxPathsExplored`, `Timeout`,
+`RetrievalTimeout`, or `Cancelled`), so it can be logged, alerted on, or
+tuned per deployment without parsing `Reason` text. Deterministic
+tie-breaking for equally-scored candidates is handled separately from the
+budget: ties are broken by `CanonicalName` ordinal comparison, so a
+re-run of the same expression against the same contract and candidate
+set always produces the same result.
+
+On `BudgetExceeded`, `GroundingDecision.PartialInterpretationsAtCutoff`
+exposes whatever interpretations the search had already constructed when
+the limit fired — useful for logging, alerting, or deciding whether to
+raise a budget and retry. This is diagnostic only: a partial search is
+not proof of a unique legal meaning, so `Committed` stays null regardless
+of what this list contains, and nothing in Foundgine treats it as
+authorizable or executes against it.
+
+## When more than one interpretation is legal
+
+A graph-constrained path answers "is this mapping legal," not "is this
+mapping what the caller meant." An expression like `active customers` can
+be structurally valid against two different fields at once — an enabled
+account and a customer with a recent order are both legitimate readings,
+and neither the graph nor a retrieval score can tell them apart on its own.
+
+`SemanticLexicalResolver.Ground` (as opposed to `Resolve`, which only
+returns the single best path) surfaces every semantically distinct
+interpretation that was still legal, distinguishes that from two pieces of
+evidence for the *same* interpretation, and refuses to silently pick a
+winner when genuinely different meanings remain tied. See
+[Grounding decisions](GROUNDING-DECISIONS.md) for the full explanation, the
+`GroundingDecision` shape, and a worked example.
+
+---
+
+Previous: [Open Intent API](OPEN-INTENT-API.md) · Next: [Grounding decisions](GROUNDING-DECISIONS.md)

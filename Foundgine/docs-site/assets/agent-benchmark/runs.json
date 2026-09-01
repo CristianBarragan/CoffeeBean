@@ -1,0 +1,92 @@
+{
+  "runs": [
+    {
+      "id": "1",
+      "title": "Establish the baseline: can semantic execution reduce agent work?",
+      "short": "Agent end-to-end baseline",
+      "date": "17 August 2026",
+      "status": "published",
+      "story": "Run 1 starts with the smallest useful experiment: the same customer-exposure-review business process is completed through a conventional application/tool flow and through Foundgine. The purpose is not to prove speed. It is to establish whether the semantic path can compress the agent interaction while reaching exactly the same final state.",
+      "why": "This is the control experiment. If the semantic boundary cannot reduce the number of application interactions or context carried between them, the later scalability and efficiency tests have little to build on.",
+      "finding": "The semantic flow reduced tool calls from 7 to 4 and estimated context load from 932 to 534 tokens (42.7% lower), while reaching the same final state. The trade-off was higher wall-clock time: 12.69 ms conventional versus 24.25 ms Foundgine (+91.1%). The early result therefore supports an agent-work reduction, not a latency claim.",
+      "meaning": "Foundgine was already changing the shape of the agent interaction before optimization: fewer application-level steps and less estimated context, but with execution overhead that later runs needed to investigate.",
+      "metrics": {
+        "toolCalls": "7 \u2192 4",
+        "context": "932 \u2192 534 est. tokens",
+        "wall": "12.69 \u2192 24.25 ms",
+        "sameState": "True"
+      }
+    },
+    {
+      "id": "2",
+      "title": "Scale the agent workflow: does the reduction survive larger customer tiers?",
+      "short": "Agent scalability / customer tiers",
+      "date": "17 August 2026",
+      "status": "published",
+      "story": "Run 2 moves from one deterministic customer to four workload tiers: 10, 100, 1,000 and 10,000 customers, combined with concurrency levels up to 64. The goal is to see whether the semantic reduction survives when the fixture and parallelism grow.",
+      "why": "A capability that looks efficient on a tiny fixture is not enough. Agents eventually operate against larger datasets and multiple simultaneous requests, so the benchmark needs to separate agent-work reduction from backend scaling behaviour.",
+      "finding": "The conventional path used 9 tool calls versus 6 for Foundgine, a one-third reduction, and estimated context load was about 26.5% lower. The published cells reported 100% request success. Latency was mixed: for example, at 10,000 customers/C64 the conventional path averaged 98.3 ms versus 131.2 ms for Foundgine. The run therefore shows that agent-work compression persisted, while execution speed remained workload-dependent.",
+      "meaning": "Run 2 established an important distinction: fewer agent interactions do not automatically mean lower end-to-end latency. The benchmark needs to measure both dimensions independently.",
+      "metrics": {
+        "toolCalls": "9 \u2192 6",
+        "context": "~26.5% lower estimated context",
+        "success": "100% published success",
+        "example": "10k/C64: 98.3 \u2192 131.2 ms"
+      }
+    },
+    {
+      "id": "3",
+      "title": "Measure efficiency: what happens when the workflow itself becomes larger?",
+      "short": "Agent cost / efficiency",
+      "date": "17 August 2026",
+      "status": "published",
+      "story": "Run 3 deliberately increases the amount of agent/tool work represented by the scenario. It asks whether the semantic path can reduce the amount of context and tool coordination without introducing a proportionally larger execution penalty.",
+      "why": "If the value of semantic execution is partly about reducing orchestration work, the effect should become visible when the workflow has more steps to coordinate. This run isolates that efficiency question from the later graph-performance benchmark.",
+      "finding": "The conventional flow used 56 tool calls versus 32 for Foundgine (42.9% fewer), and estimated context load fell from 7,568 to 4,364 tokens (42.3% lower). Average wall-clock time was almost flat: 14.64 ms versus 15.16 ms (+3.6%). Both flows reached the same final state.",
+      "meaning": "Run 3 is where the efficiency story becomes more compelling: the amount of agent-side work falls materially without the large latency penalty seen in Run 1.",
+      "metrics": {
+        "toolCalls": "56 \u2192 32",
+        "context": "7,568 \u2192 4,364 est. tokens",
+        "wall": "14.64 \u2192 15.16 ms",
+        "sameState": "True"
+      }
+    },
+    {
+      "id": "5",
+      "title": "Test the capability boundary: high-assurance TransferFunds through the same MCP protocol",
+      "short": "High-Assurance Postgres / TransferFunds",
+      "date": "18 August 2026",
+      "status": "published",
+      "story": "Run 5 asks a different architectural question. The operation is a high-assurance TransferFunds capability with tenant isolation, ownership, authorization revalidation, frozen-account checks, available-funds and daily-limit checks, idempotency, audit evidence and an atomic transaction. Both paths expose the same capability through MCP. The conventional path uses a purpose-built MCP tool backed by EF Core; the Foundgine path uses MCP + Foundgine High-Assurance Postgres. MCP is the common agent-facing protocol \u2014 the experiment changes what happens behind MCP.",
+      "why": "This is the test of whether semantic execution is useful beyond graph reads. The interesting comparison is not 'which endpoint is faster?' but whether an agent can consume a business capability without every capability becoming another handcrafted endpoint and orchestration contract.",
+      "finding": "The result is deliberately mixed. At concurrency 8\u201332, Foundgine was generally faster in the published samples, reaching about 1.10\u20131.22\u00d7 the conventional RPS and lower average wall time. At concurrency 64, the Foundgine path hit a clear scalability cliff: at 10,000 customers/C64 it averaged about 659 RPS versus 1,855 RPS for the conventional MCP + EF Core path, with 68.3 ms versus 29.6 ms average wall time. Both paths used one tool call per flow and recorded zero failures in the published cells.",
+      "meaning": "Run 5 is not a victory lap. It is useful because it exposes the boundary: semantic execution can carry a richer high-assurance capability without increasing the agent tool-call count, but the current Foundgine/Postgres mutation path still has a concurrency problem at C64 that needs engineering work.",
+      "metrics": {
+        "toolCalls": "1 \u2192 1",
+        "c8to32": "Foundgine ~1.01\u20131.22\u00d7 RPS",
+        "c64": "10k/C64: 659 vs 1,855 RPS",
+        "wallC64": "68.3 vs 29.6 ms",
+        "failures": "0 published"
+      }
+    },
+    {
+      "id": "5b",
+      "title": "Isolate the variable: same client, same logical task, individual calls versus one semantic batch call",
+      "short": "Run 5 same-client follow-up",
+      "date": "20 August 2026",
+      "status": "published",
+      "story": "Run 5b is a controlled follow-up to Run 5. It reuses the exact Run 5 HttpClient and manual JSON-RPC MCP transport, unchanged, against both endpoints, so the client itself cannot explain any difference. The only thing that changes is the shape of the request: the conventional path sends batchSize individual transfer_funds MCP calls, while Foundgine sends one transfer_funds_batch MCP call carrying the same batchSize logical transfers. The matrix repeats the same 4 workload tiers (10, 100, 1,000, 10,000 customers) and 4 concurrency levels (8, 16, 32, 64) as Run 5, with 5 warmups and 30 measured runs per cell.",
+      "why": "Run 5 found that the Foundgine path hit a scalability cliff at concurrency 64. Before treating that as a property of the execution architecture, the benchmark needed to rule out a simpler explanation: an artifact of how many separate requests each path was making at the transport layer. Holding the client fixed and only changing individual-call versus batch-call shape isolates that variable directly.",
+      "finding": "With the same client on both sides, Foundgine's single batch call outperformed the conventional path's individual calls at every workload and every concurrency level tested, including C64 \u2014 no cliff appeared. Averaged across all 16 workload/concurrency cells, Foundgine sustained about 2.95\u00d7 the conventional path's RPS (range 2.22\u00d7\u20133.78\u00d7) and 3.7\u00d7\u20136.4\u00d7 lower average wall time. At 10,000 customers/C64 specifically, Foundgine averaged about 4,291 RPS versus 1,571 RPS for the conventional path, with 74 ms versus 311 ms average wall time. Tool calls were 8 \u2192 1 per task in every cell (batch size is fixed at 8 regardless of concurrency). Foundgine's total task payload was 1.3\u00d7\u20131.8\u00d7 larger than the conventional path's despite the 8\u00d7 fewer calls \u2014 the win comes from eliminating round-trips, not from sending fewer bytes. Zero failures across all 960 published samples.",
+      "meaning": "This closes the loop on Run 5's open question: the C64 regression was tied to the specific endpoint under test in Run 5, not to batching or semantic execution generally. When the same client sends one semantic batch call instead of many individual calls, throughput and latency both improve consistently across the full matrix, with no sign of a concurrency cliff. The payload trade-off \u2014 more total bytes for fewer round-trips \u2014 is the honest cost of this approach and should be weighed against round-trip elimination for a given network.",
+      "metrics": {
+        "toolCalls": "8 \u2192 1 per task",
+        "rps": "~2.22\u00d7\u20133.78\u00d7 higher (mean ~2.95\u00d7)",
+        "c64": "10k/C64: 1,571 vs 4,291 RPS",
+        "wallC64": "311 vs 74 ms",
+        "payload": "1.3\u00d7\u20131.8\u00d7 more bytes",
+        "failures": "0 published"
+      }
+    }
+  ]
+}
