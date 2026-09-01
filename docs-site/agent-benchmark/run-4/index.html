@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Run 4 — Protocol and agent execution | Foundgine</title>
+<meta name="description" content="Foundgine Agent Benchmark Run 4: protocol-only and agent execution measurements across the full workload/concurrency matrix.">
+<link rel="canonical" href="https://cristianbarragan.github.io/Foundgine/agent-benchmark/run-4/">
+<link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg"><link rel="stylesheet" href="../../assets/style.css?v=20260828-2">
+</head><body>
+<header class="site-header"><div class="site-header-inner"><a class="brand" href="../../index.html">Foundgine</a>
+<nav id="site-nav" class="site-nav"><a href="../../what-is-foundgine.html">What is it</a><a href="../../getting-started/index.html">Getting started</a><a href="../../ai-agents/index.html">AI agents</a><a href="../../architecture/index.html">Architecture</a><a href="../../security/index.html">Security</a><a href="../../packages/index.html">Packages</a><a href="../../how-it-works/index.html">How it works</a><a href="../../walkthrough/index.html">Walkthrough</a><a href="../index.html" class="nav-current">Evidence</a><a href="https://github.com/cristianbarragan/Foundgine" target="_blank" rel="noopener">GitHub</a></nav></div></header>
+<div class="page page-wide"><main class="article article-wide">
+<section class="run-hero"><span class="eyebrow">Run 4 · Protocol / agent execution</span>
+<h1>Separate agent orchestration from protocol overhead.</h1>
+<p class="subtitle">Run 4 repeats the Run 2 4 × 4 workload/concurrency matrix and measures both the full agent flow and the underlying one-request protocol path. The same PostgreSQL fixture is used on both sides.</p>
+<div class="run-intro-grid"><div class="run-intro-card"><strong>Conventional</strong><span>GraphQL + Hot Chocolate + EF Core. Agent mode uses six GraphQL tool calls; protocol mode uses one full-graph request.</span></div><div class="run-intro-card"><strong>Foundgine</strong><span>MCP + Foundgine. Agent mode uses one semantic MCP tool call; protocol mode uses one full-graph MCP request.</span></div><div class="run-intro-card"><strong>Matrix</strong><span>10, 100, 1,000 and 10,000 customers × concurrency 8, 16, 32 and 64; 30 measured runs and 5 warmups per cell.</span></div></div>
+</section>
+<div data-benchmark-run="4"></div>
+<section class="run-section"><div class="run-label">Interpretation</div><h2>Why Run 4 matters</h2><p>The agent-mode comparison measures the end-to-end interaction shape. The protocol-mode comparison removes most agent choreography and asks what remains when both sides make one request. Read both variants before attributing a latency difference to semantic execution itself.</p><p>Estimated token, annual-cost and annual-energy figures in the report are derived estimates. They are intentionally separated from measured timing, throughput and success data.</p></section>
+</main></div>
+<footer class="site-footer">Foundgine · end-to-end agent benchmark · <a href="https://github.com/cristianbarragan/Foundgine">source on GitHub</a></footer>
+<script src="../../assets/site-nav.js"></script><script src="../../assets/agent-benchmark-report.js"></script>
+</body></html>
