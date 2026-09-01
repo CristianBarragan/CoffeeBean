@@ -1,6 +1,6 @@
 ﻿{
     "schemaVersion":  1,
-    "publishedUtc":  "2026-08-23T05:44:47.7573943+00:00",
+    "publishedUtc":  "2026-09-01T12:16:16.2952597+00:00",
     "sourceJson":  "reports/supply-chain-report.json",
     "sourceMarkdown":  "reports/supply-chain-report.md",
     "seed":  20260823,
@@ -9,5 +9,13 @@
     "success":  25,
     "failures":  0,
     "unexpectedUnauthorizedSuccesses":  9,
-    "averageLatencyMs":  43.248852
+    "averageLatencyMs":  20.210144000000003,
+    "securityPenTest":  {
+                            "total":  14,
+                            "passed":  14,
+                            "failed":  0,
+                            "skipped":  0,
+                            "suiteDurationMs":  27138.5,
+                            "averageCaseDurationMs":  2193.2
+                        }
 }

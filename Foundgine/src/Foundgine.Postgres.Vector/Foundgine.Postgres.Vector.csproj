@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Foundgine.Postgres.Vector</PackageId>
+    <Description>pgvector-backed lexical candidate retrieval for Foundgine. Vector similarity supplies ranked hypotheses only; the frozen semantic contract remains authoritative for topology and path legality.</Description>
+    <PackageTags>postgresql;pgvector;vector-search;semantic-search;lexical-grounding;foundgine</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RootNamespace>Foundgine.Postgres.Vector</RootNamespace>
+    <AssemblyName>Foundgine.Postgres.Vector</AssemblyName>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <PackageReference Include="Pgvector" Version="0.3.2" />
+    <None Include="README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
+    <ProjectReference Include="../Foundgine.Semantics/Foundgine.Semantics.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Foundgine.Planning</PackageId>
+    <Description>Provider-independent execution planning for Foundgine.</Description>
+    <PackageTags>semantic-execution;query-planning;query-optimizer;predicate-pushdown;authorization;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RootNamespace>Foundgine.Planning</RootNamespace>
+    <AssemblyName>Foundgine.Planning</AssemblyName>
+    <IsPackable>true</IsPackable>
+    <TargetFramework>net9.0</TargetFramework>
+    <PackageReleaseNotes>1.1.0: Additive release with the host-owned security execution-context provider contract. GraphQL secure query execution is provided by Foundgine.GraphQL.HotChocolate.Execution. The Supply Chain reference sample is source-integrated against this release line. 1.0.0: Semver stability declaration only; no runtime capability change since 0.5.0. 0.5.0: Packaging/documentation cleanup only; no planner runtime capability change. 0.4.0: Added provider-aware rewrite cost estimation and deterministic rule selection, predicate pushdown, projection pruning, relationship traversal/join ordering, aggregate/cardinality-aware rewrites, and semantic-equivalence plus authorization-preservation proof gates. Added deterministic authorization-predicate canonicalization and plan fingerprints.</PackageReleaseNotes>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
+    <ProjectReference Include="../Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
+    <ProjectReference Include="../Foundgine.Semantics/Foundgine.Semantics.csproj" />
+  </ItemGroup>
+</Project>

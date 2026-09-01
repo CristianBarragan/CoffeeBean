@@ -1,0 +1,13 @@
+﻿{
+    "schemaVersion":  1,
+    "publishedUtc":  "2026-08-23T05:44:47.7573943+00:00",
+    "sourceJson":  "reports/supply-chain-report.json",
+    "sourceMarkdown":  "reports/supply-chain-report.md",
+    "seed":  20260823,
+    "steps":  25,
+    "customers":  5,
+    "success":  25,
+    "failures":  0,
+    "unexpectedUnauthorizedSuccesses":  9,
+    "averageLatencyMs":  43.248852
+}

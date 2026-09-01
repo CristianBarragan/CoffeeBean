@@ -238,16 +238,29 @@ function Seed-Fixture {
 }
 
 function Start-Foundgine {
+    # Dynamically allocate the host port, same as Start-Postgres above.
+    # This container was previously fixed to host port 4302, which meant
+    # back-to-back runs (this loop tears the stack down and restarts it once
+    # per customer tier, and the orchestrator chains Run1 -> Run2 -> Run3
+    # with no gap) could race Docker's release of a just-stopped container's
+    # port binding, failing with a "port already in use"-style startup
+    # error - intermittently, and worse the tighter the gap between teardown
+    # and the next startup.
+    $script:FoundgineHostPort = Get-FreeTcpPort
+    $env:FOUNDGINE_HOST_PORT = $script:FoundgineHostPort.ToString()
+    $script:FoundgineUrl = "http://localhost:$($script:FoundgineHostPort)/graphql/warm"
+    $script:FoundgineReadyUrl = "http://localhost:$($script:FoundgineHostPort)/health/ready"
+
     if (-not $SkipDockerBuild) {
-        Write-Host 'Building and starting Foundgine warm benchmark API...'
+        Write-Host "Building and starting Foundgine warm benchmark API on host port $($script:FoundgineHostPort)..."
         Invoke-Compose -Arguments @('build', 'foundgine-warm')
     }
     else {
-        Write-Host 'Starting Foundgine warm benchmark API without rebuilding...'
+        Write-Host "Starting Foundgine warm benchmark API on host port $($script:FoundgineHostPort) without rebuilding..."
     }
 
     Invoke-Compose -Arguments @('up', '-d', '--no-deps', 'foundgine-warm')
-    Wait-Http -Url $FoundgineReadyUrl
+    Wait-Http -Url $script:FoundgineReadyUrl
 }
 
 function Run-AgentBenchmark {

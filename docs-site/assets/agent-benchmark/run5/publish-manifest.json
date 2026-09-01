@@ -1,0 +1,88 @@
+﻿{
+    "run":  "Run5",
+    "publishedUtc":  "2026-09-01T12:14:29.5162029Z",
+    "source":  "C:\\Foundgine\\benchmarks\\AgentEndToEnd\\Run5\\artifacts",
+    "destination":  "C:\\Foundgine\\docs-site\\assets\\agent-benchmark\\run5",
+    "files":  [
+                  {
+                      "path":  "00010-customers\\concurrency-008\\run5-metadata.json",
+                      "bytes":  25939,
+                      "lastWriteUtc":  "2026-09-01T12:00:14.6773292Z"
+                  },
+                  {
+                      "path":  "00010-customers\\concurrency-016\\run5-metadata.json",
+                      "bytes":  26172,
+                      "lastWriteUtc":  "2026-09-01T12:00:18.6268073Z"
+                  },
+                  {
+                      "path":  "00010-customers\\concurrency-032\\run5-metadata.json",
+                      "bytes":  26383,
+                      "lastWriteUtc":  "2026-09-01T12:00:24.4375443Z"
+                  },
+                  {
+                      "path":  "00010-customers\\concurrency-064\\run5-metadata.json",
+                      "bytes":  26921,
+                      "lastWriteUtc":  "2026-09-01T12:00:35.1839617Z"
+                  },
+                  {
+                      "path":  "00100-customers\\concurrency-008\\run5-metadata.json",
+                      "bytes":  25979,
+                      "lastWriteUtc":  "2026-09-01T12:00:49.1501118Z"
+                  },
+                  {
+                      "path":  "00100-customers\\concurrency-016\\run5-metadata.json",
+                      "bytes":  26103,
+                      "lastWriteUtc":  "2026-09-01T12:00:53.1452561Z"
+                  },
+                  {
+                      "path":  "00100-customers\\concurrency-032\\run5-metadata.json",
+                      "bytes":  26473,
+                      "lastWriteUtc":  "2026-09-01T12:00:57.0813487Z"
+                  },
+                  {
+                      "path":  "00100-customers\\concurrency-064\\run5-metadata.json",
+                      "bytes":  26860,
+                      "lastWriteUtc":  "2026-09-01T12:01:04.7186542Z"
+                  },
+                  {
+                      "path":  "01000-customers\\concurrency-008\\run5-metadata.json",
+                      "bytes":  25949,
+                      "lastWriteUtc":  "2026-09-01T12:01:19.5343802Z"
+                  },
+                  {
+                      "path":  "01000-customers\\concurrency-016\\run5-metadata.json",
+                      "bytes":  26165,
+                      "lastWriteUtc":  "2026-09-01T12:01:23.3602091Z"
+                  },
+                  {
+                      "path":  "01000-customers\\concurrency-032\\run5-metadata.json",
+                      "bytes":  26369,
+                      "lastWriteUtc":  "2026-09-01T12:01:27.4245404Z"
+                  },
+                  {
+                      "path":  "01000-customers\\concurrency-064\\run5-metadata.json",
+                      "bytes":  26735,
+                      "lastWriteUtc":  "2026-09-01T12:01:35.1980728Z"
+                  },
+                  {
+                      "path":  "10000-customers\\concurrency-008\\run5-metadata.json",
+                      "bytes":  25898,
+                      "lastWriteUtc":  "2026-09-01T12:02:00.6477678Z"
+                  },
+                  {
+                      "path":  "10000-customers\\concurrency-016\\run5-metadata.json",
+                      "bytes":  26102,
+                      "lastWriteUtc":  "2026-09-01T12:02:04.5414046Z"
+                  },
+                  {
+                      "path":  "10000-customers\\concurrency-032\\run5-metadata.json",
+                      "bytes":  26439,
+                      "lastWriteUtc":  "2026-09-01T12:02:08.5900031Z"
+                  },
+                  {
+                      "path":  "10000-customers\\concurrency-064\\run5-metadata.json",
+                      "bytes":  26875,
+                      "lastWriteUtc":  "2026-09-01T12:02:16.4089067Z"
+                  }
+              ]
+}

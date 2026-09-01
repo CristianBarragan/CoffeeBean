@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Foundgine.Sql</PackageId>
+    <Description>SQL execution provider and PostgreSQL mutation/query compilation for Foundgine.</Description>
+    <PackageTags>sql;postgresql;execution-provider;semantic-execution;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RootNamespace>Foundgine.Sql</RootNamespace>
+    <AssemblyName>Foundgine.Sql</AssemblyName>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <None Include="../../README.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="LICENSE" />
+    <ProjectReference Include="../Foundgine.Execution/Foundgine.Execution.csproj" />
+    <ProjectReference Include="../Foundgine.Metadata/Foundgine.Metadata.csproj" />
+    <ProjectReference Include="../Foundgine.Planning/Foundgine.Planning.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,82 @@
+﻿using Foundgine.Abstractions;
+using Foundgine.Planning;
+using Foundgine.Semantics;
+using Foundgine.Semantics.Query;
+using Xunit;
+
+namespace Foundgine.Planning.Tests;
+
+public sealed class RelationshipJoinOrderingRuleTests
+{
+    [Fact]
+    public void OrdersRelationshipTraversalsWithoutReorderingLogicalChildren()
+    {
+        var first = Node(2, 20, RelationshipCardinality.Many, filter: null);
+        var second = Node(3, 10, RelationshipCardinality.One, filter: new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.Eq, 1));
+        var root = new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [first, second]);
+        var before = new SemanticPlan(root);
+
+        var after = new RelationshipJoinOrderingRule().Apply(before);
+
+        Assert.Equal(before.Root.Children[0].ViaRelationship, after.Root.Children[0].ViaRelationship);
+        Assert.Equal(0, after.Root.Children[1].TraversalOrder);
+        Assert.Equal(1, after.Root.Children[0].TraversalOrder);
+        Assert.NotEqual(after.Root.Children[0].ViaRelationship, after.Root.Children[1].ViaRelationship);
+        Assert.NotEqual(after.Root.Children[0].ViaRelationship, after.Root.Children[1].ViaRelationship);
+    }
+
+    [Fact]
+    public void DoesNotApplyWhenFewerThanTwoEligibleRelationshipsExist()
+    {
+        var child = Node(2, 20, RelationshipCardinality.Many, null);
+        var plan = new SemanticPlan(new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [child]));
+
+        var after = new RelationshipJoinOrderingRule().Apply(plan);
+
+        Assert.Same(plan, after);
+    }
+
+    [Fact]
+    public void PreservesSemanticEquivalence()
+    {
+        var first = Node(2, 20, RelationshipCardinality.Many, null);
+        var second = Node(3, 10, RelationshipCardinality.One, null);
+        var before = new SemanticPlan(new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [first, second]));
+        var after = new RelationshipJoinOrderingRule().Apply(before);
+
+        var proof = SemanticEquivalenceProof.Create(before, after);
+
+        Assert.True(proof.IsSatisfied);
+    }
+
+    [Fact]
+    public void IsIdempotent()
+    {
+        var first = Node(2, 20, RelationshipCardinality.Many, null);
+        var second = Node(3, 10, RelationshipCardinality.One, null);
+        var before = new SemanticPlan(new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [first, second]));
+        var rule = new RelationshipJoinOrderingRule();
+
+        var once = rule.Apply(before);
+        var twice = rule.Apply(once);
+
+        Assert.Same(once, twice);
+    }
+
+    private static SemanticPlanNode Node(int id, ulong relationshipId, RelationshipCardinality cardinality, SemanticFilterExpression? filter)
+    {
+        var options = filter is null ? null : new SemanticQueryOptions(Filter: filter);
+        return new SemanticPlanNode(
+            id,
+            ExecutionOperation.Traverse,
+            new EntityId((ulong)id),
+            [new FieldId((ulong)id)],
+            new RelationshipId(DateTime.UnixEpoch, relationshipId),
+            null,
+            [],
+            options,
+            RelationshipCardinality: cardinality);
+    }
+}
+
+
