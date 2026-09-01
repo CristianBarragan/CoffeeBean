@@ -86,7 +86,15 @@
 <div class="matrix-field" id="matrix-customers-field"><label for="matrix-customers">Customer workload<select id="matrix-customers"><option value="all">All workloads</option></select></label></div>
 <div class="matrix-field" id="matrix-concurrency-field"><label for="matrix-concurrency">Concurrency<select id="matrix-concurrency"><option value="all">All concurrency</option></select></label></div>
 </div></div>
+
 <div id="matrix-legend-wrap" class="matrix-legend"><span id="legend-conventional"><span class="matrix-dot conventional"></span>Conventional</span><span id="legend-foundgine"><span class="matrix-dot foundgine"></span>Foundgine</span><span><span class="matrix-dot missing"></span>Not measured</span><span id="matrix-status"></span></div>
+<!-- The selected run's outcome intentionally sits directly above the matrix.
+     It is re-rendered whenever the Run dropdown changes, so the headline result
+     always describes the matrix currently visible below it. -->
+<div class="current-run-outcome" id="current-run-outcome" aria-live="polite">
+  <div class="run-metrics" id="current-run-metrics"></div>
+  <div class="run-finding" id="current-run-finding"></div>
+</div>
 <div id="heatmap-wrap" class="heatmap-wrap"><table class="heatmap"><thead id="heatmap-head"><tr><th>Workload \ Concurrency</th></tr></thead><tbody id="heatmap-body"></tbody></table></div>
 <div id="matrix-empty-state" class="matrix-empty-state" hidden><strong>No matrix for this run.</strong><span>This experiment is a focused agent workflow rather than a 4 × 4 workload/concurrency test.</span></div>
 
@@ -142,9 +150,17 @@ function metricPair(c,f,metric){
  const ratio=fv/cv;return {label:fmt(ratio,2)+'×',detail:ratio<=1?'Fewer Foundgine tool calls':'More Foundgine tool calls',good:ratio<=1};
 }
 function normalizeRows(run){return (state.aggregates[run]||[]).map(x=>({...x,customers:+x.customers,concurrency:+x.concurrency}));}
+function renderCurrentRunOutcome(runId){
+ const r=state.runs.find(x=>x.id===runId);
+ const metrics=$('current-run-metrics'), finding=$('current-run-finding');
+ if(!r){ metrics.innerHTML=''; finding.innerHTML=''; return; }
+ metrics.innerHTML=Object.entries(r.metrics||{}).map(([k,v])=>`<div class="run-metric"><small>${k.replace(/([A-Z])/g,' $1')}</small><strong>${v}</strong></div>`).join('');
+ finding.innerHTML=`<div class="finding-label">Finding · Run ${r.id}</div><p>${r.finding}</p>`;
+}
 function pair(rows,b,c){return {c:rows.find(x=>x.customers===b&&x.concurrency===c&&/^(?:Conventional|MCP \+ EF Core)$/.test(x.implementation)),f:rows.find(x=>x.customers===b&&x.concurrency===c&&/^MCP \+ Foundgine Postgres$|^Foundgine$|^MCP \+ Foundgine$/.test(x.implementation))};}
 function renderMatrix(){
  const run=$('matrix-run').value, rows=normalizeRows(run), metric=$('matrix-metric').value;
+ renderCurrentRunOutcome(run);
  const hasMatrix=rows.length>0;
  const frame=document.getElementById('evidence-frame');
  frame.classList.toggle('run-has-matrix',hasMatrix); frame.classList.toggle('run-no-matrix',!hasMatrix);
@@ -199,7 +215,7 @@ function renderRun(runId, shouldScroll=true){
  $('selected-run').innerHTML='';
  let section=document.createElement('section');section.id=anchor;section.className='run-section';$('selected-run').appendChild(section);
  const prev=state.runs[Math.max(0,state.runs.findIndex(x=>x.id===r.id)-1)], next=state.runs[Math.min(state.runs.length-1,state.runs.findIndex(x=>x.id===r.id)+1)];
- section.innerHTML=`<div class="run-section-head"><div><div class="run-label">Run ${r.id} · ${r.short}</div><h2>${r.title}</h2><p>${r.story}</p></div><span class="run-status">${r.status}</span></div><div class="run-intro-grid"><div class="run-intro-card"><strong>Why this run exists</strong><span>${r.why}</span></div><div class="run-intro-card"><strong>What was compared</strong><span>${r.id==='5'?'MCP + purpose-built EF Core tool versus MCP + Foundgine High-Assurance Postgres. Both use MCP; only the execution architecture changes.':r.id==='5b'?'The same Run 5 HttpClient against both endpoints: batchSize individual transfer_funds MCP calls versus one transfer_funds_batch MCP call.': 'The same customer-exposure-review business process through conventional and semantic agent flows.'}</span></div><div class="run-intro-card"><strong>What to take away</strong><span>${r.meaning}</span></div></div><div class="run-metrics">${Object.entries(r.metrics).map(([k,v])=>`<div class="run-metric"><small>${k.replace(/([A-Z])/g,' $1')}</small><strong>${v}</strong></div>`).join('')}</div><div class="run-finding"><div class="finding-label">Finding</div><p>${r.finding}</p></div><div class="run-nav-row"><a href="#run-${prev.id}" data-run-nav="${prev.id}">← Run ${prev.id}: ${prev.short}</a><a href="#run-${next.id}" data-run-nav="${next.id}">Run ${next.id}: ${next.short} →</a></div>`;
+ section.innerHTML=`<div class="run-section-head"><div><div class="run-label">Run ${r.id} · ${r.short}</div><h2>${r.title}</h2><p>${r.story}</p></div><span class="run-status">${r.status}</span></div><div class="run-intro-grid"><div class="run-intro-card"><strong>Why this run exists</strong><span>${r.why}</span></div><div class="run-intro-card"><strong>What was compared</strong><span>${r.id==='5'?'MCP + purpose-built EF Core tool versus MCP + Foundgine High-Assurance Postgres. Both use MCP; only the execution architecture changes.':r.id==='5b'?'The same Run 5 HttpClient against both endpoints: batchSize individual transfer_funds MCP calls versus one transfer_funds_batch MCP call.': 'The same customer-exposure-review business process through conventional and semantic agent flows.'}</span></div><div class="run-intro-card"><strong>What to take away</strong><span>${r.meaning}</span></div></div><div class="run-nav-row"><a href="#run-${prev.id}" data-run-nav="${prev.id}">← Run ${prev.id}: ${prev.short}</a><a href="#run-${next.id}" data-run-nav="${next.id}">Run ${next.id}: ${next.short} →</a></div>`;
  section.querySelectorAll('[data-run-nav]').forEach(a=>a.onclick=e=>{e.preventDefault();renderRun(a.dataset.run);document.getElementById(`run-${a.dataset.run}`).scrollIntoView({behavior:'smooth',block:'start'});});
  window.__benchmarkCellSelected=false; document.getElementById('matrix-run').value=runId; renderMatrix(); if(shouldScroll) section.scrollIntoView({behavior:'smooth',block:'start'});
 }
