@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="xunit" />
+    <ProjectReference Include="../../src/Foundgine/Foundgine.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Planning/Foundgine.Planning.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Sql/Foundgine.Sql.csproj" />
+  </ItemGroup>
+</Project>

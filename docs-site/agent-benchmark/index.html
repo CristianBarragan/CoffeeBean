@@ -142,7 +142,7 @@ function metricPair(c,f,metric){
  const ratio=fv/cv;return {label:fmt(ratio,2)+'×',detail:ratio<=1?'Fewer Foundgine tool calls':'More Foundgine tool calls',good:ratio<=1};
 }
 function normalizeRows(run){return (state.aggregates[run]||[]).map(x=>({...x,customers:+x.customers,concurrency:+x.concurrency}));}
-function pair(rows,b,c){return {c:rows.find(x=>x.customers===b&&x.concurrency===c&&/^(?:Conventional|MCP \+ EF Core)$/.test(x.implementation)),f:rows.find(x=>x.customers===b&&x.concurrency===c&&/^MCP \+ Foundgine Postgres$|^Foundgine$|^MCP \+ Foundgine$/.test(x.implementation))};}
+function pair(rows,b,c){return {c:rows.find(x=>x.customers===b&&x.concurrency===c&&/^(?:Conventional|MCP \+ EF Core|MCP \+ EF Core Postgres)$/.test(x.implementation)),f:rows.find(x=>x.customers===b&&x.concurrency===c&&/^(?:Foundgine|MCP \+ Foundgine|MCP \+ Foundgine Postgres|MCP \+ Foundgine HighAssurance Postgres.*)$/.test(x.implementation))};}
 function renderMatrix(){
  const run=$('matrix-run').value, rows=normalizeRows(run), metric=$('matrix-metric').value;
  const hasMatrix=rows.length>0;
