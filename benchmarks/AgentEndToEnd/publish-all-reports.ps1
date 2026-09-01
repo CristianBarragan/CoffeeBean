@@ -44,6 +44,11 @@ if (-not $?) {
     throw 'Failed to build benchmark matrix.'
 }
 
+& (Join-Path $PSScriptRoot 'validate-published-benchmarks.ps1')
+if (-not $?) {
+    throw 'Published benchmark validation failed.'
+}
+
 Write-Host ''
 Write-Host 'All benchmark reports and the interactive benchmark matrix are published.' `
     -ForegroundColor Green

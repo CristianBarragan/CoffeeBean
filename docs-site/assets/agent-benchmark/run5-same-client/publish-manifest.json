@@ -1,6 +1,6 @@
 ﻿{
     "run":  "Run5SameClient",
-    "publishedUtc":  "2026-09-01T22:44:40.4351168Z",
+    "publishedUtc":  "2026-09-01T23:11:46.5068969Z",
     "source":  "C:\\Foundgine\\benchmarks\\AgentEndToEnd\\Run5SameClient\\artifacts",
     "destination":  "C:\\Foundgine\\docs-site\\assets\\agent-benchmark\\run5-same-client",
     "files":  [
