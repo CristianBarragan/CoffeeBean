@@ -191,6 +191,8 @@ actually were instead of only signalling that a tie existed.
 
 ## Where this fits in the canonical lifecycle
 
+<p align="center"><img src="assets/grounding-decision-lifecycle.svg" alt="Grounding decision stage in the canonical lifecycle: lexical retrieval, candidate meanings, grounding decision, authorization, planning and execution." width="100%"></p>
+
 ```plantuml
 @startuml
 start

@@ -6,6 +6,8 @@ approximate retrieval provider only proposes candidates.
 
 ## Canonical flow
 
+<p align="center"><img src="assets/lexical-grounding-flow.svg" alt="Foundgine lexical grounding flow: tokenization, candidate retrieval, graph-constrained resolution with backtracking, then authorization and execution." width="100%"></p>
+
 ```plantuml
 @startuml
 start
@@ -78,6 +80,8 @@ either one, or combine candidates from both before handing them to
 
 Given:
 
+<p align="center"><img src="assets/lexical-grounding-example-schema.svg" alt="Example semantic schema: Customer to Orders (SalesOrder) to Lines (SalesOrderLine) to Product (CatalogProduct) to Category." width="100%"></p>
+
 ```plantuml
 @startmindmap
 * Customer
@@ -96,6 +100,8 @@ bought nike shoes
 
 Elasticsearch can return candidates such as:
 
+<p align="center"><img src="assets/lexical-grounding-example-candidates.svg" alt="Ranked lexical candidates for 'bought nike shoes': bought to Orders at 0.98, nike to CatalogProduct.Name at 0.99, shoes to Category.Name at 0.97." width="100%"></p>
+
 ```plantuml
 @startuml
 start
@@ -105,6 +111,8 @@ stop
 ```
 
 Foundgine then validates the path:
+
+<p align="center"><img src="assets/lexical-grounding-example-path.svg" alt="Validated semantic path: Customer to Orders (SalesOrder) to Lines (SalesOrderLine) to Product (CatalogProduct) to Category.Name." width="100%"></p>
 
 ```plantuml
 @startuml
@@ -193,6 +201,8 @@ Every one of these fails closed. Hitting any limit — including a cancelled
 token — returns `GroundingOutcome.BudgetExceeded` (`Committed = null`,
 `CompetingInterpretations` empty), never a partial answer built from
 whatever the search happened to find before it was cut off:
+
+<p align="center"><img src="assets/lexical-grounding-budget-exceeded.svg" alt="Grounding fails closed on any resource limit: GroundingOutcome.BudgetExceeded, Committed is null, no execution." width="100%"></p>
 
 ```plantuml
 @startuml
