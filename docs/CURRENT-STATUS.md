@@ -1,6 +1,6 @@
-# Current status — Foundgine 1.1.9
+# Current status — Foundgine 1.2.0
 
-The repository is on the 1.1.9 release line and targets .NET 9.
+The repository is on the 1.2.0 release line and targets .NET 9.
 
 This page is intentionally short: it describes the current architectural state rather than preserving historical release notes.
 
@@ -10,17 +10,17 @@ The active source tree contains the following layers:
 
 ```plantuml
 @startmindmap
-* Foundgine.Abstractions
+* Foundgine.Core.Abstractions
 * ↓
-* Foundgine.Semantics
+* Foundgine.Core.Semantic
 * ↓
-* Foundgine.Planning
+* Foundgine.Core.Semantic.Planning
 * ↓
-* Foundgine.Execution
+* Foundgine.Core.Execution
 * ↓
 * Providers
-** Foundgine.Sql
-** Foundgine.InMemory
+** Foundgine.Providers.Storage.Sql
+** Foundgine.Providers.Storage.InMemory
 @endmindmap
 ```
 
@@ -76,7 +76,7 @@ The planner currently provides:
 
 ## Current execution capabilities
 
-`Foundgine.Execution` provides:
+`Foundgine.Core.Execution` provides:
 
 - provider compilation/execution contracts;
 - execution IR;
@@ -92,7 +92,7 @@ The planner currently provides:
 
 ### SQL
 
-`Foundgine.Sql` provides the primary SQL implementation and PostgreSQL-specific functionality, including:
+`Foundgine.Providers.Storage.Sql` provides the primary SQL implementation and PostgreSQL-specific functionality, including:
 
 - parameterized SQL compilation;
 - SQL execution through ADO.NET;
@@ -104,7 +104,7 @@ The planner currently provides:
 
 ### InMemory
 
-`Foundgine.InMemory` is a deliberately limited provider used to validate provider independence and support deterministic tests/examples.
+`Foundgine.Providers.Storage.InMemory` is a deliberately limited provider used to validate provider independence and support deterministic tests/examples.
 
 ## Current adapters
 
@@ -114,19 +114,19 @@ Hot Chocolate adapters translate GraphQL into Foundgine semantic operations. Ded
 
 ### JSON
 
-`Foundgine.Intent.Json` parses structured read intent with explicit complexity limits.
+`Foundgine.Core.Serialization` parses structured read intent with explicit complexity limits.
 
 ### MCP
 
-`Foundgine.MCP` exposes capability discovery, read intent, and optional mutation dry-run/approval/execution tools through MCP.
+`Foundgine.Providers.Tools.MCP` exposes capability discovery, read intent, and optional mutation dry-run/approval/execution tools through MCP.
 
 ### AI
 
-`Foundgine.AI` integrates with `Microsoft.Extensions.AI` and exposes Foundgine operations as model tools while keeping authority host-owned.
+`Foundgine.Providers.Models` integrates with `Microsoft.Extensions.AI` and exposes Foundgine operations as model tools while keeping authority host-owned.
 
 ## AOT
 
-`Foundgine.Aot` and `Foundgine.Aot.Generator` provide compile-time declarations, validation, deterministic metadata generation, and generated semantic helpers.
+`Foundgine.Providers.Aot` provides compile-time declarations and runtime support, while `Foundgine.Providers.Aot.Generator` provides deterministic source-generated metadata. The former `Foundgine.Experimental` package has been removed entirely.
 
 ## Security architecture
 
@@ -149,7 +149,7 @@ Capability discovery is advisory.
 
 Authentication and identity lifecycle remain application/host responsibilities.
 
-`Foundgine.Security.Authority` is optional and outside the core.
+`Foundgine.Runtime.ControlPlane` is optional and outside the core.
 
 ## What is not claimed
 

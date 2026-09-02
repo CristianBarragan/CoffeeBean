@@ -1,10 +1,10 @@
 using Foundgine.HighAssurance.Postgres.Execution;
 using Npgsql;
 using System.Data;
-using Foundgine.Security.Authority;
+using Foundgine.Runtime.ControlPlane;
 using Xunit;
 
-namespace Foundgine.Security.Authority.Tests;
+namespace Foundgine.Runtime.ControlPlane.Tests;
 
 /// <summary>
 /// : authorization lifecycle writes require registered provenance,

@@ -1,17 +1,17 @@
-using Foundgine.Execution;
-using Foundgine.Metadata;
-using Foundgine.Abstractions;
-using Foundgine.Planning;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Results;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Resolution;
-using Foundgine.Sql;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Results;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Resolution;
+using Foundgine.Providers.Storage.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
 using BankingModel = Foundgine.E2E.Tests.Banking.BankingSemanticModel;
 using Foundgine.E2E.Tests.Banking;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -82,14 +82,14 @@ public sealed class FoundgineSqlPipelineTests
                 new SemanticSelection(new FieldId(1), null, []),
                 new SemanticSelection(new FieldId(2), null, [])
             ],
-            new Foundgine.Semantics.Query.SemanticQueryOptions(
-                new Foundgine.Semantics.Query.SemanticFieldFilter(
+            new Foundgine.Core.Semantic.Query.SemanticQueryOptions(
+                new Foundgine.Core.Semantic.Query.SemanticFieldFilter(
                     new FieldId(2),
-                    Foundgine.Semantics.Query.SemanticFilterOperator.Eq,
+                    Foundgine.Core.Semantic.Query.SemanticFilterOperator.Eq,
                     "Alice"),
-                [new Foundgine.Semantics.Query.SemanticOrderTerm(
+                [new Foundgine.Core.Semantic.Query.SemanticOrderTerm(
                     new FieldId(2),
-                    Foundgine.Semantics.Query.SemanticSortDirection.Desc)],
+                    Foundgine.Core.Semantic.Query.SemanticSortDirection.Desc)],
                 Limit: 1));
 
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);

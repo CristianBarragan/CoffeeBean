@@ -1,7 +1,7 @@
-using Foundgine.Abstractions;
+using Foundgine.Core.Abstractions;
 using Xunit;
 
-namespace Foundgine.Planning.Tests;
+namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed partial class PlanRewriteRuleContractTests
 {

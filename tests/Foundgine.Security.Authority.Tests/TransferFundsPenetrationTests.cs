@@ -1,11 +1,11 @@
 using Foundgine.HighAssurance.Banking;
 using Foundgine.HighAssurance.Postgres;
 using Foundgine.HighAssurance.Postgres.Execution;
-using Foundgine.Semantics.Authorization;
+using Foundgine.Core.Semantic.Authorization;
 using Npgsql;
 using Xunit;
 
-namespace Foundgine.Security.Authority.Tests;
+namespace Foundgine.Runtime.ControlPlane.Tests;
 
 /// <summary>
 /// Deliberately hostile tests for the consequential TransferFunds boundary.

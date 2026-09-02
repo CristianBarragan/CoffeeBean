@@ -1,4 +1,4 @@
-using Foundgine.Aot;
+using Foundgine.Providers.Aot;
 using Foundgine.SupplyChain.Domain.Models;
 using Foundgine.SupplyChain.Domain.Storage;
 

@@ -1,10 +1,10 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Capabilities;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Capabilities;
 
 namespace Foundgine.HighAssurance.Banking;
 

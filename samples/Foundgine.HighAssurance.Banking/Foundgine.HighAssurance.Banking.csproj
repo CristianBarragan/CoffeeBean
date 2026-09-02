@@ -6,8 +6,7 @@
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Core/Foundgine.Core.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Runtime/Foundgine.Runtime.csproj" />
   </ItemGroup>
 </Project>

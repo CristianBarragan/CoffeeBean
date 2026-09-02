@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
-using Foundgine.Security.Authority;
+using Foundgine.Runtime.ControlPlane;
 using Xunit;
 
 namespace Foundgine.Tests;

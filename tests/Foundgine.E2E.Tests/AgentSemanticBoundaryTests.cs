@@ -1,9 +1,9 @@
-using Foundgine.Abstractions;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Intent;
-using Foundgine.Semantics.Query;
-using Foundgine.Semantics.Resolution;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Intent;
+using Foundgine.Core.Semantic.Query;
+using Foundgine.Core.Semantic.Resolution;
 using Xunit;
 
 namespace Foundgine.E2E.Tests;

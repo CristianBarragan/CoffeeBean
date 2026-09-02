@@ -1,20 +1,20 @@
 using System.Security.Cryptography;
 using System.Text;
-using Foundgine.Abstractions;
-using Foundgine.Aot;
-using Foundgine.Execution;
-using Foundgine.Execution.Mutation;
-using Foundgine.Metadata;
-using Foundgine.Planning.Mutation;
-using Foundgine.Semantics.Mutation;
-using Foundgine.Semantics.Query;
-using Foundgine.Sql.Mutation;
+using Foundgine.Core.Abstractions;
+using Foundgine.Providers.Aot;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Execution.Mutation;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Semantic.Mutation;
+using Foundgine.Core.Semantic.Query;
+using Foundgine.Providers.Storage.Sql.Mutation;
 using Foundgine.SupplyChain.Application;
 using Foundgine.SupplyChain.Semantics;
 using Foundgine.Generated;
-using Foundgine.Semantics.IR;
+using Foundgine.Core.Semantic.IR;
 using Npgsql;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.SupplyChain.Infrastructure.Queries;
 

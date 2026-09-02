@@ -1,10 +1,10 @@
-using Foundgine.Abstractions;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Capabilities;
-using Foundgine.Semantics.Security;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Capabilities;
+using Foundgine.Core.Semantic.Security;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests.Security;
+namespace Foundgine.Core.Semantic.Tests.Security;
 
 public sealed class SecurityInvariantRegistryTests
 {

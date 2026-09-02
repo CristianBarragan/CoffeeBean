@@ -52,6 +52,10 @@ services.AddFoundgine(options =>
 
 Provider registration is separate.
 
+For application code, inject `IFoundgineExecutor`. It is the intentionally small
+entry point and exposes only `ExecuteAsync`. Use `IFoundgine` only for advanced
+capability-discovery, dry-run, or approval workflows.
+
 For PostgreSQL, add the SQL provider and register its compiler/execution services according to the application/provider composition.
 
 ## A simple query
@@ -109,7 +113,7 @@ Metadata supplies structural facts. Semantic configuration supplies application 
 
 ## AOT
 
-For compile-time metadata, use `Foundgine.Aot` declarations with the `Foundgine.Aot.Generator`.
+For compile-time metadata, use the `Foundgine.Providers.Aot` declarations with the `Foundgine.Providers.Aot.Generator` build-only analyzer. The AOT declarations are part of `Foundgine.Providers`; the former `Foundgine.Experimental` package is no longer used.
 
 ```plantuml
 @startuml
@@ -139,22 +143,22 @@ Configure `JsonReadIntentAdapterOptions` for public endpoints.
 
 ## GraphQL
 
-Use `Foundgine.GraphQL.HotChocolate` to translate GraphQL.
+Use `Foundgine.Extensions.GraphQL.HotChocolate` to translate GraphQL.
 
 For secure query execution use:
 
-`Foundgine.GraphQL.HotChocolate.Execution`.
+`Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Execution`.
 
 For mutations use:
 
-- `Foundgine.GraphQL.HotChocolate.Mutations`;
-- `Foundgine.GraphQL.HotChocolate.MutationExecution`.
+- `Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Mutations`;
+- `Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Mutations`.
 
 The host owns authentication/security context.
 
 ## MCP
 
-`Foundgine.MCP` exposes semantic capabilities and intent through MCP.
+`Foundgine.Providers.Tools.MCP` exposes semantic capabilities and intent through MCP.
 
 The host should provide an `ISecurityExecutionContextProvider` backed by authenticated request/session state.
 
@@ -162,7 +166,7 @@ Do not allow MCP arguments to choose tenant, identity, warrant, or provider cred
 
 ## AI
 
-`Foundgine.AI` integrates with `Microsoft.Extensions.AI`.
+`Foundgine.Providers.Models` integrates with `Microsoft.Extensions.AI`.
 
 The model can call semantic tools:
 
@@ -170,7 +174,7 @@ The model can call semantic tools:
 @startuml
 start
 :LLM;
-:Foundgine.AI;
+:Foundgine.Providers.Models;
 :Foundgine;
 :authorization + planning;
 :provider;

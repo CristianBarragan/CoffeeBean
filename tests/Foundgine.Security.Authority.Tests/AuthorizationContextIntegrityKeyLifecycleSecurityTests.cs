@@ -1,10 +1,10 @@
 using System.Security.Cryptography;
 using System.Text;
-using Foundgine.Security.Authority;
+using Foundgine.Runtime.ControlPlane;
 using Foundgine.HighAssurance.Postgres.Execution;
 using Xunit;
 
-namespace Foundgine.Security.Authority.Tests;
+namespace Foundgine.Runtime.ControlPlane.Tests;
 
 /// <summary>
 /// : adversarial tests for external authorization-integrity key lifecycle.

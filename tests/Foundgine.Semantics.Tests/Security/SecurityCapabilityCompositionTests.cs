@@ -1,9 +1,9 @@
-using Foundgine.Semantics.Capabilities;
-using Foundgine.Semantics.Security;
-using Foundgine.Semantics.Security.Warrants;
+using Foundgine.Core.Semantic.Capabilities;
+using Foundgine.Core.Semantic.Security;
+using Foundgine.Core.Semantic.Security.Warrants;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests.Security;
+namespace Foundgine.Core.Semantic.Tests.Security;
 
 public sealed class SecurityCapabilityCompositionTests
 {
@@ -86,8 +86,8 @@ public sealed class SecurityCapabilityCompositionTests
         return new(
             id,
             id,
-            new Foundgine.Abstractions.EntityId(1),
-            Foundgine.Abstractions.AuthorizationDecision.Allowed,
+            new Foundgine.Core.Abstractions.EntityId(1),
+            Foundgine.Core.Abstractions.AuthorizationDecision.Allowed,
             [], [], [], effectiveFields, [])
         {
             Operation = operation,

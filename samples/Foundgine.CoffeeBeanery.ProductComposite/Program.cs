@@ -1,5 +1,5 @@
-using Foundgine.Abstractions;
-using Foundgine.Semantics;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
 
 var model = CoffeeBeaneryProductModel.Build();
 

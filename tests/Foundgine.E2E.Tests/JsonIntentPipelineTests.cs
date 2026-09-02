@@ -1,14 +1,14 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Intent.Json;
-using Foundgine.Planning;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Resolution;
-using Foundgine.Sql;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Serialization;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Resolution;
+using Foundgine.Providers.Storage.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
 using Foundgine.E2E.Tests.Banking;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -51,7 +51,7 @@ public sealed class JsonIntentPipelineTests
         var model = BankingSemanticModel.Build();
         var metadata = BankingRelationalMetadata.Build();
         var intent = new JsonReadIntentAdapter().Parse(json);
-        var request = new Foundgine.Semantics.Intent.ReadIntentCompiler(model).Compile(intent);
+        var request = new Foundgine.Core.Semantic.Intent.ReadIntentCompiler(model).Compile(intent);
 
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         var authorized = new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(resolved);

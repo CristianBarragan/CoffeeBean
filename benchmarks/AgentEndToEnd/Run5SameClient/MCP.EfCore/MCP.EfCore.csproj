@@ -6,7 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../../../samples/Foundgine.HighAssurance.Banking/Foundgine.HighAssurance.Banking.csproj" />
-    <ProjectReference Include="../EfCore/Foundgine.HighAssurance.EfCore.csproj" />
+    <ProjectReference Include="../../Run5/EfCore/Foundgine.HighAssurance.EfCore.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.19" />

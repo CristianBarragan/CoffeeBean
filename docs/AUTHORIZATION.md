@@ -85,7 +85,7 @@ The final provider execution gate adds a second proof: the provider artifact mus
 ## Conditional authorization
 
 Conditional access is represented by the small provider-independent predicate
-IR in `Foundgine.Abstractions`.
+IR in `Foundgine.Core.Abstractions`.
 
 For example:
 

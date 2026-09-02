@@ -103,7 +103,7 @@ Foundgine's value grows with the number of distinct callers that would otherwise
 | AI-agent tool execution boundaries | `samples/Foundgine.Agent.OpenAI`, `samples/Foundgine.SupplyChain`'s MCP surface |
 | High-assurance mutation workflows | `samples/Foundgine.HighAssurance.Banking`, `samples/Foundgine.HighAssurance.Postgres` |
 | Composite / cross-domain application models | `samples/Foundgine.CoffeeBeanery.ProductComposite` |
-| Free-form / natural-language query surfaces | `Foundgine.Elasticsearch`, `Foundgine.Postgres.Vector`, [lexical grounding](docs/LEXICAL-GROUNDING.md) |
+| Free-form / natural-language query surfaces | `Foundgine.Providers.Storage.Elasticsearch`, `Foundgine.Providers.Storage.PostgresVector`, [lexical grounding](docs/LEXICAL-GROUNDING.md) |
 
 ## Open intent
 
@@ -309,7 +309,7 @@ For high-assurance mutation workflows, the mutation execution boundary can addit
 
 ### SQL
 
-`Foundgine.Sql` is the primary SQL provider. It compiles provider-independent plans to parameterized SQL and executes through ADO.NET.
+`Foundgine.Providers.Storage.Sql` is the primary SQL provider. It compiles provider-independent plans to parameterized SQL and executes through ADO.NET.
 
 PostgreSQL-specific functionality includes:
 
@@ -332,7 +332,7 @@ It also implements semantic candidate retrieval — ranked, provenance-carrying 
 
 ### InMemory
 
-`Foundgine.InMemory` executes a deliberately limited subset of the same logical plan over CLR-backed rows.
+`Foundgine.Providers.Storage.InMemory` executes a deliberately limited subset of the same logical plan over CLR-backed rows.
 
 It exists primarily to prove provider independence and support fast deterministic tests.
 
@@ -341,17 +341,17 @@ It exists primarily to prove provider independence and support fast deterministi
 Foundgine can sit below several interfaces:
 
 ```text
-Foundgine.GraphQL.HotChocolate
-Foundgine.Intent.Json
-Foundgine.MCP
-Foundgine.AI
+Foundgine.Extensions.GraphQL.HotChocolate
+Foundgine.Core.Serialization
+Foundgine.Providers.Tools.MCP
+Foundgine.Providers.Models
 ```
 
 These adapters translate their input into the Foundgine semantic boundary. They do not create alternate execution architectures.
 
 ## AOT
 
-`Foundgine.Aot` and `Foundgine.Aot.Generator` move stable metadata discovery into compilation:
+`Foundgine.Providers.Aot` (folder `Aot/` inside `Foundgine.Providers`) and the paired `Foundgine.Providers.Aot.Generator` Roslyn analyzer move stable metadata discovery into compilation:
 
 ```plantuml
 @startuml
@@ -389,46 +389,47 @@ Writes are where this matters most, because the cost of a wrong authorization de
 
 ## Package map
 
-| Package | Role |
-|---|---|
-| `Foundgine` | Application-facing runtime facade |
-| `Foundgine.Abstractions` | Shared contracts and stable identifiers |
-| `Foundgine.Semantics` | Semantic model, intent, resolution, authorization |
-| `Foundgine.Metadata` | Structural metadata and discovery |
-| `Foundgine.Planning` | Provider-independent planning and rewrites |
-| `Foundgine.Execution` | Execution IR, provider boundary, evidence/security |
-| `Foundgine.Sql` | SQL/PostgreSQL provider |
-| `Foundgine.InMemory` | In-memory proof/test provider |
-| `Foundgine.Aot` | AOT declarations and generated helpers |
-| `Foundgine.Aot.Generator` | Roslyn source generator |
-| `Foundgine.Intent.Json` | JSON intent adapter |
-| `Foundgine.MCP` | Model Context Protocol adapter |
-| `Foundgine.AI` | Microsoft.Extensions.AI integration |
-| `Foundgine.GraphQL.HotChocolate` | GraphQL query adapter |
-| `Foundgine.GraphQL.HotChocolate.Execution` | Secure GraphQL query execution |
-| `Foundgine.GraphQL.HotChocolate.Mutations` | GraphQL mutation adapter |
-| `Foundgine.GraphQL.HotChocolate.MutationExecution` | Secure GraphQL mutation execution |
-| `Foundgine.Security.Authority` | Optional authority/recovery control-plane infrastructure |
-| `Foundgine.Elasticsearch` | Optional lexical-grounding candidate source (Elasticsearch BM25/fuzzy) |
-| `Foundgine.Postgres.Vector` | Optional lexical-grounding candidate source (pgvector cosine/L2/inner-product) |
+The v2 source layout is consolidated into **4 publishable NuGet packages**.
+The AOT Roslyn generator is a build-only analyzer project under
+`src/Foundgine.Providers` and is not a separate NuGet package.
 
-All packages target .NET 9 except the Roslyn generator, which targets `netstandard2.0`.
+| Package | Source location | Role |
+|---|---|---|
+| `Foundgine.Core` | `src/Foundgine.Core` | Core contracts, semantic model, metadata, planning, and serialization |
+| `Foundgine.Runtime` | `src/Foundgine.Runtime` | Runtime orchestration, execution, control-plane, and application-facing execution APIs |
+| `Foundgine.Providers` | `src/Foundgine.Providers` | Storage, MCP, AI/model, GraphQL execution, AOT declarations/runtime support, and other provider implementations |
+| `Foundgine.Extensions` | `src/Foundgine.Extensions` | Caller-facing adapters such as GraphQL schema/translation integration |
+
+### AOT
+
+AOT declarations and runtime helpers live in `Foundgine.Providers.Aot`, inside
+`Foundgine.Providers`. The Roslyn generator remains a separate build-time
+assembly in the repository because Roslyn analyzers cannot be merged into the
+runtime library, but it is **embedded in the `Foundgine.Providers` NuGet
+package** under `analyzers/dotnet/cs/`. NuGet consumers therefore do not add a
+second generator package or analyzer reference.
+
+Repository projects that reference `Foundgine.Providers.csproj` directly may
+still reference the generator project explicitly as an analyzer, because a
+project-to-project analyzer reference is not transitive. That source-tree detail
+does not apply to normal NuGet consumers.
 
 ### Minimum footprint
 
-20 packages looks like a lot, but a basic application only ever installs two of them explicitly:
+For a normal application, start with:
 
-- `Foundgine` — the facade;
-- one provider — `Foundgine.Sql` or `Foundgine.InMemory`.
+- `Foundgine.Runtime`
+- `Foundgine.Providers`
 
-`Foundgine` transitively brings in `Foundgine.Semantics`, `Foundgine.Metadata`, `Foundgine.Planning`, `Foundgine.Execution`, and `Foundgine.Abstractions` — those are implementation layers, not separate things you choose between. The remaining packages are each optional and additive by design, not modularity for its own sake:
+`Foundgine.Core` arrives transitively through the runtime/provider packages and
+is installed directly only when you intentionally build against the semantic or
+provider-neutral contracts. Add `Foundgine.Extensions` only for optional
+framework adapters such as Hot Chocolate GraphQL.
 
-- `Foundgine.Aot` / `Foundgine.Aot.Generator` — only needed for attribute-driven, source-generated metadata instead of runtime discovery.
-- `Foundgine.Intent.Json`, `Foundgine.MCP`, `Foundgine.AI`, `Foundgine.GraphQL.HotChocolate*` — one package per caller-facing interface, so a project that only exposes GraphQL doesn't pull in Hot Chocolate's, MCP's, or Microsoft.Extensions.AI's dependency trees for interfaces it never uses.
-- `Foundgine.Security.Authority` — a substantial, independently-versioned recovery/control-plane subsystem (warrants, quorum, witnesses) that the large majority of applications will never need.
-- `Foundgine.Elasticsearch` / `Foundgine.Postgres.Vector` — only needed for approximate lexical grounding of free-form language (see [Lexical grounding](docs/LEXICAL-GROUNDING.md)); a deployment picks one, both, or neither without affecting the core resolution/authorization boundary.
-
-If you're only trying it out: `Foundgine` + `Foundgine.InMemory` is the entire footprint.
+The normal application-facing API is intentionally small: configure Foundgine
+once, inject the two-method `IFoundgineExecutor`, and call `ExecuteAsync`. Use the full `IFoundgine` interface only when you need discovery, dry-run, or approval APIs. Planning, approvals,
+capability discovery, custom provider contracts, and control-plane APIs remain
+available for advanced scenarios without being required for the first request.
 
 ## Samples
 
@@ -438,17 +439,17 @@ Start with:
 
 - `samples/Foundgine.SupplyChain.Simple`
 - `samples/Foundgine.SupplyChain`
-- `samples/Foundgine.SupplyChain.Semantic`
+- `samples/Foundgine.SupplyChain.EndToEnd/Semantic`
 - `samples/Foundgine.HighAssurance.Postgres`
 - `samples/Foundgine.Agent.OpenAI`
 
-The SupplyChain samples are also useful as architecture tests: they show how API, application, domain, metadata/AOT, semantics, authorization, planning, and PostgreSQL execution fit together. `samples/Foundgine.SupplyChain.Semantic/Tests/Grounding` is a worked [grounding-decision](docs/GROUNDING-DECISIONS.md) case study against that same real semantic contract — a materially ambiguous business term (`active supplier`) that Foundgine refuses to resolve silently, next to a case of duplicate retrieval evidence that it correctly does not treat as ambiguous.
+The SupplyChain samples are also useful as architecture tests: they show how API, application, domain, metadata/AOT, semantics, authorization, planning, and PostgreSQL execution fit together. `samples/Foundgine.SupplyChain.EndToEnd/Semantic/Tests/Grounding` is a worked [grounding-decision](docs/GROUNDING-DECISIONS.md) case study against that same real semantic contract — a materially ambiguous business term (`active supplier`) that Foundgine refuses to resolve silently, next to a case of duplicate retrieval evidence that it correctly does not treat as ambiguous. This project — including its retrieval-strategy tests (`pg_trgm`/`tsvector`/`pg_search`/Apache AGE), security invariants, and grounding case study — was formerly the standalone `Foundgine.SupplyChain.Semantic` sample and now lives inside `Foundgine.SupplyChain.EndToEnd` so the repository has a single Supply Chain end-to-end sample.
 
 ## Benchmarks
 
 `benchmarks/AgentEndToEnd` measures an agent completing the same business request two ways against the same PostgreSQL fixture: a **conventional** agent that discovers a physical data surface and writes its own relationship/query/update tools, versus a **Foundgine** agent that uses a semantic capability, an authorized graph operation, and a semantic mutation. Both flows reset to the same baseline before every measured run, so the comparison is of the same request, same fixture, same correctness assertion — only the execution boundary differs. `Run1` through `Run5SameClient` sweep customer count and concurrency; token/tool/wall-clock accounting is described in [`benchmarks/AgentEndToEnd/README.md`](benchmarks/AgentEndToEnd/README.md).
 
-`benchmarks/AgentEndToEnd/SupplyChain` runs the same idea against the stateful Supply Chain sample — agent → MCP → Foundgine → PostgreSQL — plus the deterministic `GraphPenetrationTests`/`McpPenetrationTests` security regression cases described in `SupplyChain/VERIFY-GATES.md`. Unlike Run1–5, there's no conventional counterpart here to diff against, so its report's `efficiencyEstimate` is a **modeled**, not measured, reduction estimate.
+`samples/Foundgine.SupplyChain.EndToEnd` runs the same idea against the stateful Supply Chain sample — agent → MCP → Foundgine → PostgreSQL — plus the deterministic `GraphPenetrationTests`/`McpPenetrationTests` security regression cases described in `Foundgine.SupplyChain.EndToEnd/VERIFY-GATES.md`. Unlike Run1–5, there's no conventional counterpart here to diff against, so its report's `efficiencyEstimate` is a **modeled**, not measured, reduction estimate.
 
 CI runs a smoke-sized version of both suites on every push/PR (`agent-benchmark-smoke`, ubuntu-latest, single customer/concurrency-1) so the full seed → run → report pipeline — and the Supply Chain E2E + PenTest gate — stay proven working, without the full customer/concurrency matrix running on every commit. Full-size runs are on-demand or scheduled elsewhere; see `run-all-agent-benchmarks.ps1 -IncludeSupplyChain -IncludeSemanticPipeline` for the complete suite. Published results, when available, live under `docs-site/assets/agent-benchmark`.
 

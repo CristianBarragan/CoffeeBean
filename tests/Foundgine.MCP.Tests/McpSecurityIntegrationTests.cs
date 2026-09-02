@@ -1,13 +1,13 @@
-using Foundgine;
-using Foundgine.Execution;
-using Foundgine.MCP;
-using Foundgine.Semantics.Mutation;
-using Foundgine.Semantics.Security.Execution;
-using Foundgine.Semantics.Security.Warrants;
+using Foundgine.Runtime;
+using Foundgine.Core.Execution;
+using Foundgine.Providers.Tools.MCP;
+using Foundgine.Core.Semantic.Mutation;
+using Foundgine.Core.Semantic.Security.Execution;
+using Foundgine.Core.Semantic.Security.Warrants;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
-namespace Foundgine.MCP.Tests;
+namespace Foundgine.Providers.Tools.MCP.Tests;
 
 public sealed class McpSecurityIntegrationTests
 {

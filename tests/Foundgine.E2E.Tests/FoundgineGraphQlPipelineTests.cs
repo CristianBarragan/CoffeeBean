@@ -1,14 +1,14 @@
 using Foundgine.E2E.Tests.Banking;
-using Foundgine.Execution;
-using Foundgine.GraphQL.HotChocolate;
-using Foundgine.Planning;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Resolution;
-using Foundgine.Sql;
+using Foundgine.Core.Execution;
+using Foundgine.Extensions.GraphQL.HotChocolate;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Resolution;
+using Foundgine.Providers.Storage.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
 using BankingModel = Foundgine.E2E.Tests.Banking.BankingSemanticModel;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 

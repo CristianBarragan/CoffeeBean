@@ -1,4 +1,4 @@
-using Foundgine.Postgres.Vector;
+using Foundgine.Providers.Storage.PostgresVector;
 using Npgsql;
 using Xunit;
 
@@ -102,7 +102,7 @@ public sealed class PgVectorSemanticLexicalCandidateSourceTests
         await Assert.ThrowsAsync<ArgumentNullException>(() => source.RetrieveAsync(null!));
     }
 
-    private sealed class StubEmbeddingGenerator : Foundgine.Semantics.Resolution.ISemanticEmbeddingGenerator
+    private sealed class StubEmbeddingGenerator : Foundgine.Core.Semantic.Resolution.ISemanticEmbeddingGenerator
     {
         public Task<float[]> EmbedAsync(string text, CancellationToken cancellationToken = default) =>
             Task.FromResult(new float[] { 1f });

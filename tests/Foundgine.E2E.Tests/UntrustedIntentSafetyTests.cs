@@ -1,12 +1,12 @@
-using Foundgine.Abstractions;
+using Foundgine.Core.Abstractions;
 using Foundgine.E2E.Tests.Banking;
-using Foundgine.Intent.Json;
-using Foundgine.Planning;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Intent;
-using Foundgine.Semantics.Resolution;
-using Foundgine.Sql;
+using Foundgine.Core.Serialization;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Intent;
+using Foundgine.Core.Semantic.Resolution;
+using Foundgine.Providers.Storage.Sql;
 using Xunit;
 using BankingModel = Foundgine.E2E.Tests.Banking.BankingSemanticModel;
 

@@ -127,14 +127,14 @@ The benchmark writes:
 
 ## Supply Chain E2E
 
-A separate full-stack E2E fixture now exercises a supply-chain domain through an agent-like stochastic bot → MCP → Foundgine semantic model → authorization → planner → execution → Npgsql → PostgreSQL. It supports up to five identities, mixes allowed and denied operations, and includes a high-assurance `place_order` mutation with atomic inventory decrement and idempotency.
+A separate full-stack E2E fixture now exercises a supply-chain domain through an agent-like stochastic bot → MCP → Foundgine semantic model → authorization → planner → execution → Npgsql → PostgreSQL. It supports up to five identities, mixes allowed and denied operations, and includes a high-assurance `place_order` mutation with atomic inventory decrement and idempotency. It lives at `samples/Foundgine.SupplyChain.EndToEnd` (not under `benchmarks/`) since it exercises a full sample application rather than measuring Foundgine vs. a conventional baseline.
 
 ```powershell
-cd benchmarks/AgentEndToEnd/SupplyChain
+cd samples/Foundgine.SupplyChain.EndToEnd
 ./run-supply-chain.ps1
 ```
 
-See `SupplyChain/README.md` for the actor matrix, schema, operation set and verification model.
+See `../../samples/Foundgine.SupplyChain.EndToEnd/README.md` for the actor matrix, schema, operation set and verification model.
 
 ## Experimental discipline
 

@@ -2,7 +2,7 @@ using Foundgine.HighAssurance.Banking;
 using Foundgine.HighAssurance.Postgres.Execution;
 using Xunit;
 
-namespace Foundgine.Security.Authority.Tests;
+namespace Foundgine.Runtime.ControlPlane.Tests;
 
 /// <summary>adversarial tests for decision-to-execution binding and TOCTOU resistance.</summary>
 public sealed class AuthorizationExecutionBindingSecurityTests

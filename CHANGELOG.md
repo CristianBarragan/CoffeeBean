@@ -1,14 +1,66 @@
+## [1.2.0] — 2026-09-03
+
+### Release package set
+
+This release publishes **exactly 4 NuGet packages** from `src/`: `Foundgine.Core`, `Foundgine.Runtime`, `Foundgine.Providers`, and `Foundgine.Extensions`. The AOT Roslyn source generator is a separate build-only analyzer project under `src/Foundgine.Providers` and is not published as a NuGet package.
+
+| Package | Source boundary | Responsibility |
+|---|---|---|
+| `Foundgine.Core` | `src/Foundgine.Core` | Core contracts, semantic model, metadata, planning, and serialization |
+| `Foundgine.Runtime` | `src/Foundgine.Runtime` | Runtime orchestration, execution, control-plane, and application-facing execution APIs |
+| `Foundgine.Providers` | `src/Foundgine.Providers` | Storage, MCP, AI/model, GraphQL execution, AOT declarations/runtime support, and provider implementations |
+| `Foundgine.Extensions` | `src/Foundgine.Extensions` | Caller-facing adapters such as GraphQL schema/translation integration |
+
+The AOT generator is `Foundgine.Providers.Aot.Generator`, a `netstandard2.0` build-only Roslyn component. It is not a NuGet package. The former `Foundgine.Experimental` package has been removed entirely; AOT declarations and runtime helpers now live under `Foundgine.Providers.Aot` inside `Foundgine.Providers`.
+
+### Packaging and documentation
+
+- Central package version is now **1.2.0** through `Directory.Build.props`.
+- All 4 publishable source projects have package-specific `README.md` files.
+- Every NuGet package now packs its **own** README rather than the repository root README.
+- Each package has a package-specific NuGet `Description` describing the concrete types/responsibilities contained in that package.
+- AOT declarations/runtime support are included in `Foundgine.Providers`; `Foundgine.Providers.Aot.Generator` remains build-only and is not independently packable.
+- The accidental `LICENSE/LICENSE` AOT package path is corrected to the standard `LICENSE` path.
+- `Directory.Build.props` and the release validation workflow describe the actual **4-package** publish set.
+
+### Architecture
+
+The 1.2.0 package layout follows the source architecture:
+
+```text
+src/
+├── Foundgine.Core/                     → NuGet
+├── Foundgine.Runtime/                  → NuGet
+├── Foundgine.Providers/                → NuGet
+│   ├── Aot/                             → included in Foundgine.Providers
+│   ├── Storage/{Sql,InMemory,Elasticsearch,PostgresVector}/
+│   ├── Tools/MCP/
+│   ├── Models/
+│   ├── GraphQL/HotChocolate/            → included in Foundgine.Providers
+│   └── Foundgine.Providers.Aot.Generator/ → build-only / not published
+└── Foundgine.Extensions/               → NuGet
+```
+
+### 1.1.9 semantic groundwork included in this release line
+
+- Resource-bounded lexical grounding with explicit token/path/retrieval/time/cancellation limits and fail-closed `BudgetExceeded` outcomes.
+- Provider-neutral lexical candidate retrieval and graph-constrained semantic resolution.
+- Elasticsearch/OpenSearch and PostgreSQL/pgvector retrieval integrations.
+- Canonical semantic operation graph, contract snapshot/fingerprint and authorization-preserving planning/execution boundaries.
+- Provider-backed PostgreSQL retrieval support for relational, fuzzy, full-text, optional BM25 and optional Apache AGE graph-similarity strategies.
+- MCP capability discovery → intent → execution integration.
+
 
 ## [1.1.9] — lexical grounding
 
 - Added explicit resource bounds to `SemanticLexicalResolver`: `maxTokens` (rejects oversized expressions before any retrieval or search runs), `maxPathsExplored` (a shared work budget across the token/candidate DFS and the bridging-hop BFS), `timeout` (a wall-clock ceiling on the in-memory search, default 250ms), and `retrievalTimeout` (a wall-clock ceiling on candidate retrieval across all tokens, default 2s, closing the one previously-unbounded stage of the pipeline — retrieval happens entirely before the search-time budget starts counting, so a slow or hung candidate source could otherwise block `Ground` indefinitely). Hitting any limit — or a cancelled `CancellationToken` passed to the new `Ground(expression, cancellationToken)` / `Resolve(expression, cancellationToken)` overloads — now returns `GroundingOutcome.BudgetExceeded` (`SemanticLexicalResolutionOutcome.BudgetExceeded` for `Resolve`) with `Committed = null`. This fails closed: a search cut short by a limit cannot prove it enumerated every legal interpretation, so it is never treated as evidence for the best candidate found so far.
 - Added `GroundingBudgetLimit` (`MaxTokens` / `MaxPathsExplored` / `Timeout` / `RetrievalTimeout` / `Cancelled`) and a `GroundingDecision.BudgetLimit` field so the specific limit that fired can be logged or alerted on without parsing `Reason` text.
 - Added `GroundingDecision.PartialInterpretationsAtCutoff`, populated only when `Outcome` is `BudgetExceeded`: whatever semantically distinct interpretations the search had already constructed when the limit fired, exposed for logging/alerting/budget-tuning. This is diagnostic only — `Committed` stays null regardless of how many entries it has, and nothing in Foundgine treats it as authorizable or executes against it.
-- Added a cancellable `ISemanticLexicalCandidateSource.Retrieve(request, cancellationToken)` overload (default-implemented as a delegate to the existing synchronous overload for source compatibility). `Foundgine.Elasticsearch` and `Foundgine.Postgres.Vector` now route it to their existing `RetrieveAsync` implementations so retrieval genuinely observes cancellation instead of only the in-memory search doing so.
+- Added a cancellable `ISemanticLexicalCandidateSource.Retrieve(request, cancellationToken)` overload (default-implemented as a delegate to the existing synchronous overload for source compatibility). `Foundgine.Providers.Storage.Elasticsearch` and `Foundgine.Providers.Storage.PostgresVector` now route it to their existing `RetrieveAsync` implementations so retrieval genuinely observes cancellation instead of only the in-memory search doing so.
 - Added provider-neutral semantic lexical candidate retrieval across Entity, Node, Relationship, Traversal, Field, Value, and Operation kinds.
 - Added graph-constrained lexical path resolution with highest-score-first root selection and backtracking.
 - Added a frozen-contract semantic lexicon projection suitable for Elasticsearch/OpenSearch indexing.
-- Added optional `Foundgine.Elasticsearch` HTTP integration for lexicon indexing and ranked candidate retrieval.
+- Added optional `Foundgine.Providers.Storage.Elasticsearch` HTTP integration for lexicon indexing and ranked candidate retrieval.
 - Added Supply Chain `bought` / `purchased` / `ordered` aliases for the existing `Customer.Orders` relationship.
 - Added `PostgresVectorE2ETests` — a real PostgreSQL 17 + pgvector physical proof of the full lexical grounding pipeline (semantic contract → lexicon projection → embedding → pgvector index → nearest-neighbor retrieval → graph-constrained resolution via `SemanticLexicalResolver`), plus an `EnsureSchemaAsync` idempotency test. Gated behind `FOUNDGINE_POSTGRES_CONNECTION_STRING` like the rest of `Foundgine.E2E.Tests`.
 - Switched `docker-compose.postgres.yml` from `postgres:17-alpine` to `pgvector/pgvector:pg17` (a drop-in-compatible PostgreSQL 17 image with pgvector preinstalled) since `CREATE EXTENSION vector` isn't satisfiable on a vanilla image.
@@ -23,19 +75,19 @@
 
 
 ### Fixed
-- **Removed a duplicate `SemanticIdentity` type that shadowed the real one in tests.** `Foundgine.Semantics` contained an unrelated, unused `record SemanticIdentity(FieldId FieldId, string Name)` that shared its name with the canonical `static class SemanticIdentity` in `Foundgine.Abstractions`. Because `Foundgine.Semantics.Tests` is nested under the `Foundgine.Semantics` namespace, unqualified `SemanticIdentity` references resolved to the enclosing-namespace record instead of the intended `using`-imported class, breaking `SemanticIdentityTests`. The dead record has been deleted.
+- **Removed a duplicate `SemanticIdentity` type that shadowed the real one in tests.** `Foundgine.Core.Semantic` contained an unrelated, unused `record SemanticIdentity(FieldId FieldId, string Name)` that shared its name with the canonical `static class SemanticIdentity` in `Foundgine.Core.Abstractions`. Because `Foundgine.Core.Semantic.Tests` is nested under the `Foundgine.Core.Semantic` namespace, unqualified `SemanticIdentity` references resolved to the enclosing-namespace record instead of the intended `using`-imported class, breaking `SemanticIdentityTests`. The dead record has been deleted.
 - **Stopped benchmark/sample `Exe` projects from being packed and published as NuGet packages.** `Foundgine.sln` includes several non-library `OutputType=Exe` projects — including three unrelated projects all literally named `Database` plus `CoffeeBeanery.Database` and `CoffeeBeanery.LoadTest` — that had no `IsPackable` setting and were picked up by `dotnet pack Foundgine.sln` during release, producing spurious `.nupkg` files with generic/colliding package IDs (causing the `1.1.6` release publish step to fail with `403 Forbidden` on the ownerless `Database` package ID, after `CoffeeBeanery.Database`/`CoffeeBeanery.LoadTest` had already leaked out as accidental publishes in an earlier release). `Directory.Build.props` now defaults `IsPackable` to `false` repo-wide; only the 17 intentional library projects under `src/` opt back in explicitly alongside their `PackageId`.
 
 ## [1.1.6] - 2026-08-30
 
 ### Added
-- **Provider-backed semantic retrieval test coverage in `samples/Foundgine.SupplyChain.Semantic`.** New `Tests/Retrieval/` suite exercises every `RetrievalStrategy` supported by `Foundgine.Sql.Retrieval.PostgresRetrievalCandidateSource` against the sample's own Supplier/Product domain:
+- **Provider-backed semantic retrieval test coverage in `samples/Foundgine.SupplyChain.Semantic`.** New `Tests/Retrieval/` suite exercises every `RetrievalStrategy` supported by `Foundgine.Providers.Storage.Sql.Retrieval.PostgresRetrievalCandidateSource` against the sample's own Supplier/Product domain:
   - `SupplyChainRetrievalCapabilityTests` — provider-wiring unit tests requiring no live database: the reserved `Vector` strategy always throws `NotSupportedException`; `Relational` is confirmed as a documented no-op; `Fuzzy`, `FullText`, `Search`, and `GraphSimilarity` each reject when their opt-in flag is off; `GraphSimilarity` request validation (missing `Relationship`/`ReferenceIdentity`) fails fast even when enabled; constructor null-argument guards.
   - `SupplyChainFuzzyAndFullTextRetrievalTests` — live PostgreSQL integration tests for the two default-enabled providers: `pg_trgm` fuzzy matching on `Supplier.Name` (including limit and no-match behavior) and native `tsvector` full text search on `Product.Name`, seeded against a schema matching the sample's generated storage names.
   - `SupplyChainSearchRetrievalTests` — live integration tests for the optional `pg_search`/BM25 provider, gated behind an explicit `FOUNDGINE_POSTGRES_PGSEARCH=1` opt-in on top of the database connection since the extension isn't present on a vanilla PostgreSQL image.
   - `SupplyChainGraphSimilarityRetrievalTests` — live integration tests for the optional Apache AGE graph-similarity provider, gated behind `FOUNDGINE_POSTGRES_AGE=1`, seeding a small Cypher graph over the `Supplier.purchaseOrders` relationship to demonstrate neighbor-similarity candidate retrieval.
-  - `PostgresRetrievalFactAttribute` (`PostgresRetrievalFactAttribute`/`PgSearchFactAttribute`/`ApacheAgeFactAttribute`) — connection- and extension-gated `[Fact]` variants, mirroring the existing `Foundgine.Security.Authority.Tests.PostgresFactAttribute` pattern, so the new tests skip cleanly without a configured database instead of failing CI.
-  - `Tests/Foundgine.SupplyChain.Semantic.Tests.csproj` now references `Foundgine.Sql` and `Npgsql` to support the new suite.
+  - `PostgresRetrievalFactAttribute` (`PostgresRetrievalFactAttribute`/`PgSearchFactAttribute`/`ApacheAgeFactAttribute`) — connection- and extension-gated `[Fact]` variants, mirroring the existing `Foundgine.Runtime.ControlPlane.Tests.PostgresFactAttribute` pattern, so the new tests skip cleanly without a configured database instead of failing CI.
+  - `Tests/Foundgine.SupplyChain.Semantic.Tests.csproj` now references `Foundgine.Providers.Storage.Sql` and `Npgsql` to support the new suite.
 - **Scenario 6 — Approximate & provider-backed retrieval** added to the advanced semantics sample page (`docs-site/samples/semantic/index.html`), documenting the provider-neutral `RetrievalStrategy` contract and how the PostgreSQL provider backs `Fuzzy` (pg_trgm), `FullText` (native tsvector), `Search` (optional pg_search/BM25), and `GraphSimilarity` (optional Apache AGE) while intentionally reserving `Vector` for a future `pgvector` provider. The "Provider lowering" architecture layer summary was updated to reference the same boundary.
 
 ## Step 36 — MCP Capability Discovery → Intent → Execution
@@ -224,9 +276,9 @@
 ## [1.1.5] - 2026-08-29
 
 ### Added
-- **Metadata-backed semantic discovery.** Added `IMetadataCatalog` as the model-wide structural metadata contract, plus `SemanticModel.Discover(...)` and `SemanticModelBuilder.FromMetadata(...)`. Structural entities, fields, identities and direct relationships can now be discovered from `Foundgine.Metadata` without application semantic enumeration. Added CLR type and collection-shape information to structural metadata so semantic discovery can preserve model type and relationship cardinality.
+- **Metadata-backed semantic discovery.** Added `IMetadataCatalog` as the model-wide structural metadata contract, plus `SemanticModel.Discover(...)` and `SemanticModelBuilder.FromMetadata(...)`. Structural entities, fields, identities and direct relationships can now be discovered from `Foundgine.Core.Semantic.Metadata` without application semantic enumeration. Added CLR type and collection-shape information to structural metadata so semantic discovery can preserve model type and relationship cardinality.
 - **`FoundgineOptions.UseMetadata()` and semantic/authorization configuration hooks**, making metadata-backed model discovery the preferred application setup path. Added name-based logical traversal configuration so applications no longer depend on generated relationship IDs.
-- **Semantic mutation intent builder** (`Foundgine.Semantics/Mutation/SemanticMutationIntentBuilder.cs`) and a new fluent `QueryBuilder`/`MutationBuilder` surface in `Foundgine`/`FoundgineServiceCollectionExtensions.cs`.
+- **Semantic mutation intent builder** (`Foundgine.Core.Semantic/Mutation/SemanticMutationIntentBuilder.cs`) and a new fluent `QueryBuilder`/`MutationBuilder` surface in `Foundgine`/`FoundgineServiceCollectionExtensions.cs`.
 - **Metadata structural contract.** Added compile-time validation for Foundgine relationship metadata: relationship targets must be discovered Foundgine entities; navigation property targets must match the declared relationship target; foreign-key and principal-key properties must exist, be scalar properties, and be unambiguous; foreign-key and principal-key CLR types must match. Invalid relationship metadata now reports deterministic `FGMETA001`–`FGMETA007` diagnostics and does not emit the generated registry.
 - **Domain CLR metadata producer boundary.** Extended the AOT metadata generator to discover `[FoundgineEntity]` declarations directly on C# record types, making the SupplyChain domain declarations the structural source observed by the AOT producer, while `SupplyChainMetadataProducer` remains the `IMetadataCatalog` seam consumed by semantics.
 - **New `samples/Foundgine.SupplyChain.Simple` sample** — the canonical Supply Chain sample collapsed from 6 projects into 1 (folders instead of project boundaries), demonstrating that the AOT generator and layer separation don't require separate assemblies.
@@ -314,13 +366,13 @@
 ## [1.1.1] - 2026-08-27
 
 ### Architecture
-- **Separated authorization authority/recovery from the Foundgine core.** The former `Foundgine.Authorization` package/project is now `Foundgine.Security.Authority`. The implementation remains provider-agnostic, but its purpose is explicit: authority recovery, witness quorum, credential lifecycle, journal reconciliation, promotion, failover, and recovery evidence. Foundgine core consumes validated security execution context and does not own the authority control plane. This is a package/namespace rename; consumers using `Foundgine.Authorization` must update their project reference and `using` directives.
+- **Separated authorization authority/recovery from the Foundgine core.** The former `Foundgine.Authorization` package/project is now `Foundgine.Runtime.ControlPlane`. The implementation remains provider-agnostic, but its purpose is explicit: authority recovery, witness quorum, credential lifecycle, journal reconciliation, promotion, failover, and recovery evidence. Foundgine core consumes validated security execution context and does not own the authority control plane. This is a package/namespace rename; consumers using `Foundgine.Authorization` must update their project reference and `using` directives.
 
 ### Added
 - **New `samples/Foundgine.SupplyChain.PenTest` sample** — a dedicated dual-transport (GraphQL + MCP) penetration-test harness for the SupplyChain sample, separate from the getting-started `Foundgine.SupplyChain` sample so pentest infrastructure doesn't leak into the tutorial path. Includes `Graph.Api` and `Mcp.Api` hosts, a `docker-compose.yml` with an isolated seeded Postgres instance (port 4431), a `Tests` project (`GraphPenetrationTests`, `McpPenetrationTests`, `HostConfigurationTests`, `JsonEscapingRegressionTests`, plus `McpJsonRpcClient`/`PenTestConnectionString`/`SupplyChainPenTestFactAttribute` test infrastructure), and `README.md`/`GUIDE.md`/`TUTORIAL.md` docs. Runnable locally via `scripts/run-supplychain-pentest.ps1`.
 - **New deterministic penetration suite under `tests/Foundgine.Security.Tests/Penetration/`** — 12 test files (~59 tests) covering cache/predicate-model attacks, cryptographic/identity attacks, graph/resource DoS, intent-parser hardening, JSON/MCP transport boundary abuse, mutation-authorization bypass, plan-integrity tampering, resource exhaustion, security-proof rails, semantic-boundary escapes, transport/secret leakage, and warrant trust-boundary attacks. This is the deterministic, CI-runnable counterpart to the `SEC-01`–`SEC-36` catalogue in `security/pentest/ATTACK-MATRIX.md`.
 - **Warrant trust-boundary hardening**: `SecurityWarrantExecutionTrust` enforces full root-to-leaf delegation-chain verification (every signature re-verified, every delegation edge structurally validated, each delegating issuer explicitly trusted) instead of trusting a supplied chain at face value; `FileSecurityWarrantReplayStore` adds durable, lock-protected, cross-process replay protection for single-filesystem deployments (cloud deployments should still prefer a shared store). Backed by new `SecurityWarrantGuardRailsPenetrationTests` and `SecurityAuthorityPartitionRailsTests` covering issuer-trust bypass, delegation-chain forgery, replay races, cache-partition collisions, and capability/canonicalization confusion (SEC-25 through SEC-36).
-- **`FieldId`** (`Foundgine.Abstractions`) — a `ushort`-backed value type with a custom `JsonConverter` so it can serialize both as an ordinary JSON value and as a dictionary key (`IReadOnlyDictionary<FieldId, object?>`), which `System.Text.Json`'s default converter can't do for a struct without explicit property-name read/write support. Covered by new `FieldIdJsonSerializationTests`.
+- **`FieldId`** (`Foundgine.Core.Abstractions`) — a `ushort`-backed value type with a custom `JsonConverter` so it can serialize both as an ordinary JSON value and as a dictionary key (`IReadOnlyDictionary<FieldId, object?>`), which `System.Text.Json`'s default converter can't do for a struct without explicit property-name read/write support. Covered by new `FieldIdJsonSerializationTests`.
 - **New `security/pentest/` documentation**: `README.md` (attack-family overview and live-tool usage for Nmap/ZAP/Burp/Nessus/Metasploit), `ATTACK-MATRIX.md` (the SEC-01–SEC-36 status table), `PENTEST-STATUS.md` (why this matters, what's implemented vs. requires a live environment, and live-run evidence), and `CI-INTEGRATION.md`, plus `run-all.ps1`, `run-nmap.ps1`, `run-zap-graphql.ps1`, `run-zap-mcp.ps1`, and `mcp-protocol-fuzz.ps1` for live tooling.
 - **CI**: `security.yml` gained `dependency-audit` (NuGet vulnerability audit across transitive packages, plus a deprecated-package report), `secret-scan` (gitleaks), `sbom` (CycloneDX SBOM generation), and `zap-baseline` (scheduled/manual dynamic OWASP ZAP scan combined with MCP protocol fuzzing against the SupplyChain sample) jobs. Added `.github/dependabot.yml`.
 
@@ -339,8 +391,8 @@
 ## [1.1.0] - 2026-08-26
 
 ### Added
-- Added the secure `FoundgineHotChocolateQueryExecutor` in the separate `Foundgine.GraphQL.HotChocolate.Execution` package so the pure GraphQL adapter remains independent of `Foundgine.Execution`.
-- Added the shared `ISecurityExecutionContextProvider` contract, delegate adapter, and fail-closed requirement helper under `Foundgine.Semantics.Security.Execution`.
+- Added the secure `FoundgineHotChocolateQueryExecutor` in the separate `Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Execution` package so the pure GraphQL adapter remains independent of `Foundgine.Core.Execution`.
+- Added the shared `ISecurityExecutionContextProvider` contract, delegate adapter, and fail-closed requirement helper under `Foundgine.Core.Semantic.Security.Execution`.
 - Added GraphQL executor coverage for missing security context, trusted host context propagation, result shaping, and stable adapter errors.
 
 ### Changed
@@ -362,7 +414,7 @@
 - `docs-site/getting-started/` — a hands-on "Getting started" tutorial page that runs the `Foundgine.SupplyChain` sample end to end and walks through its ten architectural layers (API → Application → Domain → AOT → Semantics → Query/Mutation repositories → high-assurance mutations → MCP → Testing), following the sample's `GUIDE.md`. Linked from the site nav, `sitemap.xml`, `llms.txt`, and `llms-full.md`.
 
 ### Fixed
-- **`samples/Foundgine.SupplyChain/Domain/Foundgine.SupplyChain.Domain.csproj` was missing the `Foundgine.Aot.Generator` analyzer reference.** The project declares `[FoundgineModel]`/`[FoundgineEntity]`/`[FoundgineField]`-attributed types but only referenced `Foundgine.Aot` as a plain `ProjectReference`, which does not transitively add `Foundgine.Aot.Generator` as an analyzer to `Domain`'s own compilation. The generator therefore never ran for `Domain`, so `Foundgine.Generated.GeneratedMetadata` (consumed by `Semantics/SupplyChainSemanticModel.cs` and, downstream, `Infrastructure` and `Tests`) was never emitted, and the sample failed to compile with `CS0234` on `Foundgine.Generated`. Added the missing `<ProjectReference Include="../../../src/Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />` entry, matching the pattern already used correctly in `tests/Foundgine.Aot.Tests` and `tests/Foundgine.E2E.Tests`.
+- **`samples/Foundgine.SupplyChain/Domain/Foundgine.SupplyChain.Domain.csproj` was missing the `Foundgine.Providers.Aot.Generator` analyzer reference.** The project declares `[FoundgineModel]`/`[FoundgineEntity]`/`[FoundgineField]`-attributed types but only referenced `Foundgine.Providers.Aot` as a plain `ProjectReference`, which does not transitively add `Foundgine.Providers.Aot.Generator` as an analyzer to `Domain`'s own compilation. The generator therefore never ran for `Domain`, so `Foundgine.Generated.GeneratedMetadata` (consumed by `Semantics/SupplyChainSemanticModel.cs` and, downstream, `Infrastructure` and `Tests`) was never emitted, and the sample failed to compile with `CS0234` on `Foundgine.Generated`. Added the missing `<ProjectReference Include="../../../src/Foundgine.Providers.Aot.Generator/Foundgine.Providers.Aot.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />` entry, matching the pattern already used correctly in `tests/Foundgine.Aot.Tests` and `tests/Foundgine.E2E.Tests`.
 - `docs-site/index.html` — the three "problem" callouts under the homepage hero (`Too many bespoke tools`, `Too much agent work`, `Execution rules get fragmented`) had no separator between the bold lead-in and the following sentence in the markup, so the two ran together as a single word (e.g. `toolsBusiness`) in contexts where the `.problem-grid strong`/`span` block-display CSS isn't applied. Added terminal punctuation and a space so the text reads correctly regardless of rendering context.
 
 ### Known verification gap
@@ -371,18 +423,18 @@
 ## [0.5.0]
 
 ### Changed
-- **`Foundgine.Security.Authority` promoted to a real, packaged library.** The authorization recovery control plane — witness quorum, credential lifecycle, journal reconciliation, and failover — moved out of `samples/Foundgine.HighAssurance.Postgres/Authorization/` and `.../Execution/` into a new `src/Foundgine.Security.Authority/` project, under a single `Foundgine.Security.Authority` namespace, depending only on `Foundgine.Execution` and the BCL. The two files that hardcode the sample's `transferFunds` operation (`AuthorizationDecision.cs`, `AuthorizationExecutionBinding.cs`) and the four genuinely Postgres-specific files (`PostgresAuthorizationContextStore`, `PostgresAuthorizationRecoveryCoordinator`, `PostgresAuthorizationSecurityUnitOfWork`, `PostgresTransferFundsExecutor`) stayed in the sample.
-- **`Foundgine.sln` fixed.** Removed a duplicate `ProjectConfigurationPlatforms` block that sat outside any `GlobalSection`, added the missing `Release|Any CPU` build configuration for the Banking/Postgres sample projects, and registered the new `Foundgine.Security.Authority` project.
+- **`Foundgine.Runtime.ControlPlane` promoted to a real, packaged library.** The authorization recovery control plane — witness quorum, credential lifecycle, journal reconciliation, and failover — moved out of `samples/Foundgine.HighAssurance.Postgres/Authorization/` and `.../Execution/` into a new `src/Foundgine.Runtime.ControlPlane/` project, under a single `Foundgine.Runtime.ControlPlane` namespace, depending only on `Foundgine.Core.Execution` and the BCL. The two files that hardcode the sample's `transferFunds` operation (`AuthorizationDecision.cs`, `AuthorizationExecutionBinding.cs`) and the four genuinely Postgres-specific files (`PostgresAuthorizationContextStore`, `PostgresAuthorizationRecoveryCoordinator`, `PostgresAuthorizationSecurityUnitOfWork`, `PostgresTransferFundsExecutor`) stayed in the sample.
+- **`Foundgine.sln` fixed.** Removed a duplicate `ProjectConfigurationPlatforms` block that sat outside any `GlobalSection`, added the missing `Release|Any CPU` build configuration for the Banking/Postgres sample projects, and registered the new `Foundgine.Runtime.ControlPlane` project.
 - **Milestone-numbering scheme removed from public surfaces.** Internal tracking IDs previously embedded in doc comments, README section headers, and changelog entries carried no meaning outside the original development process and are now gone; section headers use plain descriptive titles instead.
 - **Documentation index rewritten.** `docs/README.md` no longer links to files that don't exist in this repository. The same dead-link and stale-path cleanup was applied to `docs/ROADMAP.md`, `docs/SECURITY.md`, `the active Security.Authority test suite`, `README.md`, `ai.seo.md`, and `llms-full.md`.
 
 ### Fixed
-- Test files under `tests/Foundgine.Security.Authority.Tests` that reference the relocated `Foundgine.Security.Authority` types were missing the corresponding `using Foundgine.Security.Authority;` directive after the move; added.
+- Test files under `tests/Foundgine.Runtime.ControlPlane.Tests` that reference the relocated `Foundgine.Runtime.ControlPlane` types were missing the corresponding `using Foundgine.Runtime.ControlPlane;` directive after the move; added.
 
 ## [0.4.0]
 
 ### Added
-- **Authorization recovery control plane.** Adds authorization-recovery handling covering the failure and recovery paths of the authorization control plane: publication key lifecycle, rotation and retirement, promotion and commit atomicity, cross-instance commit and journal consensus/reconciliation, repair ordering and idempotency, and repair-proposer credential authentication, lifecycle, and replication. Full invariant-by-invariant detail lives in `docs/security/`; adversarial coverage lives in `tests/Foundgine.Security.Authority.Tests/`.
+- **Authorization recovery control plane.** Adds authorization-recovery handling covering the failure and recovery paths of the authorization control plane: publication key lifecycle, rotation and retirement, promotion and commit atomicity, cross-instance commit and journal consensus/reconciliation, repair ordering and idempotency, and repair-proposer credential authentication, lifecycle, and replication. Full invariant-by-invariant detail lives in `docs/security/`; adversarial coverage lives in `tests/Foundgine.Runtime.ControlPlane.Tests/`.
 - **Authority-term replication & recovery certificates.** Authority terms are installed through cryptographically signed direct-successor certificates with a chained history digest, preventing forged, skipped, divergent, or replayed authority transitions during replication and recovery.
 - **Authority-term certificate quorum / multi-witness validation.** Independent witness attestations over authority-term certificate digests, with strict-majority validation against configured witness identities and defenses against duplicate, unknown-witness, wrong-key, minority, and certificate-tamper conditions. The authoritative anchor remains the sole mutation authority; witness quorum is corroboration only.
 - **Witness credential lifecycle, rotation & revocation security.** Lifecycle-managed witness credentials with monotonic credential generations, compare-and-swap rotation, terminal revocation, lifecycle-backed authentication, revocation-aware in-flight credential leases, and fail-closed handling for unknown, stale, and revoked credentials.

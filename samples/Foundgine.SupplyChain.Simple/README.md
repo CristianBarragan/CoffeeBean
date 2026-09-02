@@ -15,7 +15,7 @@ Same sample, same logic, byte-for-byte identical `.cs` files — just moved from
 The layer split in the original sample is an *architectural choice*, not a
 requirement of the framework:
 
-- **The AOT source generator** (`Foundgine.Aot.Generator`) is a Roslyn
+- **The AOT source generator** (`Foundgine.Providers.Aot.Generator`) is a Roslyn
   analyzer. Analyzers run over whatever *project* they're attached to and see
   every file in it — folders don't change that. Domain never had to be a
   separate assembly for `[FoundgineModel]`/`[FoundgineEntity]` attributes to
@@ -31,7 +31,7 @@ requirement of the framework:
 ## What I did NOT change
 
 - Still targets Postgres (same `SupplyChainConnectionString` env var / config
-  key) — swapping to `Foundgine.InMemory` is a separate, larger change
+  key) — swapping to `Foundgine.Providers.Storage.InMemory` is a separate, larger change
   (different query executor, no SQL compiler) and would need its own pass.
 - `Tests/` is left out of this folder on purpose: test projects are a
   different concern from "reduce app-layer boilerplate" and normally stay

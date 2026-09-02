@@ -1,9 +1,9 @@
-using Foundgine.Abstractions;
-using Foundgine.Planning.Mutation;
-using Foundgine.Semantics.Mutation;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Semantic.Mutation;
 using Xunit;
 
-namespace Foundgine.Planning.Tests;
+namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed class SemanticMutationPlannerTests
 {

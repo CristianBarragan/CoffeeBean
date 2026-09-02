@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Foundgine.Security.Authority;
+using Foundgine.Runtime.ControlPlane;
 using Xunit;
 
 public sealed class AuthorizationRecoveryControlPlanePromotionAtomicityTests

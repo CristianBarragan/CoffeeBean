@@ -1,6 +1,6 @@
 # Foundgine website
 
-This directory contains the static public website for the current Foundgine release line (`1.1.9`, .NET 9).
+This directory contains the static public website for the current Foundgine release line (`1.2.0`, .NET 9).
 
 ## Public story
 

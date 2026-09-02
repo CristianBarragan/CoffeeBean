@@ -1,9 +1,9 @@
-using Foundgine.Abstractions;
-using Foundgine.GraphQL.HotChocolate;
-using Foundgine.Intent.Json;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Intent;
-using Foundgine.Semantics.Query;
+using Foundgine.Core.Abstractions;
+using Foundgine.Extensions.GraphQL.HotChocolate;
+using Foundgine.Core.Serialization;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Intent;
+using Foundgine.Core.Semantic.Query;
 using Xunit;
 
 namespace Foundgine.E2E.Tests;

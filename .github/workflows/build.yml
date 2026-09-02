@@ -40,7 +40,7 @@ jobs:
         run: dotnet build Foundgine.sln --no-restore --configuration Release
 
       # ----------------------------------------------------------
-      # Pack all NuGet projects
+      # Pack the exact 4 NuGet packages
       # ----------------------------------------------------------
       - name: Pack NuGet packages
         shell: bash
@@ -84,86 +84,74 @@ jobs:
 
           packages=(artifacts/nuget/*.nupkg)
 
+          expected_packages=(
+            "Foundgine.Core"
+            "Foundgine.Runtime"
+            "Foundgine.Providers"
+            "Foundgine.Extensions"
+          )
+
+          if [[ "${#packages[@]}" -ne "${#expected_packages[@]}" ]]; then
+            echo "ERROR: Expected exactly ${#expected_packages[@]} NuGet packages, produced ${#packages[@]}."
+            printf 'Expected:\n'
+            printf '  %s\n' "${expected_packages[@]}"
+            printf 'Produced:\n'
+            printf '  %s\n' "${packages[@]}"
+            exit 1
+          fi
+
+          for expected in "${expected_packages[@]}"; do
+            if ! compgen -G "artifacts/nuget/${expected}.*.nupkg" > /dev/null; then
+              echo "ERROR: Expected package was not produced: ${expected}"
+              exit 1
+            fi
+          done
+
           if [[ "${#packages[@]}" -eq 0 ]]; then
             echo "ERROR: No NuGet packages were produced."
             exit 1
           fi
 
           # ------------------------------------------------------
-          # Find Foundgine.Aot package
+          # Validate AOT assets inside Foundgine.Providers
           # ------------------------------------------------------
 
-          aot_packages=(artifacts/nuget/Foundgine.Aot.*.nupkg)
+          providers_packages=(artifacts/nuget/Foundgine.Providers.*.nupkg)
 
-          if [[ "${#aot_packages[@]}" -ne 1 ]]; then
+          if [[ "${#providers_packages[@]}" -ne 1 ]]; then
             echo
-            echo "ERROR: Expected exactly one Foundgine.Aot package."
-            echo "Found:"
-            printf '  %s\n' "${aot_packages[@]}"
+            echo "ERROR: Expected exactly one Foundgine.Providers package."
             exit 1
           fi
 
-          package="${aot_packages[0]}"
+          package="${providers_packages[0]}"
 
           echo
-          echo "========================================"
-          echo "Validating:"
-          echo "$package"
-          echo "========================================"
-          echo
-
+          echo "Validating AOT assets in: $package"
           echo "Package contents:"
           unzip -l "$package"
 
-          # ------------------------------------------------------
-          # Validate required files
-          # ------------------------------------------------------
-
           required=(
-            "lib/net9.0/Foundgine.Aot.dll"
-            "lib/net9.0/Foundgine.Metadata.dll"
-            "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"
+            "lib/net9.0/Foundgine.Providers.dll"
             "README.md"
-            "LICENSE/LICENSE"
+            "LICENSE"
           )
-
-          echo
-          echo "Checking required package assets..."
-          echo
 
           for file in "${required[@]}"; do
             if ! unzip -l "$package" | grep -Fq "$file"; then
-              echo
-              echo "ERROR: Required package asset is missing:"
-              echo "  $file"
-              echo
-              echo "Actual package contents:"
-              unzip -l "$package"
+              echo "ERROR: Required package asset is missing: $file"
               exit 1
             fi
-
             echo "OK: $file"
           done
 
-          # ------------------------------------------------------
-          # Generator must only exist in analyzer directory
-          # ------------------------------------------------------
-
           echo
-          echo "Checking generator placement..."
-
-          if unzip -l "$package" \
-              | grep -E '(^|/)Foundgine\.Aot\.Generator\.dll$' \
-              | grep -v 'analyzers/dotnet/cs/'; then
-
-            echo
-            echo "ERROR:"
-            echo "Foundgine.Aot.Generator.dll was packaged outside:"
-            echo "  analyzers/dotnet/cs/"
+          echo "Checking that the obsolete Experimental AOT package is absent..."
+          if compgen -G "artifacts/nuget/Foundgine.Experimental.Aot.*.nupkg" > /dev/null; then
+            echo "ERROR: Obsolete Foundgine.Experimental.Aot package was produced."
             exit 1
           fi
-
-          echo "OK: generator placement"
+          echo "OK: no obsolete AOT package"
 
           # ------------------------------------------------------
           # Verify package archive
@@ -264,10 +252,12 @@ jobs:
 
 
   # ============================================================
-  # Semantic supply-chain sample tests — independent pipeline check
+  # Semantic supply-chain cases — now ported under the EndToEnd
+  # sample (samples/Foundgine.SupplyChain.EndToEnd/Semantic) —
+  # independent pipeline check
   # ============================================================
   supplychain-semantic-sample-tests:
-    name: SupplyChain Semantic Sample Tests
+    name: SupplyChain EndToEnd — Semantic Cases
     needs:
       - build-pack
     runs-on: ubuntu-latest
@@ -284,13 +274,13 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Restore sample
-        run: dotnet restore samples/Foundgine.SupplyChain.Semantic/Foundgine.SupplyChain.Semantic.sln
+        run: dotnet restore samples/Foundgine.SupplyChain.EndToEnd/Semantic/Foundgine.SupplyChain.Semantic.sln
 
       - name: Build sample
-        run: dotnet build samples/Foundgine.SupplyChain.Semantic/Foundgine.SupplyChain.Semantic.sln --no-restore --configuration Release
+        run: dotnet build samples/Foundgine.SupplyChain.EndToEnd/Semantic/Foundgine.SupplyChain.Semantic.sln --no-restore --configuration Release
 
       - name: Run semantic SupplyChain tests
-        run: dotnet test samples/Foundgine.SupplyChain.Semantic/Tests/Foundgine.SupplyChain.Semantic.Tests.csproj --no-build --configuration Release --logger "console;verbosity=normal"
+        run: dotnet test samples/Foundgine.SupplyChain.EndToEnd/Semantic/Tests/Foundgine.SupplyChain.Semantic.Tests.csproj --no-build --configuration Release --logger "console;verbosity=normal"
 
 
   # ============================================================
@@ -424,7 +414,7 @@ jobs:
       # ----------------------------------------------------------
       # Supply Chain E2E: the stateful agent -> MCP -> Foundgine ->
       # PostgreSQL business workflow, plus its PenTest regression
-      # cases (see SupplyChain/VERIFY-GATES.md). Runs in the same job
+      # cases (see Foundgine.SupplyChain.EndToEnd/VERIFY-GATES.md). Runs in the same job
       # as the Run1-5 smoke test, right after it, so both benchmark
       # suites execute together on every push/PR instead of the
       # Supply Chain gate being documentation-only.
@@ -434,7 +424,7 @@ jobs:
         run: |
           Set-StrictMode -Version Latest
           $ErrorActionPreference = 'Stop'
-          $supplyChainScript = Join-Path "${{ github.workspace }}" 'benchmarks/AgentEndToEnd/SupplyChain/run-supply-chain.ps1'
+          $supplyChainScript = Join-Path "${{ github.workspace }}" 'samples/Foundgine.SupplyChain.EndToEnd/run-supply-chain.ps1'
           & $supplyChainScript
           if ($LASTEXITCODE -ne 0) {
             throw "Supply Chain E2E benchmark failed with exit code $LASTEXITCODE."
@@ -828,69 +818,6 @@ jobs:
             echo "OK"
           done
 
-          # ------------------------------------------------------
-          # Validate Foundgine.Aot package
-          # ------------------------------------------------------
-
-          aot_packages=(artifacts/nuget/Foundgine.Aot.*.nupkg)
-
-          if [[ "${#aot_packages[@]}" -ne 1 ]]; then
-            echo
-            echo "ERROR: Expected exactly one Foundgine.Aot package."
-            exit 1
-          fi
-
-          aot="${aot_packages[0]}"
-
-          echo
-          echo "Validating:"
-          echo "  $aot"
-
-          required=(
-            "lib/net9.0/Foundgine.Aot.dll"
-            "lib/net9.0/Foundgine.Metadata.dll"
-            "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"
-          )
-
-          for file in "${required[@]}"; do
-            if ! unzip -l "$aot" | grep -Fq "$file"; then
-              echo
-              echo "ERROR: Required asset missing:"
-              echo "  $file"
-              exit 1
-            fi
-
-            echo "OK: $file"
-          done
-
-          echo
-          echo "Downloaded NuGet artifacts validated successfully."
-
-      # ----------------------------------------------------------
-      # Authenticate with NuGet.org using OIDC
-      # ----------------------------------------------------------
-      - name: NuGet login (OIDC)
-        uses: NuGet/login@v1
-        id: nuget-login
-        with:
-          user: Foundgine
-
-      # ----------------------------------------------------------
-      # Publish
-      # ----------------------------------------------------------
-      - name: Publish to NuGet.org
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          shopt -s nullglob
-
-          packages=(artifacts/nuget/*.nupkg)
-
-          if [[ "${#packages[@]}" -eq 0 ]]; then
-            echo "ERROR: No packages found."
-            exit 1
-          fi
 
           for package in "${packages[@]}"; do
             echo

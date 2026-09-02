@@ -1,11 +1,11 @@
-using Foundgine.Metadata;
-using Foundgine.Abstractions;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Query;
-using Foundgine.GraphQL.HotChocolate;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Query;
+using Foundgine.Extensions.GraphQL.HotChocolate;
 using Xunit;
 
-namespace Foundgine.GraphQL.HotChocolate.Tests;
+namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
 public sealed class CollectionOrderingTests
 {

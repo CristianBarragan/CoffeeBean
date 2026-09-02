@@ -6,7 +6,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Core/Foundgine.Core.csproj" />
   </ItemGroup>
 </Project>

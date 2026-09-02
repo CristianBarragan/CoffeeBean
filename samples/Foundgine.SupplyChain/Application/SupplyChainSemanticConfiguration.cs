@@ -1,14 +1,14 @@
-using Foundgine.Abstractions;
+using Foundgine.Core.Abstractions;
 using Foundgine.Generated;
-using Foundgine.Metadata;
-using Foundgine.Semantics;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic;
 
 namespace Foundgine.SupplyChain.Application;
 
 /// <summary>
 /// Application-specific semantic enrichment for the Supply Chain sample.
 /// Structural entities, fields, identities and direct relationships are
-/// discovered from Foundgine.Metadata. This class only adds meaning that
+/// discovered from Foundgine.Core.Semantic.Metadata. This class only adds meaning that
 /// infrastructure metadata cannot infer, such as the logical
 /// Customer.transactions traversal.
 /// </summary>

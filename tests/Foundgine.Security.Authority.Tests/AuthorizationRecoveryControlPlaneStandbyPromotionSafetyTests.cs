@@ -1,5 +1,5 @@
 using Xunit;
-using Foundgine.Security.Authority;
+using Foundgine.Runtime.ControlPlane;
 
 public sealed class AuthorizationRecoveryControlPlaneStandbyPromotionSafetyTests
 {

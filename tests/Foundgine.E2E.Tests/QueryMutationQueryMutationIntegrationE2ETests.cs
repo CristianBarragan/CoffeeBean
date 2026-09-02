@@ -1,17 +1,17 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Metadata;
-using Foundgine.Planning.Mutation;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Mutation;
-using Foundgine.Semantics.Query;
-using Foundgine.Sql;
-using Foundgine.Sql.Mutation;
-using Foundgine.Sql.Mutation.Postgres;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Mutation;
+using Foundgine.Core.Semantic.Query;
+using Foundgine.Providers.Storage.Sql;
+using Foundgine.Providers.Storage.Sql.Mutation;
+using Foundgine.Providers.Storage.Sql.Mutation.Postgres;
 using Npgsql;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 

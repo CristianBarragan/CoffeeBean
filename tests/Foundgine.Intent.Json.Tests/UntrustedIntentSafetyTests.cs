@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace Foundgine.Intent.Json.Tests;
+namespace Foundgine.Core.Serialization.Tests;
 
 public sealed class UntrustedIntentSafetyTests
 {

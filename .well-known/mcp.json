@@ -9,7 +9,7 @@
     "endpointPath": "/mcp"
   },
   "server": {
-    "package": "Foundgine.MCP",
+    "package": "Foundgine.Providers.Tools.MCP",
     "language": "C#",
     "framework": ".NET 9"
   },
@@ -43,6 +43,6 @@
   },
   "source": {
     "repository": "https://github.com/CristianBarragan/Foundgine",
-    "mcpProject": "src/Foundgine.MCP"
+    "mcpProject": "src/Foundgine.Extensions/Foundgine.Providers.Tools.MCP"
   }
 }

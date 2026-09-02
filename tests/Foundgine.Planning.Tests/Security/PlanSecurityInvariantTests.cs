@@ -1,11 +1,11 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Execution.Security;
-using Foundgine.Planning;
-using Foundgine.Semantics.Security;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Execution.Security;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Security;
 using Xunit;
 
-namespace Foundgine.Planning.Tests.Security;
+namespace Foundgine.Core.Semantic.Planning.Tests.Security;
 
 public sealed class PlanSecurityInvariantTests
 {

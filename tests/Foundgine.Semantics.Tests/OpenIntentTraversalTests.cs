@@ -1,14 +1,14 @@
-using Foundgine.Abstractions;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Intent;
-using Foundgine.Semantics.Resolution;
-using Foundgine.Semantics.Capabilities;
-using Foundgine.Semantics.Query;
-using Foundgine.Semantics.IR;
-using Foundgine.Semantics.IR.Graph;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Intent;
+using Foundgine.Core.Semantic.Resolution;
+using Foundgine.Core.Semantic.Capabilities;
+using Foundgine.Core.Semantic.Query;
+using Foundgine.Core.Semantic.IR;
+using Foundgine.Core.Semantic.IR.Graph;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class OpenIntentTraversalTests
 {
@@ -84,7 +84,7 @@ public sealed class OpenIntentTraversalTests
                 Children: [new ReadSelection(Field: "Amount")])]);
 
         var graph = new ReadIntentCompiler(snapshot).CompileOperationGraph(intent);
-        var planner = new Foundgine.Planning.Planner();
+        var planner = new Foundgine.Core.Semantic.Planning.Planner();
         var plan = planner.Plan(graph);
 
         Assert.Equal(Customer, plan.Root.EntityId);
@@ -92,11 +92,11 @@ public sealed class OpenIntentTraversalTests
         Assert.Equal(Transaction, FindPlanNode(plan.Root, Transaction).EntityId);
     }
 
-    private static int CountPlanNodes(Foundgine.Planning.SemanticPlanNode node) =>
+    private static int CountPlanNodes(Foundgine.Core.Semantic.Planning.SemanticPlanNode node) =>
         1 + node.Children.Sum(CountPlanNodes);
 
-    private static Foundgine.Planning.SemanticPlanNode FindPlanNode(
-        Foundgine.Planning.SemanticPlanNode node,
+    private static Foundgine.Core.Semantic.Planning.SemanticPlanNode FindPlanNode(
+        Foundgine.Core.Semantic.Planning.SemanticPlanNode node,
         EntityId entityId)
     {
         if (node.EntityId == entityId)
@@ -146,9 +146,9 @@ public sealed class OpenIntentTraversalTests
                 new ReadFieldFilter("Amount", SemanticFilterOperator.Eq, 100)));
 
         var request = new ReadIntentCompiler(model).Compile(intent);
-        var filter = Assert.IsType<Foundgine.Semantics.Query.SemanticRelationshipFilter>(request.Options!.Filter);
-        var second = Assert.IsType<Foundgine.Semantics.Query.SemanticRelationshipFilter>(filter.Predicate);
-        var third = Assert.IsType<Foundgine.Semantics.Query.SemanticRelationshipFilter>(second.Predicate);
+        var filter = Assert.IsType<Foundgine.Core.Semantic.Query.SemanticRelationshipFilter>(request.Options!.Filter);
+        var second = Assert.IsType<Foundgine.Core.Semantic.Query.SemanticRelationshipFilter>(filter.Predicate);
+        var third = Assert.IsType<Foundgine.Core.Semantic.Query.SemanticRelationshipFilter>(second.Predicate);
 
         Assert.Equal(CustomerRelationships, filter.Relationship);
         Assert.Equal(RelationshipContract, second.Relationship);

@@ -1,4 +1,4 @@
-# Foundgine 1.1.9
+# Foundgine 1.2.0
 
 Foundgine is a **programmable semantic execution platform for .NET**. It creates an application-controlled boundary between structured caller intent and physical execution.
 
@@ -30,7 +30,7 @@ Retrieval is candidate discovery, not authorization.
 
 Intent can originate from application code, JSON, GraphQL, MCP or AI tools. These are adapters/consumers of the semantic boundary.
 
-Current providers include `Foundgine.Sql` for SQL/PostgreSQL and a deliberately limited `Foundgine.InMemory` provider. PostgreSQL retrieval includes relational lookup, `pg_trgm`, native full text, optional `pg_search`/BM25 and optional Apache AGE graph similarity. Vector retrieval is not currently implemented.
+Current providers include `Foundgine.Providers.Storage.Sql` for SQL/PostgreSQL and a deliberately limited `Foundgine.Providers.Storage.InMemory` provider. PostgreSQL retrieval includes relational lookup, `pg_trgm`, native full text, optional `pg_search`/BM25 and optional Apache AGE graph similarity. Vector retrieval is not currently implemented.
 
 ## AI
 
@@ -52,7 +52,7 @@ stop
 
 ## MCP
 
-`Foundgine.MCP` is a transport/capability adapter. Discovery is advisory. The host supplies trusted security context and every actual request is resolved and authorized.
+`Foundgine.Providers.Tools.MCP` is a transport/capability adapter. Discovery is advisory. The host supplies trusted security context and every actual request is resolved and authorized.
 
 ## Security
 
@@ -80,23 +80,23 @@ The `Foundgine.SupplyChain` sample and AgentEndToEnd benchmark demonstrate an ag
 ## Packages
 
 - `Foundgine` — runtime facade
-- `Foundgine.Abstractions` — stable contracts and identifiers
-- `Foundgine.Metadata` — structural metadata
-- `Foundgine.Semantics` — meaning, intent, resolution, authorization
-- `Foundgine.Planning` — provider-independent planning and safe rewrites
-- `Foundgine.Execution` — ExecutionIR, provider boundary, results and evidence
-- `Foundgine.Sql` — SQL/PostgreSQL provider
-- `Foundgine.InMemory` — limited non-SQL provider
-- `Foundgine.Aot` / `Foundgine.Aot.Generator` — AOT declarations and source generation
-- `Foundgine.Intent.Json` — JSON intent adapter
-- `Foundgine.GraphQL.HotChocolate*` — GraphQL adapters/execution boundaries
-- `Foundgine.MCP` — MCP adapter
-- `Foundgine.AI` — `Microsoft.Extensions.AI` integration
-- `Foundgine.Security.Authority` — optional authority/recovery control-plane infrastructure
+- `Foundgine.Core.Abstractions` — stable contracts and identifiers
+- `Foundgine.Core.Semantic.Metadata` — structural metadata
+- `Foundgine.Core.Semantic` — meaning, intent, resolution, authorization
+- `Foundgine.Core.Semantic.Planning` — provider-independent planning and safe rewrites
+- `Foundgine.Core.Execution` — ExecutionIR, provider boundary, results and evidence
+- `Foundgine.Providers.Storage.Sql` — SQL/PostgreSQL provider
+- `Foundgine.Providers.Storage.InMemory` — limited non-SQL provider
+- `Foundgine.Providers.Aot` / `Foundgine.Providers.Aot.Generator` — AOT declarations and source generation
+- `Foundgine.Core.Serialization` — JSON intent adapter
+- `Foundgine.Extensions.GraphQL.HotChocolate*` — GraphQL adapters/execution boundaries
+- `Foundgine.Providers.Tools.MCP` — MCP adapter
+- `Foundgine.Providers.Models` — `Microsoft.Extensions.AI` integration
+- `Foundgine.Runtime.ControlPlane` — optional authority/recovery control-plane infrastructure
 
 ## Current release
 
-**1.1.9 · .NET 9**
+**1.2.0 · .NET 9**
 
 For implementation truth, use the active source tree, tests, `docs/CURRENT-STATUS.md`, and package READMEs.
 

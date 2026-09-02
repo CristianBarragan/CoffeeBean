@@ -44,9 +44,9 @@ Capability descriptions help a model construct valid intent. The server resolves
 
 Authentication, identity, tenant context and model orchestration remain host responsibilities. Foundgine enforces semantic authorization and preserves security constraints into planning/execution.
 
-## Foundgine.AI
+## Foundgine.Providers.Models
 
-`Foundgine.AI` integrates with `Microsoft.Extensions.AI`, exposing Foundgine operations as model tools without hard-coding a model provider.
+`Foundgine.Providers.Models` integrates with `Microsoft.Extensions.AI`, exposing Foundgine operations as model tools without hard-coding a model provider.
 
 ## What is outside the core guarantee
 

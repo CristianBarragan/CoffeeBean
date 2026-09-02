@@ -1,11 +1,11 @@
 using System.Net;
 using System.Text;
-using Foundgine.MCP.Client;
-using Foundgine.Semantics.Capabilities;
-using Foundgine.Semantics.Intent;
+using Foundgine.Providers.Tools.MCP.Client;
+using Foundgine.Core.Semantic.Capabilities;
+using Foundgine.Core.Semantic.Intent;
 using Xunit;
 
-namespace Foundgine.MCP.Tests.Client;
+namespace Foundgine.Providers.Tools.MCP.Tests.Client;
 
 public sealed class FoundgineMcpAgentClientTests
 {
@@ -19,8 +19,8 @@ public sealed class FoundgineMcpAgentClientTests
             calls.Add(body);
             if (body.Contains("foundgine_capabilities", StringComparison.Ordinal))
                 return RpcToolResult(new SemanticCapabilityContract(1, [
-                    new("Customer.read", "Read Customer", new Foundgine.Abstractions.EntityId(1),
-                        Foundgine.Abstractions.AuthorizationDecision.Allowed, [], [], [], ["Id", "Name"], ["Transactions"])
+                    new("Customer.read", "Read Customer", new Foundgine.Core.Abstractions.EntityId(1),
+                        Foundgine.Core.Abstractions.AuthorizationDecision.Allowed, [], [], [], ["Id", "Name"], ["Transactions"])
                 ]));
 
             Assert.Contains("foundgine_query", body, StringComparison.Ordinal);

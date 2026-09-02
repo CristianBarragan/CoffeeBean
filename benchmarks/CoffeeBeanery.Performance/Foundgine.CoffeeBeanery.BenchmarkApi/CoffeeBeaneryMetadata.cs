@@ -1,5 +1,5 @@
-using Foundgine.Abstractions;
-using Foundgine.Metadata;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Metadata;
 
 namespace Foundgine.CoffeeBeanery.BenchmarkApi;
 

@@ -1,8 +1,8 @@
-using Foundgine.Security.Authority;
+using Foundgine.Runtime.ControlPlane;
 using Foundgine.HighAssurance.Postgres.Execution;
 using Xunit;
 
-namespace Foundgine.Security.Authority.Tests;
+namespace Foundgine.Runtime.ControlPlane.Tests;
 
 /// <summary>adversarial temporal authorization tests; no PostgreSQL required.</summary>
 public sealed class AuthorizationEvidenceFreshnessSecurityTests

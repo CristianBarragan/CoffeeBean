@@ -8,14 +8,14 @@ The sample does not use Foundgine `0.5.x` NuGet packages.
 
 Key source dependencies include:
 
-- `src/Foundgine.Abstractions`
-- `src/Foundgine.Aot`
-- `src/Foundgine.Aot.Generator`
-- `src/Foundgine.Metadata`
-- `src/Foundgine.Semantics`
-- `src/Foundgine.Planning`
-- `src/Foundgine.Execution`
-- `src/Foundgine.Sql`
-- `src/Foundgine.MCP`
+- `src/Foundgine.Core/Foundgine.Core.Abstractions`
+- `src/Foundgine.Providers/Foundgine.Providers.Aot`
+- `src/Foundgine.Providers/Foundgine.Providers.Aot.Generator`
+- `src/Foundgine.Runtime/Foundgine.Core.Semantic.Metadata`
+- `src/Foundgine.Core/Foundgine.Core.Semantic`
+- `src/Foundgine.Runtime/Foundgine.Core.Semantic.Planning`
+- `src/Foundgine.Runtime/Foundgine.Core.Execution`
+- `src/Foundgine.Providers/Foundgine.Providers.Storage.Sql`
+- `src/Foundgine.Extensions/Foundgine.Providers.Tools.MCP`
 
-The current release line is **Foundgine 1.1.9**. When this sample is copied outside the repository, the source references should be replaced with `1.1.9` package references (or a later compatible release).
+The current release line is **Foundgine 1.2.0**. When this sample is copied outside the repository, the source references should be replaced with `1.2.0` package references (or a later compatible release).

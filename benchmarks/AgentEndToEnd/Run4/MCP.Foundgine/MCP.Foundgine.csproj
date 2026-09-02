@@ -4,14 +4,9 @@
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
-    <ProjectReference Include="../../../../src/Foundgine/Foundgine.csproj" />
-    <ProjectReference Include="../../../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
-    <ProjectReference Include="../../../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
-    <ProjectReference Include="../../../../src/Foundgine.Intent.Json/Foundgine.Intent.Json.csproj" />
-    <ProjectReference Include="../../../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />
-    <ProjectReference Include="../../../../src/Foundgine.Planning/Foundgine.Planning.csproj" />
-    <ProjectReference Include="../../../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
-    <ProjectReference Include="../../../../src/Foundgine.Sql/Foundgine.Sql.csproj" />
-    <ProjectReference Include="../../../../src/Foundgine.MCP/Foundgine.MCP.csproj" />
+    <ProjectReference Include="../../../../src/Foundgine.Core/Foundgine.Core.csproj" />
+    <ProjectReference Include="../../../../src/Foundgine.Runtime/Foundgine.Runtime.csproj" />
+    
+    <ProjectReference Include="../../../../src/Foundgine.Providers/Foundgine.Providers.csproj" />
   </ItemGroup>
 </Project>

@@ -17,7 +17,7 @@ start
 :Application;
 :Domain + generated semantics;
 :Foundgine Planning / Execution;
-:Foundgine.Sql;
+:Foundgine.Providers.Storage.Sql;
 :PostgreSQL;
 stop
 @enduml
@@ -85,8 +85,8 @@ dotnet test samples/Foundgine.SupplyChain/Tests/Foundgine.SupplyChain.Tests.cspr
 The sample's Foundgine dependencies are source projects, not NuGet packages:
 
 ```xml
-<ProjectReference Include="../../../src/Foundgine.Aot/Foundgine.Aot.csproj" />
-<ProjectReference Include="../../../src/Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj"
+<ProjectReference Include="../../../src/Foundgine.Providers/Foundgine.Providers.csproj" />
+<ProjectReference Include="../../../src/Foundgine.Providers/Foundgine.Providers.Aot.Generator/Foundgine.Providers.Aot.Generator.csproj"
                   OutputItemType="Analyzer"
                   ReferenceOutputAssembly="false"
                   PrivateAssets="all" />
@@ -175,12 +175,12 @@ This is schema metadata, not object navigation. Neither the application model no
 
 ## 5. Let the AOT generator produce runtime metadata
 
-The `Domain` project references both `Foundgine.Aot` and the source generator:
+The `Domain` project references both `Foundgine.Providers.Aot` and the source generator:
 
 ```xml
 <ItemGroup>
-  <ProjectReference Include="../../../src/Foundgine.Aot/Foundgine.Aot.csproj" />
-  <ProjectReference Include="../../../src/Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj"
+  <ProjectReference Include="../../../src/Foundgine.Providers/Foundgine.Providers.csproj" />
+  <ProjectReference Include="../../../src/Foundgine.Providers/Foundgine.Providers.Aot.Generator/Foundgine.Providers.Aot.Generator.csproj"
                     OutputItemType="Analyzer"
                     ReferenceOutputAssembly="false"
                     PrivateAssets="all" />

@@ -1,8 +1,8 @@
-using Foundgine.Semantics.Authorization;
-using Foundgine.Execution;
-using Foundgine.Planning;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Security;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Security;
 using Xunit;
 
 namespace Foundgine.Security.Tests.Penetration;
@@ -47,8 +47,8 @@ public sealed class CacheModelAndPredicatePenetrationTests
     public void Unknown_security_obligation_cannot_be_normalized_into_a_known_one()
     {
         var ir = Foundgine.Testing.ExecutionIRTestFactory.Create(
-            new ExecutionIRNode(1, ExecutionOperation.Scan, new Foundgine.Abstractions.EntityId(1),
-                [new Foundgine.Abstractions.FieldId(1)], null, null, []),
+            new ExecutionIRNode(1, ExecutionOperation.Scan, new Foundgine.Core.Abstractions.EntityId(1),
+                [new Foundgine.Core.Abstractions.FieldId(1)], null, null, []),
             ["security.unknown"]);
 
         Assert.Contains("security.unknown", ir.RequiredSecurityInvariants);
@@ -58,10 +58,10 @@ public sealed class CacheModelAndPredicatePenetrationTests
     private static SemanticPlan CreatePlan(string invariant)
     {
         var graph = new SemanticGraph();
-        graph.AddRoot(new Foundgine.Abstractions.EntityId(1), [new Foundgine.Abstractions.FieldId(1)]);
+        graph.AddRoot(new Foundgine.Core.Abstractions.EntityId(1), [new Foundgine.Core.Abstractions.FieldId(1)]);
         return new SemanticPlan(
-            new SemanticPlanNode(1, ExecutionOperation.Scan, new Foundgine.Abstractions.EntityId(1),
-                [new Foundgine.Abstractions.FieldId(1)], null, null, []),
+            new SemanticPlanNode(1, ExecutionOperation.Scan, new Foundgine.Core.Abstractions.EntityId(1),
+                [new Foundgine.Core.Abstractions.FieldId(1)], null, null, []),
             [invariant]);
     }
 

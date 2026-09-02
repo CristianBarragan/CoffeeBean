@@ -1,4 +1,4 @@
-using Foundgine.Semantics.Mutation;
+using Foundgine.Core.Semantic.Mutation;
 using Xunit;
 
 public sealed class SemanticMutationPlannerTests

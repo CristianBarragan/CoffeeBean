@@ -1,7 +1,7 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Planning;
-using Foundgine.Semantics.Query;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Query;
 using Xunit;
 
 namespace Foundgine.E2E.Tests;

@@ -1,15 +1,15 @@
-using Foundgine;
-using Foundgine.AI;
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.InMemory;
-using Foundgine.Metadata;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
+using Foundgine.Runtime;
+using Foundgine.Providers.Models;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Providers.Storage.InMemory;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using OpenAI;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
 if (string.IsNullOrWhiteSpace(apiKey))

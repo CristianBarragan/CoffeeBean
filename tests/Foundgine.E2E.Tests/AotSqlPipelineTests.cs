@@ -1,15 +1,15 @@
-using Foundgine.Abstractions;
-using Foundgine.Aot;
-using Foundgine.Execution;
+using Foundgine.Core.Abstractions;
+using Foundgine.Providers.Aot;
+using Foundgine.Core.Execution;
 using Foundgine.Generated;
-using Foundgine.Planning;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Resolution;
-using Foundgine.Sql;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Resolution;
+using Foundgine.Providers.Storage.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 

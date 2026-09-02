@@ -3,10 +3,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" /><PackageReference Include="xunit" Version="2.9.3" /><PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" /></ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
-    <ProjectReference Include="../../../src/Foundgine.Aot/Foundgine.Aot.csproj" />
-    <ProjectReference Include="../../../src/Foundgine.Planning/Foundgine.Planning.csproj" />
-    <ProjectReference Include="../../../src/Foundgine.Sql/Foundgine.Sql.csproj" />
+    <ProjectReference Include="../../../src/Foundgine.Core/Foundgine.Core.csproj" />
+    <ProjectReference Include="../../../src/Foundgine.Providers/Foundgine.Providers.csproj" />
     <ProjectReference Include="../Domain/Foundgine.SupplyChain.Domain.csproj" />
     <ProjectReference Include="../Application/Foundgine.SupplyChain.Application.csproj" /><ProjectReference Include="../Infrastructure/Foundgine.SupplyChain.Infrastructure.csproj" /></ItemGroup>
 </Project>

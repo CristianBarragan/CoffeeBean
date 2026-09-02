@@ -3,7 +3,7 @@
   "label": "NuGet Downloads",
   "message": "41,232",
   "color": "blue",
-  "generatedAt": "2026-09-02T21:06:55.7557842Z",
+  "generatedAt": "2026-09-02T16:39:15.2128856Z",
   "totalDownloads": 41232,
   "packageCount": 29,
   "packages": [
@@ -13,7 +13,7 @@
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.Abstractions",
+      "id": "Foundgine.Core.Abstractions",
       "downloads": 4730,
       "version": "1.1.9"
     },
@@ -23,13 +23,8 @@
       "version": "1.1.5"
     },
     {
-      "id": "Foundgine.AI",
+      "id": "Foundgine.Providers.Models",
       "downloads": 1300,
-      "version": "1.1.9"
-    },
-    {
-      "id": "Foundgine.Aot",
-      "downloads": 1549,
       "version": "1.1.9"
     },
     {
@@ -48,32 +43,32 @@
       "version": "1.1.5"
     },
     {
-      "id": "Foundgine.Elasticsearch",
+      "id": "Foundgine.Providers.Storage.Elasticsearch",
       "downloads": 86,
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.Execution",
+      "id": "Foundgine.Core.Execution",
       "downloads": 3187,
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.GraphQL.HotChocolate",
+      "id": "Foundgine.Extensions.GraphQL.HotChocolate",
       "downloads": 1901,
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.GraphQL.HotChocolate.Execution",
+      "id": "Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Execution",
       "downloads": 478,
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.GraphQL.HotChocolate.MutationExecution",
+      "id": "Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Mutations",
       "downloads": 572,
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.GraphQL.HotChocolate.Mutations",
+      "id": "Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Mutations",
       "downloads": 1627,
       "version": "1.1.9"
     },
@@ -83,47 +78,47 @@
       "version": "1.1.5"
     },
     {
-      "id": "Foundgine.InMemory",
+      "id": "Foundgine.Providers.Storage.InMemory",
       "downloads": 1527,
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.Intent.Json",
+      "id": "Foundgine.Core.Serialization",
       "downloads": 2045,
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.MCP",
+      "id": "Foundgine.Providers.Tools.MCP",
       "downloads": 1220,
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.Metadata",
+      "id": "Foundgine.Core.Semantic.Metadata",
       "downloads": 2730,
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.Planning",
+      "id": "Foundgine.Core.Semantic.Planning",
       "downloads": 3515,
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.Postgres.Vector",
+      "id": "Foundgine.Providers.Storage.PostgresVector",
       "downloads": 105,
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.Security.Authority",
+      "id": "Foundgine.Runtime.ControlPlane",
       "downloads": 577,
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.Semantics",
+      "id": "Foundgine.Core.Semantic",
       "downloads": 4380,
       "version": "1.1.9"
     },
     {
-      "id": "Foundgine.Sql",
+      "id": "Foundgine.Providers.Storage.Sql",
       "downloads": 1611,
       "version": "1.1.9"
     },

@@ -1,4 +1,4 @@
-using Foundgine.Intent.Json;
+using Foundgine.Core.Serialization;
 using Xunit;
 
 namespace Foundgine.Security.Tests.Penetration;

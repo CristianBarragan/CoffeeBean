@@ -1,6 +1,6 @@
-using Foundgine.Execution;
+using Foundgine.Core.Execution;
 using Foundgine.HighAssurance.Banking;
-using Foundgine.Semantics.Authorization;
+using Foundgine.Core.Semantic.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Foundgine.HighAssurance.EfCore;

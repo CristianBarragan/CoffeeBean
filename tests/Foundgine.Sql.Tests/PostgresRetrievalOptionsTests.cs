@@ -1,8 +1,8 @@
-using Foundgine.Sql.Retrieval;
-using Foundgine.Semantics.Resolution;
+using Foundgine.Providers.Storage.Sql.Retrieval;
+using Foundgine.Core.Semantic.Resolution;
 using Xunit;
 
-namespace Foundgine.Sql.Tests;
+namespace Foundgine.Providers.Storage.Sql.Tests;
 
 public sealed class PostgresRetrievalOptionsTests
 {

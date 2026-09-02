@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using Foundgine.Aot;
+using Foundgine.Providers.Aot;
 
 namespace Foundgine.E2E.Tests;
 

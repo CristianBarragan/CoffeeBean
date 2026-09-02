@@ -1,10 +1,10 @@
-﻿using Foundgine.Abstractions;
-using Foundgine.Metadata;
-using Foundgine.Planning;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Resolution;
-using Foundgine.Sql;
+﻿using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Resolution;
+using Foundgine.Providers.Storage.Sql;
 using Xunit;
 using BankingModel = Foundgine.E2E.Tests.Banking.BankingSemanticModel;
 

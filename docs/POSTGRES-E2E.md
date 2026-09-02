@@ -66,7 +66,7 @@ user: foundgine
 password: foundgine
 ```
 
-`pgvector/pgvector:pg17` is a drop-in-compatible build of the official `postgres:17` image with the `pgvector` extension preinstalled. It is required by `Foundgine.Postgres.Vector`'s E2E tests (`PostgresVectorE2ETests`), which call `CREATE EXTENSION vector` — something a vanilla `postgres:17` image cannot satisfy.
+`pgvector/pgvector:pg17` is a drop-in-compatible build of the official `postgres:17` image with the `pgvector` extension preinstalled. It is required by `Foundgine.Providers.Storage.PostgresVector`'s E2E tests (`PostgresVectorE2ETests`), which call `CREATE EXTENSION vector` — something a vanilla `postgres:17` image cannot satisfy.
 
 The database uses a temporary filesystem, so it is safe to throw away after the test.
 

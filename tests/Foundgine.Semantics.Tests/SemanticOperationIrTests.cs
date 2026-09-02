@@ -1,8 +1,8 @@
-using Foundgine.Abstractions;
-using Foundgine.Semantics.IR;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.IR;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticOperationIrTests
 {
@@ -37,7 +37,7 @@ public sealed class SemanticOperationIrTests
     {
         var graph = new SemanticGraph();
         graph.GetType().GetProperty(nameof(SemanticGraph.Options))!
-            .SetValue(graph, new Foundgine.Semantics.Query.SemanticQueryOptions(Limit: 25));
+            .SetValue(graph, new Foundgine.Core.Semantic.Query.SemanticQueryOptions(Limit: 25));
         graph.AddRoot(new EntityId(1));
 
         var operation = SemanticOperationCompiler.Compile(graph);

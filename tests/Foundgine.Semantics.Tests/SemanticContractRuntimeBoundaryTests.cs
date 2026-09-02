@@ -1,8 +1,8 @@
 using Xunit;
-using Foundgine.Abstractions;
-using Foundgine.Semantics.Resolution;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Resolution;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticContractRuntimeBoundaryTests
 {

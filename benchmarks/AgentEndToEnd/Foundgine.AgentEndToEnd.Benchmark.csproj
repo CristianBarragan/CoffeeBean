@@ -9,11 +9,9 @@
          Do not let the SDK recursively compile every benchmark source file. -->
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="Program.cs" />
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.19" />
   </ItemGroup>
-
 </Project>

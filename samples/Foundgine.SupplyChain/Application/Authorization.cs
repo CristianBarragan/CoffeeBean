@@ -1,4 +1,4 @@
-using Foundgine.Semantics.Authorization;
+using Foundgine.Core.Semantic.Authorization;
 
 namespace Foundgine.SupplyChain.Application;
 

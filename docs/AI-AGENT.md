@@ -31,7 +31,7 @@ Capability discovery is descriptive. Search results, model output and tool argum
 start
 :LLM / Agent Framework;
 :Microsoft.Extensions.AI;
-:Foundgine.AI;
+:Foundgine.Providers.Models;
 :IFoundgine;
 :semantic resolution;
 :authorization;
@@ -43,7 +43,7 @@ stop
 
 The model is an untrusted producer of intent.
 
-## What `Foundgine.AI` provides
+## What `Foundgine.Providers.Models` provides
 
 The package contains:
 
@@ -211,7 +211,7 @@ AI and MCP are independent adapters over the same runtime:
 @startuml
 start
 :Microsoft.Extensions.AI;
-:Foundgine.AI;
+:Foundgine.Providers.Models;
 :Foundgine;
 stop
 @enduml
@@ -221,7 +221,7 @@ stop
 @startuml
 start
 :MCP;
-:Foundgine.MCP;
+:Foundgine.Providers.Tools.MCP;
 :Foundgine;
 stop
 @enduml
@@ -267,7 +267,7 @@ It is a controlled AI tool integration.
 
 ## Related source package
 
-See `src/Foundgine.AI/README.md` for the package-level API and security contract.
+See `src/Foundgine.Providers/Foundgine.Providers.Models/README.md` for the package-level API and security contract.
 
 ---
 

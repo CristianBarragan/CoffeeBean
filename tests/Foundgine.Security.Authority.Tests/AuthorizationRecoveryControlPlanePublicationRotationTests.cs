@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
-using Foundgine.Security.Authority;
+using Foundgine.Runtime.ControlPlane;
 using Xunit;
 
 public sealed class AuthorizationRecoveryControlPlanePublicationRotationTests

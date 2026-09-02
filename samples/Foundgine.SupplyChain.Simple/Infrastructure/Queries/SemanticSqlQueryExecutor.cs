@@ -1,14 +1,14 @@
 using System.Security.Cryptography;
 using System.Text;
-using Foundgine.Execution;
-using Foundgine.Metadata;
-using Foundgine.Planning;
-using Foundgine.Semantics.IR;
-using Foundgine.Sql;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.IR;
+using Foundgine.Providers.Storage.Sql;
 using Npgsql;
 using Foundgine.SupplyChain.Application;
-using Foundgine.Sql.Query;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using Foundgine.Providers.Storage.Sql.Query;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.SupplyChain.Infrastructure.Queries;
 

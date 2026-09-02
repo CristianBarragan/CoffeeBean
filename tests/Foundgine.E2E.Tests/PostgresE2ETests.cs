@@ -1,15 +1,15 @@
 using System.Text.Json;
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Execution.Mutation;
-using Foundgine.Metadata;
-using Foundgine.Planning.Mutation;
-using Foundgine.Semantics.Mutation;
-using Foundgine.Sql.Mutation;
-using Foundgine.Sql.Mutation.Postgres;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Execution.Mutation;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Semantic.Mutation;
+using Foundgine.Providers.Storage.Sql.Mutation;
+using Foundgine.Providers.Storage.Sql.Mutation.Postgres;
 using Npgsql;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 

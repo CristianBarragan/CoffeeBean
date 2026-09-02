@@ -1,10 +1,10 @@
 using Foundgine.E2E.Tests.Banking;
-using Foundgine.Metadata;
-using Foundgine.Abstractions;
-using Foundgine.Planning;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Resolution;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Resolution;
 using Xunit;
 
 namespace Foundgine.E2E.Tests;
