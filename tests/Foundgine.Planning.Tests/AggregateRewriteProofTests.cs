@@ -1,11 +1,11 @@
-using Foundgine.Abstractions;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Aggregates;
-using Foundgine.Semantics.Query;
-using Foundgine.Semantics.Security;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Aggregates;
+using Foundgine.Core.Semantic.Query;
+using Foundgine.Core.Semantic.Security;
 using Xunit;
 
-namespace Foundgine.Planning.Tests;
+namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed class AggregateRewriteProofTests
 {

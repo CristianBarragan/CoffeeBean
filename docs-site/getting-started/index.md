@@ -13,7 +13,7 @@ start
 :Domain + AOT metadata;
 :Semantics;
 :Planning / ExecutionIR;
-:Foundgine.Sql;
+:Foundgine.Providers.Storage.Sql;
 :PostgreSQL;
 stop
 @enduml
@@ -53,7 +53,7 @@ Domain types and business concepts.
 
 ### AOT metadata
 
-`Foundgine.Aot.Generator` turns compile-time declarations into generated metadata, reducing runtime discovery and supporting Native AOT-friendly applications.
+`Foundgine.Providers.Aot.Generator` turns compile-time declarations into generated metadata, reducing runtime discovery and supporting Native AOT-friendly applications.
 
 ### Semantics
 
@@ -65,7 +65,7 @@ Semantic operations become provider-independent plans and `ExecutionIR`. Physica
 
 ### Execution / provider
 
-`Foundgine.Execution` owns the final execution boundary. `Foundgine.Sql` lowers the work to parameterized SQL and executes it through ADO.NET/PostgreSQL.
+`Foundgine.Core.Execution` owns the final execution boundary. `Foundgine.Providers.Storage.Sql` lowers the work to parameterized SQL and executes it through ADO.NET/PostgreSQL.
 
 ### MCP
 

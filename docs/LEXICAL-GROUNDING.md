@@ -42,7 +42,7 @@ scoring candidate cannot.
 
 ## Elasticsearch
 
-`Foundgine.Elasticsearch` is optional. It projects a frozen
+`Foundgine.Providers.Storage.Elasticsearch` is optional. It projects a frozen
 `SemanticContractSnapshot` through `SemanticLexiconProjection` and retrieves
 ranked candidates through Elasticsearch BM25/fuzzy matching.
 
@@ -56,8 +56,8 @@ continuity before accepting an interpretation.
 
 ## PostgreSQL (pgvector)
 
-`Foundgine.Postgres.Vector` is optional and implements the same
-`ISemanticLexicalCandidateSource` boundary as `Foundgine.Elasticsearch`. It
+`Foundgine.Providers.Storage.PostgresVector` is optional and implements the same
+`ISemanticLexicalCandidateSource` boundary as `Foundgine.Providers.Storage.Elasticsearch`. It
 projects a frozen `SemanticContractSnapshot` through the same
 `SemanticLexiconProjection`, embeds each entry with a caller-supplied
 `ISemanticEmbeddingGenerator`, and stores the vectors in a PostgreSQL table

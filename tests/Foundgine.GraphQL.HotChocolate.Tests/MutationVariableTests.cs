@@ -1,12 +1,12 @@
-using Foundgine.Abstractions;
-using Foundgine.GraphQL.HotChocolate;
-using Foundgine.Metadata;
-using Foundgine.Planning.Mutation;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Query;
+using Foundgine.Core.Abstractions;
+using Foundgine.Extensions.GraphQL.HotChocolate;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Query;
 using Xunit;
 
-namespace Foundgine.GraphQL.HotChocolate.Tests;
+namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
 public sealed class MutationVariableTests
 {

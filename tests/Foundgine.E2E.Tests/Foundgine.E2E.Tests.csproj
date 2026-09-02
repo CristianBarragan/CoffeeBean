@@ -10,19 +10,12 @@
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
-    <ProjectReference Include="../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
-    <ProjectReference Include="../../src/Foundgine/Foundgine.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Planning/Foundgine.Planning.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Aot/Foundgine.Aot.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Aot.Generator/Foundgine.Aot.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
-    <ProjectReference Include="../../src/Foundgine.Sql/Foundgine.Sql.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Postgres.Vector/Foundgine.Postgres.Vector.csproj" />
-    <ProjectReference Include="../../src/Foundgine.InMemory/Foundgine.InMemory.csproj" />
-    <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Intent.Json/Foundgine.Intent.Json.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Runtime/Foundgine.Runtime.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Core/Foundgine.Core.csproj" />
+
+    <ProjectReference Include="../../src/Foundgine.Providers/Foundgine.Providers.Aot.Generator/Foundgine.Providers.Aot.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" SkipGetTargetFrameworkProperties="true" UndefineProperties="TargetFramework" />
+    <ProjectReference Include="../../src/Foundgine.Providers/Foundgine.Providers.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Extensions/Foundgine.Extensions.csproj" />
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
   </ItemGroup>

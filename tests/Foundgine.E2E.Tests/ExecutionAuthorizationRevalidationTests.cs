@@ -1,6 +1,6 @@
-using Foundgine.Execution;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
 using Xunit;
 
 namespace Foundgine.E2E.Tests;
@@ -11,9 +11,9 @@ public sealed class ExecutionAuthorizationRevalidationTests
     public async Task Current_authority_version_mismatch_fails_closed()
     {
         var model = new SemanticModelBuilder()
-            .Entity(new Foundgine.Abstractions.EntityId(1), "Customer", entity => entity
-                .Identity(new Foundgine.Abstractions.FieldId(1), "Id")
-                .Field(new Foundgine.Abstractions.FieldId(1), "Id", typeof(long)))
+            .Entity(new Foundgine.Core.Abstractions.EntityId(1), "Customer", entity => entity
+                .Identity(new Foundgine.Core.Abstractions.FieldId(1), "Id")
+                .Field(new Foundgine.Core.Abstractions.FieldId(1), "Id", typeof(long)))
             .Build();
         var contract = model.Freeze().CreateSnapshot();
         var evidence = new SemanticAuthorizationEvidence(
@@ -35,9 +35,9 @@ public sealed class ExecutionAuthorizationRevalidationTests
     public async Task Revoked_current_authority_fails_closed()
     {
         var model = new SemanticModelBuilder()
-            .Entity(new Foundgine.Abstractions.EntityId(1), "Customer", entity => entity
-                .Identity(new Foundgine.Abstractions.FieldId(1), "Id")
-                .Field(new Foundgine.Abstractions.FieldId(1), "Id", typeof(long)))
+            .Entity(new Foundgine.Core.Abstractions.EntityId(1), "Customer", entity => entity
+                .Identity(new Foundgine.Core.Abstractions.FieldId(1), "Id")
+                .Field(new Foundgine.Core.Abstractions.FieldId(1), "Id", typeof(long)))
             .Build();
         var contract = model.Freeze().CreateSnapshot();
         var evidence = new SemanticAuthorizationEvidence(

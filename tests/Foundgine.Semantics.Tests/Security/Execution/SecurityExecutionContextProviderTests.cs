@@ -1,8 +1,8 @@
-using Foundgine.Semantics.Security.Execution;
-using Foundgine.Semantics.Security.Warrants;
+using Foundgine.Core.Semantic.Security.Execution;
+using Foundgine.Core.Semantic.Security.Warrants;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests.Security.Execution;
+namespace Foundgine.Core.Semantic.Tests.Security.Execution;
 
 public sealed class SecurityExecutionContextProviderTests
 {
@@ -16,13 +16,13 @@ public sealed class SecurityExecutionContextProviderTests
             now.AddMinutes(-1), now.AddMinutes(10), "nonce-1", "issuer-key", null, []);
     }
 
-    private static Foundgine.Semantics.Security.Execution.SecurityExecutionContext CreateContext() =>
+    private static Foundgine.Core.Semantic.Security.Execution.SecurityExecutionContext CreateContext() =>
         new(CreateWarrant(), "subject-1", "api", "tenant-a", "customer/*");
 
-    private sealed class FixedProvider(Foundgine.Semantics.Security.Execution.SecurityExecutionContext? context)
+    private sealed class FixedProvider(Foundgine.Core.Semantic.Security.Execution.SecurityExecutionContext? context)
         : ISecurityExecutionContextProvider
     {
-        public Foundgine.Semantics.Security.Execution.SecurityExecutionContext? GetSecurityExecutionContext() => context;
+        public Foundgine.Core.Semantic.Security.Execution.SecurityExecutionContext? GetSecurityExecutionContext() => context;
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public sealed class DelegateSecurityExecutionContextProviderTests
     public void Delegates_to_the_supplied_factory_on_each_call()
     {
         var callCount = 0;
-        var context = new Foundgine.Semantics.Security.Execution.SecurityExecutionContext(
+        var context = new Foundgine.Core.Semantic.Security.Execution.SecurityExecutionContext(
             CreateWarrant(), "subject-1", "api", "tenant-a", "customer/*");
 
         var provider = new DelegateSecurityExecutionContextProvider(() =>

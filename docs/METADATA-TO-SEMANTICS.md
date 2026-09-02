@@ -6,9 +6,9 @@ Foundgine separates four responsibilities:
 
 ## Structural discovery
 
-`Foundgine.Metadata` is the structural source of truth. Providers or generated metadata describe entities, fields, keys, CLR types and direct relationships.
+`Foundgine.Core.Semantic.Metadata` is the structural source of truth. Providers or generated metadata describe entities, fields, keys, CLR types and direct relationships.
 
-`Foundgine.Semantics` consumes that metadata through `IMetadataCatalog`:
+`Foundgine.Core.Semantic` consumes that metadata through `IMetadataCatalog`:
 
 ```csharp
 var model = SemanticModel.Discover(metadata);

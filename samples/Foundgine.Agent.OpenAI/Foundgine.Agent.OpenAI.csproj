@@ -6,10 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../src/Foundgine.AI/Foundgine.AI.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Providers/Foundgine.Providers.csproj" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.9.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
-    <ProjectReference Include="../../src/Foundgine.InMemory/Foundgine.InMemory.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Core/Foundgine.Core.csproj" />
   </ItemGroup>
 </Project>

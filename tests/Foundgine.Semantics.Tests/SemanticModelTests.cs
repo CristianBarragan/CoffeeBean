@@ -1,9 +1,9 @@
-﻿using Foundgine.Metadata;
-using Foundgine.Abstractions;
-using Foundgine.Semantics;
+﻿using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticModelTests
 {

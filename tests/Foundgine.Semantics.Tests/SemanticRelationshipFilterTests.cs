@@ -1,9 +1,9 @@
-using Foundgine.Metadata;
-using Foundgine.Abstractions;
-using Foundgine.Semantics.Query;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Query;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticRelationshipFilterTests
 {

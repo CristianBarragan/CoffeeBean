@@ -1,11 +1,11 @@
-using Foundgine.Semantics.Authorization;
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Planning;
-using Foundgine.Semantics.Security;
-using Foundgine.Sql;
-using Foundgine.Sql.Security;
-using Foundgine.Sql.Query;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Security;
+using Foundgine.Providers.Storage.Sql;
+using Foundgine.Providers.Storage.Sql.Security;
+using Foundgine.Providers.Storage.Sql.Query;
 using Xunit;
 
 namespace Foundgine.E2E.Tests.Security;

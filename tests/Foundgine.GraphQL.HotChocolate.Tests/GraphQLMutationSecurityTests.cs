@@ -1,16 +1,18 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Execution.Mutation;
-using Foundgine.Metadata;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Mutation;
-using Foundgine.Semantics.Security.Execution;
-using Foundgine.Semantics.Security.Warrants;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Execution.Mutation;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Mutation;
+using Foundgine.Core.Semantic.Security.Execution;
+using Foundgine.Core.Semantic.Security.Warrants;
+using Foundgine.Extensions.GraphQL.HotChocolate;
+using Foundgine.Runtime;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
-namespace Foundgine.GraphQL.HotChocolate.Tests;
+namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
 public sealed class GraphQLMutationSecurityTests
 {

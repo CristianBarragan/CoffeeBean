@@ -12,13 +12,9 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
-    <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate.Execution/Foundgine.GraphQL.HotChocolate.Execution.csproj" />
-    <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" />
-    <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj" />
-    <ProjectReference Include="../../src/Foundgine.GraphQL.HotChocolate.MutationExecution/Foundgine.GraphQL.HotChocolate.MutationExecution.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
-    <ProjectReference Include="../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />
-    <ProjectReference Include="../../src/Foundgine/Foundgine.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Runtime/Foundgine.Runtime.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Extensions/Foundgine.Extensions.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Providers/Foundgine.Providers.csproj" />
+    <ProjectReference Include="../../src/Foundgine.Core/Foundgine.Core.csproj" />
   </ItemGroup>
 </Project>

@@ -54,7 +54,7 @@ card MCP
 card AI
 card Code
 card Foundgine
-card "Foundgine.Sql / Foundgine.InMemory / ..." as Provider
+card "Foundgine.Providers.Storage.Sql / Foundgine.Providers.Storage.InMemory / ..." as Provider
 GraphQL --> Foundgine
 JSON --> Foundgine
 MCP --> Foundgine
@@ -69,8 +69,8 @@ Concretely, that means:
 - it replaces the layer where a controller, resolver, or tool handler would
   otherwise hand-roll authorization checks, tenant filters, and query
   construction;
-- it does not replace the provider underneath — `Foundgine.Sql` still talks
-  to PostgreSQL, `Foundgine.InMemory` is a proof/test provider, and nothing
+- it does not replace the provider underneath — `Foundgine.Providers.Storage.Sql` still talks
+  to PostgreSQL, `Foundgine.Providers.Storage.InMemory` is a proof/test provider, and nothing
   stops an application from also using an ORM for ordinary CRUD persistence
   alongside it;
 - it does not replace the transport in front — GraphQL, MCP, and JSON
@@ -111,7 +111,7 @@ thin translation instead of its own security surface.
 
 - `samples/Foundgine.SupplyChain` — MCP → application → semantic model →
   planning → SQL → PostgreSQL.
-- `samples/Foundgine.SupplyChain.Semantic` — the architectural proving
+- `samples/Foundgine.SupplyChain.EndToEnd/Semantic` — the architectural proving
   ground for Metadata → Semantics → Authorization → Intent, including the
   [lexical grounding](LEXICAL-GROUNDING.md) and
   [grounding-decision](GROUNDING-DECISIONS.md) case studies.
@@ -165,9 +165,9 @@ text into a semantic interpretation without letting retrieval relevance
 become authorization, and without letting a structurally valid path stand
 in for a correctly understood one.
 
-- `src/Foundgine.Elasticsearch`, `src/Foundgine.Postgres.Vector` — the two
+- `src/Foundgine.Providers/Foundgine.Providers.Storage.Elasticsearch`, `src/Foundgine.Providers/Foundgine.Providers.Storage.PostgresVector` — the two
   optional candidate-retrieval providers for this category.
-- `samples/Foundgine.SupplyChain.Semantic/Tests/Grounding` — a worked
+- `samples/Foundgine.SupplyChain.EndToEnd/Semantic/Tests/Grounding` — a worked
   example of a materially ambiguous business term (`active supplier`)
   against a real generated semantic contract.
 

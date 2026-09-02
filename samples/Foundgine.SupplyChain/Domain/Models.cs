@@ -1,4 +1,4 @@
-using Foundgine.Aot;
+using Foundgine.Providers.Aot;
 
 namespace Foundgine.SupplyChain.Domain.Models;
 

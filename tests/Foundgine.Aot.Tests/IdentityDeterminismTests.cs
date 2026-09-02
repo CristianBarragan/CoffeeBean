@@ -1,15 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Foundgine.Abstractions;
-using Foundgine.Aot;
-using Foundgine.Aot.Generator;
-using Foundgine.Metadata;
+using Foundgine.Core.Abstractions;
+using Foundgine.Providers.Aot;
+using Foundgine.Providers.Aot.Generator;
+using Foundgine.Core.Semantic.Metadata;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 
-namespace Foundgine.Aot.Tests;
+namespace Foundgine.Providers.Aot.Tests;
 
 public sealed class IdentityDeterminismTests
 {
@@ -17,7 +17,7 @@ public sealed class IdentityDeterminismTests
     public void Generated_entity_and_field_ids_are_independent_of_declaration_order()
     {
         const string first = """
-            using Foundgine.Aot;
+            using Foundgine.Providers.Aot;
 
             [FoundgineEntity(StorageName = "customers")]
             public sealed class Customer
@@ -34,7 +34,7 @@ public sealed class IdentityDeterminismTests
             """;
 
         const string reordered = """
-            using Foundgine.Aot;
+            using Foundgine.Providers.Aot;
 
             [FoundgineEntity(StorageName = "customers")]
             public sealed class Customer
@@ -74,7 +74,7 @@ public sealed class IdentityDeterminismTests
     public void Existing_generated_ids_survive_adding_an_unrelated_module()
     {
         const string customer = """
-            using Foundgine.Aot;
+            using Foundgine.Providers.Aot;
 
             [FoundgineEntity(StorageName = "customers")]
             public sealed class Customer
@@ -88,7 +88,7 @@ public sealed class IdentityDeterminismTests
             """;
 
         const string order = """
-            using Foundgine.Aot;
+            using Foundgine.Providers.Aot;
 
             [FoundgineEntity(StorageName = "orders")]
             public sealed class Order
@@ -121,7 +121,7 @@ public sealed class IdentityDeterminismTests
     public void Generated_ids_are_identical_across_independent_compilations()
     {
         const string source = """
-            using Foundgine.Aot;
+            using Foundgine.Providers.Aot;
 
             [FoundgineEntity(
                 Name = "Customer",
@@ -166,7 +166,7 @@ public sealed class IdentityDeterminismTests
     public void Changing_aliases_does_not_change_generated_identity()
     {
         const string withoutAliases = """
-            using Foundgine.Aot;
+            using Foundgine.Providers.Aot;
 
             [FoundgineEntity(
                 Name = "Customer",
@@ -181,7 +181,7 @@ public sealed class IdentityDeterminismTests
             """;
 
         const string withAliases = """
-            using Foundgine.Aot;
+            using Foundgine.Providers.Aot;
 
             [FoundgineEntity(
                 Name = "Customer",
@@ -244,13 +244,13 @@ public sealed class IdentityDeterminismTests
 
     [Theory]
     [InlineData("""
-        using Foundgine.Aot;
+        using Foundgine.Providers.Aot;
 
         [FoundgineEntity(Id = 0)]
         public sealed class Customer { }
         """)]
     [InlineData("""
-        using Foundgine.Aot;
+        using Foundgine.Providers.Aot;
 
         [FoundgineEntity]
         public sealed class Customer
@@ -260,7 +260,7 @@ public sealed class IdentityDeterminismTests
         }
         """)]
     [InlineData("""
-        using Foundgine.Aot;
+        using Foundgine.Providers.Aot;
 
         [FoundgineEntity]
         public sealed class Customer
@@ -287,7 +287,7 @@ public sealed class IdentityDeterminismTests
         }
         """)]
     [InlineData("""
-        using Foundgine.Aot;
+        using Foundgine.Providers.Aot;
 
         [FoundgineEntity]
         public sealed class Customer
@@ -299,7 +299,7 @@ public sealed class IdentityDeterminismTests
     [InlineData("""
         using System;
         using System.Linq.Expressions;
-        using Foundgine.Aot;
+        using Foundgine.Providers.Aot;
 
         [FoundgineEntity(Id = 1)]
         public sealed class Customer
@@ -321,7 +321,7 @@ public sealed class IdentityDeterminismTests
         }
         """)]
     [InlineData("""
-        using Foundgine.Aot;
+        using Foundgine.Providers.Aot;
 
         [FoundgineModel(Id = 0)]
         public sealed class CustomerModel { }
@@ -346,7 +346,7 @@ public sealed class IdentityDeterminismTests
     public void Duplicate_explicit_entity_ids_are_rejected()
     {
         const string source = """
-            using Foundgine.Aot;
+            using Foundgine.Providers.Aot;
 
             [FoundgineEntity(Id = 77)]
             public sealed class Customer { }
@@ -468,7 +468,7 @@ public sealed class IdentityDeterminismTests
 
                     MetadataReference.CreateFromFile(
                         typeof(
-                            Foundgine.Abstractions.SemanticIdentity)
+                            Foundgine.Core.Abstractions.SemanticIdentity)
                             .Assembly.Location)
                 })
                 .GroupBy(

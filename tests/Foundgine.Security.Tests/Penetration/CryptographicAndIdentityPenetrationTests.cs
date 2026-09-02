@@ -1,5 +1,5 @@
 using System.Security.Cryptography;
-using Foundgine.Semantics.Security.Warrants;
+using Foundgine.Core.Semantic.Security.Warrants;
 using Xunit;
 
 namespace Foundgine.Security.Tests.Penetration;

@@ -1,9 +1,9 @@
-using Foundgine.Intent.Json;
-using Foundgine.Semantics.Intent;
-using Foundgine.Semantics.Query;
+using Foundgine.Core.Serialization;
+using Foundgine.Core.Semantic.Intent;
+using Foundgine.Core.Semantic.Query;
 using Xunit;
 
-namespace Foundgine.Intent.Json.Tests;
+namespace Foundgine.Core.Serialization.Tests;
 
 public sealed class JsonReadIntentAdapterTests
 {

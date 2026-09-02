@@ -82,7 +82,7 @@ This keeps the semantic vocabulary stable if the physical schema changes.
 
 ## 4. AOT layer
 
-`Foundgine.Aot` attributes are compiled by `Foundgine.Aot.Generator`.
+`Foundgine.Providers.Aot` attributes are compiled by `Foundgine.Providers.Aot.Generator`.
 
 The generator emits `Foundgine.Generated.GeneratedMetadata`.
 
@@ -92,7 +92,7 @@ The sample consumes the generated registry through `SupplyChainSemanticModel.Met
 @startuml
 start
 :AOT declarations;
-:Foundgine.Aot.Generator;
+:Foundgine.Providers.Aot.Generator;
 :GeneratedMetadata;
 :IMetadataProvider;
 :Planner / SqlCompiler;
@@ -135,7 +135,7 @@ start
 :GeneratedSemanticModel.SalesOrder.CustomerId.Eq(customerId);
 :Foundgine Planner;
 :Execution plan;
-:Foundgine.Sql.SqlCompiler;
+:Foundgine.Providers.Storage.Sql.SqlCompiler;
 :SqlPlan;
 :SqlExecutionProvider;
 :PostgreSQL;
@@ -206,7 +206,7 @@ Recommended progression:
 6. MCP contract tests
 7. full agent-facing E2E benchmark tests
 
-The existing `benchmarks/AgentEndToEnd/SupplyChain` remains untouched and continues to provide the benchmark workload and comparison harness.
+The existing `samples/Foundgine.SupplyChain.EndToEnd` remains untouched and continues to provide the benchmark workload and comparison harness.
 
 ## 11. Why this structure is future-proof
 
@@ -253,7 +253,7 @@ can be introduced at the appropriate boundary rather than forcing a rewrite of t
 There are now two deliberately separate artifacts:
 
 ```text
-benchmarks/AgentEndToEnd/SupplyChain
+samples/Foundgine.SupplyChain.EndToEnd
     = benchmark harness / stable comparison workload
 
 samples/Foundgine.SupplyChain

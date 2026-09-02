@@ -1,4 +1,4 @@
-using Foundgine.Semantics.Security;
+using Foundgine.Core.Semantic.Security;
 
 namespace Foundgine.HighAssurance.Postgres;
 

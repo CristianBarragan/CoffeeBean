@@ -1,7 +1,7 @@
-using Foundgine.Postgres.Vector;
+using Foundgine.Providers.Storage.PostgresVector;
 using Xunit;
 
-namespace Foundgine.Postgres.Vector.Tests;
+namespace Foundgine.Providers.Storage.PostgresVector.Tests;
 
 public sealed class PgVectorOptionsTests
 {

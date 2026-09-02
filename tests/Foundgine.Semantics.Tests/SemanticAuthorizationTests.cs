@@ -1,11 +1,11 @@
-using Foundgine.Metadata;
-using Foundgine.Abstractions;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Resolution;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Resolution;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticAuthorizationTests
 {
@@ -15,7 +15,7 @@ public sealed class SemanticAuthorizationTests
     {
         var (model, request, customer, _, _) = CreateBankingRequest();
         var contract = model.Freeze().CreateSnapshot();
-        var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(
+        var operation = Foundgine.Core.Semantic.IR.SemanticOperationCompiler.Compile(
             new SemanticRequestResolver(contract).Resolve(request));
 
         var authorized = new SemanticAuthorizer(new DenyAccountPolicy()).Authorize(contract, operation);
@@ -28,7 +28,7 @@ public sealed class SemanticAuthorizationTests
     {
         var (model, request, _, _, _) = CreateBankingRequest();
         var contract = model.Freeze().CreateSnapshot();
-        var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(
+        var operation = Foundgine.Core.Semantic.IR.SemanticOperationCompiler.Compile(
             new SemanticRequestResolver(contract).Resolve(request));
         operation = operation with { Root = operation.Root with { EntityId = new EntityId(999) } };
 
@@ -43,7 +43,7 @@ public sealed class SemanticAuthorizationTests
     {
         var (model, request, _, account, _) = CreateBankingRequest();
         var contract = model.Freeze().CreateSnapshot();
-        var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(
+        var operation = Foundgine.Core.Semantic.IR.SemanticOperationCompiler.Compile(
             new SemanticRequestResolver(contract).Resolve(request));
         var child = operation.Root.Children.Single();
         operation = operation with
@@ -66,7 +66,7 @@ public sealed class SemanticAuthorizationTests
     {
         var (model, request, customer, account, _) = CreateBankingRequest();
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
-        var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(resolved);
+        var operation = Foundgine.Core.Semantic.IR.SemanticOperationCompiler.Compile(resolved);
 
         var authorized = new SemanticAuthorizer(new DenyAccountPolicy()).Authorize(operation);
 
@@ -85,7 +85,7 @@ public sealed class SemanticAuthorizationTests
 
         var (model, request, _, _, _) = CreateBankingRequest();
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
-        var operation = Foundgine.Semantics.IR.SemanticOperationCompiler.Compile(resolved);
+        var operation = Foundgine.Core.Semantic.IR.SemanticOperationCompiler.Compile(resolved);
 
         var authorized = new SemanticAuthorizer(new ConditionalPolicy(predicate)).Authorize(operation);
 

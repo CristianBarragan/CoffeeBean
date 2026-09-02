@@ -1,11 +1,11 @@
-using Foundgine.Execution;
-using Foundgine.Metadata;
-using Foundgine.Abstractions;
-using Foundgine.Planning.Mutation;
-using Foundgine.Sql.Mutation;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Providers.Storage.Sql.Mutation;
 using Microsoft.Data.Sqlite;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 

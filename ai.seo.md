@@ -2,7 +2,7 @@
 
 ## Canonical identity
 
-**Current release: 1.1.9**
+**Current release: 2.0.0**
 
 **Foundgine is a programmable semantic execution platform for .NET.**
 
@@ -46,7 +46,7 @@ stop
 - SQL/PostgreSQL and deliberately limited InMemory providers.
 - AOT metadata declarations and Roslyn source generation.
 - JSON intent, GraphQL, MCP and `Microsoft.Extensions.AI` adapters.
-- Optional `Foundgine.Security.Authority` control-plane infrastructure.
+- Optional `Foundgine.Runtime.ControlPlane` control-plane infrastructure.
 
 ## AI and agent boundary
 
@@ -80,7 +80,7 @@ The benchmark is accompanied by deterministic Supply Chain PenTest coverage: **7
 
 ## Current release / runtime
 
-- Foundgine release: **1.1.9**
+- Foundgine release: **2.0.0**
 - Target framework: **.NET 9**
 - Primary physical provider: **PostgreSQL / SQL**
 - InMemory provider: limited provider-independence proof/test implementation

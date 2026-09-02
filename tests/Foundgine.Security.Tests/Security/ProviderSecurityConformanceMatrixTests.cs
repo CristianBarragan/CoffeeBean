@@ -1,5 +1,5 @@
-using Foundgine.Execution.Security;
-using Foundgine.Semantics.Security;
+using Foundgine.Core.Execution.Security;
+using Foundgine.Core.Semantic.Security;
 using Xunit;
 
 namespace Foundgine.Security.Tests.Security;

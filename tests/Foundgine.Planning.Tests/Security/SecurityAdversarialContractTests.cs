@@ -1,12 +1,12 @@
-using Foundgine.Semantics.Authorization;
-using Foundgine.Execution;
-using Foundgine.Execution.Security;
-using Foundgine.Planning;
-using Foundgine.Semantics.Security;
-using Foundgine.Abstractions;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Execution.Security;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Security;
+using Foundgine.Core.Abstractions;
 using Xunit;
 
-namespace Foundgine.Planning.Tests.Security;
+namespace Foundgine.Core.Semantic.Planning.Tests.Security;
 
 /// <summary>
 /// M2 adversarial tests. These tests deliberately mutate or weaken the
@@ -167,11 +167,11 @@ public sealed class SecurityAdversarialContractTests
     [Fact]
     public void Capability_contract_rejects_unknown_invariant_before_planning()
     {
-        var capability = new Foundgine.Semantics.Capabilities.SemanticCapability(
+        var capability = new Foundgine.Core.Semantic.Capabilities.SemanticCapability(
             "Customer.read",
             "Read Customer",
             new EntityId(1),
-            Foundgine.Abstractions.AuthorizationDecision.Allowed,
+            Foundgine.Core.Abstractions.AuthorizationDecision.Allowed,
             [], [], [], ["Name"], [])
         {
             RequiredSecurityInvariants = ["security.attacker-added"]

@@ -1,10 +1,10 @@
-using Foundgine.Abstractions;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.IR;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.IR;
 using Xunit;
 
-namespace Foundgine.Planning.Tests;
+namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed class SemanticPlanAuthorizationBindingStep26Tests
 {

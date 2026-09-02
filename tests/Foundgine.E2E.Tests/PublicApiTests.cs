@@ -1,14 +1,15 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Execution.Security;
-using Foundgine.Planning;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Execution.Security;
+using Foundgine.Core.Semantic.Planning;
 using Microsoft.Extensions.DependencyInjection;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Security;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Resolution;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Security;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Resolution;
+using Foundgine.Runtime;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 

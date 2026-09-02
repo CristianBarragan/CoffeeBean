@@ -1,8 +1,8 @@
 # Foundgine Supply Chain — Layered MCP Sample
 
-A maintainable, agent-facing Supply Chain application showing **MCP → application → semantic model → Foundgine planning → Foundgine.Sql → PostgreSQL**.
+A maintainable, agent-facing Supply Chain application showing **MCP → application → semantic model → Foundgine planning → Foundgine.Providers.Storage.Sql → PostgreSQL**.
 
-This sample intentionally lives under `samples/` and is separate from `benchmarks/AgentEndToEnd/SupplyChain`. The existing benchmark remains the stable benchmark harness; this sample is the architecture/reference implementation to evolve independently.
+This sample intentionally lives under `samples/` and is separate from `samples/Foundgine.SupplyChain.EndToEnd`. The existing benchmark remains the stable benchmark harness; this sample is the architecture/reference implementation to evolve independently.
 
 ## Architecture
 
@@ -14,7 +14,7 @@ start
 :Application;
 :Domain + Foundgine configuration;
 :Foundgine Planning / Execution;
-:Foundgine.Sql;
+:Foundgine.Providers.Storage.Sql;
 :PostgreSQL;
 stop
 @enduml
@@ -28,7 +28,7 @@ stop
 | `Application` | use cases, capability authorization and application contracts |
 | `Domain` | storage records and AOT application models |
 | `Application/SupplyChainSemanticConfiguration.cs` | application-specific semantic enrichment; structural metadata is discovered by Foundgine |
-| `Infrastructure` | PostgreSQL integration and Foundgine.Sql query/mutation adapters |
+| `Infrastructure` | PostgreSQL integration and Foundgine.Providers.Storage.Sql query/mutation adapters |
 | `Tests` | application, semantic and infrastructure tests |
 
 ## Foundgine source projects used
@@ -37,15 +37,15 @@ This sample is source-integrated. It uses `ProjectReference` entries into the re
 
 The main Foundgine projects used are:
 
-- `Foundgine.Abstractions`
-- `Foundgine.Aot`
-- `Foundgine.Aot.Generator`
-- `Foundgine.Metadata`
-- `Foundgine.Semantics`
-- `Foundgine.Planning`
-- `Foundgine.Execution`
-- `Foundgine.Sql`
-- `Foundgine.MCP`
+- `Foundgine.Core.Abstractions`
+- `Foundgine.Providers.Aot`
+- `Foundgine.Providers.Aot.Generator`
+- `Foundgine.Core.Semantic.Metadata`
+- `Foundgine.Core.Semantic`
+- `Foundgine.Core.Semantic.Planning`
+- `Foundgine.Core.Execution`
+- `Foundgine.Providers.Storage.Sql`
+- `Foundgine.Providers.Tools.MCP`
 
 External dependencies remain `ModelContextProtocol.AspNetCore` and `Npgsql`.
 

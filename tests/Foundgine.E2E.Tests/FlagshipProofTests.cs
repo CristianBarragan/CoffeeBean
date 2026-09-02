@@ -1,17 +1,17 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.InMemory;
-using Foundgine.Intent.Json;
-using Foundgine.Planning;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Intent;
-using Foundgine.Semantics.Resolution;
-using Foundgine.Sql;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Providers.Storage.InMemory;
+using Foundgine.Core.Serialization;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Intent;
+using Foundgine.Core.Semantic.Resolution;
+using Foundgine.Providers.Storage.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
 using Foundgine.E2E.Tests.Banking;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -66,7 +66,7 @@ public sealed class FlagshipProofTests
         var sqlPlan = new SqlCompiler(metadata).Compile(plan);
         Assert.Contains("SELECT", sqlPlan.CommandText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("WHERE", sqlPlan.CommandText, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("Foundgine.InMemory", sqlPlan.CommandText, StringComparison.Ordinal);
+        Assert.DoesNotContain("Foundgine.Providers.Storage.InMemory", sqlPlan.CommandText, StringComparison.Ordinal);
 
         var memoryPlan = new InMemoryCompiler().Compile(plan);
         Assert.Equal("in-memory", memoryPlan.Provider);

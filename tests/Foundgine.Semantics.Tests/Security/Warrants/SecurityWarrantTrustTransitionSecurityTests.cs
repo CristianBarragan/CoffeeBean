@@ -1,7 +1,7 @@
-using Foundgine.Semantics.Security.Warrants;
+using Foundgine.Core.Semantic.Security.Warrants;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests.Security.Warrants;
+namespace Foundgine.Core.Semantic.Tests.Security.Warrants;
 
 public sealed class SecurityWarrantTrustTransitionSecurityTests
 {

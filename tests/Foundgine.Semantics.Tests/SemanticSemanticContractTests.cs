@@ -1,10 +1,10 @@
-using Foundgine.Abstractions;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Query;
-using Foundgine.Semantics.Resolution;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Query;
+using Foundgine.Core.Semantic.Resolution;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticSemanticContractTests
 {

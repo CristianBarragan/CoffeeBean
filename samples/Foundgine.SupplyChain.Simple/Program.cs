@@ -1,11 +1,11 @@
-using Foundgine.Metadata;
-using Foundgine.Planning;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.SupplyChain.Application;
 using Foundgine.SupplyChain.Infrastructure.Mutations;
 using Foundgine.SupplyChain.Infrastructure.Queries;
 using Foundgine.SupplyChain.Semantics;
 using ModelContextProtocol.Server;
-using Foundgine.MCP;
+using Foundgine.Providers.Tools.MCP;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,7 +27,7 @@ builder.Services.AddSingleton<SemanticSqlQueryExecutor>();
 builder.Services.AddScoped<ISupplyChainQueries, SupplyChainQueryRepository>();
 builder.Services.AddScoped<ISupplyChainMutations, SupplyChainMutationRepository>();
 
-builder.Services.AddFoundgineMcp(() => new Foundgine.Execution.ExecutionContext());
+builder.Services.AddFoundgineMcp(() => new Foundgine.Core.Execution.ExecutionContext());
 builder.Services.AddMcpServer().WithHttpTransport(o => o.Stateless = true).WithTools<SupplyChainMcpTools>();
 
 var app = builder.Build();

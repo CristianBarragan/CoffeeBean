@@ -1,8 +1,8 @@
-using Foundgine.Abstractions;
-using Foundgine.GraphQL.HotChocolate;
+using Foundgine.Core.Abstractions;
+using Foundgine.Extensions.GraphQL.HotChocolate;
 using Xunit;
 
-namespace Foundgine.GraphQL.HotChocolate.Tests;
+namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
 public sealed class AdapterBoundaryTests
 {
@@ -15,8 +15,8 @@ public sealed class AdapterBoundaryTests
             .Where(x => x is not null)
             .ToArray();
 
-        Assert.DoesNotContain("Foundgine.Planning", references);
-        Assert.DoesNotContain("Foundgine.Execution", references);
-        Assert.DoesNotContain("Foundgine.Sql", references);
+        Assert.DoesNotContain("Foundgine.Core.Semantic.Planning", references);
+        Assert.DoesNotContain("Foundgine.Core.Execution", references);
+        Assert.DoesNotContain("Foundgine.Providers.Storage.Sql", references);
     }
 }

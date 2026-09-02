@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace Foundgine.Security.Authority.Tests;
+namespace Foundgine.Runtime.ControlPlane.Tests;
 
 /// <summary>Runs only when the PostgreSQL integration connection is configured.</summary>
 public sealed class PostgresFactAttribute : FactAttribute

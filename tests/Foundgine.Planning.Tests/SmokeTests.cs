@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace Foundgine.Planning.Tests;
+namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed class SmokeTests
 {

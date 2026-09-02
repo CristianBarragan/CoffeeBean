@@ -1,34 +1,29 @@
 using System.Xml.Linq;
 using Xunit;
 
-namespace Foundgine.Planning.Tests;
+namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed class ArchitectureBoundaryTests
 {
     [Fact]
     public void Core_projects_do_not_reference_transport_or_provider_packages()
     {
+        // v2 package restructuring (see PackageReleaseNotes in each csproj) consolidated the
+        // former per-module packages (Foundgine.Core.Abstractions, Foundgine.Core.Semantic,
+        // Foundgine.Core.Semantic.Planning, Foundgine.Core.Execution, ...) into two packages:
+        // Foundgine.Core (provider-independent semantic layer) and Foundgine.Runtime (execution
+        // layer, which is allowed to depend on Foundgine.Core but nothing transport/provider).
         var root = FindRepositoryRoot();
 
         AssertProjectReferencesDoNotContain(
             root,
-            "src/Foundgine.Abstractions/Foundgine.Abstractions.csproj",
-            "GraphQL", "HotChocolate", "Sql", "InMemory", "Intent.Json", "Aot");
+            "src/Foundgine.Core/Foundgine.Core.csproj",
+            "GraphQL", "HotChocolate", "Sql", "Npgsql", "InMemory", "Intent.Json", "Aot");
 
         AssertProjectReferencesDoNotContain(
             root,
-            "src/Foundgine.Semantics/Foundgine.Semantics.csproj",
-            "GraphQL", "HotChocolate", "Sql", "InMemory", "Intent.Json", "Aot");
-
-        AssertProjectReferencesDoNotContain(
-            root,
-            "src/Foundgine.Planning/Foundgine.Planning.csproj",
-            "GraphQL", "HotChocolate", "Sql", "InMemory");
-
-        AssertProjectReferencesDoNotContain(
-            root,
-            "src/Foundgine.Execution/Foundgine.Execution.csproj",
-            "GraphQL", "HotChocolate", "Sql", "InMemory");
+            "src/Foundgine.Runtime/Foundgine.Runtime.csproj",
+            "GraphQL", "HotChocolate", "Sql", "Npgsql", "InMemory");
     }
 
     [Fact]

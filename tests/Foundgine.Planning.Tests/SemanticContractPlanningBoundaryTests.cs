@@ -1,10 +1,10 @@
-using Foundgine.Abstractions;
-using Foundgine.Planning;
-using Foundgine.Semantics;
-using Foundgine.Semantics.IR;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.IR;
 using Xunit;
 
-namespace Foundgine.Planning.Tests;
+namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed class SemanticContractPlanningBoundaryTests
 {

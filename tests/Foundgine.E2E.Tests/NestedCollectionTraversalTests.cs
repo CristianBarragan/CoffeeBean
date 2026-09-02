@@ -1,15 +1,15 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using FoundgineExecutionContext = Foundgine.Execution.ExecutionContext;
-using Foundgine.Planning;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Query;
-using Foundgine.Semantics.Resolution;
-using Foundgine.Sql;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using FoundgineExecutionContext = Foundgine.Core.Execution.ExecutionContext;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Query;
+using Foundgine.Core.Semantic.Resolution;
+using Foundgine.Providers.Storage.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 using BankingModel = Foundgine.E2E.Tests.Banking.BankingSemanticModel;
 using Foundgine.E2E.Tests.Banking;
 

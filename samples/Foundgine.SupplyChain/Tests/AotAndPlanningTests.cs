@@ -1,11 +1,11 @@
-using Foundgine.Abstractions;
-using Foundgine.Aot;
+using Foundgine.Core.Abstractions;
+using Foundgine.Providers.Aot;
 using Foundgine.Generated;
-using Foundgine.Semantics;
-using Foundgine.Planning;
-using Foundgine.Semantics.IR;
-using Foundgine.Semantics.Query;
-using Foundgine.Sql;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.IR;
+using Foundgine.Core.Semantic.Query;
+using Foundgine.Providers.Storage.Sql;
 using Foundgine.SupplyChain.Application;
 using Xunit;
 

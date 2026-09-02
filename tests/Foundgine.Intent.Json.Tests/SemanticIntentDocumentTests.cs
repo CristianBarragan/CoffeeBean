@@ -1,9 +1,9 @@
-using Foundgine.Semantics;
-using Foundgine.Semantics.Intent;
-using Foundgine.Abstractions;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Intent;
+using Foundgine.Core.Abstractions;
 using Xunit;
 
-namespace Foundgine.Intent.Json.Tests;
+namespace Foundgine.Core.Serialization.Tests;
 
 public sealed class SemanticIntentDocumentTests
 {

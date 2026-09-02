@@ -1,14 +1,15 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Capabilities;
-using Foundgine.Semantics.Security.Execution;
-using Foundgine.Semantics.Security.Warrants;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Capabilities;
+using Foundgine.Core.Semantic.Security.Execution;
+using Foundgine.Core.Semantic.Security.Warrants;
+using Foundgine.Extensions.GraphQL.HotChocolate;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 using Xunit;
 
-namespace Foundgine.GraphQL.HotChocolate.Tests;
+namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
 public sealed class FoundgineHotChocolateQueryExecutorTests
 {
@@ -35,7 +36,7 @@ public sealed class FoundgineHotChocolateQueryExecutorTests
         public SecurityExecutionContext? GetSecurityExecutionContext() => context;
     }
 
-    private sealed class RecordingFoundgine : Foundgine.IFoundgine
+    private sealed class RecordingFoundgine : Foundgine.Runtime.IFoundgine
     {
         public SemanticRequest? ReceivedRequest { get; private set; }
         public ExecutionResult ResultToReturn { get; set; } = new([]);
@@ -44,9 +45,9 @@ public sealed class FoundgineHotChocolateQueryExecutorTests
         public SemanticCapabilityContract DescribeCapabilityContract() => throw new NotImplementedException();
         public SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security) => throw new NotImplementedException();
         public SemanticVersionSet DescribeVersionSet() => throw new NotImplementedException();
-        public Foundgine.DryRunResult DryRun(SemanticRequest request) => throw new NotImplementedException();
-        public Foundgine.PlanApproval ApprovePlan(SemanticRequest request, string approvedBy) => throw new NotImplementedException();
-        public Task<ExecutionResult> ExecuteApprovedAsync(Foundgine.PlanApproval approval, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Foundgine.Runtime.DryRunResult DryRun(SemanticRequest request) => throw new NotImplementedException();
+        public Foundgine.Runtime.PlanApproval ApprovePlan(SemanticRequest request, string approvedBy) => throw new NotImplementedException();
+        public Task<ExecutionResult> ExecuteApprovedAsync(Foundgine.Runtime.PlanApproval approval, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
         public Task<ExecutionResult> ExecuteAsync(SemanticRequest request, ExecutionContext? context = null, CancellationToken cancellationToken = default)
         {
@@ -54,7 +55,7 @@ public sealed class FoundgineHotChocolateQueryExecutorTests
             return Task.FromResult(ResultToReturn);
         }
 
-        public Task<ExecutionResult> ExecuteAsync(Foundgine.Semantics.Intent.ReadIntent intent, ExecutionContext? context = null, CancellationToken cancellationToken = default) =>
+        public Task<ExecutionResult> ExecuteAsync(Foundgine.Core.Semantic.Intent.ReadIntent intent, ExecutionContext? context = null, CancellationToken cancellationToken = default) =>
             throw new NotImplementedException();
     }
 

@@ -1,9 +1,9 @@
 using Foundgine.E2E.Tests.Banking;
-using Foundgine.Intent.Json;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Intent;
-using Foundgine.Semantics.Resolution;
-using Foundgine.Sql;
+using Foundgine.Core.Serialization;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Intent;
+using Foundgine.Core.Semantic.Resolution;
+using Foundgine.Providers.Storage.Sql;
 using Xunit;
 using BankingModel = Foundgine.E2E.Tests.Banking.BankingSemanticModel;
 
@@ -57,9 +57,9 @@ public sealed class AdversarialIntentTests
         var intent = new JsonReadIntentAdapter().Parse(json);
         var request = new ReadIntentCompiler(model).Compile(intent);
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
-        var plan = new Foundgine.Planning.Planner().Plan(resolved) with
+        var plan = new Foundgine.Core.Semantic.Planning.Planner().Plan(resolved) with
         {
-            AuthorizationBinding = new Foundgine.Planning.SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+            AuthorizationBinding = new Foundgine.Core.Semantic.Planning.SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
         };
         var sql = new SqlCompiler(BankingRelationalMetadata.Build()).Compile(plan);
 

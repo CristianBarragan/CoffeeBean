@@ -1,5 +1,5 @@
-using Foundgine.Postgres.Vector;
-using Foundgine.Semantics.Resolution;
+using Foundgine.Providers.Storage.PostgresVector;
+using Foundgine.Core.Semantic.Resolution;
 using Npgsql;
 using Xunit;
 

@@ -1,10 +1,10 @@
-using Foundgine.MCP;
-using Foundgine.Semantics.Mutation;
-using Foundgine.Semantics.Security.Execution;
-using Foundgine.Semantics.Security.Warrants;
+using Foundgine.Providers.Tools.MCP;
+using Foundgine.Core.Semantic.Mutation;
+using Foundgine.Core.Semantic.Security.Execution;
+using Foundgine.Core.Semantic.Security.Warrants;
 using Xunit;
 
-namespace Foundgine.MCP.Tests;
+namespace Foundgine.Providers.Tools.MCP.Tests;
 
 public sealed class McpSecurityExecutionContextProviderTests
 {
@@ -24,18 +24,18 @@ public sealed class McpSecurityExecutionContextProviderTests
         public SecurityExecutionContext? GetSecurityExecutionContext() => context;
     }
 
-    private sealed class StubFoundgine : Foundgine.IFoundgine
+    private sealed class StubFoundgine : Foundgine.Runtime.IFoundgine
     {
-        public Foundgine.Semantics.Authorization.SemanticAuthorizationCapabilities DescribeCapabilities() => throw new NotImplementedException();
-        public Foundgine.Semantics.Capabilities.SemanticCapabilityContract DescribeCapabilityContract() => throw new NotImplementedException();
-        public Foundgine.Semantics.Capabilities.SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security) =>
+        public Foundgine.Core.Semantic.Authorization.SemanticAuthorizationCapabilities DescribeCapabilities() => throw new NotImplementedException();
+        public Foundgine.Core.Semantic.Capabilities.SemanticCapabilityContract DescribeCapabilityContract() => throw new NotImplementedException();
+        public Foundgine.Core.Semantic.Capabilities.SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security) =>
             new(1, []);
-        public Foundgine.Semantics.SemanticVersionSet DescribeVersionSet() => throw new NotImplementedException();
-        public Foundgine.DryRunResult DryRun(Foundgine.Semantics.SemanticRequest request) => throw new NotImplementedException();
-        public Foundgine.PlanApproval ApprovePlan(Foundgine.Semantics.SemanticRequest request, string approvedBy) => throw new NotImplementedException();
-        public Task<Foundgine.Execution.ExecutionResult> ExecuteApprovedAsync(Foundgine.PlanApproval approval, Foundgine.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<Foundgine.Execution.ExecutionResult> ExecuteAsync(Foundgine.Semantics.SemanticRequest request, Foundgine.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<Foundgine.Execution.ExecutionResult> ExecuteAsync(Foundgine.Semantics.Intent.ReadIntent intent, Foundgine.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Foundgine.Core.Semantic.SemanticVersionSet DescribeVersionSet() => throw new NotImplementedException();
+        public Foundgine.Runtime.DryRunResult DryRun(Foundgine.Core.Semantic.SemanticRequest request) => throw new NotImplementedException();
+        public Foundgine.Runtime.PlanApproval ApprovePlan(Foundgine.Core.Semantic.SemanticRequest request, string approvedBy) => throw new NotImplementedException();
+        public Task<Foundgine.Core.Execution.ExecutionResult> ExecuteApprovedAsync(Foundgine.Runtime.PlanApproval approval, Foundgine.Core.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<Foundgine.Core.Execution.ExecutionResult> ExecuteAsync(Foundgine.Core.Semantic.SemanticRequest request, Foundgine.Core.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<Foundgine.Core.Execution.ExecutionResult> ExecuteAsync(Foundgine.Core.Semantic.Intent.ReadIntent intent, Foundgine.Core.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     [Fact]

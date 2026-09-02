@@ -1,13 +1,13 @@
-using Foundgine;
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Intent.Json;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Sql;
+using Foundgine.Runtime;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Serialization;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Providers.Storage.Sql;
 using Foundgine.E2E.Tests.Banking;
 using Npgsql;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -127,7 +127,7 @@ public sealed class PostgresBlackBoxTests
  private sealed class TenantPolicy : AllowAllSemanticAuthorizationPolicy
  {
  public override AuthorizationPredicate? GetPredicate(
- Foundgine.Abstractions.EntityId entityId,
+ Foundgine.Core.Abstractions.EntityId entityId,
  AuthorizationOperation operation) =>
  operation == AuthorizationOperation.Read && entityId == BankingSemanticModel.Customer
  ? AuthorizationPredicate.Equal(

@@ -1,14 +1,14 @@
-using Foundgine;
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.MCP;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Sql;
+using Foundgine.Runtime;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Providers.Tools.MCP;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Providers.Storage.Sql;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Run4.McpFoundgine;
 using System.Data.Common;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 var builder = WebApplication.CreateBuilder(args);
 var cs = builder.Configuration.GetConnectionString("BankingConnectionString") ?? throw new InvalidOperationException("Missing connection string.");

@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace Foundgine.Semantics.Security.Warrants;
+namespace Foundgine.Core.Semantic.Security.Warrants;
 
 public sealed class SecurityWarrantRevocationSecurityTests
 {

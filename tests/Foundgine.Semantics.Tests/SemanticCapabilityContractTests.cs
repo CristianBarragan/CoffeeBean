@@ -1,10 +1,10 @@
 using System.Text.Json;
-using Foundgine.Abstractions;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Capabilities;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Capabilities;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 /// <summary>
 /// Locks the semantic capability contract used by application and AI adapters.

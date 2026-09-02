@@ -99,7 +99,7 @@ $env:BankingConnectionString = "Host=localhost;Port=5432;Database=...;Username=.
 $env:FOUNDGINE_GRAPHQL_URL = "http://localhost:8080/graphql/warm"
 $env:AGENT_BENCHMARK_MODE = "replay"
 
-dotnet run --project benchmarks/AgentEndToEnd/Run1/Foundgine.AgentEndToEnd.Benchmark.csproj
+dotnet run --project benchmarks/AgentEndToEnd/Run1/Foundgine.AgentEndToEnd.Run1.csproj
 ```
 
 ### Live mode
@@ -116,7 +116,7 @@ $env:AGENT_MODEL = "your-model"
 $env:AGENT_BENCHMARK_WARMUPS = "5"
 $env:AGENT_BENCHMARK_RUNS = "30"
 
-dotnet run --project benchmarks/AgentEndToEnd/Run1/Foundgine.AgentEndToEnd.Benchmark.csproj
+dotnet run --project benchmarks/AgentEndToEnd/Run1/Foundgine.AgentEndToEnd.Run1.csproj
 ```
 
 The benchmark writes:

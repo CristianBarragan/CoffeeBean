@@ -1,8 +1,8 @@
-using Foundgine.Semantics.Aggregates;
-using Foundgine.Semantics.Query;
+using Foundgine.Core.Semantic.Aggregates;
+using Foundgine.Core.Semantic.Query;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class AggregateProviderCapabilityTests
 {

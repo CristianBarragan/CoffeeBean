@@ -1,8 +1,8 @@
 using System.Security.Cryptography;
-using Foundgine.Semantics.Security.Warrants;
+using Foundgine.Core.Semantic.Security.Warrants;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests.Security.Warrants;
+namespace Foundgine.Core.Semantic.Tests.Security.Warrants;
 
 /// <summary>
 /// Guard-rail tests for authority monotonicity, fail-closed context handling,

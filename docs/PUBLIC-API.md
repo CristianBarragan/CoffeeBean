@@ -4,7 +4,7 @@ Foundgine's public API is organized around a small common path with explicit adv
 
 ## Common application surface
 
-The normal application entry point is `IFoundgine`.
+The normal application entry point is `IFoundgineExecutor`. It deliberately exposes only two `ExecuteAsync` overloads: one for `SemanticRequest` and one for `ReadIntent`. The broader `IFoundgine` interface is the advanced surface for capability discovery, dry-run, plan approval, and approved execution.
 
 For reads, the main authoring surface is:
 
@@ -117,10 +117,10 @@ Use `AddFoundgine(...)` for normal DI composition.
 
 Advanced integrations can consume:
 
-- `Foundgine.Semantics`;
-- `Foundgine.Planning`;
-- `Foundgine.Execution`;
-- `Foundgine.Metadata`;
+- `Foundgine.Core.Semantic`;
+- `Foundgine.Core.Semantic.Planning`;
+- `Foundgine.Core.Execution`;
+- `Foundgine.Core.Semantic.Metadata`;
 - provider packages.
 
 These expose more of the architecture intentionally.
@@ -150,7 +150,7 @@ stop
 @startuml
 start
 :custom intent adapter;
-:Foundgine.Semantics;
+:Foundgine.Core.Semantic;
 stop
 @enduml
 ```
@@ -191,7 +191,7 @@ The public API must not make it easier to accidentally replace trusted context w
 
 ## Versioning
 
-The repository is currently on the 1.1.9 release line.
+The repository is currently on the 2.0.0 release line.
 
 The most stable conceptual contracts are:
 
@@ -210,19 +210,19 @@ When changing these, update the affected adapter/provider tests rather than addi
 | Area | Package |
 |---|---|
 | Facade | `Foundgine` |
-| Contracts/IDs | `Foundgine.Abstractions` |
-| Semantics | `Foundgine.Semantics` |
-| Metadata | `Foundgine.Metadata` |
-| Planning | `Foundgine.Planning` |
-| Execution | `Foundgine.Execution` |
-| SQL | `Foundgine.Sql` |
-| InMemory | `Foundgine.InMemory` |
-| AOT | `Foundgine.Aot`, `Foundgine.Aot.Generator` |
-| JSON | `Foundgine.Intent.Json` |
-| GraphQL | `Foundgine.GraphQL.HotChocolate*` |
-| MCP | `Foundgine.MCP` |
-| AI | `Foundgine.AI` |
-| Authority recovery | `Foundgine.Security.Authority` |
+| Contracts/IDs | `Foundgine.Core.Abstractions` |
+| Semantics | `Foundgine.Core.Semantic` |
+| Metadata | `Foundgine.Core.Semantic.Metadata` |
+| Planning | `Foundgine.Core.Semantic.Planning` |
+| Execution | `Foundgine.Core.Execution` |
+| SQL | `Foundgine.Providers.Storage.Sql` |
+| InMemory | `Foundgine.Providers.Storage.InMemory` |
+| AOT | `Foundgine.Providers.Aot`, `Foundgine.Providers.Aot.Generator` (build-only analyzer) |
+| JSON | `Foundgine.Core.Serialization` |
+| GraphQL | `Foundgine.Extensions.GraphQL.HotChocolate*` |
+| MCP | `Foundgine.Providers.Tools.MCP` |
+| AI | `Foundgine.Providers.Models` |
+| Authority recovery | `Foundgine.Runtime.ControlPlane` |
 
 ---
 

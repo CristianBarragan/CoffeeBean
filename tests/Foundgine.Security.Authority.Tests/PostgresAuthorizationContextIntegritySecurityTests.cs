@@ -1,4 +1,4 @@
-using Foundgine.Security.Authority;
+using Foundgine.Runtime.ControlPlane;
 using Foundgine.HighAssurance.Postgres.Execution;
 using Npgsql;
 using System.Data;
@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Xunit;
 
-namespace Foundgine.Security.Authority.Tests;
+namespace Foundgine.Runtime.ControlPlane.Tests;
 
 /// <summary>
 /// : persisted authorization evidence is cryptographically bound to its

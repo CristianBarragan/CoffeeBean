@@ -1,8 +1,8 @@
-using Foundgine.Abstractions;
-using Foundgine.Intent.Json;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Capabilities;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Serialization;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Capabilities;
 using Xunit;
 
 namespace Foundgine.Security.Tests;

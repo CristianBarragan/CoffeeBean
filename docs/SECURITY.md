@@ -221,13 +221,13 @@ Do not accept identity, tenant, audience, warrant, or provider control informati
 
 Use:
 
-`Foundgine.GraphQL.HotChocolate.Execution`
+`Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Execution`
 
 for the secure query execution path.
 
 For mutations use:
 
-`Foundgine.GraphQL.HotChocolate.MutationExecution`.
+`Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Mutations`.
 
 ## MCP
 
@@ -327,7 +327,7 @@ stop
 
 ## Authority recovery
 
-`Foundgine.Security.Authority` is optional.
+`Foundgine.Runtime.ControlPlane` is optional.
 
 It provides authority/control-plane recovery primitives such as witness quorum, credential lifecycle, journal reconciliation, promotion/failover, and recovery evidence.
 

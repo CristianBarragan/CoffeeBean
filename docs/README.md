@@ -1,6 +1,6 @@
 # Foundgine documentation
 
-This directory contains the **current** Foundgine documentation for the 1.1.9 release line.
+This directory contains the **current** Foundgine documentation for the 2.0.0 release line.
 
 The repository itself is the source of truth. Documentation describes implemented architecture and tested behavior; it does not use old release notes or historical benchmark snapshots as current product guidance.
 

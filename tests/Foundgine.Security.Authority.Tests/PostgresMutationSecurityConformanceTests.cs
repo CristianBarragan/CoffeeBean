@@ -1,7 +1,7 @@
 using Foundgine.HighAssurance.Postgres;
 using Xunit;
 
-namespace Foundgine.Security.Authority.Tests;
+namespace Foundgine.Runtime.ControlPlane.Tests;
 
 public sealed class PostgresMutationSecurityConformanceTests
 {

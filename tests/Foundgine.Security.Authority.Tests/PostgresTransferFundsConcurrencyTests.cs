@@ -4,7 +4,7 @@ using Foundgine.HighAssurance.Postgres.Execution;
 using Npgsql;
 using Xunit;
 
-namespace Foundgine.Security.Authority.Tests;
+namespace Foundgine.Runtime.ControlPlane.Tests;
 
 public sealed class PostgresTransferFundsConcurrencyTests
 {
@@ -137,7 +137,7 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var service =
             new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource, (_, _, _) => authorize));
 
-        await Assert.ThrowsAsync<Foundgine.Semantics.Authorization.SemanticAuthorizationException>(() =>
+        await Assert.ThrowsAsync<Foundgine.Core.Semantic.Authorization.SemanticAuthorizationException>(() =>
             service.ExecuteAsync(
                 actor, tenant, new TransferFundsCommand(source, destination, 100m, "authorization-recheck")));
 

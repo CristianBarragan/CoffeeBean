@@ -3,7 +3,7 @@ using Npgsql;
 using System.Data;
 using Xunit;
 
-namespace Foundgine.Security.Authority.Tests;
+namespace Foundgine.Runtime.ControlPlane.Tests;
 
 /// <summary>
 /// closes authorization-context lifecycle races and replay paths.

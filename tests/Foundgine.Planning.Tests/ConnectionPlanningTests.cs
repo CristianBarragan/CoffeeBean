@@ -1,9 +1,9 @@
-using Foundgine.Abstractions;
-using Foundgine.Planning;
-using Foundgine.Semantics;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic;
 using Xunit;
 
-namespace Foundgine.Planning.Tests;
+namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed class ConnectionPlanningTests
 {

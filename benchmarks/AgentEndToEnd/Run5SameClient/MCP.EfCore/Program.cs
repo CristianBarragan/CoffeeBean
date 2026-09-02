@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Text.Json;
 using Foundgine.HighAssurance.Banking;
 using Foundgine.HighAssurance.EfCore;
-using Foundgine.Semantics.Authorization;
+using Foundgine.Core.Semantic.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ModelContextProtocol.Server;
 
@@ -17,7 +17,7 @@ builder.Services.AddScoped<EfTransferFundsService>(sp =>
         sp.GetRequiredService<BankingDbContext>(),
         sp.GetRequiredService<IBankAuthorization>().CanTransfer));
 
-// Same MCP wiring as MCP.Foundgine (Postgres/Foundgine.Sql) — the only
+// Same MCP wiring as MCP.Foundgine (Postgres/Foundgine.Providers.Storage.Sql) — the only
 // difference between the two MCP servers is the execution boundary behind
 // the tool (EfTransferFundsService here vs PostgresTransferFundsService
 // there). Protocol, tool name, and request/response shape are identical so

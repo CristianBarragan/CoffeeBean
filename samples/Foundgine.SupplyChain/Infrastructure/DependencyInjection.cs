@@ -1,6 +1,6 @@
-using Foundgine.Metadata;
-using Foundgine.Planning;
-using Foundgine.Semantics;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic;
 using Foundgine.SupplyChain.Application;
 using Foundgine.SupplyChain.Infrastructure.Mutations;
 using Foundgine.SupplyChain.Infrastructure.Queries;
