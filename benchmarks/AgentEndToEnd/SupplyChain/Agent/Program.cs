@@ -183,6 +183,43 @@ internal static class Program
                 expectedAllowed =
                     actor.Name is "bob" or "admin";
             }
+            else if (choice < 70)
+            {
+                // Ambiguity-resolution cases from the Foundgine walkthrough
+                // (docs-site/walkthrough/index.html): "top supplier in
+                // <state>" is not a database key. In the seeded fixture:
+                //   TX -> unambiguous (Acme > Globex): calculated evidence,
+                //         goes all the way to execution.
+                //   CA -> tie (Northstar == Southline): stops before
+                //         authorization/execution and asks the agent to
+                //         choose or give a more specific intent.
+                //   NY -> no suppliers at all: not_found, nothing to
+                //         resolve or execute.
+                //   CA + an explicit supplierName -> closes the loop: the
+                //         agent already knows which of the tied candidates
+                //         it wants, so this resolves and executes instead
+                //         of asking again.
+                capability = "find_top_supplier_overdue_orders";
+
+                var pick = rng.Next(4);
+                var state = pick switch
+                {
+                    0 => "TX",
+                    1 => "CA",
+                    2 => "NY",
+                    _ => "CA"
+                };
+                var supplierName = pick == 3
+                    ? (rng.Next(2) == 0 ? "Northstar Supply" : "Southline Parts")
+                    : null;
+
+                toolArguments = supplierName is null
+                    ? new { actor = actor.Name, state }
+                    : (object)new { actor = actor.Name, state, supplierName };
+
+                expectedAllowed =
+                    actor.Name is "bob" or "admin";
+            }
             else if (choice < 80)
             {
                 capability = "place_order";

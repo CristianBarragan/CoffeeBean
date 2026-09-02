@@ -69,6 +69,7 @@ public static class SupplyChainSemanticModel
     public static readonly EntityId Warehouse = new(8);
     public static readonly EntityId Shipment = new(9);
     public static readonly EntityId Carrier = new(10);
+    public static readonly EntityId PurchaseOrder = new(11);
 
     public static readonly RelationshipId CustomerOrders = new(1);
     public static readonly RelationshipId OrderItems = new(2);
@@ -80,6 +81,7 @@ public static class SupplyChainSemanticModel
     public static readonly RelationshipId OrderShipments = new(8);
     public static readonly RelationshipId ShipmentCarrier = new(9);
     public static readonly RelationshipId ShipmentWarehouse = new(10);
+    public static readonly RelationshipId SupplierPurchaseOrders = new(11);
 
     public static SemanticModel Build() => new SemanticModelBuilder()
         .Entity(Customer, "Customer", e => e
@@ -113,7 +115,17 @@ public static class SupplyChainSemanticModel
         .Entity(Supplier, "Supplier", e => e
             .Identity(new FieldId(1), "Id")
             .Field(new FieldId(2), "Name", typeof(string))
-            .Field(new FieldId(3), "Email", typeof(string)))
+            .Field(new FieldId(3), "Email", typeof(string))
+            .Field(new FieldId(4), "State", typeof(string))
+            .Field(new FieldId(5), "TotalOrderValue", typeof(decimal))
+            .Field(new FieldId(6), "NegotiatedCost", typeof(decimal))
+            .Relationship(SupplierPurchaseOrders, "PurchaseOrders", PurchaseOrder, RelationshipCardinality.Many))
+        .Entity(PurchaseOrder, "PurchaseOrder", e => e
+            .Identity(new FieldId(1), "Id")
+            .Field(new FieldId(2), "SupplierId", typeof(int))
+            .Field(new FieldId(3), "ExpectedDate", typeof(DateOnly))
+            .Field(new FieldId(4), "ReceivedDate", typeof(DateOnly?))
+            .Field(new FieldId(5), "Status", typeof(string)))
         .Entity(Category, "Category", e => e
             .Identity(new FieldId(1), "Id")
             .Field(new FieldId(2), "Name", typeof(string)))
@@ -150,7 +162,7 @@ public sealed class SupplyChainAuthorizer
     public bool CanExecute(string actor, string capability, int? requestedCustomerId = null, int? actorCustomerId = null)
     {
         if (actor == "admin") return true;
-        if (actor == "bob") return capability is "get_my_orders" or "get_order" or "get_product" or "get_shipment" or "place_order" or "cancel_order" or "list_customers";
+        if (actor == "bob") return capability is "get_my_orders" or "get_order" or "get_product" or "get_shipment" or "place_order" or "cancel_order" or "list_customers" or "find_top_supplier_overdue_orders";
         if (actor == "carol") return capability is "get_product" or "get_inventory" or "update_inventory" or "create_shipment" or "update_shipment";
         if (actor == "dave") return capability is "get_product" or "get_inventory" or "list_products" or "list_suppliers" or "update_inventory";
         if (actor == "alice")
@@ -181,10 +193,10 @@ public sealed class SupplyChainMcpTools
         capabilities = actor switch
         {
             "alice" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order" },
-            "bob" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order", "list_customers" },
+            "bob" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order", "list_customers", "find_top_supplier_overdue_orders" },
             "carol" => new[] { "get_product", "get_inventory", "update_inventory", "create_shipment", "update_shipment" },
             "dave" => new[] { "get_product", "get_inventory", "list_products", "list_suppliers", "update_inventory" },
-            "admin" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order", "list_customers", "get_inventory", "update_inventory", "create_shipment", "update_shipment", "list_products", "list_suppliers" },
+            "admin" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order", "list_customers", "get_inventory", "update_inventory", "create_shipment", "update_shipment", "list_products", "list_suppliers", "find_top_supplier_overdue_orders" },
             _ => Array.Empty<string>()
         }
     };
@@ -220,6 +232,19 @@ public sealed class SupplyChainMcpTools
     [McpServerTool(Name = "list_suppliers")]
     public Task<object> ListSuppliers(string actor, CancellationToken ct = default) =>
         Execute("list_suppliers", actor, null, ct, (s, _) => s.ListSuppliers(ct));
+
+    // The ambiguity-resolution case from the Foundgine walkthrough
+    // (docs-site/walkthrough/index.html): "top supplier in <state>" is not a
+    // database key, so it is resolved through ranked candidates + evidence
+    // before anything is authorized to execute. supplierName is optional -
+    // when the caller (agent) has already been told candidates are tied and
+    // comes back with a specific name, that closes the loop into a resolved
+    // result instead of asking again. See
+    // SupplyChainExecutionService.FindTopSupplierOverdueOrders for all
+    // outcomes this can produce.
+    [McpServerTool(Name = "find_top_supplier_overdue_orders")]
+    public Task<object> FindTopSupplierOverdueOrders(string actor, string state, string? supplierName = null, CancellationToken ct = default) =>
+        Execute("find_top_supplier_overdue_orders", actor, null, ct, (s, _) => s.FindTopSupplierOverdueOrders(actor, state, supplierName, ct));
 
     [McpServerTool(Name = "update_inventory")]
     public Task<object> UpdateInventory(string actor, int warehouseId, int productId, int quantity, CancellationToken ct = default) =>
@@ -385,6 +410,171 @@ public sealed class SupplyChainExecutionService
         await using var c = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand("SELECT supplier_id, supplier_name, email FROM suppliers ORDER BY supplier_id", c);
         return new { suppliers = await ReadRows(cmd, ct) };
+    }
+
+    // Mirrors docs-site/walkthrough/index.html: "top supplier in <state>" is
+    // language, not a database key, so it goes through retrieval (ranked
+    // candidates + evidence) before anything downstream may execute.
+    //
+    // Outcomes, none of which are errors:
+    //   - "not_found": no supplier exists for the state at all. Nothing to
+    //     resolve, so nothing is authorized or executed.
+    //   - "clarification_needed": two or more suppliers are tied for "top".
+    //     Resolution stops here. It does not guess, does not authorize, and
+    //     does not execute the purchase-order query - it hands the ranked
+    //     candidates back to the caller and asks for a more specific intent
+    //     (a supplier name, a tiebreak criterion, a narrower region).
+    //   - "resolved": exactly one candidate ranks highest for the state, OR
+    //     the caller closed the loop by naming a specific supplier
+    //     (supplierName) after a prior clarification_needed response. The
+    //     graph is bound to that real supplier, treated as authorized (see
+    //     the Plan(...) comment on why authorization here is an allow-all
+    //     provenance stamp rather than a second access-control layer) and
+    //     the overdue purchase orders are executed and returned with
+    //     evidence. Supplier.NegotiatedCost is a commercially sensitive
+    //     field - like Supplier.NegotiatedCost in the walkthrough, it is
+    //     stripped from the response for every actor except admin, and
+    //     listed under deniedFields.
+    public async Task<object> FindTopSupplierOverdueOrders(string actor, string state, string? supplierName, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(state)) throw new ArgumentException("State is required.");
+
+        await using var c = await ds.OpenConnectionAsync(ct);
+
+        // Retrieval: ranked candidates + provenance. This step alone cannot
+        // grant access to anything.
+        const string candidateSql = """
+            SELECT supplier_id, supplier_name, state, total_order_value, negotiated_cost
+            FROM suppliers
+            WHERE state = @state
+            ORDER BY total_order_value DESC, supplier_id
+            """;
+        await using var candidateCmd = new NpgsqlCommand(candidateSql, c);
+        candidateCmd.Parameters.AddWithValue("state", state.ToUpperInvariant());
+        var candidates = await ReadRows(candidateCmd, ct);
+
+        if (candidates.Count == 0)
+        {
+            return new { status = "not_found", state, reason = $"No suppliers found in state '{state}'." };
+        }
+
+        Dictionary<string, object?> supplier;
+
+        if (!string.IsNullOrWhiteSpace(supplierName))
+        {
+            // The caller is closing the loop: a prior call told them the
+            // candidates were tied, and they came back with a specific
+            // name instead of leaving Foundgine to guess. Still validated
+            // against the real candidate set for the state - a name that
+            // doesn't match anything in scope is refused, not guessed at.
+            var named = candidates.SingleOrDefault(x =>
+                string.Equals((string)x["supplier_name"]!, supplierName, StringComparison.OrdinalIgnoreCase));
+
+            if (named is null)
+            {
+                return new
+                {
+                    status = "not_found",
+                    state,
+                    reason = $"'{supplierName}' does not match any supplier in state '{state}'.",
+                    candidates = candidates.Select(x => new { id = x["supplier_id"], name = x["supplier_name"], state = x["state"], totalOrderValue = x["total_order_value"] })
+                };
+            }
+
+            supplier = named;
+        }
+        else
+        {
+            var topValue = (decimal)candidates[0]["total_order_value"]!;
+            var tiedAtTop = candidates.Where(x => (decimal)x["total_order_value"]! == topValue).ToList();
+
+            if (tiedAtTop.Count > 1)
+            {
+                return new
+                {
+                    status = "clarification_needed",
+                    state,
+                    reason = $"{tiedAtTop.Count} suppliers are tied for 'top' by total order value in state '{state}'; the request cannot be resolved to one supplier without more specific intent.",
+                    candidates = tiedAtTop.Select(x => new { id = x["supplier_id"], name = x["supplier_name"], state = x["state"], totalOrderValue = x["total_order_value"] }),
+                    evidence = new { strategy = "relational", orderBy = "total_order_value desc", tie = true },
+                    suggestedRefinements = new[]
+                    {
+                        "Name the supplier directly (pass supplierName on the next call).",
+                        "Give a tiebreak criterion (for example: most recent purchase order, or lowest lead time).",
+                        "Narrow to a more specific region than the state."
+                    }
+                };
+            }
+
+            supplier = candidates[0];
+        }
+
+        var supplierId = (int)supplier["supplier_id"]!;
+        var supplierValue = (decimal)supplier["total_order_value"]!;
+        var runnerUp = candidates.Where(x => (int)x["supplier_id"]! != supplierId).ToList();
+        var runnerUpValue = runnerUp.Count > 0 ? runnerUp.Max(x => (decimal)x["total_order_value"]!) : 0m;
+
+        // Resolution + authorization + plan binding: the graph is finalized
+        // against the one real supplier the candidate resolved to. See the
+        // Plan(...) comment for what "authorization" means in this fixed
+        // benchmark schema.
+        var plan = PlanSupplier();
+
+        const string poSql = """
+            SELECT purchase_order_id, expected_date
+            FROM purchase_orders
+            WHERE supplier_id = @supplierId
+              AND received_date IS NULL
+              AND expected_date < CURRENT_DATE
+            ORDER BY expected_date
+            """;
+        await using var poCmd = new NpgsqlCommand(poSql, c);
+        poCmd.Parameters.AddWithValue("supplierId", supplierId);
+        var overdueRows = await ReadRows(poCmd, ct);
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var overduePurchaseOrders = overdueRows.Select(r =>
+        {
+            var expected = DateOnly.FromDateTime((DateTime)r["expected_date"]!);
+            return new
+            {
+                purchaseOrderId = r["purchase_order_id"],
+                expectedDate = expected,
+                daysLate = today.DayNumber - expected.DayNumber
+            };
+        }).ToList();
+
+        // Field-level authorization, mirroring step 7 of the walkthrough:
+        // NegotiatedCost is denied to every actor except admin, regardless
+        // of the fact that the capability call itself was allowed.
+        var isAdmin = string.Equals(actor, "admin", StringComparison.OrdinalIgnoreCase);
+        var deniedFields = isAdmin ? Array.Empty<string>() : new[] { "Supplier.NegotiatedCost" };
+
+        return new
+        {
+            status = "resolved",
+            state,
+            resolvedBy = string.IsNullOrWhiteSpace(supplierName) ? "ranking" : "explicit-name",
+            supplier = new
+            {
+                id = supplierId,
+                name = supplier["supplier_name"],
+                state = supplier["state"],
+                totalOrderValue = supplierValue,
+                negotiatedCost = isAdmin ? supplier["negotiated_cost"] : null
+            },
+            evidence = new
+            {
+                strategy = "relational",
+                orderBy = "total_order_value desc",
+                rank = 1,
+                marginOverRunnerUp = supplierValue - runnerUpValue
+            },
+            authorization = new { decision = "allow", deniedFields },
+            overduePurchaseOrders,
+            rowCount = overduePurchaseOrders.Count,
+            plan = PlanFingerprint(plan)
+        };
     }
 
     public async Task<object> UpdateInventory(int warehouseId, int productId, int quantity, CancellationToken ct)
@@ -556,6 +746,11 @@ public sealed class SupplyChainExecutionService
             null, null, Array.Empty<SemanticReadNode>())));
 
     private SemanticPlan PlanPlaceOrder() => PlanProduct();
+
+    private SemanticPlan PlanSupplier() => Plan(new SemanticOperation(
+        new SemanticReadNode(1, SupplyChainSemanticModel.Supplier,
+            new[] { new FieldId(1), new FieldId(2), new FieldId(4), new FieldId(5), new FieldId(6) },
+            null, null, Array.Empty<SemanticReadNode>())));
 
     // Authorizes the operation against the trusted contract (see the
     // AllowAllSemanticAuthorizationPolicy comment in Program.cs's DI setup

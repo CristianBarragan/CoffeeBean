@@ -11,7 +11,7 @@ The bot supports up to five customer identities plus Bob, Carol, Dave and Admin,
 ## Actors
 
 - Alice — Customer; own orders/customer-visible product and shipment reads; create/cancel own orders.
-- Bob — Customer Service; customer/order/shipment reads and order cancellation.
+- Bob — Customer Service / Purchasing; customer/order/shipment reads, order cancellation, and the ambiguity-resolution `find_top_supplier_overdue_orders` capability (see below).
 - Carol — Warehouse Operator; inventory and shipment operations.
 - Dave — Procurement; suppliers/products/inventory operations.
 - Admin — unrestricted.
@@ -34,7 +34,31 @@ Queries additionally exercise relationship traversal such as Customer → Orders
 
 ## Current coverage
 
-MCP capabilities include capability discovery, customer/order/product/shipment reads, inventory reads and writes, supplier/product/customer listing, order creation/cancellation, shipment creation/status updates, and the high-assurance `PlaceOrder` transaction. Order fulfillment records its warehouse allocation so cancellation restores inventory to the correct warehouse.
+MCP capabilities include capability discovery, customer/order/product/shipment reads, inventory reads and writes, supplier/product/customer listing, order creation/cancellation, shipment creation/status updates, the ambiguity-resolution `find_top_supplier_overdue_orders` capability, and the high-assurance `PlaceOrder` transaction. Order fulfillment records its warehouse allocation so cancellation restores inventory to the correct warehouse.
+
+## Ambiguity resolution: "top supplier in `<state>`"
+
+The [Foundgine walkthrough](../../../docs-site/walkthrough/index.html) traces one request — *"show me overdue purchase orders from our top supplier in Texas"* — through every layer, including the step where **"top supplier" is not a database key** and has to be resolved through ranked candidates and evidence before anything downstream may execute. `find_top_supplier_overdue_orders(actor, state, supplierName?)` brings that exact case into this benchmark, and the seeded fixture is built so all four of its outcomes are exercised:
+
+| `state` / args                         | Suppliers                                                | Outcome                                                                                                                                                                                                              |
+| --------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `TX`                                    | Acme Industrial (482,000) > Globex Components (210,000)    | **Calculated evidence → execution.** The top candidate is unambiguous, so resolution binds the graph to Acme, authorizes it, and executes the overdue-purchase-order query, returning rows plus evidence (rank, margin over the runner-up, plan fingerprint). |
+| `CA`                                    | Northstar Supply (300,000) = Southline Parts (300,000)      | **Candidates, no assurance → ask, don't guess.** The two suppliers tie for "top", so resolution stops before authorization or execution and returns `status: "clarification_needed"` with the tied candidates and suggested refinements (name the supplier, give a tiebreak criterion, narrow the region). |
+| `NY`                                    | none seeded                                                | **No candidates at all.** Returns `status: "not_found"` — there is nothing to resolve, so nothing is authorized or executed either.                                                                                 |
+| `CA` + `supplierName: "Northstar Supply"` | same tie as above, but the caller now names one directly     | **Closing the loop.** The agent has already been told the candidates are tied and comes back with a specific name instead of leaving Foundgine to guess. The name is validated against the real candidate set (an unmatched name still returns `not_found`, never a guess) and, once matched, resolves and executes exactly like the `TX` case, with `resolvedBy: "explicit-name"`. |
+
+Every `resolved` response also demonstrates field-level authorization from step 7 of the walkthrough: `Supplier.NegotiatedCost` is a commercially sensitive field that is stripped from the response — and listed under `deniedFields` — for every actor except Admin, regardless of the fact that the capability call itself was allowed.
+
+The agent workload calls this capability with a random choice among all four shapes above on each occurrence, so a single run exercises every outcome. Bob (purchasing/customer service) and Admin are authorized for it; every other actor is expected to be denied at the MCP boundary, same as the rest of this benchmark's authorization matrix.
+
+### Other cases worth adding later
+
+A few more walkthrough-shaped cases that would extend this further, not yet implemented:
+
+- **Stale authorization binding.** Simulate an actor's role or grant changing between plan binding (step 8) and execution (step 10-11), and assert the fingerprint mismatch fails the request closed instead of running a stale decision.
+- **Near-tie below a confidence threshold.** Today "ambiguous" means an exact numeric tie. A more realistic case is two candidates close enough (e.g. within 5%) that guessing is risky even without an exact tie — worth its own threshold-based `clarification_needed` variant.
+- **Retrieval strategy variety.** This capability only uses the `relational` strategy. Adding a `fuzzy`/`fullText` retrieval case (e.g. "the Nor supplier" resolving to Northstar via `pg_trgm`) would exercise `Foundgine.Sql`'s other retrieval strategies described in `docs/ARCHITECTURE.md`.
+- **Multi-field ambiguity.** Combine an ambiguous supplier with an ambiguous product/category reference in the same request, to check that the graph carries and resolves more than one candidate node at once.
 
 ## Run
 
