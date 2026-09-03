@@ -1,0 +1,11 @@
+@startuml
+start
+:user request;
+:chat client;
+:tool call;
+:FoundgineAiToolset;
+:Foundgine;
+:tool result;
+:chat client;
+stop
+@enduml

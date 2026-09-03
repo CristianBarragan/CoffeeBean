@@ -1,0 +1,10 @@
+@startuml
+start
+:Authorization;
+:Plan Binding;
+:Execution IR;
+:Provider;
+:Execution;
+:Evidence;
+stop
+@enduml

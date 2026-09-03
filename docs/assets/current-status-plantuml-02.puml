@@ -1,0 +1,10 @@
+@startuml
+start
+:untrusted intent;
+:semantic resolution;
+:authorization;
+:security-preserving plan;
+:provider conformance;
+:execution;
+stop
+@enduml

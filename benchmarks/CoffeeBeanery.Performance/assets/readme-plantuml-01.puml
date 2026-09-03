@@ -1,0 +1,6 @@
+@startuml
+start
+:real upsert;
+:exact same top-50/full-graph select;
+stop
+@enduml

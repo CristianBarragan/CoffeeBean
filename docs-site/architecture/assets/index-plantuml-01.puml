@@ -1,0 +1,12 @@
+@startuml
+start
+:Intent;
+:Resolve;
+:Authorize;
+:Plan;
+:Rewrite/Optimize;
+:Provider Compilation;
+:Execution;
+:Result + Evidence;
+stop
+@enduml

@@ -44,15 +44,7 @@ Make it easier to implement and compose providers without leaking provider detai
 
 A new provider should primarily need:
 
-```plantuml
-@startuml
-start
-:logical plan / ExecutionIR;
-:provider compiler;
-:provider execution;
-stop
-@enduml
-```
+![PlantUML diagram: ROADMAP, diagram 1](assets/roadmap-plantuml-01.svg)
 
 with explicit security conformance.
 

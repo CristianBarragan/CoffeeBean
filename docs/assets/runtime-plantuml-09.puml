@@ -1,0 +1,10 @@
+@startuml
+start
+:SemanticMutationOperationGraph;
+:MutationPlan;
+:dependency levels;
+:security/conformance checks;
+:provider execution;
+:MutationResult;
+stop
+@enduml

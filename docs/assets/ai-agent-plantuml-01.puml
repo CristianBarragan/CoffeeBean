@@ -1,0 +1,12 @@
+@startuml
+start
+:AI Agent;
+:Intent;
+:Semantic Model;
+:Semantic Operation Graph;
+:Retrieval / Resolution;
+:Authorization;
+:Plan Binding;
+:Execution IR → Provider → Execution → Evidence;
+stop
+@enduml

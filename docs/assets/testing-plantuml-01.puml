@@ -1,0 +1,5 @@
+@startuml
+start
+:intent → resolve → authorize → plan → provider → result;
+stop
+@enduml

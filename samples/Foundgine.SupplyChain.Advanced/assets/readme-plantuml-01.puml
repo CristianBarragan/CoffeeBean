@@ -1,0 +1,11 @@
+@startuml
+start
+:Unit semantics / planning / authorization tests;
+:PostgreSQL integration tests;
+:Authorization penetration tests;
+:Adversarial semantic-input penetration tests;
+:Performance smoke / benchmark;
+:Supply Chain agent-facing E2E;
+:Agent → MCP → Foundgine → PostgreSQL;
+stop
+@enduml

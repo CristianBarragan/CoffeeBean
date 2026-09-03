@@ -101,23 +101,7 @@ Only the **total number of customers and therefore total graph volume** changes.
 
 Each tier gets its own report directory:
 
-```plantuml
-@startmindmap
-* benchmarks/AgentEndToEnd/Run2/artifacts/
-** 00010-customers/
-** agent-benchmark.json
-** agent-benchmark.md
-** 00100-customers/
-** agent-benchmark.json
-** agent-benchmark.md
-** 01000-customers/
-** agent-benchmark.json
-** agent-benchmark.md
-** 10000-customers/
-*** agent-benchmark.json
-*** agent-benchmark.md
-@endmindmap
-```
+![PlantUML diagram: README, diagram 1](assets/readme-plantuml-01.svg)
 
 The benchmark itself reports:
 

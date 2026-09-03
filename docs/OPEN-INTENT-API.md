@@ -7,17 +7,7 @@ Foundgine's intent surface is deliberately open. Applications expose a semantic 
 
 Typed, dynamic, JSON, MCP, GraphQL and AI callers all converge on the same semantic lifecycle after producing intent:
 
-```plantuml
-@startuml
-start
-:Caller → Intent → Semantic Model → Semantic Operation Graph;
-:Retrieval → Resolution;
-:Authorization;
-:Plan Binding → Execution IR;
-:Provider → Execution → Evidence;
-stop
-@enduml
-```
+![PlantUML diagram: OPEN-INTENT-API, diagram 1](assets/open-intent-api-plantuml-01.svg)
 
 ## Typed and dynamic authoring
 

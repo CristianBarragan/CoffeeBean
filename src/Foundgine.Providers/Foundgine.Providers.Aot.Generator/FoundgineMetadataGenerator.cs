@@ -625,7 +625,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             sb,
             models,
             modelEntityMap,
-            entityIds);
+            entityIds,
+            relationshipIds);
 
         sb.AppendLine(
             "public sealed class GeneratedMetadataProvider : IMetadataProvider, IMetadataSource");
@@ -677,7 +678,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         StringBuilder sb,
         ImmutableArray<INamedTypeSymbol> models,
         Dictionary<string, INamedTypeSymbol> modelEntityMap,
-        Dictionary<string, ulong> entityIds)
+        Dictionary<string, ulong> entityIds,
+        Dictionary<string, ulong> relationshipIds)
     {
         sb.AppendLine("public static class GeneratedSemanticModel");
         sb.AppendLine("{");
@@ -798,6 +800,64 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 sb.AppendLine($"            {field.Identifier}.Id,");
 
             sb.AppendLine("        };");
+
+            // Relationships are declared on the storage (ERP) entity, not on
+            // the application model, but callers should never need to walk
+            // the registry by name to find a RelationshipId: emit one
+            // strongly-typed, named constant per [FoundgineRelationship]
+            // property found on the mapped entity. This removes the need for
+            // any hand-written MetadataRegistry.Relationships.Single(...)
+            // lookup helper in application code.
+            var relationshipProperties = entity.GetMembers()
+                .OfType<IPropertySymbol>()
+                .Where(p =>
+                    p.DeclaredAccessibility == Accessibility.Public &&
+                    !p.IsStatic &&
+                    GetAttribute(p, RelationshipAttribute) is not null)
+                .ToArray();
+
+            if (relationshipProperties.Length > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("        public static class Relationships");
+                sb.AppendLine("        {");
+
+                var usedRelationshipIdentifiers =
+                    new HashSet<string>(StringComparer.Ordinal);
+
+                foreach (var property in relationshipProperties)
+                {
+                    var relationshipKey =
+                        entity.ToDisplayString() + "." + property.Name;
+
+                    if (!relationshipIds.TryGetValue(
+                            relationshipKey,
+                            out var relationshipId))
+                    {
+                        continue;
+                    }
+
+                    var attribute =
+                        GetAttribute(property, RelationshipAttribute);
+
+                    var relationshipName =
+                        GetNamedString(attribute, "Name")
+                        ?? property.Name;
+
+                    var identifier =
+                        GetGeneratedSemanticFieldIdentifier(
+                            relationshipName,
+                            usedRelationshipIdentifiers);
+
+                    usedRelationshipIdentifiers.Add(identifier);
+
+                    sb.AppendLine(
+                        $"            public static readonly RelationshipId {identifier} = new({relationshipId});");
+                }
+
+                sb.AppendLine("        }");
+            }
+
             sb.AppendLine("    }");
             sb.AppendLine();
         }

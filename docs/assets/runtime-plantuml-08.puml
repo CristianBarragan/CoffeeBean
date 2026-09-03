@@ -1,0 +1,8 @@
+@startuml
+start
+:provider rows;
+:MaterializedResult;
+:ExecutionResult;
+:application / adapter;
+stop
+@enduml

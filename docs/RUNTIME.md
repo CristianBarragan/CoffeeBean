@@ -7,18 +7,7 @@ The Foundgine runtime coordinates semantic requests, planning, provider executio
 
 Runtime implements the latter half of the canonical lifecycle:
 
-```plantuml
-@startuml
-start
-:Authorization;
-:Plan Binding;
-:Execution IR;
-:Provider;
-:Execution;
-:Evidence;
-stop
-@enduml
-```
+![PlantUML diagram: RUNTIME, diagram 1](assets/runtime-plantuml-01.svg)
 
 The runtime must not accept an unbound execution artifact. The semantic contract and authorization provenance carried by the plan remain verifiable through provider execution.
 
@@ -26,21 +15,7 @@ The runtime must not accept an unbound execution artifact. The semantic contract
 
 A normal read follows:
 
-```plantuml
-@startuml
-start
-:ReadIntent;
-:semantic resolution;
-:validation / normalization;
-:authorization;
-:semantic plan;
-:ExecutionIR;
-:provider compilation;
-:provider execution;
-:result materialization;
-stop
-@enduml
-```
+![PlantUML diagram: RUNTIME, diagram 2](assets/runtime-plantuml-02.svg)
 
 `IFoundgine.ExecuteAsync(...)` is the application-facing boundary.
 
@@ -61,16 +36,7 @@ Authority-bearing values must originate from the host.
 
 `Foundgine.Core.Execution` separates logical plans from provider plans:
 
-```plantuml
-@startuml
-start
-:ExecutionIR;
-:IProviderPlanCompiler;
-:ProviderPlan;
-:IExecutionProvider;
-stop
-@enduml
-```
+![PlantUML diagram: RUNTIME, diagram 3](assets/runtime-plantuml-03.svg)
 
 This is the point where SQL or another physical representation is allowed.
 
@@ -78,26 +44,7 @@ This is the point where SQL or another physical representation is allowed.
 
 The runtime consumes a canonical semantic operation graph rather than allowing each adapter to construct its own execution representation.
 
-```plantuml
-@startuml
-start
-:Intent;
-:Resolve into SemanticOperationGraph;
-:Validate graph + resource limits;
-:Authorize graph against SemanticContractSnapshot;
-:Authorization evidence;
-:Plan authorized graph;
-:SemanticPlan.AuthorizationBinding;
-:Security-preserving optimization;
-:ExecutionIR;
-:Provider compilation;
-:Provider plan inherits authorization binding;
-:Provider security proof;
-:Final execution gate;
-:Execute;
-stop
-@enduml
-```
+![PlantUML diagram: RUNTIME, diagram 4](assets/runtime-plantuml-04.svg)
 
 ### Binding invariant
 
@@ -107,17 +54,7 @@ Planner rewrites must preserve the binding exactly. `ExecutionIRCompiler` refuse
 
 The binding is therefore not a cached permission token. It is a tamper-detection/provenance mechanism connecting:
 
-```plantuml
-@startuml
-start
-:semantic meaning;
-:authorization decision;
-:logical plan;
-:execution IR;
-:provider artifact;
-stop
-@enduml
-```
+![PlantUML diagram: RUNTIME, diagram 5](assets/runtime-plantuml-05.svg)
 
 A different contract, different authorization decision, modified execution IR, transplanted provider plan, or unsatisfied provider security proof must fail closed.
 
@@ -129,16 +66,7 @@ A provider plan cache can sit around compilation.
 
 The safe order is:
 
-```plantuml
-@startuml
-start
-:resolve;
-:authorize;
-:cache/compile;
-:execute with current context;
-stop
-@enduml
-```
+![PlantUML diagram: RUNTIME, diagram 6](assets/runtime-plantuml-06.svg)
 
 The cache must not remove runtime authorization predicates.
 
@@ -146,17 +74,7 @@ The cache must not remove runtime authorization predicates.
 
 Before execution, required security invariants are compared with provider guarantees.
 
-```plantuml
-@startmindmap
-* required invariants
-* ↓
-* provider conformance
-* ↓
-* satisfied?
-** yes → execute
-** no  → reject
-@endmindmap
-```
+![PlantUML diagram: RUNTIME, diagram 7](assets/runtime-plantuml-07.svg)
 
 This protects the semantic contract from a provider that cannot preserve it.
 
@@ -166,16 +84,7 @@ The runtime distinguishes provider execution from result materialization.
 
 Typical flow:
 
-```plantuml
-@startuml
-start
-:provider rows;
-:MaterializedResult;
-:ExecutionResult;
-:application / adapter;
-stop
-@enduml
-```
+![PlantUML diagram: RUNTIME, diagram 8](assets/runtime-plantuml-08.svg)
 
 Adapters such as GraphQL can then shape the result for their own transport.
 
@@ -189,18 +98,7 @@ Evidence is diagnostic/audit information. It is not an authorization grant.
 
 Mutation runtime is intentionally separate from reads.
 
-```plantuml
-@startuml
-start
-:SemanticMutationOperationGraph;
-:MutationPlan;
-:dependency levels;
-:security/conformance checks;
-:provider execution;
-:MutationResult;
-stop
-@enduml
-```
+![PlantUML diagram: RUNTIME, diagram 9](assets/runtime-plantuml-09.svg)
 
 Generated-value dependencies are represented explicitly.
 

@@ -193,17 +193,7 @@ actually were instead of only signalling that a tie existed.
 
 <p align="center"><img src="assets/grounding-decision-lifecycle.svg" alt="Grounding decision stage in the canonical lifecycle: lexical retrieval, candidate meanings, grounding decision, authorization, planning and execution." width="100%"></p>
 
-```plantuml
-@startuml
-start
-:Lexical retrieval;
-:Candidate meanings (graph-constrained paths);
-:Grounding decision   ← this stage;
-:Authorization;
-:Planning / execution;
-stop
-@enduml
-```
+![PlantUML diagram: GROUNDING-DECISIONS, diagram 1](assets/grounding-decisions-plantuml-01.svg)
 
 Grounding is not a replacement for authorization, planning, or provider
 execution — it runs before all of them, and it is scoped narrowly: deciding

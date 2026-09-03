@@ -2,23 +2,7 @@
 
 Foundgine's AOT path moves stable domain knowledge out of the request path.
 
-```plantuml
-@startuml
-card "Storage entities + EF relationship model" as Storage
-card "Domain models" as Domain
-card "physical/storage metadata" as Phys
-card "semantic connections" as Sem
-card "AOT compiler" as Compiler
-card "generated metadata / graph" as Meta
-card "runtime" as Runtime
-Storage --> Phys
-Storage --> Sem
-Domain --> Sem
-Sem --> Compiler
-Compiler --> Meta
-Meta --> Runtime
-@enduml
-```
+![PlantUML diagram: AOT, diagram 1](assets/aot-plantuml-01.svg)
 
 ## Important boundary
 
@@ -48,12 +32,7 @@ The property is a declaration of topology. Foundgine never evaluates it and neve
 
 The generator emits:
 
-```plantuml
-@startmindmap
-* Product
-** Contract → Contract entity
-@endmindmap
-```
+![PlantUML diagram: AOT, diagram 2](assets/aot-plantuml-02.svg)
 
 Relational key details remain on the storage side. This is intentional: a connection says **what may be visited**, while EF/entity metadata says **how the storage relationship exists**.
 
@@ -65,17 +44,7 @@ Special conversions such as `ProductType → ContractType` should therefore be r
 
 ## Runtime goal
 
-```plantuml
-@startuml
-start
-:request;
-:known model/connection graph;
-:traversal + planning;
-:provider;
-:EF / SQL / other source;
-stop
-@enduml
-```
+![PlantUML diagram: AOT, diagram 3](assets/aot-plantuml-03.svg)
 
 The expensive discovery work belongs in AOT. Runtime should bind request-specific values and execute the already-known topology.
 

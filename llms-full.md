@@ -4,13 +4,7 @@ Foundgine is a **programmable semantic execution platform for .NET**. It creates
 
 ## Canonical lifecycle
 
-```plantuml
-@startuml
-start
-:Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence;
-stop
-@enduml
-```
+![PlantUML diagram: llms-full, diagram 1](assets/llms-full-plantuml-01.svg)
 
 Retrieval is candidate discovery, not authorization.
 
@@ -36,19 +30,7 @@ Current providers include `Foundgine.Providers.Storage.Sql` for SQL/PostgreSQL a
 
 AI may generate structured intent. It does not decide application authority, tenant identity, exposed semantics, credentials, policy or whether security invariants may be skipped.
 
-```plantuml
-@startuml
-start
-:AI;
-:semantic capability / intent;
-:Foundgine;
-:resolve;
-:authorize;
-:plan;
-:provider;
-stop
-@enduml
-```
+![PlantUML diagram: llms-full, diagram 2](assets/llms-full-plantuml-02.svg)
 
 ## MCP
 
@@ -58,18 +40,7 @@ stop
 
 The core security boundary is:
 
-```plantuml
-@startuml
-start
-:untrusted input;
-:semantic resolution;
-:authorization;
-:security-preserving plan;
-:provider conformance;
-:execution;
-stop
-@enduml
-```
+![PlantUML diagram: llms-full, diagram 3](assets/llms-full-plantuml-03.svg)
 
 Identity, tenant, audience, secrets and other authority remain host-owned.
 

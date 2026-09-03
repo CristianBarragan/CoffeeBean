@@ -5,48 +5,18 @@ transport-specific check around execution.
 
 The model has four important boundaries:
 
-```plantuml
-@startuml
-start
-:Entity access;
-:Field access;
-:Relationship access;
-:Conditional predicate;
-stop
-@enduml
-```
+![PlantUML diagram: AUTHORIZATION, diagram 1](assets/authorization-plantuml-01.svg)
 
 A policy can therefore describe a domain such as:
 
-```plantuml
-@startmindmap
-* Employee
-** readable
-** writable
-** fields
-*** Name       read/write
-*** Email      read/write
-*** Salary     denied
-*** TenantId   conditional
-@endmindmap
-```
+![PlantUML diagram: AUTHORIZATION, diagram 2](assets/authorization-plantuml-02.svg)
 
 
 ## Authorization in the canonical lifecycle
 
 Authorization is stage 7 of the canonical lifecycle: **Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence**. Retrieval can discover candidates, but authorization evaluates the resolved operation graph under the trusted semantic contract.
 
-```plantuml
-@startuml
-start
-:Semantic Operation Graph;
-:Resolution;
-:Authorization;
-:Plan Binding;
-:Execution IR;
-stop
-@enduml
-```
+![PlantUML diagram: AUTHORIZATION, diagram 3](assets/authorization-plantuml-03.svg)
 
 A retrieval result, capability description, or caller-supplied claim never becomes authority merely because it helped construct intent.
 
@@ -54,24 +24,7 @@ A retrieval result, capability description, or caller-supplied claim never becom
 
 Authorization applies to the complete resolved semantic operation graph. The graph is validated before policy evaluation and the resulting decision is captured as immutable evidence.
 
-```plantuml
-@startuml
-start
-:resolved operation graph;
-:contract validation + resource limits;
-if (authorization) then (allow)
-  :evidence + authorized graph;
-  :plan;
-  :authorization binding;
-  :execution IR;
-  :provider artifact;
-  :final gate;
-else (deny)
-  :reject;
-  stop
-endif
-@enduml
-```
+![PlantUML diagram: AUTHORIZATION, diagram 4](assets/authorization-plantuml-04.svg)
 
 The plan binding contains two identities:
 
@@ -96,13 +49,7 @@ Expression<Func<UserContext, Employee, bool>> CanReadEmployee =>
 
 The generator/policy layer can represent the condition as:
 
-```plantuml
-@startmindmap
-* Equal
-** MemberAccess(resource, TenantId)
-** MemberAccess(context, TenantId)
-@endmindmap
-```
+![PlantUML diagram: AUTHORIZATION, diagram 5](assets/authorization-plantuml-05.svg)
 
 The expression tree is not retained and is never compiled or invoked by the
 runtime. The predicate travels with the semantic graph into the
@@ -120,18 +67,7 @@ Foundgine also exposes a provider-independent capability description through
 This is intended for callers that need to understand what they can ask for,
 including AI agents:
 
-```plantuml
-@startuml
-start
-:Claims / Roles / Application identity;
-:Authorization policy;
-:Semantic capabilities;
-:Agent builds valid intent;
-:Authorization again;
-:Execution plan;
-stop
-@enduml
-```
+![PlantUML diagram: AUTHORIZATION, diagram 6](assets/authorization-plantuml-06.svg)
 
 Capability discovery is **descriptive, not authoritative**. An agent or API
 caller must never be trusted because it previously received a capability
@@ -171,14 +107,7 @@ into an authorization-free cached plan.
 
 The intended model is:
 
-```plantuml
-@startuml
-start
-:cacheable plan shape + retained authorization predicate + current execution context;
-:safe provider execution;
-stop
-@enduml
-```
+![PlantUML diagram: AUTHORIZATION, diagram 7](assets/authorization-plantuml-07.svg)
 
 Claims, roles, identity providers, and policy administration are deliberately
 outside this layer. They can sit above Foundgine and produce semantic policy

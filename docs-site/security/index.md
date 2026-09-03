@@ -4,18 +4,7 @@ Foundgine treats intent as untrusted and carries authorization constraints into 
 
 ## Invariant
 
-```plantuml
-@startuml
-start
-:Intent;
-:Resolve;
-:Authorize;
-:Security-preserving Plan;
-:Provider Conformance;
-:Execute;
-stop
-@enduml
-```
+![PlantUML diagram: index, diagram 1](assets/index-plantuml-01.svg)
 
 Capability discovery is descriptive, not authorization. Caller-supplied claims cannot widen authority. Optional `Foundgine.Runtime.ControlPlane` infrastructure is outside the core execution boundary.
 

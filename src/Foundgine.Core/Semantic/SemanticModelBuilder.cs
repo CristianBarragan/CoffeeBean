@@ -123,6 +123,166 @@ public sealed class SemanticModelBuilder
     }
 
     /// <summary>
+    /// Overlays an independently authored semantic model onto an existing model.
+    /// Entities are matched by semantic name rather than by numeric identity, so
+    /// a curated semantic declaration can enrich metadata discovered from a
+    /// producer without copying the producer's structural identities.
+    ///
+    /// Existing structural fields and relationships are retained. When the
+    /// overlay declares a field or relationship with the same semantic name,
+    /// the existing identity and structural target are retained while aliases,
+    /// constraints and explicitly authored capabilities are applied from the
+    /// overlay. This is the composition point for metadata-first applications
+    /// that want a small amount of strongly typed semantic authoring.
+    /// </summary>
+    public SemanticModelBuilder Overlay(SemanticModel overlay)
+    {
+        ArgumentNullException.ThrowIfNull(overlay);
+
+        foreach (var overlayEntity in overlay.Entities)
+        {
+            var existing = _entities.Values.FirstOrDefault(entity =>
+                string.Equals(entity.Name, overlayEntity.Name, StringComparison.OrdinalIgnoreCase));
+
+            if (existing is null)
+            {
+                _entities.Add(overlayEntity.Id, overlayEntity);
+                continue;
+            }
+
+            if (existing.ModelType is not null &&
+                overlayEntity.ModelType is not null &&
+                existing.ModelType != overlayEntity.ModelType)
+            {
+                throw new InvalidOperationException(
+                    $"Semantic entity '{existing.Name}' is being overlaid by incompatible CLR model types '{existing.ModelType.FullName}' and '{overlayEntity.ModelType.FullName}'.");
+            }
+
+            var fields = existing.Fields.ToList();
+            foreach (var overlayField in overlayEntity.Fields)
+            {
+                var index = fields.FindIndex(field =>
+                    string.Equals(field.Name, overlayField.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (index < 0)
+                {
+                    fields.Add(overlayField);
+                    continue;
+                }
+
+                var current = fields[index];
+                if (current.ClrType != overlayField.ClrType)
+                {
+                    throw new InvalidOperationException(
+                        $"Semantic field '{existing.Name}.{current.Name}' is being overlaid with incompatible CLR types '{current.ClrType.FullName}' and '{overlayField.ClrType.FullName}'.");
+                }
+
+                fields[index] = current with
+                {
+                    SemanticType = overlayField.SemanticType ?? current.SemanticType,
+                    Capabilities = overlayField.Capabilities,
+                    Aliases = MergeAliases(current.EffectiveAliases, overlayField.EffectiveAliases),
+                    Constraints = MergeConstraints(current.EffectiveConstraints, overlayField.EffectiveConstraints),
+                    NullableOverride = overlayField.NullableOverride ?? current.NullableOverride
+                };
+            }
+
+            var relationships = existing.Relationships.ToList();
+            foreach (var overlayRelationship in overlayEntity.Relationships)
+            {
+                var index = relationships.FindIndex(relationship =>
+                    string.Equals(relationship.Name, overlayRelationship.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (index < 0)
+                {
+                    relationships.Add(overlayRelationship);
+                    continue;
+                }
+
+                var current = relationships[index];
+                var currentTargetName = _entities[current.Target].Name;
+                var overlayTargetName = overlay.TryGet(overlayRelationship.Target, out var overlayTarget)
+                    ? overlayTarget.Name
+                    : overlayRelationship.Target.ToString();
+
+                if (!string.Equals(currentTargetName, overlayTargetName, StringComparison.OrdinalIgnoreCase) ||
+                    current.Cardinality != overlayRelationship.Cardinality)
+                {
+                    throw new InvalidOperationException(
+                        $"Semantic relationship '{existing.Name}.{current.Name}' conflicts with the existing target/cardinality.");
+                }
+
+                relationships[index] = current with
+                {
+                    Aliases = MergeAliases(current.EffectiveAliases, overlayRelationship.EffectiveAliases)
+                };
+            }
+
+            var identity = existing.Identity;
+            if (!string.Equals(identity.Name, overlayEntity.Identity.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    $"Semantic entity '{existing.Name}' has conflicting identities '{identity.Name}' and '{overlayEntity.Identity.Name}'.");
+            }
+
+            _entities[existing.Id] = existing with
+            {
+                Identity = identity,
+                Fields = fields.ToArray(),
+                Relationships = relationships.ToArray(),
+                Aliases = MergeAliases(existing.EffectiveAliases, overlayEntity.EffectiveAliases),
+                ModelType = existing.ModelType ?? overlayEntity.ModelType
+            };
+        }
+
+        // A curated module may also contribute logical traversals. Those are
+        // already semantic identities, so preserve them exactly when they do
+        // not duplicate an existing traversal.
+        foreach (var traversal in overlay.Traversals)
+        {
+            if (!_traversals.Any(existingTraversal =>
+                    existingTraversal.Source == traversal.Source &&
+                    string.Equals(existingTraversal.Name, traversal.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                _traversals.Add(traversal);
+            }
+        }
+
+        return this;
+    }
+
+    private static IReadOnlyList<SemanticAlias> MergeAliases(
+        IEnumerable<SemanticAlias> current,
+        IEnumerable<SemanticAlias> overlay)
+    {
+        var result = current.ToList();
+        foreach (var alias in overlay)
+        {
+            if (!result.Any(existing =>
+                    string.Equals(existing.Name, alias.Name, StringComparison.OrdinalIgnoreCase)))
+                result.Add(new SemanticAlias(alias.Name));
+        }
+        return result.ToArray();
+    }
+
+    private static IReadOnlyList<SemanticConstraint> MergeConstraints(
+        IEnumerable<SemanticConstraint> current,
+        IEnumerable<SemanticConstraint> overlay)
+    {
+        var result = current.ToList();
+        foreach (var constraint in overlay)
+        {
+            if (!result.Any(existing =>
+                    existing.Kind == constraint.Kind &&
+                    string.Equals(existing.Value, constraint.Value, StringComparison.Ordinal) &&
+                    existing.Minimum == constraint.Minimum &&
+                    existing.Maximum == constraint.Maximum))
+                result.Add(constraint);
+        }
+        return result.ToArray();
+    }
+
+    /// <summary>
     /// Imports an already generated or independently authored semantic model.
     /// Entity identities must not collide. This lets an application deliberately
     /// mix generated semantics with manually curated semantic entities.

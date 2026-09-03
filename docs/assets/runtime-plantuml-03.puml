@@ -1,0 +1,8 @@
+@startuml
+start
+:ExecutionIR;
+:IProviderPlanCompiler;
+:ProviderPlan;
+:IExecutionProvider;
+stop
+@enduml

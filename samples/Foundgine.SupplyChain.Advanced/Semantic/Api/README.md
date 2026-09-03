@@ -26,3 +26,8 @@ are rejected outright and fail the whole call, while recognized narrowing/eviden
 role already allows. See [`../GUIDE.md`](../GUIDE.md#claims-validation) for the full rules.
 
 The endpoint is `/mcp` and the health endpoint is `/health`.
+
+
+## Semantic contract used by the API
+
+The API registers the composed `SupplyChainSemanticModel`. That model discovers the full Supply Chain structure from generated metadata, applies the two-entity `ManualSupplyChainSemanticModel` overlay, and then exposes the resulting contract to the semantic/MCP flow.

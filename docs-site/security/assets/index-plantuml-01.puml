@@ -1,0 +1,10 @@
+@startuml
+start
+:Intent;
+:Resolve;
+:Authorize;
+:Security-preserving Plan;
+:Provider Conformance;
+:Execute;
+stop
+@enduml

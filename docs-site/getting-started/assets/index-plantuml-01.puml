@@ -1,0 +1,12 @@
+@startuml
+start
+:Agent / MCP client;
+:API;
+:Application capability;
+:Domain + AOT metadata;
+:Semantics;
+:Planning / ExecutionIR;
+:Foundgine.Providers.Storage.Sql;
+:PostgreSQL;
+stop
+@enduml

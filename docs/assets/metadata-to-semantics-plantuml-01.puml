@@ -1,0 +1,6 @@
+@startuml
+start
+:Customer;
+:transactions;
+stop
+@enduml

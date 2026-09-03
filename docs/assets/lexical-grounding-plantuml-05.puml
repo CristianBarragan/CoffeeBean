@@ -1,0 +1,7 @@
+@startuml
+start
+:GroundingOutcome.BudgetExceeded;
+:no committed interpretation;
+:no execution;
+stop
+@enduml

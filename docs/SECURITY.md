@@ -4,20 +4,7 @@ Foundgine treats external intent as untrusted input.
 
 The fundamental rule is:
 
-```plantuml
-@startuml
-start
-:Input;
-:Parse;
-:Resolve;
-:Validate;
-:Authorize;
-:Plan;
-:Provider security conformance;
-:Execute;
-stop
-@enduml
-```
+![PlantUML diagram: SECURITY, diagram 1](assets/security-plantuml-01.svg)
 
 No transport adapter should bypass the semantic/security boundary.
 
@@ -26,21 +13,7 @@ No transport adapter should bypass the semantic/security boundary.
 
 Foundgine's security story follows one lifecycle rather than separate transport-specific paths:
 
-```plantuml
-@startuml
-start
-:Caller → Intent → Semantic Model → Operation Graph;
-:Retrieval;
-:Resolution;
-:Authorization;
-:Plan Binding;
-:Execution IR;
-:Provider;
-:Execution;
-:Evidence;
-stop
-@enduml
-```
+![PlantUML diagram: SECURITY, diagram 2](assets/security-plantuml-02.svg)
 
 **Retrieval is never authorization.** Fuzzy, full-text, BM25 and Apache AGE graph retrieval may return candidates and evidence, but every candidate is still resolved and authorized before execution.
 
@@ -132,18 +105,7 @@ time rather than becoming an alternate source of authority.
 
 The safe lifecycle is:
 
-```plantuml
-@startuml
-start
-:request;
-:resolve + validate;
-:authorize;
-:create/bind plan;
-:cache or compile provider plan;
-:execute with current trusted context;
-stop
-@enduml
-```
+![PlantUML diagram: SECURITY, diagram 3](assets/security-plantuml-03.svg)
 
 A cache hit must never skip semantic resolution or authorization, and provider
 conformance must still be satisfied before execution.
@@ -152,13 +114,7 @@ conformance must still be satisfied before execution.
 
 A logical traversal can hide intermediate entities:
 
-```plantuml
-@startuml
-start
-:Customer → CustomerRelationship → Contract → Transaction;
-stop
-@enduml
-```
+![PlantUML diagram: SECURITY, diagram 4](assets/security-plantuml-04.svg)
 
 Authorization sees the expanded path.
 
@@ -175,17 +131,7 @@ A traversal is not a security shortcut.
 
 Capability discovery exists so dynamic callers and AI agents can construct valid intent.
 
-```plantuml
-@startuml
-start
-:capability description;
-:caller constructs intent;
-:Foundgine resolves;
-:authorization;
-:execution;
-stop
-@enduml
-```
+![PlantUML diagram: SECURITY, diagram 5](assets/security-plantuml-05.svg)
 
 A capability document is not an authorization token.
 
@@ -201,17 +147,7 @@ A provider can execute valid SQL and still violate Foundgine's security contract
 
 Foundgine therefore carries required security invariants into execution and checks provider conformance.
 
-```plantuml
-@startmindmap
-* plan requirements
-* ↓
-* provider guarantees
-* ↓
-* conformance
-** satisfied → execute
-** missing   → reject
-@endmindmap
-```
+![PlantUML diagram: SECURITY, diagram 6](assets/security-plantuml-06.svg)
 
 ## GraphQL
 
@@ -235,16 +171,7 @@ MCP tool arguments are untrusted.
 
 The MCP host should obtain security context from authenticated session/request state.
 
-```plantuml
-@startuml
-start
-:MCP request;
-:host authentication;
-:ISecurityExecutionContextProvider;
-:Foundgine;
-stop
-@enduml
-```
+![PlantUML diagram: SECURITY, diagram 7](assets/security-plantuml-07.svg)
 
 Do not allow an agent to select its own tenant or authorization role.
 
@@ -254,29 +181,11 @@ An LLM is an untrusted producer of intent.
 
 Avoid:
 
-```plantuml
-@startuml
-start
-:LLM;
-:SQL;
-:database credentials;
-stop
-@enduml
-```
+![PlantUML diagram: SECURITY, diagram 8](assets/security-plantuml-08.svg)
 
 Use:
 
-```plantuml
-@startuml
-start
-:LLM;
-:semantic tool;
-:Foundgine;
-:authorization;
-:provider;
-stop
-@enduml
-```
+![PlantUML diagram: SECURITY, diagram 9](assets/security-plantuml-09.svg)
 
 The application remains responsible for authentication, model credentials, rate limits, quotas, and prompt/application policy.
 
@@ -292,17 +201,7 @@ Writes have stronger security requirements than reads.
 
 The mutation path can include:
 
-```plantuml
-@startuml
-start
-:semantic authorization;
-:security invariants;
-:approval / plan binding where configured;
-:revalidation;
-:provider execution;
-stop
-@enduml
-```
+![PlantUML diagram: SECURITY, diagram 10](assets/security-plantuml-10.svg)
 
 A mutation builder is an authoring tool, not an authorization mechanism.
 
@@ -312,18 +211,7 @@ Caching must never cache away authorization.
 
 The safe conceptual model is:
 
-```plantuml
-@startuml
-start
-:current request;
-:resolve;
-:authorize;
-:reuse/compile plan shape;
-:bind current runtime context;
-:execute;
-stop
-@enduml
-```
+![PlantUML diagram: SECURITY, diagram 11](assets/security-plantuml-11.svg)
 
 ## Authority recovery
 
