@@ -1,0 +1,7 @@
+@startuml
+start
+:MCP;
+:Foundgine.Providers.Tools.MCP;
+:Foundgine;
+stop
+@enduml

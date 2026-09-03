@@ -1,4 +1,5 @@
 using Foundgine.Providers.Aot;
+using Foundgine.Core.Semantic;
 
 namespace Foundgine.SupplyChain.Advanced.Domain;
 
@@ -21,10 +22,12 @@ public readonly record struct CustomerOrderLineId(int Value);
 public sealed record Company([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] CompanyId Id, string Name,
     [property: FoundgineSemanticDimension("tenant")] string TenantId);
 
+[SemanticEntity]
 [FoundgineEntity("BusinessUnit", StorageName = "business_units", Id = 1001)]
 public sealed record BusinessUnit([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] BusinessUnitId Id,
     [property: FoundgineSemanticDimension("company"), FoundgineField(Index = true)] CompanyId CompanyId, string Name);
 
+[SemanticEntity]
 [FoundgineEntity("Warehouse", StorageName = "warehouses", Id = 1002)]
 public sealed record Warehouse([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] WarehouseId Id,
     [property: FoundgineSemanticDimension("businessUnit"), FoundgineField(Index = true)] BusinessUnitId BusinessUnitId,
@@ -40,6 +43,7 @@ public sealed record Warehouse([property: FoundgineField("Id", Id = 1, IsPrimary
     public IReadOnlyList<InventoryLot> Inventory { get; init; } = [];
 }
 
+[SemanticEntity]
 [FoundgineEntity("Supplier", StorageName = "suppliers", Id = 1003)]
 public sealed record Supplier([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] SupplierId Id, string Name,
     [property: FoundgineSemanticDimension("country"), FoundgineField(Index = true)] string Country,
@@ -62,10 +66,12 @@ public sealed record SupplierSite([property: FoundgineField("Id", Id = 1, IsPrim
     [property: FoundgineField(Index = true)] SupplierId SupplierId,
     [property: FoundgineSemanticDimension("country")] string Country, string Name);
 
+[SemanticEntity]
 [FoundgineEntity("SupplierCertification", StorageName = "supplier_certifications", Id = 1005)]
 public sealed record SupplierCertification([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] CertificationId Id,
     [property: FoundgineField(Index = true)] SupplierId SupplierId, string Type, DateOnly ValidFrom, DateOnly ValidTo);
 
+[SemanticEntity]
 [FoundgineEntity("Product", StorageName = "products", Id = 1006)]
 public sealed record Product([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] ProductId Id, string Sku, string Name,
     [property: FoundgineSemanticDimension("category"), FoundgineField(Index = true)] string Category, decimal SafetyStock)
@@ -80,6 +86,7 @@ public sealed record Product([property: FoundgineField("Id", Id = 1, IsPrimaryKe
     public IReadOnlyList<ProductComponent> UsedInComponents { get; init; } = [];
 }
 
+[SemanticEntity]
 [FoundgineEntity("ProductComponent", StorageName = "product_components", Id = 1007)]
 public sealed record ProductComponent(
     [property: FoundgineField("ParentProductId", Id = 1, IsPrimaryKey = true)] ProductId ParentProductId,
@@ -100,6 +107,7 @@ public sealed record ProductComponent(
 
 public enum PurchaseOrderStatus { Open, PartiallyReceived, Cancelled, Closed }
 
+[SemanticEntity]
 [FoundgineEntity("PurchaseOrder", StorageName = "purchase_orders", Id = 1008)]
 public sealed record PurchaseOrder([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] PurchaseOrderId Id,
     [property: FoundgineField(Index = true)] SupplierId SupplierId,
@@ -114,6 +122,7 @@ public sealed record PurchaseOrder([property: FoundgineField("Id", Id = 1, IsPri
     public Supplier Supplier { get; init; } = null!;
 }
 
+[SemanticEntity]
 [FoundgineEntity("PurchaseOrderLine", StorageName = "purchase_order_lines", Id = 1009)]
 public sealed record PurchaseOrderLine([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] PurchaseOrderLineId Id,
     PurchaseOrderId PurchaseOrderId, [property: FoundgineField(Index = true)] ProductId ProductId, decimal Quantity, decimal UnitPrice)
@@ -124,9 +133,11 @@ public sealed record PurchaseOrderLine([property: FoundgineField("Id", Id = 1, I
 
 public enum ShipmentStatus { Planned, InTransit, Delayed, PartiallyReceived, Received, Cancelled }
 
+[SemanticEntity]
 [FoundgineEntity("Shipment", StorageName = "shipments", Id = 1010)]
 public sealed record Shipment([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] ShipmentId Id, PurchaseOrderId PurchaseOrderId, DateOnly ExpectedArrival, DateOnly? ActualArrival, ShipmentStatus Status, decimal Quantity);
 
+[SemanticEntity]
 [FoundgineEntity("InventoryLot", StorageName = "inventory", Id = 1011)]
 public sealed record InventoryLot([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] InventoryLotId Id,
     WarehouseId WarehouseId, [property: FoundgineField(Index = true)] ProductId ProductId,
@@ -136,6 +147,7 @@ public sealed record InventoryLot([property: FoundgineField("Id", Id = 1, IsPrim
     public Warehouse Warehouse { get; init; } = null!;
 }
 
+[SemanticEntity]
 [FoundgineEntity("CustomerOrder", StorageName = "customer_orders", Id = 1012)]
 public sealed record CustomerOrder([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] CustomerOrderId Id, BusinessUnitId BusinessUnitId, DateOnly PlacedOn, string Status)
 {
@@ -143,6 +155,7 @@ public sealed record CustomerOrder([property: FoundgineField("Id", Id = 1, IsPri
     public IReadOnlyList<CustomerOrderLine> Lines { get; init; } = [];
 }
 
+[SemanticEntity]
 [FoundgineEntity("CustomerOrderLine", StorageName = "customer_order_lines", Id = 1013)]
 public sealed record CustomerOrderLine([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] CustomerOrderLineId Id, CustomerOrderId CustomerOrderId, ProductId ProductId, decimal Quantity);
 
@@ -166,6 +179,7 @@ public sealed record ProductionMaterial(int Id, int ProductionOrderId, ProductId
 public sealed record ProductionOutput([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] int Id,
     int ProductionOrderId, ProductId ProductId, decimal Quantity);
 
+[SemanticEntity]
 [FoundgineEntity("ComplianceIncident", StorageName = "compliance_incidents", Id = 1014)]
 [FoundgineEvent("OccurredOn")]
 public sealed record ComplianceIncident([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] int Id,

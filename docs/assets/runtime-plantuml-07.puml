@@ -1,0 +1,9 @@
+@startmindmap
+* required invariants
+* ↓
+* provider conformance
+* ↓
+* satisfied?
+** yes → execute
+** no  → reject
+@endmindmap

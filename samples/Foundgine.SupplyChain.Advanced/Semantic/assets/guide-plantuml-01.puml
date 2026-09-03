@@ -1,0 +1,10 @@
+@startuml
+start
+:Structural metadata;
+:SemanticModel.Discover();
+:two-entity typed semantic overlay;
+:SupplyChain authorization;
+:open intent;
+:resolution / planning;
+stop
+@enduml

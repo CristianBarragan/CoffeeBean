@@ -1,0 +1,15 @@
+@startuml
+start
+:Intent;
+:Semantic Operation Graph;
+:Validate + resource limits;
+:Authorize against semantic contract;
+:Authorized Graph + Evidence;
+:Semantic Plan + AuthorizationBinding;
+:Security-preserving rewrites;
+:ExecutionIR;
+:Provider Plan + Security Proof;
+:Final execution gate;
+:Execute;
+stop
+@enduml

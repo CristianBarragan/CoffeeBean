@@ -1,0 +1,11 @@
+@startuml
+start
+:Intent source;
+:Semantic Intent;
+:Resolution;
+:Authorization;
+:Execution Plan;
+:Provider;
+:Result + Evidence;
+stop
+@enduml

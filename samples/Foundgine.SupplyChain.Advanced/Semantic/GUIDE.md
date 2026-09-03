@@ -5,18 +5,7 @@ complex supply-chain domain.
 
 ## Pipeline
 
-```plantuml
-@startuml
-start
-:Structural metadata;
-:SemanticModel.Discover();
-:small SupplyChain semantic enrichment;
-:SupplyChain authorization;
-:open intent;
-:resolution / planning;
-stop
-@enduml
-```
+![PlantUML diagram: GUIDE, diagram 1](assets/guide-plantuml-01.svg)
 
 ### Metadata = what exists
 
@@ -27,9 +16,7 @@ in `SupplyChainSemanticModel`.
 
 ### Semantics = what it means
 
-`Semantics/SupplyChainSemanticModel.cs` starts with `SemanticModelBuilder.FromMetadata`
-and adds the logical `Product.shipments` and `Product.supplierIncidents` traversals. The traversal is authored entirely
-with names; generated relationship IDs remain internal.
+`Semantics/SupplyChainSemanticModel.cs` starts with `SemanticModelBuilder.FromMetadata`, overlays the small typed `ManualSupplyChainSemanticModel` for `Product` and `ProductComponent`, and then adds the logical `Product.shipments` and `Product.supplierIncidents` traversals. The manual declarations are therefore part of the real runtime contract, while generated structural identities remain internal.
 
 ### Authorization = what may be exercised
 

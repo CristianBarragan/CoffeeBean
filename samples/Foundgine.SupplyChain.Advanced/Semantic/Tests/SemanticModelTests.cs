@@ -1,6 +1,8 @@
 using Foundgine.SupplyChain.Advanced.Semantics;
 using Foundgine.SupplyChain.Advanced.Application;
+using Foundgine.SupplyChain.Advanced.Infrastructure.Metadata;
 using Foundgine.SupplyChain.Advanced.Authorization;
+using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Capabilities;
 using Xunit;
 
@@ -25,6 +27,25 @@ public sealed class SemanticModelTests
         var purchaseOrder = model.Get(SupplyChainSemanticModel.PurchaseOrder);
         Assert.Contains(purchaseOrder.Relationships, r => r.Name == "lines");
         Assert.Contains(purchaseOrder.Relationships, r => r.Name == "shipments");
+    }
+
+    [Fact]
+    public void Manual_semantic_overlay_is_composed_into_the_complete_runtime_model()
+    {
+        var model = SupplyChainSemanticModel.Build();
+        var product = model.Get(SupplyChainSemanticModel.Product);
+        var component = model.Get(SupplyChainSemanticModel.Component);
+
+        Assert.Equal(17, model.Entities.Count);
+        Assert.Contains(product.EffectiveAliases, a => a.Name == "Item");
+        Assert.Contains(product.Fields.Single(x => x.Name == "Sku").EffectiveAliases, a => a.Name == "PartNumber");
+        Assert.Contains(product.Fields.Single(x => x.Name == "Sku").EffectiveConstraints, c => c.Kind == SemanticConstraintKind.Pattern);
+        Assert.True(product.Fields.Single(x => x.Name == "SafetyStock").Capabilities.HasFlag(SemanticFieldCapabilities.Writable));
+        Assert.Contains(product.Relationships, r => r.Name == "components" && r.Target == component.Id);
+        Assert.Contains(component.Relationships, r => r.Name == "componentProduct" && r.Target == product.Id);
+
+        // Structural metadata remains the source of the canonical entity identity.
+        Assert.Equal(SupplyChainMetadataProducer.Catalog.GetEntity(product.Id).EntityId, product.Id);
     }
 
     [Fact]

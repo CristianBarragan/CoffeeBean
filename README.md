@@ -5,7 +5,7 @@
 
 # [Foundgine.io](https://cristianbarragan.github.io/Foundgine/docs-site/index.html)
 
-[![NuGet Version](https://img.shields.io/nuget/v/Foundgine?label=NuGet%20Version)](https://www.nuget.org/packages/Foundgine/)
+[![NuGet Version](https://img.shields.io/nuget/v/Foundgine?label=NuGet%20Version)](https://www.nuget.org/packages/Foundgine.Core/)
 [![NuGet Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fcristianbarragan.github.io%2FFoundgine%2Fdocs-site%2Fassets%2Ffoundgine-nuget-downloads.json)](https://www.nuget.org/packages?q=Foundgine)
 [![Unit Tests](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=unit-tests&label=Unit%20Tests)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
 [![Integration Tests](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=integration-tests&label=Integration%20Tests)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
@@ -28,6 +28,15 @@ A caller submits structured intent. Foundgine resolves that intent against an ap
 > **Retrieval is discovery, not authority:** relational lookup, `pg_trgm`, `tsvector`, optional `pg_search`/BM25, and optional Apache AGE produce candidates + evidence. Those results still pass through semantic resolution and authorization.
 
 
+
+## Getting started
+
+New to the repo? The fastest path in is the Supply Chain sample pair, each with its own step-by-step tutorial docs:
+
+- **Starter** — [`samples/Foundgine.SupplyChain`](samples/Foundgine.SupplyChain), tutorials: [Starter Tutorial](samples/Foundgine.SupplyChain/SupplyChain-Starter-Tutorial.md) · [Explained](samples/Foundgine.SupplyChain/Foundgine-SupplyChain-Explained.md).
+- **Advanced** — [`samples/Foundgine.SupplyChain.Advanced`](samples/Foundgine.SupplyChain.Advanced), tutorials: [`docs/00-Overview-And-Setup.md`](samples/Foundgine.SupplyChain.Advanced/docs/00-Overview-And-Setup.md) and the numbered docs that follow it (see [Samples](#samples) below for the full list).
+
+For the conceptual/framework docs (not sample-specific), start at [`docs/GETTING-STARTED.md`](docs/GETTING-STARTED.md) — see [Documentation](#documentation).
 
 ## **Walkthrough: from natural language to authorized execution**
 
@@ -64,30 +73,13 @@ Foundgine centralizes those concerns without making GraphQL, AI, MCP, or a datab
 
 This matters most where a single caller can reach many capabilities at once — an AI agent with a set of tools is the clearest case. In a typical stack, each tool is free to implement its own authorization, tenant filtering, and validation on the way to the database:
 
-```plantuml
-@startmindmap
-* Agent
-** Tool A → its own auth / filtering / query logic
-** Tool B → its own auth / filtering / query logic
-** Tool C → its own auth / filtering / query logic
-** Tool D → its own auth / filtering / query logic
-@endmindmap
-```
+![PlantUML diagram: README, diagram 1](assets/readme-plantuml-01.svg)
 
 An agent with 50 tools can end up with 50 separate execution and security surfaces, each only as safe as the developer who wrote that one tool.
 
 Foundgine gives every capability the same path instead:
 
-```plantuml
-@startuml
-start
-:Agent;
-:Capability (structured intent);
-:Foundgine — one semantic + authorization boundary;
-:Execution plan → provider;
-stop
-@enduml
-```
+![PlantUML diagram: README, diagram 2](assets/readme-plantuml-02.svg)
 
 The application still defines what each capability means and who may use it. What Foundgine removes is the need for every tool, endpoint, or adapter to reimplement that decision on its own.
 
@@ -141,50 +133,11 @@ The diagram above is the **canonical Foundgine architecture**. Every interface a
 
 ### Canonical semantic lifecycle
 
-```plantuml
-@startuml
-start
-:Caller;
-:Intent;
-:Semantic Model;
-:Semantic Operation Graph;
-:Retrieval;
-:Resolution;
-:Authorization;
-:Plan Binding;
-:Execution IR;
-:Provider;
-:Execution;
-:Evidence;
-stop
-@enduml
-```
+![PlantUML diagram: README, diagram 3](assets/readme-plantuml-03.svg)
 
 ### Retrieval is a parallel candidate-discovery stage
 
-```plantuml
-@startuml
-start
-:Retrieval;
-fork
-  :Relational\n(structured);
-fork again
-  :Fuzzy\n(pg_trgm);
-fork again
-  :FullText\n(tsvector);
-fork again
-  :BM25\n(pg_search);
-fork again
-  :AGE Graph\n(Apache AGE);
-fork again
-  :Other strategies;
-end fork
-:Candidates + Evidence;
-:Resolution;
-:Authorization;
-stop
-@enduml
-```
+![PlantUML diagram: README, diagram 4](assets/readme-plantuml-04.svg)
 
 Search and graph mechanisms are therefore **not alternate authorization or execution paths**. They are retrieval strategies that help resolve ambiguous references.
 
@@ -222,24 +175,7 @@ The key distinction `Ground` makes is between two candidates that are genuinely 
 
 The central execution artifact is the semantic operation graph. It is resolved and authorized before planning, then carried forward through immutable provenance binding into execution:
 
-```plantuml
-@startuml
-start
-:Intent;
-:Semantic Operation Graph;
-:Validate + bound complexity;
-:Authorize against semantic contract;
-:Authorized Graph + Evidence;
-:Provider-independent Plan;
-note right: AuthorizationBinding
-:Security-preserving optimization;
-:ExecutionIR;
-:Provider Plan + Security Proof;
-:Final Execution Gate;
-:Execute;
-stop
-@enduml
-```
+![PlantUML diagram: README, diagram 5](assets/readme-plantuml-05.svg)
 
 The key invariant is simple: **an executable provider artifact must remain traceably bound to the semantic contract and authorization decision that produced it.** Optimization may change the execution shape, but it cannot detach or weaken that security provenance.
 
@@ -249,14 +185,7 @@ The SQL provider isn't limited to relational access: the same semantic candidate
 
 The semantic model describes application meaning:
 
-```plantuml
-@startmindmap
-* Customer
-** Id
-** Name
-** transactions
-@endmindmap
-```
+![PlantUML diagram: README, diagram 6](assets/readme-plantuml-06.svg)
 
 It does not have to be identical to the physical persistence model.
 
@@ -285,19 +214,7 @@ The execution layer converts the logical plan into provider execution while enfo
 
 Foundgine treats transport input as untrusted.
 
-```plantuml
-@startuml
-start
-:untrusted intent;
-:resolve;
-:validate;
-:authorize;
-:security-preserving plan;
-:provider conformance;
-:execute;
-stop
-@enduml
-```
+![PlantUML diagram: README, diagram 7](assets/readme-plantuml-07.svg)
 
 Identity, tenant, audience, and warrant authority come from the host/security boundary rather than model-generated or transport arguments.
 
@@ -353,17 +270,7 @@ These adapters translate their input into the Foundgine semantic boundary. They 
 
 `Foundgine.Providers.Aot` (folder `Aot/` inside `Foundgine.Providers`) and the paired `Foundgine.Providers.Aot.Generator` Roslyn analyzer move stable metadata discovery into compilation:
 
-```plantuml
-@startuml
-start
-:AOT declarations;
-:Roslyn generator;
-:generated metadata;
-:semantic model;
-:runtime;
-stop
-@enduml
-```
+![PlantUML diagram: README, diagram 8](assets/readme-plantuml-08.svg)
 
 This is designed for Native-AOT-friendly metadata discovery. It does not make arbitrary application/provider dependencies automatically AOT-compatible.
 
@@ -371,17 +278,7 @@ This is designed for Native-AOT-friendly metadata discovery. It does not make ar
 
 Mutations use a separate semantic/planning/execution path because writes require explicit dependencies and stronger security guarantees.
 
-```plantuml
-@startuml
-start
-:Semantic mutation graph;
-:Mutation plan;
-:Dependency levels;
-:Security/conformance;
-:Provider execution;
-stop
-@enduml
-```
+![PlantUML diagram: README, diagram 9](assets/readme-plantuml-09.svg)
 
 All mutation transports should converge on this boundary.
 
@@ -439,9 +336,20 @@ The repository deliberately keeps the public Supply Chain learning path small:
 
 The minimal realistic application. It keeps the application in one project while preserving clear Domain, Application, Infrastructure and Semantics folders. Use this first to understand the basic MCP → Foundgine → PostgreSQL path.
 
+**Tutorials:**
+- [Building the Starter, step by step](samples/Foundgine.SupplyChain/SupplyChain-Starter-Tutorial.md) — builds the sample from an empty folder, file by file.
+- [Foundgine Supply Chain, Explained](samples/Foundgine.SupplyChain/Foundgine-SupplyChain-Explained.md) — the concept-by-concept walkthrough: why 3 separate domain files, what each of the 4 packages is for, why actor/token auth is stateless, why mutations get a separate compiler, and the required setup for each step.
+
 ### 2. `samples/Foundgine.SupplyChain.Advanced` — Advanced
 
 The full proving-ground application. It adds richer semantic modeling, authorization, bounded graph traversal, grounding/ambiguity handling, retrieval strategies, adversarial tests, a high-assurance `PlaceOrder` mutation, and the stateful agent-facing E2E workload.
+
+**Tutorials:** start at [`docs/00-Overview-And-Setup.md`](samples/Foundgine.SupplyChain.Advanced/docs/00-Overview-And-Setup.md) (prerequisites, environment variables, how this sample differs from the starter) and follow the numbered set:
+1. [Claims and Authorization](samples/Foundgine.SupplyChain.Advanced/docs/01-Claims-And-Authorization.md)
+2. [High-Assurance Scenarios](samples/Foundgine.SupplyChain.Advanced/docs/02-High-Assurance-Scenarios.md)
+3. [Ambiguity Resolution ("Grounding")](samples/Foundgine.SupplyChain.Advanced/docs/03-Ambiguity-And-Grounding.md)
+4. [Retrieval Strategies](samples/Foundgine.SupplyChain.Advanced/docs/04-Retrieval-Strategies.md)
+5. [Adversarial & Security Boundary Testing](samples/Foundgine.SupplyChain.Advanced/docs/05-Adversarial-Security-Testing.md)
 
 Other specialized implementations are intentionally kept out of `samples/`: benchmark-only fixtures live under `benchmarks/AgentEndToEnd/Fixtures`, while framework-wide security and conformance tests live under `tests/`.
 

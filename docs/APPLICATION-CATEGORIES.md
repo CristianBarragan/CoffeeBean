@@ -23,20 +23,7 @@ workflow engine, or an autonomous agent framework. See
 At a glance, every caller — application code, GraphQL, JSON, MCP, an AI
 agent — converges on the same pipeline:
 
-```plantuml
-@startuml
-start
-:Caller;
-:Intent;
-:Semantic Model        (what the application exposes);
-:Resolution            (including lexical grounding, for free-form language);
-:Authorization         (what this caller may do);
-:Provider-independent Plan;
-:Provider execution;
-:Result + Evidence;
-stop
-@enduml
-```
+![PlantUML diagram: APPLICATION-CATEGORIES, diagram 1](assets/application-categories-plantuml-01.svg)
 
 The application defines what exists and what is allowed once. Every
 caller-facing surface reuses that same decision instead of re-implementing
@@ -46,23 +33,7 @@ it. See [Architecture](ARCHITECTURE.md) for the full lifecycle.
 
 Foundgine sits **below the transport, above the provider**:
 
-```plantuml
-@startuml
-card GraphQL
-card JSON
-card MCP
-card AI
-card Code
-card Foundgine
-card "Foundgine.Providers.Storage.Sql / Foundgine.Providers.Storage.InMemory / ..." as Provider
-GraphQL --> Foundgine
-JSON --> Foundgine
-MCP --> Foundgine
-AI --> Foundgine
-Code --> Foundgine
-Foundgine --> Provider
-@enduml
-```
+![PlantUML diagram: APPLICATION-CATEGORIES, diagram 2](assets/application-categories-plantuml-02.svg)
 
 Concretely, that means:
 

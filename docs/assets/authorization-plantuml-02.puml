@@ -1,0 +1,10 @@
+@startmindmap
+* Employee
+** readable
+** writable
+** fields
+*** Name       read/write
+*** Email      read/write
+*** Salary     denied
+*** TenantId   conditional
+@endmindmap

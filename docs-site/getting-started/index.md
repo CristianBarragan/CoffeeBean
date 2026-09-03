@@ -4,20 +4,7 @@ The canonical `Foundgine.SupplyChain` sample is the fastest way to understand th
 
 ## What you will run
 
-```plantuml
-@startuml
-start
-:Agent / MCP client;
-:API;
-:Application capability;
-:Domain + AOT metadata;
-:Semantics;
-:Planning / ExecutionIR;
-:Foundgine.Providers.Storage.Sql;
-:PostgreSQL;
-stop
-@enduml
-```
+![PlantUML diagram: index, diagram 1](assets/index-plantuml-01.svg)
 
 ## Prerequisites
 
@@ -36,6 +23,15 @@ docker compose -f docker-compose.postgres.yml up -d
 ## Run the sample
 
 The exact command and configuration are maintained in `samples/Foundgine.SupplyChain/GUIDE.md`. The important part of the exercise is following one request through the layers rather than memorizing a command sequence.
+
+## Step-by-step tutorials
+
+Two written tutorials walk through the Supply Chain samples file by file, including the required setup for each step:
+
+- **Starter** — [Building the Starter, step by step](https://github.com/CristianBarragan/Foundgine/blob/main/samples/Foundgine.SupplyChain/SupplyChain-Starter-Tutorial.md) builds `Foundgine.SupplyChain` from an empty folder; [Foundgine Supply Chain, Explained](https://github.com/CristianBarragan/Foundgine/blob/main/samples/Foundgine.SupplyChain/Foundgine-SupplyChain-Explained.md) covers the *why* behind each file and package.
+- **Advanced** — [`docs/00-Overview-And-Setup.md`](https://github.com/CristianBarragan/Foundgine/blob/main/samples/Foundgine.SupplyChain.Advanced/docs/00-Overview-And-Setup.md) in `Foundgine.SupplyChain.Advanced` is the index for five numbered docs covering claims/authorization, high-assurance read scenarios, ambiguity ("grounding") resolution, retrieval strategies, and adversarial security testing — each tied to the exact test files that prove it.
+
+See the [Samples](../samples/index.html) page for more on how the two samples relate.
 
 ## Layer-by-layer
 

@@ -8,8 +8,9 @@ namespace Foundgine.SupplyChain.Advanced.Semantics;
 /// <summary>
 /// Application semantic configuration for the Supply Chain showcase.
 /// Structural entities, fields, identities and direct relationships come from
-/// generated Foundgine metadata. This layer adds only business meaning that
-/// metadata cannot infer, currently the logical Product.shipments traversal.
+/// generated Foundgine metadata. A small strongly typed manual semantic overlay
+/// then enriches Product and ProductComponent, while this layer adds the
+/// application-level logical traversals that metadata cannot infer.
 /// </summary>
 public static class SupplyChainSemanticModel
 {
@@ -32,6 +33,7 @@ public static class SupplyChainSemanticModel
 
     public static SemanticModel Build() =>
         Metadata.FromMetadata()
+            .Overlay(ManualSupplyChainSemanticModel.Model)
             .Traversal("Product", "shipments", "purchaseOrderLines", "purchaseOrder", "shipments")
             .Traversal("Product", "supplierIncidents", "purchaseOrderLines", "purchaseOrder", "supplier", "incidents")
             .Build();

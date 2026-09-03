@@ -1,0 +1,5 @@
+@startuml
+start
+:GraphQL → semantic request JSON    → semantic request MCP     → semantic request AI      → semantic tool calls / semantic request;
+stop
+@enduml

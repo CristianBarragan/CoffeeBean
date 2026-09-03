@@ -11,29 +11,7 @@ CI always supplies that connection string.
 
 PostgreSQL retrieval is a branch inside the canonical semantic lifecycle, not a second pipeline:
 
-```plantuml
-@startuml
-start
-:Semantic Operation Graph;
-:Retrieval;
-fork
-  :Relational;
-fork again
-  :Fuzzy\n(pg_trgm);
-fork again
-  :FullText\n(tsvector);
-fork again
-  :BM25\n(pg_search);
-fork again
-  :AGE\n(Apache AGE);
-end fork
-:Candidates + Evidence;
-:Resolution;
-:Authorization;
-:Plan;
-stop
-@enduml
-```
+![PlantUML diagram: POSTGRES-E2E, diagram 1](assets/postgres-e2e-plantuml-01.svg)
 
 No retrieval strategy grants authority or bypasses semantic authorization.
 

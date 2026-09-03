@@ -2,6 +2,12 @@
 
 A reproducible end-to-end supply-chain reference application exercising the Foundgine layers from an agent-like bot through MCP, semantic modeling, authorization, planning, execution and PostgreSQL.
 
+> **New here?** This README covers *how to run it*. For *why it's built this
+> way* — claims/authorization, high-assurance read scenarios, ambiguity
+> ("grounding") resolution, retrieval strategies, and adversarial security
+> testing, each tied to the exact test files that prove it — see
+> [`docs/00-Overview-And-Setup.md`](./docs/00-Overview-And-Setup.md).
+
 ## Flow
 
 AI agent bot → MCP → Foundgine capability boundary → semantic model → authorization → semantic planner → execution service → Npgsql → PostgreSQL.
@@ -88,19 +94,7 @@ This copies the JSON and Markdown report to `docs-site/assets/agent-benchmark/su
 
 The advanced Supply Chain sample is deliberately the **end of the story**, not the beginning. It takes the lower-level guarantees already tested by the repository and places them in a realistic agent-facing business workflow:
 
-```plantuml
-@startuml
-start
-:Unit semantics / planning / authorization tests;
-:PostgreSQL integration tests;
-:Authorization penetration tests;
-:Adversarial semantic-input penetration tests;
-:Performance smoke / benchmark;
-:Supply Chain agent-facing E2E;
-:Agent → MCP → Foundgine → PostgreSQL;
-stop
-@enduml
-```
+![PlantUML diagram: README, diagram 1](assets/readme-plantuml-01.svg)
 
 This advanced sample answers a different question from a raw throughput benchmark: **can an application expose useful business capabilities to an agent without handing the agent authority over the application's data-access and execution rules?**
 
@@ -122,6 +116,6 @@ Do not read the Supply Chain report as a replacement for those gates. It is the 
 
 - **Retrieval strategies** — dedicated coverage for every `RetrievalStrategy` PostgreSQL provider mechanism: `Fuzzy` (`pg_trgm`), `FullText` (`tsvector`), `Search` (optional `pg_search`/BM25), and `GraphSimilarity` (optional Apache AGE). No other sample in the repository exercises these.
 - **Grounding decisions** (`Semantic/Tests/Grounding`) — the unit-level case study behind [Grounding decisions](../../docs/GROUNDING-DECISIONS.md): ambiguity (`active supplier`), duplicate-evidence-is-not-ambiguity, unresolved/no-vocabulary, and `SemanticLexicalResolver.Ground`'s budget/timeout/cancellation fail-closed behavior — run directly against `SemanticLexicalResolver` with a fake candidate source, independent of any live retrieval provider or MCP round-trip. This is what the `find_top_supplier_overdue_orders` capability above exercises at the black-box, agent-facing level; `Semantic/Tests/Grounding` exercises the same resolver white-box, including budget/cancellation edge cases that have no equivalent when going through a full MCP round-trip.
-- **Security invariants** — recursive graph traversal (`RecursiveSupplierRiskTests`), graph security boundary, open-intent mutation security, adversarial invariants, sensitive-field authorization, and an MCP authorization penetration suite, all against the sample's own generated + manually authored semantic model.
+- **Security invariants** — recursive graph traversal (`RecursiveSupplierRiskTests`), graph security boundary, open-intent mutation security, adversarial invariants, sensitive-field authorization, and an MCP authorization penetration suite, all against the sample's metadata-discovered semantic model. A separate two-entity manual builder example is included only to illustrate the alternative authoring path; it is not part of the application pipeline.
 
 See `Semantic/README.md` and `Semantic/GUIDE.md` for the full architecture and authorization walkthrough, and `Semantic/Tests/` for all 21 test files.

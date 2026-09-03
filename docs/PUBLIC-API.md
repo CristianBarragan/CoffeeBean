@@ -137,41 +137,13 @@ The lower-level APIs are useful for:
 
 Prefer the highest-level API that solves the application problem.
 
-```plantuml
-@startuml
-start
-:ordinary application;
-:Foundgine;
-stop
-@enduml
-```
+![PlantUML diagram: PUBLIC-API, diagram 1](assets/public-api-plantuml-01.svg)
 
-```plantuml
-@startuml
-start
-:custom intent adapter;
-:Foundgine.Core.Semantic;
-stop
-@enduml
-```
+![PlantUML diagram: PUBLIC-API, diagram 2](assets/public-api-plantuml-02.svg)
 
-```plantuml
-@startuml
-start
-:custom planner/provider;
-:Planning + Execution;
-stop
-@enduml
-```
+![PlantUML diagram: PUBLIC-API, diagram 3](assets/public-api-plantuml-03.svg)
 
-```plantuml
-@startuml
-start
-:custom physical provider;
-:Execution + provider package;
-stop
-@enduml
-```
+![PlantUML diagram: PUBLIC-API, diagram 4](assets/public-api-plantuml-04.svg)
 
 Do not make application code depend on provider internals merely to construct a query.
 

@@ -12,24 +12,7 @@ Do not reduce Foundgine to GraphQL, SQL, an ORM, an AI framework, an MCP impleme
 
 ## Canonical lifecycle
 
-```plantuml
-@startuml
-start
-:Caller;
-:Intent;
-:Semantic Model;
-:Semantic Operation Graph;
-:Retrieval / candidate discovery;
-:Resolution;
-:Authorization;
-:Plan Binding;
-:Execution IR;
-:Provider;
-:Execution;
-:Evidence;
-stop
-@enduml
-```
+![PlantUML diagram: ai.seo, diagram 1](assets/ai-seo-plantuml-01.svg)
 
 **Critical invariant:** retrieval discovers candidates and evidence; it does not grant authority. Authorization happens after semantic resolution and remains bound through planning and execution.
 
@@ -52,23 +35,7 @@ stop
 
 AI is an **untrusted producer of structured intent**, not the authority.
 
-```plantuml
-@startmindmap
-* AI agent
-* ↓
-* capability / structured intent
-* ↓
-* Foundgine
-* ├─ retrieval / candidate discovery
-* ├─ semantic resolution
-* ├─ validation
-* ├─ authorization
-* ├─ planning
-* └─ execution
-* ↓
-* provider
-@endmindmap
-```
+![PlantUML diagram: ai.seo, diagram 2](assets/ai-seo-plantuml-02.svg)
 
 The host owns identity, tenant, audience, credentials, model orchestration, secrets, policy and other trusted context. Model or transport arguments must not become security authority. Capability discovery is descriptive/advisory and is never an authorization grant.
 

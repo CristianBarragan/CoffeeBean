@@ -1,0 +1,10 @@
+@startuml
+start
+:current request;
+:resolve;
+:authorize;
+:reuse/compile plan shape;
+:bind current runtime context;
+:execute;
+stop
+@enduml

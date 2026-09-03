@@ -1,0 +1,11 @@
+@startuml
+start
+:untrusted intent;
+:resolve;
+:validate;
+:authorize;
+:security-preserving plan;
+:provider conformance;
+:execute;
+stop
+@enduml

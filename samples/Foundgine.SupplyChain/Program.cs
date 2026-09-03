@@ -3,7 +3,7 @@ using Foundgine.Core.Semantic.Planning;
 using Foundgine.SupplyChain.Application;
 using Foundgine.SupplyChain.Infrastructure.Mutations;
 using Foundgine.SupplyChain.Infrastructure.Queries;
-using Foundgine.SupplyChain.Advanceds;
+using Foundgine.Generated;
 using ModelContextProtocol.Server;
 using Foundgine.Providers.Tools.MCP;
 using Npgsql;
@@ -20,8 +20,11 @@ builder.Services.AddSingleton<ICapabilityAuthorizer, SupplyChainAuthorizer>();
 builder.Services.AddScoped<SupplyChainApplication>();
 
 builder.Services.AddSingleton(NpgsqlDataSource.Create(cs));
-builder.Services.AddSingleton<IMetadataProvider>(_ => SupplyChainSemanticModel.Metadata);
-builder.Services.AddSingleton(SupplyChainSemanticModel.Metadata);
+// GeneratedMetadata.Registry is emitted by the AOT generator directly from
+// Domain/Models.cs + Domain/StorageModels.cs + Domain/Mappings.cs - it
+// already implements IMetadataProvider, so there is nothing to wrap here.
+builder.Services.AddSingleton<IMetadataProvider>(GeneratedMetadata.Registry);
+builder.Services.AddSingleton(GeneratedMetadata.Registry);
 builder.Services.AddSingleton<Planner>();
 builder.Services.AddSingleton<SemanticSqlQueryExecutor>();
 builder.Services.AddScoped<ISupplyChainQueries, SupplyChainQueryRepository>();

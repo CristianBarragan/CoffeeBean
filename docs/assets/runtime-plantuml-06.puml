@@ -1,0 +1,8 @@
+@startuml
+start
+:resolve;
+:authorize;
+:cache/compile;
+:execute with current context;
+stop
+@enduml

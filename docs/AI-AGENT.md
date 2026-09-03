@@ -7,39 +7,13 @@ Foundgine's AI integration is deliberately small: it exposes semantic execution 
 
 An agent is another untrusted caller. It does not receive a special execution path:
 
-```plantuml
-@startuml
-start
-:AI Agent;
-:Intent;
-:Semantic Model;
-:Semantic Operation Graph;
-:Retrieval / Resolution;
-:Authorization;
-:Plan Binding;
-:Execution IR → Provider → Execution → Evidence;
-stop
-@enduml
-```
+![PlantUML diagram: AI-AGENT, diagram 1](assets/ai-agent-plantuml-01.svg)
 
 Capability discovery is descriptive. Search results, model output and tool arguments remain untrusted until the normal semantic and authorization stages accept them.
 
 ## Architecture
 
-```plantuml
-@startuml
-start
-:LLM / Agent Framework;
-:Microsoft.Extensions.AI;
-:Foundgine.Providers.Models;
-:IFoundgine;
-:semantic resolution;
-:authorization;
-:planning;
-:provider execution;
-stop
-@enduml
-```
+![PlantUML diagram: AI-AGENT, diagram 2](assets/ai-agent-plantuml-02.svg)
 
 The model is an untrusted producer of intent.
 
@@ -60,32 +34,13 @@ An agent can first discover the semantic capabilities available to its execution
 
 The flow is:
 
-```plantuml
-@startuml
-start
-:host context;
-:capability contract;
-:LLM;
-:structured intent;
-stop
-@enduml
-```
+![PlantUML diagram: AI-AGENT, diagram 3](assets/ai-agent-plantuml-03.svg)
 
 Discovery is descriptive.
 
 The request is still authorized when executed:
 
-```plantuml
-@startuml
-start
-:LLM intent;
-:Foundgine resolution;
-:authorization;
-:plan;
-:provider;
-stop
-@enduml
-```
+![PlantUML diagram: AI-AGENT, diagram 4](assets/ai-agent-plantuml-04.svg)
 
 ## Security boundary
 
@@ -117,19 +72,7 @@ The application supplies its preferred `IChatClient` and can then use the return
 
 The agent helper uses Microsoft.Extensions.AI function invocation to support:
 
-```plantuml
-@startuml
-start
-:user request;
-:chat client;
-:tool call;
-:FoundgineAiToolset;
-:Foundgine;
-:tool result;
-:chat client;
-stop
-@enduml
-```
+![PlantUML diagram: AI-AGENT, diagram 5](assets/ai-agent-plantuml-05.svg)
 
 The loop is bounded by tool-iteration/resource controls.
 
@@ -158,17 +101,7 @@ Foundgine cannot make arbitrary natural-language instructions trustworthy.
 
 The security strategy is instead to make the execution authority independent of the model:
 
-```plantuml
-@startuml
-start
-:untrusted text;
-:model-generated intent;
-:semantic resolution;
-:host-backed authorization;
-:controlled provider execution;
-stop
-@enduml
-```
+![PlantUML diagram: AI-AGENT, diagram 6](assets/ai-agent-plantuml-06.svg)
 
 Malicious text in data must not be able to grant the model new Foundgine authority.
 
@@ -178,28 +111,11 @@ Applications still need model/application-level prompt-injection defenses.
 
 The intended pattern is:
 
-```plantuml
-@startuml
-start
-:AI;
-:semantic intent;
-:Foundgine;
-:provider;
-stop
-@enduml
-```
+![PlantUML diagram: AI-AGENT, diagram 7](assets/ai-agent-plantuml-07.svg)
 
 not:
 
-```plantuml
-@startuml
-start
-:AI;
-:SQL;
-:database;
-stop
-@enduml
-```
+![PlantUML diagram: AI-AGENT, diagram 8](assets/ai-agent-plantuml-08.svg)
 
 This keeps database credentials and physical schema outside the model's control.
 
@@ -207,25 +123,9 @@ This keeps database credentials and physical schema outside the model's control.
 
 AI and MCP are independent adapters over the same runtime:
 
-```plantuml
-@startuml
-start
-:Microsoft.Extensions.AI;
-:Foundgine.Providers.Models;
-:Foundgine;
-stop
-@enduml
-```
+![PlantUML diagram: AI-AGENT, diagram 9](assets/ai-agent-plantuml-09.svg)
 
-```plantuml
-@startuml
-start
-:MCP;
-:Foundgine.Providers.Tools.MCP;
-:Foundgine;
-stop
-@enduml
-```
+![PlantUML diagram: AI-AGENT, diagram 10](assets/ai-agent-plantuml-10.svg)
 
 An application can use either or both.
 
@@ -235,23 +135,7 @@ GraphQL and JSON are also intent adapters.
 
 The important property is convergence:
 
-```plantuml
-@startuml
-card GraphQL
-card JSON
-card MCP
-card AI
-card "C#" as CSharp
-card "semantic intent" as SI
-card "same authorization/planning/execution" as Exec
-GraphQL --> SI
-JSON --> SI
-MCP --> SI
-AI --> SI
-CSharp --> SI
-SI --> Exec
-@enduml
-```
+![PlantUML diagram: AI-AGENT, diagram 11](assets/ai-agent-plantuml-11.svg)
 
 ## Current scope
 

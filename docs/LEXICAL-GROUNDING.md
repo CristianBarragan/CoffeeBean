@@ -8,23 +8,7 @@ approximate retrieval provider only proposes candidates.
 
 <p align="center"><img src="assets/lexical-grounding-flow.svg" alt="Foundgine lexical grounding flow: tokenization, candidate retrieval, graph-constrained resolution with backtracking, then authorization and execution." width="100%"></p>
 
-```plantuml
-@startuml
-start
-:Natural language;
-:Tokenization;
-:Candidate retrieval (for every token × semantic kind);
-:Ranked lexical candidates;
-:Highest-scoring root candidate;
-:Semantic-contract validation;
-:Neighbour-constrained graph walk;
-:Backtracking when a candidate cannot form a valid path;
-:Canonical semantic interpretation;
-:Authorization;
-:Planning / execution;
-stop
-@enduml
-```
+![PlantUML diagram: LEXICAL-GROUNDING, diagram 1](assets/lexical-grounding-plantuml-01.svg)
 
 For each token, the retrieval boundary can consider:
 
@@ -82,15 +66,7 @@ Given:
 
 <p align="center"><img src="assets/lexical-grounding-example-schema.svg" alt="Example semantic schema: Customer to Orders (SalesOrder) to Lines (SalesOrderLine) to Product (CatalogProduct) to Category." width="100%"></p>
 
-```plantuml
-@startmindmap
-* Customer
-* └─ Orders → SalesOrder
-* └─ Lines → SalesOrderLine
-* └─ Product → CatalogProduct
-* └─ Category → Category
-@endmindmap
-```
+![PlantUML diagram: LEXICAL-GROUNDING, diagram 2](assets/lexical-grounding-plantuml-02.svg)
 
 and a lexical expression:
 
@@ -102,25 +78,13 @@ Elasticsearch can return candidates such as:
 
 <p align="center"><img src="assets/lexical-grounding-example-candidates.svg" alt="Ranked lexical candidates for 'bought nike shoes': bought to Orders at 0.98, nike to CatalogProduct.Name at 0.99, shoes to Category.Name at 0.97." width="100%"></p>
 
-```plantuml
-@startuml
-start
-:bought → Orders                    0.98 nike   → CatalogProduct.Name=...   0.99 shoes  → Category.Name=...         0.97;
-stop
-@enduml
-```
+![PlantUML diagram: LEXICAL-GROUNDING, diagram 3](assets/lexical-grounding-plantuml-03.svg)
 
 Foundgine then validates the path:
 
 <p align="center"><img src="assets/lexical-grounding-example-path.svg" alt="Validated semantic path: Customer to Orders (SalesOrder) to Lines (SalesOrderLine) to Product (CatalogProduct) to Category.Name." width="100%"></p>
 
-```plantuml
-@startuml
-start
-:Customer → Orders → SalesOrder → Lines → SalesOrderLine → Product → CatalogProduct → Category → Category.Name;
-stop
-@enduml
-```
+![PlantUML diagram: LEXICAL-GROUNDING, diagram 4](assets/lexical-grounding-plantuml-04.svg)
 
 The database is queried only after this semantic interpretation has been
 resolved and authorized. It does not decide what the words mean.
@@ -204,15 +168,7 @@ whatever the search happened to find before it was cut off:
 
 <p align="center"><img src="assets/lexical-grounding-budget-exceeded.svg" alt="Grounding fails closed on any resource limit: GroundingOutcome.BudgetExceeded, Committed is null, no execution." width="100%"></p>
 
-```plantuml
-@startuml
-start
-:GroundingOutcome.BudgetExceeded;
-:no committed interpretation;
-:no execution;
-stop
-@enduml
-```
+![PlantUML diagram: LEXICAL-GROUNDING, diagram 5](assets/lexical-grounding-plantuml-05.svg)
 
 This is a deliberate design choice, not an incidental one: a search
 stopped by a resource limit has not proven there is only one legal

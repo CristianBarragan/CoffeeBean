@@ -12,24 +12,7 @@ The central architectural rule is:
 
 The canonical lifecycle is: **Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence**. Other pages may focus on individual stages, but they must preserve this ordering.
 
-```plantuml
-@startuml
-start
-:Caller;
-:Intent;
-:Semantic Model;
-:Semantic Operation Graph;
-:Retrieval;
-:Resolution;
-:Authorization;
-:Plan Binding;
-:Execution IR;
-:Provider;
-:Execution;
-:Evidence;
-stop
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 1](assets/architecture-plantuml-01.svg)
 
 ## Semantic Operation Graph → Authorization → Plan Binding → Execution
 
@@ -37,41 +20,7 @@ The semantic operation graph is the canonical security object for a resolved req
 
 The lifecycle is deliberately monotonic:
 
-```plantuml
-@startmindmap
-* Caller / transport
-* ↓
-* Intent
-* ↓
-* Semantic resolution
-* ↓
-* Semantic Operation Graph
-* ↓
-* Graph validation + resource limits
-* ↓
-* Authorization against the immutable semantic contract
-* ↓
-* Authorized Operation Graph + Authorization Evidence
-* ↓
-* Provider-independent Semantic Plan
-* │
-**** AuthorizationBinding
-***** ContractFingerprint
-***** AuthorizationFingerprint
-* ↓
-* Security-preserving rewrites / optimization
-* ↓
-* ExecutionIR
-* ↓
-* Provider plan + provider security proof
-* ↓
-* Final execution gate
-* ↓
-* Provider execution
-* ↓
-* Result + evidence
-@endmindmap
-```
+![PlantUML diagram: ARCHITECTURE, diagram 2](assets/architecture-plantuml-02.svg)
 
 ### The graph is the security unit
 
@@ -79,54 +28,17 @@ The lifecycle is deliberately monotonic:
 
 Authorization evaluates the complete graph against the trusted immutable `SemanticContractSnapshot`. For graph authorization, the provider is absent from the decision boundary. A successful decision produces both an authorized graph and immutable authorization evidence.
 
-```plantuml
-@startuml
-start
-:SemanticContractSnapshot + SemanticOperationGraph;
-:authorization;
-:AuthorizedGraph + AuthorizationEvidence;
-stop
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 3](assets/architecture-plantuml-03.svg)
 
 Retrieval strategies such as relational lookup, fuzzy search, full-text search, BM25 or Apache AGE may help resolve ambiguous references, but they only produce candidates and evidence. They never become the authority over which graph nodes may be exercised.
 
-```plantuml
-@startuml
-start
-:Retrieval;
-fork
-  :Relational\n(structured);
-fork again
-  :Fuzzy\n(pg_trgm);
-fork again
-  :FullText\n(tsvector);
-fork again
-  :BM25\n(pg_search);
-fork again
-  :AGE Graph\n(Apache AGE);
-fork again
-  :Other strategies;
-end fork
-:Candidates + Evidence;
-:Resolution;
-stop
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 4](assets/architecture-plantuml-04.svg)
 
 ### Plan binding is provenance, not a second authorization system
 
 When an authorized operation is planned, the resulting `SemanticPlan` carries a `SemanticPlanAuthorizationBinding`. The binding records the fingerprints of the exact semantic contract and authorization decision that produced the plan.
 
-```plantuml
-@startmindmap
-* SemanticPlan
-* │
-** AuthorizationBinding
-**** contract fingerprint
-**** authorization fingerprint
-@endmindmap
-```
+![PlantUML diagram: ARCHITECTURE, diagram 5](assets/architecture-plantuml-05.svg)
 
 Planner rewrites are required to preserve this binding. A rewrite that adds, removes, or changes the authorization provenance is rejected rather than silently producing an authorization-free plan.
 
@@ -138,18 +50,7 @@ This means optimization can change execution shape without changing the authorit
 
 The provider plan then inherits the same binding. The final execution gate additionally requires a provider security proof bound to the exact provider plan and exact `ExecutionIR`.
 
-```plantuml
-@startuml
-start
-:authorized semantic plan;
-:authorization binding;
-:ExecutionIR;
-:provider plan + security proof;
-:exact-plan execution gate;
-:execute;
-stop
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 6](assets/architecture-plantuml-06.svg)
 
 The important invariant is:
 
@@ -184,14 +85,7 @@ Intent is untrusted input.
 
 `Foundgine.Core.Semantic` defines application meaning:
 
-```plantuml
-@startmindmap
-* Entity
-** fields
-** identity
-** relationships
-@endmindmap
-```
+![PlantUML diagram: ARCHITECTURE, diagram 7](assets/architecture-plantuml-07.svg)
 
 It also defines request graphs, filters, ordering, pagination, logical traversals, mutation semantics, capability descriptions, and security context contracts.
 
@@ -243,15 +137,7 @@ A transport can help construct intent but cannot grant authority.
 
 A read plan contains topology such as:
 
-```plantuml
-@startuml
-start
-:Scan;
-:Traverse;
-:TraverseConnection;
-stop
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 8](assets/architecture-plantuml-08.svg)
 
 and semantic clauses such as filtering, ordering and pagination.
 
@@ -313,27 +199,7 @@ The existence of both providers is an architectural test: the logical plan canno
 
 Semantic resolution sometimes needs ranked candidates for an ambiguous reference — a name that doesn't exactly match, a fuzzy search term, or a "find things related to this" request. `Foundgine.Providers.Storage.Sql` answers that through PostgreSQL mechanisms selected per request, all behind the same provider-neutral `RetrievalStrategy` contract:
 
-```plantuml
-@startuml
-start
-:Semantic candidate request;
-:RetrievalStrategy;
-fork
-  :Fuzzy\n(pg_trgm);
-fork again
-  :FullText\n(tsvector);
-fork again
-  :Search\n(pg_search / BM25, optional);
-fork again
-  :GraphSimilarity\n(Apache AGE / Cypher, optional);
-fork again
-  :Vector\n(not on this boundary);
-end fork
-:Ranked candidates + provenance;
-:Semantic resolution / authorization (unchanged);
-stop
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 9](assets/architecture-plantuml-09.svg)
 
 `Fuzzy` and `FullText` use PostgreSQL's built-in `pg_trgm` and `tsvector`/`websearch_to_tsquery`. `Search` and `GraphSimilarity` are optional and require the `pg_search` and Apache AGE extensions respectively — `GraphSimilarity` runs a Cypher query through AGE over a semantic relationship (for example, finding suppliers similar to a given one by shared purchase-order neighbors) and returns ranked candidates, the same shape as any other strategy. `Vector` is not implemented on this per-field `IApproximateCandidateSource` boundary; token-level vector retrieval instead lives in `Foundgine.Providers.Storage.PostgresVector`, a `pgvector`-backed implementation of the separate `ISemanticLexicalCandidateSource` boundary used by lexical grounding (see below and [`LEXICAL-GROUNDING.md`](LEXICAL-GROUNDING.md)).
 
@@ -343,13 +209,7 @@ Retrieval only ever produces candidates and evidence. It does not bypass semanti
 
 Transport packages remain thin:
 
-```plantuml
-@startuml
-start
-:GraphQL → semantic request JSON    → semantic request MCP     → semantic request AI      → semantic tool calls / semantic request;
-stop
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 10](assets/architecture-plantuml-10.svg)
 
 They do not become alternate planners.
 
@@ -357,15 +217,7 @@ They do not become alternate planners.
 
 Authority is host-owned.
 
-```plantuml
-@startuml
-start
-:Authentication / trusted host;
-:SecurityExecutionContext;
-:semantic execution;
-stop
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 11](assets/architecture-plantuml-11.svg)
 
 GraphQL variables, JSON properties, MCP arguments, and model-generated tool arguments must not be treated as authoritative identity/tenant/warrant material.
 
@@ -373,13 +225,7 @@ GraphQL variables, JSON properties, MCP arguments, and model-generated tool argu
 
 A semantic traversal can hide intermediate edges:
 
-```plantuml
-@startuml
-start
-:Customer → CustomerRelationship → Contract → Transaction;
-stop
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 12](assets/architecture-plantuml-12.svg)
 
 as:
 
@@ -395,17 +241,7 @@ This prevents a shortcut from bypassing a denied intermediate entity or relation
 
 Mutation semantics have their own algebra because writes require dependency, generated-value, approval, and security handling.
 
-```plantuml
-@startuml
-start
-:Semantic mutation graph;
-:Mutation plan;
-:dependency levels;
-:security/conformance gate;
-:provider execution;
-stop
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 13](assets/architecture-plantuml-13.svg)
 
 GraphQL mutation translation, MCP mutation tools, and direct mutation authoring all converge on this boundary.
 
@@ -413,17 +249,7 @@ GraphQL mutation translation, MCP mutation tools, and direct mutation authoring 
 
 The AOT architecture moves stable topology into compilation:
 
-```plantuml
-@startuml
-start
-:Foundgine.Providers.Aot declarations;
-:Foundgine.Providers.Aot.Generator;
-:generated metadata;
-:metadata/semantic discovery;
-:runtime;
-stop
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 14](assets/architecture-plantuml-14.svg)
 
 This reduces runtime discovery work and supports Native AOT-friendly metadata handling.
 
@@ -433,15 +259,7 @@ It does not make arbitrary provider/application dependencies automatically Nativ
 
 `Foundgine.Runtime.ControlPlane` is deliberately outside the core.
 
-```plantuml
-@startuml
-start
-:authority/recovery subsystem;
-:validated authority context;
-:Foundgine semantic execution;
-stop
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 15](assets/architecture-plantuml-15.svg)
 
 Applications that do not need a distributed authorization authority/recovery control plane do not need this package.
 
@@ -449,39 +267,9 @@ Applications that do not need a distributed authorization authority/recovery con
 
 The intended package structure is:
 
-```plantuml
-@startuml
-card "Foundgine.Core.Abstractions" as Abstractions
-card Metadata
-card Semantics
-card AOT
-card Planning
-card Execution
-card SQL
-card InMemory
-Metadata --> Abstractions
-Semantics --> Abstractions
-AOT --> Abstractions
-Metadata --> Planning
-Semantics --> Planning
-Planning --> Execution
-Execution --> SQL
-Execution --> InMemory
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 16](assets/architecture-plantuml-16.svg)
 
-```plantuml
-@startmindmap
-* Adapters
-** JSON
-** GraphQL
-** MCP
-** AI
-* │
-* ▼
-* Foundgine
-@endmindmap
-```
+![PlantUML diagram: ARCHITECTURE, diagram 17](assets/architecture-plantuml-17.svg)
 
 The exact project-reference graph contains additional supporting dependencies, but this is the architectural direction.
 
@@ -510,19 +298,7 @@ boundary. Each token may be searched against every semantic kind (entity, node,
 relationship, traversal, field, value, or operation). The highest retrieval
 score is the first hypothesis, not truth.
 
-```plantuml
-@startuml
-start
-:Token;
-:ISemanticLexicalCandidateSource ↓ (Elasticsearch BM25, or pgvector cosine/L2/IP similarity, or both) ranked candidates across semantic kinds;
-:highest-scoring root candidate;
-:semantic graph validation;
-:neighbour-constrained walk;
-:backtrack if the candidate cannot form a complete path;
-:canonical semantic interpretation;
-stop
-@enduml
-```
+![PlantUML diagram: ARCHITECTURE, diagram 18](assets/architecture-plantuml-18.svg)
 
 The semantic graph is authoritative for topology. Approximate retrieval scores
 never authorize a path and are never treated as probabilities. Database/provider

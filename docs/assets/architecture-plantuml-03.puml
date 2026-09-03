@@ -1,0 +1,7 @@
+@startuml
+start
+:SemanticContractSnapshot + SemanticOperationGraph;
+:authorization;
+:AuthorizedGraph + AuthorizationEvidence;
+stop
+@enduml

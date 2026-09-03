@@ -1,0 +1,14 @@
+@startmindmap
+* AI agent
+* ↓
+* capability discovery / structured intent
+* ↓
+* Foundgine
+* ├─ resolve
+* ├─ validate
+* ├─ authorize
+* ├─ plan
+* └─ execute
+* ↓
+* provider
+@endmindmap

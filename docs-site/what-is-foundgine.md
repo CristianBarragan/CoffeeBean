@@ -8,20 +8,7 @@ Applications increasingly have many callers: APIs, GraphQL, automation, internal
 
 ## The Foundgine model
 
-```plantuml
-@startuml
-start
-:Caller;
-:Intent;
-:Semantic Model;
-:Resolution + Validation;
-:Authorization;
-:Provider-independent Plan;
-:Provider;
-:Result + Evidence;
-stop
-@enduml
-```
+![PlantUML diagram: what-is-foundgine, diagram 1](assets/what-is-foundgine-plantuml-01.svg)
 
 ## Semantic versus persistence models
 

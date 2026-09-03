@@ -1,0 +1,11 @@
+@startuml
+start
+:request;
+:semantic resolution;
+:authorization;
+:provider-plan cache;
+:PostgreSQL;
+:result shaping;
+:transport;
+stop
+@enduml
