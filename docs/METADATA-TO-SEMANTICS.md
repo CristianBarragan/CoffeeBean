@@ -75,7 +75,7 @@ samples/Foundgine.SupplyChain/Application/SupplyChainSemanticConfiguration.cs
 
 It no longer has a separate `SupplyChain.Semantics` project. This is an architectural acceptance criterion: ordinary structural discovery must continue to work without an application-owned semantic framework.
 
-The intentionally difficult `Foundgine.SupplyChain.Semantic` showcase remains a separate example for mixed/manual semantics, recursive relationships, authorization and complex mutation planning.
+The intentionally difficult `Foundgine.SupplyChain.Advanced` showcase remains a separate example for mixed/manual semantics, recursive relationships, authorization and complex mutation planning.
 
 ---
 

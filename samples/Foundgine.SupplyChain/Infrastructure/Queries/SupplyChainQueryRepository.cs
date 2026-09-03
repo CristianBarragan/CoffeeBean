@@ -10,6 +10,7 @@ using Foundgine.Core.Semantic.Mutation;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Providers.Storage.Sql.Mutation;
 using Foundgine.SupplyChain.Application;
+using Foundgine.SupplyChain.Advanceds;
 using Foundgine.Generated;
 using Foundgine.Core.Semantic.IR;
 using Npgsql;
@@ -35,7 +36,7 @@ public sealed class SupplyChainQueryRepository : ISupplyChainQueries
     {
         var line = new SemanticReadNode(2, GeneratedSemanticModel.SalesOrderLine.Entity,
             GeneratedSemanticModel.SalesOrderLine.All,
-            SupplyChainSemanticConfiguration.OrderLines, null, []);
+            SupplyChainSemanticModel.OrderLines, null, []);
         var filter = new SemanticAndFilter([
             GeneratedSemanticModel.SalesOrder.Id.Eq(orderId),
             GeneratedSemanticModel.SalesOrder.CustomerId.Eq(customerId)]);
@@ -51,7 +52,7 @@ public sealed class SupplyChainQueryRepository : ISupplyChainQueries
     {
         var filter = new SemanticAndFilter([
             GeneratedSemanticModel.Shipment.Id.Eq(shipmentId),
-            new SemanticRelationshipFilter(SupplyChainSemanticConfiguration.ShipmentOrder, SemanticRelationshipQuantifier.Some,
+            new SemanticRelationshipFilter(SupplyChainSemanticModel.ShipmentOrder, SemanticRelationshipQuantifier.Some,
                 GeneratedSemanticModel.SalesOrder.CustomerId.Eq(customerId))]);
         var result = await _sql.ExecuteAsync(Read(GeneratedSemanticModel.Shipment.Entity, GeneratedSemanticModel.Shipment.All, filter), ct);
         var row = result.Rows.FirstOrDefault() ?? throw new KeyNotFoundException("Shipment not found.");

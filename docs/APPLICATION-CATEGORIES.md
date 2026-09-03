@@ -109,14 +109,13 @@ One hardened semantic and authorization core exposed through several
 transports at once (GraphQL, MCP, JSON), so each transport adapter stays a
 thin translation instead of its own security surface.
 
-- `samples/Foundgine.SupplyChain` — MCP → application → semantic model →
-  planning → SQL → PostgreSQL.
-- `samples/Foundgine.SupplyChain.EndToEnd/Semantic` — the architectural proving
-  ground for Metadata → Semantics → Authorization → Intent, including the
-  [lexical grounding](LEXICAL-GROUNDING.md) and
-  [grounding-decision](GROUNDING-DECISIONS.md) case studies.
-- `samples/Foundgine.SupplyChain.PenTest` — the same hardened core with a
-  security-regression harness over both GraphQL and MCP.
+- `samples/Foundgine.SupplyChain` — the minimal MCP → application → semantic
+  model → planning → SQL → PostgreSQL starter.
+- `samples/Foundgine.SupplyChain.Advanced` — the full semantic proving ground
+  for Metadata → Semantics → Authorization → Intent, including lexical
+  grounding, ambiguity handling, retrieval strategies and adversarial tests.
+- `benchmarks/AgentEndToEnd/Fixtures/SupplyChain.PenTest` — benchmark-only
+  transport security regression coverage over GraphQL and MCP.
 
 ### 2. AI-agent tool execution boundaries
 
@@ -125,10 +124,9 @@ remains the authority over what that intent means and whether it is
 authorized, so a growing tool surface does not become a growing set of
 independent, inconsistently-secured execution paths.
 
-- `samples/Foundgine.Agent.OpenAI` — the smallest useful example: one
-  semantic model, one in-memory provider, one agent adapter.
-- `samples/Foundgine.SupplyChain`'s MCP surface — the same pattern at
-  application scale.
+- `samples/Foundgine.SupplyChain` — the starter agent-facing MCP surface.
+- `samples/Foundgine.SupplyChain.Advanced` — the same boundary at full
+  application and semantic complexity.
 
 See [AI agents](AI-AGENT.md) for the boundary this draws in detail.
 
@@ -139,10 +137,10 @@ justify explicit dependency ordering, replay protection, deterministic
 locking, and an execution receipt — deliberately *not* inferred from
 natural language.
 
-- `samples/Foundgine.HighAssurance.Banking` — a `TransferFunds` mutation
+- `benchmarks/AgentEndToEnd/Fixtures/HighAssurance.Banking` — a `TransferFunds` mutation
   whose execution boundary revalidates tenant, ownership, account state,
   and daily limits, and produces an audit entry and receipt.
-- `samples/Foundgine.HighAssurance.Postgres` — the same capability against
+- `benchmarks/AgentEndToEnd/Fixtures/HighAssurance.Postgres` — the same capability against
   real PostgreSQL execution, transaction, and idempotency semantics.
 
 ### 4. Composite / cross-domain application models
@@ -152,8 +150,8 @@ schema — meaning is assembled from multiple underlying concepts, and the
 semantic layer is what makes that assembly explicit instead of implicit in
 query code.
 
-- `samples/Foundgine.CoffeeBeanery.ProductComposite` — a composite
-  application model built over separately-stored underlying concepts.
+- `samples/Foundgine.SupplyChain.Advanced` — its application-facing semantic
+  model is explicitly separated from persistence/storage concepts.
 
 ### 5. Free-form / natural-language query surfaces
 
@@ -167,11 +165,11 @@ in for a correctly understood one.
 
 - `src/Foundgine.Providers/Foundgine.Providers.Storage.Elasticsearch`, `src/Foundgine.Providers/Foundgine.Providers.Storage.PostgresVector` — the two
   optional candidate-retrieval providers for this category.
-- `samples/Foundgine.SupplyChain.EndToEnd/Semantic/Tests/Grounding` — a worked
+- `samples/Foundgine.SupplyChain.Advanced/Semantic/Tests/Grounding` — a worked
   example of a materially ambiguous business term (`active supplier`)
   against a real generated semantic contract.
 
-These categories are not mutually exclusive — the SupplyChain samples alone
+These categories are not mutually exclusive — the two SupplyChain samples alone
 touch categories 1, 2, and 5 at once. They are meant as a map of *why* a
 given piece of architecture exists, not a menu of separate products.
 

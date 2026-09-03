@@ -13,9 +13,9 @@ fed by benchmark-matrix.json.
 
 Two other benchmarks in this repo have no conventional counterpart to run
 side-by-side, so they can only report a *modeled* estimate:
-  - samples/Foundgine.SupplyChain.EndToEnd (agent authorization workload,
+  - samples/Foundgine.SupplyChain.Advanced (agent authorization workload,
     MCP-only) -> reports/supply-chain-report.json ("efficiencyEstimate")
-  - samples/Foundgine.SupplyChain.EndToEnd/Semantic/Benchmarks (in-process pipeline
+  - samples/Foundgine.SupplyChain.Advanced/Semantic/Benchmarks (in-process pipeline
     weight benchmark) -> reports/pipeline-benchmark.json ("efficiencyEstimate")
 
 This script reads whichever of those report files it can find and merges
@@ -71,7 +71,7 @@ def measured_headline(repo_root: Path):
 
 def supply_chain_summary(repo_root: Path):
     for candidate in [
-        repo_root / "samples/Foundgine.SupplyChain.EndToEnd/reports/supply-chain-report.json",
+        repo_root / "samples/Foundgine.SupplyChain.Advanced/reports/supply-chain-report.json",
         repo_root / "docs-site/assets/agent-benchmark/supply-chain/supply-chain-report.json",
     ]:
         report = load_json(candidate)
@@ -104,7 +104,7 @@ def supply_chain_summary(repo_root: Path):
 
 def semantic_pipeline_summary(repo_root: Path):
     for candidate in [
-        repo_root / "samples/Foundgine.SupplyChain.EndToEnd/Semantic/Benchmarks/reports/pipeline-benchmark.json",
+        repo_root / "samples/Foundgine.SupplyChain.Advanced/Semantic/Benchmarks/reports/pipeline-benchmark.json",
         repo_root / "docs-site/assets/agent-benchmark/semantic-pipeline/pipeline-benchmark.json",
     ]:
         report = load_json(candidate)

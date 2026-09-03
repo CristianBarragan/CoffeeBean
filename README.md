@@ -99,10 +99,10 @@ Foundgine's value grows with the number of distinct callers that would otherwise
 
 | Category | Proven by |
 |---|---|
-| Multi-transport enterprise backends (GraphQL + MCP + JSON over one hardened core) | `samples/Foundgine.SupplyChain*` |
-| AI-agent tool execution boundaries | `samples/Foundgine.Agent.OpenAI`, `samples/Foundgine.SupplyChain`'s MCP surface |
-| High-assurance mutation workflows | `samples/Foundgine.HighAssurance.Banking`, `samples/Foundgine.HighAssurance.Postgres` |
-| Composite / cross-domain application models | `samples/Foundgine.CoffeeBeanery.ProductComposite` |
+| Multi-transport enterprise backends (GraphQL + MCP + JSON over one hardened core) | `samples/Foundgine.SupplyChain`, `samples/Foundgine.SupplyChain.Advanced` |
+| AI-agent tool execution boundaries | `samples/Foundgine.SupplyChain`, `samples/Foundgine.SupplyChain.Advanced` |
+| High-assurance mutation workflows | `benchmarks/AgentEndToEnd/Fixtures/HighAssurance.Banking`, `benchmarks/AgentEndToEnd/Fixtures/HighAssurance.Postgres` |
+| Composite / cross-domain application models | `samples/Foundgine.SupplyChain.Advanced` semantic model |
 | Free-form / natural-language query surfaces | `Foundgine.Providers.Storage.Elasticsearch`, `Foundgine.Providers.Storage.PostgresVector`, [lexical grounding](docs/LEXICAL-GROUNDING.md) |
 
 ## Open intent
@@ -385,7 +385,7 @@ stop
 
 All mutation transports should converge on this boundary.
 
-Writes are where this matters most, because the cost of a wrong authorization decision is much higher than for a read. `samples/Foundgine.HighAssurance.Banking` is the concrete proof case: a `TransferFunds` mutation whose execution boundary revalidates tenant, ownership, account state, and daily limits, holds deterministic locks across both accounts, and produces an audit entry and execution receipt — while making no claim that Foundgine infers financial policy from natural language. See its [README](samples/Foundgine.HighAssurance.Banking/README.md) for the full walkthrough.
+Writes are where this matters most, because the cost of a wrong authorization decision is much higher than for a read. `benchmarks/AgentEndToEnd/Fixtures/HighAssurance.Banking` is the concrete proof case: a `TransferFunds` mutation whose execution boundary revalidates tenant, ownership, account state, and daily limits, holds deterministic locks across both accounts, and produces an audit entry and execution receipt — while making no claim that Foundgine infers financial policy from natural language. See its [README](benchmarks/AgentEndToEnd/Fixtures/HighAssurance.Banking/README.md) for the full walkthrough.
 
 ## Package map
 
@@ -433,25 +433,37 @@ available for advanced scenarios without being required for the first request.
 
 ## Samples
 
-The repository contains progressively more advanced examples, including the SupplyChain semantic sample.
+The repository deliberately keeps the public Supply Chain learning path small:
 
-Start with:
+### 1. `samples/Foundgine.SupplyChain` — Starter
 
-- `samples/Foundgine.SupplyChain.Simple`
-- `samples/Foundgine.SupplyChain`
-- `samples/Foundgine.SupplyChain.EndToEnd/Semantic`
-- `samples/Foundgine.HighAssurance.Postgres`
-- `samples/Foundgine.Agent.OpenAI`
+The minimal realistic application. It keeps the application in one project while preserving clear Domain, Application, Infrastructure and Semantics folders. Use this first to understand the basic MCP → Foundgine → PostgreSQL path.
 
-The SupplyChain samples are also useful as architecture tests: they show how API, application, domain, metadata/AOT, semantics, authorization, planning, and PostgreSQL execution fit together. `samples/Foundgine.SupplyChain.EndToEnd/Semantic/Tests/Grounding` is a worked [grounding-decision](docs/GROUNDING-DECISIONS.md) case study against that same real semantic contract — a materially ambiguous business term (`active supplier`) that Foundgine refuses to resolve silently, next to a case of duplicate retrieval evidence that it correctly does not treat as ambiguous. This project — including its retrieval-strategy tests (`pg_trgm`/`tsvector`/`pg_search`/Apache AGE), security invariants, and grounding case study — was formerly the standalone `Foundgine.SupplyChain.Semantic` sample and now lives inside `Foundgine.SupplyChain.EndToEnd` so the repository has a single Supply Chain end-to-end sample.
+### 2. `samples/Foundgine.SupplyChain.Advanced` — Advanced
+
+The full proving-ground application. It adds richer semantic modeling, authorization, bounded graph traversal, grounding/ambiguity handling, retrieval strategies, adversarial tests, a high-assurance `PlaceOrder` mutation, and the stateful agent-facing E2E workload.
+
+Other specialized implementations are intentionally kept out of `samples/`: benchmark-only fixtures live under `benchmarks/AgentEndToEnd/Fixtures`, while framework-wide security and conformance tests live under `tests/`.
+
+The two Supply Chain samples are therefore a progression, not parallel implementations of the same thing:
+
+```text
+Starter
+  ↓
+Advanced
+  ↓
+Benchmarks / security fixtures
+```
+
+The advanced sample also contains the worked [grounding-decision](docs/GROUNDING-DECISIONS.md) case study and provider-backed retrieval tests.
 
 ## Benchmarks
 
 `benchmarks/AgentEndToEnd` measures an agent completing the same business request two ways against the same PostgreSQL fixture: a **conventional** agent that discovers a physical data surface and writes its own relationship/query/update tools, versus a **Foundgine** agent that uses a semantic capability, an authorized graph operation, and a semantic mutation. Both flows reset to the same baseline before every measured run, so the comparison is of the same request, same fixture, same correctness assertion — only the execution boundary differs. `Run1` through `Run5SameClient` sweep customer count and concurrency; token/tool/wall-clock accounting is described in [`benchmarks/AgentEndToEnd/README.md`](benchmarks/AgentEndToEnd/README.md).
 
-`samples/Foundgine.SupplyChain.EndToEnd` runs the same idea against the stateful Supply Chain sample — agent → MCP → Foundgine → PostgreSQL — plus the deterministic `GraphPenetrationTests`/`McpPenetrationTests` security regression cases described in `Foundgine.SupplyChain.EndToEnd/VERIFY-GATES.md`. Unlike Run1–5, there's no conventional counterpart here to diff against, so its report's `efficiencyEstimate` is a **modeled**, not measured, reduction estimate.
+The advanced Supply Chain workload is the stateful agent-facing demonstration — agent → MCP → Foundgine → PostgreSQL — and is intentionally separate from the conventional-vs-Foundgine Run1–5 comparison. Its `efficiencyEstimate` is **modeled**, not a measured conventional comparison.
 
-CI runs a smoke-sized version of both suites on every push/PR (`agent-benchmark-smoke`, ubuntu-latest, single customer/concurrency-1) so the full seed → run → report pipeline — and the Supply Chain E2E + PenTest gate — stay proven working, without the full customer/concurrency matrix running on every commit. Full-size runs are on-demand or scheduled elsewhere; see `run-all-agent-benchmarks.ps1 -IncludeSupplyChain -IncludeSemanticPipeline` for the complete suite. Published results, when available, live under `docs-site/assets/agent-benchmark`.
+CI runs a smoke-sized version of the benchmark suites on every push/PR (`agent-benchmark-smoke`, ubuntu-latest, single customer/concurrency-1) so the full seed → run → report pipeline stays proven working without the full customer/concurrency matrix running on every commit. Full-size runs are on-demand or scheduled elsewhere; see `run-all-agent-benchmarks.ps1 -IncludeSupplyChain -IncludeSemanticPipeline` for the complete suite. Published results, when available, live under `docs-site/assets/agent-benchmark`.
 
 ## Documentation
 
