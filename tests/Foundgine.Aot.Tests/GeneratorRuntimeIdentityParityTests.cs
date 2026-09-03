@@ -1,20 +1,20 @@
 using System.Linq;
 using System.Text.RegularExpressions;
-using Foundgine.Abstractions;
-using Foundgine.Aot;
-using Foundgine.Metadata;
+using Foundgine.Core.Abstractions;
+using Foundgine.Providers.Aot;
+using Foundgine.Core.Semantic.Metadata;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 
-namespace Foundgine.Aot.Tests;
+namespace Foundgine.Providers.Aot.Tests;
 
 /// <summary>
-/// Fix: <c>Foundgine.Aot.Generator</c> can no longer reference the runtime
-/// <see cref="Foundgine.Abstractions.SemanticIdentity"/> hashing helper directly
+/// Fix: <c>Foundgine.Providers.Aot.Generator</c> can no longer reference the runtime
+/// <see cref="Foundgine.Core.Abstractions.SemanticIdentity"/> hashing helper directly
 /// (analyzers running inside the compiler process must not carry a hard
 /// dependency on the consuming compilation's runtime assemblies), so the fix
-/// introduced <c>Foundgine.Aot.Generator.GeneratorSemanticIdentity</c> as an
+/// introduced <c>Foundgine.Providers.Aot.Generator.GeneratorSemanticIdentity</c> as an
 /// independent copy of the same namespaces, key-building rules, and FNV-1a
 /// hash used at runtime.
 ///
@@ -23,7 +23,7 @@ namespace Foundgine.Aot.Tests;
 /// entity/field defined via <c>[FoundgineEntity]</c>/<c>[FoundgineField]</c>
 /// (compile-time, hashed by <c>GeneratorSemanticIdentity</c>) and the same
 /// logically-named entity/field defined via the manual
-/// <see cref="Foundgine.Semantics.SemanticModelBuilder"/> path (runtime,
+/// <see cref="Foundgine.Core.Semantic.SemanticModelBuilder"/> path (runtime,
 /// hashed by <see cref="SemanticIdentity"/>) would silently compute
 /// different numeric IDs for what is supposed to be the same identity -
 /// exactly the kind of confusion a security capability contract or a plan
@@ -38,7 +38,7 @@ namespace Foundgine.Aot.Tests;
 public sealed class GeneratorRuntimeIdentityParityTests
 {
     private const string Source = """
-        using Foundgine.Aot;
+        using Foundgine.Providers.Aot;
 
         [FoundgineEntity(StorageName = "customers")]
         public sealed class Customer
@@ -188,7 +188,7 @@ public sealed class GeneratorRuntimeIdentityParityTests
             CSharpGeneratorDriver.Create(
                 new ISourceGenerator[]
                 {
-                    new Foundgine.Aot.Generator
+                    new Foundgine.Providers.Aot.Generator
                         .FoundgineMetadataGenerator()
                         .AsSourceGenerator()
                 },

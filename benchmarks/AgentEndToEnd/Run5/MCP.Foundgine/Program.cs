@@ -1,8 +1,8 @@
 using Foundgine.HighAssurance.Banking;
 using Foundgine.HighAssurance.Postgres;
 using Foundgine.HighAssurance.Postgres.Execution;
-using Foundgine.MCP;
-using Foundgine.Semantics.Authorization;
+using Foundgine.Providers.Tools.MCP;
+using Foundgine.Core.Semantic.Authorization;
 using ModelContextProtocol.Server;
 using Npgsql;
 
@@ -21,7 +21,7 @@ builder.Services.AddScoped<PostgresTransferFundsService>();
 
 // This is deliberately the MCP boundary: MCP transports a capability invocation,
 // while the high-assurance Postgres service remains the domain execution boundary.
-builder.Services.AddFoundgineMcp(() => new Foundgine.Execution.ExecutionContext());
+builder.Services.AddFoundgineMcp(() => new Foundgine.Core.Execution.ExecutionContext());
 builder.Services.AddMcpServer()
     .WithHttpTransport(o => o.Stateless = true)
     .WithTools<TransferMcpTools>();

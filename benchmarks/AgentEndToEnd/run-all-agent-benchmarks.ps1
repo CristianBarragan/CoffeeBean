@@ -164,7 +164,7 @@ if ($IncludeSemanticPipeline) {
     Write-Host ' there is no conventional flow to compare against here.' -ForegroundColor DarkGray
     Write-Host '------------------------------------------------------------' -ForegroundColor DarkGray
 
-    $semanticPipelineDir = Join-Path $repoRootForSemantic 'samples/Foundgine.SupplyChain.Semantic'
+    $semanticPipelineDir = Join-Path $repoRootForSemantic 'samples/Foundgine.SupplyChain.Advanced/Semantic'
     if (-not (Test-Path -LiteralPath $semanticPipelineDir)) {
         Write-Warning "SupplyChain.Semantic sample not found: $semanticPipelineDir"
         $failed += 'SemanticPipeline'
@@ -203,7 +203,7 @@ if ($IncludeSupplyChain) {
     $standardRuns += [PSCustomObject]@{ Run = 'SupplyChain (modeled estimate)'; ArtifactRoot = Join-Path $root 'SupplyChain/reports' }
 }
 if ($IncludeSemanticPipeline) {
-    $standardRuns += [PSCustomObject]@{ Run = 'SemanticPipeline (modeled estimate)'; ArtifactRoot = Join-Path $repoRootForSemantic 'samples/Foundgine.SupplyChain.Semantic/Benchmarks/reports' }
+    $standardRuns += [PSCustomObject]@{ Run = 'SemanticPipeline (modeled estimate)'; ArtifactRoot = Join-Path $repoRootForSemantic 'samples/Foundgine.SupplyChain.Advanced/Semantic/Benchmarks/reports' }
 }
 
 $artifactSummary = foreach ($entry in $standardRuns) {

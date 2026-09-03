@@ -1,6 +1,6 @@
-using Foundgine.Metadata;
-using Foundgine.Abstractions;
-using Foundgine.Semantics;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
 
 namespace Foundgine.E2E.Tests.Banking;
 

@@ -1,12 +1,12 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.InMemory;
-using Foundgine.Metadata;
-using Foundgine.Planning;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Providers.Storage.InMemory;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
-namespace Foundgine.InMemory.Tests;
+namespace Foundgine.Providers.Storage.InMemory.Tests;
 
 /// <summary>
 /// Step 37 escape-boundary regression tests.

@@ -1,19 +1,20 @@
 using System.Security.Cryptography;
 using System.Text;
-using Foundgine.Abstractions;
-using Foundgine.Aot;
-using Foundgine.Execution;
-using Foundgine.Execution.Mutation;
-using Foundgine.Metadata;
-using Foundgine.Planning.Mutation;
-using Foundgine.Semantics.Mutation;
-using Foundgine.Semantics.Query;
-using Foundgine.Sql.Mutation;
+using Foundgine.Core.Abstractions;
+using Foundgine.Providers.Aot;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Execution.Mutation;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Semantic.Mutation;
+using Foundgine.Core.Semantic.Query;
+using Foundgine.Providers.Storage.Sql.Mutation;
 using Foundgine.SupplyChain.Application;
+using Foundgine.SupplyChain.Advanceds;
 using Foundgine.Generated;
-using Foundgine.Semantics.IR;
+using Foundgine.Core.Semantic.IR;
 using Npgsql;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.SupplyChain.Infrastructure.Queries;
 
@@ -35,7 +36,7 @@ public sealed class SupplyChainQueryRepository : ISupplyChainQueries
     {
         var line = new SemanticReadNode(2, GeneratedSemanticModel.SalesOrderLine.Entity,
             GeneratedSemanticModel.SalesOrderLine.All,
-            SupplyChainSemanticConfiguration.OrderLines, null, []);
+            SupplyChainSemanticModel.OrderLines, null, []);
         var filter = new SemanticAndFilter([
             GeneratedSemanticModel.SalesOrder.Id.Eq(orderId),
             GeneratedSemanticModel.SalesOrder.CustomerId.Eq(customerId)]);
@@ -51,7 +52,7 @@ public sealed class SupplyChainQueryRepository : ISupplyChainQueries
     {
         var filter = new SemanticAndFilter([
             GeneratedSemanticModel.Shipment.Id.Eq(shipmentId),
-            new SemanticRelationshipFilter(SupplyChainSemanticConfiguration.ShipmentOrder, SemanticRelationshipQuantifier.Some,
+            new SemanticRelationshipFilter(SupplyChainSemanticModel.ShipmentOrder, SemanticRelationshipQuantifier.Some,
                 GeneratedSemanticModel.SalesOrder.CustomerId.Eq(customerId))]);
         var result = await _sql.ExecuteAsync(Read(GeneratedSemanticModel.Shipment.Entity, GeneratedSemanticModel.Shipment.All, filter), ct);
         var row = result.Rows.FirstOrDefault() ?? throw new KeyNotFoundException("Shipment not found.");

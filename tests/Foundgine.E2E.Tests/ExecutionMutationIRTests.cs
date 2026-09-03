@@ -1,9 +1,9 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution.Mutation;
-using Foundgine.Execution;
-using Foundgine.Planning.Mutation;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution.Mutation;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic.Planning.Mutation;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 

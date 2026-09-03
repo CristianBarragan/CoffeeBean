@@ -1,5 +1,5 @@
 using Foundgine.HighAssurance.Banking;
-using Foundgine.Semantics.Authorization;
+using Foundgine.Core.Semantic.Authorization;
 using Xunit;
 
 namespace Foundgine.HighAssurance.Tests;

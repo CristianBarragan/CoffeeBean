@@ -2,15 +2,15 @@ using System.Text.Json;
 using System.Collections;
 using System.Data;
 using System.Data.Common;
-using Foundgine.Abstractions;
-using Foundgine.Metadata;
-using Foundgine.Planning.Mutation;
-using Foundgine.Execution;
-using Foundgine.Sql.Mutation;
-using Foundgine.Sql.Mutation.Postgres;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Execution;
+using Foundgine.Providers.Storage.Sql.Mutation;
+using Foundgine.Providers.Storage.Sql.Mutation.Postgres;
 using Npgsql;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -23,7 +23,7 @@ public sealed class PostgresCorrelationContractTests
     {
         var method = typeof(PostgresBatchedMutationCompiler).GetMethod(
             nameof(PostgresBatchedMutationCompiler.Compile),
-            new[] { typeof(Foundgine.Execution.Mutation.ExecutionMutationIR) });
+            new[] { typeof(Foundgine.Core.Execution.Mutation.ExecutionMutationIR) });
 
         Assert.NotNull(method);
     }
@@ -33,7 +33,7 @@ public sealed class PostgresCorrelationContractTests
     {
         var method = typeof(PostgresBatchedMutationCompiler).GetMethod(
             nameof(PostgresBatchedMutationCompiler.TryCompile),
-            new[] { typeof(Foundgine.Execution.Mutation.ExecutionMutationIR) });
+            new[] { typeof(Foundgine.Core.Execution.Mutation.ExecutionMutationIR) });
 
         Assert.NotNull(method);
     }

@@ -59,7 +59,7 @@ Authority-bearing values must originate from the host.
 
 ## Provider boundary
 
-`Foundgine.Execution` separates logical plans from provider plans:
+`Foundgine.Core.Execution` separates logical plans from provider plans:
 
 ```plantuml
 @startuml
@@ -237,7 +237,7 @@ A provider implementation should prove:
 - pagination semantics;
 - mutation dependencies if mutations are supported.
 
-See `Foundgine.Execution/README.md` and `Foundgine.Sql/README.md` for the provider boundary.
+See `Foundgine.Core.Execution/README.md` and `Foundgine.Providers.Storage.Sql/README.md` for the provider boundary.
 
 ---
 

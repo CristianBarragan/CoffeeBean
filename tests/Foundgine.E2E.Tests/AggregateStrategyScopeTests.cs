@@ -1,8 +1,8 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Planning;
-using Foundgine.Semantics.Query;
-using Foundgine.Sql;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Query;
+using Foundgine.Providers.Storage.Sql;
 using Foundgine.E2E.Tests.Banking;
 using Xunit;
 

@@ -1,8 +1,8 @@
-using Foundgine.Abstractions;
-using Foundgine.Semantics.Authorization;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Authorization;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticAuthorizationCapabilityCompositionTests
 {

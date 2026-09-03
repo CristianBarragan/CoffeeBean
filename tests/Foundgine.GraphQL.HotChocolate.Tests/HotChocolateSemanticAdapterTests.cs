@@ -1,10 +1,10 @@
-using Foundgine.GraphQL.HotChocolate;
-using Foundgine.Metadata;
-using Foundgine.Abstractions;
-using Foundgine.Semantics;
+using Foundgine.Extensions.GraphQL.HotChocolate;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
 using Xunit;
 
-namespace Foundgine.GraphQL.HotChocolate.Tests;
+namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
 public sealed class HotChocolateSemanticAdapterTests
 {

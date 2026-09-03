@@ -85,7 +85,7 @@ The final provider execution gate adds a second proof: the provider artifact mus
 ## Conditional authorization
 
 Conditional access is represented by the small provider-independent predicate
-IR in `Foundgine.Abstractions`.
+IR in `Foundgine.Core.Abstractions`.
 
 For example:
 
@@ -186,7 +186,7 @@ decisions without becoming part of the Foundgine core.
 
 ## SupplyChain reference matrix
 
-The `Foundgine.SupplyChain.Semantic` sample is the canonical worked example for the policy boundaries above. It deliberately mixes manual and generated semantic authoring and then applies a single provider-independent policy model to the resulting `SemanticModel`.
+The `Foundgine.SupplyChain.Advanced` sample is the canonical worked example for the policy boundaries above. It deliberately mixes manual and generated semantic authoring and then applies a single provider-independent policy model to the resulting `SemanticModel`.
 
 It demonstrates:
 

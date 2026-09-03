@@ -1,12 +1,13 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Execution.Security;
-using Foundgine.Planning;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Security;
-using Foundgine.Semantics.Authorization;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Execution.Security;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Security;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Runtime;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -169,10 +170,10 @@ public sealed class WarrantPlanCacheAttackTests
     public void Different_warrants_cannot_share_an_authority_cache_key()
     {
         var now = DateTimeOffset.UtcNow;
-        var first = new Foundgine.Semantics.Security.Warrants.SecurityWarrant(
+        var first = new Foundgine.Core.Semantic.Security.Warrants.SecurityWarrant(
             "w1", "issuer", "agent-a", "foundgine",
-            [new Foundgine.Semantics.Security.Warrants.CapabilityGrant("Customer.read", "read")],
-            Foundgine.Semantics.Security.Warrants.SecurityWarrantConstraints.Unrestricted,
+            [new Foundgine.Core.Semantic.Security.Warrants.CapabilityGrant("Customer.read", "read")],
+            Foundgine.Core.Semantic.Security.Warrants.SecurityWarrantConstraints.Unrestricted,
             now.AddMinutes(-1), now.AddHours(1), "n1", "k1", null, []);
         var second = first with { Id = "w2", Nonce = "n2" };
 

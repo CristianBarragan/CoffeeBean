@@ -1,17 +1,17 @@
-using Foundgine.Semantics.Security;
-using Foundgine;
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Intent.Json;
-using Foundgine.Planning;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Sql;
+using Foundgine.Core.Semantic.Security;
+using Foundgine.Runtime;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Serialization;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Providers.Storage.Sql;
 using Foundgine.E2E.Tests.Banking;
-using Foundgine.Execution.Security;
+using Foundgine.Core.Execution.Security;
 using Microsoft.Data.Sqlite;
 using Npgsql;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -183,7 +183,7 @@ public sealed class BlackBoxAdversarialEngineTests
 
  private static FoundgineEngine CreateEngine(
  IExecutionProvider provider,
- Foundgine.Metadata.IMetadataProvider metadata,
+ Foundgine.Core.Semantic.Metadata.IMetadataProvider metadata,
  ISemanticAuthorizationPolicy policy,
  IProviderPlanCompiler? compiler = null) =>
  new(
@@ -262,7 +262,7 @@ public sealed class BlackBoxAdversarialEngineTests
  SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
  private readonly SqlCompiler _inner;
 
- public CountingSqlCompiler(Foundgine.Metadata.IMetadataProvider metadata) =>
+ public CountingSqlCompiler(Foundgine.Core.Semantic.Metadata.IMetadataProvider metadata) =>
  _inner = new SqlCompiler(metadata);
 
  public int Count { get; private set; }

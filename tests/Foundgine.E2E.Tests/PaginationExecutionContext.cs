@@ -1,5 +1,5 @@
-using Foundgine.Execution;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using Foundgine.Core.Execution;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 

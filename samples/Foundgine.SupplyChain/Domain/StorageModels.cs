@@ -1,4 +1,4 @@
-using Foundgine.Aot;
+using Foundgine.Providers.Aot;
 
 namespace Foundgine.SupplyChain.Domain.Storage;
 
@@ -9,7 +9,7 @@ public sealed class CustomerERP
     [FoundgineField("FirstName", StorageName = "first_name", Id = 2)] public string FirstName { get; init; } = "";
     [FoundgineField("LastName", StorageName = "last_name", Id = 3)] public string LastName { get; init; } = "";
     [FoundgineField("Email", StorageName = "email", Id = 4)] public string Email { get; init; } = "";
-    [FoundgineRelationship(typeof(SalesOrderERP), "CustomerId", "Id", Id = 1, Name = "Orders")] [FoundgineAlias("bought")] [FoundgineAlias("purchased")] [FoundgineAlias("ordered")] public IReadOnlyList<SalesOrderERP> Orders { get; init; } = [];
+    [FoundgineRelationship(typeof(SalesOrderERP), "CustomerId", "Id", Id = 1, Name = "Orders")] public IReadOnlyList<SalesOrderERP> Orders { get; init; } = [];
 }
 
 [FoundgineEntity("SalesOrderERP", StorageName = "orders", Id = 2)]

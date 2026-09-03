@@ -14,7 +14,6 @@ permissions:
   contents: read
 
 jobs:
-
   # ============================================================
   # Build and create NuGet packages
   # ============================================================
@@ -39,9 +38,6 @@ jobs:
       - name: Build
         run: dotnet build Foundgine.sln --no-restore --configuration Release
 
-      # ----------------------------------------------------------
-      # Pack all NuGet projects
-      # ----------------------------------------------------------
       - name: Pack NuGet packages
         shell: bash
         run: |
@@ -58,20 +54,12 @@ jobs:
           rm -rf artifacts/nuget
           mkdir -p artifacts/nuget
 
-          echo
-          echo "========================================"
-          echo "Packing packable projects in Foundgine.sln"
-          echo "========================================"
-
           dotnet pack Foundgine.sln \
             --no-restore \
             --configuration Release \
             --output artifacts/nuget \
             -p:PackageVersion="$version"
 
-      # ----------------------------------------------------------
-      # Validate generated packages
-      # ----------------------------------------------------------
       - name: Validate NuGet packages
         shell: bash
         run: |
@@ -84,106 +72,66 @@ jobs:
 
           packages=(artifacts/nuget/*.nupkg)
 
+          expected_packages=(
+            "Foundgine.Core"
+            "Foundgine.Runtime"
+            "Foundgine.Providers"
+            "Foundgine.Extensions"
+          )
+
+          if [[ "${#packages[@]}" -ne "${#expected_packages[@]}" ]]; then
+            echo "ERROR: Expected exactly ${#expected_packages[@]} NuGet packages, produced ${#packages[@]}."
+            exit 1
+          fi
+
+          for expected in "${expected_packages[@]}"; do
+            if ! compgen -G "artifacts/nuget/${expected}.*.nupkg" > /dev/null; then
+              echo "ERROR: Expected package was not produced: ${expected}"
+              exit 1
+            fi
+          done
+
           if [[ "${#packages[@]}" -eq 0 ]]; then
             echo "ERROR: No NuGet packages were produced."
             exit 1
           fi
 
-          # ------------------------------------------------------
-          # Find Foundgine.Aot package
-          # ------------------------------------------------------
+          providers_packages=(artifacts/nuget/Foundgine.Providers.*.nupkg)
 
-          aot_packages=(artifacts/nuget/Foundgine.Aot.*.nupkg)
-
-          if [[ "${#aot_packages[@]}" -ne 1 ]]; then
-            echo
-            echo "ERROR: Expected exactly one Foundgine.Aot package."
-            echo "Found:"
-            printf '  %s\n' "${aot_packages[@]}"
+          if [[ "${#providers_packages[@]}" -ne 1 ]]; then
+            echo "ERROR: Expected exactly one Foundgine.Providers package."
             exit 1
           fi
 
-          package="${aot_packages[0]}"
+          package="${providers_packages[0]}"
 
-          echo
-          echo "========================================"
-          echo "Validating:"
-          echo "$package"
-          echo "========================================"
-          echo
-
-          echo "Package contents:"
+          echo "Validating AOT assets in: $package"
           unzip -l "$package"
 
-          # ------------------------------------------------------
-          # Validate required files
-          # ------------------------------------------------------
-
           required=(
-            "lib/net9.0/Foundgine.Aot.dll"
-            "lib/net9.0/Foundgine.Metadata.dll"
-            "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"
+            "lib/net9.0/Foundgine.Providers.dll"
             "README.md"
-            "LICENSE/LICENSE"
+            "LICENSE"
           )
-
-          echo
-          echo "Checking required package assets..."
-          echo
 
           for file in "${required[@]}"; do
             if ! unzip -l "$package" | grep -Fq "$file"; then
-              echo
-              echo "ERROR: Required package asset is missing:"
-              echo "  $file"
-              echo
-              echo "Actual package contents:"
-              unzip -l "$package"
+              echo "ERROR: Required package asset is missing: $file"
               exit 1
             fi
-
             echo "OK: $file"
           done
 
-          # ------------------------------------------------------
-          # Generator must only exist in analyzer directory
-          # ------------------------------------------------------
-
-          echo
-          echo "Checking generator placement..."
-
-          if unzip -l "$package" \
-              | grep -E '(^|/)Foundgine\.Aot\.Generator\.dll$' \
-              | grep -v 'analyzers/dotnet/cs/'; then
-
-            echo
-            echo "ERROR:"
-            echo "Foundgine.Aot.Generator.dll was packaged outside:"
-            echo "  analyzers/dotnet/cs/"
+          if compgen -G "artifacts/nuget/Foundgine.Experimental.Aot.*.nupkg" > /dev/null; then
+            echo "ERROR: Obsolete Foundgine.Experimental.Aot package was produced."
             exit 1
           fi
-
-          echo "OK: generator placement"
-
-          # ------------------------------------------------------
-          # Verify package archive
-          # ------------------------------------------------------
-
-          echo
-          echo "Checking ZIP integrity..."
+          echo "OK: no obsolete AOT package"
 
           unzip -t "$package" >/dev/null
 
-          echo "OK: package archive"
-
-          echo
-          echo "========================================"
           echo "NuGet package validation passed."
-          echo "========================================"
 
-      # ----------------------------------------------------------
-      # Upload packages for publish job
-      # ----------------------------------------------------------
       - name: Upload NuGet artifact
         uses: actions/upload-artifact@v4
         with:
@@ -191,10 +139,6 @@ jobs:
           path: artifacts/nuget/*
           if-no-files-found: error
 
-
-  # ============================================================
-  # Unit tests — intentionally separate from PostgreSQL integration
-  # ============================================================
   unit-tests:
     name: Unit Tests
     needs:
@@ -218,13 +162,6 @@ jobs:
       - name: Build
         run: dotnet build Foundgine.sln --no-restore --configuration Release
 
-      # E2E tests are deliberately excluded. They have their own PostgreSQL
-      # integration gate below so unit and integration tests never overlap.
-      # The SupplyChain pentest suite is excluded for the same reason: it
-      # needs its own Postgres container (samples/Foundgine.SupplyChain.PenTest/
-      # docker-compose.yml, port 4431) and is gated behind
-      # FOUNDGINE_SUPPLYCHAIN_PENTEST so it skips cleanly here instead of
-      # burning its readiness-retry budget with no container present.
       - name: Run unit tests
         run: |
           dotnet test Foundgine.sln \
@@ -233,9 +170,6 @@ jobs:
             --filter "FullyQualifiedName!~Foundgine.E2E.Tests&FullyQualifiedName!~Foundgine.SupplyChain.PenTest.Tests" \
             --logger "console;verbosity=normal"
 
-  # ============================================================
-  # Supply-chain sample tests — independent pipeline check
-  # ============================================================
   supplychain-sample-tests:
     name: SupplyChain Sample Tests
     needs:
@@ -254,20 +188,16 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Restore sample
-        run: dotnet restore samples/Foundgine.SupplyChain/Foundgine.SupplyChain.sln
+        run: dotnet restore benchmarks/AgentEndToEnd/Fixtures/SupplyChain.Layered/Foundgine.SupplyChain.sln
 
       - name: Build sample
-        run: dotnet build samples/Foundgine.SupplyChain/Foundgine.SupplyChain.sln --no-restore --configuration Release
+        run: dotnet build benchmarks/AgentEndToEnd/Fixtures/SupplyChain.Layered/Foundgine.SupplyChain.sln --no-restore --configuration Release
 
       - name: Run SupplyChain tests
-        run: dotnet test samples/Foundgine.SupplyChain/Tests/Foundgine.SupplyChain.Tests.csproj --no-build --configuration Release --logger "console;verbosity=normal"
+        run: dotnet test benchmarks/AgentEndToEnd/Fixtures/SupplyChain.Layered/Tests/Foundgine.SupplyChain.Tests.csproj --no-build --configuration Release --logger "console;verbosity=normal"
 
-
-  # ============================================================
-  # Semantic supply-chain sample tests — independent pipeline check
-  # ============================================================
   supplychain-semantic-sample-tests:
-    name: SupplyChain Semantic Sample Tests
+    name: SupplyChain EndToEnd — Semantic Cases
     needs:
       - build-pack
     runs-on: ubuntu-latest
@@ -284,18 +214,14 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Restore sample
-        run: dotnet restore samples/Foundgine.SupplyChain.Semantic/Foundgine.SupplyChain.Semantic.sln
+        run: dotnet restore samples/Foundgine.SupplyChain.Advanced/Semantic/Foundgine.SupplyChain.Advanced.sln
 
       - name: Build sample
-        run: dotnet build samples/Foundgine.SupplyChain.Semantic/Foundgine.SupplyChain.Semantic.sln --no-restore --configuration Release
+        run: dotnet build samples/Foundgine.SupplyChain.Advanced/Semantic/Foundgine.SupplyChain.Advanced.sln --no-restore --configuration Release
 
       - name: Run semantic SupplyChain tests
-        run: dotnet test samples/Foundgine.SupplyChain.Semantic/Tests/Foundgine.SupplyChain.Semantic.Tests.csproj --no-build --configuration Release --logger "console;verbosity=normal"
+        run: dotnet test samples/Foundgine.SupplyChain.Advanced/Semantic/Tests/Foundgine.SupplyChain.Advanced.Tests.csproj --no-build --configuration Release --logger "console;verbosity=normal"
 
-
-  # ============================================================
-  # PostgreSQL 17 end-to-end tests
-  # ============================================================
   integration-tests:
     needs:
       - build-pack
@@ -317,18 +243,12 @@ jobs:
       - name: Build
         run: dotnet build Foundgine.sln --no-restore --configuration Release
 
-      # ----------------------------------------------------------
-      # Start PostgreSQL
-      # ----------------------------------------------------------
       - name: Start PostgreSQL 17
         run: |
           docker compose \
             -f docker-compose.postgres.yml \
             up -d --wait postgres
 
-      # ----------------------------------------------------------
-      # Verify PostgreSQL
-      # ----------------------------------------------------------
       - name: Verify PostgreSQL 17
         run: |
           docker compose \
@@ -339,9 +259,6 @@ jobs:
               -d foundgine_e2e \
               -c 'select version();'
 
-      # ----------------------------------------------------------
-      # Run E2E tests
-      # ----------------------------------------------------------
       - name: Run PostgreSQL E2E
         run: |
           dotnet test \
@@ -351,9 +268,6 @@ jobs:
             --filter "FullyQualifiedName~Foundgine.E2E.Tests" \
             --logger "console;verbosity=normal"
 
-      # ----------------------------------------------------------
-      # Diagnostics
-      # ----------------------------------------------------------
       - name: PostgreSQL diagnostics on failure
         if: failure()
         run: |
@@ -361,9 +275,6 @@ jobs:
             -f docker-compose.postgres.yml \
             logs --no-color postgres
 
-      # ----------------------------------------------------------
-      # Cleanup
-      # ----------------------------------------------------------
       - name: Stop PostgreSQL
         if: always()
         run: |
@@ -373,19 +284,10 @@ jobs:
             --volumes \
             --remove-orphans
 
-
-  # ============================================================
-  # Benchmark projects — outside Foundgine.sln, so verify them
-  # independently rather than treating solution build as coverage.
-  # ============================================================
   agent-benchmark-smoke:
     name: Agent Benchmark Smoke — 1 Customer
     needs:
       - build-pack
-    # All benchmark containers are Linux containers (mcr.microsoft.com/dotnet:9.0,
-    # postgres:17). Run the smoke harness on a Linux-hosted runner so Docker
-    # uses the same container platform as local benchmark runs and never tries
-    # to resolve a Linux image against a Windows container daemon.
     runs-on: ubuntu-latest
 
     steps:
@@ -399,17 +301,6 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
-      # ----------------------------------------------------------
-      # Real end-to-end smoke test, not a stub: this proves the full
-      # run-all-agent-benchmarks.ps1 pipeline (seed -> run -> report)
-      # still works for every one of Run1..Run5SameClient, at the smallest
-      # possible size. -Smoke forces a single customer at concurrency 1,
-      # never publishes to docs-site/assets, and deletes every artifact it
-      # produces when it's done - so this job leaves no files behind.
-      # The full customer/concurrency matrix stays out of CI; that's what
-      # this same script's *default* (non-Smoke) invocation is for, run
-      # on demand or on a schedule elsewhere.
-      # ----------------------------------------------------------
       - name: Run agent benchmark smoke test
         shell: pwsh
         run: |
@@ -421,20 +312,12 @@ jobs:
             throw "Agent benchmark smoke test failed with exit code $LASTEXITCODE."
           }
 
-      # ----------------------------------------------------------
-      # Supply Chain E2E: the stateful agent -> MCP -> Foundgine ->
-      # PostgreSQL business workflow, plus its PenTest regression
-      # cases (see SupplyChain/VERIFY-GATES.md). Runs in the same job
-      # as the Run1-5 smoke test, right after it, so both benchmark
-      # suites execute together on every push/PR instead of the
-      # Supply Chain gate being documentation-only.
-      # ----------------------------------------------------------
       - name: Run Supply Chain E2E benchmark
         shell: pwsh
         run: |
           Set-StrictMode -Version Latest
           $ErrorActionPreference = 'Stop'
-          $supplyChainScript = Join-Path "${{ github.workspace }}" 'benchmarks/AgentEndToEnd/SupplyChain/run-supply-chain.ps1'
+          $supplyChainScript = Join-Path "${{ github.workspace }}" 'samples/Foundgine.SupplyChain.Advanced/run-supply-chain.ps1'
           & $supplyChainScript
           if ($LASTEXITCODE -ne 0) {
             throw "Supply Chain E2E benchmark failed with exit code $LASTEXITCODE."
@@ -472,13 +355,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           projects=(
             "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/CoffeeBeanery.Database.csproj"
             "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/CoffeeBeanery.LoadTest.csproj"
             "benchmarks/CoffeeBeanery.Performance/HotChocolate.CoffeeBeanery.BenchmarkApi/HotChocolate.CoffeeBeanery.BenchmarkApi.csproj"
           )
-
           for project in "${projects[@]}"; do
             echo "Restoring $project"
             dotnet restore "$project"
@@ -488,54 +369,34 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           projects=(
             "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/CoffeeBeanery.Database.csproj"
             "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/CoffeeBeanery.LoadTest.csproj"
             "benchmarks/CoffeeBeanery.Performance/HotChocolate.CoffeeBeanery.BenchmarkApi/HotChocolate.CoffeeBeanery.BenchmarkApi.csproj"
           )
-
           for project in "${projects[@]}"; do
             echo "Building $project"
-            dotnet build "$project"               --no-restore               --configuration Release
+            dotnet build "$project" --no-restore --configuration Release
           done
 
-      # ----------------------------------------------------------
-      # Real performance smoke test - Hot Chocolate + EF Core target only.
-      # ----------------------------------------------------------
-      # This is intentionally tiny. It proves the benchmark stack can actually
-      # seed a database, start the API, execute real benchmark traffic and
-      # finish successfully. The full benchmark matrix remains outside CI.
-      #
-      # Split out from the combined "Performance Smoke" job so this target
-      # and the Foundgine target (benchmark-build-foundgine) run in parallel
-      # CI jobs instead of sequentially in one job - same total work, about
-      # half the wall-clock time. `--no-deps` on `docker compose run` also
-      # stops compose from auto-starting the *other* target's API container
-      # via the loader service's depends_on graph, which the combined job
-      # was doing unnecessarily on every run.
       - name: Pull PostgreSQL image with retry
         shell: bash
         run: |
           set -euo pipefail
-
           image="postgres:17-alpine"
           max_attempts=6
-
           for attempt in $(seq 1 "$max_attempts"); do
             echo "Pulling $image (attempt $attempt/$max_attempts)..."
             if docker pull "$image"; then
               echo "Successfully pulled $image."
               exit 0
             fi
-
             if [ "$attempt" -lt "$max_attempts" ]; then
               delay=$((attempt * 10))
               echo "Docker registry pull failed; retrying in ${delay}s..."
               sleep "$delay"
             fi
           done
-
           echo "Unable to pull $image after $max_attempts attempts." >&2
           exit 1
 
@@ -556,26 +417,14 @@ jobs:
           BENCHMARK_FAIL_ON_ERRORS: "true"
         run: |
           set -euo pipefail
-
           COMPOSE=benchmarks/CoffeeBeanery.Performance/docker-compose.benchmark.yml
           PROJECT=foundgine-performance-smoke-hc
-
           cleanup() {
             docker compose -p "$PROJECT" -f "$COMPOSE" down -v --remove-orphans || true
           }
           trap cleanup EXIT
-
-          echo "Starting PostgreSQL and Hot Chocolate API..."
           docker compose -p "$PROJECT" -f "$COMPOSE" up -d --build postgres database hotchocolate
-
-          echo "Waiting for benchmark service..."
           docker compose -p "$PROJECT" -f "$COMPOSE" up --wait hotchocolate
-
-          echo
-          echo "========================================"
-          echo "Performance smoke: Hot Chocolate + EF Core"
-          echo "========================================"
-
           docker compose -p "$PROJECT" -f "$COMPOSE" run --rm --no-deps \
             -e BENCHMARK_TARGET_NAME="Hot Chocolate + EF Core" \
             -e BENCHMARK_TARGET_URL="http://hotchocolate:4300/graphql" \
@@ -589,16 +438,6 @@ jobs:
             -e BENCHMARK_FAIL_ON_ERRORS="$BENCHMARK_FAIL_ON_ERRORS" \
             -e BENCHMARK_REPORT_DIRECTORY=/reports \
             loader
-
-          echo
-          echo "========================================"
-          echo "Performance smoke test passed."
-          echo "Customers: 1"
-          echo "Concurrency: 1"
-          echo "Batch size: 1"
-          echo "Warm-up: 1s"
-          echo "Measurement: 1s"
-          echo "========================================"
 
   benchmark-build-foundgine:
     name: Performance Smoke — Foundgine Warm Cache
@@ -621,13 +460,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           projects=(
             "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/CoffeeBeanery.Database.csproj"
             "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/CoffeeBeanery.LoadTest.csproj"
             "benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj"
           )
-
           for project in "${projects[@]}"; do
             echo "Restoring $project"
             dotnet restore "$project"
@@ -637,45 +474,34 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           projects=(
             "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.Database/CoffeeBeanery.Database.csproj"
             "benchmarks/CoffeeBeanery.Performance/CoffeeBeanery.LoadTest/CoffeeBeanery.LoadTest.csproj"
             "benchmarks/CoffeeBeanery.Performance/Foundgine.CoffeeBeanery.BenchmarkApi/Foundgine.CoffeeBeanery.BenchmarkApi.csproj"
           )
-
           for project in "${projects[@]}"; do
             echo "Building $project"
-            dotnet build "$project"               --no-restore               --configuration Release
+            dotnet build "$project" --no-restore --configuration Release
           done
 
-      # ----------------------------------------------------------
-      # Real performance smoke test - Foundgine (provider-plan cache,
-      # warm) target only. See benchmark-build-hotchocolate for why this
-      # is a separate parallel job rather than a second sequential step.
-      # ----------------------------------------------------------
       - name: Pull PostgreSQL image with retry
         shell: bash
         run: |
           set -euo pipefail
-
           image="postgres:17-alpine"
           max_attempts=6
-
           for attempt in $(seq 1 "$max_attempts"); do
             echo "Pulling $image (attempt $attempt/$max_attempts)..."
             if docker pull "$image"; then
               echo "Successfully pulled $image."
               exit 0
             fi
-
             if [ "$attempt" -lt "$max_attempts" ]; then
               delay=$((attempt * 10))
               echo "Docker registry pull failed; retrying in ${delay}s..."
               sleep "$delay"
             fi
           done
-
           echo "Unable to pull $image after $max_attempts attempts." >&2
           exit 1
 
@@ -696,26 +522,14 @@ jobs:
           BENCHMARK_FAIL_ON_ERRORS: "true"
         run: |
           set -euo pipefail
-
           COMPOSE=benchmarks/CoffeeBeanery.Performance/docker-compose.benchmark.yml
           PROJECT=foundgine-performance-smoke-fg
-
           cleanup() {
             docker compose -p "$PROJECT" -f "$COMPOSE" down -v --remove-orphans || true
           }
           trap cleanup EXIT
-
-          echo "Starting PostgreSQL and Foundgine warm-cache API..."
           docker compose -p "$PROJECT" -f "$COMPOSE" up -d --build postgres database foundgine-warm
-
-          echo "Waiting for benchmark service..."
           docker compose -p "$PROJECT" -f "$COMPOSE" up --wait foundgine-warm
-
-          echo
-          echo "========================================"
-          echo "Performance smoke: Foundgine - provider-plan cache"
-          echo "========================================"
-
           docker compose -p "$PROJECT" -f "$COMPOSE" run --rm --no-deps \
             -e BENCHMARK_TARGET_NAME="Foundgine - provider-plan cache" \
             -e BENCHMARK_TARGET_URL="http://foundgine-warm:4302/graphql/warm" \
@@ -730,35 +544,9 @@ jobs:
             -e BENCHMARK_REPORT_DIRECTORY=/reports \
             loader
 
-          echo
-          echo "========================================"
-          echo "Performance smoke test passed."
-          echo "Customers: 1"
-          echo "Concurrency: 1"
-          echo "Batch size: 1"
-          echo "Warm-up: 1s"
-          echo "Measurement: 1s"
-          echo "========================================"
-
-
-  # ============================================================
-  # Publish to NuGet.org
-  # ============================================================
   publish-nuget:
     name: Publish NuGet packages
     if: startsWith(github.ref, 'refs/tags/v')
-
-    # IMPORTANT:
-    # Publishing is blocked unless the complete build/test job,
-    # PostgreSQL E2E job, and benchmark smoke test all pass.
-    #
-    # The penetration/security jobs (security-penetration,
-    # security-penetration-graph, security-penetration-mcp,
-    # security-adversarial, security-semantic-penetration, etc.) now live in
-    # security.yml. `needs:` cannot reference jobs in another workflow file,
-    # so this job can no longer wait on them directly here. Add each of those
-    # security.yml jobs as a required status check in the repo's branch/tag
-    # protection rules so a tag push still can't publish unless they pass.
     needs:
       - build-pack
       - unit-tests
@@ -766,143 +554,47 @@ jobs:
       - benchmark-build-hotchocolate
       - benchmark-build-foundgine
       - agent-benchmark-smoke
-
     runs-on: ubuntu-latest
-
     environment: production
-
     permissions:
       contents: read
       id-token: write
 
     steps:
-
-      # ----------------------------------------------------------
-      # Download packages generated by build-test-pack
-      # ----------------------------------------------------------
       - name: Download NuGet artifact
         uses: actions/download-artifact@v8
         with:
           name: nuget-packages
           path: artifacts/nuget
 
-      # ----------------------------------------------------------
-      # Setup .NET
-      # ----------------------------------------------------------
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 9.0.x
 
-      # ----------------------------------------------------------
-      # Validate downloaded artifacts
-      # ----------------------------------------------------------
       - name: Validate downloaded packages
         shell: bash
         run: |
           set -euo pipefail
-
           shopt -s nullglob
-
           packages=(artifacts/nuget/*.nupkg)
-
           if [[ "${#packages[@]}" -eq 0 ]]; then
             echo "ERROR: No NuGet packages downloaded."
             exit 1
           fi
-
-          echo "Downloaded packages:"
-          printf '  %s\n' "${packages[@]}"
-
-          # ------------------------------------------------------
-          # Verify every package archive
-          # ------------------------------------------------------
-
           for package in "${packages[@]}"; do
-            echo
-            echo "Checking archive:"
-            echo "  $package"
-
             unzip -t "$package" >/dev/null
-
-            echo "OK"
           done
 
-          # ------------------------------------------------------
-          # Validate Foundgine.Aot package
-          # ------------------------------------------------------
-
-          aot_packages=(artifacts/nuget/Foundgine.Aot.*.nupkg)
-
-          if [[ "${#aot_packages[@]}" -ne 1 ]]; then
-            echo
-            echo "ERROR: Expected exactly one Foundgine.Aot package."
-            exit 1
-          fi
-
-          aot="${aot_packages[0]}"
-
-          echo
-          echo "Validating:"
-          echo "  $aot"
-
-          required=(
-            "lib/net9.0/Foundgine.Aot.dll"
-            "lib/net9.0/Foundgine.Metadata.dll"
-            "analyzers/dotnet/cs/Foundgine.Aot.Generator.dll"
-          )
-
-          for file in "${required[@]}"; do
-            if ! unzip -l "$aot" | grep -Fq "$file"; then
-              echo
-              echo "ERROR: Required asset missing:"
-              echo "  $file"
-              exit 1
-            fi
-
-            echo "OK: $file"
-          done
-
-          echo
-          echo "Downloaded NuGet artifacts validated successfully."
-
-      # ----------------------------------------------------------
-      # Authenticate with NuGet.org using OIDC
-      # ----------------------------------------------------------
-      - name: NuGet login (OIDC)
-        uses: NuGet/login@v1
-        id: nuget-login
-        with:
-          user: Foundgine
-
-      # ----------------------------------------------------------
-      # Publish
-      # ----------------------------------------------------------
-      - name: Publish to NuGet.org
+      - name: Publish NuGet packages
         shell: bash
         run: |
           set -euo pipefail
-
           shopt -s nullglob
-
           packages=(artifacts/nuget/*.nupkg)
-
-          if [[ "${#packages[@]}" -eq 0 ]]; then
-            echo "ERROR: No packages found."
-            exit 1
-          fi
-
           for package in "${packages[@]}"; do
-            echo
-            echo "========================================"
-            echo "Publishing:"
-            echo "$package"
-            echo "========================================"
-
             dotnet nuget push "$package" \
               --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
               --source "https://api.nuget.org/v3/index.json" \
               --skip-duplicate
-
-            echo "Published successfully."
           done

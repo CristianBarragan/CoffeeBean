@@ -1,7 +1,7 @@
-using Foundgine.Abstractions;
+using Foundgine.Core.Abstractions;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticRelationshipIdentityConsistencyTests
 {

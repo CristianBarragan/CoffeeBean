@@ -1,7 +1,7 @@
-using Foundgine.Execution;
+using Foundgine.Core.Execution;
 using Xunit;
 
-namespace Foundgine.MCP.Tests;
+namespace Foundgine.Providers.Tools.MCP.Tests;
 
 public sealed class ExecutionReceiptUnificationTests
 {

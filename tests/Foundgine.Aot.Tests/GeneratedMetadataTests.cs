@@ -1,11 +1,11 @@
 ﻿using System.Linq.Expressions;
-using Foundgine.Aot;
+using Foundgine.Providers.Aot;
 using Foundgine.Generated;
-using Foundgine.Metadata;
-using Foundgine.Abstractions;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Abstractions;
 using Xunit;
 
-namespace Foundgine.Aot.Tests;
+namespace Foundgine.Providers.Aot.Tests;
 
 [FoundgineEntity(Id = 1, StorageName = "customers")]
 [FoundgineAlias("Client")]
@@ -188,7 +188,7 @@ public sealed class GeneratedMetadataTests
         var model = GeneratedMetadata.Registry.Discover();
 
         Assert.Equal(model.ContractFingerprint, GeneratedSemanticModel.ContractFingerprint);
-        Assert.True(Foundgine.Semantics.SemanticContractAttestation.Matches(
+        Assert.True(Foundgine.Core.Semantic.SemanticContractAttestation.Matches(
             model, GeneratedSemanticModel.ContractFingerprint));
     }
 

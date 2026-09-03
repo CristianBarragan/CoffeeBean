@@ -7,13 +7,10 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="10.0.3" />
-    <ProjectReference Include="../../../src/Foundgine.Abstractions/Foundgine.Abstractions.csproj" />
-    <ProjectReference Include="../../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
-    <ProjectReference Include="../../../src/Foundgine.Metadata/Foundgine.Metadata.csproj" />
-    <ProjectReference Include="../../../src/Foundgine.Planning/Foundgine.Planning.csproj" />
-    <ProjectReference Include="../../../src/Foundgine.Semantics/Foundgine.Semantics.csproj" />
-    <ProjectReference Include="../../../src/Foundgine.Sql/Foundgine.Sql.csproj" />
-    <ProjectReference Include="../../../src/Foundgine.GraphQL.HotChocolate/Foundgine.GraphQL.HotChocolate.csproj" />
-    <ProjectReference Include="../../../src/Foundgine.GraphQL.HotChocolate.Mutations/Foundgine.GraphQL.HotChocolate.Mutations.csproj" />
+    <ProjectReference Include="../../../src/Foundgine.Core/Foundgine.Core.csproj" />
+    <ProjectReference Include="../../../src/Foundgine.Runtime/Foundgine.Runtime.csproj" />
+    
+    <ProjectReference Include="../../../src/Foundgine.Providers/Foundgine.Providers.csproj" />
+    <ProjectReference Include="../../../src/Foundgine.Extensions/Foundgine.Extensions.csproj" />
   </ItemGroup>
 </Project>

@@ -1,9 +1,9 @@
-using Foundgine.Abstractions;
-using Foundgine.Planning.Mutation;
-using Foundgine.Semantics.Authorization;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Semantic.Authorization;
 using Xunit;
 
-namespace Foundgine.Planning.Tests;
+namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed class MutationPlanningBoundaryTests
 {
@@ -120,14 +120,14 @@ public sealed class MutationAuthorizationTests
             entity.Id,
             MutationKind.Update,
             [new MutationFieldValue(new ColumnId(2), "secret")],
-            Filter: new Foundgine.Semantics.Query.SemanticFieldFilter(
+            Filter: new Foundgine.Core.Semantic.Query.SemanticFieldFilter(
                 new FieldId(1),
-                Foundgine.Semantics.Query.SemanticFilterOperator.Eq,
+                Foundgine.Core.Semantic.Query.SemanticFilterOperator.Eq,
                 1),
             ReturnFields: [new FieldId(1)]);
         var plan = new MutationPlanner(schema).Plan(intent);
 
-        var ex = Assert.Throws<Foundgine.Semantics.Authorization.SemanticAuthorizationException>(
+        var ex = Assert.Throws<Foundgine.Core.Semantic.Authorization.SemanticAuthorizationException>(
             () => new MutationAuthorizer(schema, new DenyFieldWritePolicy()).Authorize(plan));
 
         Assert.Contains("write field", ex.Message);

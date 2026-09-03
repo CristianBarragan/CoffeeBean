@@ -1,11 +1,11 @@
-using Foundgine.Semantics.Authorization;
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Planning;
-using Foundgine.Semantics.Security;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Security;
 using Xunit;
 
-namespace Foundgine.Planning.Tests.Security;
+namespace Foundgine.Core.Semantic.Planning.Tests.Security;
 
 public sealed class SecurityContractClosureTests
 {

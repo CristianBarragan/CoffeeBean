@@ -4,7 +4,7 @@ using Foundgine.HighAssurance.Postgres.Execution;
 using Npgsql;
 using Xunit;
 
-namespace Foundgine.Security.Authority.Tests;
+namespace Foundgine.Runtime.ControlPlane.Tests;
 
 internal static class PostgresTestEnvironment
 {

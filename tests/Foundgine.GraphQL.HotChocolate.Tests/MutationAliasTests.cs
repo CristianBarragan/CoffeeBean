@@ -1,11 +1,11 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution.Mutation;
-using Foundgine.GraphQL.HotChocolate;
-using Foundgine.Metadata;
-using Foundgine.Semantics;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution.Mutation;
+using Foundgine.Extensions.GraphQL.HotChocolate;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic;
 using Xunit;
 
-namespace Foundgine.GraphQL.HotChocolate.Tests;
+namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
 public sealed class MutationAliasTests
 {
@@ -24,7 +24,7 @@ public sealed class MutationAliasTests
             }
             """);
 
-        var mutation = Assert.IsType<Foundgine.Planning.Mutation.MutationIntent>(adapted.Intent.Mutation);
+        var mutation = Assert.IsType<Foundgine.Core.Semantic.Planning.Mutation.MutationIntent>(adapted.Intent.Mutation);
         Assert.Equal([new FieldId(1), new FieldId(2)], mutation.ReturnFields);
         Assert.Equal(
             [

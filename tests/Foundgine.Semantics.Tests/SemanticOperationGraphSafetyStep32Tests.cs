@@ -1,10 +1,10 @@
-﻿using Foundgine.Abstractions;
-using Foundgine.Semantics.IR;
-using Foundgine.Semantics.IR.Graph;
-using Foundgine.Semantics.Security.Execution;
+﻿using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.IR;
+using Foundgine.Core.Semantic.IR.Graph;
+using Foundgine.Core.Semantic.Security.Execution;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticOperationGraphSafetyStep32Tests
 {

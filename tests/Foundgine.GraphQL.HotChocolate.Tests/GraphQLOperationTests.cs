@@ -1,10 +1,10 @@
-using Foundgine.Abstractions;
-using Foundgine.GraphQL.HotChocolate;
-using Foundgine.Metadata;
-using Foundgine.Semantics;
+using Foundgine.Core.Abstractions;
+using Foundgine.Extensions.GraphQL.HotChocolate;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic;
 using Xunit;
 
-namespace Foundgine.GraphQL.HotChocolate.Tests;
+namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
 public sealed class GraphQLOperationTests
 {
@@ -62,7 +62,7 @@ public sealed class GraphQLOperationTests
             mutation UpdateCustomer { updateCustomer(input: { name: "Grace" }, where: { id: { eq: 1 } }) { id } }
             """, null, "UpdateCustomer");
 
-        Assert.Equal(Foundgine.Planning.Mutation.MutationKind.Update, intent.Mutation.Kind);
+        Assert.Equal(Foundgine.Core.Semantic.Planning.Mutation.MutationKind.Update, intent.Mutation.Kind);
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public sealed class GraphQLOperationTests
             """, null, "UpdateCustomer");
 
         Assert.True(result.Succeeded);
-        Assert.Equal(Foundgine.Planning.Mutation.MutationKind.Update, result.Data!.Mutation.Kind);
+        Assert.Equal(Foundgine.Core.Semantic.Planning.Mutation.MutationKind.Update, result.Data!.Mutation.Kind);
     }
 
     [Fact]

@@ -1,7 +1,7 @@
-using Foundgine.Abstractions;
-using Foundgine.Postgres.Vector;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Resolution;
+using Foundgine.Core.Abstractions;
+using Foundgine.Providers.Storage.PostgresVector;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Resolution;
 using Npgsql;
 using Xunit;
 

@@ -1,8 +1,8 @@
-using Foundgine.Semantics.Expressions;
-using Foundgine.Semantics.Query;
+using Foundgine.Core.Semantic.Expressions;
+using Foundgine.Core.Semantic.Query;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticAlgebraTests
 {
@@ -10,11 +10,11 @@ public sealed class SemanticAlgebraTests
     public void LogicalNormalization_FlattensSortsAndDeduplicates()
     {
         var a = new SemanticBinaryExpression("eq",
-            new SemanticFieldReferenceExpression(new Foundgine.Abstractions.FieldId(1), new SemanticType.Scalar(SemanticScalarKind.Int32)),
+            new SemanticFieldReferenceExpression(new Foundgine.Core.Abstractions.FieldId(1), new SemanticType.Scalar(SemanticScalarKind.Int32)),
             new SemanticLiteralExpression(SemanticValue.From(1), new SemanticType.Scalar(SemanticScalarKind.Int32)),
             SemanticExpressionTypes.Boolean);
         var b = new SemanticBinaryExpression("eq",
-            new SemanticFieldReferenceExpression(new Foundgine.Abstractions.FieldId(2), new SemanticType.Scalar(SemanticScalarKind.Int32)),
+            new SemanticFieldReferenceExpression(new Foundgine.Core.Abstractions.FieldId(2), new SemanticType.Scalar(SemanticScalarKind.Int32)),
             new SemanticLiteralExpression(SemanticValue.From(2), new SemanticType.Scalar(SemanticScalarKind.Int32)),
             SemanticExpressionTypes.Boolean);
         var expression = new SemanticLogicalExpression(
@@ -42,7 +42,7 @@ public sealed class SemanticAlgebraTests
     public void CountOrdering_DoesNotRequireAFieldSemantically()
     {
         var source = new SemanticFieldReferenceExpression(
-            new Foundgine.Abstractions.FieldId(7),
+            new Foundgine.Core.Abstractions.FieldId(7),
             new SemanticType.Collection(new SemanticType.Object("Order")));
 
         var expression = new SemanticAggregateExpression(SemanticAggregateExpressionKind.Count, source);

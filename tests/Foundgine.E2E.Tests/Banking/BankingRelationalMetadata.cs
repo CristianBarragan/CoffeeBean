@@ -1,12 +1,12 @@
-using Foundgine.Metadata;
-using Foundgine.Abstractions;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Abstractions;
 
 namespace Foundgine.E2E.Tests.Banking;
 
 /// <summary>
 /// The smallest relational metadata required by the SQL proof. It maps the semantic
 /// Banking proof to SQLite storage without introducing storage concepts into
-/// Foundgine.Semantics.
+/// Foundgine.Core.Semantic.
 /// </summary>
 public static class BankingRelationalMetadata
 {

@@ -1,8 +1,8 @@
-using Foundgine.Abstractions;
-using Foundgine.Planning.Mutation;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Mutation;
-using Foundgine.Semantics.Query;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Mutation;
+using Foundgine.Core.Semantic.Query;
 using Xunit;
 
 namespace Foundgine.Security.Tests.Penetration;

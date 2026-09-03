@@ -1,9 +1,9 @@
-using Foundgine.Security.Authority;
+using Foundgine.Runtime.ControlPlane;
 using Foundgine.HighAssurance.Postgres.Execution;
 using Npgsql;
 using Xunit;
 
-namespace Foundgine.Security.Authority.Tests;
+namespace Foundgine.Runtime.ControlPlane.Tests;
 
 public sealed class PostgresAuthorizationRecoverySecurityTests
 {

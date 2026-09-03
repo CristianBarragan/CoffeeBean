@@ -1,16 +1,16 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Execution.Security;
-using FoundgineExecutionContext = Foundgine.Execution.ExecutionContext;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Execution.Security;
+using FoundgineExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 using Foundgine.Generated;
-using Foundgine.Planning;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Security;
-using Foundgine.Sql;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Security;
+using Foundgine.Providers.Storage.Sql;
 using Microsoft.Data.Sqlite;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -104,8 +104,8 @@ public sealed class EvidenceTests
     {
         var compiler = new CapturingEvidenceCompiler();
         var provider = new CapturingEvidenceProvider();
-        var engine = new Foundgine.FoundgineEngine(
-            new Foundgine.FoundgineOptions
+        var engine = new Foundgine.Runtime.FoundgineEngine(
+            new Foundgine.Runtime.FoundgineOptions
             {
                 Model = Banking.BankingSemanticModel.Build(),
                 AuthorizationPolicy = new AllowAllSemanticAuthorizationPolicy()

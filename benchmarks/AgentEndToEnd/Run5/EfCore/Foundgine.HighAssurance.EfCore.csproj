@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../../../samples/Foundgine.HighAssurance.Banking/Foundgine.HighAssurance.Banking.csproj" />
-    <ProjectReference Include="../../../../src/Foundgine.Execution/Foundgine.Execution.csproj" />
+    <ProjectReference Include="../../Fixtures/HighAssurance.Banking/Foundgine.HighAssurance.Banking.csproj" />
+    <ProjectReference Include="../../../../src/Foundgine.Runtime/Foundgine.Runtime.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.19" />

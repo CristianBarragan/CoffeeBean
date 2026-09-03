@@ -1,17 +1,17 @@
 using Foundgine.CoffeeBeanery.BenchmarkApi;
-using Foundgine.Execution;
-using Foundgine.Execution.Mutation;
-using Foundgine.GraphQL.HotChocolate;
-using Foundgine.Metadata;
-using Foundgine.Planning;
-using Foundgine.Planning.Mutation;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.IR;
-using Foundgine.Semantics.Resolution;
-using Foundgine.Sql;
-using Foundgine.Sql.Mutation.Postgres;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Execution.Mutation;
+using Foundgine.Extensions.GraphQL.HotChocolate;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.IR;
+using Foundgine.Core.Semantic.Resolution;
+using Foundgine.Providers.Storage.Sql;
+using Foundgine.Providers.Storage.Sql.Mutation.Postgres;
 using Npgsql;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString =
@@ -164,7 +164,7 @@ app.MapGet("/health/ready", async (CancellationToken cancellationToken) =>
 });
 app.Run();
 
-static ExecutionContext BuildExecutionContext(Foundgine.Planning.SemanticPlan plan)
+static ExecutionContext BuildExecutionContext(Foundgine.Core.Semantic.Planning.SemanticPlan plan)
 {
     var options = plan.Root.QueryOptions;
     if (options?.Limit is null && options?.Offset is null)
@@ -172,11 +172,11 @@ static ExecutionContext BuildExecutionContext(Foundgine.Planning.SemanticPlan pl
 
     var values = new Dictionary<string, object?>(StringComparer.Ordinal);
     if (options.Limit is { } limit)
-        values[Foundgine.Execution.ExecutionContextKeys.PaginationLimit] =
+        values[Foundgine.Core.Execution.ExecutionContextKeys.PaginationLimit] =
             limit + (options.After is not null ? 1 : 0);
     if (options.Offset is { } offset)
-        values[Foundgine.Execution.ExecutionContextKeys.PaginationOffset] = offset;
-    values[Foundgine.Execution.ExecutionContextKeys.PaginationHasCursor] = options.After is not null;
+        values[Foundgine.Core.Execution.ExecutionContextKeys.PaginationOffset] = offset;
+    values[Foundgine.Core.Execution.ExecutionContextKeys.PaginationHasCursor] = options.After is not null;
 
     return new ExecutionContext(values);
 }

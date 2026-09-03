@@ -1,8 +1,8 @@
-using Foundgine.Abstractions;
-using Foundgine.Semantics.Mutation;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Mutation;
 using Xunit;
 
-namespace Foundgine.Semantics.Tests;
+namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticMutationIrTests
 {

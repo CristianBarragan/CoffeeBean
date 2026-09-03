@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Foundgine.Abstractions;
+using Foundgine.Core.Abstractions;
 using Xunit;
 
 namespace Foundgine.E2E.Tests;
@@ -7,9 +7,9 @@ namespace Foundgine.E2E.Tests;
 /// <summary>
 /// Regression coverage for a bug where mutation execution results
 /// (IReadOnlyDictionary&lt;FieldId, object?&gt; ReturnedValues, see
-/// Foundgine.Execution.Mutation.MutationResult) threw
+/// Foundgine.Core.Execution.Mutation.MutationResult) threw
 ///
-///     System.NotSupportedException: The type 'Foundgine.Abstractions.FieldId'
+///     System.NotSupportedException: The type 'Foundgine.Core.Abstractions.FieldId'
 ///     is not a supported dictionary key using converter of type
 ///     'ObjectDefaultConverter`1[FieldId]' ...
 ///

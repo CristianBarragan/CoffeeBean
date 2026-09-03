@@ -1,13 +1,14 @@
-using Foundgine.Abstractions;
-using Foundgine.Execution;
-using Foundgine.Semantics;
-using Foundgine.Semantics.Authorization;
-using Foundgine.Semantics.Capabilities;
-using Foundgine.Semantics.Security.Execution;
-using Foundgine.Semantics.Security.Warrants;
-using Foundgine.Semantics.Query;
+using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Capabilities;
+using Foundgine.Core.Semantic.Security.Execution;
+using Foundgine.Core.Semantic.Security.Warrants;
+using Foundgine.Core.Semantic.Query;
+using Foundgine.Runtime;
 using Xunit;
-using ExecutionContext = Foundgine.Execution.ExecutionContext;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -50,7 +51,7 @@ public sealed class OpenIntentApiTests
         Assert.Equal("Orders", intent.Selections[2].Relationship);
         Assert.Equal(2, intent.Selections[2].EffectiveChildren.Count);
         Assert.Equal(25, intent.Limit);
-        Assert.IsType<Foundgine.Semantics.Intent.ReadFieldFilter>(intent.Filter);
+        Assert.IsType<Foundgine.Core.Semantic.Intent.ReadFieldFilter>(intent.Filter);
     }
 
     [Fact]
@@ -67,7 +68,7 @@ public sealed class OpenIntentApiTests
 
         Assert.Equal("Customer", intent.RootEntity);
         Assert.Equal("Orders", intent.Selections[2].Relationship);
-        Assert.Equal("TenantId", Assert.IsType<Foundgine.Semantics.Intent.ReadFieldFilter>(intent.Filter).Field);
+        Assert.Equal("TenantId", Assert.IsType<Foundgine.Core.Semantic.Intent.ReadFieldFilter>(intent.Filter).Field);
     }
 
     [Fact]
@@ -85,7 +86,7 @@ public sealed class OpenIntentApiTests
             .ToIntent();
 
         var error = Assert.Throws<InvalidOperationException>(() =>
-            new Foundgine.Semantics.Intent.ReadIntentCompiler(model).Compile(intent));
+            new Foundgine.Core.Semantic.Intent.ReadIntentCompiler(model).Compile(intent));
 
         Assert.Contains("Unknown field 'Customer.Nmae'", error.Message);
     }
@@ -100,6 +101,6 @@ public sealed class OpenIntentApiTests
         public PlanApproval ApprovePlan(SemanticRequest request, string approvedBy) => throw new NotSupportedException();
         public Task<ExecutionResult> ExecuteApprovedAsync(PlanApproval approval, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<ExecutionResult> ExecuteAsync(SemanticRequest request, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<ExecutionResult> ExecuteAsync(Foundgine.Semantics.Intent.ReadIntent intent, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<ExecutionResult> ExecuteAsync(Foundgine.Core.Semantic.Intent.ReadIntent intent, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

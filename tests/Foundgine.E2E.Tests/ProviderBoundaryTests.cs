@@ -1,6 +1,6 @@
 using System.Reflection;
-using Foundgine.Execution;
-using Foundgine.Execution.Mutation;
+using Foundgine.Core.Execution;
+using Foundgine.Core.Execution.Mutation;
 using Xunit;
 
 namespace Foundgine.E2E.Tests;
@@ -34,6 +34,6 @@ public sealed class ProviderBoundaryTests
             .Select(x => x.Name)
             .ToHashSet(StringComparer.Ordinal);
 
-        Assert.DoesNotContain("Foundgine.Sql", references);
+        Assert.DoesNotContain("Foundgine.Providers.Storage.Sql", references);
     }
 }

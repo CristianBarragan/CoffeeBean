@@ -1,5 +1,5 @@
----
 name: Security
+
 on:
   push:
     branches:
@@ -12,8 +12,10 @@ on:
   schedule:
     - cron: 0 6 * * 1
   workflow_dispatch: {}
+
 permissions:
   contents: read
+
 jobs:
   dependency-audit:
     name: NuGet Vulnerability Audit
@@ -28,44 +30,27 @@ jobs:
       - name: Restore with full audit mode
         id: audit_restore
         shell: bash
-        run: >
+        run: |
           set -euo pipefail
-
-
           echo "Restoring with NuGetAuditMode=all (checks transitive packages too)..."
-
           output="$(dotnet restore Foundgine.sln -p:NuGetAuditMode=all 2>&1)" || true
-
           echo "$output"
-
-
           if echo "$output" | grep -qE "warning NU190[1-4]"; then
-            echo
             echo "ERROR: Unsuppressed vulnerability warnings (NU1901-NU1904) detected."
-            echo "Either upgrade the affected package, or add a justified"
-            echo "<NuGetAuditSuppress Include=\"<advisory-url>\" /> entry to the"
-            echo "affected project — see Foundgine.E2E.Tests.csproj for an example."
             exit 1
           fi
-
-
-          echo
-
           echo "OK: no unsuppressed vulnerability warnings."
       - name: Informational — vulnerable package report
         shell: bash
-        run: >
+        run: |
           set -euo pipefail
-
-          echo "Full vulnerable-package report (informational; suppressions may not apply here):"
-
           dotnet list Foundgine.sln package --vulnerable --include-transitive || true
       - name: Check for deprecated packages
         shell: bash
-        run: >
+        run: |
           set -euo pipefail
-
           dotnet list Foundgine.sln package --deprecated --include-transitive || true
+
   sbom:
     name: Generate SBOM
     runs-on: ubuntu-latest
@@ -82,13 +67,10 @@ jobs:
         run: dotnet tool install --global CycloneDX
       - name: Generate SBOM
         shell: bash
-        run: >
+        run: |
           set -euo pipefail
-
           mkdir -p artifacts/sbom
-
           export PATH="$PATH:$HOME/.dotnet/tools"
-
           dotnet-CycloneDX Foundgine.sln -o artifacts/sbom -F Json -fn foundgine-sbom.json
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
@@ -96,6 +78,7 @@ jobs:
           name: sbom
           path: artifacts/sbom/*
           if-no-files-found: error
+
   zap-baseline:
     name: Dynamic Scan — SupplyChain Sample
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -145,6 +128,7 @@ jobs:
         run: |
           cd samples/Foundgine.SupplyChain
           docker compose down --volumes --remove-orphans
+
   security-penetration-graph:
     name: Security Penetration Test — SupplyChain GraphQL
     runs-on: ubuntu-latest
@@ -156,33 +140,27 @@ jobs:
         with:
           dotnet-version: 9.0.x
       - name: Restore pentest suite
-        run: dotnet restore
-          samples/Foundgine.SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj
+        run: dotnet restore benchmarks/AgentEndToEnd/Fixtures/SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj
       - name: Build pentest suite
-        run: dotnet build
-          samples/Foundgine.SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj
-          --no-restore --configuration Release
+        run: dotnet build benchmarks/AgentEndToEnd/Fixtures/SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj --no-restore --configuration Release
       - name: Start isolated PostgreSQL 17
-        run: docker compose -f samples/Foundgine.SupplyChain.PenTest/docker-compose.yml
-          up -d --wait postgres
+        run: docker compose -f benchmarks/AgentEndToEnd/Fixtures/SupplyChain.PenTest/docker-compose.yml up -d --wait postgres
       - name: Seed isolated pentest database
-        run: docker compose -f samples/Foundgine.SupplyChain.PenTest/docker-compose.yml
-          run --rm seed
+        run: docker compose -f benchmarks/AgentEndToEnd/Fixtures/SupplyChain.PenTest/docker-compose.yml run --rm seed
       - name: Run GraphQL penetration tests
         env:
           SupplyChainConnectionString: Host=localhost;Port=4431;Database=foundgine_supply_chain_pentest;Username=benchmark;Password=benchmark
-        run: >
+        run: |
           set -euo pipefail
-
-          dotnet test samples/Foundgine.SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj \
+          dotnet test benchmarks/AgentEndToEnd/Fixtures/SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj \
             --no-build \
             --configuration Release \
             --filter 'FullyQualifiedName~GraphPenetrationTests' \
             --logger 'console;verbosity=normal'
       - name: Teardown isolated database
         if: always()
-        run: docker compose -f samples/Foundgine.SupplyChain.PenTest/docker-compose.yml
-          down --volumes --remove-orphans
+        run: docker compose -f benchmarks/AgentEndToEnd/Fixtures/SupplyChain.PenTest/docker-compose.yml down --volumes --remove-orphans
+
   security-penetration:
     name: Security Penetration Test — Authorization
     runs-on: ubuntu-latest
@@ -206,7 +184,6 @@ jobs:
         run: |
           set -euo pipefail
           export FOUNDGINE_POSTGRES_CONNECTION='Host=localhost;Port=55432;Database=foundgine_e2e;Username=foundgine;Password=foundgine'
-
           dotnet test \
             tests/Foundgine.Security.Authority.Tests/Foundgine.Security.Authority.Tests.csproj \
             --no-build \
@@ -227,6 +204,7 @@ jobs:
             down \
             --volumes \
             --remove-orphans
+
   security-adversarial:
     name: Security Penetration Test — Adversarial Intent
     runs-on: ubuntu-latest
@@ -244,7 +222,6 @@ jobs:
       - name: Run hostile model corpus
         run: |
           set -euo pipefail
-
           dotnet test \
             tests/Foundgine.E2E.Tests/Foundgine.E2E.Tests.csproj \
             --no-build \
@@ -254,13 +231,13 @@ jobs:
       - name: Run adversarial engine tests
         run: |
           set -euo pipefail
-
           dotnet test \
             tests/Foundgine.E2E.Tests/Foundgine.E2E.Tests.csproj \
             --no-build \
             --configuration Release \
             --filter 'FullyQualifiedName~BlackBoxAdversarialEngineTests' \
             --logger 'console;verbosity=normal'
+
   security-semantic-penetration:
     name: Security Penetration Test — Foundgine Semantic Boundary
     runs-on: ubuntu-latest
@@ -280,7 +257,6 @@ jobs:
       - name: Run Foundgine penetration tests
         run: |
           set -euo pipefail
-
           dotnet test \
             tests/Foundgine.Security.Tests/Foundgine.Security.Tests.csproj \
             --no-build \
@@ -296,6 +272,7 @@ jobs:
             tests/Foundgine.Security.Tests/TestResults/*.trx
             security/pentest/*.md
           if-no-files-found: warn
+
   security-penetration-mcp:
     name: Security Penetration Test — SupplyChain MCP
     runs-on: ubuntu-latest
@@ -307,30 +284,23 @@ jobs:
         with:
           dotnet-version: 9.0.x
       - name: Restore pentest suite
-        run: dotnet restore
-          samples/Foundgine.SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj
+        run: dotnet restore benchmarks/AgentEndToEnd/Fixtures/SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj
       - name: Build pentest suite
-        run: dotnet build
-          samples/Foundgine.SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj
-          --no-restore --configuration Release
+        run: dotnet build benchmarks/AgentEndToEnd/Fixtures/SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj --no-restore --configuration Release
       - name: Start isolated PostgreSQL 17
-        run: docker compose -f samples/Foundgine.SupplyChain.PenTest/docker-compose.yml
-          up -d --wait postgres
+        run: docker compose -f benchmarks/AgentEndToEnd/Fixtures/SupplyChain.PenTest/docker-compose.yml up -d --wait postgres
       - name: Seed isolated pentest database
-        run: docker compose -f samples/Foundgine.SupplyChain.PenTest/docker-compose.yml
-          run --rm seed
+        run: docker compose -f benchmarks/AgentEndToEnd/Fixtures/SupplyChain.PenTest/docker-compose.yml run --rm seed
       - name: Run MCP penetration tests
         env:
           SupplyChainConnectionString: Host=localhost;Port=4431;Database=foundgine_supply_chain_pentest;Username=benchmark;Password=benchmark
-        run: >
+        run: |
           set -euo pipefail
-
-          dotnet test samples/Foundgine.SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj \
+          dotnet test benchmarks/AgentEndToEnd/Fixtures/SupplyChain.PenTest/Tests/Foundgine.SupplyChain.PenTest.Tests.csproj \
             --no-build \
             --configuration Release \
             --filter 'FullyQualifiedName~McpPenetrationTests' \
             --logger 'console;verbosity=normal'
       - name: Teardown isolated database
         if: always()
-        run: docker compose -f samples/Foundgine.SupplyChain.PenTest/docker-compose.yml
-          down --volumes --remove-orphans
+        run: docker compose -f benchmarks/AgentEndToEnd/Fixtures/SupplyChain.PenTest/docker-compose.yml down --volumes --remove-orphans
