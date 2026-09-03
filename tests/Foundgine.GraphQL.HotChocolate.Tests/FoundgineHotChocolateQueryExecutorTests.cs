@@ -5,7 +5,7 @@ using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Capabilities;
 using Foundgine.Core.Semantic.Security.Execution;
 using Foundgine.Core.Semantic.Security.Warrants;
-using Foundgine.Providers.GraphQL.HotChocolate;
+using Foundgine.Extensions.GraphQL.HotChocolate;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 using Xunit;
 

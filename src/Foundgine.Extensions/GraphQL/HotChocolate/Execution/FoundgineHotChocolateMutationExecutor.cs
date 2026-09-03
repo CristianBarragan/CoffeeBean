@@ -2,11 +2,10 @@ using Foundgine.Runtime;
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Mutation;
-using Foundgine.Extensions.GraphQL.HotChocolate;
 using Foundgine.Core.Semantic.Security.Execution;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
-namespace Foundgine.Providers.GraphQL.HotChocolate;
+namespace Foundgine.Extensions.GraphQL.HotChocolate;
 
 /// <summary>
 /// Secure GraphQL mutation execution boundary. GraphQL is an untrusted transport:

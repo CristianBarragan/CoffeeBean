@@ -23,8 +23,8 @@ Foundgine.Core.Semantic.Planning / Execution
 This package does not execute SQL and does not replace the Foundgine mutation authorization/security boundary.
 
 For secure GraphQL mutation execution, see `FoundgineHotChocolateMutationExecutor` in
-`Foundgine.Providers` (`src/Foundgine.Providers/GraphQL/HotChocolate/`), which depends on
-this package for translation and adds the secure execution boundary.
+`Foundgine.Extensions` (`src/Foundgine.Extensions/GraphQL/HotChocolate/Execution/`), which
+depends on this package for translation and adds the secure execution boundary.
 
 ## Install
 

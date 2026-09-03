@@ -1,4 +1,4 @@
-## [1.2.0] — 2026-09-03
+## [2.0.0] — 2026-09-03
 
 ### Release package set
 
@@ -8,14 +8,14 @@ This release publishes **exactly 4 NuGet packages** from `src/`: `Foundgine.Core
 |---|---|---|
 | `Foundgine.Core` | `src/Foundgine.Core` | Core contracts, semantic model, metadata, planning, and serialization |
 | `Foundgine.Runtime` | `src/Foundgine.Runtime` | Runtime orchestration, execution, control-plane, and application-facing execution APIs |
-| `Foundgine.Providers` | `src/Foundgine.Providers` | Storage, MCP, AI/model, GraphQL execution, AOT declarations/runtime support, and provider implementations |
-| `Foundgine.Extensions` | `src/Foundgine.Extensions` | Caller-facing adapters such as GraphQL schema/translation integration |
+| `Foundgine.Providers` | `src/Foundgine.Providers` | Storage, MCP, AI/model, AOT declarations/runtime support, and provider implementations |
+| `Foundgine.Extensions` | `src/Foundgine.Extensions` | Caller-facing adapters such as GraphQL schema/translation integration and secure GraphQL execution |
 
 The AOT generator is `Foundgine.Providers.Aot.Generator`, a `netstandard2.0` build-only Roslyn component. It is not a NuGet package. The former `Foundgine.Experimental` package has been removed entirely; AOT declarations and runtime helpers now live under `Foundgine.Providers.Aot` inside `Foundgine.Providers`.
 
 ### Packaging and documentation
 
-- Central package version is now **1.2.0** through `Directory.Build.props`.
+- Central package version is now **2.0.0** through `Directory.Build.props`.
 - All 4 publishable source projects have package-specific `README.md` files.
 - Every NuGet package now packs its **own** README rather than the repository root README.
 - Each package has a package-specific NuGet `Description` describing the concrete types/responsibilities contained in that package.
@@ -25,7 +25,7 @@ The AOT generator is `Foundgine.Providers.Aot.Generator`, a `netstandard2.0` bui
 
 ### Architecture
 
-The 1.2.0 package layout follows the source architecture:
+The 2.0.0 package layout follows the source architecture:
 
 ```text
 src/
@@ -36,9 +36,10 @@ src/
 │   ├── Storage/{Sql,InMemory,Elasticsearch,PostgresVector}/
 │   ├── Tools/MCP/
 │   ├── Models/
-│   ├── GraphQL/HotChocolate/            → included in Foundgine.Providers
 │   └── Foundgine.Providers.Aot.Generator/ → build-only / not published
 └── Foundgine.Extensions/               → NuGet
+    └── GraphQL/HotChocolate/            → included in Foundgine.Extensions
+        └── Execution/                    → secure query/mutation execution
 ```
 
 ### 1.1.9 semantic groundwork included in this release line

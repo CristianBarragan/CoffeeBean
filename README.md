@@ -397,8 +397,8 @@ The AOT Roslyn generator is a build-only analyzer project under
 |---|---|---|
 | `Foundgine.Core` | `src/Foundgine.Core` | Core contracts, semantic model, metadata, planning, and serialization |
 | `Foundgine.Runtime` | `src/Foundgine.Runtime` | Runtime orchestration, execution, control-plane, and application-facing execution APIs |
-| `Foundgine.Providers` | `src/Foundgine.Providers` | Storage, MCP, AI/model, GraphQL execution, AOT declarations/runtime support, and other provider implementations |
-| `Foundgine.Extensions` | `src/Foundgine.Extensions` | Caller-facing adapters such as GraphQL schema/translation integration |
+| `Foundgine.Providers` | `src/Foundgine.Providers` | Storage, MCP, AI/model, AOT declarations/runtime support, and other provider implementations |
+| `Foundgine.Extensions` | `src/Foundgine.Extensions` | Caller-facing adapters such as GraphQL schema/translation integration and secure GraphQL execution |
 
 ### AOT
 

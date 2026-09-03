@@ -1,10 +1,9 @@
 using Foundgine.Core.Execution;
 using Foundgine.Core.Semantic.Security.Execution;
-using Foundgine.Extensions.GraphQL.HotChocolate;
 using Foundgine.Runtime;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
-namespace Foundgine.Providers.GraphQL.HotChocolate;
+namespace Foundgine.Extensions.GraphQL.HotChocolate;
 
 /// <summary>
 /// The outcome of a secured GraphQL query execution: the raw provider-neutral

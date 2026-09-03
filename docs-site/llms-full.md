@@ -1,4 +1,4 @@
-# Foundgine 1.2.0 — Website full context
+# Foundgine 2.0.0 — Website full context
 
 Foundgine is a **programmable semantic execution platform for .NET**. It creates an application-controlled boundary between structured caller intent and physical execution.
 
@@ -96,7 +96,7 @@ The `Foundgine.SupplyChain` sample and AgentEndToEnd benchmark demonstrate an ag
 
 ## Current release
 
-**1.2.0 · .NET 9**
+**2.0.0 · .NET 9**
 
 For implementation truth, use the active source tree, tests, `docs/CURRENT-STATUS.md`, and package READMEs.
 
