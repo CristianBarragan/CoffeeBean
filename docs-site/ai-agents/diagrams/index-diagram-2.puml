@@ -1,13 +1,27 @@
 @startuml
-hide stereotype
-skinparam monochrome true
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
 skinparam shadowing false
-rectangle "Converted website diagram" as D
-note right of D
-├─ resolve
- ├─ validate
- ├─ authorize
- ├─ plan
- └─ execute
+skinparam ArrowColor #55506A
+skinparam componentStyle rectangle
+skinparam rectangle {
+  FontSize 15
+  FontColor #17132B
+  BorderColor #55506A
+  BackgroundColor #FFFFFF
+}
+rectangle "AI Agent" as Agent #F3EFFF
+rectangle "Structured intent" as Intent
+rectangle "Foundgine semantic execution boundary" as F #EEF9EF
+rectangle "Provider plan" as Plan
+rectangle "Execution + evidence" as Exec #EDF9F3
+Agent --> Intent
+Intent --> F
+F --> Plan
+Plan --> Exec
+note right of F
+Capability discovery is descriptive.
+Authorization is evaluated for
+every actual operation.
 end note
 @enduml

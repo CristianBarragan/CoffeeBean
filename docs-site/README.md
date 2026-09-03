@@ -1,41 +1,42 @@
 # Foundgine website
 
-This directory contains the static public website for the current Foundgine release line (`2.0.0`, .NET 9).
+Static public documentation for Foundgine **1.2.0 · .NET 9**.
 
-## Public story
+## Public reading path
 
-The site is intentionally organized around the product rather than development milestones:
+The site is a guided product story rather than a dump of repository internals:
 
-1. **What it is** — the semantic execution problem and model.
-2. **Getting started** — the canonical Supply Chain application.
-3. **How it works** — request lifecycle with representative payloads.
-4. **Architecture** — semantic, planning, execution and provider boundaries.
-5. **AI agents** — host-owned authority and controlled model integration.
-6. **Security** — authorization invariants and execution gates.
-7. **Samples** — canonical, semantic and PenTest applications.
-8. **Packages** — all source packages and their responsibilities.
-9. **Evidence** — controlled agent benchmarks, Supply Chain E2E and scoped performance evidence.
+1. **What is Foundgine?** — the problem and semantic execution boundary.
+2. **Getting started** — run the starter Supply Chain application.
+3. **Walkthrough** — trace one request with concrete payloads.
+4. **Architecture** — use the canonical lifecycle as the reference map.
+5. **AI agents** — understand the agent/tool boundary.
+6. **Security** — inspect authorization and fail-closed invariants.
+7. **Samples** — choose starter, advanced semantic and PenTest material.
+8. **Evidence** — inspect benchmark methodology and results.
+9. **Packages** — choose packages by architectural responsibility.
 
-## Content policy
+Every conceptual page has an in-page table of contents and a previous/home/next navigation strip. Deeper implementation detail belongs in the linked repository Markdown files.
 
-The public website should describe the current architecture. Do not add milestone/phase notes, obsolete release snapshots, abandoned design alternatives, or historical implementation details to the public navigation.
+## Content rules
 
-Historical development material belongs in the repository history or changelog, not in the current product narrative.
+- Describe the current implementation, not historical milestones.
+- Keep the landing page concise; move detailed explanations to dedicated pages or repository docs.
+- Distinguish measured benchmark results from modeled estimates.
+- Keep security claims tied to executable tests or documented invariants.
+- Keep transport, semantic and provider responsibilities explicit.
+- Use the canonical architecture as the stable visual reference.
 
-## Benchmark assets
+## Diagrams
 
-Only published aggregate measurements and the Supply Chain report are retained as website data. Large per-request captures and obsolete benchmark experiments are not part of the public site.
-
-Benchmark claims must distinguish measured values from estimated context metrics and must state the workload/concurrency scope.
+PlantUML sources and rendered SVGs live beside each other in `assets/` where they are maintained as documentation assets. The AI-agent boundary now uses the same professional visual language as the canonical architecture rather than a compressed mindmap.
 
 ## Editing
 
-The website is static HTML with shared CSS and small JavaScript components. The Markdown files beside major pages provide concise source/context versions for documentation and LLM ingestion; the served HTML remains the public rendering source.
+The served HTML is the public rendering source. The smaller Markdown files beside major pages are concise context/reference versions. When adding a public page:
 
-When adding a page:
-
-1. use the existing site shell and navigation;
-2. describe the current implementation, not historical milestones;
-3. link to the relevant source README/sample when deeper detail is needed;
-4. add the page to `sitemap.xml` and `llms.txt` when it is public/indexable;
-5. verify all relative links before committing.
+1. use the shared site shell and navigation;
+2. add meaningful section headings so the automatic TOC can index them;
+3. link to the next conceptual page and the relevant source Markdown;
+4. add public/indexable pages to `sitemap.xml` and `llms.txt`;
+5. verify relative links before committing.

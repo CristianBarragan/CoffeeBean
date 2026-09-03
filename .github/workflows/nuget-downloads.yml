@@ -55,7 +55,6 @@ jobs:
             $packageData += [ordered]@{
               id        = $package.id
               downloads = $downloads
-              version   = $package.version
             }
           }
 

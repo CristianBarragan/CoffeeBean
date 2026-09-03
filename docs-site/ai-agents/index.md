@@ -1,37 +1,25 @@
 # AI Agents with Foundgine
 
-Foundgine gives an AI agent a controlled application capability surface without giving the model database authority.
+Foundgine gives AI agents a controlled application capability surface without giving the model database authority.
 
-## The problem it addresses
+## The boundary
 
-Without a shared boundary, each tool an agent can call is free to implement its own authorization, tenant filtering, and query logic:
+![Foundgine AI agent capability boundary](assets/agent-tool-boundary.svg)
 
-![PlantUML diagram: index, diagram 1](assets/index-plantuml-01.svg)
+The agent proposes structured intent. Foundgine resolves, validates, authorizes, plans and executes it through the same boundary used by other callers.
 
-An agent with dozens of tools can end up with dozens of independent execution and security surfaces. Foundgine routes every tool through one semantic and authorization boundary instead, so "what does this request mean, and is this caller allowed to make it" is answered the same way regardless of which tool the model called.
+## Capability discovery is advisory
 
-## Intended boundary
+Discovery describes what the application exposes. It does not grant permission. The server evaluates authorization again for every actual operation.
 
-![PlantUML diagram: index, diagram 2](assets/index-plantuml-02.svg)
+## Host-owned security
 
-## Capability discovery is not authorization
+Authentication, actor identity, tenant context, secrets and model orchestration remain host responsibilities.
 
-Capability descriptions help a model construct valid intent. The server resolves and authorizes every actual request again.
+## Go deeper
 
-## Security
+Read the repository [AI agent guide](https://github.com/CristianBarragan/Foundgine/blob/main/docs/AI-AGENT.md).
 
-Authentication, identity, tenant context and model orchestration remain host responsibilities. Foundgine enforces semantic authorization and preserves security constraints into planning/execution.
+## Continue
 
-## Foundgine.Providers.Models
-
-`Foundgine.Providers.Models` integrates with `Microsoft.Extensions.AI`, exposing Foundgine operations as model tools without hard-coding a model provider.
-
-## What is outside the core guarantee
-
-Foundgine is not a general autonomous-agent framework. Model selection, memory, orchestration, deployment and autonomous behavior belong to the surrounding application.
-
-The same restraint applies when an agent's input is free-form language: Foundgine will tell an agent when its own words were ambiguous against the semantic contract (see [Grounding decisions](../../docs/GROUNDING-DECISIONS.md)) rather than letting the model's confidence stand in for a correct interpretation. See [What Foundgine is designed for](../../docs/APPLICATION-CATEGORIES.md) for how the agent-tool category relates to the others.
-
-## Next
-
-Read [Packages](../packages/index.html) next.
+[Security](../security/index.html) → [Samples](../samples/index.html)

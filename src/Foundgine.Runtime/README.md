@@ -46,7 +46,7 @@ The application must compose a semantic model, authorization/security policy and
 ## Install
 
 ```bash
-dotnet add package Foundgine.Runtime --version 2.0.0
+dotnet add package Foundgine.Runtime --version 1.2.0
 ```
 
 ## Typical relationship

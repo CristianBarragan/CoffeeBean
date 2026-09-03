@@ -3,9 +3,7 @@
   <img src="docs-site/assets/logo/foundgine-logo.png" alt="Foundgine" width="360">
 </picture>
 
-# [Foundgine.io](https://cristianbarragan.github.io/Foundgine/docs-site/index.html)
-
-[![NuGet Version](https://img.shields.io/nuget/v/Foundgine?label=NuGet%20Version)](https://www.nuget.org/packages/Foundgine.Core/)
+[![NuGet Version](https://img.shields.io/nuget/v/Foundgine.Core?label=NuGet%20Version)](https://www.nuget.org/packages/Foundgine.Core/)
 [![NuGet Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fcristianbarragan.github.io%2FFoundgine%2Fdocs-site%2Fassets%2Ffoundgine-nuget-downloads.json)](https://www.nuget.org/packages?q=Foundgine)
 [![Unit Tests](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=unit-tests&label=Unit%20Tests)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
 [![Integration Tests](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=integration-tests&label=Integration%20Tests)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
@@ -17,367 +15,74 @@
 
 **Programmable semantic execution for .NET.**
 
-Foundgine separates **what a caller wants** from **how the application executes it**.
+Foundgine gives application code, APIs, GraphQL, MCP and AI agents one application-controlled boundary between **caller intent**, **application meaning**, **authorization** and **physical execution**.
 
-A caller submits structured intent. Foundgine resolves that intent against an application-defined semantic model, validates it, applies authorization, builds a provider-independent execution plan, and sends that plan to a provider such as SQL or InMemory.
+[**Open the documentation →**](https://cristianbarragan.github.io/Foundgine/docs-site/)
 
-<p align="center"><img src="docs/assets/canonical-architecture.svg" alt="Foundgine canonical architecture: Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence. Retrieval uses parallel relational, pg_trgm fuzzy, PostgreSQL full-text, optional pg_search BM25, and optional Apache AGE graph strategies to produce candidates and evidence." width="100%"></p>
+## The idea
 
-> **Canonical lifecycle:** Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence.
->
-> **Retrieval is discovery, not authority:** relational lookup, `pg_trgm`, `tsvector`, optional `pg_search`/BM25, and optional Apache AGE produce candidates + evidence. Those results still pass through semantic resolution and authorization.
+```text
+Caller → Intent → Semantic Model → Operation Graph
+       → Resolution → Authorization → Plan Binding
+       → ExecutionIR → Provider → Result + Evidence
+```
 
+Retrieval can discover candidates and evidence, but **retrieval is not authorization**. The application owns identity and policy; providers execute the already-authorized artifact.
 
+<p align="center"><img src="docs/assets/canonical-architecture.svg" alt="Foundgine canonical architecture from caller intent through semantic resolution, authorization, planning, execution and evidence." width="100%"></p>
 
-## Getting started
+## Get started
 
-New to the repo? The fastest path in is the Supply Chain sample pair, each with its own step-by-step tutorial docs:
+The fastest path is the Supply Chain sample pair:
 
-- **Starter** — [`samples/Foundgine.SupplyChain`](samples/Foundgine.SupplyChain), tutorials: [Starter Tutorial](samples/Foundgine.SupplyChain/SupplyChain-Starter-Tutorial.md) · [Explained](samples/Foundgine.SupplyChain/Foundgine-SupplyChain-Explained.md).
-- **Advanced** — [`samples/Foundgine.SupplyChain.Advanced`](samples/Foundgine.SupplyChain.Advanced), tutorials: [`docs/00-Overview-And-Setup.md`](samples/Foundgine.SupplyChain.Advanced/docs/00-Overview-And-Setup.md) and the numbered docs that follow it (see [Samples](#samples) below for the full list).
+- **Starter:** [`samples/Foundgine.SupplyChain`](samples/Foundgine.SupplyChain) — the smallest realistic application boundary.
+  - [Build it step by step](samples/Foundgine.SupplyChain/SupplyChain-Starter-Tutorial.md)
+  - [Understand why it is structured this way](samples/Foundgine.SupplyChain/Foundgine-SupplyChain-Explained.md)
+- **Advanced:** [`samples/Foundgine.SupplyChain.Advanced`](samples/Foundgine.SupplyChain.Advanced) — richer semantics, grounding, retrieval, authorization and adversarial testing.
+  - Start at [`docs/00-Overview-And-Setup.md`](samples/Foundgine.SupplyChain.Advanced/docs/00-Overview-And-Setup.md) and follow 01–05.
 
-For the conceptual/framework docs (not sample-specific), start at [`docs/GETTING-STARTED.md`](docs/GETTING-STARTED.md) — see [Documentation](#documentation).
+For the conceptual path, use [`docs/README.md`](docs/README.md) or the [documentation site](https://cristianbarragan.github.io/Foundgine/docs-site/).
 
-## **Walkthrough: from natural language to authorized execution**
+## Walkthrough
 
-**See the complete walkthrough:** [**From Natural Language to Authorized Execution**](https://cristianbarragan.github.io/Foundgine/docs-site/walkthrough/index.html)
+**[From Natural Language to Authorized Execution](https://cristianbarragan.github.io/Foundgine/docs-site/walkthrough/)** traces one request — “show me overdue purchase orders from our top supplier in Texas” — through every layer with representative payloads.
 
-> **Example request:** **“show me overdue purchase orders from our top supplier in Texas”**
->
-> Follow that single request through Foundgine's semantic model, retrieval, resolution, authorization, plan binding, execution IR, provider execution, and evidence — with the concrete payload at each step.
+## Why the boundary matters
 
-## Why Foundgine?
+The number of independent execution surfaces is a security and maintenance multiplier. A tool-per-capability design can give an agent dozens of places where authorization, tenant filtering and query construction are implemented differently. Foundgine centralizes the semantic decision without making a transport or database the center of the architecture.
 
-Modern applications can have many callers:
+For the deeper rationale, read:
 
-- application code;
-- APIs;
-- GraphQL;
-- JSON clients;
-- automation;
-- MCP clients;
-- AI agents.
+- [`docs/WHY-FOUNDGINE.md`](docs/WHY-FOUNDGINE.md)
+- [`docs/APPLICATION-CATEGORIES.md`](docs/APPLICATION-CATEGORIES.md)
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- [`docs/AUTHORIZATION.md`](docs/AUTHORIZATION.md)
+- [`docs/SECURITY.md`](docs/SECURITY.md)
+- [`docs/AI-AGENT.md`](docs/AI-AGENT.md)
 
-Without a common semantic execution boundary, each surface tends to duplicate:
+## Package shape
 
-- model knowledge;
-- validation;
-- authorization;
-- relationship traversal;
-- query translation;
-- provider execution.
+The current source layout is consolidated into four publishable packages:
 
-Foundgine centralizes those concerns without making GraphQL, AI, MCP, or a database the center of the architecture.
-
-### The tool-surface problem
-
-This matters most where a single caller can reach many capabilities at once — an AI agent with a set of tools is the clearest case. In a typical stack, each tool is free to implement its own authorization, tenant filtering, and validation on the way to the database:
-
-![PlantUML diagram: README, diagram 1](assets/readme-plantuml-01.svg)
-
-An agent with 50 tools can end up with 50 separate execution and security surfaces, each only as safe as the developer who wrote that one tool.
-
-Foundgine gives every capability the same path instead:
-
-![PlantUML diagram: README, diagram 2](assets/readme-plantuml-02.svg)
-
-The application still defines what each capability means and who may use it. What Foundgine removes is the need for every tool, endpoint, or adapter to reimplement that decision on its own.
-
-> **Callers describe what they want. The application defines what exists and what is allowed. Foundgine determines how the authorized meaning executes.**
-
-### What Foundgine is designed for
-
-Foundgine's value grows with the number of distinct callers that would otherwise reimplement authorization and query construction, how consequential a wrong authorization decision would be, and how much of the caller's input is free-form language rather than a fixed shape. See [What Foundgine is designed for](docs/APPLICATION-CATEGORIES.md) for the full what/how/where breakdown and the categories of applications the samples in this repository prove it against:
-
-| Category | Proven by |
+| Package | Responsibility |
 |---|---|
-| Multi-transport enterprise backends (GraphQL + MCP + JSON over one hardened core) | `samples/Foundgine.SupplyChain`, `samples/Foundgine.SupplyChain.Advanced` |
-| AI-agent tool execution boundaries | `samples/Foundgine.SupplyChain`, `samples/Foundgine.SupplyChain.Advanced` |
-| High-assurance mutation workflows | `benchmarks/AgentEndToEnd/Fixtures/HighAssurance.Banking`, `benchmarks/AgentEndToEnd/Fixtures/HighAssurance.Postgres` |
-| Composite / cross-domain application models | `samples/Foundgine.SupplyChain.Advanced` semantic model |
-| Free-form / natural-language query surfaces | `Foundgine.Providers.Storage.Elasticsearch`, `Foundgine.Providers.Storage.PostgresVector`, [lexical grounding](docs/LEXICAL-GROUNDING.md) |
+| `Foundgine.Core` | Semantic model, metadata, intent, planning and provider-independent contracts |
+| `Foundgine.Runtime` | Application-facing orchestration, authorization and execution |
+| `Foundgine.Providers` | Storage, AI/model, MCP, AOT and other concrete integrations |
+| `Foundgine.Extensions` | Optional framework integrations such as Hot Chocolate GraphQL |
 
-## Open intent
+The normal application starting point is `Foundgine.Runtime` + `Foundgine.Providers`. See the [package guide](docs-site/packages/) for the current boundary map.
 
-Foundgine does not require a predefined method for every possible query.
+## Evidence
 
-Typed C#:
+The repository contains controlled benchmarks and deterministic security tests. The public evidence distinguishes **measured** tool calls, latency, RPS and success/failure counts from **estimated** context metrics.
 
-```csharp
-var result = await foundgine
-    .Query<Customer>()
-    .Select(c => new { c.Id, c.Name })
-    .Where(c => c.TenantId == tenantId)
-    .Take(50)
-    .ExecuteAsync();
-```
+- [Agent benchmark explorer](https://cristianbarragan.github.io/Foundgine/docs-site/agent-benchmark/)
+- [Supply Chain E2E](https://cristianbarragan.github.io/Foundgine/docs-site/agent-benchmark/supply-chain/)
+- [Security PenTest](https://cristianbarragan.github.io/Foundgine/docs-site/samples/pentest/)
+- [`benchmarks/AgentEndToEnd/README.md`](benchmarks/AgentEndToEnd/README.md)
 
-Dynamic C#:
-
-```csharp
-var result = await foundgine
-    .Query("Customer")
-    .Select("Id", "Name")
-    .Where("TenantId", SemanticFilterOperator.Eq, tenantId)
-    .Take(50)
-    .ExecuteAsync();
-```
-
-Both converge on the same provider-neutral semantic intent.
-
-Open intent does **not** mean open authority. Names are resolved against the semantic model and authorization is evaluated before planning/execution.
-
-## The architecture
-
-The diagram above is the **canonical Foundgine architecture**. Every interface and provider-specific feature fits into this same lifecycle; individual documentation pages may zoom into one portion, but the ordering and security boundaries do not change.
-
-### Canonical semantic lifecycle
-
-![PlantUML diagram: README, diagram 3](assets/readme-plantuml-03.svg)
-
-### Retrieval is a parallel candidate-discovery stage
-
-![PlantUML diagram: README, diagram 4](assets/readme-plantuml-04.svg)
-
-Search and graph mechanisms are therefore **not alternate authorization or execution paths**. They are retrieval strategies that help resolve ambiguous references.
-
-### Grounding decisions: ambiguity as a first-class result
-
-A graph-constrained path answers "is this mapping legal," not "is this mapping what the caller meant." A candidate that fits the semantic graph is not automatically the meaning the user intended, and a resolver that always returns the top-scored candidate will occasionally authorize and execute a confidently wrong interpretation — a perfectly authorized misunderstanding.
-
-Given a schema where `Customer` has both an account-enabled flag and an order history, the expression `active customers` is genuinely ambiguous: it can legally mean "account currently enabled" or "ordered recently," and neither the graph nor a retrieval score can tell those apart. `SemanticLexicalResolver.Ground` treats that as a first-class result instead of silently picking one:
-
-```csharp
-var decision = resolver.Ground("active customers");
-
-switch (decision.Outcome)
-{
-    case GroundingOutcome.Committed:
-        // A single interpretation — or several that agree on meaning and only
-        // differ in bridging route or evidence — proceed to authorization/planning.
-        break;
-
-    case GroundingOutcome.RequiresClarification:
-        // decision.CompetingInterpretations lists every semantically distinct
-        // reading still in contention, e.g. Customer.AccountEnabled vs.
-        // Customer.HasRecentOrder. Ask, don't guess.
-        break;
-
-    case GroundingOutcome.Unresolved:
-        // decision.Reason names the token with no legal candidate at all.
-        break;
-}
-```
-
-The key distinction `Ground` makes is between two candidates that are genuinely different *meanings* (different field, value, relationship, or root entity) versus two candidates that are different *evidence for the same meaning* (the same relationship proposed by two retrieval sources, or reached via two bridging routes). Only the first case can produce `RequiresClarification`; the second collapses into one committed interpretation, so duplicate or multi-source retrieval evidence never masquerades as ambiguity. See [Grounding decisions](docs/GROUNDING-DECISIONS.md) for the full explanation and a worked example against a real semantic contract.
-
-### The security-preserving lifecycle
-
-The central execution artifact is the semantic operation graph. It is resolved and authorized before planning, then carried forward through immutable provenance binding into execution:
-
-![PlantUML diagram: README, diagram 5](assets/readme-plantuml-05.svg)
-
-The key invariant is simple: **an executable provider artifact must remain traceably bound to the semantic contract and authorization decision that produced it.** Optimization may change the execution shape, but it cannot detach or weaken that security provenance.
-
-The SQL provider isn't limited to relational access: the same semantic candidate-retrieval contract also reaches PostgreSQL's full-text/fuzzy search and, optionally, Apache AGE for graph-similarity queries — see [Providers](#providers) below.
-
-### Semantic model
-
-The semantic model describes application meaning:
-
-![PlantUML diagram: README, diagram 6](assets/readme-plantuml-06.svg)
-
-It does not have to be identical to the physical persistence model.
-
-### Metadata
-
-Structural metadata describes facts such as entities, fields, keys, columns, and direct relationships.
-
-```text
-Metadata = what exists
-Semantics = what it means / exposes
-Authorization = what this actor may exercise
-Intent = what the caller wants
-```
-
-### Planning
-
-Planning produces a logical, provider-independent execution plan.
-
-The plan does not contain SQL tables, SQL aliases, provider parameters, or GraphQL AST nodes.
-
-### Execution
-
-The execution layer converts the logical plan into provider execution while enforcing provider security conformance and materializing results/evidence.
-
-## Security by boundary
-
-Foundgine treats transport input as untrusted.
-
-![PlantUML diagram: README, diagram 7](assets/readme-plantuml-07.svg)
-
-Identity, tenant, audience, and warrant authority come from the host/security boundary rather than model-generated or transport arguments.
-
-Capability discovery is advisory; execution authorizes the actual request again.
-
-For high-assurance mutation workflows, the mutation execution boundary can additionally enforce warrant validation, resource scope, security invariants, replay protection, plan binding, approval, and provider conformance.
-
-## Providers
-
-### SQL
-
-`Foundgine.Providers.Storage.Sql` is the primary SQL provider. It compiles provider-independent plans to parameterized SQL and executes through ADO.NET.
-
-PostgreSQL-specific functionality includes:
-
-- PostgreSQL mutation compilation;
-- set-based batched mutation compilation/execution;
-- provider cost estimation;
-- SQL security conformance.
-
-It also implements semantic candidate retrieval — ranked, provenance-carrying matches for ambiguous references — through one provider-neutral `RetrievalStrategy` contract with several PostgreSQL-backed strategies:
-
-| Strategy | PostgreSQL mechanism |
-|---|---|
-| `Fuzzy` | `pg_trgm` |
-| `FullText` | `tsvector` / `websearch_to_tsquery` |
-| `Search` | optional `pg_search` / BM25 |
-| `GraphSimilarity` | optional Apache AGE (Cypher over a semantic relationship) |
-| `Vector` | reserved for a future `pgvector` provider |
-
-`Fuzzy` and `FullText` need nothing beyond PostgreSQL itself. `Search` and `GraphSimilarity` are optional and only activate when `pg_search` or Apache AGE are installed. Whichever strategy runs, retrieval only produces candidates and evidence — the result still goes through ordinary semantic resolution and authorization before it can appear in an execution plan.
-
-### InMemory
-
-`Foundgine.Providers.Storage.InMemory` executes a deliberately limited subset of the same logical plan over CLR-backed rows.
-
-It exists primarily to prove provider independence and support fast deterministic tests.
-
-## Interfaces and adapters
-
-Foundgine can sit below several interfaces:
-
-```text
-Foundgine.Extensions.GraphQL.HotChocolate
-Foundgine.Core.Serialization
-Foundgine.Providers.Tools.MCP
-Foundgine.Providers.Models
-```
-
-These adapters translate their input into the Foundgine semantic boundary. They do not create alternate execution architectures.
-
-## AOT
-
-`Foundgine.Providers.Aot` (folder `Aot/` inside `Foundgine.Providers`) and the paired `Foundgine.Providers.Aot.Generator` Roslyn analyzer move stable metadata discovery into compilation:
-
-![PlantUML diagram: README, diagram 8](assets/readme-plantuml-08.svg)
-
-This is designed for Native-AOT-friendly metadata discovery. It does not make arbitrary application/provider dependencies automatically AOT-compatible.
-
-## Mutations
-
-Mutations use a separate semantic/planning/execution path because writes require explicit dependencies and stronger security guarantees.
-
-![PlantUML diagram: README, diagram 9](assets/readme-plantuml-09.svg)
-
-All mutation transports should converge on this boundary.
-
-Writes are where this matters most, because the cost of a wrong authorization decision is much higher than for a read. `benchmarks/AgentEndToEnd/Fixtures/HighAssurance.Banking` is the concrete proof case: a `TransferFunds` mutation whose execution boundary revalidates tenant, ownership, account state, and daily limits, holds deterministic locks across both accounts, and produces an audit entry and execution receipt — while making no claim that Foundgine infers financial policy from natural language. See its [README](benchmarks/AgentEndToEnd/Fixtures/HighAssurance.Banking/README.md) for the full walkthrough.
-
-## Package map
-
-The v2 source layout is consolidated into **4 publishable NuGet packages**.
-The AOT Roslyn generator is a build-only analyzer project under
-`src/Foundgine.Providers` and is not a separate NuGet package.
-
-| Package | Source location | Role |
-|---|---|---|
-| `Foundgine.Core` | `src/Foundgine.Core` | Core contracts, semantic model, metadata, planning, and serialization |
-| `Foundgine.Runtime` | `src/Foundgine.Runtime` | Runtime orchestration, execution, control-plane, and application-facing execution APIs |
-| `Foundgine.Providers` | `src/Foundgine.Providers` | Storage, MCP, AI/model, AOT declarations/runtime support, and other provider implementations |
-| `Foundgine.Extensions` | `src/Foundgine.Extensions` | Caller-facing adapters such as GraphQL schema/translation integration and secure GraphQL execution |
-
-### AOT
-
-AOT declarations and runtime helpers live in `Foundgine.Providers.Aot`, inside
-`Foundgine.Providers`. The Roslyn generator remains a separate build-time
-assembly in the repository because Roslyn analyzers cannot be merged into the
-runtime library, but it is **embedded in the `Foundgine.Providers` NuGet
-package** under `analyzers/dotnet/cs/`. NuGet consumers therefore do not add a
-second generator package or analyzer reference.
-
-Repository projects that reference `Foundgine.Providers.csproj` directly may
-still reference the generator project explicitly as an analyzer, because a
-project-to-project analyzer reference is not transitive. That source-tree detail
-does not apply to normal NuGet consumers.
-
-### Minimum footprint
-
-For a normal application, start with:
-
-- `Foundgine.Runtime`
-- `Foundgine.Providers`
-
-`Foundgine.Core` arrives transitively through the runtime/provider packages and
-is installed directly only when you intentionally build against the semantic or
-provider-neutral contracts. Add `Foundgine.Extensions` only for optional
-framework adapters such as Hot Chocolate GraphQL.
-
-The normal application-facing API is intentionally small: configure Foundgine
-once, inject the two-method `IFoundgineExecutor`, and call `ExecuteAsync`. Use the full `IFoundgine` interface only when you need discovery, dry-run, or approval APIs. Planning, approvals,
-capability discovery, custom provider contracts, and control-plane APIs remain
-available for advanced scenarios without being required for the first request.
-
-## Samples
-
-The repository deliberately keeps the public Supply Chain learning path small:
-
-### 1. `samples/Foundgine.SupplyChain` — Starter
-
-The minimal realistic application. It keeps the application in one project while preserving clear Domain, Application, Infrastructure and Semantics folders. Use this first to understand the basic MCP → Foundgine → PostgreSQL path.
-
-**Tutorials:**
-- [Building the Starter, step by step](samples/Foundgine.SupplyChain/SupplyChain-Starter-Tutorial.md) — builds the sample from an empty folder, file by file.
-- [Foundgine Supply Chain, Explained](samples/Foundgine.SupplyChain/Foundgine-SupplyChain-Explained.md) — the concept-by-concept walkthrough: why 3 separate domain files, what each of the 4 packages is for, why actor/token auth is stateless, why mutations get a separate compiler, and the required setup for each step.
-
-### 2. `samples/Foundgine.SupplyChain.Advanced` — Advanced
-
-The full proving-ground application. It adds richer semantic modeling, authorization, bounded graph traversal, grounding/ambiguity handling, retrieval strategies, adversarial tests, a high-assurance `PlaceOrder` mutation, and the stateful agent-facing E2E workload.
-
-**Tutorials:** start at [`docs/00-Overview-And-Setup.md`](samples/Foundgine.SupplyChain.Advanced/docs/00-Overview-And-Setup.md) (prerequisites, environment variables, how this sample differs from the starter) and follow the numbered set:
-1. [Claims and Authorization](samples/Foundgine.SupplyChain.Advanced/docs/01-Claims-And-Authorization.md)
-2. [High-Assurance Scenarios](samples/Foundgine.SupplyChain.Advanced/docs/02-High-Assurance-Scenarios.md)
-3. [Ambiguity Resolution ("Grounding")](samples/Foundgine.SupplyChain.Advanced/docs/03-Ambiguity-And-Grounding.md)
-4. [Retrieval Strategies](samples/Foundgine.SupplyChain.Advanced/docs/04-Retrieval-Strategies.md)
-5. [Adversarial & Security Boundary Testing](samples/Foundgine.SupplyChain.Advanced/docs/05-Adversarial-Security-Testing.md)
-
-Other specialized implementations are intentionally kept out of `samples/`: benchmark-only fixtures live under `benchmarks/AgentEndToEnd/Fixtures`, while framework-wide security and conformance tests live under `tests/`.
-
-The two Supply Chain samples are therefore a progression, not parallel implementations of the same thing:
-
-```text
-Starter
-  ↓
-Advanced
-  ↓
-Benchmarks / security fixtures
-```
-
-The advanced sample also contains the worked [grounding-decision](docs/GROUNDING-DECISIONS.md) case study and provider-backed retrieval tests.
-
-## Benchmarks
-
-`benchmarks/AgentEndToEnd` measures an agent completing the same business request two ways against the same PostgreSQL fixture: a **conventional** agent that discovers a physical data surface and writes its own relationship/query/update tools, versus a **Foundgine** agent that uses a semantic capability, an authorized graph operation, and a semantic mutation. Both flows reset to the same baseline before every measured run, so the comparison is of the same request, same fixture, same correctness assertion — only the execution boundary differs. `Run1` through `Run5SameClient` sweep customer count and concurrency; token/tool/wall-clock accounting is described in [`benchmarks/AgentEndToEnd/README.md`](benchmarks/AgentEndToEnd/README.md).
-
-The advanced Supply Chain workload is the stateful agent-facing demonstration — agent → MCP → Foundgine → PostgreSQL — and is intentionally separate from the conventional-vs-Foundgine Run1–5 comparison. Its `efficiencyEstimate` is **modeled**, not a measured conventional comparison.
-
-CI runs a smoke-sized version of the benchmark suites on every push/PR (`agent-benchmark-smoke`, ubuntu-latest, single customer/concurrency-1) so the full seed → run → report pipeline stays proven working without the full customer/concurrency matrix running on every commit. Full-size runs are on-demand or scheduled elsewhere; see `run-all-agent-benchmarks.ps1 -IncludeSupplyChain -IncludeSemanticPipeline` for the complete suite. Published results, when available, live under `docs-site/assets/agent-benchmark`.
-
-## Documentation
-
-The docs are meant to be read in order, each page linking to the next: start at [`docs/GETTING-STARTED.md`](docs/GETTING-STARTED.md) and follow the "Next" link at the bottom of each page, or use the full list in [`docs/README.md`](docs/README.md). Two pages worth calling out directly: [What Foundgine is designed for](docs/APPLICATION-CATEGORIES.md) (the what/how/where and the application categories) and [Grounding decisions](docs/GROUNDING-DECISIONS.md) (telling a competing meaning apart from routing noise in free-form language).
-
-Every project under `src/` has its own package-level README describing its responsibility, API boundary, security considerations, and relationship to the rest of Foundgine.
+Benchmark results are workload-specific and should not be generalized beyond the published experiment.
 
 ## Development
 
@@ -387,10 +92,8 @@ dotnet build
 dotnet test
 ```
 
-PostgreSQL integration testing is documented in [`docs/POSTGRES-E2E.md`](docs/POSTGRES-E2E.md).
+PostgreSQL integration testing: [`docs/POSTGRES-E2E.md`](docs/POSTGRES-E2E.md).
 
-## Current release line
-
-The repository is on **1.1.9** and targets **.NET 9**.
+Current release: **1.2.0** · **.NET 9**
 
 Foundgine is licensed under the MIT license.

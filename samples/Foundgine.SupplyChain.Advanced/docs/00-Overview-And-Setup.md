@@ -54,9 +54,10 @@ few extras this sample exercises optionally:
   running with the `pg_search` (ParadeDB) and Apache AGE extensions enabled
   (see doc `04`).
 - A clone of this repository — the sample uses project references into
-  `src/Foundgine.Core`, `src/Foundgine.Runtime`, `src/Foundgine.Providers`,
-  `src/Foundgine.Security.Authority`, and related projects, exactly like
-  the starter sample does.
+  `src/Foundgine.Core`, `src/Foundgine.Runtime` (whose `ControlPlane/` folder
+  now holds the authority/recovery concerns formerly in the standalone
+  `Foundgine.Security.Authority` package), and `src/Foundgine.Providers`,
+  exactly like the starter sample does.
 - **PowerShell** (`pwsh`) — the sample's runner scripts
   (`run-supply-chain.ps1`, `publish-supply-chain-report.ps1`,
   `merge-supply-chain-pentest-report.ps1`) are PowerShell, cross-platform

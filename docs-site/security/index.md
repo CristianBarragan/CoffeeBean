@@ -1,13 +1,19 @@
 # Foundgine Security
 
-Foundgine treats intent as untrusted and carries authorization constraints into planning and provider execution. Authentication and identity lifecycle remain host-owned.
+Foundgine treats intent as untrusted and carries authorization obligations into planning and provider execution.
 
 ## Invariant
 
-![PlantUML diagram: index, diagram 1](assets/index-plantuml-01.svg)
+![Foundgine security boundary](assets/index-plantuml-01.svg)
 
-Capability discovery is descriptive, not authorization. Caller-supplied claims cannot widen authority. Optional `Foundgine.Runtime.ControlPlane` infrastructure is outside the core execution boundary.
+Capability discovery is descriptive. Caller-supplied authorization claims cannot widen trusted authority. Provider conformance is part of the execution boundary.
 
-## Next
+## Go deeper
 
-Read [AI agents](../ai-agents/index.html) next.
+- [Authorization](https://github.com/CristianBarragan/Foundgine/blob/main/docs/AUTHORIZATION.md)
+- [Security model](https://github.com/CristianBarragan/Foundgine/blob/main/docs/SECURITY.md)
+- [Security PenTest sample](../samples/pentest/index.html)
+
+## Continue
+
+[AI agents](../ai-agents/index.html) → [Samples](../samples/index.html)
