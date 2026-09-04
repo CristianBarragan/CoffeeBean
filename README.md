@@ -17,6 +17,8 @@
 
 Foundgine gives application code, APIs, GraphQL, MCP and AI agents one application-controlled boundary between **caller intent**, **application meaning**, **authorization** and **physical execution**.
 
+[**Go to website →**](https://cristianbarragan.github.io/Foundgine/docs-site/)
+
 # The problem
 
 As applications expose more functionality to any caller, you can end up with lots of individual tools/endpoints, each containing its own validation, authorization, query logic, and business rules.
@@ -42,6 +44,14 @@ Without a common semantic execution layer, each surface tends to grow its own ru
 
 That produces duplicated semantics and inconsistent security boundaries.
 
+# A concrete example
+
+"show me **overdue purchase orders** from our **top supplier** in **Texas**"
+
+The interesting thing isn't the sentence itself. It's what happens after the sentence:
+
+![PlantUML diagram: CONCRETE EXAMPLE, diagram 1](docs/diagrams/overdue_purchase_orders_flow.svg)
+
 # Why Foundgine
 
 Foundgine exists to provide a stable execution boundary between **application intent** and **physical execution**.
@@ -50,15 +60,7 @@ The problem is not that applications lack APIs. The problem is that every new in
 
 Foundgine centralizes that responsibility.
 
-[**Go to website →**](https://cristianbarragan.github.io/Foundgine/docs-site/)
-
 ## The idea
-
-```text
-Caller → Intent → Semantic Model → Operation Graph
-       → Resolution → Authorization → Plan Binding
-       → ExecutionIR → Provider → Result + Evidence
-```
 
 Retrieval can discover candidates and evidence, but **retrieval is not authorization**. The application owns identity and policy; providers execute the already-authorized artifact.
 

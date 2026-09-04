@@ -1,0 +1,42 @@
+@startuml overdue_purchase_orders_flow
+skinparam backgroundColor white
+skinparam ActivityFontSize 14
+skinparam ActivityDiamondFontSize 14
+skinparam defaultTextAlignment center
+skinparam ArrowColor #555555
+skinparam ActivityBorderColor #2C3E50
+skinparam ActivityBackgroundColor #EAF2F8
+skinparam ActivityStartColor #2C3E50
+skinparam ActivityEndColor #2C3E50
+
+title Overdue Purchase Orders — Query Resolution Flow
+
+start
+
+:"overdue purchase orders";
+note right: Natural language query
+
+:PurchaseOrder;
+note right: Resolve target entity
+
+:status / due date semantics;
+note right: Interpret "overdue" as\nstatus + due_date logic
+
+:Supplier relationship;
+note right: Join to Supplier entity
+
+:Texas;
+note right: Apply location filter\n(Supplier state = TX)
+
+:authorization;
+note right: Apply row-level\naccess control
+
+:execution plan;
+note right: Build query plan
+
+:PostgreSQL;
+note right: Execute against database
+
+stop
+
+@enduml
