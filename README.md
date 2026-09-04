@@ -17,7 +17,7 @@
 
 Foundgine gives application code, APIs, GraphQL, MCP and AI agents one application-controlled boundary between **caller intent**, **application meaning**, **authorization** and **physical execution**.
 
-[**Open the documentation →**](https://cristianbarragan.github.io/Foundgine/docs-site/)
+[**Go to website →**](https://cristianbarragan.github.io/Foundgine/docs-site/)
 
 ## The idea
 
