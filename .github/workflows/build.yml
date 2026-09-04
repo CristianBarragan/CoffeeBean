@@ -244,15 +244,18 @@ jobs:
         run: dotnet build Foundgine.sln --no-restore --configuration Release
 
       - name: Start PostgreSQL 17
+        env:
+          POSTGRES_HOST_PORT: "55432"
         run: |
-          docker compose \
-            -f docker-compose.postgres.yml \
+          docker compose -p foundgine-e2e -f docker-compose.postgres.yml down -v --remove-orphans || true
+          docker compose -p foundgine-e2e -f docker-compose.postgres.yml \
             up -d --wait postgres
 
       - name: Verify PostgreSQL 17
+        env:
+          POSTGRES_HOST_PORT: "55432"
         run: |
-          docker compose \
-            -f docker-compose.postgres.yml \
+          docker compose -p foundgine-e2e -f docker-compose.postgres.yml \
             exec -T postgres \
             psql \
               -U foundgine \
@@ -270,16 +273,18 @@ jobs:
 
       - name: PostgreSQL diagnostics on failure
         if: failure()
+        env:
+          POSTGRES_HOST_PORT: "55432"
         run: |
-          docker compose \
-            -f docker-compose.postgres.yml \
+          docker compose -p foundgine-e2e -f docker-compose.postgres.yml \
             logs --no-color postgres
 
       - name: Stop PostgreSQL
         if: always()
+        env:
+          POSTGRES_HOST_PORT: "55432"
         run: |
-          docker compose \
-            -f docker-compose.postgres.yml \
+          docker compose -p foundgine-e2e -f docker-compose.postgres.yml \
             down \
             --volumes \
             --remove-orphans
@@ -415,6 +420,7 @@ jobs:
           BENCHMARK_CONCURRENCY: "1"
           BENCHMARK_BATCH_SIZES: "1"
           BENCHMARK_FAIL_ON_ERRORS: "true"
+          POSTGRES_HOST_PORT: "55433"
         run: |
           set -euo pipefail
           COMPOSE=benchmarks/CoffeeBeanery.Performance/docker-compose.benchmark.yml
@@ -423,6 +429,7 @@ jobs:
             docker compose -p "$PROJECT" -f "$COMPOSE" down -v --remove-orphans || true
           }
           trap cleanup EXIT
+          cleanup
           docker compose -p "$PROJECT" -f "$COMPOSE" up -d --build postgres database hotchocolate
           docker compose -p "$PROJECT" -f "$COMPOSE" up --wait hotchocolate
           docker compose -p "$PROJECT" -f "$COMPOSE" run --rm --no-deps \
@@ -520,6 +527,7 @@ jobs:
           BENCHMARK_CONCURRENCY: "1"
           BENCHMARK_BATCH_SIZES: "1"
           BENCHMARK_FAIL_ON_ERRORS: "true"
+          POSTGRES_HOST_PORT: "55434"
         run: |
           set -euo pipefail
           COMPOSE=benchmarks/CoffeeBeanery.Performance/docker-compose.benchmark.yml
@@ -528,6 +536,7 @@ jobs:
             docker compose -p "$PROJECT" -f "$COMPOSE" down -v --remove-orphans || true
           }
           trap cleanup EXIT
+          cleanup
           docker compose -p "$PROJECT" -f "$COMPOSE" up -d --build postgres database foundgine-warm
           docker compose -p "$PROJECT" -f "$COMPOSE" up --wait foundgine-warm
           docker compose -p "$PROJECT" -f "$COMPOSE" run --rm --no-deps \

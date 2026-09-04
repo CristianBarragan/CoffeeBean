@@ -163,7 +163,7 @@ The public API must not make it easier to accidentally replace trusted context w
 
 ## Versioning
 
-The repository is currently on the 2.0.0 release line.
+The repository is currently on the 1.2.0 release line.
 
 The most stable conceptual contracts are:
 

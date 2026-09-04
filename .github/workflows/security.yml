@@ -176,14 +176,17 @@ jobs:
       - name: Build
         run: dotnet build Foundgine.sln --no-restore --configuration Release
       - name: Start PostgreSQL 17
+        env:
+          POSTGRES_HOST_PORT: "55435"
         run: |
-          docker compose \
+          docker compose -p foundgine-security-pg -f docker-compose.postgres.yml down -v --remove-orphans || true
+          docker compose -p foundgine-security-pg \
             -f docker-compose.postgres.yml \
             up -d --wait postgres
       - name: Run authorization penetration tests
         run: |
           set -euo pipefail
-          export FOUNDGINE_POSTGRES_CONNECTION='Host=localhost;Port=55432;Database=foundgine_e2e;Username=foundgine;Password=foundgine'
+          export FOUNDGINE_POSTGRES_CONNECTION='Host=localhost;Port=55435;Database=foundgine_e2e;Username=foundgine;Password=foundgine'
           dotnet test \
             tests/Foundgine.Security.Authority.Tests/Foundgine.Security.Authority.Tests.csproj \
             --no-build \
@@ -192,14 +195,18 @@ jobs:
             --logger 'console;verbosity=normal'
       - name: PostgreSQL diagnostics on failure
         if: failure()
+        env:
+          POSTGRES_HOST_PORT: "55435"
         run: |
-          docker compose \
+          docker compose -p foundgine-security-pg \
             -f docker-compose.postgres.yml \
             logs --no-color postgres
       - name: Stop PostgreSQL
         if: always()
+        env:
+          POSTGRES_HOST_PORT: "55435"
         run: |
-          docker compose \
+          docker compose -p foundgine-security-pg \
             -f docker-compose.postgres.yml \
             down \
             --volumes \

@@ -134,16 +134,9 @@ Configure `JsonReadIntentAdapterOptions` for public endpoints.
 
 ## GraphQL
 
-Use `Foundgine.Extensions.GraphQL.HotChocolate` to translate GraphQL.
+Use `Foundgine.Extensions.GraphQL.HotChocolate` to translate GraphQL operations into Foundgine semantic intent.
 
-For secure query execution use:
-
-`Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Execution`.
-
-For mutations use:
-
-- `Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Mutations`;
-- `Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Mutations`.
+The same namespace also contains the secure query and mutation executors — `FoundgineHotChocolateQueryExecutor` and `FoundgineHotChocolateMutationExecutor` — that run that intent through the Foundgine authorization/execution boundary.
 
 The host owns authentication/security context.
 

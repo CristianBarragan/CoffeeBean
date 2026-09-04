@@ -1,11 +1,18 @@
 # Performance and benchmark evidence
 
-Foundgine performance claims are scoped to explicit workloads. The benchmark suite separates measured RPS, latency, tool calls and success/failure counts from estimated context metrics.
+Foundgine benchmark claims are scoped to explicit workloads. The site distinguishes measured tool calls, timing, RPS and correctness counts from estimated context metrics.
 
-The strongest current agent-facing evidence concerns reduced tool coordination and semantic batching. The TransferFunds run intentionally records a concurrency limitation rather than hiding it; the same-client follow-up isolates request shape and demonstrates the benefit of one semantic batch call.
+## Evidence
 
-PostgreSQL query measurements are also workload-specific and should not be treated as a universal comparison against every ORM, schema or hardware configuration.
+- [Agent benchmark explorer](../agent-benchmark/index.html)
+- [Supply Chain E2E](../agent-benchmark/supply-chain/index.html)
+- [Run 5 — high-assurance mutation](../agent-benchmark/run-5/index.html)
+- [Run 5b — individual versus batch](../agent-benchmark/run-5b/index.html)
 
-## Next
+## Interpretation
 
-That's the guided path through the site. For the full technical documentation (semantic modeling, authorization, testing, and more), see [`docs/README.md`](https://github.com/cristianbarragan/Foundgine/blob/main/docs/README.md) in the repository.
+Read the experiment question, workload and concurrency before comparing values. Do not generalize beyond the published fixture and configuration.
+
+## Continue
+
+[Samples](../samples/index.html) → [Architecture](../architecture/index.html)
