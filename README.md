@@ -19,7 +19,7 @@
 
 Foundgine separates **what a caller wants** from **how the application executes it**.
 
-A caller submits structured intent. Foundgine resolves that intent against an application-defined semantic model, validates it, applies authorization, builds a provider-independent execution plan, and sends that plan to a provider such as SQL or InMemory.
+A caller submits structured intent. Foundgine resolves that intent against an application-defined semantic model, validates it, applies authorization, builds a provider-independent execution plan, and sends that plan to any data storage provider - Currently Foundgine has an InMemory and Postgres storage providers, but it can be extended to any storage.
 
 <p align="center"><img src="docs/assets/canonical-architecture.svg" alt="Foundgine canonical architecture: Caller → Intent → Semantic Model → Semantic Operation Graph → Retrieval → Resolution → Authorization → Plan Binding → Execution IR → Provider → Execution → Evidence. Retrieval uses parallel relational, pg_trgm fuzzy, PostgreSQL full-text, optional pg_search BM25, and optional Apache AGE graph strategies to produce candidates and evidence." width="100%"></p>
 
