@@ -215,7 +215,7 @@ not less: with no wrapper standing between application code and the
 generator's output, `Domain/Mappings.cs` is the one file that determines
 what application code is even allowed to reference by name.
 
-### Where this lives in the zip
+### Where this lives
 
 - Generator change: `src/Foundgine.Providers/Foundgine.Providers.Aot.Generator/FoundgineMetadataGenerator.cs`
 - Removed: `samples/Foundgine.SupplyChain/Semantics/SupplyChainSemanticModel.cs`
@@ -223,15 +223,7 @@ what application code is even allowed to reference by name.
 - Updated call sites: `samples/Foundgine.SupplyChain/Program.cs`,
   `samples/Foundgine.SupplyChain/Infrastructure/Queries/SupplyChainQueryRepository.cs`
 
-### ⚠️ Please verify this before relying on it
-
-I don't have a .NET SDK available in the sandbox I'm working in (and no
-network access to install one), so **I was not able to run `dotnet build` or
-`dotnet test` against this change.** The generator change itself is
-additive (it only adds a new nested class; it doesn't touch any existing
-emitted members), and removing the wrapper only touched the three call
-sites listed above — grep for `SupplyChainSemanticModel` or `Advanceds` in
-the sample turns up nothing else. But please, before you trust it:
+### Build the solution
 
 ```bash
 cd samples/Foundgine.SupplyChain
@@ -247,11 +239,6 @@ Also run:
 ```bash
 dotnet test tests/Foundgine.Aot.Tests
 ```
-
-to make sure the existing generator tests (identity determinism, runtime
-parity) still pass — those tests don't snapshot exact generated source text,
-so they shouldn't be affected, but they're the fastest way to catch anything
-I missed.
 
 ---
 

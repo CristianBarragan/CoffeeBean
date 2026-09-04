@@ -47,7 +47,7 @@ For AOT generation, no separate generator installation or package reference is r
 ## Install
 
 ```bash
-dotnet add package Foundgine.Providers --version 1.2.0
+dotnet add package Foundgine.Providers --version 2.0.0
 ```
 
 ## Typical application stack

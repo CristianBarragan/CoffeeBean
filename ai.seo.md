@@ -2,7 +2,7 @@
 
 ## Canonical identity
 
-**Current release: 1.2.0**
+**Current release: 2.0.0**
 
 **Foundgine is a programmable semantic execution platform for .NET.**
 
@@ -47,7 +47,7 @@ The benchmark is accompanied by deterministic Supply Chain PenTest coverage: **7
 
 ## Current release / runtime
 
-- Foundgine release: **1.2.0**
+- Foundgine release: **2.0.0**
 - Target framework: **.NET 9**
 - Primary physical provider: **PostgreSQL / SQL**
 - InMemory provider: limited provider-independence proof/test implementation

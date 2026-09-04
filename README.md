@@ -94,6 +94,6 @@ dotnet test
 
 PostgreSQL integration testing: [`docs/POSTGRES-E2E.md`](docs/POSTGRES-E2E.md).
 
-Current release: **1.2.0** · **.NET 9**
+Current release: **2.0.0** · **.NET 9**
 
 Foundgine is licensed under the MIT license.
