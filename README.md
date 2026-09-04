@@ -19,6 +19,10 @@ Foundgine gives application code, APIs, GraphQL, MCP and AI agents one applicati
 
 # The problem
 
+As applications expose more functionality to any caller, you can end up with lots of individual tools/endpoints, each containing its own validation, authorization, query logic, and business rules.
+
+Foundgine tries to centralize that into a semantic execution boundary. The caller says what it wants, while the application remains responsible for deciding what is allowed and how it gets executed.
+
 A complex application may have several ways to express an operation:
 
 ```text
