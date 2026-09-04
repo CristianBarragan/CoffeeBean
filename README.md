@@ -17,6 +17,35 @@
 
 Foundgine gives application code, APIs, GraphQL, MCP and AI agents one application-controlled boundary between **caller intent**, **application meaning**, **authorization** and **physical execution**.
 
+# The problem
+
+A complex application may have several ways to express an operation:
+
+```text
+Application code
+GraphQL
+JSON
+AI-generated intent
+```
+
+Without a common semantic execution layer, each surface tends to grow its own rules for:
+
+- what entities and fields exist;
+- which relationships can be traversed;
+- which filters are valid;
+- what the caller is authorized to access; and
+- how the request becomes database or service operations.
+
+That produces duplicated semantics and inconsistent security boundaries.
+
+# Why Foundgine
+
+Foundgine exists to provide a stable execution boundary between **application intent** and **physical execution**.
+
+The problem is not that applications lack APIs. The problem is that every new intent source can otherwise become responsible for understanding the application's model, relationships, authorization rules, and provider-specific execution details.
+
+Foundgine centralizes that responsibility.
+
 [**Go to website →**](https://cristianbarragan.github.io/Foundgine/docs-site/)
 
 ## The idea
