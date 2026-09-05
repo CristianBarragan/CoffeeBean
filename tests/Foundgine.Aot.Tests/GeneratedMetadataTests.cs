@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Linq;
+using System.Linq.Expressions;
 using Foundgine.Providers.Aot;
 using Foundgine.Generated;
 using Foundgine.Core.Semantic.Metadata;
@@ -197,6 +198,19 @@ public sealed class SalesOrderFixture
     public string Status { get; init; } = string.Empty;
 }
 
+
+
+[FoundgineModel(Id = 50, MinimumWeight = 80)]
+public sealed class WeightedAliasModel
+{
+    public int Id { get; init; }
+}
+
+[FoundgineModelEntityMap(typeof(WeightedAliasModel), typeof(Customer))]
+internal static class WeightedAliasSchemaMap
+{
+}
+
 public sealed class GeneratedMetadataTests
 {
     [Fact]
@@ -248,11 +262,21 @@ public sealed class GeneratedMetadataTests
     public void Generator_propagates_aot_aliases_without_changing_identity()
     {
         var customer = GeneratedMetadata.Registry.GetEntity(new EntityId(1));
-        Assert.Equal(["Client"], customer.Aliases);
-        Assert.Equal(["DisplayName"], customer.EffectiveFields.Single(x => x.Id == new FieldId(2)).Aliases);
+        Assert.Equal(["Client"], customer.Aliases?.Select(a => a.Name));
+        Assert.Equal(["DisplayName"], customer.EffectiveFields.Single(x => x.Id == new FieldId(2)).Aliases?.Select(a => a.Name));
 
         var relationship = GeneratedMetadata.Registry.GetRelationship(new RelationshipId(1));
-        Assert.Equal(["CustomerAccounts"], relationship.Aliases);
+        Assert.Equal(["CustomerAccounts"], relationship.Aliases?.Select(a => a.Name));
+    }
+
+    [Fact]
+    public void Generator_propagates_model_minimum_alias_weight_and_entity_mapping()
+    {
+        var model = GeneratedMetadata.Registry.GetModel(new ModelId(50));
+
+        Assert.Equal("WeightedAliasModel", model.Name);
+        Assert.Equal(new EntityId(1), model.Entity);
+        Assert.Equal(80, model.MinimumWeight);
     }
 
     [Fact]
@@ -264,10 +288,10 @@ public sealed class GeneratedMetadataTests
         // stacked [FoundgineAlias("order")] that only differs by case -
         // the generator must merge both forms and dedupe case-insensitively,
         // keeping first-seen order.
-        Assert.Equal(["SalesOrder", "Order"], entity.Aliases);
+        Assert.Equal(["SalesOrder", "Order"], entity.Aliases?.Select(a => a.Name));
 
         var status = entity.EffectiveFields.Single(x => x.Name == "Status");
-        Assert.Equal(["State", "Stage"], status.Aliases);
+        Assert.Equal(["State", "Stage"], status.Aliases?.Select(a => a.Name));
 
         // Multi-name aliases resolve through SemanticModelDiscovery exactly
         // like the classic single-name form.

@@ -75,6 +75,53 @@ public sealed class SemanticModelFingerprintTests
     }
 
     [Fact]
+    public void Fingerprint_changes_when_only_the_declared_alias_weight_changes()
+    {
+        // Alias weight is security-relevant evidence, not decorative metadata.
+        // A contract that only relaxes/tightens a declared alias weight is a
+        // different contract and must not silently share a fingerprint with
+        // the original — otherwise an audit trail keyed on ContractFingerprint
+        // could not distinguish "Vendor is weight-90 evidence for Supplier"
+        // from "Vendor is weight-40 evidence for Supplier".
+        var first = new SemanticModelBuilder()
+            .Entity<TestProduct>(EntityId.Create("Product"), "Product", e => e
+                .Identity(x => x.Id)
+                .Field(x => x.Name)
+                .FieldAlias(x => x.Name, "DisplayName", 90))
+            .Build();
+        var changed = new SemanticModelBuilder()
+            .Entity<TestProduct>(EntityId.Create("Product"), "Product", e => e
+                .Identity(x => x.Id)
+                .Field(x => x.Name)
+                .FieldAlias(x => x.Name, "DisplayName", 40))
+            .Build();
+
+        Assert.NotEqual(first.ContractFingerprint, changed.ContractFingerprint);
+    }
+
+    [Fact]
+    public void Fingerprint_is_unaffected_by_unweighted_vs_weighted_alias_of_the_same_name()
+    {
+        // An alias with no declared weight is a different declaration from
+        // the same alias name with a weight, so the fingerprint must still
+        // distinguish them even though only the weight component differs.
+        var unweighted = new SemanticModelBuilder()
+            .Entity<TestProduct>(EntityId.Create("Product"), "Product", e => e
+                .Identity(x => x.Id)
+                .Field(x => x.Name)
+                .FieldAlias(x => x.Name, "DisplayName"))
+            .Build();
+        var weighted = new SemanticModelBuilder()
+            .Entity<TestProduct>(EntityId.Create("Product"), "Product", e => e
+                .Identity(x => x.Id)
+                .Field(x => x.Name)
+                .FieldAlias(x => x.Name, "DisplayName", 50))
+            .Build();
+
+        Assert.NotEqual(unweighted.ContractFingerprint, weighted.ContractFingerprint);
+    }
+
+    [Fact]
     public void Fingerprint_is_lowercase_sha256()
     {
         var fingerprint = BuildModel(false).ContractFingerprint;

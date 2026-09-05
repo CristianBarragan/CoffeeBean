@@ -76,6 +76,39 @@ Foundgine does not treat the paraphrase as a fuzzy guess at a *different* operat
 
 > **The invariant:** alias matching changes vocabulary, not authority. “Buys” does not create a new capability, and “seller” does not create a second supplier meaning — both are application-declared paths to identities that already exist.
 
+
+### Alias weights in the same concrete example
+
+The Supply Chain contract now also demonstrates **weighted aliases**. For
+example, `Vendor` and `Seller` are declared aliases of `Supplier` with
+application-defined evidence weights, while `PO`/`POs`/`Buy`/`Buys` carry
+weights on `PurchaseOrder`. Field and relationship aliases can be weighted as
+well.
+
+These weights are **evidence strength, not retrieval confidence and not
+authorization**, and they apply only when the current request actually uses
+lexical grounding. Only aliases matched by that grounding path contribute. The
+scopes never bleed into one another: a field weight of `50` is **50 for that
+field**, not `50` for its containing entity/table, so it cannot satisfy an
+entity-level minimum. If the model was already known with certainty during
+processing, that is recorded as a distinct provenance category
+(`ModelResolutionEvidence.KnownWithCertainty`) rather than a numeric value on
+the same 1–100 scale as alias weight, so it can never be combined
+arithmetically with field/entity/relationship evidence. With no lexical
+grounding, the weight feature is inert.
+
+`AliasWeightEvidenceGate` checks each grounded scope independently and fails
+the evidence check closed when a scope is too weak; it never creates a
+capability or bypasses authorization. Every result also carries the
+`ContractFingerprint` of the frozen contract it was measured against — the
+fingerprint changes if a declared alias weight changes, so it can identify
+the exact evidence-relevant contract state, not just entity/field shape. The
+advanced Supply Chain sample covers entity, field, and relationship weights,
+known-model provenance, no-lexical activation, boundary values, invalid
+weights, unweighted aliases, threshold violations, and preservation through
+AOT metadata and the frozen semantic contract.
+
+
 # When more than one meaning is legal
 
 Aliases collapse *different words* onto *one* meaning. Sometimes the ambiguity runs the other way: the **same word** is a legal match for **two different meanings at once**, and neither the graph nor a retrieval score can tell them apart on its own.

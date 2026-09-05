@@ -38,3 +38,26 @@ The running application uses the composed `SupplyChainSemanticModel`: it discove
 The purpose of this sample is to teach the metadata-first architecture. Manually reproducing every entity, field and relationship would create a second schema that can drift from the actual domain and would obscure the architectural boundary the sample is intended to demonstrate.
 
 This is the intended composition pattern when an application has a metadata source but still needs curated semantic meaning: discover the complete structural graph first, then overlay only the small set of typed semantic declarations that cannot be inferred structurally.
+
+
+## Weighted lexical evidence
+
+The generated semantic contract also carries optional alias weights. In the
+Supply Chain domain, entity, field, and relationship aliases are weighted
+directly on the AOT declarations. `AliasWeightEvidenceGate` applies them only
+when the current request is actually being lexically grounded, and only when a
+weighted alias participates in that grounding path. Scope is preserved: a field
+weight of `50` is evidence for that field only, never for its containing entity.
+If a model was already known with certainty during processing, model-level
+evidence is treated as `100`, but that certainty does not inflate field or
+relationship evidence. With no lexical grounding, the feature is inert.
+
+The corresponding coverage is in `Tests/Grounding/SupplyChainAliasWeightTests.cs`,
+including AOT propagation, entity/field/relationship scopes, known-model `100`,
+no-lexical-grounding behavior, boundary values, invalid weights, unweighted
+aliases, threshold violations, and frozen-contract preservation.
+
+The corresponding coverage is in
+`Tests/Grounding/SupplyChainAliasWeightTests.cs`, including AOT propagation,
+entity/field/relationship aliases, boundary values, invalid values,
+unweighted aliases, threshold violations, and frozen-contract preservation.

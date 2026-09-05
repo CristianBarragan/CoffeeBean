@@ -32,9 +32,9 @@ public sealed class SemanticEntityBuilder
         return this;
     }
 
-    public SemanticEntityBuilder Alias(string alias)
+    public SemanticEntityBuilder Alias(string alias, int? weight = null)
     {
-        AddAlias(_aliases, alias);
+        AddAlias(_aliases, alias, weight);
         return this;
     }
 
@@ -44,7 +44,7 @@ public sealed class SemanticEntityBuilder
     {
         ArgumentNullException.ThrowIfNull(aliases);
         foreach (var alias in aliases)
-            AddAlias(_aliases, alias);
+            AddAlias(_aliases, alias, null);
         return this;
     }
 
@@ -71,12 +71,12 @@ public sealed class SemanticEntityBuilder
         return this;
     }
 
-    public SemanticEntityBuilder FieldAlias(FieldId fieldId, string alias)
+    public SemanticEntityBuilder FieldAlias(FieldId fieldId, string alias, int? weight = null)
     {
         var index = _fields.FindIndex(x => x.Id == fieldId);
         if (index < 0) throw new InvalidOperationException($"Field '{fieldId}' is not declared on '{_name}'.");
         var field = _fields[index];
-        var aliases = field.EffectiveAliases.Concat([new SemanticAlias(alias)]).ToArray();
+        var aliases = field.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray();
         _fields[index] = field with { Aliases = aliases };
         return this;
     }
@@ -88,7 +88,7 @@ public sealed class SemanticEntityBuilder
         var index = _fields.FindIndex(x => x.Id == fieldId);
         if (index < 0) throw new InvalidOperationException($"Field '{fieldId}' is not declared on '{_name}'.");
         var field = _fields[index];
-        var merged = field.EffectiveAliases.Concat(aliases.Select(a => new SemanticAlias(a))).ToArray();
+        var merged = field.EffectiveAliases.Concat(aliases.Select(a => new SemanticAlias(a, null))).ToArray();
         _fields[index] = field with { Aliases = merged };
         return this;
     }
@@ -103,12 +103,12 @@ public sealed class SemanticEntityBuilder
         return this;
     }
 
-    public SemanticEntityBuilder RelationshipAlias(RelationshipId relationshipId, string alias)
+    public SemanticEntityBuilder RelationshipAlias(RelationshipId relationshipId, string alias, int? weight = null)
     {
         var index = _relationships.FindIndex(x => x.Id == relationshipId);
         if (index < 0) throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
         var relationship = _relationships[index];
-        var aliases = relationship.EffectiveAliases.Concat([new SemanticAlias(alias)]).ToArray();
+        var aliases = relationship.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray();
         _relationships[index] = relationship with { Aliases = aliases };
         return this;
     }
@@ -123,12 +123,12 @@ public sealed class SemanticEntityBuilder
             _relationships.ToArray(),
             _aliases.ToArray());
 
-    private static void AddAlias(List<SemanticAlias> aliases, string alias)
+    private static void AddAlias(List<SemanticAlias> aliases, string alias, int? weight)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(alias);
         if (aliases.Any(x => string.Equals(x.Name, alias, StringComparison.OrdinalIgnoreCase)))
             throw new ArgumentException($"Duplicate semantic alias '{alias}'.", nameof(alias));
-        aliases.Add(new SemanticAlias(alias));
+        aliases.Add(new SemanticAlias(alias, weight));
     }
 }
 
@@ -153,7 +153,7 @@ public sealed class SemanticEntityBuilder<TModel>
         _name = name;
     }
 
-    public SemanticEntityBuilder<TModel> Alias(string alias)
+    public SemanticEntityBuilder<TModel> Alias(string alias, int? weight = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(alias);
 
@@ -165,7 +165,7 @@ public sealed class SemanticEntityBuilder<TModel>
                 nameof(alias));
         }
 
-        _aliases.Add(new SemanticAlias(alias));
+        _aliases.Add(new SemanticAlias(alias, weight));
         return this;
     }
 
@@ -227,13 +227,13 @@ public sealed class SemanticEntityBuilder<TModel>
         return this;
     }
 
-    public SemanticEntityBuilder<TModel> FieldAlias<TProperty>(Expression<Func<TModel, TProperty>> property, string alias)
+    public SemanticEntityBuilder<TModel> FieldAlias<TProperty>(Expression<Func<TModel, TProperty>> property, string alias, int? weight = null)
     {
         var fieldId = FieldId.Create(_name, GetProperty(property).Name);
         var index = _fields.FindIndex(x => x.Id == fieldId);
         if (index < 0) throw new InvalidOperationException($"Field '{fieldId}' is not declared on '{_name}'.");
         var field = _fields[index];
-        _fields[index] = field with { Aliases = field.EffectiveAliases.Concat([new SemanticAlias(alias)]).ToArray() };
+        _fields[index] = field with { Aliases = field.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray() };
         return this;
     }
 
@@ -245,7 +245,7 @@ public sealed class SemanticEntityBuilder<TModel>
         var index = _fields.FindIndex(x => x.Id == fieldId);
         if (index < 0) throw new InvalidOperationException($"Field '{fieldId}' is not declared on '{_name}'.");
         var field = _fields[index];
-        var merged = field.EffectiveAliases.Concat(aliases.Select(a => new SemanticAlias(a))).ToArray();
+        var merged = field.EffectiveAliases.Concat(aliases.Select(a => new SemanticAlias(a, null))).ToArray();
         _fields[index] = field with { Aliases = merged };
         return this;
     }
@@ -297,12 +297,12 @@ public sealed class SemanticEntityBuilder<TModel>
         return this;
     }
 
-    public SemanticEntityBuilder<TModel> RelationshipAlias(RelationshipId relationshipId, string alias)
+    public SemanticEntityBuilder<TModel> RelationshipAlias(RelationshipId relationshipId, string alias, int? weight = null)
     {
         var index = _relationships.FindIndex(x => x.Id == relationshipId);
         if (index < 0) throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
         var relationship = _relationships[index];
-        _relationships[index] = relationship with { Aliases = relationship.EffectiveAliases.Concat([new SemanticAlias(alias)]).ToArray() };
+        _relationships[index] = relationship with { Aliases = relationship.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray() };
         return this;
     }
 
@@ -313,7 +313,7 @@ public sealed class SemanticEntityBuilder<TModel>
         var index = _relationships.FindIndex(x => x.Id == relationshipId);
         if (index < 0) throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
         var relationship = _relationships[index];
-        var merged = relationship.EffectiveAliases.Concat(aliases.Select(a => new SemanticAlias(a))).ToArray();
+        var merged = relationship.EffectiveAliases.Concat(aliases.Select(a => new SemanticAlias(a, null))).ToArray();
         _relationships[index] = relationship with { Aliases = merged };
         return this;
     }

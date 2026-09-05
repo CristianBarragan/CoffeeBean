@@ -12,7 +12,7 @@ namespace Foundgine.Core.Semantic.Tests;
 /// The walkthrough's Step 3 ("Semantic Model") and Step 5 ("Retrieval") describe
 /// two different jobs that are easy to conflate:
 ///   - the semantic contract declares <em>aliases</em> on an entity
-///     (<see cref="SemanticEntityBuilder{T}.Alias(string)"/>), which
+///     (<see cref="SemanticEntityBuilder{T}.Alias(string, int?)"/>), which
 ///     <see cref="SemanticLexiconProjection"/> folds into every
 ///     <see cref="SemanticLexiconEntry"/> it derives from that entity;
 ///   - a retrieval provider (Elasticsearch, pgvector, or — as here — a fake,

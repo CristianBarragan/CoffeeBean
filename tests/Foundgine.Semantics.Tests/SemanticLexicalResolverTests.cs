@@ -1,4 +1,5 @@
 using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Resolution;
 using System.Threading;
 using Xunit;
@@ -314,9 +315,9 @@ public sealed class SemanticLexicalResolverTests
             .CreateSnapshot();
 
         // A candidate source that simulates a slow/hung provider (network
-        // partition, slow index). retrievalTimeout is checked before each
-        // token's Retrieve call, so a short-enough timeout deterministically
-        // fires on the very first token without needing to race the sleep.
+        // partition, slow index). The source is intentionally slower than the
+        // deadline; the resolver must fail closed even when the provider ignores
+        // cancellation and returns only after the deadline has elapsed.
         var source = new SlowLexicalSource(TimeSpan.FromMilliseconds(20));
         var resolver = new SemanticLexicalResolver(model, source, retrievalTimeout: TimeSpan.FromTicks(1));
 
@@ -325,6 +326,67 @@ public sealed class SemanticLexicalResolverTests
         Assert.Equal(GroundingOutcome.BudgetExceeded, decision.Outcome);
         Assert.Equal(GroundingBudgetLimit.RetrievalTimeout, decision.BudgetLimit);
         Assert.Null(decision.Committed);
+    }
+
+    [Fact]
+    public void Ground_detects_retrieval_timeout_after_a_provider_returns()
+    {
+        var customer = new EntityId(1);
+        var model = new SemanticModelBuilder()
+            .Entity(customer, "Customer", e => e.Identity(new FieldId(101), "Id"))
+            .Build()
+            .Freeze()
+            .CreateSnapshot();
+
+        // This source deliberately ignores cancellation and blocks longer than
+        // the configured retrieval deadline. The resolver must check the shared
+        // deadline after Retrieve returns rather than silently accepting the result.
+        var source = new SlowLexicalSource(TimeSpan.FromMilliseconds(20));
+        var resolver = new SemanticLexicalResolver(model, source, retrievalTimeout: TimeSpan.FromMilliseconds(5));
+
+        var decision = resolver.Ground("customers");
+
+        Assert.Equal(GroundingOutcome.BudgetExceeded, decision.Outcome);
+        Assert.Equal(GroundingBudgetLimit.RetrievalTimeout, decision.BudgetLimit);
+        Assert.Null(decision.Committed);
+    }
+
+    [Fact]
+    public void Ground_uses_one_retrieval_deadline_across_compact_token_fallback()
+    {
+        var customer = new EntityId(1);
+        var model = new SemanticModelBuilder()
+            .Entity(customer, "Customer", e => e.Identity(new FieldId(101), "Id"))
+            .Build()
+            .Freeze()
+            .CreateSnapshot();
+
+        // The invariant under test is that the compact-token fallback shares
+        // the original retrieval deadline; it must not receive a fresh timeout.
+        // Keep the initial token lookup well inside the overall budget, then
+        // make the compact fallback exceed only the *remaining* budget.
+        // A fresh timeout for the fallback would incorrectly allow it to
+        // complete; the shared deadline must reject it.
+        //
+        // The margins here are deliberately wide (well beyond Windows' ~15ms
+        // default thread-timer resolution, which can silently round a
+        // Thread.Sleep(1) up to that much) so the assertions don't flake
+        // depending on OS scheduling: the first lookup sleeps for 0ms (no
+        // rounding risk at all), and the fallback's 500ms is far past any
+        // plausible scheduler jitter on top of the 200ms budget.
+        var source = new SequencedSlowEmptyLexicalSource(
+            TimeSpan.Zero,
+            TimeSpan.FromMilliseconds(500));
+        var resolver = new SemanticLexicalResolver(model, source, retrievalTimeout: TimeSpan.FromMilliseconds(200));
+
+        var decision = resolver.Ground("customer profile");
+
+        Assert.Equal(GroundingOutcome.BudgetExceeded, decision.Outcome);
+        Assert.Equal(GroundingBudgetLimit.RetrievalTimeout, decision.BudgetLimit);
+        Assert.Null(decision.Committed);
+        Assert.Equal(2, source.Requests.Count);
+        Assert.Contains(source.Requests[0].Token, new[] { "customer", "profile" });
+        Assert.Equal("customerprofile", source.Requests[1].Token);
     }
 
     [Fact]
@@ -360,6 +422,121 @@ public sealed class SemanticLexicalResolverTests
         Assert.NotNull(decision.EffectivePartialInterpretationsAtCutoff);
     }
 
+    [Fact]
+    public void Ground_refuses_commit_when_unique_interpretation_has_insufficient_alias_weight()
+    {
+        var customer = new EntityId(1);
+        var model = new SemanticModelBuilder()
+            .Entity(customer, "Customer", e => e
+                .Identity(new FieldId(101), "Id")
+                .Alias("Buyer", 40))
+            .Build()
+            .Freeze()
+            .CreateSnapshot();
+
+        var source = new FakeLexicalSource(
+            new SemanticLexicalCandidate("Buyer", SemanticLexicalCandidateKind.Entity, "Customer", .99,
+                EntityId: customer));
+
+        var decision = new SemanticLexicalResolver(model, source, minimumAliasWeight: 80).Ground("Buyer");
+
+        Assert.Equal(GroundingOutcome.RequiresClarification, decision.Outcome);
+        Assert.Null(decision.Committed);
+        Assert.False(decision.HadCompetingMeanings);
+        Assert.Contains("minimum weight", decision.Reason, StringComparison.OrdinalIgnoreCase);
+        Assert.NotNull(decision.AliasEvidence);
+        Assert.Equal(AliasEvidenceStatus.Insufficient, decision.AliasEvidence!.Status);
+        Assert.Equal(40, decision.AliasEvidence.EntityWeights[customer]);
+    }
+
+    [Fact]
+    public void Ground_commits_unique_interpretation_when_alias_weight_meets_threshold_even_if_retrieval_score_differs()
+    {
+        var customer = new EntityId(1);
+        var model = new SemanticModelBuilder()
+            .Entity(customer, "Customer", e => e
+                .Identity(new FieldId(101), "Id")
+                .Alias("Buyer", 90))
+            .Build()
+            .Freeze()
+            .CreateSnapshot();
+
+        var source = new FakeLexicalSource(
+            new SemanticLexicalCandidate("Buyer", SemanticLexicalCandidateKind.Entity, "Customer", .60,
+                EntityId: customer));
+
+        var decision = new SemanticLexicalResolver(model, source, minimumAliasWeight: 80).Ground("Buyer");
+
+        Assert.Equal(GroundingOutcome.Committed, decision.Outcome);
+        Assert.NotNull(decision.Committed);
+        Assert.Equal(90, decision.Committed!.EffectiveAliasEvidence.EntityWeights[customer]);
+        Assert.Equal(AliasEvidenceStatus.Sufficient, decision.Committed.EffectiveAliasEvidence.Status);
+    }
+
+    [Fact]
+    public void Alias_weight_never_changes_which_interpretation_wins_only_whether_the_winner_may_commit()
+    {
+        // Alias weights are a post-ranking commitment gate, not a retrieval
+        // ranking signal. The same retrieval candidates are therefore evaluated
+        // against two otherwise equivalent contracts: in the first contract
+        // the retrieval winner has weak alias evidence and cannot commit; in the
+        // second it has strong alias evidence and can commit. The lower-scoring
+        // interpretation never gets to win merely because its alias weight is
+        // higher.
+        var customer = new EntityId(1);
+        var vendor = new EntityId(2);
+
+        SemanticContractSnapshot BuildContract(int customerAliasWeight)
+            => new SemanticModelBuilder()
+                .Entity(customer, "Customer", e => e
+                    .Identity(new FieldId(101), "Id")
+                    .Alias("Party", customerAliasWeight))
+                .Entity(vendor, "Vendor", e => e
+                    .Identity(new FieldId(201), "Id"))
+                .Build()
+                .Freeze()
+                .CreateSnapshot();
+
+        var sourceCandidates = new[]
+        {
+            new SemanticLexicalCandidate("Party", SemanticLexicalCandidateKind.Entity, "Customer", .97,
+                EntityId: customer),
+            new SemanticLexicalCandidate("Party", SemanticLexicalCandidateKind.Entity, "Vendor", .40,
+                EntityId: vendor)
+        };
+
+        var weakDecision = new SemanticLexicalResolver(
+            BuildContract(customerAliasWeight: 20),
+            new FakeLexicalSource(sourceCandidates),
+            minimumAliasWeight: 50)
+            .Ground("Party");
+
+        // Retrieval score alone decided the winner: Customer, not Vendor.
+        // The winner then fails the alias-weight commitment gate.
+        Assert.Equal(GroundingOutcome.RequiresClarification, weakDecision.Outcome);
+        Assert.False(weakDecision.HadCompetingMeanings);
+        Assert.Null(weakDecision.Committed);
+        Assert.NotNull(weakDecision.AliasEvidence);
+        Assert.Equal(AliasEvidenceStatus.Insufficient, weakDecision.AliasEvidence!.Status);
+        Assert.Equal(20, weakDecision.AliasEvidence.EntityWeights[customer]);
+        Assert.DoesNotContain(vendor, weakDecision.AliasEvidence.EntityWeights.Keys);
+
+        var strongDecision = new SemanticLexicalResolver(
+            BuildContract(customerAliasWeight: 95),
+            new FakeLexicalSource(sourceCandidates),
+            minimumAliasWeight: 50)
+            .Ground("Party");
+
+        // Increasing the winner's alias weight changes only commitment. It
+        // does not change which interpretation won retrieval ranking.
+        Assert.Equal(GroundingOutcome.Committed, strongDecision.Outcome);
+        Assert.NotNull(strongDecision.Committed);
+        Assert.Equal(customer, strongDecision.Committed!.RootEntity);
+        Assert.Equal(AliasEvidenceStatus.Sufficient, strongDecision.AliasEvidence!.Status);
+        Assert.Equal(95, strongDecision.AliasEvidence.EntityWeights[customer]);
+        Assert.DoesNotContain(vendor, strongDecision.AliasEvidence.EntityWeights.Keys);
+    }
+
     private sealed class Dummy
     {
         public int Id { get; init; }
@@ -377,6 +554,53 @@ public sealed class SemanticLexicalResolverTests
                 .Where(x => request.EffectiveKinds.Contains(x.Kind))
                 .OrderByDescending(x => x.Score)
                 .ToArray();
+        }
+    }
+
+    private sealed class SequencedSlowEmptyLexicalSource(params TimeSpan[] delays) : ISemanticLexicalCandidateSource
+    {
+        public List<SemanticLexicalRequest> Requests { get; } = [];
+
+        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request)
+        {
+            return RetrieveCore(request);
+        }
+
+        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(
+            SemanticLexicalRequest request,
+            CancellationToken cancellationToken)
+        {
+            return RetrieveCore(request);
+        }
+
+        private IReadOnlyList<SemanticLexicalCandidate> RetrieveCore(SemanticLexicalRequest request)
+        {
+            var index = Requests.Count;
+            Requests.Add(request);
+            var delay = delays[Math.Min(index, delays.Length - 1)];
+            Thread.Sleep(delay);
+            return [];
+        }
+    }
+
+    private sealed class SlowEmptyLexicalSource(TimeSpan delay) : ISemanticLexicalCandidateSource
+    {
+        public List<SemanticLexicalRequest> Requests { get; } = [];
+
+        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request)
+        {
+            Requests.Add(request);
+            Thread.Sleep(delay);
+            return [];
+        }
+
+        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(
+            SemanticLexicalRequest request,
+            CancellationToken cancellationToken)
+        {
+            Requests.Add(request);
+            Thread.Sleep(delay);
+            return [];
         }
     }
 

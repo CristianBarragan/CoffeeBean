@@ -1,4 +1,5 @@
 using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
 
 namespace Foundgine.Core.Semantic.Resolution;
 
@@ -16,9 +17,9 @@ public enum GroundingOutcome : byte
     /// the expression maps to).</summary>
     Committed,
 
-    /// <summary>Two or more interpretations are structurally valid and
-    /// disagree on meaning — a different field, value, relationship, or
-    /// root entity. Foundgine must not authorize one of them silently.</summary>
+    /// <summary>Foundgine has a candidate meaning but must not silently commit
+    /// it. This includes competing meanings within the ambiguity margin and,
+    /// when configured, insufficient declared lexical alias evidence.</summary>
     RequiresClarification,
 
     /// <summary>No legal interpretation could be constructed at all.</summary>
@@ -76,7 +77,7 @@ public enum GroundingBudgetLimit : byte
 
 /// <summary>
 /// One candidate meaning for a lexical expression: the token-by-token
-/// mapping onto the semantic contract it commits to, its confidence, and
+/// mapping onto the semantic contract it commits to, its interpretation score, and
 /// a signature that identifies what it means as distinct from how it got
 /// there. Two interpretations that reach the same relationship, field, or
 /// value via different bridging routes share a <see cref="Signature"/>;
@@ -86,15 +87,26 @@ public enum GroundingBudgetLimit : byte
 /// </summary>
 public sealed record GroundingInterpretation(
     IReadOnlyList<SemanticLexicalStep> Steps,
-    double Confidence,
+    double InterpretationScore,
     EntityId RootEntity,
-    string Signature)
+    string Signature,
+    AliasInterpretationEvidence? AliasEvidence = null)
 {
+    /// <summary>Compatibility alias for callers migrating from the pre-2.0.1 name. The value is a heuristic
+    /// interpretation score, not calibrated confidence.</summary>
+    [Obsolete("Use InterpretationScore. This value is a heuristic ranking score, not calibrated confidence.", false)]
+    public double Confidence => InterpretationScore;
+
     /// <summary>Lexical and graph-similarity evidence backing this interpretation,
     /// one group per step, in expression order. This is the evidence a person or
     /// an authorization log can inspect to see *why* this meaning was chosen —
     /// not just that a path existed.</summary>
     public IEnumerable<ResolutionEvidence> LexicalEvidence => Steps.SelectMany(x => x.Candidate.EffectiveEvidence);
+
+    /// <summary>Application-declared alias evidence used by the optional commitment policy.
+    /// Null is reserved for callers constructing the compatibility record directly.</summary>
+    public AliasInterpretationEvidence EffectiveAliasEvidence =>
+        AliasEvidence ?? new(AliasEvidenceStatus.NotApplicable, new Dictionary<EntityId, int>(), new Dictionary<FieldId, int>(), new Dictionary<RelationshipId, int>());
 }
 
 /// <summary>
@@ -118,6 +130,9 @@ public sealed record GroundingInterpretation(
 /// <param name="BudgetLimit">Which resource limit fired, when <param name="Outcome"/>
 /// is <see cref="GroundingOutcome.BudgetExceeded"/>; <see cref="GroundingBudgetLimit.None"/>
 /// otherwise.</param>
+/// <remarks>Competing interpretations are internal semantic results. Applications must not expose their
+/// semantic metadata directly to untrusted callers unless that metadata is disclosure-safe; prefer a
+/// sanitized clarification projection at the runtime/application boundary.</remarks>
 /// <param name="PartialInterpretationsAtCutoff">Populated only when <paramref name="Outcome"/>
 /// is <see cref="GroundingOutcome.BudgetExceeded"/>: whatever semantically distinct
 /// interpretations the search had already constructed at the moment the limit fired.
@@ -126,6 +141,10 @@ public sealed record GroundingInterpretation(
 /// never treated as authorizable: <param name="Committed"/> stays null no matter how many
 /// entries it has, and nothing in Foundgine executes against it <param name="CompetingInterpretations"/>
 /// <param name="Reason"/><param name="RootCandidates"/>.</param>
+/// <param name="AliasEvidence">Application-declared alias evidence backing the leading
+/// interpretation, when <paramref name="Outcome"/> is <see cref="GroundingOutcome.Committed"/>
+/// or <see cref="GroundingOutcome.RequiresClarification"/> due to insufficient weight. Null
+/// when the optional alias-weight commitment policy was not configured or did not apply.</param>
 public sealed record GroundingDecision(
     string Expression,
     GroundingOutcome Outcome,
@@ -134,12 +153,13 @@ public sealed record GroundingDecision(
     string Reason,
     IReadOnlyList<SemanticLexicalCandidate> RootCandidates,
     GroundingBudgetLimit BudgetLimit = GroundingBudgetLimit.None,
-    IReadOnlyList<GroundingInterpretation>? PartialInterpretationsAtCutoff = null)
+    IReadOnlyList<GroundingInterpretation>? PartialInterpretationsAtCutoff = null,
+    AliasInterpretationEvidence? AliasEvidence = null)
 {
     /// <summary>True when more than one semantically distinct interpretation was
     /// structurally legal, regardless of whether Foundgine still committed to one
-    /// (because one interpretation dominated on confidence) or refused to
-    /// (because two or more remained materially tied).</summary>
+    /// (because one interpretation dominated on interpretation score) or refused to
+    /// (because two or more remained within the ambiguity margin).</summary>
     public bool HadCompetingMeanings => CompetingInterpretations.Count > 0;
 
     /// <summary>Null-safe accessor for <see cref="PartialInterpretationsAtCutoff"/>.</summary>

@@ -45,10 +45,10 @@ public sealed record Warehouse([property: FoundgineField("Id", Id = 1, IsPrimary
 
 [SemanticEntity]
 [FoundgineEntity("Supplier", StorageName = "suppliers", Id = 1003)]
-[FoundgineAlias("Vendor")]
-[FoundgineAlias("Seller")]
+[FoundgineAlias("Vendor", Weight = 95)]
+[FoundgineAlias("Seller", Weight = 90)]
 public sealed record Supplier([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] SupplierId Id, string Name,
-    [property: FoundgineSemanticDimension("country"), FoundgineField(Index = true), FoundgineAlias("State")] string Country,
+    [property: FoundgineSemanticDimension("country"), FoundgineField(Index = true), FoundgineAlias("State", Weight = 85)] string Country,
     decimal RiskScore, [property: FoundgineSemanticDimension("tenant")] string TenantId)
 {
     [FoundgineRelationship(typeof(SupplierCertification), "SupplierId", "Id", Name = "certifications")]
@@ -111,20 +111,22 @@ public enum PurchaseOrderStatus { Open, PartiallyReceived, Cancelled, Closed }
 
 [SemanticEntity]
 [FoundgineEntity("PurchaseOrder", StorageName = "purchase_orders", Id = 1008)]
-[FoundgineAlias(["PO", "POs"])]
-[FoundgineAlias(["Buy", "Buys"])]
+[FoundgineAlias("PO", Weight = 100)]
+[FoundgineAlias("POs", Weight = 95)]
+[FoundgineAlias("Buy", Weight = 90)]
+[FoundgineAlias("Buys", Weight = 85)]
 public sealed record PurchaseOrder([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] PurchaseOrderId Id,
     [property: FoundgineField(Index = true)] SupplierId SupplierId,
     [property: FoundgineField(Index = true)] WarehouseId WarehouseId,
     PurchaseOrderStatus Status, DateOnly OrderedOn,
-    [property: FoundgineAlias("DueDate")] DateOnly ExpectedArrival)
+    [property: FoundgineAlias("DueDate", Weight = 90)] DateOnly ExpectedArrival)
 {
     [FoundgineRelationship(typeof(PurchaseOrderLine), "PurchaseOrderId", "Id", Name = "lines")]
     public IReadOnlyList<PurchaseOrderLine> Lines { get; init; } = [];
     [FoundgineRelationship(typeof(Shipment), "PurchaseOrderId", "Id", Name = "shipments")]
     public IReadOnlyList<Shipment> Shipments { get; init; } = [];
     [FoundgineRelationship(typeof(Supplier), "SupplierId", "Id", Name = "supplier")]
-    [FoundgineAlias("vendor")]
+    [FoundgineAlias("vendor", Weight = 85)]
     public Supplier Supplier { get; init; } = null!;
 }
 

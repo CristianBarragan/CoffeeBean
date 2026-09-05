@@ -20,15 +20,17 @@ public sealed class SemanticLexicalResolver
     private readonly int _maxPathsExplored;
     private readonly TimeSpan _timeout;
     private readonly TimeSpan _retrievalTimeout;
+    private readonly int? _minimumAliasWeight;
 
     /// <param name="contract">The frozen semantic contract to resolve against.</param>
     /// <param name="source">The candidate retrieval boundary (Elasticsearch, pgvector, or a composite).</param>
-    /// <param name="candidateLimit">Maximum candidates retrieved per token, per semantic kind. Bounds the
-    /// branching factor of the search at each token.</param>
+    /// <param name="candidateLimit">Maximum candidates retained per token across all semantic kinds. The
+    /// candidate source is queried once per token and the resulting candidates are normalized and then
+    /// truncated to this total limit before graph search.</param>
     /// <param name="maxBridgeHops">Maximum relationship hops the bridging BFS will traverse to connect a
     /// candidate back to the current entity. Bounds graph depth per transition.</param>
-    /// <param name="ambiguityThreshold">Confidence gap below which two competing interpretations are
-    /// treated as tied and force <see cref="GroundingOutcome.RequiresClarification"/>.</param>
+    /// <param name="ambiguityThreshold">Interpretation-score gap below which two competing interpretations
+    /// are considered within the ambiguity margin and force <see cref="GroundingOutcome.RequiresClarification"/>.</param>
     /// <param name="maxTokens">Maximum tokens an expression may contain. Checked before any retrieval or
     /// search runs, since token count is the dominant term in the search's worst-case branching
     /// (<c>candidateLimit ^ tokenCount</c>, before graph-legality pruning). Expressions over this limit
@@ -43,6 +45,12 @@ public sealed class SemanticLexicalResolver
     /// see cref="Ground" call, independent of the node-count budget. This clock starts only after
     /// candidate retrieval has completed; see <paramref name="retrievalTimeout"/> for the stage before it.
     /// Defaults to 250ms; pass a longer value for large contracts.</param>
+    /// <param name="minimumAliasWeight">Optional minimum declared alias weight required to commit an
+    /// interpretation. When null, weighted aliases remain diagnostic evidence only. When configured,
+    /// retrieval scores still rank interpretations, but a uniquely selected interpretation containing
+    /// a declared alias below this threshold cannot be committed and returns
+    /// <see cref="GroundingOutcome.RequiresClarification"/>. This is a commitment policy, not an
+    /// authorization decision.</param>
     /// <param name="retrievalTimeout">Wall-clock ceiling for candidate retrieval across all tokens in one
     /// <see>
     ///     <cref>Ground</cref>
@@ -52,7 +60,7 @@ public sealed class SemanticLexicalResolver
     /// starts counting, so without this bound a slow or hung candidate source could block <see>
     ///         <cref>Ground</cref>
     ///     </see>
-    ///     indefinitely regardless of how tightly <paramref name="maxPathsExplored"/> or <paramref name="timeout"/>
+    ///     indefinitely regardless of how aggressively <paramref name="maxPathsExplored"/> or <paramref name="timeout"/>
     /// are configured. Defaults to 2 seconds — looser than the in-memory search timeout, since retrieval
     /// legitimately involves network or database I/O.</param>
     /// <remarks>
@@ -73,7 +81,8 @@ public sealed class SemanticLexicalResolver
         int maxTokens = 32,
         int maxPathsExplored = 5000,
         TimeSpan? timeout = null,
-        TimeSpan? retrievalTimeout = null)
+        TimeSpan? retrievalTimeout = null,
+        int? minimumAliasWeight = null)
     {
         _contract = contract ?? throw new ArgumentNullException(nameof(contract));
         _source = source ?? throw new ArgumentNullException(nameof(source));
@@ -84,6 +93,7 @@ public sealed class SemanticLexicalResolver
         if (maxPathsExplored is < 1 or > 1_000_000) throw new ArgumentOutOfRangeException(nameof(maxPathsExplored));
         if (timeout is { } t && t <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeout));
         if (retrievalTimeout is { } rt && rt <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(retrievalTimeout));
+        if (minimumAliasWeight is { } maw && maw is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(minimumAliasWeight));
         _candidateLimit = candidateLimit;
         _maxBridgeHops = maxBridgeHops;
         _ambiguityThreshold = ambiguityThreshold;
@@ -91,6 +101,7 @@ public sealed class SemanticLexicalResolver
         _maxPathsExplored = maxPathsExplored;
         _timeout = timeout ?? TimeSpan.FromMilliseconds(250);
         _retrievalTimeout = retrievalTimeout ?? TimeSpan.FromSeconds(2);
+        _minimumAliasWeight = minimumAliasWeight;
     }
 
     /// <summary>
@@ -122,7 +133,7 @@ public sealed class SemanticLexicalResolver
         return new(
             outcome,
             leading.Steps,
-            leading.Confidence,
+            leading.InterpretationScore,
             leading.RootEntity,
             decision.Reason,
             decision.RootCandidates);
@@ -136,8 +147,8 @@ public sealed class SemanticLexicalResolver
     /// route is a retrieval/graph artifact, not part of what the user meant).
     /// Interpretations that map a token onto a different field, value,
     /// relationship, or root entity are treated as competing meanings: if two
-    /// or more of those remain within <c>ambiguityThreshold</c> confidence of
-    /// each other, Foundgine reports <see cref="GroundingOutcome.RequiresClarification"/>
+    /// or more of those remain within <c>ambiguityThreshold</c> interpretation-score
+    /// separation of each other, Foundgine reports <see cref="GroundingOutcome.RequiresClarification"/>
     /// instead of committing to whichever one happened to score highest.
     /// </summary>
     public GroundingDecision Ground(string expression) => Ground(expression, CancellationToken.None);
@@ -165,9 +176,13 @@ public sealed class SemanticLexicalResolver
                 GroundingBudgetLimit.MaxTokens);
 
         IReadOnlyDictionary<string, IReadOnlyList<SemanticLexicalCandidate>> candidateSets;
+        using var retrievalCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        retrievalCts.CancelAfter(_retrievalTimeout);
+        var retrievalStopwatch = System.Diagnostics.Stopwatch.StartNew();
+
         try
         {
-            candidateSets = GetCandidates(tokens, cancellationToken);
+            candidateSets = GetCandidates(tokens, retrievalCts.Token, retrievalStopwatch, stopOnFirstEmpty: true);
         }
         catch (GroundingRetrievalTimeoutException ex)
         {
@@ -180,7 +195,7 @@ public sealed class SemanticLexicalResolver
                 [],
                 GroundingBudgetLimit.RetrievalTimeout);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             return new(
                 expression,
@@ -190,6 +205,17 @@ public sealed class SemanticLexicalResolver
                 "Candidate retrieval was cancelled before the graph search began.",
                 [],
                 GroundingBudgetLimit.Cancelled);
+        }
+        catch (OperationCanceledException)
+        {
+            return new(
+                expression,
+                GroundingOutcome.BudgetExceeded,
+                null,
+                [],
+                $"Candidate retrieval exceeded the configured retrieval timeout ({retrievalStopwatch.Elapsed.TotalMilliseconds:0}ms). Grounding was refused before the graph search began.",
+                [],
+                GroundingBudgetLimit.RetrievalTimeout);
         }
 
         if (candidateSets.Values.Any(x => x.Count == 0))
@@ -206,7 +232,7 @@ public sealed class SemanticLexicalResolver
                 var compactToken = string.Concat(tokens);
                 try
                 {
-                    var compactCandidates = GetCandidates([compactToken], cancellationToken);
+                    var compactCandidates = GetCandidates([compactToken], retrievalCts.Token, retrievalStopwatch);
                     if (compactCandidates[compactToken].Count > 0)
                     {
                         tokens = [compactToken];
@@ -224,7 +250,7 @@ public sealed class SemanticLexicalResolver
                         [],
                         GroundingBudgetLimit.RetrievalTimeout);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
                     return new(
                         expression,
@@ -235,11 +261,28 @@ public sealed class SemanticLexicalResolver
                         [],
                         GroundingBudgetLimit.Cancelled);
                 }
+                catch (OperationCanceledException)
+                {
+                    return new(
+                        expression,
+                        GroundingOutcome.BudgetExceeded,
+                        null,
+                        [],
+                        $"Candidate retrieval exceeded the configured retrieval timeout ({retrievalStopwatch.Elapsed.TotalMilliseconds:0}ms). Grounding was refused before the graph search began.",
+                        [],
+                        GroundingBudgetLimit.RetrievalTimeout);
+                }
             }
 
-            if (candidateSets.Values.Any(x => x.Count == 0))
+            if (candidateSets.Values.Any(x => x.Count == 0) || tokens.Any(x => !candidateSets.ContainsKey(x)))
             {
-                var missing = tokens.First(x => candidateSets[x].Count == 0);
+                // With stopOnFirstEmpty, a failed compact-token fallback can
+                // leave candidateSets holding only the tokens queried before
+                // the empty one that triggered the fallback attempt — later
+                // tokens were never looked up at all. Treat an unqueried
+                // token the same as an empty one rather than indexing the
+                // dictionary directly, which would throw for those tokens.
+                var missing = tokens.First(x => !candidateSets.TryGetValue(x, out var c) || c.Count == 0);
                 return new(
                     expression,
                     GroundingOutcome.Unresolved,
@@ -277,10 +320,10 @@ public sealed class SemanticLexicalResolver
         if (budget.Exceeded)
         {
             var partial = rawPaths
-                .Select(p => new GroundingInterpretation(p.Steps, p.Confidence, p.RootEntity!.Value, Signature(p.Steps)))
+                .Select(p => CreateInterpretation(p))
                 .GroupBy(x => x.Signature)
-                .Select(g => g.OrderByDescending(x => x.Confidence).First())
-                .OrderByDescending(x => x.Confidence)
+                .Select(g => g.OrderByDescending(x => x.InterpretationScore).First())
+                .OrderByDescending(x => x.InterpretationScore)
                 .ToArray();
 
             return new(
@@ -310,19 +353,39 @@ public sealed class SemanticLexicalResolver
         // meanings; they are alternate evidence for the same interpretation,
         // so surfacing them as "ambiguity" would just be retrieval noise.
         var interpretations = rawPaths
-            .Select(p => new GroundingInterpretation(p.Steps, p.Confidence, p.RootEntity!.Value, Signature(p.Steps)))
+            .Select(p => CreateInterpretation(p))
             .GroupBy(x => x.Signature)
-            .Select(g => g.OrderByDescending(x => x.Confidence).First())
-            .OrderByDescending(x => x.Confidence)
+            .Select(g => g.OrderByDescending(x => x.InterpretationScore).First())
+            .OrderByDescending(x => x.InterpretationScore)
             .ThenBy(x => x.RootEntity.Value)
             .ToArray();
 
         var best = interpretations[0];
-        var tiedMeanings = interpretations
-            .Where(x => Math.Abs(x.Confidence - best.Confidence) < _ambiguityThreshold)
+
+        // Retrieval/graph score answers "which interpretation ranks first".
+        // Alias weight answers a different policy question: "is that selected
+        // meaning sufficiently supported by application-declared lexical
+        // evidence to commit?" Weight never changes the ranking itself.
+        if (_minimumAliasWeight is { } minimumAliasWeight &&
+            best.EffectiveAliasEvidence.Status == AliasEvidenceStatus.Insufficient)
+        {
+            return new(
+                expression,
+                GroundingOutcome.RequiresClarification,
+                null,
+                [],
+                $"The leading interpretation contains declared lexical alias evidence below the configured minimum weight of {minimumAliasWeight}. Foundgine will not commit the interpretation automatically.",
+                roots,
+                GroundingBudgetLimit.None,
+                null,
+                best.EffectiveAliasEvidence);
+        }
+
+        var withinAmbiguityMargin = interpretations
+            .Where(x => Math.Abs(x.InterpretationScore - best.InterpretationScore) < _ambiguityThreshold)
             .ToArray();
 
-        if (tiedMeanings.Length <= 1)
+        if (withinAmbiguityMargin.Length <= 1)
         {
             return new(
                 expression,
@@ -332,16 +395,37 @@ public sealed class SemanticLexicalResolver
                 interpretations.Length > 1
                     ? "One interpretation scored clearly above the others; the remaining interpretations are retained as rejected alternatives, not discarded."
                     : "A single semantic interpretation was constructed and no competing meaning was found.",
-                roots);
+                roots,
+                GroundingBudgetLimit.None,
+                null,
+                best.EffectiveAliasEvidence);
         }
 
         return new(
             expression,
             GroundingOutcome.RequiresClarification,
             null,
-            tiedMeanings,
-            $"{tiedMeanings.Length} interpretations map these tokens onto different fields, values, relationships, or entities and are within {_ambiguityThreshold:P0} confidence of each other. Committing to the top-ranked one would risk a perfectly authorized misunderstanding.",
-            roots);
+            withinAmbiguityMargin,
+            $"{withinAmbiguityMargin.Length} interpretations map these tokens onto different fields, values, relationships, or entities and are within {_ambiguityThreshold:P0} interpretation-score separation of each other. Committing to the top-ranked one would risk a perfectly authorized misunderstanding.",
+            roots,
+            GroundingBudgetLimit.None,
+            null,
+            best.EffectiveAliasEvidence);
+    }
+
+    private GroundingInterpretation CreateInterpretation(SemanticLexicalResolution resolution)
+    {
+        var aliasEvidence = AliasWeightEvidenceGate.Evaluate(
+            _contract,
+            _minimumAliasWeight ?? 1,
+            resolution);
+
+        return new GroundingInterpretation(
+            resolution.Steps,
+            resolution.Confidence,
+            resolution.RootEntity!.Value,
+            Signature(resolution.Steps),
+            AliasInterpretationEvidence.From(aliasEvidence));
     }
 
     /// <summary>Identifies what an interpretation means — the ordered mapping
@@ -391,7 +475,8 @@ public sealed class SemanticLexicalResolver
         if (string.IsNullOrWhiteSpace(expression))
             throw new ArgumentException("Lexical expression cannot be empty.", nameof(expression));
 
-        return GetCandidates(Tokenize(expression), CancellationToken.None);
+        using var retrievalCts = new CancellationTokenSource(_retrievalTimeout);
+        return GetCandidates(Tokenize(expression), retrievalCts.Token, System.Diagnostics.Stopwatch.StartNew());
     }
 
     /// <summary>Retrieves candidates for every token, bounded by
@@ -401,24 +486,46 @@ public sealed class SemanticLexicalResolver
     /// or hung candidate source could block <see>
     ///     <cref>Ground</cref>
     /// </see>
-    /// indefinitely
-    /// regardless of how the search-time limits are configured.</summary>
+    /// indefinitely regardless of how the search-time limits are configured. The resolver shares one
+    /// retrieval deadline across all token and compact-fallback lookups.</summary>
+    /// <param name="tokens">The lexical tokens to retrieve candidates for.</param>
+    /// <param name="cancellationToken">Token observed between and after individual retrieval calls.</param>
+    /// <param name="stopwatch">The shared clock the retrieval deadline is measured against.</param>
+    /// <param name="stopOnFirstEmpty">
+    /// When <c>true</c>, retrieval stops as soon as any token comes back with
+    /// no candidates instead of continuing through the remaining tokens. The
+    /// caller (the initial per-token pass in <see>
+    ///     <cref>Ground</cref>
+    /// </see>
+    /// ) falls back to a single compact-token lookup whenever *any* token is
+    /// empty, so querying the rest of the tokens individually first would
+    /// only spend shared retrieval budget on results that are about to be
+    /// discarded — budget the compact-token fallback needs instead.
+    /// </param>
     private IReadOnlyDictionary<string, IReadOnlyList<SemanticLexicalCandidate>> GetCandidates(
         IReadOnlyList<string> tokens,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        System.Diagnostics.Stopwatch stopwatch,
+        bool stopOnFirstEmpty = false)
     {
         var result = new Dictionary<string, IReadOnlyList<SemanticLexicalCandidate>>(StringComparer.OrdinalIgnoreCase);
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         foreach (var token in tokens)
         {
-            if (stopwatch.Elapsed > _retrievalTimeout)
+            if (stopwatch.Elapsed >= _retrievalTimeout)
                 throw new GroundingRetrievalTimeoutException(token, stopwatch.Elapsed);
 
             cancellationToken.ThrowIfCancellationRequested();
 
             var candidates = _source
-                .Retrieve(new SemanticLexicalRequest(token, Limit: _candidateLimit), cancellationToken)
+                .Retrieve(new SemanticLexicalRequest(token, Limit: _candidateLimit), cancellationToken);
+
+            // A synchronous provider may ignore the cancellation token. Detect
+            // that case at the same deadline boundary immediately after it returns.
+            if (stopwatch.Elapsed >= _retrievalTimeout)
+                throw new GroundingRetrievalTimeoutException(token, stopwatch.Elapsed);
+
+            candidates = candidates
                 .Where(x => x.Score >= 0)
                 // Retrieval providers may legitimately index the same declared
                 // entity more than once (for example the semantic Entity and
@@ -456,6 +563,9 @@ public sealed class SemanticLexicalResolver
                 candidates = exactEntityRoots;
 
             result[token] = candidates;
+
+            if (stopOnFirstEmpty && candidates.Count == 0)
+                break;
         }
 
         return result;
@@ -473,13 +583,13 @@ public sealed class SemanticLexicalResolver
 
         if (index == tokens.Count)
         {
-            var confidence = state.Steps.Count == 0
+            var interpretationScore = state.Steps.Count == 0
                 ? 0
                 : state.Steps.Select(x => x.Candidate.Score).Average() * state.GraphFactor;
             results.Add(new(
                 SemanticLexicalResolutionOutcome.Resolved,
                 state.Steps,
-                Math.Clamp(confidence, 0, 1),
+                Math.Clamp(interpretationScore, 0, 1),
                 state.RootEntity,
                 "A complete lexical path was grounded against the semantic contract."));
             return;

@@ -260,7 +260,7 @@ public sealed class SemanticModelBuilder
         {
             if (!result.Any(existing =>
                     string.Equals(existing.Name, alias.Name, StringComparison.OrdinalIgnoreCase)))
-                result.Add(new SemanticAlias(alias.Name));
+                result.Add(new SemanticAlias(alias.Name, alias.Weight));
         }
         return result.ToArray();
     }

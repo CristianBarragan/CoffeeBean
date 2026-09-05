@@ -23,6 +23,26 @@ public sealed class FoundgineAliasAttribute : Attribute
     /// <summary>The declared alias names. Contains a single entry for the common
     /// <c>[FoundgineAlias("name")]</c> form.</summary>
     public string[] Names { get; }
+
+    private int _weight;
+
+    /// <summary>Optional evidence weight from 1 to 100 (inclusive),
+    /// applied to every name declared on this attribute instance. Stack the
+    /// attribute once per name to give different names different weights.
+    /// Leave unset (0) to declare no weight.</summary>
+    public int Weight
+    {
+        get => _weight;
+        init
+        {
+            if (value is < 1 or > 100)
+                throw new ArgumentOutOfRangeException(
+                    nameof(Weight),
+                    value,
+                    "Weight must be between 1 and 100 (inclusive) when specified.");
+            _weight = value;
+        }
+    }
 }
 
 /// <summary>Marks an application model for compile-time semantic metadata generation.
@@ -33,6 +53,29 @@ public sealed class FoundgineModelAttribute : Attribute
     public FoundgineModelAttribute(string? name = null) => Name = name;
     public string? Name { get; }
     public ulong Id { get; init; }
+
+    private int _minimumWeight;
+
+    /// <summary>Optional minimum alias-weight requirement from 1 to 100
+    /// (inclusive) for this model's mapped entities. When set, each mapped
+    /// entity's own average alias weight must meet this minimum, and the
+    /// average across entities must also meet it, or the weighted alias
+    /// evidence is treated as inconclusive (see
+    /// <see cref="Foundgine.Core.Semantic.AliasWeightEvidenceGate"/>). Leave
+    /// unset (0) to declare no minimum.</summary>
+    public int MinimumWeight
+    {
+        get => _minimumWeight;
+        init
+        {
+            if (value is < 1 or > 100)
+                throw new ArgumentOutOfRangeException(
+                    nameof(MinimumWeight),
+                    value,
+                    "MinimumWeight must be between 1 and 100 (inclusive) when specified.");
+            _minimumWeight = value;
+        }
+    }
 }
 
 /// <summary>Overrides generated field metadata for a scalar entity property.</summary>

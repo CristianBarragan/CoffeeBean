@@ -30,7 +30,7 @@ public static class SemanticModelDiscovery
                     field.Id,
                     field.Name,
                     field.ClrType,
-                    Aliases: field.Aliases?.Select(a => new SemanticAlias(a)).ToArray()))
+                    Aliases: field.Aliases?.Select(a => new SemanticAlias(a.Name, a.Weight)).ToArray()))
                 .ToArray();
 
             var primary = item.PrimaryKey is null
@@ -50,7 +50,7 @@ public static class SemanticModelDiscovery
                 new Foundgine.Core.Semantic.SemanticFieldIdentity(primary.Id, primary.Name),
                 fields,
                 [],
-                item.Aliases?.Select(a => new SemanticAlias(a)).ToArray())
+                item.Aliases?.Select(a => new SemanticAlias(a.Name, a.Weight)).ToArray())
             {
                 ModelType = item.ClrType
             };
@@ -72,7 +72,7 @@ public static class SemanticModelDiscovery
                 relationship.Name,
                 relationship.Target,
                 relationship.IsCollection ? RelationshipCardinality.Many : RelationshipCardinality.One,
-                relationship.Aliases?.Select(a => new SemanticAlias(a)).ToArray()));
+                relationship.Aliases?.Select(a => new SemanticAlias(a.Name, a.Weight)).ToArray()));
 
             entities[relationship.Source] = source with
             {

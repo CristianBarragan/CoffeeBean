@@ -10,6 +10,9 @@ tested against *this* sample's real generated schema):
 `docs/LEXICAL-GROUNDING.md` and `docs/GROUNDING-DECISIONS.md` at the repo
 root.
 
+
+> **Retrieval deadline case studies:** `Semantic/Tests/Grounding/SupplyChainGroundingRetrievalDeadlineTests.cs` covers three distinct failure modes: deadline exhausted before a provider call, a provider returning after the deadline, and a compact-token fallback consuming the remaining portion of the same shared deadline.
+
 ## The concept: grounding, and why it's a distinct step from planning
 
 "Grounding" is the step where a natural-language phrase from an agent or
@@ -27,6 +30,17 @@ The important design decision, stated directly in the doc comments across
 this test suite: **there is no fourth outcome that means "picked the
 best-scored guess."** If grounding can't *prove* a single interpretation,
 it refuses — every outcome other than `Committed` returns `Committed = null`.
+
+## Weighted alias evidence is a separate signal
+
+The same semantic contract also demonstrates optional alias weights in
+`Tests/Grounding/SupplyChainAliasWeightTests.cs`. Entity, field, and
+relationship aliases can carry a 1–100 application-declared weight. The
+`AliasWeightEvidenceGate` checks the weighted evidence against a configured
+minimum and reports inconclusive evidence when a weighted entity is below the
+threshold. It does **not** alter the alias identity, replace retrieval scores,
+or grant authorization. This keeps lexical evidence and authority as separate
+boundaries.
 
 ## Case 1: genuine ambiguity, not just multiple candidates
 
