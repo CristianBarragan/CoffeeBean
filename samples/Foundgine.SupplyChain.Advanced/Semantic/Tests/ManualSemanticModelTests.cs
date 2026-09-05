@@ -30,6 +30,7 @@ public sealed class ManualSemanticModelTests
         var component = model.Get(ManualSupplyChainSemanticModel.ProductComponent);
 
         Assert.Contains(product.EffectiveAliases, a => a.Name == "Item");
+        Assert.Contains(product.EffectiveAliases, a => a.Name == "Item2");
 
         var sku = product.Fields.Single(f => f.Name == "Sku");
         Assert.Contains(sku.EffectiveAliases, a => a.Name == "PartNumber");

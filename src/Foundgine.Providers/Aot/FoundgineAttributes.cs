@@ -10,13 +10,19 @@ public sealed class FoundgineEntityAttribute : Attribute
     public ulong Id { get; init; }
 }
 
-/// <summary>Declares a historical semantic name for an AOT entity, field, or relationship.
-/// Aliases resolve to the canonical declaration and never participate in identity generation.</summary>
+/// <summary>Declares one or more historical/synonymous semantic names for an AOT entity,
+/// field, or relationship. Aliases resolve to the canonical declaration and never
+/// participate in identity generation. Multiple names can be declared in a single
+/// application - <c>[FoundgineAlias("aa", "bb")]</c> or <c>[FoundgineAlias(["aa", "bb"])]</c> -
+/// and/or by stacking the attribute multiple times; both forms are merged.</summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property, AllowMultiple = true, Inherited = false)]
 public sealed class FoundgineAliasAttribute : Attribute
 {
-    public FoundgineAliasAttribute(string name) => Name = name;
-    public string Name { get; }
+    public FoundgineAliasAttribute(params string[] names) => Names = names;
+
+    /// <summary>The declared alias names. Contains a single entry for the common
+    /// <c>[FoundgineAlias("name")]</c> form.</summary>
+    public string[] Names { get; }
 }
 
 /// <summary>Marks an application model for compile-time semantic metadata generation.

@@ -32,7 +32,7 @@ public static class ManualSupplyChainSemanticModel
             // Only Product is manually authored here. The complete Product
             // schema in the running application still comes from metadata.
             .Entity<D.Product>(Product, "Product", e => e
-                .Alias("Item")
+                .Aliases("Item", "Item2")
                 .Identity(x => x.Id)
                 .Field(x => x.Sku)
                 .FieldAlias(x => x.Sku, "PartNumber")

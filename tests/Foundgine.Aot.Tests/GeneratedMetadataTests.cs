@@ -180,6 +180,23 @@ public sealed class IdentityRegressionChild
     public int ParentId { get; init; }
 }
 
+// Exercises FoundgineAliasAttribute's params/collection-expression form
+// (multiple names in a single application) alongside the classic stacked
+// form, both on the class and on a member, including a duplicate across
+// the two forms to confirm the generator dedupes case-insensitively.
+[FoundgineEntity(Id = 40, StorageName = "sales_orders")]
+[FoundgineAlias(["SalesOrder", "Order"])]
+[FoundgineAlias("order")]
+public sealed class SalesOrderFixture
+{
+    [FoundgineField(Id = 1, StorageName = "id", IsPrimaryKey = true)]
+    public int Id { get; init; }
+
+    [FoundgineField(Id = 2, StorageName = "status")]
+    [FoundgineAlias("State", "Stage")]
+    public string Status { get; init; } = string.Empty;
+}
+
 public sealed class GeneratedMetadataTests
 {
     [Fact]
@@ -236,6 +253,29 @@ public sealed class GeneratedMetadataTests
 
         var relationship = GeneratedMetadata.Registry.GetRelationship(new RelationshipId(1));
         Assert.Equal(["CustomerAccounts"], relationship.Aliases);
+    }
+
+    [Fact]
+    public void FoundgineAlias_accepts_multiple_names_in_a_single_application()
+    {
+        var entity = GeneratedMetadata.Registry.GetEntity(new EntityId(40));
+
+        // ["SalesOrder", "Order"] declared together, plus a separately
+        // stacked [FoundgineAlias("order")] that only differs by case -
+        // the generator must merge both forms and dedupe case-insensitively,
+        // keeping first-seen order.
+        Assert.Equal(["SalesOrder", "Order"], entity.Aliases);
+
+        var status = entity.EffectiveFields.Single(x => x.Name == "Status");
+        Assert.Equal(["State", "Stage"], status.Aliases);
+
+        // Multi-name aliases resolve through SemanticModelDiscovery exactly
+        // like the classic single-name form.
+        var model = GeneratedMetadata.Registry.Discover();
+        var resolved = model.ResolveEntity("Order");
+        Assert.Equal(entity.EntityId, resolved.Id);
+        Assert.Contains(resolved.EffectiveAliases, a => a.Name == "SalesOrder");
+        Assert.Contains(resolved.Fields.Single(x => x.Name == "Status").EffectiveAliases, a => a.Name == "Stage");
     }
 
     [Fact]

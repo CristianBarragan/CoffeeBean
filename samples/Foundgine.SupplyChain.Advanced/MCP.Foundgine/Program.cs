@@ -417,10 +417,17 @@ public sealed class SupplyChainExecutionService
     // candidates + evidence) before anything downstream may execute.
     //
     // Outcomes, none of which are errors:
-    //   - "not_found": no supplier exists for the state at all. Nothing to
-    //     resolve, so nothing is authorized or executed.
-    //   - "clarification_needed": two or more suppliers are tied for "top".
-    //     Resolution stops here. It does not guess, does not authorize, and
+    //   - "not_found": no supplier exists for the state at all, or a
+    //     supplierName was given that doesn't match any candidate exactly
+    //     AND doesn't turn up anything via approximate retrieval either
+    //     (see TryApproximateSupplierMatchAsync). Nothing to resolve, so
+    //     nothing is authorized or executed.
+    //   - "clarification_needed": either two or more suppliers are tied for
+    //     "top" (evidence.strategy = "relational"), or a supplierName that
+    //     missed an exact match turned up look-alikes via Fuzzy/FullText/
+    //     Search retrieval (evidence.strategy = "fuzzy"/"fulltext"/
+    //     "search") - a "did you mean" rather than a tie. Either way,
+    //     resolution stops here. It does not guess, does not authorize, and
     //     does not execute the purchase-order query - it hands the ranked
     //     candidates back to the caller and asks for a more specific intent
     //     (a supplier name, a tiebreak criterion, a narrower region).
@@ -472,11 +479,49 @@ public sealed class SupplyChainExecutionService
 
             if (named is null)
             {
+                // Exact match failed. Before answering not_found, ask
+                // whether the name is only slightly off - a typo, different
+                // word order, a partial phrase - via the same approximate
+                // retrieval strategies PostgresRetrievalCandidateSource
+                // exposes as RetrievalStrategy.Fuzzy/FullText/Search. A hit
+                // here is evidence for a "did you mean" clarification, not
+                // an auto-resolve: it still hands candidates back to the
+                // caller instead of binding the graph to a guess.
+                var approx = await TryApproximateSupplierMatchAsync(c, state, supplierName, ct);
+
+                if (approx is { Matches.Count: > 0 })
+                {
+                    return new
+                    {
+                        status = "clarification_needed",
+                        state,
+                        reason = $"'{supplierName}' does not exactly match any supplier in state '{state}', " +
+                                 $"but {approx.Value.Matches.Count} looked similar via {approx.Value.Strategy} retrieval.",
+                        candidates = approx.Value.Matches.Select(x => new
+                        {
+                            id = x["supplier_id"],
+                            name = x["supplier_name"],
+                            state = x["state"],
+                            totalOrderValue = x["total_order_value"],
+                            score = x["score"]
+                        }),
+                        evidence = new { strategy = approx.Value.Strategy, matchedAgainst = supplierName, tie = false },
+                        suggestedRefinements = new[]
+                        {
+                            "Re-call with the exact supplierName from the candidates above.",
+                            "Narrow to a more specific region than the state."
+                        }
+                    };
+                }
+
                 return new
                 {
                     status = "not_found",
                     state,
                     reason = $"'{supplierName}' does not match any supplier in state '{state}'.",
+                    strategiesTried = PgSearchEnabled
+                        ? new[] { "exact", "fuzzy", "fulltext", "search" }
+                        : new[] { "exact", "fuzzy", "fulltext" },
                     candidates = candidates.Select(x => new { id = x["supplier_id"], name = x["supplier_name"], state = x["state"], totalOrderValue = x["total_order_value"] })
                 };
             }
@@ -770,6 +815,130 @@ public sealed class SupplyChainExecutionService
         semantic = p.Root,
         execution = ExecutionIRCompiler.Compile(p).Root
     }));
+
+    // pg_search (ParadeDB/BM25) isn't installed on a vanilla PostgreSQL
+    // image, so it stays opt-in - same gate SupplyChain.Advanced's own
+    // PgSearchFactAttribute uses for the PostgresRetrievalCandidateSource
+    // test suite (see Semantic/Tests/Retrieval/PostgresRetrievalFactAttribute.cs).
+    private static bool PgSearchEnabled =>
+        string.Equals(Environment.GetEnvironmentVariable("FOUNDGINE_POSTGRES_PGSEARCH"), "1", StringComparison.Ordinal);
+
+    // Approximate retrieval fallback for a supplierName that didn't match
+    // any candidate exactly, tried in increasing order of looseness -
+    // mirroring PostgresRetrievalCandidateSource's RetrievalStrategy enum:
+    //   1. Fuzzy    - pg_trgm trigram similarity (typos, minor misspellings)
+    //   2. FullText - native Postgres full-text search (word order, stemming)
+    //   3. Search   - pg_search/BM25 (opt-in, FOUNDGINE_POSTGRES_PGSEARCH=1)
+    // GraphSimilarity and Vector don't apply here - there's no relationship
+    // or embedding to compare against, just a misspelled or loosely-phrased
+    // name - and Relational is the exact match this method is a fallback
+    // from. Returns the first strategy that finds anything, or null if none
+    // of them do.
+    private static async Task<(string Strategy, List<Dictionary<string, object?>> Matches)?> TryApproximateSupplierMatchAsync(
+        NpgsqlConnection c, string state, string supplierName, CancellationToken ct)
+    {
+        var fuzzy = await TryFuzzyAsync(c, state, supplierName, ct);
+        if (fuzzy.Count > 0) return ("fuzzy", fuzzy);
+
+        var fullText = await TryFullTextAsync(c, state, supplierName, ct);
+        if (fullText.Count > 0) return ("fulltext", fullText);
+
+        if (PgSearchEnabled)
+        {
+            var search = await TrySearchAsync(c, state, supplierName, ct);
+            if (search.Count > 0) return ("search", search);
+        }
+
+        return null;
+    }
+
+    // pg_trgm's % operator: true when trigram similarity clears the
+    // (session-configurable, default 0.3) similarity threshold. Ships in
+    // every stock PostgreSQL image's contrib modules and is provisioned by
+    // Database/Program.cs's schema (CREATE EXTENSION IF NOT EXISTS pg_trgm).
+    private static async Task<List<Dictionary<string, object?>>> TryFuzzyAsync(
+        NpgsqlConnection c, string state, string supplierName, CancellationToken ct)
+    {
+        const string sql = """
+            SELECT supplier_id, supplier_name, state, total_order_value, negotiated_cost,
+                   similarity(supplier_name, @name) AS score
+            FROM suppliers
+            WHERE state = @state AND supplier_name % @name
+            ORDER BY score DESC
+            LIMIT 5
+            """;
+        await using var cmd = new NpgsqlCommand(sql, c);
+        cmd.Parameters.AddWithValue("state", state.ToUpperInvariant());
+        cmd.Parameters.AddWithValue("name", supplierName);
+        try
+        {
+            return await ReadRows(cmd, ct);
+        }
+        catch (PostgresException)
+        {
+            // pg_trgm not installed on this instance - degrade to "no
+            // fuzzy candidates" instead of failing the whole capability.
+            return [];
+        }
+    }
+
+    // Native Postgres full-text search: catches word-order and stemming
+    // differences (e.g. "Industrial Metal" vs "Metal Industries") that
+    // trigram similarity can miss.
+    private static async Task<List<Dictionary<string, object?>>> TryFullTextAsync(
+        NpgsqlConnection c, string state, string supplierName, CancellationToken ct)
+    {
+        const string sql = """
+            SELECT supplier_id, supplier_name, state, total_order_value, negotiated_cost,
+                   ts_rank_cd(to_tsvector('english', supplier_name), websearch_to_tsquery('english', @name)) AS score
+            FROM suppliers
+            WHERE state = @state
+              AND to_tsvector('english', supplier_name) @@ websearch_to_tsquery('english', @name)
+            ORDER BY score DESC
+            LIMIT 5
+            """;
+        await using var cmd = new NpgsqlCommand(sql, c);
+        cmd.Parameters.AddWithValue("state", state.ToUpperInvariant());
+        cmd.Parameters.AddWithValue("name", supplierName);
+        try
+        {
+            return await ReadRows(cmd, ct);
+        }
+        catch (PostgresException)
+        {
+            return [];
+        }
+    }
+
+    // pg_search/BM25 (ParadeDB), the same provider PostgresRetrievalCandidateSource.
+    // ExecutePgSearchAsync uses for RetrievalStrategy.Search. Requires the
+    // pg_search extension and a BM25 index that this sample does not
+    // provision by default, so it's gated by FOUNDGINE_POSTGRES_PGSEARCH=1
+    // (checked by the caller) and degrades to "no candidates" rather than
+    // throwing if the extension/operator turns out not to be installed.
+    private static async Task<List<Dictionary<string, object?>>> TrySearchAsync(
+        NpgsqlConnection c, string state, string supplierName, CancellationToken ct)
+    {
+        const string sql = """
+            SELECT supplier_id, supplier_name, state, total_order_value, negotiated_cost,
+                   pdb.score(supplier_id) AS score
+            FROM suppliers
+            WHERE supplier_name ||| @name AND state = @state
+            ORDER BY score DESC
+            LIMIT 5
+            """;
+        await using var cmd = new NpgsqlCommand(sql, c);
+        cmd.Parameters.AddWithValue("state", state.ToUpperInvariant());
+        cmd.Parameters.AddWithValue("name", supplierName);
+        try
+        {
+            return await ReadRows(cmd, ct);
+        }
+        catch (PostgresException)
+        {
+            return [];
+        }
+    }
 
     private static async Task<List<Dictionary<string, object?>>> ReadRows(NpgsqlCommand cmd, CancellationToken ct)
     {

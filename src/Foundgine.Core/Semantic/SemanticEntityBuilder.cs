@@ -38,6 +38,16 @@ public sealed class SemanticEntityBuilder
         return this;
     }
 
+    /// <summary>Declares multiple aliases in one call, e.g. <c>.Aliases("Item", "Item2")</c>
+    /// or <c>.Aliases(["Item", "Item2"])</c>. Equivalent to calling <see cref="Alias"/> once per name.</summary>
+    public SemanticEntityBuilder Aliases(params string[] aliases)
+    {
+        ArgumentNullException.ThrowIfNull(aliases);
+        foreach (var alias in aliases)
+            AddAlias(_aliases, alias);
+        return this;
+    }
+
     public SemanticEntityBuilder Field(
         FieldId id,
         string name,
@@ -68,6 +78,18 @@ public sealed class SemanticEntityBuilder
         var field = _fields[index];
         var aliases = field.EffectiveAliases.Concat([new SemanticAlias(alias)]).ToArray();
         _fields[index] = field with { Aliases = aliases };
+        return this;
+    }
+
+    /// <summary>Declares multiple field aliases in one call.</summary>
+    public SemanticEntityBuilder FieldAliases(FieldId fieldId, params string[] aliases)
+    {
+        ArgumentNullException.ThrowIfNull(aliases);
+        var index = _fields.FindIndex(x => x.Id == fieldId);
+        if (index < 0) throw new InvalidOperationException($"Field '{fieldId}' is not declared on '{_name}'.");
+        var field = _fields[index];
+        var merged = field.EffectiveAliases.Concat(aliases.Select(a => new SemanticAlias(a))).ToArray();
+        _fields[index] = field with { Aliases = merged };
         return this;
     }
 
@@ -147,6 +169,16 @@ public sealed class SemanticEntityBuilder<TModel>
         return this;
     }
 
+    /// <summary>Declares multiple aliases in one call, e.g. <c>.Aliases("Item", "Item2")</c>
+    /// or <c>.Aliases(["Item", "Item2"])</c>. Equivalent to calling <see cref="Alias"/> once per name.</summary>
+    public SemanticEntityBuilder<TModel> Aliases(params string[] aliases)
+    {
+        ArgumentNullException.ThrowIfNull(aliases);
+        foreach (var alias in aliases)
+            Alias(alias);
+        return this;
+    }
+
     /// <summary>
     /// Declares the semantic identity using a property on <typeparamref name="TModel"/>.
     /// Foundgine derives the identity field id deterministically from the
@@ -205,6 +237,19 @@ public sealed class SemanticEntityBuilder<TModel>
         return this;
     }
 
+    /// <summary>Declares multiple field aliases in one call.</summary>
+    public SemanticEntityBuilder<TModel> FieldAliases<TProperty>(Expression<Func<TModel, TProperty>> property, params string[] aliases)
+    {
+        ArgumentNullException.ThrowIfNull(aliases);
+        var fieldId = FieldId.Create(_name, GetProperty(property).Name);
+        var index = _fields.FindIndex(x => x.Id == fieldId);
+        if (index < 0) throw new InvalidOperationException($"Field '{fieldId}' is not declared on '{_name}'.");
+        var field = _fields[index];
+        var merged = field.EffectiveAliases.Concat(aliases.Select(a => new SemanticAlias(a))).ToArray();
+        _fields[index] = field with { Aliases = merged };
+        return this;
+    }
+
     /// <summary>
     /// Declares a relationship with strongly typed property selectors on both
     /// sides. <typeparamref name="TModel"/> is the source/domain model and
@@ -258,6 +303,18 @@ public sealed class SemanticEntityBuilder<TModel>
         if (index < 0) throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
         var relationship = _relationships[index];
         _relationships[index] = relationship with { Aliases = relationship.EffectiveAliases.Concat([new SemanticAlias(alias)]).ToArray() };
+        return this;
+    }
+
+    /// <summary>Declares multiple relationship aliases in one call.</summary>
+    public SemanticEntityBuilder<TModel> RelationshipAliases(RelationshipId relationshipId, params string[] aliases)
+    {
+        ArgumentNullException.ThrowIfNull(aliases);
+        var index = _relationships.FindIndex(x => x.Id == relationshipId);
+        if (index < 0) throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
+        var relationship = _relationships[index];
+        var merged = relationship.EffectiveAliases.Concat(aliases.Select(a => new SemanticAlias(a))).ToArray();
+        _relationships[index] = relationship with { Aliases = merged };
         return this;
     }
 

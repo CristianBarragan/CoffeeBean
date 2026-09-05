@@ -60,6 +60,37 @@ Because both providers implement the same interface, a deployment can run
 either one, or combine candidates from both before handing them to
 `SemanticLexicalResolver`.
 
+## Not to be confused with: field-value retrieval (`IApproximateCandidateSource`)
+
+Everything above — Elasticsearch, pgvector, `SemanticLexicalResolver` — is
+one specific boundary: `ISemanticLexicalCandidateSource`, which matches
+**vocabulary**. Given the token `nike`, it answers "which schema entity or
+field does this *word* mean?" (`CatalogProduct.Name`, in the worked example
+below).
+
+`Foundgine.Providers.Storage.Sql.Retrieval.PostgresRetrievalCandidateSource`
+implements a different boundary, `IApproximateCandidateSource`, which
+matches **data**. Given the string `"Acme Suplies"`, it answers "which
+*row* is this closest to?" — via `RetrievalStrategy.Fuzzy` (`pg_trgm`),
+`FullText` (native Postgres), `Search` (pg_search/BM25), or
+`GraphSimilarity` (Apache AGE). See `docs/ARCHITECTURE.md`'s retrieval
+paragraph, and `samples/Foundgine.SupplyChain.Advanced/docs/04-Retrieval-Strategies.md`
+for a worked, tested case per strategy against a real schema — including
+`find_top_supplier_overdue_orders`'s own scoped use of `Fuzzy`/`FullText`/
+`Search` to turn a misspelled `supplierName` into a "did you mean"
+`clarification_needed` instead of a flat `not_found`.
+
+Both boundaries produce *candidates and evidence, never authority* — the
+same rule this document states above ("The highest retrieval score is the
+first hypothesis, not truth") applies equally to a fuzzy-matched row as to
+a fuzzy-matched vocabulary token. But they answer genuinely different
+questions, and nothing in Foundgine currently connects them: there is no
+code path where a data-value match from `PostgresRetrievalCandidateSource`
+becomes a `SemanticLexicalCandidate` fed into `Ground`. A future provider
+that unifies "the word looks like X" and "the value looks like Y" into one
+retrieval pass is a reasonable extension, not something either boundary
+does today.
+
 ## Example
 
 Given:

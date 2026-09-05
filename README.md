@@ -23,7 +23,7 @@ Foundgine gives application code, APIs, GraphQL, MCP and AI agents one applicati
 
 As applications expose more functionality to callers, you can end up with lots of individual tools/endpoints, each containing its own validation, authorization, query logic, and business rules.
 
-Foundgine tries to centralize that into a semantic execution boundary. The caller says what it wants, while the application remains responsible for deciding what is allowed and how it gets executed.
+Foundgine centralizes that responsibility into a semantic execution boundary. The caller expresses intent, while the application remains responsible for deciding what that intent means, what is allowed, and how it gets executed.
 
 A complex application may have several ways to express an operation:
 
@@ -46,11 +46,64 @@ That produces duplicated semantics and inconsistent security boundaries.
 
 # A concrete example
 
-"show me **overdue purchase orders** from our **top supplier** in **Texas**"
+Two callers can ask for the same thing in different words:
 
-The interesting thing isn't the sentence itself. It's what happens after the sentence:
+- **Canonical:** “show me overdue purchase orders from our top supplier in Texas”
+- **Paraphrase:** “show me the overdue buys from our top seller in Texas”
 
-![PlantUML diagram: CONCRETE EXAMPLE, diagram 1](docs/diagrams/overdue_purchase_orders_flow.svg)
+Foundgine does not treat the paraphrase as a fuzzy guess at a *different* operation. In the Supply Chain semantic contract, `Buy`/`Buys` are declared aliases of `PurchaseOrder`, and `Seller` is a declared alias of `Supplier`. Both sentences are grounded onto the **same canonical semantic identities** before authorization or planning ever runs — the diagram below follows one request all the way from words to a database call.
+
+*Tests:* [`SupplyChainGroundingAliasTests.cs`](samples/Foundgine.SupplyChain.Advanced/Semantic/Tests/Grounding/SupplyChainGroundingAliasTests.cs) (advanced Supply Chain sample) · [`SemanticAliasSynonymGroundingTests.cs`](tests/Foundgine.Semantics.Tests/SemanticAliasSynonymGroundingTests.cs) (core semantics).
+
+<p align="center"><img src="docs/assets/overdue-purchase-orders-alias-flow.svg" alt="Foundgine alias-matched Supply Chain request from caller intent through semantic resolution, authorization, planning, PostgreSQL execution and evidence." width="100%"></p>
+
+### The request, layer by layer
+
+| # | Layer | What happens |
+|---|---|---|
+| 1 | **Caller intent** | The caller sends either sentence. Neither one contains SQL or provider instructions. |
+| 2 | **Intent representation** | The request becomes structured intent — the caller never constructs a physical query directly. |
+| 3 | **Semantic Model** | The generated contract exposes canonical meanings and their declared aliases: `PurchaseOrder ← Buy, Buys` and `Supplier ← Vendor, Seller`. |
+| 4 | **Semantic Operation Graph** | The request becomes application meaning: overdue purchase-order semantics, a ranked “top supplier” relationship, and a `Texas` constraint. |
+| 5 | **Retrieval** | Relational, fuzzy/full-text, BM25/search, or graph strategies propose candidates and evidence. **They never grant authority.** |
+| 6 | **Semantic Resolution** | `buys → PurchaseOrder` and `seller → Supplier`. The aliases normalize to the same canonical identities as the original wording. |
+| 7 | **Authorization** | Application policy runs against the resolved semantic graph and caller identity. Retrieval results cannot bypass this step. |
+| 8 | **Plan Binding** | The authorized decision is bound to a provider-independent execution plan. |
+| 9 | **ExecutionIR** | The executable artifact carries the resolved plan and its authorization provenance across the execution boundary. |
+| 10 | **Provider** | Only now does a physical provider — PostgreSQL, here — receive the already-authorized artifact. |
+| 11 | **Execution** | The provider executes the constrained plan; it does not reinterpret caller vocabulary. |
+| 12 | **Evidence** | The result carries evidence of what was resolved and executed. Evidence records what happened — **it does not grant authority.** |
+
+> **The invariant:** alias matching changes vocabulary, not authority. “Buys” does not create a new capability, and “seller” does not create a second supplier meaning — both are application-declared paths to identities that already exist.
+
+# When more than one meaning is legal
+
+Aliases collapse *different words* onto *one* meaning. Sometimes the ambiguity runs the other way: the **same word** is a legal match for **two different meanings at once**, and neither the graph nor a retrieval score can tell them apart on its own.
+
+Take the request **“active customers”**. Both of the following are structurally valid readings:
+
+- a customer whose **account is enabled** (`Customer.AccountEnabled`)
+- a customer who **placed a recent order** (`Customer.HasRecentOrder`)
+
+A fuzzy/BM25/vector retriever can legitimately return both, with close scores (`0.91` vs. `0.89`). Foundgine does not break the tie by picking whichever scored higher: a higher retrieval score is not evidence of what the caller meant, and authorization can’t rescue a wrong guess — a request built from the wrong meaning is still a *fully authorized* request. It would just be a perfectly authorized misunderstanding.
+
+<p align="center"><img src="docs/assets/lexical-grounding-clarification-flow.svg" alt="Foundgine lexical grounding when two meanings are legal: fuzzy retrieval returns tied candidates, both form a valid semantic path, grounding reports RequiresClarification, and the caller picks one before authorization runs." width="100%"></p>
+
+### What Foundgine does instead of guessing
+
+| Stage | What happens |
+|---|---|
+| **Retrieval (fuzzy)** | Every plausible reading comes back as a candidate, each with its own score and evidence. Retrieval only ever proposes — it never decides. |
+| **Graph-constrained resolution** | Each candidate is checked against the frozen semantic contract. Both `AccountEnabled` and `HasRecentOrder` form a legal path. A legal path only proves an interpretation is *possible* — not that it is the one *intended*. |
+| **Grounding decision** | `SemanticLexicalResolver.Ground` compares the two paths’ **signatures** — what each one means, not how it got there. The signatures differ and neither dominates on confidence, so the outcome is `GroundingOutcome.RequiresClarification`: `Committed` stays `null`, and both readings are listed in `CompetingInterpretations`, each with its own steps, confidence, and evidence. |
+| **Caller chooses** | The competing meanings are surfaced back as a clarifying question — *“Did you mean customers with an enabled account, or customers with a recent order?”* — instead of silently executing a guess. |
+| **Same boundary as everyone else** | Once the caller picks one, that single interpretation goes through the exact same Authorization → Planning → Execution path as any other request. |
+
+> **The invariant:** a legal semantic path is not proof of intent. When retrieval genuinely can’t tell two meanings apart, Foundgine surfaces the ambiguity instead of silently authorizing a coin flip.
+
+The same mechanism fails closed the same way in two other cases: when a resource limit (token count, search budget, timeout) stops the search before it can prove there is only one meaning (`GroundingOutcome.BudgetExceeded`), and when no legal interpretation exists at all (`GroundingOutcome.Unresolved`). Neither one ever falls back to a best-effort guess.
+
+Read more: **[Lexical grounding](docs/LEXICAL-GROUNDING.md)** covers fuzzy retrieval, the resolver’s complexity bounds, and worked adversarial examples end-to-end. **[Grounding decisions](docs/GROUNDING-DECISIONS.md)** covers the full `GroundingDecision` shape, the difference between “different evidence for the same meaning” and “different meanings,” and the complete `active customers` walkthrough, backed by a passing test.
 
 # Why Foundgine
 
@@ -80,7 +133,7 @@ For the conceptual path, use [`docs/README.md`](docs/README.md) or the [document
 
 ## Walkthrough
 
-**[From Natural Language to Authorized Execution](https://cristianbarragan.github.io/Foundgine/docs-site/walkthrough/)** traces one request — “show me overdue purchase orders from our top supplier in Texas” — through every layer with representative payloads.
+**[From Natural Language to Authorized Execution](https://cristianbarragan.github.io/Foundgine/docs-site/walkthrough/)** traces the same Supply Chain scenario through every layer with representative payloads. The canonical request and the alias-matched paraphrase are resolved to the same semantic identities before authorization and planning.
 
 ## Why the boundary matters
 
@@ -129,6 +182,12 @@ dotnet test
 
 PostgreSQL integration testing: [`docs/POSTGRES-E2E.md`](docs/POSTGRES-E2E.md).
 
-Current release: **2.0.0** · **.NET 9**
+## Release 2.0.1
+
+**Current release: 2.0.1 · .NET 9**
+
+The 2.0.1 release includes deterministic semantic alias grounding for generated contracts and the corresponding Supply Chain example coverage. Canonical and declared-alias vocabulary now converge on the same semantic identity without weakening the authorization boundary.
+
+See [`CHANGELOG.md`](CHANGELOG.md) for the release notes.
 
 Foundgine is licensed under the MIT license.

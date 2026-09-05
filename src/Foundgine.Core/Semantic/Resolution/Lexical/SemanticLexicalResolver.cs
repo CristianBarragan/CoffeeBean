@@ -194,14 +194,60 @@ public sealed class SemanticLexicalResolver
 
         if (candidateSets.Values.Any(x => x.Count == 0))
         {
-            var missing = tokens.First(x => candidateSets[x].Count == 0);
-            return new(
-                expression,
-                GroundingOutcome.Unresolved,
-                null,
-                [],
-                $"No lexical candidate was returned for token '{missing}'.",
-                []);
+            // Semantic declaration names are commonly PascalCase identifiers
+            // (for example PurchaseOrder) while callers naturally write the
+            // same name with spaces ("purchase order"). If token-by-token
+            // retrieval cannot ground the expression, make one bounded fallback
+            // lookup for the compact spelling. This is deliberately all-or-
+            // nothing: it does not silently discard unknown filler tokens or
+            // invent arbitrary n-gram segmentations.
+            if (tokens.Length > 1)
+            {
+                var compactToken = string.Concat(tokens);
+                try
+                {
+                    var compactCandidates = GetCandidates([compactToken], cancellationToken);
+                    if (compactCandidates[compactToken].Count > 0)
+                    {
+                        tokens = [compactToken];
+                        candidateSets = compactCandidates;
+                    }
+                }
+                catch (GroundingRetrievalTimeoutException ex)
+                {
+                    return new(
+                        expression,
+                        GroundingOutcome.BudgetExceeded,
+                        null,
+                        [],
+                        $"Candidate retrieval for compact token '{ex.Token}' exceeded the configured retrieval timeout ({ex.Elapsed.TotalMilliseconds:0}ms). Grounding was refused before the graph search began.",
+                        [],
+                        GroundingBudgetLimit.RetrievalTimeout);
+                }
+                catch (OperationCanceledException)
+                {
+                    return new(
+                        expression,
+                        GroundingOutcome.BudgetExceeded,
+                        null,
+                        [],
+                        "Candidate retrieval was cancelled before the graph search began.",
+                        [],
+                        GroundingBudgetLimit.Cancelled);
+                }
+            }
+
+            if (candidateSets.Values.Any(x => x.Count == 0))
+            {
+                var missing = tokens.First(x => candidateSets[x].Count == 0);
+                return new(
+                    expression,
+                    GroundingOutcome.Unresolved,
+                    null,
+                    [],
+                    $"No lexical candidate was returned for token '{missing}'.",
+                    []);
+            }
         }
 
         var roots = candidateSets[tokens[0]]
@@ -298,14 +344,44 @@ public sealed class SemanticLexicalResolver
             roots);
     }
 
-    /// <summary>Identifies what an interpretation means — the token-to-contract
-    /// mapping — independent of which bridging route the graph search used to
-    /// get there. Two paths with the same signature are the same interpretation.</summary>
+    /// <summary>Identifies what an interpretation means — the ordered mapping
+    /// to canonical contract identities — independent of caller wording and of
+    /// which bridging route the graph search used to get there. Aliases and
+    /// canonical spellings must therefore produce the same signature. Two paths
+    /// with the same signature are the same interpretation.</summary>
     private static string Signature(IReadOnlyList<SemanticLexicalStep> steps) =>
         string.Join(
             "|",
             steps.Select(s =>
-                $"{s.Token}:{s.Candidate.Kind}:{s.Candidate.CanonicalName}:{s.Candidate.EntityId}:{s.Candidate.FieldId}:{s.Candidate.RelationshipId}:{s.Candidate.Value}"));
+                $"{MeaningKind(s.Candidate.Kind)}:{s.Candidate.CanonicalName}:{s.Candidate.EntityId}:{s.Candidate.FieldId}:{s.Candidate.RelationshipId}:{s.Candidate.Value}"));
+
+    /// <summary>Returns the semantic identity represented by a retrieval
+    /// candidate. Entity and Node are intentionally the same identity because
+    /// the lexicon contains both a semantic entity document and a graph-node
+    /// document for the same declared entity. The remaining identity fields
+    /// distinguish genuinely different meanings.</summary>
+    private static string SemanticIdentityKey(SemanticLexicalCandidate candidate) =>
+        $"{MeaningKind(candidate.Kind)}:{candidate.CanonicalName}:{candidate.EntityId}:{candidate.FieldId}:{candidate.RelationshipId}:{candidate.Value}";
+
+    private static int CandidateKindPreference(SemanticLexicalCandidateKind kind) =>
+        kind switch
+        {
+            SemanticLexicalCandidateKind.Entity => 0,
+            SemanticLexicalCandidateKind.Node => 1,
+            _ => 2
+        };
+
+    /// <summary>
+    /// Normalizes retrieval-only representations that carry the same semantic
+    /// identity. An Entity lexicon document and its graph Node document are two
+    /// ways to retrieve the same declared entity, not two competing meanings.
+    /// Keeping that implementation detail in the ambiguity signature makes an
+    /// exact canonical name (and every alias of it) spuriously ambiguous.
+    /// </summary>
+    private static SemanticLexicalCandidateKind MeaningKind(SemanticLexicalCandidateKind kind) =>
+        kind == SemanticLexicalCandidateKind.Node
+            ? SemanticLexicalCandidateKind.Entity
+            : kind;
 
     /// <summary>Returns the ranked candidate matrix used by the resolver.
     /// Each token is queried once across all semantic kinds.
@@ -344,9 +420,40 @@ public sealed class SemanticLexicalResolver
             var candidates = _source
                 .Retrieve(new SemanticLexicalRequest(token, Limit: _candidateLimit), cancellationToken)
                 .Where(x => x.Score >= 0)
+                // Retrieval providers may legitimately index the same declared
+                // entity more than once (for example the semantic Entity and
+                // its graph Node projection). Those are two retrieval
+                // representations of one meaning, not two meanings. Collapse
+                // them before graph search so duplicate index documents can
+                // never turn into a false clarification result. Deliberately
+                // do NOT collapse different semantic kinds (field,
+                // relationship, value, or a different entity), because those
+                // remain genuine ambiguity.
+                .GroupBy(SemanticIdentityKey)
+                .Select(g => g
+                    .OrderByDescending(x => x.Score)
+                    .ThenBy(x => CandidateKindPreference(x.Kind))
+                    .ThenBy(x => x.CanonicalName, StringComparer.OrdinalIgnoreCase)
+                    .First())
                 .OrderByDescending(x => x.Score)
+                .ThenBy(x => CandidateKindPreference(x.Kind))
                 .ThenBy(x => x.CanonicalName, StringComparer.OrdinalIgnoreCase)
+                .Take(_candidateLimit)
                 .ToArray();
+
+            // A bare exact canonical entity name is an entity-root expression.
+            // Relationship members can legitimately share that spelling (for
+            // example PurchaseOrder.supplier and PurchaseOrderLine.purchaseOrder),
+            // but they must not make the canonical entity root ambiguous. Aliases
+            // remain ambiguity-aware and are not affected by this preference.
+            var exactEntityRoots = candidates
+                .Where(x =>
+                    (x.Kind is SemanticLexicalCandidateKind.Entity or SemanticLexicalCandidateKind.Node) &&
+                    string.Equals(x.CanonicalName, token, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            if (exactEntityRoots.Length > 0)
+                candidates = exactEntityRoots;
 
             result[token] = candidates;
         }
