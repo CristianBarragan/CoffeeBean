@@ -1858,9 +1858,10 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     {
         var aliases = symbol.GetAttributes()
             .Where(a => a.AttributeClass?.ToDisplayString() == "Foundgine.Providers.Aot.FoundgineAliasAttribute")
-            .Select(a => a.ConstructorArguments.Length == 1 ? a.ConstructorArguments[0].Value as string : null)
+            .SelectMany(a => a.ConstructorArguments.Length == 1
+                ? ExtractAliasNames(a.ConstructorArguments[0])
+                : [])
             .Where(a => !string.IsNullOrWhiteSpace(a))
-            .Select(a => a!)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
@@ -1868,6 +1869,29 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             return "null";
 
         return "new string[] { " + string.Join(", ", aliases.Select(a => $"\"{Escape(a)}\"")) + " }";
+    }
+
+    /// <summary>
+    /// The alias attribute's <c>params string[] names</c> parameter is always
+    /// represented by Roslyn as a single <see cref="TypedConstantKind.Array"/>
+    /// constructor argument, whether the caller wrote a single name, several
+    /// positional names, or an array/collection-expression literal. This
+    /// flattens that argument back into the individual alias names.
+    /// </summary>
+    private static IEnumerable<string> ExtractAliasNames(TypedConstant argument)
+    {
+        if (argument.Kind == TypedConstantKind.Array)
+        {
+            foreach (var element in argument.Values)
+            {
+                if (element.Value is string name && !string.IsNullOrWhiteSpace(name))
+                    yield return name;
+            }
+        }
+        else if (argument.Value is string single && !string.IsNullOrWhiteSpace(single))
+        {
+            yield return single;
+        }
     }
 
     private static string GetEntityName(

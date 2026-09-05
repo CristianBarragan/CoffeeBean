@@ -1,6 +1,6 @@
-# Current status — Foundgine 2.0.0
+# Current status — Foundgine 2.0.1
 
-The repository is on the 2.0.0 release line and targets .NET 9.
+The repository is on the 2.0.1 release line and targets .NET 9.
 
 This page is intentionally short: it describes the current architectural state rather than preserving historical release notes.
 

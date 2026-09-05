@@ -45,8 +45,10 @@ public sealed record Warehouse([property: FoundgineField("Id", Id = 1, IsPrimary
 
 [SemanticEntity]
 [FoundgineEntity("Supplier", StorageName = "suppliers", Id = 1003)]
+[FoundgineAlias("Vendor")]
+[FoundgineAlias("Seller")]
 public sealed record Supplier([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] SupplierId Id, string Name,
-    [property: FoundgineSemanticDimension("country"), FoundgineField(Index = true)] string Country,
+    [property: FoundgineSemanticDimension("country"), FoundgineField(Index = true), FoundgineAlias("State")] string Country,
     decimal RiskScore, [property: FoundgineSemanticDimension("tenant")] string TenantId)
 {
     [FoundgineRelationship(typeof(SupplierCertification), "SupplierId", "Id", Name = "certifications")]
@@ -109,16 +111,20 @@ public enum PurchaseOrderStatus { Open, PartiallyReceived, Cancelled, Closed }
 
 [SemanticEntity]
 [FoundgineEntity("PurchaseOrder", StorageName = "purchase_orders", Id = 1008)]
+[FoundgineAlias(["PO", "POs"])]
+[FoundgineAlias(["Buy", "Buys"])]
 public sealed record PurchaseOrder([property: FoundgineField("Id", Id = 1, IsPrimaryKey = true)] PurchaseOrderId Id,
     [property: FoundgineField(Index = true)] SupplierId SupplierId,
     [property: FoundgineField(Index = true)] WarehouseId WarehouseId,
-    PurchaseOrderStatus Status, DateOnly OrderedOn, DateOnly ExpectedArrival)
+    PurchaseOrderStatus Status, DateOnly OrderedOn,
+    [property: FoundgineAlias("DueDate")] DateOnly ExpectedArrival)
 {
     [FoundgineRelationship(typeof(PurchaseOrderLine), "PurchaseOrderId", "Id", Name = "lines")]
     public IReadOnlyList<PurchaseOrderLine> Lines { get; init; } = [];
     [FoundgineRelationship(typeof(Shipment), "PurchaseOrderId", "Id", Name = "shipments")]
     public IReadOnlyList<Shipment> Shipments { get; init; } = [];
     [FoundgineRelationship(typeof(Supplier), "SupplierId", "Id", Name = "supplier")]
+    [FoundgineAlias("vendor")]
     public Supplier Supplier { get; init; } = null!;
 }
 

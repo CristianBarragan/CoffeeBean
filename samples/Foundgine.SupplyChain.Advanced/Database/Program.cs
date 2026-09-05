@@ -2,7 +2,16 @@ using Npgsql;
 using System.Text;
 
 const string Schema = """
+-- pg_trgm backs RetrievalStrategy.Fuzzy (see PostgresRetrievalCandidateSource
+-- and SupplyChainExecutionService.TryFuzzyAsync): it's contrib, ships with
+-- every stock PostgreSQL image, and needs no opt-in. pg_search (BM25,
+-- RetrievalStrategy.Search) is deliberately NOT provisioned here - it's a
+-- ParadeDB extension that isn't present on a vanilla image, so that path is
+-- gated behind FOUNDGINE_POSTGRES_PGSEARCH=1 and degrades to "no candidates"
+-- rather than failing when the extension is missing.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE TABLE IF NOT EXISTS suppliers (supplier_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,supplier_name VARCHAR(100) NOT NULL,contact_name VARCHAR(100),email VARCHAR(100) UNIQUE,phone VARCHAR(20),address VARCHAR(255),state VARCHAR(2),total_order_value DECIMAL(14,2) NOT NULL DEFAULT 0,negotiated_cost DECIMAL(14,2),created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP);
+CREATE INDEX IF NOT EXISTS ix_suppliers_name_trgm ON suppliers USING gin (supplier_name gin_trgm_ops);
 CREATE TABLE IF NOT EXISTS purchase_orders (purchase_order_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,supplier_id INT NOT NULL REFERENCES suppliers(supplier_id),expected_date DATE NOT NULL,received_date DATE,status VARCHAR(20) NOT NULL DEFAULT 'Open' CHECK(status IN('Open','Received','Cancelled')));
 CREATE INDEX IF NOT EXISTS ix_purchase_orders_supplier ON purchase_orders(supplier_id);
 CREATE TABLE IF NOT EXISTS categories (category_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,category_name VARCHAR(50) NOT NULL UNIQUE,description TEXT);

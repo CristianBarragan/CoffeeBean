@@ -87,5 +87,57 @@ provider-*behavior* coverage in the other four files: it proves the gating
 logic itself is correct (a disabled strategy never reaches PostgreSQL to
 find out it's disabled) without needing any infrastructure to do so.
 
+## `find_top_supplier_overdue_orders`'s own fallback: a lighter cousin of `PostgresRetrievalCandidateSource`
+
+Everything above exercises `PostgresRetrievalCandidateSource` directly
+against `SupplyChainSemanticModel.Metadata` and a throwaway fixture schema —
+it's provider-conformance testing for `IApproximateCandidateSource`, not a
+capability. `MCP.Foundgine/Program.cs`'s `SupplyChainExecutionService`
+implements the same three practical strategies (`Fuzzy`, `FullText`,
+`Search`) a second time, independently, scoped to one real question: *does
+the `supplierName` a caller passed to `find_top_supplier_overdue_orders`
+approximately match a supplier in the requested state?*
+
+It's deliberately **not** routed through `PostgresRetrievalCandidateSource`.
+That type resolves against `_metadata.GetEntity`/`ResolveField` and the
+generated `SupplyChainSemanticModel.Metadata` catalog — the right shape when
+retrieval has to be generic across arbitrary entities/fields chosen at
+grounding time. `find_top_supplier_overdue_orders` already knows, at compile
+time, that it's matching `Supplier.Name` scoped to one `state` — so
+`SupplyChainExecutionService.TryApproximateSupplierMatchAsync` is three
+small, direct SQL queries (`TryFuzzyAsync`, `TryFullTextAsync`,
+`TrySearchAsync`) against the real `suppliers` table, run in that order,
+stopping at the first strategy that returns anything:
+
+| Order | Strategy | SQL shape | Gate |
+|---|---|---|---|
+| 1 | `Fuzzy` | `similarity(supplier_name, @name)` / `supplier_name % @name` | always on — `Database/Program.cs` provisions `CREATE EXTENSION IF NOT EXISTS pg_trgm` and a `gin_trgm_ops` index on `suppliers.supplier_name` as part of the sample's own schema |
+| 2 | `FullText` | `ts_rank_cd(to_tsvector(...), websearch_to_tsquery(...))` | always on — native Postgres, no extension needed |
+| 3 | `Search` | `pdb.score(supplier_id)` / `supplier_name \|\|\| @name` | `FOUNDGINE_POSTGRES_PGSEARCH=1`, same gate as `SupplyChainSearchRetrievalTests.cs` above |
+
+Two things carried over deliberately from `PostgresRetrievalCandidateSource`
+and from the tie-break case earlier in this walkthrough:
+
+- **Ordering by looseness.** Fuzzy (character-level) is tried before
+  FullText (token-level) before Search (BM25-ranked), exactly the same
+  reasoning as "Fuzzy vs. full-text" above — try the strategy least likely
+  to produce a false positive on a short proper noun like a supplier name
+  first.
+- **A match is evidence, not authority.** Finding an approximate candidate
+  never auto-resolves the capability. It returns `status:
+  "clarification_needed"` with `evidence.strategy` naming which one
+  matched, exactly the same "ask, don't guess" contract the exact-tie case
+  uses — see `03-Ambiguity-And-Grounding.md` and the README's outcomes
+  table. The caller still has to name the supplier back before anything is
+  authorized or executed. If all three strategies come back empty, the
+  capability falls through to `not_found` with `strategiesTried` listing
+  what was actually attempted, so a caller (or this doc) never has to guess
+  whether fuzzy matching ran and simply found nothing versus never running
+  at all.
+- **Fails soft, not loud, when an extension is missing.** Each of the three
+  helper methods catches `PostgresException` and returns no candidates
+  rather than throwing — the same "opt-in, not opt-out" posture as the gate
+  table above, applied at the query level instead of the test-skip level.
+
 ---
 Previous: [`03-Ambiguity-And-Grounding.md`](./03-Ambiguity-And-Grounding.md) · Next: [`05-Adversarial-Security-Testing.md`](./05-Adversarial-Security-Testing.md)

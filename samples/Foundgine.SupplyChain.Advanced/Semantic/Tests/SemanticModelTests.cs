@@ -38,6 +38,7 @@ public sealed class SemanticModelTests
 
         Assert.Equal(17, model.Entities.Count);
         Assert.Contains(product.EffectiveAliases, a => a.Name == "Item");
+        Assert.Contains(product.EffectiveAliases, a => a.Name == "Item2");
         Assert.Contains(product.Fields.Single(x => x.Name == "Sku").EffectiveAliases, a => a.Name == "PartNumber");
         Assert.Contains(product.Fields.Single(x => x.Name == "Sku").EffectiveConstraints, c => c.Kind == SemanticConstraintKind.Pattern);
         Assert.True(product.Fields.Single(x => x.Name == "SafetyStock").Capabilities.HasFlag(SemanticFieldCapabilities.Writable));
