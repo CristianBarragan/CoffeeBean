@@ -89,7 +89,7 @@ public enum GroundingBudgetLimit : byte
 
 public sealed record GroundingInterpretation(
     IReadOnlyList<SemanticLexicalStep> Steps,
-    double Confidence,
+    double InterpretationScore,
     EntityId RootEntity,
     string Signature);
 
@@ -233,3 +233,8 @@ tracked future work.
 ---
 
 Previous: [Lexical grounding](LEXICAL-GROUNDING.md) · Next: [Authorization](AUTHORIZATION.md)
+
+
+> **Disclosure boundary:** `CompetingInterpretations` is an internal semantic result. Do not expose its
+> semantic metadata directly to untrusted callers unless the application has determined that the metadata
+> is disclosure-safe. Prefer a sanitized clarification projection at the runtime/application boundary.

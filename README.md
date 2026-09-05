@@ -42,7 +42,23 @@ Without a common semantic execution layer, each surface tends to grow its own ru
 - what the caller is authorized to access; and
 - how the request becomes database or service operations.
 
-That produces duplicated semantics and inconsistent security boundaries.
+That produces duplicated semantics and inconsistent security boundaries. 
+
+## The idea
+
+Retrieval can discover candidates and evidence, but **retrieval is not authorization**. The application owns identity and policy; providers execute the already-authorized artifact. **Foundgine** centralizes this responsibility.
+
+## Get started
+
+The fastest path is the Supply Chain sample pair:
+
+- **Starter:** [`samples/Foundgine.SupplyChain`](samples/Foundgine.SupplyChain) — the smallest realistic application boundary.
+  - [Build it step by step](samples/Foundgine.SupplyChain/SupplyChain-Starter-Tutorial.md)
+  - [Understand why it is structured this way](samples/Foundgine.SupplyChain/Foundgine-SupplyChain-Explained.md)
+- **Advanced:** [`samples/Foundgine.SupplyChain.Advanced`](samples/Foundgine.SupplyChain.Advanced) — richer semantics, grounding, retrieval, authorization and adversarial testing.
+  - Start at [`docs/00-Overview-And-Setup.md`](samples/Foundgine.SupplyChain.Advanced/docs/00-Overview-And-Setup.md) and follow 01–05.
+
+For the conceptual path, use [`docs/README.md`](docs/README.md) or the [documentation site](https://cristianbarragan.github.io/Foundgine/docs-site/).
 
 # A concrete example
 
@@ -105,36 +121,6 @@ The same mechanism fails closed the same way in two other cases: when a resource
 
 Read more: **[Lexical grounding](docs/LEXICAL-GROUNDING.md)** covers fuzzy retrieval, the resolver’s complexity bounds, and worked adversarial examples end-to-end. **[Grounding decisions](docs/GROUNDING-DECISIONS.md)** covers the full `GroundingDecision` shape, the difference between “different evidence for the same meaning” and “different meanings,” and the complete `active customers` walkthrough, backed by a passing test.
 
-# Why Foundgine
-
-Foundgine exists to provide a stable execution boundary between **application intent** and **physical execution**.
-
-The problem is not that applications lack APIs. The problem is that every new intent source can otherwise become responsible for understanding the application's model, relationships, authorization rules, and provider-specific execution details.
-
-Foundgine centralizes that responsibility.
-
-## The idea
-
-Retrieval can discover candidates and evidence, but **retrieval is not authorization**. The application owns identity and policy; providers execute the already-authorized artifact.
-
-<p align="center"><img src="docs/assets/canonical-architecture.svg" alt="Foundgine canonical architecture from caller intent through semantic resolution, authorization, planning, execution and evidence." width="100%"></p>
-
-## Get started
-
-The fastest path is the Supply Chain sample pair:
-
-- **Starter:** [`samples/Foundgine.SupplyChain`](samples/Foundgine.SupplyChain) — the smallest realistic application boundary.
-  - [Build it step by step](samples/Foundgine.SupplyChain/SupplyChain-Starter-Tutorial.md)
-  - [Understand why it is structured this way](samples/Foundgine.SupplyChain/Foundgine-SupplyChain-Explained.md)
-- **Advanced:** [`samples/Foundgine.SupplyChain.Advanced`](samples/Foundgine.SupplyChain.Advanced) — richer semantics, grounding, retrieval, authorization and adversarial testing.
-  - Start at [`docs/00-Overview-And-Setup.md`](samples/Foundgine.SupplyChain.Advanced/docs/00-Overview-And-Setup.md) and follow 01–05.
-
-For the conceptual path, use [`docs/README.md`](docs/README.md) or the [documentation site](https://cristianbarragan.github.io/Foundgine/docs-site/).
-
-## Walkthrough
-
-**[From Natural Language to Authorized Execution](https://cristianbarragan.github.io/Foundgine/docs-site/walkthrough/)** traces the same Supply Chain scenario through every layer with representative payloads. The canonical request and the alias-matched paraphrase are resolved to the same semantic identities before authorization and planning.
-
 ## Why the boundary matters
 
 The number of independent execution surfaces is a security and maintenance multiplier. A tool-per-capability design can give an agent dozens of places where authorization, tenant filtering and query construction are implemented differently. Foundgine centralizes the semantic decision without making a transport or database the center of the architecture.
@@ -182,11 +168,11 @@ dotnet test
 
 PostgreSQL integration testing: [`docs/POSTGRES-E2E.md`](docs/POSTGRES-E2E.md).
 
-## Release 2.0.1
+## Release 2.0.2
 
-**Current release: 2.0.1 · .NET 9**
+**Current release: 2.0.2 · .NET 9**
 
-The 2.0.1 release includes deterministic semantic alias grounding for generated contracts and the corresponding Supply Chain example coverage. Canonical and declared-alias vocabulary now converge on the same semantic identity without weakening the authorization boundary.
+The 2.0.2 release fixes the compact-name lexical fallback (e.g. `purchase order` → `purchaseorder`) so it is reliably reached instead of being starved of retrieval-timeout budget by exhaustive per-token lookups, and closes a related crash when the fallback itself finds no candidates. It builds on the 2.0.1 release, which introduced deterministic semantic alias grounding for generated contracts and the corresponding Supply Chain example coverage — canonical and declared-alias vocabulary converge on the same semantic identity without weakening the authorization boundary.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for the release notes.
 

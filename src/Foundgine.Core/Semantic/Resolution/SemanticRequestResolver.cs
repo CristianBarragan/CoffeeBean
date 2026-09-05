@@ -17,16 +17,6 @@ public sealed class SemanticRequestResolver
         _contract = contract ?? throw new ArgumentNullException(nameof(contract));
     }
 
-    /// <summary>
-    /// Compatibility constructor for low-level callers still holding a model.
-    /// Runtime application wiring should inject the snapshot instead.
-    /// </summary>
-    [Obsolete("Pass SemanticContractSnapshot to the resolver at the runtime boundary.", false)]
-    public SemanticRequestResolver(SemanticModel model)
-        : this((model ?? throw new ArgumentNullException(nameof(model))).Freeze().CreateSnapshot())
-    {
-    }
-
     public SemanticGraph Resolve(SemanticRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);

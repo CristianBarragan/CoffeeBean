@@ -17,4 +17,4 @@ public sealed record FieldMetadata(
     // Hints that this field is backed by (or should be backed by) a storage
     // index, for use by query planners choosing access paths.
     bool IsIndexed = false,
-    IReadOnlyList<string>? Aliases = null);
+    IReadOnlyList<AliasDeclaration>? Aliases = null);

@@ -56,6 +56,43 @@ The [Foundgine walkthrough](../../docs-site/walkthrough/index.html) traces one r
 
 Every `resolved` response also demonstrates field-level authorization from step 7 of the walkthrough: `Supplier.NegotiatedCost` is a commercially sensitive field that is stripped from the response — and listed under `deniedFields` — for every actor except Admin, regardless of the fact that the capability call itself was allowed.
 
+
+### Weighted alias evidence
+
+The advanced semantic contract also exercises the new **weighted alias evidence**
+feature end-to-end. The same concrete vocabulary used by the ambiguity example
+now carries application-declared evidence weights:
+
+| Declaration | Example weight | Scope |
+|---|---:|---|
+| `Supplier → Vendor` / `Seller` | 95 / 90 | Entity alias |
+| `Supplier.Country → State` | 85 | Field alias |
+| `PurchaseOrder → PO` / `POs` / `Buy` / `Buys` | 100 / 95 / 90 / 85 | Entity aliases |
+| `PurchaseOrder.ExpectedArrival → DueDate` | 90 | Field alias |
+| `PurchaseOrder.supplier → vendor` | 85 | Relationship alias |
+
+`AliasWeightEvidenceGate` treats these values as **application-declared
+evidence strength**, not retrieval scores and never as authority. The feature is
+active only for the aliases actually used by the current lexical-grounding path.
+Entity, field, and relationship evidence remain separate scopes: a `50` weight
+on `Supplier.State` is **50 for that field only**, never `50` for the Supplier
+table/entity. It therefore cannot satisfy an entity-level minimum by being
+averaged into the entity.
+
+If the model was already established with certainty earlier in processing, its
+**model-level evidence is 100**. That 100 does not inflate a field or relationship
+weight. Every grounded scope is checked independently against the configured
+minimum. With no lexical grounding, the weight feature is inert.
+
+The advanced tests cover the feature at both contract and evidence boundaries:
+AOT propagation of weights, entity/field/relationship declarations, optional
+weights, `1`/`100` boundaries, invalid `0`/`101` values, mixed weighted and
+unweighted aliases, threshold equality, violating entities, no-weight models,
+and preservation through the frozen semantic snapshot. This is deliberately
+separate from authorization: **weight can strengthen evidence about vocabulary;
+it cannot create or expand a capability.**
+
+
 The agent workload calls this capability with a random choice among all five shapes above on each occurrence, so a single run exercises every outcome. Bob (purchasing/customer service) and Admin are authorized for it; every other actor is expected to be denied at the MCP boundary, same as the rest of this benchmark's authorization matrix.
 
 ### Other cases worth adding later
@@ -115,7 +152,8 @@ Do not read the Supply Chain report as a replacement for those gates. It is the 
 `Semantic/` contains the advanced semantic proving ground. It stays inside this sample so the repository has one Supply Chain starter and one Supply Chain advanced sample rather than a collection of overlapping semantic samples. It is a separate, self-contained project (own `.sln`, own `Foundgine.SupplyChain.Advanced.csproj`, own CI job) rather than sharing the bot/MCP/agent code above — it tests a different layer:
 
 - **Retrieval strategies** — dedicated coverage for every `RetrievalStrategy` PostgreSQL provider mechanism: `Fuzzy` (`pg_trgm`), `FullText` (`tsvector`), `Search` (optional `pg_search`/BM25), and `GraphSimilarity` (optional Apache AGE). No other sample in the repository exercises these.
+- **Weighted alias evidence** (`Semantic/Tests/Grounding/SupplyChainAliasWeightTests.cs`) — AOT-preserved entity, field, and relationship alias weights plus threshold and fail-closed evidence-gate cases.
 - **Grounding decisions** (`Semantic/Tests/Grounding`) — the unit-level case study behind [Grounding decisions](../../docs/GROUNDING-DECISIONS.md): ambiguity (`active supplier`), duplicate-evidence-is-not-ambiguity, unresolved/no-vocabulary, and `SemanticLexicalResolver.Ground`'s budget/timeout/cancellation fail-closed behavior — run directly against `SemanticLexicalResolver` with a fake candidate source, independent of any live retrieval provider or MCP round-trip. This is what the `find_top_supplier_overdue_orders` capability above exercises at the black-box, agent-facing level; `Semantic/Tests/Grounding` exercises the same resolver white-box, including budget/cancellation edge cases that have no equivalent when going through a full MCP round-trip.
 - **Security invariants** — recursive graph traversal (`RecursiveSupplierRiskTests`), graph security boundary, open-intent mutation security, adversarial invariants, sensitive-field authorization, and an MCP authorization penetration suite, all against the sample's metadata-discovered semantic model. A separate two-entity manual builder example is included only to illustrate the alternative authoring path; it is not part of the application pipeline.
 
-See `Semantic/README.md` and `Semantic/GUIDE.md` for the full architecture and authorization walkthrough, and `Semantic/Tests/` for all 21 test files.
+See `Semantic/README.md` and `Semantic/GUIDE.md` for the full architecture and authorization walkthrough, and `Semantic/Tests/` for the complete semantic test suite.

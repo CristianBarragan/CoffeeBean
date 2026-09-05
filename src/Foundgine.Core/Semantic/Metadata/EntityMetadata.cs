@@ -21,7 +21,7 @@ public sealed record EntityMetadata(
     // and the entity IsEvent. Null for state entities and for events that did
     // not declare a temporal column.
     ColumnReference? TemporalColumn = null,
-    IReadOnlyList<string>? Aliases = null)
+    IReadOnlyList<AliasDeclaration>? Aliases = null)
 {
     public string EffectiveStorageName => StorageName ?? Name;
     public IReadOnlyList<FieldMetadata> EffectiveFields => Fields ?? [];

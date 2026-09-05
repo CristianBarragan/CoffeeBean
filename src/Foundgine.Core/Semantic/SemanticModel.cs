@@ -78,7 +78,7 @@ public sealed class SemanticModel
                 .Select(FreezeRelationship)
                 .ToArray();
             var aliases = entity.EffectiveAliases
-                .Select(x => new SemanticAlias(x.Name))
+                .Select(x => new SemanticAlias(x.Name, x.Weight))
                 .ToArray();
 
             copy[pair.Key] = entity with
@@ -95,7 +95,7 @@ public sealed class SemanticModel
     private static SemanticField FreezeField(SemanticField field) => field with
     {
         Aliases = new ReadOnlyCollection<SemanticAlias>(
-            field.EffectiveAliases.Select(x => new SemanticAlias(x.Name)).ToArray()),
+            field.EffectiveAliases.Select(x => new SemanticAlias(x.Name, x.Weight)).ToArray()),
         Constraints = new ReadOnlyCollection<SemanticConstraint>(
             field.EffectiveConstraints
                 .Select(x => new SemanticConstraint(x.Kind, x.Value, x.Minimum, x.Maximum))
@@ -105,7 +105,7 @@ public sealed class SemanticModel
     private static SemanticRelationship FreezeRelationship(SemanticRelationship relationship) => relationship with
     {
         Aliases = new ReadOnlyCollection<SemanticAlias>(
-            relationship.EffectiveAliases.Select(x => new SemanticAlias(x.Name)).ToArray())
+            relationship.EffectiveAliases.Select(x => new SemanticAlias(x.Name, x.Weight)).ToArray())
     };
 
     private static IReadOnlyList<SemanticTraversal> FreezeTraversals(IReadOnlyList<SemanticTraversal>? traversals)

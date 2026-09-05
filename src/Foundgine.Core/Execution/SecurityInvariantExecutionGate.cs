@@ -30,9 +30,4 @@ public static class SecurityInvariantExecutionGate
 
         proof.EnsureSatisfied();
     }
-
-    [Obsolete("Use EnsureExecutable(plan, ir) so the certificate is bound to the exact Execution IR.")]
-    public static void EnsureExecutable(ProviderPlan plan) =>
-        throw new InvalidOperationException(
-            "Execution IR is required to validate the security certificate binding.");
 }

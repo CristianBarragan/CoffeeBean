@@ -236,20 +236,23 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         foreach (var model in models.OrderBy(x => x.ToDisplayString(), StringComparer.Ordinal))
         {
             var modelId = modelIds[model.ToDisplayString()];
+            var modelAttribute = GetAttribute(model, ModelAttribute);
             var modelName =
-                GetNamedString(GetAttribute(model, ModelAttribute), "Name")
+                GetNamedString(modelAttribute, "Name")
                 ?? model.Name;
+            var minimumWeight = GetNamedInt(modelAttribute, "MinimumWeight");
+            var minimumWeightArg = minimumWeight is int mw ? mw.ToString() : "null";
 
             if (modelEntityMap.TryGetValue(model.ToDisplayString(), out var modelEntity) &&
                 entityIds.TryGetValue(modelEntity.ToDisplayString(), out var mappedEntityId))
             {
                 sb.AppendLine(
-                    $"        registry.Register(new ModelMetadata(new ModelId({modelId}), \"{Escape(modelName)}\", new EntityId({mappedEntityId})));");
+                    $"        registry.Register(new ModelMetadata(new ModelId({modelId}), \"{Escape(modelName)}\", new EntityId({mappedEntityId}), {minimumWeightArg}));");
             }
             else
             {
                 sb.AppendLine(
-                    $"        registry.Register(new ModelMetadata(new ModelId({modelId}), \"{Escape(modelName)}\"));");
+                    $"        registry.Register(new ModelMetadata(new ModelId({modelId}), \"{Escape(modelName)}\", MinimumWeight: {minimumWeightArg}));");
             }
         }
 
@@ -1856,19 +1859,31 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
     private static string FormatAliases(ISymbol symbol)
     {
-        var aliases = symbol.GetAttributes()
+        // Each attribute instance's declared names all share that instance's
+        // Weight (or no weight, when unset). Stacking the attribute per name
+        // is how callers give different names different weights.
+        var entries = symbol.GetAttributes()
             .Where(a => a.AttributeClass?.ToDisplayString() == "Foundgine.Providers.Aot.FoundgineAliasAttribute")
-            .SelectMany(a => a.ConstructorArguments.Length == 1
-                ? ExtractAliasNames(a.ConstructorArguments[0])
-                : [])
-            .Where(a => !string.IsNullOrWhiteSpace(a))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .SelectMany(a =>
+            {
+                var names = a.ConstructorArguments.Length == 1
+                    ? ExtractAliasNames(a.ConstructorArguments[0])
+                    : [];
+                var weight = GetNamedInt(a, "Weight");
+                return names.Select(name => (Name: name, Weight: weight));
+            })
+            .Where(a => !string.IsNullOrWhiteSpace(a.Name))
+            .GroupBy(a => a.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
             .ToArray();
 
-        if (aliases.Length == 0)
+        if (entries.Length == 0)
             return "null";
 
-        return "new string[] { " + string.Join(", ", aliases.Select(a => $"\"{Escape(a)}\"")) + " }";
+        return "new AliasDeclaration[] { "
+            + string.Join(", ", entries.Select(a =>
+                $"new AliasDeclaration(\"{Escape(a.Name)}\", {(a.Weight is int w ? w.ToString() : "null")})"))
+            + " }";
     }
 
     /// <summary>
@@ -1951,6 +1966,31 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             .FirstOrDefault(x => x.Key == name)
             .Value
             .Value is true;
+
+    private static int? GetNamedInt(
+        AttributeData? attribute,
+        string name)
+    {
+        if (attribute is null)
+            return null;
+
+        var argument = attribute.NamedArguments
+            .FirstOrDefault(x => x.Key == name);
+
+        if (argument.Key is null)
+            return null;
+
+        return argument.Value.Value switch
+        {
+            int intValue => intValue,
+            uint uintValue => (int)uintValue,
+            byte byteValue => byteValue,
+            ushort ushortValue => ushortValue,
+            long longValue => (int)longValue,
+            ulong ulongValue => (int)ulongValue,
+            _ => null
+        };
+    }
 
     private static string? GetCtorString(
         AttributeData attribute,
