@@ -42,7 +42,23 @@ Without a common semantic execution layer, each surface tends to grow its own ru
 - what the caller is authorized to access; and
 - how the request becomes database or service operations.
 
-That produces duplicated semantics and inconsistent security boundaries.
+That produces duplicated semantics and inconsistent security boundaries. 
+
+## The idea
+
+Retrieval can discover candidates and evidence, but **retrieval is not authorization**. The application owns identity and policy; providers execute the already-authorized artifact. **Foundgine** centralizes this responsibility.
+
+## Get started
+
+The fastest path is the Supply Chain sample pair:
+
+- **Starter:** [`samples/Foundgine.SupplyChain`](samples/Foundgine.SupplyChain) — the smallest realistic application boundary.
+  - [Build it step by step](samples/Foundgine.SupplyChain/SupplyChain-Starter-Tutorial.md)
+  - [Understand why it is structured this way](samples/Foundgine.SupplyChain/Foundgine-SupplyChain-Explained.md)
+- **Advanced:** [`samples/Foundgine.SupplyChain.Advanced`](samples/Foundgine.SupplyChain.Advanced) — richer semantics, grounding, retrieval, authorization and adversarial testing.
+  - Start at [`docs/00-Overview-And-Setup.md`](samples/Foundgine.SupplyChain.Advanced/docs/00-Overview-And-Setup.md) and follow 01–05.
+
+For the conceptual path, use [`docs/README.md`](docs/README.md) or the [documentation site](https://cristianbarragan.github.io/Foundgine/docs-site/).
 
 # A concrete example
 
@@ -76,39 +92,6 @@ Foundgine does not treat the paraphrase as a fuzzy guess at a *different* operat
 
 > **The invariant:** alias matching changes vocabulary, not authority. “Buys” does not create a new capability, and “seller” does not create a second supplier meaning — both are application-declared paths to identities that already exist.
 
-
-### Alias weights in the same concrete example
-
-The Supply Chain contract now also demonstrates **weighted aliases**. For
-example, `Vendor` and `Seller` are declared aliases of `Supplier` with
-application-defined evidence weights, while `PO`/`POs`/`Buy`/`Buys` carry
-weights on `PurchaseOrder`. Field and relationship aliases can be weighted as
-well.
-
-These weights are **evidence strength, not retrieval confidence and not
-authorization**, and they apply only when the current request actually uses
-lexical grounding. Only aliases matched by that grounding path contribute. The
-scopes never bleed into one another: a field weight of `50` is **50 for that
-field**, not `50` for its containing entity/table, so it cannot satisfy an
-entity-level minimum. If the model was already known with certainty during
-processing, that is recorded as a distinct provenance category
-(`ModelResolutionEvidence.KnownWithCertainty`) rather than a numeric value on
-the same 1–100 scale as alias weight, so it can never be combined
-arithmetically with field/entity/relationship evidence. With no lexical
-grounding, the weight feature is inert.
-
-`AliasWeightEvidenceGate` checks each grounded scope independently and fails
-the evidence check closed when a scope is too weak; it never creates a
-capability or bypasses authorization. Every result also carries the
-`ContractFingerprint` of the frozen contract it was measured against — the
-fingerprint changes if a declared alias weight changes, so it can identify
-the exact evidence-relevant contract state, not just entity/field shape. The
-advanced Supply Chain sample covers entity, field, and relationship weights,
-known-model provenance, no-lexical activation, boundary values, invalid
-weights, unweighted aliases, threshold violations, and preservation through
-AOT metadata and the frozen semantic contract.
-
-
 # When more than one meaning is legal
 
 Aliases collapse *different words* onto *one* meaning. Sometimes the ambiguity runs the other way: the **same word** is a legal match for **two different meanings at once**, and neither the graph nor a retrieval score can tell them apart on its own.
@@ -137,36 +120,6 @@ A fuzzy/BM25/vector retriever can legitimately return both, with close scores (`
 The same mechanism fails closed the same way in two other cases: when a resource limit (token count, search budget, timeout) stops the search before it can prove there is only one meaning (`GroundingOutcome.BudgetExceeded`), and when no legal interpretation exists at all (`GroundingOutcome.Unresolved`). Neither one ever falls back to a best-effort guess.
 
 Read more: **[Lexical grounding](docs/LEXICAL-GROUNDING.md)** covers fuzzy retrieval, the resolver’s complexity bounds, and worked adversarial examples end-to-end. **[Grounding decisions](docs/GROUNDING-DECISIONS.md)** covers the full `GroundingDecision` shape, the difference between “different evidence for the same meaning” and “different meanings,” and the complete `active customers` walkthrough, backed by a passing test.
-
-# Why Foundgine
-
-Foundgine exists to provide a stable execution boundary between **application intent** and **physical execution**.
-
-The problem is not that applications lack APIs. The problem is that every new intent source can otherwise become responsible for understanding the application's model, relationships, authorization rules, and provider-specific execution details.
-
-Foundgine centralizes that responsibility.
-
-## The idea
-
-Retrieval can discover candidates and evidence, but **retrieval is not authorization**. The application owns identity and policy; providers execute the already-authorized artifact.
-
-<p align="center"><img src="docs/assets/canonical-architecture.svg" alt="Foundgine canonical architecture from caller intent through semantic resolution, authorization, planning, execution and evidence." width="100%"></p>
-
-## Get started
-
-The fastest path is the Supply Chain sample pair:
-
-- **Starter:** [`samples/Foundgine.SupplyChain`](samples/Foundgine.SupplyChain) — the smallest realistic application boundary.
-  - [Build it step by step](samples/Foundgine.SupplyChain/SupplyChain-Starter-Tutorial.md)
-  - [Understand why it is structured this way](samples/Foundgine.SupplyChain/Foundgine-SupplyChain-Explained.md)
-- **Advanced:** [`samples/Foundgine.SupplyChain.Advanced`](samples/Foundgine.SupplyChain.Advanced) — richer semantics, grounding, retrieval, authorization and adversarial testing.
-  - Start at [`docs/00-Overview-And-Setup.md`](samples/Foundgine.SupplyChain.Advanced/docs/00-Overview-And-Setup.md) and follow 01–05.
-
-For the conceptual path, use [`docs/README.md`](docs/README.md) or the [documentation site](https://cristianbarragan.github.io/Foundgine/docs-site/).
-
-## Walkthrough
-
-**[From Natural Language to Authorized Execution](https://cristianbarragan.github.io/Foundgine/docs-site/walkthrough/)** traces the same Supply Chain scenario through every layer with representative payloads. The canonical request and the alias-matched paraphrase are resolved to the same semantic identities before authorization and planning.
 
 ## Why the boundary matters
 
@@ -215,11 +168,11 @@ dotnet test
 
 PostgreSQL integration testing: [`docs/POSTGRES-E2E.md`](docs/POSTGRES-E2E.md).
 
-## Release 2.0.1
+## Release 2.0.2
 
-**Current release: 2.0.1 · .NET 9**
+**Current release: 2.0.2 · .NET 9**
 
-The 2.0.1 release includes deterministic semantic alias grounding for generated contracts and the corresponding Supply Chain example coverage. Canonical and declared-alias vocabulary now converge on the same semantic identity without weakening the authorization boundary.
+The 2.0.2 release fixes the compact-name lexical fallback (e.g. `purchase order` → `purchaseorder`) so it is reliably reached instead of being starved of retrieval-timeout budget by exhaustive per-token lookups, and closes a related crash when the fallback itself finds no candidates. It builds on the 2.0.1 release, which introduced deterministic semantic alias grounding for generated contracts and the corresponding Supply Chain example coverage — canonical and declared-alias vocabulary converge on the same semantic identity without weakening the authorization boundary.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for the release notes.
 
