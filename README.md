@@ -13,7 +13,17 @@
 
 # Foundgine - **Programmable semantic execution for .NET.**
 
-Foundgine lets AI agents and other callers express what they want without giving them authority over how your application's data and business operations are executed. It gives application code, APIs, GraphQL, MCP and AI agents one application-controlled boundary between **caller intent**, **application meaning**, **authorization** and **physical execution**.
+Foundgine gives AI agents and other callers a way to express what they want, while your application retains full control over how anything is executed. It introduces a single, application‑controlled semantic execution boundary that sits between:
+
+ * caller intent,
+
+ * your domain meaning,
+
+ * your authorization rules,
+
+ * and the actual operations performed on your data, APIs, GraphQL, MCP tools, or backend systems.
+
+This boundary ensures that agents can propose actions, but only your application decides **what is allowed, what is safe, and what is actually executed.**
 
 [**Go to website →**](https://cristianbarragan.github.io/Foundgine/docs-site/)
 
