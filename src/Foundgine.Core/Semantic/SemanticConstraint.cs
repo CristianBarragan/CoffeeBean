@@ -7,20 +7,30 @@ public sealed record SemanticConstraint(
     decimal? Minimum = null,
     decimal? Maximum = null)
 {
-    public static SemanticConstraint Range(decimal? minimum = null, decimal? maximum = null) =>
-        new(SemanticConstraintKind.Range, Minimum: minimum, Maximum: maximum);
+    public static SemanticConstraint Range(decimal? minimum = null, decimal? maximum = null)
+    {
+        return new(SemanticConstraintKind.Range, Minimum: minimum, Maximum: maximum);
+    }
 
-    public static SemanticConstraint Pattern(string pattern) =>
-        new(SemanticConstraintKind.Pattern, pattern);
+    public static SemanticConstraint Pattern(string pattern)
+    {
+        return new SemanticConstraint(SemanticConstraintKind.Pattern, pattern);
+    }
 
-    public static SemanticConstraint Temporal(string semantics) =>
-        new(SemanticConstraintKind.Temporal, semantics);
+    public static SemanticConstraint Temporal(string semantics)
+    {
+        return new SemanticConstraint(SemanticConstraintKind.Temporal, semantics);
+    }
 
-    public static SemanticConstraint Currency(string currencyCode) =>
-        new(SemanticConstraintKind.Currency, currencyCode);
+    public static SemanticConstraint Currency(string currencyCode)
+    {
+        return new SemanticConstraint(SemanticConstraintKind.Currency, currencyCode);
+    }
 
-    public static SemanticConstraint CountryCode(string countryCode) =>
-        new(SemanticConstraintKind.CountryCode, countryCode);
+    public static SemanticConstraint CountryCode(string countryCode)
+    {
+        return new SemanticConstraint(SemanticConstraintKind.CountryCode, countryCode);
+    }
 }
 
 public enum SemanticConstraintKind : byte

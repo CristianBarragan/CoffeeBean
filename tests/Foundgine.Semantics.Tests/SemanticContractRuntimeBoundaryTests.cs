@@ -1,4 +1,3 @@
-using Xunit;
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Resolution;
 
@@ -52,5 +51,3 @@ public sealed class SemanticContractRuntimeBoundaryTests
         Assert.Single(graph.Nodes);
     }
 }
-
-

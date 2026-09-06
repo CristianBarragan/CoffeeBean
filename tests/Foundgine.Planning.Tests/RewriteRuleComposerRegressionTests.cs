@@ -1,5 +1,4 @@
 using Foundgine.Core.Abstractions;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
@@ -35,7 +34,11 @@ public sealed class RewriteRuleComposerRegressionTests
         public double BenefitEstimate => 1;
         public bool IsIdempotent => true;
         public int Priority => 0;
-        public bool CanApply(SemanticPlan plan) => true;
+
+        public bool CanApply(SemanticPlan plan)
+        {
+            return true;
+        }
 
         public SemanticPlan Apply(SemanticPlan plan)
         {

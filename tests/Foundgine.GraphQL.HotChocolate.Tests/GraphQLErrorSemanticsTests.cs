@@ -1,8 +1,6 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Extensions.GraphQL.HotChocolate;
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic;
-using Xunit;
+using Foundgine.Core.Semantic.Metadata;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
@@ -31,10 +29,11 @@ public sealed class GraphQLErrorSemanticsTests
         var (model, metadata) = BuildCustomer();
 
         var result = new HotChocolateMutationAdapter(model, metadata).TryAdapt("""
-            mutation CreateCustomer($name: String!) {
-              createCustomer(input: { name: $name }) { id }
-            }
-            """, new Dictionary<string, object?> { ["name"] = 42 });
+                                                                               mutation CreateCustomer($name: String!) {
+                                                                                 createCustomer(input: { name: $name }) { id }
+                                                                               }
+                                                                               """,
+            new Dictionary<string, object?> { ["name"] = 42 });
 
         Assert.False(result.Succeeded);
         var error = Assert.Single(result.Errors);
@@ -49,10 +48,10 @@ public sealed class GraphQLErrorSemanticsTests
         var (model, metadata) = BuildCustomer();
 
         var result = new HotChocolateMutationAdapter(model, metadata).TryAdapt("""
-            mutation CreateCustomer {
-              createCustomer(input: { name: "Ada" }) { id name }
-            }
-            """);
+                                                                               mutation CreateCustomer {
+                                                                                 createCustomer(input: { name: "Ada" }) { id name }
+                                                                               }
+                                                                               """);
 
         Assert.True(result.Succeeded);
         Assert.NotNull(result.Data);
@@ -76,9 +75,11 @@ public sealed class GraphQLErrorSemanticsTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 

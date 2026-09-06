@@ -1,13 +1,9 @@
-using System.Security.Cryptography;
-using System.Text;
-using Foundgine.Core.Abstractions;
-
 namespace Foundgine.Core.Semantic;
 
 /// <summary>
-/// Produces a canonical, provider-independent fingerprint for a semantic model.
-/// The fingerprint is based only on semantic declarations and is independent of
-/// registration/declaration order or CLR metadata identity.
+///     Produces a canonical, provider-independent fingerprint for a semantic model.
+///     The fingerprint is based only on semantic declarations and is independent of
+///     registration/declaration order or CLR metadata identity.
 /// </summary>
 public static class SemanticModelFingerprint
 {
@@ -38,11 +34,9 @@ public static class SemanticModelFingerprint
                              .ThenBy(x => x.Value, StringComparer.Ordinal)
                              .ThenBy(x => x.Minimum)
                              .ThenBy(x => x.Maximum))
-                {
                     Append(canonical, "constraint", (byte)constraint.Kind, constraint.Value ?? "",
                         constraint.Minimum?.ToString("G29", System.Globalization.CultureInfo.InvariantCulture) ?? "",
                         constraint.Maximum?.ToString("G29", System.Globalization.CultureInfo.InvariantCulture) ?? "");
-                }
             }
 
             foreach (var relationship in entity.Relationships.OrderBy(x => x.Id.Value))
@@ -70,7 +64,8 @@ public static class SemanticModelFingerprint
     {
         foreach (var alias in aliases.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
                      .ThenBy(x => x.Name, StringComparer.Ordinal))
-            Append(builder, "alias", alias.Name, alias.Weight?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "");
+            Append(builder, "alias", alias.Name,
+                alias.Weight?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "");
     }
 
     private static void Append(StringBuilder builder, string kind, params object[] values)
@@ -81,15 +76,19 @@ public static class SemanticModelFingerprint
             var text = value.ToString() ?? "";
             builder.Append('|').Append(text.Length).Append(':').Append(text);
         }
+
         builder.Append('\n');
     }
 
-    private static string CanonicalType(SemanticType type) => type switch
+    private static string CanonicalType(SemanticType type)
     {
-        SemanticType.Scalar scalar => $"scalar:{scalar.Kind}",
-        SemanticType.Enum value => $"enum:{value.Name}",
-        SemanticType.Object value => $"object:{value.Name}",
-        SemanticType.Collection value => $"collection:{CanonicalType(value.ElementType)}",
-        _ => throw new InvalidOperationException($"Unsupported semantic type '{type.GetType().FullName}'.")
-    };
+        return type switch
+        {
+            SemanticType.Scalar scalar => $"scalar:{scalar.Kind}",
+            SemanticType.Enum value => $"enum:{value.Name}",
+            SemanticType.Object value => $"object:{value.Name}",
+            SemanticType.Collection value => $"collection:{CanonicalType(value.ElementType)}",
+            _ => throw new InvalidOperationException($"Unsupported semantic type '{type.GetType().FullName}'.")
+        };
+    }
 }

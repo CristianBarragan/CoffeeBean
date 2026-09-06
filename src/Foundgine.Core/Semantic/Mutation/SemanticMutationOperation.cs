@@ -4,9 +4,9 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.Mutation;
 
 /// <summary>
-/// Canonical semantic representation of one mutation operation.
-/// It contains semantic identities and intent only; physical columns, SQL,
-/// provider plans and transaction mechanics are intentionally absent.
+///     Canonical semantic representation of one mutation operation.
+///     It contains semantic identities and intent only; physical columns, SQL,
+///     provider plans and transaction mechanics are intentionally absent.
 /// </summary>
 public sealed record SemanticMutationOperation(
     EntityId Entity,

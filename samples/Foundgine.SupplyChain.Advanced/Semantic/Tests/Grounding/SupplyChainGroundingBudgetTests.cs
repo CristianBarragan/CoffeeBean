@@ -1,20 +1,17 @@
-using System.Threading;
-using Foundgine.Core.Semantic.Resolution;
 using Foundgine.SupplyChain.Advanced.Semantics;
-using Xunit;
 
 namespace Foundgine.SupplyChain.Advanced.Tests.Grounding;
 
 /// <summary>
-/// Case study for the "Complexity bounds" section of docs/LEXICAL-GROUNDING.md,
-/// run against the real generated Supply Chain semantic contract instead of
-/// the toy model used in the core library's
-/// <c>SemanticLexicalResolverTests</c>. Every control in that doc's table
-/// (<c>maxTokens</c>, <c>maxPathsExplored</c>, <c>timeout</c>,
-/// <c>retrievalTimeout</c>, cancellation) fails closed the same way:
-/// <see cref="GroundingOutcome.BudgetExceeded"/> with <c>Committed = null</c>,
-/// never a best-effort answer built from a search that was cut off before it
-/// could prove there was only one legal interpretation.
+///     Case study for the "Complexity bounds" section of docs/LEXICAL-GROUNDING.md,
+///     run against the real generated Supply Chain semantic contract instead of
+///     the toy model used in the core library's
+///     <c>SemanticLexicalResolverTests</c>. Every control in that doc's table
+///     (<c>maxTokens</c>, <c>maxPathsExplored</c>, <c>timeout</c>,
+///     <c>retrievalTimeout</c>, cancellation) fails closed the same way:
+///     <see cref="GroundingOutcome.BudgetExceeded" /> with <c>Committed = null</c>,
+///     never a best-effort answer built from a search that was cut off before it
+///     could prove there was only one legal interpretation.
 /// </summary>
 public sealed class SupplyChainGroundingBudgetTests
 {
@@ -185,9 +182,11 @@ public sealed class SupplyChainGroundingBudgetTests
         }
     }
 
-    /// <summary>Simulates a slow/hung retrieval provider (e.g. a network
-    /// partition or a slow index) so retrieval-timeout behavior can be
-    /// exercised deterministically.</summary>
+    /// <summary>
+    ///     Simulates a slow/hung retrieval provider (e.g. a network
+    ///     partition or a slow index) so retrieval-timeout behavior can be
+    ///     exercised deterministically.
+    /// </summary>
     private sealed class SlowLexicalSource(TimeSpan delay) : ISemanticLexicalCandidateSource
     {
         public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request)
@@ -196,7 +195,8 @@ public sealed class SupplyChainGroundingBudgetTests
             return [];
         }
 
-        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request, CancellationToken cancellationToken)
+        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request,
+            CancellationToken cancellationToken)
         {
             Thread.Sleep(delay);
             return [];

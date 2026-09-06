@@ -1,6 +1,3 @@
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Resolution;
 
@@ -16,7 +13,8 @@ public sealed class SemanticLexiconIndexClient
     public SemanticLexiconIndexClient(HttpClient httpClient, string index = "foundgine-semantic-lexicon")
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        if (string.IsNullOrWhiteSpace(index)) throw new ArgumentException("Elasticsearch index cannot be empty.", nameof(index));
+        if (string.IsNullOrWhiteSpace(index))
+            throw new ArgumentException("Elasticsearch index cannot be empty.", nameof(index));
         _index = index;
     }
 
@@ -29,10 +27,7 @@ public sealed class SemanticLexiconIndexClient
         if (head.IsSuccessStatusCode)
             return;
 
-        if (head.StatusCode != System.Net.HttpStatusCode.NotFound)
-        {
-            head.EnsureSuccessStatusCode();
-        }
+        if (head.StatusCode != System.Net.HttpStatusCode.NotFound) head.EnsureSuccessStatusCode();
 
         var mapping = new
         {

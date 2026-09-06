@@ -1,13 +1,8 @@
-using Foundgine.Core.Abstractions;
-using Foundgine.Providers.Aot;
-using Foundgine.Generated;
-using Foundgine.Core.Semantic;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.IR;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Providers.Storage.Sql;
 using Foundgine.SupplyChain.Application;
-using Xunit;
 
 namespace Foundgine.SupplyChain.Tests;
 
@@ -29,7 +24,8 @@ public sealed class AotAndPlanningTests
     public void Generated_semantic_surface_exposes_named_fields_without_numeric_ids()
     {
         Assert.Equal("QuantityOnHand", GeneratedSemanticModel.InventoryPosition.QuantityOnHand.Name);
-        Assert.Equal(SupplyChainSemanticConfiguration.InventoryPosition, GeneratedSemanticModel.InventoryPosition.Entity);
+        Assert.Equal(SupplyChainSemanticConfiguration.InventoryPosition,
+            GeneratedSemanticModel.InventoryPosition.Entity);
     }
 
     [Fact]

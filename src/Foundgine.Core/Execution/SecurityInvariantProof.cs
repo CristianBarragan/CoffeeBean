@@ -4,9 +4,9 @@ using Foundgine.Core.Semantic.Security;
 namespace Foundgine.Core.Execution;
 
 /// <summary>
-/// Immutable security execution certificate bound to one exact provider plan
-/// and one exact Execution IR fingerprint. Normal callers cannot construct or
-/// attach this type; only the security certification gate can issue it.
+///     Immutable security execution certificate bound to one exact provider plan
+///     and one exact Execution IR fingerprint. Normal callers cannot construct or
+///     attach this type; only the security certification gate can issue it.
 /// </summary>
 public sealed class SecurityInvariantProof
 {
@@ -35,10 +35,12 @@ public sealed class SecurityInvariantProof
     public string ExecutionIrFingerprint { get; }
     public bool IsSatisfied => Missing.Count == 0;
 
-    internal bool IsBoundTo(ProviderPlan plan, ExecutionIR ir) =>
-        _boundPlan is not null &&
-        ReferenceEquals(_boundPlan, plan) &&
-        string.Equals(ExecutionIrFingerprint, ExecutionIRFingerprint.Create(ir), StringComparison.Ordinal);
+    internal bool IsBoundTo(ProviderPlan plan, ExecutionIR ir)
+    {
+        return _boundPlan is not null &&
+               ReferenceEquals(_boundPlan, plan) &&
+               string.Equals(ExecutionIrFingerprint, ExecutionIRFingerprint.Create(ir), StringComparison.Ordinal);
+    }
 
     public void EnsureSatisfied()
     {
@@ -60,7 +62,8 @@ public sealed class SecurityInvariantProof
         ArgumentNullException.ThrowIfNull(preserved);
         var requiredSet = required.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
         var preservedSet = preserved.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
-        var missing = requiredSet.Except(preservedSet, StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        var missing = requiredSet.Except(preservedSet, StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal)
+            .ToArray();
         return new SecurityInvariantProof(null, string.Empty, provider, requiredSet, preservedSet, missing);
     }
 
@@ -99,9 +102,9 @@ public sealed class SecurityInvariantProof
 }
 
 /// <summary>
-/// Provider declaration of capabilities. A declaration is not sufficient
-/// evidence for security-critical provider invariants; those require a
-/// concrete evaluator over the compiled provider plan.
+///     Provider declaration of capabilities. A declaration is not sufficient
+///     evidence for security-critical provider invariants; those require a
+///     concrete evaluator over the compiled provider plan.
 /// </summary>
 public interface ISecurityInvariantProviderCompiler
 {
@@ -143,26 +146,20 @@ public static class SecurityInvariantProofGate
                 "ExecutionIR contains no security obligations. An executable provider plan must carry a non-empty security certificate.");
 
         if (compiler is not ISecurityInvariantProviderCompiler securityCompiler)
-        {
             throw new InvalidOperationException(
                 $"Provider compiler '{compiler.GetType().Name}' does not declare a security-invariant preservation contract.");
-        }
 
         foreach (var id in required)
-        {
             if (!SecurityInvariantRegistry.Contains(id))
                 throw new InvalidOperationException($"Unknown required security invariant '{id}'.");
-        }
 
         var requiredConcreteEvaluation = required
             .Where(ConcreteEvaluationRequired.Contains)
             .ToArray();
 
         if (requiredConcreteEvaluation.Length > 0 && compiler is not IProviderSecurityConformanceEvaluator)
-        {
             throw new InvalidOperationException(
                 $"Provider compiler '{compiler.GetType().Name}' has no concrete security conformance evaluator for security-critical invariants: {string.Join(", ", requiredConcreteEvaluation)}.");
-        }
 
         IReadOnlyCollection<string> preserved = securityCompiler.PreservedSecurityInvariants;
 

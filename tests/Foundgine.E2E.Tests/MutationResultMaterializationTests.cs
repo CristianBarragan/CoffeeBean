@@ -1,8 +1,7 @@
+using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution.Mutation;
 using Foundgine.Core.Semantic;
-using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Planning.Mutation;
-using Xunit;
 
 namespace Foundgine.E2E.Tests;
 
@@ -20,19 +19,23 @@ public sealed class MutationResultMaterializationTests
             new MutationIntent(Customer, MutationKind.Create,
                 [new MutationFieldValue(new ColumnId(2), "Alice")],
                 ReturnFields: [new FieldId(1), new FieldId(2)]),
-            [new NestedMutationChild(
-                new RelationshipId(801),
-                new NestedMutationIntent(
-                    new MutationIntent(Account, MutationKind.Create,
-                        [new MutationFieldValue(new ColumnId(3), "Primary")],
-                        ReturnFields: [new FieldId(1), new FieldId(2), new FieldId(3)]),
-                    [new NestedMutationChild(
-                        new RelationshipId(802),
-                        new NestedMutationIntent(
-                            new MutationIntent(Transaction, MutationKind.Create,
-                                [new MutationFieldValue(new ColumnId(3), 250)],
-                                ReturnFields: [new FieldId(1), new FieldId(2), new FieldId(3)]),
-                            []))]))]);
+            [
+                new NestedMutationChild(
+                    new RelationshipId(801),
+                    new NestedMutationIntent(
+                        new MutationIntent(Account, MutationKind.Create,
+                            [new MutationFieldValue(new ColumnId(3), "Primary")],
+                            ReturnFields: [new FieldId(1), new FieldId(2), new FieldId(3)]),
+                        [
+                            new NestedMutationChild(
+                                new RelationshipId(802),
+                                new NestedMutationIntent(
+                                    new MutationIntent(Transaction, MutationKind.Create,
+                                        [new MutationFieldValue(new ColumnId(3), 250)],
+                                        ReturnFields: [new FieldId(1), new FieldId(2), new FieldId(3)]),
+                                    []))
+                        ]))
+            ]);
 
         var result = new MutationBatchResult([
             new MutationResult(1, new Dictionary<FieldId, object?>
@@ -102,5 +105,4 @@ public sealed class MutationResultMaterializationTests
                 .Field(new FieldId(3), "Amount", typeof(long)))
             .Build();
     }
-
 }

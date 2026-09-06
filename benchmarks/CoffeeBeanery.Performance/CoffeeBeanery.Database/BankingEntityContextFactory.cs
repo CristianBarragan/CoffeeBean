@@ -1,7 +1,3 @@
-using System;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
-
 namespace CoffeeBeanery.Database;
 
 public sealed class BankingEntityContextFactory : IDesignTimeDbContextFactory<BankingEntityContext>

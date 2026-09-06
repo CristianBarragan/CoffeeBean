@@ -1,8 +1,5 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Query;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
@@ -40,7 +37,8 @@ public sealed class PlanningDependencyBoundaryTests
                 .SelectMany(FlattenTypes)
                 .ToArray();
 
-            Assert.DoesNotContain(members, x => x.Namespace?.StartsWith("Foundgine.Core.Semantic.Metadata", StringComparison.Ordinal) == true);
+            Assert.DoesNotContain(members,
+                x => x.Namespace?.StartsWith("Foundgine.Core.Semantic.Metadata", StringComparison.Ordinal) == true);
         }
     }
 

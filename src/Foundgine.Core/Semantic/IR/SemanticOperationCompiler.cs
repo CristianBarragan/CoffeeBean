@@ -3,9 +3,9 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.IR;
 
 /// <summary>
-/// Lowers the resolved SemanticGraph into canonical Semantic IR.
-/// This operation is deliberately lossless for information owned by the
-/// semantic layer. No provider or storage information is introduced.
+///     Lowers the resolved SemanticGraph into canonical Semantic IR.
+///     This operation is deliberately lossless for information owned by the
+///     semantic layer. No provider or storage information is introduced.
 /// </summary>
 public static class SemanticOperationCompiler
 {
@@ -32,7 +32,7 @@ public static class SemanticOperationCompiler
             nodeIds,
             visited,
             graph.Options,
-            isRoot: true);
+            true);
 
         if (visited.Count != graph.Nodes.Count)
         {

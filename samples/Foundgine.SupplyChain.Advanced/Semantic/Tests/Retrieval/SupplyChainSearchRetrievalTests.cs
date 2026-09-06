@@ -1,18 +1,15 @@
-using Foundgine.Core.Semantic.Resolution;
-using Foundgine.SupplyChain.Advanced.Semantics;
 using Foundgine.Providers.Storage.Sql.Retrieval;
-using Npgsql;
-using Xunit;
+using Foundgine.SupplyChain.Advanced.Semantics;
 
 namespace Foundgine.SupplyChain.Advanced.Tests.Retrieval;
 
 /// <summary>
-/// Exercises <see cref="PostgresRetrievalCandidateSource"/>'s
-/// <see cref="RetrievalStrategy.Search"/> strategy, which is deliberately
-/// isolated to the pg_search (ParadeDB BM25) extension per
-/// src/Foundgine.Providers.Storage.Sql/README.md. pg_search is not installed on a vanilla
-/// PostgreSQL image, so - unlike Fuzzy/FullText - this requires an explicit
-/// second opt-in on top of the connection string: FOUNDGINE_POSTGRES_PGSEARCH=1.
+///     Exercises <see cref="PostgresRetrievalCandidateSource" />'s
+///     <see cref="RetrievalStrategy.Search" /> strategy, which is deliberately
+///     isolated to the pg_search (ParadeDB BM25) extension per
+///     src/Foundgine.Providers.Storage.Sql/README.md. pg_search is not installed on a vanilla
+///     PostgreSQL image, so - unlike Fuzzy/FullText - this requires an explicit
+///     second opt-in on top of the connection string: FOUNDGINE_POSTGRES_PGSEARCH=1.
 /// </summary>
 public sealed class SupplyChainSearchRetrievalTests
 {
@@ -62,8 +59,7 @@ public sealed class SupplyChainSearchRetrievalTests
             "metal fabrication",
             RetrievalStrategy.Search);
 
-        await Assert.ThrowsAsync<NotSupportedException>(
-            () => source.RetrieveAsync(request));
+        await Assert.ThrowsAsync<NotSupportedException>(() => source.RetrieveAsync(request));
     }
 
     private static async Task SeedAsync(NpgsqlDataSource dataSource)
@@ -85,7 +81,9 @@ public sealed class SupplyChainSearchRetrievalTests
             """;
 
         await using (var command = new NpgsqlCommand(ddl, connection))
+        {
             await command.ExecuteNonQueryAsync();
+        }
 
         const string seed =
             """
@@ -97,7 +95,9 @@ public sealed class SupplyChainSearchRetrievalTests
             """;
 
         await using (var command = new NpgsqlCommand(seed, connection))
+        {
             await command.ExecuteNonQueryAsync();
+        }
 
         const string index =
             """
@@ -108,6 +108,8 @@ public sealed class SupplyChainSearchRetrievalTests
             """;
 
         await using (var command = new NpgsqlCommand(index, connection))
+        {
             await command.ExecuteNonQueryAsync();
+        }
     }
 }

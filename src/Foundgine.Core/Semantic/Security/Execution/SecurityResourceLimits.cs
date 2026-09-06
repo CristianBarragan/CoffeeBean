@@ -3,8 +3,8 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.Security.Execution;
 
 /// <summary>
-/// Bounds applied to the protocol-neutral semantic request before resolution and planning.
-/// These limits protect the semantic engine even when an adapter other than JSON is used.
+///     Bounds applied to the protocol-neutral semantic request before resolution and planning.
+///     These limits protect the semantic engine even when an adapter other than JSON is used.
 /// </summary>
 public sealed record SecurityResourceLimits
 {
@@ -43,9 +43,9 @@ public sealed record SecurityResourceLimits
 }
 
 /// <summary>
-/// Enforces resource and complexity bounds at the semantic boundary.
-/// Adapter-level limits are defense-in-depth; this validator is the canonical
-/// engine-side guard and therefore also protects non-JSON callers.
+///     Enforces resource and complexity bounds at the semantic boundary.
+///     Adapter-level limits are defense-in-depth; this validator is the canonical
+///     engine-side guard and therefore also protects non-JSON callers.
 /// </summary>
 public static class SecurityResourceLimitValidator
 {
@@ -76,10 +76,8 @@ public static class SecurityResourceLimitValidator
             Reject($"Order complexity exceeds the configured maximum of {limits.MaxOrderTerms} terms.");
 
         foreach (var term in options.EffectiveOrder)
-        {
             if (term.EffectivePath.Count > limits.MaxOrderPathDepth)
                 Reject($"Order relationship path exceeds the configured maximum of {limits.MaxOrderPathDepth} levels.");
-        }
 
         if (options.Filter is not null)
         {
@@ -115,7 +113,10 @@ public static class SecurityResourceLimitValidator
         return count;
     }
 
-    public static void ValidateFilter(SemanticFilterExpression filter, SecurityResourceLimits limits) => _ = CountFilter(filter, 1, limits);
+    public static void ValidateFilter(SemanticFilterExpression filter, SecurityResourceLimits limits)
+    {
+        _ = CountFilter(filter, 1, limits);
+    }
 
     private static int CountFilter(
         SemanticFilterExpression filter,
@@ -147,5 +148,8 @@ public static class SecurityResourceLimitValidator
         return count > limits.MaxFilterNodes ? count : count;
     }
 
-    private static void Reject(string message) => throw new InvalidOperationException(message);
+    private static void Reject(string message)
+    {
+        throw new InvalidOperationException(message);
+    }
 }

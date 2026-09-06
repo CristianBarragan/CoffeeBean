@@ -3,12 +3,11 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.Aggregates;
 
 /// <summary>
-/// The outcome of a legality check performed by <see cref="AggregateRewriteLegality"/>.
-///
-/// A result is only <see cref="IsLegal"/> when every individual check it represents passed.
-/// <see cref="Violations"/> is always empty when <see cref="IsLegal"/> is <see langword="true"/>,
-/// and always non-empty when it is <see langword="false"/> — callers can rely on this instead of
-/// re-deriving why a rewrite failed.
+///     The outcome of a legality check performed by <see cref="AggregateRewriteLegality" />.
+///     A result is only <see cref="IsLegal" /> when every individual check it represents passed.
+///     <see cref="Violations" /> is always empty when <see cref="IsLegal" /> is <see langword="true" />,
+///     and always non-empty when it is <see langword="false" /> — callers can rely on this instead of
+///     re-deriving why a rewrite failed.
 /// </summary>
 public sealed record AggregateRewriteLegalityResult(
     bool IsLegal,
@@ -25,8 +24,8 @@ public sealed record AggregateRewriteLegalityResult(
     }
 
     /// <summary>
-    /// Combines several results into one. The combined result is legal only if every input
-    /// result was legal; otherwise it carries the union of all violations, in order.
+    ///     Combines several results into one. The combined result is legal only if every input
+    ///     result was legal; otherwise it carries the union of all violations, in order.
     /// </summary>
     public static AggregateRewriteLegalityResult Combine(params AggregateRewriteLegalityResult[] results)
     {
@@ -40,32 +39,32 @@ public sealed record AggregateRewriteLegalityResult(
 }
 
 /// <summary>
-/// The explicit legality boundary for aggregate rewrites.
-///
-/// This type does not perform any rewriting itself. It exists so that a rewrite rule can ask,
-/// before it fires, "is it even semantically legal to substitute aggregate A for aggregate B
-/// here?" — and get a fail-closed answer backed by the centralized
-/// <see cref="SemanticAggregateSemanticsCatalog"/> contract rather than an ad-hoc,
-/// rule-local assumption.
-///
-/// A rewrite that changes which aggregate function is evaluated must be rejected unless it
-/// preserves:
-/// <list type="bullet">
-///   <item>empty-collection semantics (does the result differ when the collection is empty?)</item>
-///   <item>NULL-input semantics (does NULL-handling differ?)</item>
-///   <item>duplicate sensitivity (does the result differ for duplicate rows/values?)</item>
-///   <item>cardinality requirements (does the rewrite depend on relationship cardinality that
-///     was never proven?)</item>
-/// </list>
-/// The classic example this rejects: COUNT(R) → MIN(R.X). Both can appear to "check whether R
-/// has rows" for some callers, but they disagree on all three of empty-collection result,
-/// NULL-input behavior, and duplicate sensitivity, so the substitution is illegal.
+///     The explicit legality boundary for aggregate rewrites.
+///     This type does not perform any rewriting itself. It exists so that a rewrite rule can ask,
+///     before it fires, "is it even semantically legal to substitute aggregate A for aggregate B
+///     here?" — and get a fail-closed answer backed by the centralized
+///     <see cref="SemanticAggregateSemanticsCatalog" /> contract rather than an ad-hoc,
+///     rule-local assumption.
+///     A rewrite that changes which aggregate function is evaluated must be rejected unless it
+///     preserves:
+///     <list type="bullet">
+///         <item>empty-collection semantics (does the result differ when the collection is empty?)</item>
+///         <item>NULL-input semantics (does NULL-handling differ?)</item>
+///         <item>duplicate sensitivity (does the result differ for duplicate rows/values?)</item>
+///         <item>
+///             cardinality requirements (does the rewrite depend on relationship cardinality that
+///             was never proven?)
+///         </item>
+///     </list>
+///     The classic example this rejects: COUNT(R) → MIN(R.X). Both can appear to "check whether R
+///     has rows" for some callers, but they disagree on all three of empty-collection result,
+///     NULL-input behavior, and duplicate sensitivity, so the substitution is illegal.
 /// </summary>
 public static class AggregateRewriteLegality
 {
     /// <summary>
-    /// Checks whether the empty-collection result is preserved by substituting
-    /// <paramref name="to"/> for <paramref name="from"/>.
+    ///     Checks whether the empty-collection result is preserved by substituting
+    ///     <paramref name="to" /> for <paramref name="from" />.
     /// </summary>
     public static AggregateRewriteLegalityResult CheckEmptySemantics(
         SemanticAggregateSemantics from,
@@ -83,8 +82,8 @@ public static class AggregateRewriteLegality
     }
 
     /// <summary>
-    /// Checks whether NULL-input behavior is preserved by substituting <paramref name="to"/>
-    /// for <paramref name="from"/>.
+    ///     Checks whether NULL-input behavior is preserved by substituting <paramref name="to" />
+    ///     for <paramref name="from" />.
     /// </summary>
     public static AggregateRewriteLegalityResult CheckNullSemantics(
         SemanticAggregateSemantics from,
@@ -101,8 +100,8 @@ public static class AggregateRewriteLegality
     }
 
     /// <summary>
-    /// Checks whether duplicate sensitivity is preserved by substituting <paramref name="to"/>
-    /// for <paramref name="from"/>.
+    ///     Checks whether duplicate sensitivity is preserved by substituting <paramref name="to" />
+    ///     for <paramref name="from" />.
     /// </summary>
     public static AggregateRewriteLegalityResult CheckDuplicateSensitivity(
         SemanticAggregateSemantics from,
@@ -120,12 +119,11 @@ public static class AggregateRewriteLegality
     }
 
     /// <summary>
-    /// Checks whether the rewrite's cardinality requirements are satisfied.
-    ///
-    /// If either aggregate's contract requires a cardinality proof, the rewrite is only legal
-    /// when <paramref name="knowledge"/> is something other than
-    /// <see cref="SemanticCardinalityKnowledge.Unknown"/>. This fails closed: a rewrite that
-    /// needs a cardinality proof is never assumed legal just because no proof was supplied.
+    ///     Checks whether the rewrite's cardinality requirements are satisfied.
+    ///     If either aggregate's contract requires a cardinality proof, the rewrite is only legal
+    ///     when <paramref name="knowledge" /> is something other than
+    ///     <see cref="SemanticCardinalityKnowledge.Unknown" />. This fails closed: a rewrite that
+    ///     needs a cardinality proof is never assumed legal just because no proof was supplied.
     /// </summary>
     public static AggregateRewriteLegalityResult CheckCardinalityRequirement(
         SemanticAggregateSemantics from,
@@ -146,12 +144,11 @@ public static class AggregateRewriteLegality
     }
 
     /// <summary>
-    /// The full legality gate for substituting aggregate <paramref name="to"/> for aggregate
-    /// <paramref name="from"/>. Runs every individual check and fails closed: the substitution
-    /// is legal only when empty-collection semantics, NULL semantics, duplicate sensitivity,
-    /// and cardinality requirements are all preserved.
-    ///
-    /// Substituting an aggregate for itself is always legal.
+    ///     The full legality gate for substituting aggregate <paramref name="to" /> for aggregate
+    ///     <paramref name="from" />. Runs every individual check and fails closed: the substitution
+    ///     is legal only when empty-collection semantics, NULL semantics, duplicate sensitivity,
+    ///     and cardinality requirements are all preserved.
+    ///     Substituting an aggregate for itself is always legal.
     /// </summary>
     public static AggregateRewriteLegalityResult CheckSubstitution(
         SemanticAggregateSemantics from,
@@ -172,30 +169,39 @@ public static class AggregateRewriteLegality
     }
 
     /// <summary>
-    /// Convenience overload that looks up both sides in
-    /// <see cref="SemanticAggregateSemanticsCatalog"/> before running
-    /// <see cref="CheckSubstitution(SemanticAggregateSemantics, SemanticAggregateSemantics, SemanticCardinalityKnowledge)"/>.
+    ///     Convenience overload that looks up both sides in
+    ///     <see cref="SemanticAggregateSemanticsCatalog" /> before running
+    ///     <see cref="CheckSubstitution(SemanticAggregateSemantics, SemanticAggregateSemantics, SemanticCardinalityKnowledge)" />
+    ///     .
     /// </summary>
     public static AggregateRewriteLegalityResult CheckSubstitution(
         SemanticFilterAggregate from,
         SemanticFilterAggregate to,
-        SemanticCardinalityKnowledge knowledge = SemanticCardinalityKnowledge.Unknown) =>
-        CheckSubstitution(
+        SemanticCardinalityKnowledge knowledge = SemanticCardinalityKnowledge.Unknown)
+    {
+        return CheckSubstitution(
             SemanticAggregateSemanticsCatalog.For(from),
             SemanticAggregateSemanticsCatalog.For(to),
             knowledge);
+    }
 
-    private static string Describe(SemanticEmptyCollectionResult result) => result switch
+    private static string Describe(SemanticEmptyCollectionResult result)
     {
-        SemanticEmptyCollectionResult.Zero => "zero",
-        SemanticEmptyCollectionResult.Null => "NULL",
-        _ => result.ToString()
-    };
+        return result switch
+        {
+            SemanticEmptyCollectionResult.Zero => "zero",
+            SemanticEmptyCollectionResult.Null => "NULL",
+            _ => result.ToString()
+        };
+    }
 
-    private static string Describe(SemanticNullInputBehavior behavior) => behavior switch
+    private static string Describe(SemanticNullInputBehavior behavior)
     {
-        SemanticNullInputBehavior.NeverNull => "never NULL",
-        SemanticNullInputBehavior.IgnoresNull => "NULL-ignoring",
-        _ => behavior.ToString()
-    };
+        return behavior switch
+        {
+            SemanticNullInputBehavior.NeverNull => "never NULL",
+            SemanticNullInputBehavior.IgnoresNull => "NULL-ignoring",
+            _ => behavior.ToString()
+        };
+    }
 }

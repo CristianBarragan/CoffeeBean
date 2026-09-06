@@ -1,17 +1,14 @@
 using Foundgine.HighAssurance.Banking;
 using Foundgine.HighAssurance.Postgres;
 using Foundgine.HighAssurance.Postgres.Execution;
-using Foundgine.Core.Semantic.Authorization;
-using Npgsql;
-using Xunit;
 
 namespace Foundgine.Runtime.ControlPlane.Tests;
 
 /// <summary>
-/// Deliberately hostile tests for the consequential TransferFunds boundary.
-/// These are penetration-style tests: the authorization callback is treated as
-/// potentially compromised, request state is mutated between attempts, and
-/// batch inputs are constructed to bypass per-item checks.
+///     Deliberately hostile tests for the consequential TransferFunds boundary.
+///     These are penetration-style tests: the authorization callback is treated as
+///     potentially compromised, request state is mutated between attempts, and
+///     batch inputs are constructed to bypass per-item checks.
 /// </summary>
 public sealed class TransferFundsPenetrationTests
 {
@@ -26,7 +23,7 @@ public sealed class TransferFundsPenetrationTests
         var victim = Guid.NewGuid();
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
-        await SeedAccountsAsync(dataSource, tenant, source, victim, destination, actor, dailyLimit: 1_000_000m);
+        await SeedAccountsAsync(dataSource, tenant, source, victim, destination, actor, 1_000_000m);
 
         // The authorization dependency is intentionally malicious: it claims ALLOW
         // even though the actor does not own the source account.
@@ -54,7 +51,7 @@ public sealed class TransferFundsPenetrationTests
         var actor = Guid.NewGuid();
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
-        await SeedAccountsAsync(dataSource, tenant, source, actor, destination, actor, dailyLimit: 50m);
+        await SeedAccountsAsync(dataSource, tenant, source, actor, destination, actor, 50m);
 
         var service = AuthorizedService(dataSource);
 
@@ -79,7 +76,7 @@ public sealed class TransferFundsPenetrationTests
         var source = Guid.NewGuid();
         var destinationA = Guid.NewGuid();
         var destinationB = Guid.NewGuid();
-        await SeedAccountsAsync(dataSource, tenant, source, actor, destinationA, actor, dailyLimit: 75m);
+        await SeedAccountsAsync(dataSource, tenant, source, actor, destinationA, actor, 75m);
         await InsertAccountAsync(dataSource, tenant, destinationB, actor, 1000m, 1_000_000m);
 
         var service = AuthorizedService(dataSource);
@@ -135,7 +132,7 @@ public sealed class TransferFundsPenetrationTests
         var actor = Guid.NewGuid();
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
-        await SeedAccountsAsync(dataSource, realTenant, source, actor, destination, actor, dailyLimit: 1_000_000m);
+        await SeedAccountsAsync(dataSource, realTenant, source, actor, destination, actor, 1_000_000m);
 
         var service = AuthorizedService(dataSource);
 
@@ -159,7 +156,7 @@ public sealed class TransferFundsPenetrationTests
         var actor = Guid.NewGuid();
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
-        await SeedAccountsAsync(dataSource, tenant, source, actor, destination, actor, dailyLimit: 10m);
+        await SeedAccountsAsync(dataSource, tenant, source, actor, destination, actor, 10m);
 
         var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(
             dataSource,
@@ -169,13 +166,15 @@ public sealed class TransferFundsPenetrationTests
             actor, tenant, new TransferFundsCommand(source, destination, 11m, "pentest-limit-authorizer")));
     }
 
-    private static PostgresTransferFundsService AuthorizedService(NpgsqlDataSource dataSource) =>
-        new(new PostgresTransferFundsExecutor(
+    private static PostgresTransferFundsService AuthorizedService(NpgsqlDataSource dataSource)
+    {
+        return new PostgresTransferFundsService(new PostgresTransferFundsExecutor(
             dataSource,
             static (id, source, destination) => new AuthorizationDecision(
                 id == source.OwnerId && id == destination.OwnerId,
                 1,
                 $"owner:{id}")));
+    }
 
     private static async Task PrepareAsync(NpgsqlDataSource dataSource)
     {
@@ -209,10 +208,10 @@ public sealed class TransferFundsPenetrationTests
         decimal dailyLimit)
     {
         const string sql = """
-            INSERT INTO banking.bank_account
-            (id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold, daily_transferred, daily_limit, is_frozen)
-            VALUES (@id, @tenant, @owner, @balance, 0, 0, 0, @limit, false);
-            """;
+                           INSERT INTO banking.bank_account
+                           (id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold, daily_transferred, daily_limit, is_frozen)
+                           VALUES (@id, @tenant, @owner, @balance, 0, 0, 0, @limit, false);
+                           """;
         await using var command = dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("id", id);
         command.Parameters.AddWithValue("tenant", tenant);
@@ -235,12 +234,12 @@ public sealed class TransferFundsPenetrationTests
     {
         await using var connection = await dataSource.OpenConnectionAsync();
         const string sql = """
-            SELECT
-                (SELECT balance FROM banking.bank_account WHERE id = @source),
-                (SELECT balance FROM banking.bank_account WHERE id = @destination),
-                (SELECT count(*) FROM banking.transfer_idempotency),
-                (SELECT count(*) FROM banking.transfer_audit);
-            """;
+                           SELECT
+                               (SELECT balance FROM banking.bank_account WHERE id = @source),
+                               (SELECT balance FROM banking.bank_account WHERE id = @destination),
+                               (SELECT count(*) FROM banking.transfer_idempotency),
+                               (SELECT count(*) FROM banking.transfer_audit);
+                           """;
         await using var command = new NpgsqlCommand(sql, connection);
         command.Parameters.AddWithValue("source", source);
         command.Parameters.AddWithValue("destination", destination);

@@ -1,15 +1,14 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
-using Xunit;
+using Foundgine.Core.Semantic.Planning;
 
 namespace Foundgine.Security.Tests;
 
 /// <summary>
-/// Deterministic semantic-security fuzz harness. The generator produces hostile
-/// graph shapes and the assertions verify that authorization invariants survive
-/// the semantic-to-plan boundary without involving SQL, GraphQL, or a provider.
+///     Deterministic semantic-security fuzz harness. The generator produces hostile
+///     graph shapes and the assertions verify that authorization invariants survive
+///     the semantic-to-plan boundary without involving SQL, GraphQL, or a provider.
 /// </summary>
 public sealed class SemanticSecurityFuzzHarnessTests
 {
@@ -55,7 +54,7 @@ public sealed class SemanticSecurityFuzzHarnessTests
 
         for (var caseIndex = 0; caseIndex < 250; caseIndex++)
         {
-            var graph = GenerateGraph(random, forceRootAllowed: true);
+            var graph = GenerateGraph(random, true);
             var authorized = authorizer.Authorize(graph);
             var plan = planner.Plan(authorized);
 
@@ -83,7 +82,7 @@ public sealed class SemanticSecurityFuzzHarnessTests
 
         for (var i = 0; i < count; i++)
         {
-            var graph = GenerateGraph(random, forceRootAllowed: true);
+            var graph = GenerateGraph(random, true);
             var authorized = authorizer.Authorize(graph);
             fingerprints.Add(SemanticPlanFingerprint.Create(planner.Plan(authorized)));
         }
@@ -141,18 +140,14 @@ public sealed class SemanticSecurityFuzzHarnessTests
             $"case={caseIndex} path={path}: denied entity reached plan: {node.EntityId}");
 
         foreach (var field in node.Fields)
-        {
             Assert.True(
                 policy.CanAccessField(node.EntityId, field),
                 $"case={caseIndex} path={path}: denied field reached plan: {field}");
-        }
 
         if (node.ViaRelationship is { } relationship)
-        {
             Assert.True(
                 policy.CanAccessRelationship(new EntityId(1), relationship),
                 $"case={caseIndex} path={path}: denied relationship reached plan: {relationship}");
-        }
 
         for (var i = 0; i < node.Children.Count; i++)
             AssertAuthorizedPlan(node.Children[i], policy, caseIndex, $"{path}/{i}");
@@ -160,9 +155,20 @@ public sealed class SemanticSecurityFuzzHarnessTests
 
     private sealed class FuzzPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessEntity(EntityId entityId) => entityId.Value % 2 == 0;
-        public override bool CanAccessField(EntityId entityId, FieldId fieldId) => fieldId.Value % 2 == 0;
-        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId) => relationshipId.Value % 2 == 0;
+        public override bool CanAccessEntity(EntityId entityId)
+        {
+            return entityId.Value % 2 == 0;
+        }
+
+        public override bool CanAccessField(EntityId entityId, FieldId fieldId)
+        {
+            return fieldId.Value % 2 == 0;
+        }
+
+        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId)
+        {
+            return relationshipId.Value % 2 == 0;
+        }
     }
 
     private sealed class PredicatePolicy : AllowAllSemanticAuthorizationPolicy
@@ -175,7 +181,9 @@ public sealed class SemanticSecurityFuzzHarnessTests
 
         public override AuthorizationPredicate? GetPredicate(
             EntityId entityId,
-            AuthorizationOperation operation) =>
-            operation == AuthorizationOperation.Read ? Predicate : null;
+            AuthorizationOperation operation)
+        {
+            return operation == AuthorizationOperation.Read ? Predicate : null;
+        }
     }
 }

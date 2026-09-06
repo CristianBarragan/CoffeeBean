@@ -1,6 +1,5 @@
 using Foundgine.Core.Semantic.Security.Execution;
 using Foundgine.Core.Semantic.Security.Warrants;
-using Xunit;
 
 namespace Foundgine.Security.Tests.Security;
 
@@ -81,8 +80,9 @@ public sealed class SecurityAuthorityPartitionRailsTests
         Assert.NotEqual(first.AuthorityCachePartition, second.AuthorityCachePartition);
     }
 
-    private static SecurityWarrant CreateWarrant(string id = "warrant", string nonce = "nonce") =>
-        new(
+    private static SecurityWarrant CreateWarrant(string id = "warrant", string nonce = "nonce")
+    {
+        return new(
             id,
             "issuer",
             "agent",
@@ -95,4 +95,5 @@ public sealed class SecurityAuthorityPartitionRailsTests
             "key-1",
             null,
             []);
+    }
 }

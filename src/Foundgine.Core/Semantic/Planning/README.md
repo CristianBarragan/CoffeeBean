@@ -19,7 +19,8 @@ The package contains:
 
 ## Boundary
 
-The planner describes **how an authorized semantic operation may be executed logically**. It does not emit SQL, database aliases, indexes, joins, or transport objects.
+The planner describes **how an authorized semantic operation may be executed logically**. It does not emit SQL, database
+aliases, indexes, joins, or transport objects.
 
 ```text
 Authorized semantic operation

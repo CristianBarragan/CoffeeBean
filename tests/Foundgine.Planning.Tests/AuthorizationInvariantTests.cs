@@ -1,14 +1,12 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
 /// <summary>
-/// Locks the P0.3 authorization contract at the semantic-to-plan boundary.
-/// These tests intentionally avoid SQL and GraphQL so the invariants remain
-/// provider-independent.
+///     Locks the P0.3 authorization contract at the semantic-to-plan boundary.
+///     These tests intentionally avoid SQL and GraphQL so the invariants remain
+///     provider-independent.
 /// </summary>
 public sealed class AuthorizationInvariantTests
 {
@@ -70,24 +68,35 @@ public sealed class AuthorizationInvariantTests
 
     private sealed class DenyRootPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessEntity(EntityId entityId) => false;
+        public override bool CanAccessEntity(EntityId entityId)
+        {
+            return false;
+        }
     }
 
     private sealed class DenyFieldPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessField(EntityId entityId, FieldId fieldId) => fieldId != new FieldId(2);
+        public override bool CanAccessField(EntityId entityId, FieldId fieldId)
+        {
+            return fieldId != new FieldId(2);
+        }
     }
 
     private sealed class DenyRelationshipPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId) => false;
+        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId)
+        {
+            return false;
+        }
     }
 
     private sealed class ConditionalPolicy(AuthorizationPredicate predicate) : AllowAllSemanticAuthorizationPolicy
     {
         public override AuthorizationPredicate? GetPredicate(
             EntityId entityId,
-            AuthorizationOperation operation) =>
-            operation == AuthorizationOperation.Read ? predicate : null;
+            AuthorizationOperation operation)
+        {
+            return operation == AuthorizationOperation.Read ? predicate : null;
+        }
     }
 }

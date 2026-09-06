@@ -17,11 +17,11 @@ public enum AliasEvidenceStatus : byte
 }
 
 /// <summary>
-/// Whether the semantic model itself was already known with certainty prior to
-/// lexical resolution. This is a different epistemic category from declared
-/// alias evidence: it describes provenance of the model, not the strength of a
-/// lexical match, and it deliberately has no numeric scale so it can never be
-/// combined arithmetically (e.g. max/averaged) with an alias weight.
+///     Whether the semantic model itself was already known with certainty prior to
+///     lexical resolution. This is a different epistemic category from declared
+///     alias evidence: it describes provenance of the model, not the strength of a
+///     lexical match, and it deliberately has no numeric scale so it can never be
+///     combined arithmetically (e.g. max/averaged) with an alias weight.
 /// </summary>
 public enum ModelResolutionEvidence : byte
 {
@@ -33,8 +33,8 @@ public enum ModelResolutionEvidence : byte
 }
 
 /// <summary>
-/// Measured, application-declared lexical evidence. This type does not perform
-/// authorization and does not alter retrieval scores.
+///     Measured, application-declared lexical evidence. This type does not perform
+///     authorization and does not alter retrieval scores.
 /// </summary>
 public sealed record AliasWeightEvidenceResult(
     AliasEvidenceStatus Status,
@@ -48,23 +48,23 @@ public sealed record AliasWeightEvidenceResult(
     string ContractFingerprint)
 {
     /// <summary>
-    /// Compatibility projection. Prefer <see cref="Status"/> because
-    /// NotApplicable and Sufficient are intentionally different states.
+    ///     Compatibility projection. Prefer <see cref="Status" /> because
+    ///     NotApplicable and Sufficient are intentionally different states.
     /// </summary>
     [Obsolete("Use Status. IsConclusive is true for both NotApplicable and Sufficient.", false)]
     public bool IsConclusive => Status != AliasEvidenceStatus.Insufficient;
 
     /// <summary>
-    /// Compatibility projection onto the old numeric representation.
+    ///     Compatibility projection onto the old numeric representation.
     /// </summary>
     [Obsolete("Use ModelEvidence. Model provenance is not on the same numeric scale as declared alias weight.", false)]
     public int? ModelWeight => ModelEvidence == ModelResolutionEvidence.KnownWithCertainty ? 100 : null;
 }
 
 /// <summary>
-/// Measures application-declared alias weights that actually participated in
-/// lexical grounding. The resolver may use this measurement as a commitment
-/// policy, but the evaluator itself never authorizes execution.
+///     Measures application-declared alias weights that actually participated in
+///     lexical grounding. The resolver may use this measurement as a commitment
+///     policy, but the evaluator itself never authorizes execution.
 /// </summary>
 public static class AliasWeightEvidenceGate
 {
@@ -96,7 +96,6 @@ public static class AliasWeightEvidenceGate
             : ModelResolutionEvidence.Unknown;
 
         if (lexicalResolution is null || lexicalResolution.Steps.Count == 0)
-        {
             return new(
                 AliasEvidenceStatus.NotApplicable,
                 modelEvidence,
@@ -107,7 +106,6 @@ public static class AliasWeightEvidenceGate
                 [],
                 [],
                 model.ContractFingerprint);
-        }
 
         var entityWeights = new Dictionary<EntityId, int>();
         var fieldWeights = new Dictionary<FieldId, int>();
@@ -146,7 +144,8 @@ public static class AliasWeightEvidenceGate
 
         var violatingEntities = entityWeights.Where(x => x.Value < minimumWeight).Select(x => x.Key).ToArray();
         var violatingFields = fieldWeights.Where(x => x.Value < minimumWeight).Select(x => x.Key).ToArray();
-        var violatingRelationships = relationshipWeights.Where(x => x.Value < minimumWeight).Select(x => x.Key).ToArray();
+        var violatingRelationships =
+            relationshipWeights.Where(x => x.Value < minimumWeight).Select(x => x.Key).ToArray();
 
         var applicable = entityWeights.Count > 0 || fieldWeights.Count > 0 || relationshipWeights.Count > 0;
         var status = !applicable
@@ -157,7 +156,7 @@ public static class AliasWeightEvidenceGate
                 ? AliasEvidenceStatus.Sufficient
                 : AliasEvidenceStatus.Insufficient;
 
-        return new(
+        return new AliasWeightEvidenceResult(
             status,
             modelEvidence,
             entityWeights,
@@ -178,12 +177,12 @@ public static class AliasWeightEvidenceGate
 }
 
 /// <summary>
-/// Backing evidence attached to one grounding interpretation. Alias weights
-/// are integers on their declared 1-100 scale; interpretation scores remain
-/// separate doubles because they are retrieval/graph ranking heuristics.
-/// ContractFingerprint identifies the exact frozen semantic contract this
-/// evidence was measured against, so an audit trail can prove which contract
-/// version a Sufficient/Insufficient verdict corresponds to.
+///     Backing evidence attached to one grounding interpretation. Alias weights
+///     are integers on their declared 1-100 scale; interpretation scores remain
+///     separate doubles because they are retrieval/graph ranking heuristics.
+///     ContractFingerprint identifies the exact frozen semantic contract this
+///     evidence was measured against, so an audit trail can prove which contract
+///     version a Sufficient/Insufficient verdict corresponds to.
 /// </summary>
 public sealed record AliasInterpretationEvidence(
     AliasEvidenceStatus Status,
@@ -192,6 +191,10 @@ public sealed record AliasInterpretationEvidence(
     IReadOnlyDictionary<RelationshipId, int> RelationshipWeights,
     string? ContractFingerprint = null)
 {
-    public static AliasInterpretationEvidence From(AliasWeightEvidenceResult result) =>
-        new(result.Status, result.EntityWeights, result.FieldWeights, result.RelationshipWeights, result.ContractFingerprint);
+    public static AliasInterpretationEvidence From(AliasWeightEvidenceResult result)
+    {
+        return new AliasInterpretationEvidence(result.Status, result.EntityWeights, result.FieldWeights,
+            result.RelationshipWeights,
+            result.ContractFingerprint);
+    }
 }

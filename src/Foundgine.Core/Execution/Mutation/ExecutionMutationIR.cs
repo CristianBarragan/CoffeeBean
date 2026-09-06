@@ -1,15 +1,13 @@
-using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Planning.Mutation;
 
 namespace Foundgine.Core.Execution.Mutation;
 
 /// <summary>
-/// Canonical provider-neutral execution representation for mutation work.
-///
-/// Mutation semantics are resolved before this boundary. This representation
-/// contains the concrete provider-neutral work required to execute a mutation
-/// batch, including dependency edges, but contains no SQL or provider-specific
-/// plan types.
+///     Canonical provider-neutral execution representation for mutation work.
+///     Mutation semantics are resolved before this boundary. This representation
+///     contains the concrete provider-neutral work required to execute a mutation
+///     batch, including dependency edges, but contains no SQL or provider-specific
+///     plan types.
 /// </summary>
 public sealed record ExecutionMutationIR(
     IReadOnlyList<MutationOperation> Operations,
@@ -18,7 +16,8 @@ public sealed record ExecutionMutationIR(
     /// <summary>Security invariants required to execute this exact mutation IR.</summary>
     public IReadOnlyList<string> RequiredSecurityInvariants { get; init; } = [];
 
-    public static ExecutionMutationIR From(MutationBatchPlan plan, IReadOnlyList<string>? requiredSecurityInvariants = null)
+    public static ExecutionMutationIR From(MutationBatchPlan plan,
+        IReadOnlyList<string>? requiredSecurityInvariants = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
 
@@ -34,29 +33,31 @@ public sealed record ExecutionMutationIR(
         {
             RequiredSecurityInvariants = requiredSecurityInvariants is null
                 ? []
-                : requiredSecurityInvariants.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray()
+                : requiredSecurityInvariants.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal)
+                    .ToArray()
         };
     }
 
     /// <summary>
-    /// Materializes the canonical provider-neutral mutation batch consumed by
-    /// existing mutation compilers. No correlation-specific representation is
-    /// introduced here.
+    ///     Materializes the canonical provider-neutral mutation batch consumed by
+    ///     existing mutation compilers. No correlation-specific representation is
+    ///     introduced here.
     /// </summary>
-    public MutationBatchPlan ToMutationBatchPlan() =>
-        new(Operations, Dependencies);
+    public MutationBatchPlan ToMutationBatchPlan()
+    {
+        return new MutationBatchPlan(Operations, Dependencies);
+    }
 
     /// <summary>
-    /// Derives dependency edges from field-level value references. This is a
-    /// validation/consistency operation; the Dependencies collection remains
-    /// the canonical execution graph input.
+    ///     Derives dependency edges from field-level value references. This is a
+    ///     validation/consistency operation; the Dependencies collection remains
+    ///     the canonical execution graph input.
     /// </summary>
     public IReadOnlyList<MutationDependency> DeriveDependencies()
     {
         var result = new List<MutationDependency>();
 
         for (var targetIndex = 0; targetIndex < Operations.Count; targetIndex++)
-        {
             foreach (var field in Operations[targetIndex].Fields)
             {
                 var source = field.Source;
@@ -65,18 +66,14 @@ public sealed record ExecutionMutationIR(
 
                 if (source.SourceOperationIndex < 0 ||
                     source.SourceOperationIndex >= Operations.Count)
-                {
                     throw new InvalidOperationException(
-                        $"Mutation value reference points to invalid source operation " +
+                        "Mutation value reference points to invalid source operation " +
                         $"{source.SourceOperationIndex}.");
-                }
 
                 if (source.SourceOperationIndex >= targetIndex)
-                {
                     throw new InvalidOperationException(
-                        $"Mutation value reference must point from an earlier operation: " +
+                        "Mutation value reference must point from an earlier operation: " +
                         $"{source.SourceOperationIndex} -> {targetIndex}.");
-                }
 
                 result.Add(new MutationDependency(
                     source.SourceOperationIndex,
@@ -84,14 +81,13 @@ public sealed record ExecutionMutationIR(
                     source.SourceField,
                     field.Column));
             }
-        }
 
         return result;
     }
 
     /// <summary>
-    /// Ensures canonical dependency metadata agrees with dependency edges
-    /// derivable from field-level value references.
+    ///     Ensures canonical dependency metadata agrees with dependency edges
+    ///     derivable from field-level value references.
     /// </summary>
     public void ValidateDerivedDependencies()
     {
@@ -110,10 +106,8 @@ public sealed record ExecutionMutationIR(
             .ToArray();
 
         if (!expected.SequenceEqual(actual))
-        {
             throw new InvalidOperationException(
                 "Mutation dependency metadata disagrees with field correlation references.");
-        }
     }
 
     private static void ValidateDependencies(
@@ -126,28 +120,26 @@ public sealed record ExecutionMutationIR(
                 dependency.SourceOperationIndex >= operationCount ||
                 dependency.TargetOperationIndex < 0 ||
                 dependency.TargetOperationIndex >= operationCount)
-            {
                 throw new InvalidOperationException(
-                    $"Mutation dependency indexes are outside the execution IR: " +
+                    "Mutation dependency indexes are outside the execution IR: " +
                     $"{dependency.SourceOperationIndex} -> {dependency.TargetOperationIndex}.");
-            }
 
             if (dependency.SourceOperationIndex >= dependency.TargetOperationIndex)
-            {
                 throw new InvalidOperationException(
-                    $"Mutation dependency must point from an earlier operation: " +
+                    "Mutation dependency must point from an earlier operation: " +
                     $"{dependency.SourceOperationIndex} -> {dependency.TargetOperationIndex}.");
-            }
         }
     }
 }
 
 /// <summary>
-/// Explicit lowering from the provider-neutral mutation planning artifact to
-/// the canonical execution representation.
+///     Explicit lowering from the provider-neutral mutation planning artifact to
+///     the canonical execution representation.
 /// </summary>
 public static class ExecutionMutationIRCompiler
 {
-    public static ExecutionMutationIR Compile(MutationBatchPlan plan) =>
-        ExecutionMutationIR.From(plan);
+    public static ExecutionMutationIR Compile(MutationBatchPlan plan)
+    {
+        return ExecutionMutationIR.From(plan);
+    }
 }

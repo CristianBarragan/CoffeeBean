@@ -1,8 +1,5 @@
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Resolution;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -17,8 +14,8 @@ public sealed class SemanticResolutionBoundaryTests
 
         var request = new SemanticRequest(new EntityId(1), []);
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request));
 
         Assert.Contains("at least one selection", ex.Message);
     }
@@ -44,8 +41,8 @@ public sealed class SemanticResolutionBoundaryTests
                 new SemanticSelection(null, relationship, [new SemanticSelection(new FieldId(1), null, [])])
             ]);
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request));
 
         Assert.Contains("selected more than once", ex.Message);
     }
@@ -71,4 +68,3 @@ public sealed class SemanticResolutionBoundaryTests
         Assert.Equal(new[] { new FieldId(2) }, graph.Nodes[0].Fields);
     }
 }
-

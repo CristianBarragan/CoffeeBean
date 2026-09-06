@@ -1,51 +1,55 @@
-using System.Diagnostics;
-using System.Globalization;
 using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic.Planning.Mutation;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Query;
-using HotChocolate.Language;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate;
 
 /// <summary>
-/// Translates GraphQL mutation syntax into provider-neutral Foundgine mutation
-/// intents. GraphQL variables, fragments, aliases, directives and output
-/// projection remain entirely at this adapter boundary.
+///     Translates GraphQL mutation syntax into provider-neutral Foundgine mutation
+///     intents. GraphQL variables, fragments, aliases, directives and output
+///     projection remain entirely at this adapter boundary.
 /// </summary>
 public sealed class HotChocolateMutationAdapter
 {
-    private readonly SemanticModel _model;
     private readonly IMetadataProvider _metadata;
-
-    public SemanticModel Model => _model;
 
     public HotChocolateMutationAdapter(SemanticModel model, IMetadataProvider metadata)
     {
-        _model = model ?? throw new ArgumentNullException(nameof(model));
+        Model = model ?? throw new ArgumentNullException(nameof(model));
         _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
     }
 
-    public NestedMutationIntent Adapt(string graphql) =>
-        AdaptResultShape(graphql).Intent;
+    public SemanticModel Model { get; }
+
+    public NestedMutationIntent Adapt(string graphql)
+    {
+        return AdaptResultShape(graphql).Intent;
+    }
 
     public NestedMutationIntent Adapt(
         string graphql,
         string? operationName,
-        IReadOnlyDictionary<string, object?>? variables = null) =>
-        AdaptResultShape(graphql, variables, operationName).Intent;
+        IReadOnlyDictionary<string, object?>? variables = null)
+    {
+        return AdaptResultShape(graphql, variables, operationName).Intent;
+    }
 
     public NestedMutationIntent Adapt(
         string graphql,
-        IReadOnlyDictionary<string, object?>? variables) =>
-        Adapt(graphql, operationName: null, variables);
+        IReadOnlyDictionary<string, object?>? variables)
+    {
+        return Adapt(graphql, null, variables);
+    }
 
     public NestedMutationIntent Adapt(
         string graphql,
         IReadOnlyDictionary<string, object?>? variables,
-        string? operationName) =>
-        Adapt(graphql, operationName, variables);
+        string? operationName)
+    {
+        return Adapt(graphql, operationName, variables);
+    }
 
 
     public GraphQLMutationAdaptation AdaptWithResultShape(
@@ -62,7 +66,8 @@ public sealed class HotChocolateMutationAdapter
         GraphQLVariableCoercer.ValidateSuppliedVariables(variables, variableDefinitions);
 
         if (operation.Directives.Count != 0)
-            throw new InvalidOperationException("GraphQL mutation operation directives are not supported by the adapter.");
+            throw new InvalidOperationException(
+                "GraphQL mutation operation directives are not supported by the adapter.");
 
         var fields = operation.SelectionSet.Selections
             .OfType<FieldNode>()
@@ -70,28 +75,29 @@ public sealed class HotChocolateMutationAdapter
             .ToArray();
 
         if (fields.Length != 1)
-            throw new InvalidOperationException("Foundgine GraphQL mutation adapter supports exactly one root mutation field.");
+            throw new InvalidOperationException(
+                "Foundgine GraphQL mutation adapter supports exactly one root mutation field.");
 
         var root = fields[0];
         if (root.Alias is not null)
-            throw new InvalidOperationException("GraphQL mutation root aliases are not supported by the mutation contract.");
+            throw new InvalidOperationException(
+                "GraphQL mutation root aliases are not supported by the mutation contract.");
 
         return AdaptRootField(root, document, variableDefinitions, variables);
     }
 
     /// <summary>
-    /// Batch form of <see cref="AdaptWithResultShape"/>: accepts a mutation document with
-    /// MORE THAN ONE root field, each of which becomes an independent mutation (createX,
-    /// updateX, deleteX, upsertX; each may still have its own nested children, same as the
-    /// single-field form). Every root field in a batch document MUST be aliased - that alias
-    /// is the key used to correlate each result back to its request in the response and in
-    /// <see cref="GraphQLMutationBatchItem.ResultKey"/>.
-    ///
-    /// This does not change the single-field contract: a document with exactly one,
-    /// unaliased root field should keep going through <see cref="AdaptWithResultShape"/>.
-    /// Combine the returned items' <c>Intent</c> values with
-    /// <c>MutationPlanner.Plan(IReadOnlyList&lt;NestedMutationIntent&gt;)</c> to get one
-    /// dependency-aware <c>MutationBatchPlan</c> for the whole document.
+    ///     Batch form of <see cref="AdaptWithResultShape" />: accepts a mutation document with
+    ///     MORE THAN ONE root field, each of which becomes an independent mutation (createX,
+    ///     updateX, deleteX, upsertX; each may still have its own nested children, same as the
+    ///     single-field form). Every root field in a batch document MUST be aliased - that alias
+    ///     is the key used to correlate each result back to its request in the response and in
+    ///     <see cref="GraphQLMutationBatchItem.ResultKey" />.
+    ///     This does not change the single-field contract: a document with exactly one,
+    ///     unaliased root field should keep going through <see cref="AdaptWithResultShape" />.
+    ///     Combine the returned items' <c>Intent</c> values with
+    ///     <c>MutationPlanner.Plan(IReadOnlyList&lt;NestedMutationIntent&gt;)</c> to get one
+    ///     dependency-aware <c>MutationBatchPlan</c> for the whole document.
     /// </summary>
     public IReadOnlyList<GraphQLMutationBatchItem> AdaptBatchWithResultShape(
         string graphql,
@@ -107,7 +113,8 @@ public sealed class HotChocolateMutationAdapter
         GraphQLVariableCoercer.ValidateSuppliedVariables(variables, variableDefinitions);
 
         if (operation.Directives.Count != 0)
-            throw new InvalidOperationException("GraphQL mutation operation directives are not supported by the adapter.");
+            throw new InvalidOperationException(
+                "GraphQL mutation operation directives are not supported by the adapter.");
 
         var fields = operation.SelectionSet.Selections
             .OfType<FieldNode>()
@@ -118,11 +125,13 @@ public sealed class HotChocolateMutationAdapter
             throw new InvalidOperationException("GraphQL mutation operation contains no root fields.");
 
         if (fields.Length == 1 && fields[0].Alias is null)
-        {
             // Not actually a batch - route through the single-field contract so callers
             // that always call the batch method still get the plain, unkeyed behavior.
-            return [new GraphQLMutationBatchItem(fields[0].Name.Value, AdaptRootField(fields[0], document, variableDefinitions, variables))];
-        }
+            return
+            [
+                new GraphQLMutationBatchItem(fields[0].Name.Value,
+                    AdaptRootField(fields[0], document, variableDefinitions, variables))
+            ];
 
         var seenKeys = new HashSet<string>(StringComparer.Ordinal);
         var items = new List<GraphQLMutationBatchItem>(fields.Length);
@@ -137,7 +146,8 @@ public sealed class HotChocolateMutationAdapter
             if (!seenKeys.Add(key))
                 throw new InvalidOperationException($"Duplicate root mutation alias '{key}' in batch document.");
 
-            items.Add(new GraphQLMutationBatchItem(key, AdaptRootField(field, document, variableDefinitions, variables)));
+            items.Add(
+                new GraphQLMutationBatchItem(key, AdaptRootField(field, document, variableDefinitions, variables)));
         }
 
         return items;
@@ -167,7 +177,8 @@ public sealed class HotChocolateMutationAdapter
         IReadOnlyDictionary<string, object?>? variables)
     {
         if (root.Directives.Count != 0)
-            throw new InvalidOperationException("GraphQL mutation directives on the root mutation field are not supported by the adapter.");
+            throw new InvalidOperationException(
+                "GraphQL mutation directives on the root mutation field are not supported by the adapter.");
 
         var (kind, entityName) = ParseOperation(root.Name.Value);
         var entity = FindEntity(entityName);
@@ -197,8 +208,10 @@ public sealed class HotChocolateMutationAdapter
     public GraphQLMutationAdaptation AdaptResultShape(
         string graphql,
         IReadOnlyDictionary<string, object?>? variables = null,
-        string? operationName = null) =>
-        AdaptWithResultShape(graphql, variables, operationName);
+        string? operationName = null)
+    {
+        return AdaptWithResultShape(graphql, variables, operationName);
+    }
 
     public GraphQLAdapterResult<NestedMutationIntent> TryAdapt(
         string graphql,
@@ -220,8 +233,10 @@ public sealed class HotChocolateMutationAdapter
     public GraphQLAdapterResult<NestedMutationIntent> TryAdapt(
         string graphql,
         string? operationName,
-        IReadOnlyDictionary<string, object?>? variables) =>
-        TryAdapt(graphql, variables, operationName);
+        IReadOnlyDictionary<string, object?>? variables)
+    {
+        return TryAdapt(graphql, variables, operationName);
+    }
 
     private static OperationDefinitionNode SelectOperation(
         DocumentNode document,
@@ -236,9 +251,9 @@ public sealed class HotChocolateMutationAdapter
         if (operationName is not null)
         {
             operation = operations.FirstOrDefault(x =>
-                string.Equals(x.Name?.Value, operationName, StringComparison.Ordinal))
-                ?? throw new InvalidOperationException(
-                    $"GraphQL operation '{operationName}' was not found.");
+                            string.Equals(x.Name?.Value, operationName, StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            $"GraphQL operation '{operationName}' was not found.");
         }
         else
         {
@@ -250,7 +265,7 @@ public sealed class HotChocolateMutationAdapter
 
         if (operation.Operation != expectedType)
             throw new InvalidOperationException(
-                $"Selected GraphQL operation must be a mutation operation.");
+                "Selected GraphQL operation must be a mutation operation.");
 
         return operation;
     }
@@ -267,7 +282,6 @@ public sealed class HotChocolateMutationAdapter
         IReadOnlyList<ColumnId>? conflictColumns = null;
 
         foreach (var argument in field.Arguments)
-        {
             switch (argument.Name.Value)
             {
                 case "input":
@@ -291,7 +305,6 @@ public sealed class HotChocolateMutationAdapter
                     throw new InvalidOperationException(
                         $"Mutation argument '{argument.Name.Value}' is not supported.");
             }
-        }
 
         if (kind is MutationKind.Create or MutationKind.Upsert && input is null)
             throw new InvalidOperationException("Create/upsert mutations require an 'input' object.");
@@ -323,9 +336,11 @@ public sealed class HotChocolateMutationAdapter
         return kind switch
         {
             MutationKind.Create => new MutationIntent(entity.Id, kind, input.Fields, null, DefaultReturnFields(entity)),
-            MutationKind.Update => new MutationIntent(entity.Id, kind, input.Fields, input.Filter, DefaultReturnFields(entity)),
+            MutationKind.Update => new MutationIntent(entity.Id, kind, input.Fields, input.Filter,
+                DefaultReturnFields(entity)),
             MutationKind.Delete => new MutationIntent(entity.Id, kind, [], input.Filter, DefaultReturnFields(entity)),
-            MutationKind.Upsert => new UpsertIntent(entity.Id, input.Fields, input.ConflictColumns, DefaultReturnFields(entity)),
+            MutationKind.Upsert => new UpsertIntent(entity.Id, input.Fields, input.ConflictColumns,
+                DefaultReturnFields(entity)),
             _ => throw new InvalidOperationException($"Mutation '{kind}' is not supported.")
         };
     }
@@ -343,13 +358,13 @@ public sealed class HotChocolateMutationAdapter
             {
                 var metadataEntity = _metadata.GetEntity(entity.Id);
                 var metadataField = metadataEntity.EffectiveFields.FirstOrDefault(x => x.Id == semanticField.Id)
-                    ?? throw new InvalidOperationException(
-                        $"Field '{pair.Key}' is not mapped in metadata for '{entity.Name}'.");
+                                    ?? throw new InvalidOperationException(
+                                        $"Field '{pair.Key}' is not mapped in metadata for '{entity.Name}'.");
 
                 var value = pair.Value;
                 var column = metadataField.Column
-                    ?? throw new InvalidOperationException(
-                        $"Field '{pair.Key}' on '{entity.Name}' has no storage column mapping.");
+                             ?? throw new InvalidOperationException(
+                                 $"Field '{pair.Key}' on '{entity.Name}' has no storage column mapping.");
 
                 fields.Add(new MutationFieldValue(
                     column.ColumnId,
@@ -357,8 +372,7 @@ public sealed class HotChocolateMutationAdapter
                 continue;
             }
 
-            var relationship = entity.Relationships.FirstOrDefault(
-                x => NamesEqual(x.Name, pair.Key));
+            var relationship = entity.Relationships.FirstOrDefault(x => NamesEqual(x.Name, pair.Key));
 
             if (relationship is null)
                 throw new InvalidOperationException(
@@ -368,9 +382,9 @@ public sealed class HotChocolateMutationAdapter
             {
                 var childFields = new List<MutationFieldValue>();
                 var grandChildren = new List<NestedChildInput>();
-                TranslateInputObject(_model.Get(relationship.Target), childInput, childFields, grandChildren);
+                TranslateInputObject(Model.Get(relationship.Target), childInput, childFields, grandChildren);
 
-                var target = _model.Get(relationship.Target);
+                var target = Model.Get(relationship.Target);
                 var childIntent = new MutationIntent(
                     target.Id,
                     MutationKind.Create,
@@ -397,10 +411,8 @@ public sealed class HotChocolateMutationAdapter
         {
             if (value is not System.Collections.IEnumerable enumerable || value is string ||
                 value is IReadOnlyDictionary<string, object?>)
-            {
                 throw new InvalidOperationException(
                     $"Collection relationship '{relationship.Name}' requires a list input.");
-            }
 
             return enumerable.Cast<object?>()
                 .Select(RequireInputObject)
@@ -410,12 +422,16 @@ public sealed class HotChocolateMutationAdapter
         return [RequireInputObject(value)];
     }
 
-    private static IReadOnlyDictionary<string, object?> RequireInputObject(object? value) =>
-        value as IReadOnlyDictionary<string, object?>
-        ?? throw new InvalidOperationException("Nested mutation input must be an object.");
+    private static IReadOnlyDictionary<string, object?> RequireInputObject(object? value)
+    {
+        return value as IReadOnlyDictionary<string, object?>
+               ?? throw new InvalidOperationException("Nested mutation input must be an object.");
+    }
 
-    private static IReadOnlyList<FieldId> DefaultReturnFields(SemanticEntity entity) =>
-        [entity.Identity.FieldId, .. entity.Fields.Select(x => x.Id)];
+    private static IReadOnlyList<FieldId> DefaultReturnFields(SemanticEntity entity)
+    {
+        return [entity.Identity.FieldId, .. entity.Fields.Select(x => x.Id)];
+    }
 
     private GraphQLMutationResultShape TranslateReturnShape(
         SemanticEntity entity,
@@ -433,7 +449,6 @@ public sealed class HotChocolateMutationAdapter
         var responseNames = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var selection in selectionSet.Selections)
-        {
             switch (selection)
             {
                 case FieldNode field:
@@ -445,12 +460,12 @@ public sealed class HotChocolateMutationAdapter
 
                     if (field.SelectionSet is not null)
                     {
-                        var relationship = entity.Relationships.FirstOrDefault(
-                            x => NamesEqual(x.Name, field.Name.Value))
+                        var relationship =
+                            entity.Relationships.FirstOrDefault(x => NamesEqual(x.Name, field.Name.Value))
                             ?? throw new InvalidOperationException(
                                 $"Mutation result field '{field.Name.Value}' is not a relationship on '{entity.Name}'.");
 
-                        var target = _model.Get(relationship.Target);
+                        var target = Model.Get(relationship.Target);
                         var childShape = TranslateReturnShape(
                             target, field.SelectionSet, fragments, variables,
                             variableDefinitions, fragmentStack);
@@ -468,8 +483,8 @@ public sealed class HotChocolateMutationAdapter
                     }
 
                     var scalar = FindField(entity, field.Name.Value)
-                        ?? throw new InvalidOperationException(
-                            $"Mutation result field '{field.Name.Value}' is not defined on '{entity.Name}'.");
+                                 ?? throw new InvalidOperationException(
+                                     $"Mutation result field '{field.Name.Value}' is not defined on '{entity.Name}'.");
 
                     var scalarResponseName = field.Alias?.Value ?? ToGraphQLName(field.Name.Value);
                     AddMutationField(
@@ -491,6 +506,7 @@ public sealed class HotChocolateMutationAdapter
                             variableDefinitions, fragmentStack);
                         MergeShape(fields, relationships, responseNames, nestedShape);
                     }
+
                     break;
 
                 case FragmentSpreadNode spread:
@@ -516,7 +532,6 @@ public sealed class HotChocolateMutationAdapter
                     throw new InvalidOperationException(
                         $"GraphQL mutation selection '{selection.GetType().Name}' is not supported.");
             }
-        }
 
         return new GraphQLMutationResultShape(fields, relationships);
     }
@@ -559,8 +574,7 @@ public sealed class HotChocolateMutationAdapter
     {
         if (!responseNames.Add(relationship.ResponseName))
         {
-            var existing = relationships.FirstOrDefault(
-                x => x.ResponseName == relationship.ResponseName);
+            var existing = relationships.FirstOrDefault(x => x.ResponseName == relationship.ResponseName);
             if (existing is not null && existing.Relationship == relationship.Relationship)
                 return;
 
@@ -578,7 +592,7 @@ public sealed class HotChocolateMutationAdapter
         var requestedFields = shape.Fields.Select(x => x.Field).ToList();
         if (intent.Children.Count != 0)
         {
-            var identity = _model.Get(intent.Mutation.Entity).Identity.FieldId;
+            var identity = Model.Get(intent.Mutation.Entity).Identity.FieldId;
             if (!requestedFields.Contains(identity))
                 requestedFields.Insert(0, identity);
         }
@@ -591,7 +605,7 @@ public sealed class HotChocolateMutationAdapter
             var child = intent.Children.FirstOrDefault(x => x.Relationship == relationship.Relationship);
             if (child is null)
             {
-                var parentEntity = _model.Get(intent.Mutation.Entity);
+                var parentEntity = Model.Get(intent.Mutation.Entity);
                 var semanticRelationship = parentEntity.Relationships
                     .FirstOrDefault(x => x.Id == relationship.Relationship);
 
@@ -617,10 +631,8 @@ public sealed class HotChocolateMutationAdapter
         }
 
         foreach (var child in intent.Children)
-        {
             if (!shape.Relationships.Any(x => x.Relationship == child.Relationship))
                 children.Add(child);
-        }
 
         return new NestedMutationIntent(mutation, children);
     }
@@ -648,16 +660,15 @@ public sealed class HotChocolateMutationAdapter
         foreach (var pair in dictionary)
         {
             var semanticField = FindField(entity, pair.Key)
-                ?? throw new InvalidOperationException(
-                    $"Mutation filter field '{pair.Key}' is not defined on '{entity.Name}'.");
+                                ?? throw new InvalidOperationException(
+                                    $"Mutation filter field '{pair.Key}' is not defined on '{entity.Name}'.");
 
             var metadataEntity = _metadata.GetEntity(entity.Id);
             var metadataField = metadataEntity.EffectiveFields.FirstOrDefault(x => x.Id == semanticField.Id)
-                ?? throw new InvalidOperationException(
-                    $"Filter field '{pair.Key}' is not mapped in metadata for '{entity.Name}'.");
+                                ?? throw new InvalidOperationException(
+                                    $"Filter field '{pair.Key}' is not mapped in metadata for '{entity.Name}'.");
 
             if (pair.Value is IReadOnlyDictionary<string, object?> operators)
-            {
                 foreach (var op in operators)
                 {
                     var filterOperator = ParseFilterOperator(op.Key);
@@ -680,14 +691,11 @@ public sealed class HotChocolateMutationAdapter
                         filterOperator,
                         filterValue));
                 }
-            }
             else
-            {
                 expressions.Add(new SemanticFieldFilter(
                     semanticField.Id,
                     SemanticFilterOperator.Eq,
                     CoerceMutationValue(metadataField, pair.Value, $"{entity.Name}.{pair.Key}")));
-            }
         }
 
         if (expressions.Count == 0)
@@ -698,8 +706,9 @@ public sealed class HotChocolateMutationAdapter
             : new SemanticAndFilter(expressions);
     }
 
-    private static SemanticFilterOperator ParseFilterOperator(string value) =>
-        value.ToLowerInvariant() switch
+    private static SemanticFilterOperator ParseFilterOperator(string value)
+    {
+        return value.ToLowerInvariant() switch
         {
             "eq" => SemanticFilterOperator.Eq,
             "neq" => SemanticFilterOperator.Neq,
@@ -707,6 +716,7 @@ public sealed class HotChocolateMutationAdapter
             _ => throw new InvalidOperationException(
                 $"Mutation filter operator '{value}' is not supported.")
         };
+    }
 
     private IReadOnlyList<ColumnId> TranslateConflictColumnsValue(
         object? value,
@@ -727,16 +737,16 @@ public sealed class HotChocolateMutationAdapter
         return names.Select(name =>
         {
             var field = FindField(entity, name)
-                ?? throw new InvalidOperationException(
-                    $"Conflict field '{name}' is not defined on '{entity.Name}'.");
+                        ?? throw new InvalidOperationException(
+                            $"Conflict field '{name}' is not defined on '{entity.Name}'.");
 
             var metadataField = metadataEntity.EffectiveFields.FirstOrDefault(x => x.Id == field.Id)
-                ?? throw new InvalidOperationException(
-                    $"Conflict field '{name}' has no metadata mapping.");
+                                ?? throw new InvalidOperationException(
+                                    $"Conflict field '{name}' has no metadata mapping.");
 
             return metadataField.Column?.ColumnId
-                ?? throw new InvalidOperationException(
-                    $"Conflict field '{name}' has no storage column.");
+                   ?? throw new InvalidOperationException(
+                       $"Conflict field '{name}' has no storage column.");
         }).ToArray();
     }
 
@@ -799,7 +809,8 @@ public sealed class HotChocolateMutationAdapter
                 return DateTime.Parse(dateTimeText, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
 
             if (type == typeof(DateTimeOffset) && value is string dateTimeOffsetText)
-                return DateTimeOffset.Parse(dateTimeOffsetText, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+                return DateTimeOffset.Parse(dateTimeOffsetText, CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind);
 
             if (type == typeof(DateOnly) && value is string dateOnlyText)
                 return DateOnly.Parse(dateOnlyText, CultureInfo.InvariantCulture);
@@ -814,9 +825,7 @@ public sealed class HotChocolateMutationAdapter
                 type == typeof(long) || type == typeof(ulong) ||
                 type == typeof(float) || type == typeof(double) ||
                 type == typeof(decimal))
-            {
                 return Convert.ChangeType(value, type, CultureInfo.InvariantCulture);
-            }
         }
         catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentException)
         {
@@ -827,20 +836,26 @@ public sealed class HotChocolateMutationAdapter
         throw TypeError(path, type, value);
     }
 
-    private static InvalidOperationException TypeError(string path, Type expectedType, object value) =>
-        new($"GraphQL value for '{path}' expects '{expectedType.Name}', but received '{value.GetType().Name}'.");
+    private static InvalidOperationException TypeError(string path, Type expectedType, object value)
+    {
+        return new($"GraphQL value for '{path}' expects '{expectedType.Name}', but received '{value.GetType().Name}'.");
+    }
 
     private static object? ResolveValue(
         IValueNode value,
         IReadOnlyDictionary<string, object?>? variables,
-        IReadOnlyDictionary<string, VariableDefinitionNode> definitions) =>
-        GraphQLVariableCoercer.ResolveValue(value, variables, definitions);
+        IReadOnlyDictionary<string, VariableDefinitionNode> definitions)
+    {
+        return GraphQLVariableCoercer.ResolveValue(value, variables, definitions);
+    }
 
     private static bool ShouldInclude(
         IReadOnlyList<DirectiveNode> directives,
         IReadOnlyDictionary<string, object?>? variables,
-        IReadOnlyDictionary<string, VariableDefinitionNode> definitions) =>
-        GraphQLDirectiveEvaluator.ShouldInclude(directives, variables, definitions);
+        IReadOnlyDictionary<string, VariableDefinitionNode> definitions)
+    {
+        return GraphQLDirectiveEvaluator.ShouldInclude(directives, variables, definitions);
+    }
 
     private static void ValidateFragmentType(
         SemanticEntity entity,
@@ -858,7 +873,6 @@ public sealed class HotChocolateMutationAdapter
     private static (MutationKind Kind, string EntityName) ParseOperation(string name)
     {
         foreach (var prefix in new[] { "create", "update", "delete", "upsert" })
-        {
             if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
                 name.Length > prefix.Length)
             {
@@ -872,24 +886,29 @@ public sealed class HotChocolateMutationAdapter
                 };
                 return (kind, name[prefix.Length..]);
             }
-        }
 
         throw new InvalidOperationException(
             $"GraphQL mutation field '{name}' must use createX, updateX, deleteX, or upsertX naming.");
     }
 
-    private SemanticEntity FindEntity(string name) =>
-        _model.Entities.FirstOrDefault(x =>
-            string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase))
-        ?? throw new InvalidOperationException(
-            $"GraphQL mutation entity '{name}' is not defined in the semantic model.");
+    private SemanticEntity FindEntity(string name)
+    {
+        return Model.Entities.FirstOrDefault(x =>
+                   string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase))
+               ?? throw new InvalidOperationException(
+                   $"GraphQL mutation entity '{name}' is not defined in the semantic model.");
+    }
 
-    private static bool NamesEqual(string schemaName, string graphqlName) =>
-        string.Equals(schemaName, graphqlName, StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(ToGraphQLName(schemaName), graphqlName, StringComparison.Ordinal);
+    private static bool NamesEqual(string schemaName, string graphqlName)
+    {
+        return string.Equals(schemaName, graphqlName, StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(ToGraphQLName(schemaName), graphqlName, StringComparison.Ordinal);
+    }
 
-    private static string ToGraphQLName(string name) =>
-        string.IsNullOrEmpty(name) ? name : char.ToLowerInvariant(name[0]) + name[1..];
+    private static string ToGraphQLName(string name)
+    {
+        return string.IsNullOrEmpty(name) ? name : char.ToLowerInvariant(name[0]) + name[1..];
+    }
 
     private sealed record MutationBuildResult(
         IReadOnlyList<MutationFieldValue> Fields,

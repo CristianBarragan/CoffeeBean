@@ -1,19 +1,21 @@
-using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Mutation;
 using Foundgine.Core.Semantic.Mutation;
-using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 using Foundgine.Core.Semantic.Security.Execution;
+using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.Runtime;
 
 public interface IFoundgineMutations
 {
     MutationDryRunResult DryRun(SemanticMutationRequest request);
+
     Task<MutationExecutionResult> ExecuteAsync(
         SemanticMutationRequest request,
         ExecutionContext? context = null,
         CancellationToken cancellationToken = default);
+
     MutationPlanApproval Approve(SemanticMutationRequest request, string approvedBy);
+
     Task<MutationExecutionResult> ExecuteApprovedAsync(
         MutationPlanApproval approval,
         ExecutionContext? context = null,

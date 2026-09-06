@@ -1,9 +1,6 @@
-using Foundgine.Extensions.GraphQL.HotChocolate;
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic;
-using Xunit;
+using Foundgine.Core.Semantic.Query;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
@@ -20,13 +17,13 @@ public sealed class QueryArgumentsTests
             .Build();
 
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query {
-              customer(where: { name: { eq: "Alice" } }, order: { name: DESC }, first: 10, skip: 2) {
-                id
-                name
-              }
-            }
-            """);
+                                                                   query {
+                                                                     customer(where: { name: { eq: "Alice" } }, order: { name: DESC }, first: 10, skip: 2) {
+                                                                       id
+                                                                       name
+                                                                     }
+                                                                   }
+                                                                   """);
 
         Assert.NotNull(request.Options);
         Assert.Equal(10, request.Options!.Limit);
@@ -44,10 +41,10 @@ public sealed class QueryArgumentsTests
             .Build();
 
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query {
-              customer(first: 10, after: "MQ==") { id }
-            }
-            """);
+                                                                   query {
+                                                                     customer(first: 10, after: "MQ==") { id }
+                                                                   }
+                                                                   """);
 
         Assert.Equal(10, request.Options!.Limit);
         Assert.Equal("MQ==", request.Options.After);

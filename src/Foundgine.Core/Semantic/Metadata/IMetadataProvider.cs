@@ -3,8 +3,8 @@ using Foundgine.Core.Abstractions;
 namespace Foundgine.Core.Semantic.Metadata;
 
 /// <summary>
-/// Runtime access to generated/static metadata. The core depends on this
-/// abstraction rather than on a particular generator implementation.
+///     Runtime access to generated/static metadata. The core depends on this
+///     abstraction rather than on a particular generator implementation.
 /// </summary>
 public interface IMetadataProvider
 {

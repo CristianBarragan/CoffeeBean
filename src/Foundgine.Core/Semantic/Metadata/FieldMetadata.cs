@@ -1,9 +1,10 @@
 using Foundgine.Core.Abstractions;
+
 namespace Foundgine.Core.Semantic.Metadata;
 
 /// <summary>
-/// Static field metadata, including an optional provider-neutral storage
-/// column reference. Providers decide how to translate that reference.
+///     Static field metadata, including an optional provider-neutral storage
+///     column reference. Providers decide how to translate that reference.
 /// </summary>
 public sealed record FieldMetadata(
     FieldId Id,

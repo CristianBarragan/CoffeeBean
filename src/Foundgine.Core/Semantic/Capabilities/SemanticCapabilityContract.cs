@@ -5,15 +5,15 @@ using Foundgine.Core.Semantic.Security;
 namespace Foundgine.Core.Semantic.Capabilities;
 
 /// <summary>
-/// Canonical, machine-readable description of the semantic application surface.
-/// The contract is descriptive and never replaces execution-time authorization.
+///     Canonical, machine-readable description of the semantic application surface.
+///     The contract is descriptive and never replaces execution-time authorization.
 /// </summary>
 public sealed record SemanticCapabilityContract(
     int Version,
     IReadOnlyList<SemanticCapability> Capabilities);
 
 /// <summary>
-/// A named capability exposed by the semantic model.
+///     A named capability exposed by the semantic model.
 /// </summary>
 public sealed record SemanticCapability(
     string Id,
@@ -48,7 +48,7 @@ public sealed record SemanticCapability(
 }
 
 /// <summary>
-/// Describes one input accepted by a semantic capability.
+///     Describes one input accepted by a semantic capability.
 /// </summary>
 public sealed record SemanticCapabilityInput(
     string Name,
@@ -57,23 +57,23 @@ public sealed record SemanticCapabilityInput(
     string? Description = null);
 
 /// <summary>
-/// Describes a semantic precondition or execution constraint.
+///     Describes a semantic precondition or execution constraint.
 /// </summary>
 public sealed record SemanticCapabilityConstraint(
     string Name,
     string Description);
 
 /// <summary>
-/// Describes a side effect that may result from executing a capability.
+///     Describes a side effect that may result from executing a capability.
 /// </summary>
 public sealed record SemanticCapabilityEffect(
     string Name,
     string Description);
 
 /// <summary>
-/// Builds the first canonical capability contract from the existing semantic
-/// model and authorization capability surface. Providers and transports should
-/// consume this contract rather than constructing their own semantic schemas.
+///     Builds the first canonical capability contract from the existing semantic
+///     model and authorization capability surface. Providers and transports should
+///     consume this contract rather than constructing their own semantic schemas.
 /// </summary>
 public static class SemanticCapabilityContractDiscovery
 {
@@ -95,8 +95,10 @@ public static class SemanticCapabilityContractDiscovery
         var capabilities = discovered.Entities
             .Select(entity => entity with
             {
-                Read = PreservePredicate(entity.Read, policy.GetPredicate(entity.EntityId, AuthorizationOperation.Read)),
-                Write = PreservePredicate(entity.Write, policy.GetPredicate(entity.EntityId, AuthorizationOperation.Write))
+                Read = PreservePredicate(entity.Read,
+                    policy.GetPredicate(entity.EntityId, AuthorizationOperation.Read)),
+                Write = PreservePredicate(entity.Write,
+                    policy.GetPredicate(entity.EntityId, AuthorizationOperation.Write))
             })
             .SelectMany(entity => BuildCapabilities(model, entity, policy))
             .OrderBy(capability => capability.Id, StringComparer.Ordinal)
@@ -108,10 +110,12 @@ public static class SemanticCapabilityContractDiscovery
 
     private static AuthorizationDecision PreservePredicate(
         AuthorizationDecision decision,
-        AuthorizationPredicate? predicate) =>
-        predicate is not null
+        AuthorizationPredicate? predicate)
+    {
+        return predicate is not null
             ? AuthorizationDecision.Conditional(predicate)
             : decision;
+    }
 
     private static IEnumerable<SemanticCapability> BuildCapabilities(
         SemanticModel model,
@@ -154,9 +158,12 @@ public static class SemanticCapabilityContractDiscovery
             Inputs: BuildWriteInputs(model, entity),
             Constraints: BuildWriteConstraints(),
             Effects: entity.Write.IsAllowed
-                ? [new SemanticCapabilityEffect(
-                    "data.write",
-                    $"May modify {entity.Name} data when execution-time authorization permits it.")]
+                ?
+                [
+                    new SemanticCapabilityEffect(
+                        "data.write",
+                        $"May modify {entity.Name} data when execution-time authorization permits it.")
+                ]
                 : [],
             Fields: entity.Fields
                 .Where(x => x.Write.IsAllowed)
@@ -175,13 +182,10 @@ public static class SemanticCapabilityContractDiscovery
         };
 
         if (entity.Write.IsAllowed)
-        {
             foreach (var action in BuildMutationActions(model, entity))
                 yield return action;
-        }
 
         foreach (var relationship in entity.Relationships.Where(x => x.Read.IsAllowed))
-        {
             yield return new SemanticCapability(
                 Id: $"{entity.Name}.{relationship.Name}.traverse",
                 Name: $"Traverse {entity.Name}.{relationship.Name}",
@@ -197,19 +201,21 @@ public static class SemanticCapabilityContractDiscovery
                 HasSideEffects = false,
                 IsIdempotent = true
             };
-        }
 
-        foreach (var traversal in model.Traversals.Where(x => x.Source == entity.EntityId && TraversalIsReadable(model, x, policy)))
-        {
+        foreach (var traversal in model.Traversals.Where(x =>
+                     x.Source == entity.EntityId && TraversalIsReadable(model, x, policy)))
             yield return new SemanticCapability(
                 Id: $"{entity.Name}.{traversal.Name}.traverse",
                 Name: $"Traverse {entity.Name}.{traversal.Name}",
                 TargetEntityId: traversal.Target,
                 Access: AuthorizationDecision.Allowed,
                 Inputs: [],
-                Constraints: [new SemanticCapabilityConstraint(
-                    "semantic-path",
-                    $"Logical traversal expands through relationship path {string.Join(" -> ", traversal.Path.Select(x => x.Value))}; every hop remains subject to execution-time authorization.")],
+                Constraints:
+                [
+                    new SemanticCapabilityConstraint(
+                        "semantic-path",
+                        $"Logical traversal expands through relationship path {string.Join(" -> ", traversal.Path.Select(x => x.Value))}; every hop remains subject to execution-time authorization.")
+                ],
                 Effects: [],
                 Fields: [],
                 Relationships: [])
@@ -218,7 +224,6 @@ public static class SemanticCapabilityContractDiscovery
                 HasSideEffects = false,
                 IsIdempotent = true
             };
-        }
     }
 
 
@@ -231,7 +236,8 @@ public static class SemanticCapabilityContractDiscovery
         foreach (var relationshipId in traversal.Path)
         {
             var relationship = current.Relationships.FirstOrDefault(x => x.Id == relationshipId);
-            if (relationship is null || !policy.GetRelationshipAccess(current.Id, relationship.Id, AuthorizationOperation.Read).IsAllowed)
+            if (relationship is null || !policy
+                    .GetRelationshipAccess(current.Id, relationship.Id, AuthorizationOperation.Read).IsAllowed)
                 return false;
 
             current = model.Get(relationship.Target);
@@ -242,11 +248,14 @@ public static class SemanticCapabilityContractDiscovery
         return true;
     }
 
-    private static IReadOnlyList<SemanticCapabilityConstraint> BuildWriteConstraints() =>
-    [
-        new("authorization", "Execution-time authorization must permit the requested mutation."),
-        new("writable-fields", "Every requested field must be writable under the effective authorization policy.")
-    ];
+    private static IReadOnlyList<SemanticCapabilityConstraint> BuildWriteConstraints()
+    {
+        return
+        [
+            new("authorization", "Execution-time authorization must permit the requested mutation."),
+            new("writable-fields", "Every requested field must be writable under the effective authorization policy.")
+        ];
+    }
 
     private static IEnumerable<SemanticCapability> BuildMutationActions(
         SemanticModel model,
@@ -262,16 +271,19 @@ public static class SemanticCapabilityContractDiscovery
                 },
                 "update" => new[]
                 {
-                    new SemanticCapabilityConstraint("target-selection", "A target filter or equivalent identity selection is required."),
+                    new SemanticCapabilityConstraint("target-selection",
+                        "A target filter or equivalent identity selection is required."),
                     new SemanticCapabilityConstraint("writable-fields", "Every supplied field must be writable.")
                 },
                 "delete" => new[]
                 {
-                    new SemanticCapabilityConstraint("target-selection", "A target filter or equivalent identity selection is required.")
+                    new SemanticCapabilityConstraint("target-selection",
+                        "A target filter or equivalent identity selection is required.")
                 },
                 "upsert" => new[]
                 {
-                    new SemanticCapabilityConstraint("conflict-key", "A conflict key or equivalent identity must determine the upsert target."),
+                    new SemanticCapabilityConstraint("conflict-key",
+                        "A conflict key or equivalent identity must determine the upsert target."),
                     new SemanticCapabilityConstraint("writable-fields", "Every supplied field must be writable.")
                 },
                 _ => Array.Empty<SemanticCapabilityConstraint>()
@@ -287,14 +299,17 @@ public static class SemanticCapabilityContractDiscovery
 
             yield return new SemanticCapability(
                 Id: $"{entity.Name}.{action}",
-                Name: $"{action switch { "create" => "Create", "update" => "Update", "delete" => "Delete", "upsert" => "Upsert", _ => action }} {entity.Name}",
+                Name:
+                $"{action switch { "create" => "Create", "update" => "Update", "delete" => "Delete", "upsert" => "Upsert", _ => action }} {entity.Name}",
                 TargetEntityId: entity.EntityId,
                 Access: entity.Write,
                 Inputs: action == "delete" ? [] : BuildWriteInputs(model, entity),
                 Constraints: constraints,
                 Effects: effects,
-                Fields: entity.Fields.Where(x => x.Write.IsAllowed).Select(x => x.Name).OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray(),
-                Relationships: entity.Relationships.Where(x => x.Write.IsAllowed).Select(x => x.Name).OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray())
+                Fields: entity.Fields.Where(x => x.Write.IsAllowed).Select(x => x.Name)
+                    .OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray(),
+                Relationships: entity.Relationships.Where(x => x.Write.IsAllowed).Select(x => x.Name)
+                    .OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray())
             {
                 Operation = action,
                 HasSideEffects = entity.Write.IsAllowed,

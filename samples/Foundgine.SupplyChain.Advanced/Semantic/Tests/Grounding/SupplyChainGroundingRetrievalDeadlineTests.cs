@@ -1,16 +1,13 @@
-using System.Threading;
-using Foundgine.Core.Semantic.Resolution;
 using Foundgine.SupplyChain.Advanced.Semantics;
-using Xunit;
 
 namespace Foundgine.SupplyChain.Advanced.Tests.Grounding;
 
 /// <summary>
-/// Supply Chain case studies for bounded lexical retrieval. These scenarios
-/// deliberately use the real generated Supply Chain semantic contract so the
-/// sample demonstrates the same fail-closed retrieval guarantees as the core
-/// resolver tests: a retrieval deadline is one shared budget across every
-/// token lookup and any compact-token fallback.
+///     Supply Chain case studies for bounded lexical retrieval. These scenarios
+///     deliberately use the real generated Supply Chain semantic contract so the
+///     sample demonstrates the same fail-closed retrieval guarantees as the core
+///     resolver tests: a retrieval deadline is one shared budget across every
+///     token lookup and any compact-token fallback.
 /// </summary>
 public sealed class SupplyChainGroundingRetrievalDeadlineTests
 {
@@ -106,11 +103,15 @@ public sealed class SupplyChainGroundingRetrievalDeadlineTests
         public List<SemanticLexicalRequest> Requests { get; } = [];
 
         public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request)
-            => RetrieveCore(request);
+        {
+            return RetrieveCore(request);
+        }
 
         public IReadOnlyList<SemanticLexicalCandidate> Retrieve(
             SemanticLexicalRequest request, CancellationToken cancellationToken)
-            => RetrieveCore(request);
+        {
+            return RetrieveCore(request);
+        }
 
         private IReadOnlyList<SemanticLexicalCandidate> RetrieveCore(
             SemanticLexicalRequest request)

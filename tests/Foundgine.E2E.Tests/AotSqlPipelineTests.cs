@@ -1,14 +1,9 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Providers.Aot;
-using Foundgine.Core.Execution;
-using Foundgine.Generated;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Resolution;
 using Foundgine.Providers.Storage.Sql;
-using Microsoft.Data.Sqlite;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
@@ -103,21 +98,20 @@ public sealed class AotSqlPipelineTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "AotCustomers" (
-                "Id" INTEGER PRIMARY KEY,
-                "Name" TEXT NOT NULL
-            );
-            CREATE TABLE "AotAccounts" (
-                "Id" INTEGER PRIMARY KEY,
-                "CustomerId" INTEGER NOT NULL,
-                "Balance" DECIMAL NOT NULL
-            );
-            INSERT INTO "AotCustomers" VALUES (1, 'Ada');
-            INSERT INTO "AotCustomers" VALUES (2, 'Grace');
-            INSERT INTO "AotAccounts" VALUES (10, 1, 100.0);
-            INSERT INTO "AotAccounts" VALUES (20, 2, 250.0);
-            """;
+                              CREATE TABLE "AotCustomers" (
+                                  "Id" INTEGER PRIMARY KEY,
+                                  "Name" TEXT NOT NULL
+                              );
+                              CREATE TABLE "AotAccounts" (
+                                  "Id" INTEGER PRIMARY KEY,
+                                  "CustomerId" INTEGER NOT NULL,
+                                  "Balance" DECIMAL NOT NULL
+                              );
+                              INSERT INTO "AotCustomers" VALUES (1, 'Ada');
+                              INSERT INTO "AotCustomers" VALUES (2, 'Grace');
+                              INSERT INTO "AotAccounts" VALUES (10, 1, 100.0);
+                              INSERT INTO "AotAccounts" VALUES (20, 2, 250.0);
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

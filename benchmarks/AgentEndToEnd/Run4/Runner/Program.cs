@@ -1,8 +1,3 @@
-using System.Diagnostics;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-
 var runs = GetInt("RUN4_RUNS", 30);
 var warmups = GetInt("RUN4_WARMUPS", 5);
 var mode = Environment.GetEnvironmentVariable("RUN4_MODE") ?? (args.Length > 0 ? args[0] : "both");
@@ -50,6 +45,7 @@ if (mode is "agent" or "both")
                 input += q.Length;
                 output += (await PostGraphql(http, gql, q)).Length;
             }
+
             return (input, output);
         });
 
@@ -123,7 +119,9 @@ if (!string.IsNullOrWhiteSpace(reportDirectory))
         tokenEstimate = "chars / 4 heuristic; replay mode is not provider billing data",
         samples = reportStats.SelectMany(x => x.RunSummaries.Select(r => new
         {
-            implementation = x.Name.Contains("GraphQL", StringComparison.OrdinalIgnoreCase) ? "Conventional" : "Foundgine",
+            implementation = x.Name.Contains("GraphQL", StringComparison.OrdinalIgnoreCase)
+                ? "Conventional"
+                : "Foundgine",
             option = x.Name,
             run = r.Run,
             concurrency,
@@ -142,7 +140,8 @@ if (!string.IsNullOrWhiteSpace(reportDirectory))
             estimatedContextTokens = r.EstimatedContextTokens
         })).ToArray()
     };
-    await File.WriteAllTextAsync(Path.Combine(reportDirectory, "run4-metadata.json"), JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
+    await File.WriteAllTextAsync(Path.Combine(reportDirectory, "run4-metadata.json"),
+        JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
 }
 
 static async Task<ConcurrentStats> MeasureConcurrent(
@@ -158,9 +157,12 @@ static async Task<ConcurrentStats> MeasureConcurrent(
         var warmup = await RunBatch(concurrency, customerCount, action);
         if (warmup.Failed > 0)
         {
-            foreach (var error in warmup.Samples.Where(x => !x.Success).GroupBy(x => x.ErrorType ?? "Unknown").OrderByDescending(x => x.Count()))
-                Console.WriteLine($"  warmup-error={error.Key} count={error.Count()} sample=\"{error.First().ErrorMessage}\"");
-            throw new InvalidOperationException($"Warmup failed for {name}: {warmup.Failed}/{warmup.Count} workers failed.");
+            foreach (var error in warmup.Samples.Where(x => !x.Success).GroupBy(x => x.ErrorType ?? "Unknown")
+                         .OrderByDescending(x => x.Count()))
+                Console.WriteLine(
+                    $"  warmup-error={error.Key} count={error.Count()} sample=\"{error.First().ErrorMessage}\"");
+            throw new InvalidOperationException(
+                $"Warmup failed for {name}: {warmup.Failed}/{warmup.Count} workers failed.");
         }
     }
 
@@ -179,13 +181,18 @@ static async Task<ConcurrentStats> MeasureConcurrent(
         var p95 = Percentile(latencies, .95);
         var p99 = Percentile(latencies, .99);
         var rps = maxWall > 0 ? successful.Length / (maxWall / 1000.0) : 0;
-        var avgContext = successful.Length == 0 ? 0 : successful.Average(x => EstimateTokens(x.InputChars + x.OutputChars));
+        var avgContext = successful.Length == 0
+            ? 0
+            : successful.Average(x => EstimateTokens(x.InputChars + x.OutputChars));
         var avgInput = successful.Length == 0 ? 0 : successful.Average(x => x.InputChars / 4.0);
         var avgOutput = successful.Length == 0 ? 0 : successful.Average(x => x.OutputChars / 4.0);
 
         runSummaries.Add(new RunSummary(
             run, rps, avgWall, p50, p95, p99, maxWall, successful.Length, batch.Failed,
-            name.Contains("agent", StringComparison.OrdinalIgnoreCase) && name.Contains("GraphQL", StringComparison.OrdinalIgnoreCase) ? 6 : 1,
+            name.Contains("agent", StringComparison.OrdinalIgnoreCase) &&
+            name.Contains("GraphQL", StringComparison.OrdinalIgnoreCase)
+                ? 6
+                : 1,
             avgInput, avgOutput, avgContext));
 
         Console.WriteLine(
@@ -194,7 +201,8 @@ static async Task<ConcurrentStats> MeasureConcurrent(
             $"toolCalls/flow={(name.Contains("agent", StringComparison.OrdinalIgnoreCase) && name.Contains("GraphQL", StringComparison.OrdinalIgnoreCase) ? 6 : 1)} " +
             $"estInputTokens={avgInput:F0} estOutputTokens={avgOutput:F0} estContextLoadTokens={avgContext:F0}");
 
-        foreach (var error in batch.Samples.Where(x => !x.Success).GroupBy(x => x.ErrorType ?? "Unknown").OrderByDescending(x => x.Count()))
+        foreach (var error in batch.Samples.Where(x => !x.Success).GroupBy(x => x.ErrorType ?? "Unknown")
+                     .OrderByDescending(x => x.Count()))
             Console.WriteLine($"  error={error.Key} count={error.Count()} sample=\"{error.First().ErrorMessage}\"");
     }
 
@@ -207,7 +215,7 @@ static async Task<BatchResult> RunBatch(
     Func<int, Task<(int inputChars, int outputChars)>> action)
 {
     var tasks = Enumerable.Range(0, concurrency)
-        .Select(worker => RunOne(customerCount == 0 ? 1 : (worker % customerCount) + 1, action))
+        .Select(worker => RunOne(customerCount == 0 ? 1 : worker % customerCount + 1, action))
         .ToArray();
     return new BatchResult(await Task.WhenAll(tasks));
 }
@@ -231,37 +239,50 @@ static async Task<Sample> RunOne(int customerId, Func<int, Task<(int inputChars,
 static void PrintComparison(ConcurrentStats a, ConcurrentStats b, int aCalls, int bCalls)
 {
     Console.WriteLine();
-    Print(a); Print(b);
-    Console.WriteLine($"Latency delta ({b.Name} vs {a.Name}): {(b.Average/a.Average-1)*100:F1}%");
+    Print(a);
+    Print(b);
+    Console.WriteLine($"Latency delta ({b.Name} vs {a.Name}): {(b.Average / a.Average - 1) * 100:F1}%");
     Console.WriteLine($"Tool calls/flow: {a.Name}={aCalls}, {b.Name}={bCalls}");
     var aContext = EstimateTokens(a.AvgInputChars + a.AvgOutputChars);
     var bContext = EstimateTokens(b.AvgInputChars + b.AvgOutputChars);
-    Console.WriteLine($"Estimated context-load reduction: {(1.0 - bContext / aContext)*100:F1}%");
+    Console.WriteLine($"Estimated context-load reduction: {(1.0 - bContext / aContext) * 100:F1}%");
     Console.WriteLine();
 }
 
-static void Print(ConcurrentStats x) => Console.WriteLine(
-    $"{x.Name}: avg={x.Average:F1}ms p50={Percentile(x.SuccessfulLatencies,.50):F1}ms " +
-    $"p95={Percentile(x.SuccessfulLatencies,.95):F1}ms p99={Percentile(x.SuccessfulLatencies,.99):F1}ms " +
-    $"success={x.SuccessCount}/{x.Samples.Count} estInput={x.AvgInputChars/4.0:F0} " +
-    $"estOutput={x.AvgOutputChars/4.0:F0} estContext={EstimateTokens(x.AvgInputChars+x.AvgOutputChars):F0}");
-
-static string[] BuildGraphQlCalls(int customerId) => new[]
+static void Print(ConcurrentStats x)
 {
-    $"query {{ customer(id: {customerId}) {{ id customerKey fullName }} }}",
-    $"query {{ relationships(customerId: {customerId}) {{ id relationshipKey }} }}",
-    $"query {{ contracts(customerId: {customerId}) {{ id contractKey amount }} }}",
-    $"query {{ transactions(customerId: {customerId}) {{ id transactionKey amount balance }} }}",
-    $"query {{ exposure(customerId: {customerId}) {{ contractCount contractAmount transactionBalance }} }}",
-    $"query {{ customerVerify(id: {customerId}) {{ id customerKey fullName }} }}"
-};
+    Console.WriteLine(
+        $"{x.Name}: avg={x.Average:F1}ms p50={Percentile(x.SuccessfulLatencies, .50):F1}ms " +
+        $"p95={Percentile(x.SuccessfulLatencies, .95):F1}ms p99={Percentile(x.SuccessfulLatencies, .99):F1}ms " +
+        $"success={x.SuccessCount}/{x.Samples.Count} estInput={x.AvgInputChars / 4.0:F0} " +
+        $"estOutput={x.AvgOutputChars / 4.0:F0} estContext={EstimateTokens(x.AvgInputChars + x.AvgOutputChars):F0}");
+}
 
-static string BuildFullGraphQl(int customerId) =>
-    $"query {{ customer(id: {customerId}) {{ id customerKey fullName }} relationships(customerId: {customerId}) {{ id relationshipKey }} contracts(customerId: {customerId}) {{ id contractKey amount }} transactions(customerId: {customerId}) {{ id transactionKey amount balance }} exposure(customerId: {customerId}) {{ contractCount contractAmount transactionBalance }} customerVerify(id: {customerId}) {{ id customerKey fullName }} }}";
+static string[] BuildGraphQlCalls(int customerId)
+{
+    return new[]
+    {
+        $"query {{ customer(id: {customerId}) {{ id customerKey fullName }} }}",
+        $"query {{ relationships(customerId: {customerId}) {{ id relationshipKey }} }}",
+        $"query {{ contracts(customerId: {customerId}) {{ id contractKey amount }} }}",
+        $"query {{ transactions(customerId: {customerId}) {{ id transactionKey amount balance }} }}",
+        $"query {{ exposure(customerId: {customerId}) {{ contractCount contractAmount transactionBalance }} }}",
+        $"query {{ customerVerify(id: {customerId}) {{ id customerKey fullName }} }}"
+    };
+}
 
-static string BuildIntent(int customerId) => """
-{"rootEntity":"Customer","selections":[{"field":"Id"},{"field":"CustomerKey"},{"field":"FullName"},{"relationship":"CustomerBankingRelationship","children":[{"field":"Id"},{"field":"CustomerBankingRelationshipKey"},{"relationship":"Contract","children":[{"field":"Id"},{"field":"ContractKey"},{"field":"Amount"},{"relationship":"Transaction","children":[{"field":"Id"},{"field":"TransactionKey"},{"field":"Amount"},{"field":"Balance"}]}]}]}],"filter":{"kind":"field","field":"Id","operator":"Eq","value":__CUSTOMER_ID__}}
-""".Replace("__CUSTOMER_ID__", customerId.ToString(), StringComparison.Ordinal);
+static string BuildFullGraphQl(int customerId)
+{
+    return
+        $"query {{ customer(id: {customerId}) {{ id customerKey fullName }} relationships(customerId: {customerId}) {{ id relationshipKey }} contracts(customerId: {customerId}) {{ id contractKey amount }} transactions(customerId: {customerId}) {{ id transactionKey amount balance }} exposure(customerId: {customerId}) {{ contractCount contractAmount transactionBalance }} customerVerify(id: {customerId}) {{ id customerKey fullName }} }}";
+}
+
+static string BuildIntent(int customerId)
+{
+    return """
+           {"rootEntity":"Customer","selections":[{"field":"Id"},{"field":"CustomerKey"},{"field":"FullName"},{"relationship":"CustomerBankingRelationship","children":[{"field":"Id"},{"field":"CustomerBankingRelationshipKey"},{"relationship":"Contract","children":[{"field":"Id"},{"field":"ContractKey"},{"field":"Amount"},{"relationship":"Transaction","children":[{"field":"Id"},{"field":"TransactionKey"},{"field":"Amount"},{"field":"Balance"}]}]}]}],"filter":{"kind":"field","field":"Id","operator":"Eq","value":__CUSTOMER_ID__}}
+           """.Replace("__CUSTOMER_ID__", customerId.ToString(), StringComparison.Ordinal);
+}
 
 static async Task<string> PostGraphql(HttpClient http, string url, string query)
 {
@@ -272,7 +293,8 @@ static async Task<string> PostGraphql(HttpClient http, string url, string query)
     });
     var body = await response.Content.ReadAsStringAsync();
     if (!response.IsSuccessStatusCode) throw new HttpRequestException($"GraphQL {(int)response.StatusCode}: {body}");
-    if (body.Contains("\"errors\"", StringComparison.Ordinal)) throw new InvalidOperationException($"GraphQL errors: {body}");
+    if (body.Contains("\"errors\"", StringComparison.Ordinal))
+        throw new InvalidOperationException($"GraphQL errors: {body}");
     return body;
 }
 
@@ -318,11 +340,21 @@ static async Task<HttpResponseMessage> SendWithRetry(HttpClient http, Func<Task<
 {
     Exception? last = null;
     for (var attempt = 1; attempt <= 4; attempt++)
-    {
-        try { return await send(); }
-        catch (HttpRequestException ex) when (attempt < 4) { last = ex; await Task.Delay(100 * (int)Math.Pow(2, attempt - 1)); }
-        catch (TaskCanceledException ex) when (attempt < 4) { last = ex; await Task.Delay(100 * (int)Math.Pow(2, attempt - 1)); }
-    }
+        try
+        {
+            return await send();
+        }
+        catch (HttpRequestException ex) when (attempt < 4)
+        {
+            last = ex;
+            await Task.Delay(100 * (int)Math.Pow(2, attempt - 1));
+        }
+        catch (TaskCanceledException ex) when (attempt < 4)
+        {
+            last = ex;
+            await Task.Delay(100 * (int)Math.Pow(2, attempt - 1));
+        }
+
     throw last ?? new HttpRequestException("HTTP request failed after retries.");
 }
 
@@ -330,41 +362,83 @@ static async Task WaitFor(HttpClient http, string url)
 {
     for (var i = 0; i < 180; i++)
     {
-        try { using var r = await http.GetAsync(url); if (r.IsSuccessStatusCode) return; } catch { }
+        try
+        {
+            using var r = await http.GetAsync(url);
+            if (r.IsSuccessStatusCode) return;
+        }
+        catch
+        {
+        }
+
         await Task.Delay(500);
     }
+
     throw new InvalidOperationException($"Endpoint did not become ready: {url}");
 }
 
-static string Classify(Exception ex) => ex switch
+static string Classify(Exception ex)
 {
-    HttpRequestException => "HTTP",
-    TaskCanceledException => "Timeout",
-    _ when ex.Message.Contains("MCP", StringComparison.OrdinalIgnoreCase) => "MCP",
-    _ when ex.Message.Contains("GraphQL", StringComparison.OrdinalIgnoreCase) => "GraphQL",
-    _ => "Application"
-};
+    return ex switch
+    {
+        HttpRequestException => "HTTP",
+        TaskCanceledException => "Timeout",
+        _ when ex.Message.Contains("MCP", StringComparison.OrdinalIgnoreCase) => "MCP",
+        _ when ex.Message.Contains("GraphQL", StringComparison.OrdinalIgnoreCase) => "GraphQL",
+        _ => "Application"
+    };
+}
 
 static double Percentile(IReadOnlyList<double> values, double p)
 {
     var x = values.OrderBy(v => v).ToArray();
     if (x.Length == 0) return 0;
     var i = (x.Length - 1) * p;
-    var lo = (int)Math.Floor(i); var hi = (int)Math.Ceiling(i);
+    var lo = (int)Math.Floor(i);
+    var hi = (int)Math.Ceiling(i);
     return lo == hi ? x[lo] : x[lo] + (x[hi] - x[lo]) * (i - lo);
 }
 
-static double EstimateTokens(double chars) => Math.Max(1, chars / 4.0);
-static int GetInt(string name, int fallback) => int.TryParse(Environment.GetEnvironmentVariable(name), out var v) ? v : fallback;
+static double EstimateTokens(double chars)
+{
+    return Math.Max(1, chars / 4.0);
+}
 
-record Sample(bool Success, double WallMs, int InputChars, int OutputChars, string? ErrorType, string? ErrorMessage);
-record BatchResult(Sample[] Samples)
+static int GetInt(string name, int fallback)
+{
+    return int.TryParse(Environment.GetEnvironmentVariable(name), out var v) ? v : fallback;
+}
+
+internal record Sample(
+    bool Success,
+    double WallMs,
+    int InputChars,
+    int OutputChars,
+    string? ErrorType,
+    string? ErrorMessage);
+
+internal record BatchResult(Sample[] Samples)
 {
     public int Count => Samples.Length;
     public int Failed => Samples.Count(x => !x.Success);
 }
-record RunSummary(int Run, double Rps, double AvgWallMs, double P50Ms, double P95Ms, double P99Ms, double MaxWallMs, int Success, int Failed, int ToolCalls, double EstimatedInputTokens, double EstimatedOutputTokens, double EstimatedContextTokens);
-record ConcurrentStats(string Name, List<Sample> Samples, List<RunSummary> RunSummaries)
+
+internal record RunSummary(
+    int Run,
+    double Rps,
+    double AvgWallMs,
+    double P50Ms,
+    double P95Ms,
+    double P99Ms,
+    double MaxWallMs,
+    int Success,
+    int Failed,
+    int ToolCalls,
+    double EstimatedInputTokens,
+    double EstimatedOutputTokens,
+    double EstimatedContextTokens);
+
+internal record ConcurrentStats(string Name, List<Sample> Samples, List<RunSummary> RunSummaries)
 {
     public int SuccessCount => Samples.Count(x => x.Success);
     public double Average => SuccessCount == 0 ? 0 : Samples.Where(x => x.Success).Average(x => x.WallMs);

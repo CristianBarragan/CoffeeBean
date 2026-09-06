@@ -6,7 +6,8 @@ It demonstrates the complete basic path without splitting the application into a
 
 **MCP → application → semantic model → Foundgine planning/execution → PostgreSQL**
 
-The folders are architectural boundaries; they do not require separate assemblies. The AOT generator sees the whole application project, so the starter stays easy to read and easy to run.
+The folders are architectural boundaries; they do not require separate assemblies. The AOT generator sees the whole
+application project, so the starter stays easy to read and easy to run.
 
 ## What it demonstrates
 

@@ -4,11 +4,11 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.Mutation;
 
 /// <summary>
-/// Canonical provider-neutral planning artifact for a semantic mutation graph.
-/// Dependencies are the single semantic representation of value flow across
-/// operation boundaries. A dependency inherently requires the produced value to
-/// retain its logical source identity until the target field consumes it.
-/// No physical correlation column, SQL alias, or provider mechanism appears here.
+///     Canonical provider-neutral planning artifact for a semantic mutation graph.
+///     Dependencies are the single semantic representation of value flow across
+///     operation boundaries. A dependency inherently requires the produced value to
+///     retain its logical source identity until the target field consumes it.
+///     No physical correlation column, SQL alias, or provider mechanism appears here.
 /// </summary>
 public sealed record SemanticMutationPlan(
     IReadOnlyList<SemanticMutationOperationPlan> Operations,
@@ -34,4 +34,3 @@ public sealed record SemanticMutationDependencyPlan(
     FieldId SourceField,
     FieldId TargetField,
     RelationshipId? Relationship = null);
-

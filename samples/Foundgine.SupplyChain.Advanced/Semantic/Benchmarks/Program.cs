@@ -23,13 +23,6 @@
 //   dotnet run -c Release --project Benchmarks
 //   dotnet run -c Release --project Benchmarks -- --iterations 5000 --warmup 200
 
-using System.Globalization;
-using System.Text.Json;
-using Foundgine.Core.Semantic.Capabilities;
-using Foundgine.Core.Semantic.Intent;
-using Foundgine.Core.Semantic.Mutation;
-using Foundgine.Core.Semantic.Query;
-using Foundgine.Core.Semantic.Resolution;
 using Foundgine.SupplyChain.Advanced.Authorization;
 using Foundgine.SupplyChain.Advanced.Data;
 using Foundgine.SupplyChain.Advanced.Domain;
@@ -47,12 +40,13 @@ PrintStructuralSize();
 
 var seedData = SupplyChainData.Seed();
 var seedAuth = new AuthorizationContext(
-    "tenant-a", new HashSet<WarehouseId> { new(1), new(2) }, CanReadSupplierRisk: true, CanWritePurchasing: true);
+    "tenant-a", new HashSet<WarehouseId> { new(1), new(2) }, true, true);
 
 var results = new List<StageResult>
 {
     Measure("01 Metadata catalog access", () => Touch(SupplyChainSemanticModel.Metadata.Entities.Count())),
-    Measure("02 SemanticModel.Build() (discover + traversal enrichment)", () => Touch(SupplyChainSemanticModel.Build().Entities.Count)),
+    Measure("02 SemanticModel.Build() (discover + traversal enrichment)",
+        () => Touch(SupplyChainSemanticModel.Build().Entities.Count)),
     Measure("03 Freeze() + CreateSnapshot()", () =>
     {
         var model = SupplyChainSemanticModel.Build();
@@ -74,10 +68,13 @@ var results = new List<StageResult>
             var policy = SupplyChainAuthorization.Create("tenant-a", role);
             sum += SemanticCapabilityContractDiscovery.Describe(model, policy).Capabilities.Count;
         }
+
         return Touch(sum);
     }),
-    Measure("06 Open intent: shallow read (Product.shipments.Status)", () => Touch(ResolveShallowReadIntent().Nodes.Count)),
-    Measure("07 Open intent: deep read (Product.supplierIncidents, 5 hops)", () => Touch(ResolveDeepReadIntent().Nodes.Count)),
+    Measure("06 Open intent: shallow read (Product.shipments.Status)",
+        () => Touch(ResolveShallowReadIntent().Nodes.Count)),
+    Measure("07 Open intent: deep read (Product.supplierIncidents, 5 hops)",
+        () => Touch(ResolveDeepReadIntent().Nodes.Count)),
     Measure("08 Open intent: 4-op nested mutation build + plan", () => Touch(BuildAndPlanMutation().Operations.Count)),
     Measure("09 Scenario: recursive supplier risk (BOM cycle)", () =>
         Touch(SupplyChainScenarios.RecursiveSupplierRisk(seedData, new ProductId(1), seedAuth).Count)),
@@ -89,7 +86,7 @@ var results = new List<StageResult>
             SupplyChainScenarios.AssertAdversarialInvariants(seedData, seedAuth);
             return Touch(1);
         })),
-    Measure("12 FULL PIPELINE (all of the above, one request's worth)", () => WithSilencedConsole(RunFullPipelineOnce)),
+    Measure("12 FULL PIPELINE (all of the above, one request's worth)", () => WithSilencedConsole(RunFullPipelineOnce))
 };
 
 Console.WriteLine();
@@ -159,25 +156,25 @@ SemanticMutationPlan BuildAndPlanMutation()
     var model = SupplyChainSemanticModel.Model;
     var graph = new SemanticMutationIntentBuilder(model)
         .Create("PurchaseOrder", "order")
-            .Set("SupplierId", 1)
-            .Set("WarehouseId", 1)
-            .Set("Status", "Open")
-            .Return("Id")
+        .Set("SupplierId", 1)
+        .Set("WarehouseId", 1)
+        .Set("Status", "Open")
+        .Return("Id")
         .Create("PurchaseOrderLine", "line")
-            .SetFrom("PurchaseOrderId", "order", "Id")
-            .Set("ProductId", 1)
-            .Set("Quantity", 25m)
-            .Return("Id", "PurchaseOrderId")
+        .SetFrom("PurchaseOrderId", "order", "Id")
+        .Set("ProductId", 1)
+        .Set("Quantity", 25m)
+        .Return("Id", "PurchaseOrderId")
         .Create("Shipment", "shipment")
-            .SetFrom("PurchaseOrderId", "order", "Id")
-            .Set("ExpectedArrival", new DateTime(2026, 9, 5))
-            .Set("Status", "Planned")
-            .Set("Quantity", 25m)
-            .Return("Id", "PurchaseOrderId")
+        .SetFrom("PurchaseOrderId", "order", "Id")
+        .Set("ExpectedArrival", new DateTime(2026, 9, 5))
+        .Set("Status", "Planned")
+        .Set("Quantity", 25m)
+        .Return("Id", "PurchaseOrderId")
         .Update("PurchaseOrder")
-            .Set("Status", "Open")
-            .Where("Id", SemanticFilterOperator.Eq, 1)
-            .Return("Id")
+        .Set("Status", "Open")
+        .Where("Id", SemanticFilterOperator.Eq, 1)
+        .Return("Id")
         .Build();
 
     return new SemanticMutationPlanner().Plan(graph);
@@ -217,18 +214,25 @@ StageResult Measure(string name, Func<int> action)
     }
 
     var freq = System.Diagnostics.Stopwatch.Frequency;
-    double ticksToMicros(long ticks) => ticks * 1_000_000.0 / freq;
+
+    double ticksToMicros(long ticks)
+    {
+        return ticks * 1_000_000.0 / freq;
+    }
 
     return new StageResult(
         name,
-        AvgMicros: ticksToMicros(elapsedTicksTotal) / iterations,
-        MinMicros: ticksToMicros(minTicks == long.MaxValue ? 0 : minTicks),
-        MaxMicros: ticksToMicros(maxTicks == long.MinValue ? 0 : maxTicks),
-        AvgBytes: (double)bytesTotal / iterations,
-        Checksum: checksum);
+        ticksToMicros(elapsedTicksTotal) / iterations,
+        ticksToMicros(minTicks == long.MaxValue ? 0 : minTicks),
+        ticksToMicros(maxTicks == long.MinValue ? 0 : maxTicks),
+        (double)bytesTotal / iterations,
+        checksum);
 }
 
-int Touch(int value) => value; // keeps the JIT from proving the call is dead code.
+int Touch(int value)
+{
+    return value;
+} // keeps the JIT from proving the call is dead code.
 
 T WithSilencedConsole<T>(Func<T> action)
 {
@@ -237,8 +241,14 @@ T WithSilencedConsole<T>(Func<T> action)
     // thousands of times inside a timed loop.
     var original = Console.Out;
     Console.SetOut(TextWriter.Null);
-    try { return action(); }
-    finally { Console.SetOut(original); }
+    try
+    {
+        return action();
+    }
+    finally
+    {
+        Console.SetOut(original);
+    }
 }
 
 // ---- token / agent-work reduction estimate ---------------------------------
@@ -302,7 +312,7 @@ EfficiencyEstimate PrintAndBuildEfficiencyEstimate()
     var scenarios = new[]
     {
         Estimate("Shallow read (Product.shipments.Status)", shallow),
-        Estimate("Deep read (Product.supplierIncidents.Severity, 5 hops)", deep),
+        Estimate("Deep read (Product.supplierIncidents.Severity, 5 hops)", deep)
     };
 
     Console.WriteLine("Token / agent-work reduction estimate (modeled, see caveats below)");
@@ -310,17 +320,26 @@ EfficiencyEstimate PrintAndBuildEfficiencyEstimate()
     foreach (var s in scenarios)
     {
         Console.WriteLine($"  {s.Name}");
-        Console.WriteLine($"    nodes touched: {s.NodeCount}   selected fields: {s.SelectedFieldCount}   full-entity fields: {s.FullFieldCount}");
-        Console.WriteLine($"    est. context load: Foundgine ~{s.FoundgineTokens} tok  vs  conventional-full-resource ~{s.ConventionalTokens} tok  ({s.ContextLoadReductionPercent:N1}% lower)");
-        Console.WriteLine($"    tool calls: Foundgine {s.FoundgineToolCalls}  vs  conventional (N+1) {s.ConventionalToolCalls}  ({s.ToolCallReductionPercent:N1}% lower)");
+        Console.WriteLine(
+            $"    nodes touched: {s.NodeCount}   selected fields: {s.SelectedFieldCount}   full-entity fields: {s.FullFieldCount}");
+        Console.WriteLine(
+            $"    est. context load: Foundgine ~{s.FoundgineTokens} tok  vs  conventional-full-resource ~{s.ConventionalTokens} tok  ({s.ContextLoadReductionPercent:N1}% lower)");
+        Console.WriteLine(
+            $"    tool calls: Foundgine {s.FoundgineToolCalls}  vs  conventional (N+1) {s.ConventionalToolCalls}  ({s.ToolCallReductionPercent:N1}% lower)");
     }
+
     Console.WriteLine();
     Console.WriteLine("Caveats:");
-    Console.WriteLine("  - Modeled, not measured: no conventional REST/GraphQL endpoint runs in this process to compare against.");
-    Console.WriteLine("  - TokensPerField (~6) and per-node envelope (~2) are coarse JSON-payload assumptions, not a real tokenizer count.");
-    Console.WriteLine("  - \"Conventional\" assumes one request per record (N+1) and a full-resource (all-fields) response shape, which is");
-    Console.WriteLine("    the common default for hand-written REST/GraphQL resolvers this sample's docs compare Foundgine against.");
-    Console.WriteLine("  - For a measured (not modeled) comparison, see benchmarks/AgentEndToEnd/Run1-5, which execute both flows live.");
+    Console.WriteLine(
+        "  - Modeled, not measured: no conventional REST/GraphQL endpoint runs in this process to compare against.");
+    Console.WriteLine(
+        "  - TokensPerField (~6) and per-node envelope (~2) are coarse JSON-payload assumptions, not a real tokenizer count.");
+    Console.WriteLine(
+        "  - \"Conventional\" assumes one request per record (N+1) and a full-resource (all-fields) response shape, which is");
+    Console.WriteLine(
+        "    the common default for hand-written REST/GraphQL resolvers this sample's docs compare Foundgine against.");
+    Console.WriteLine(
+        "  - For a measured (not modeled) comparison, see benchmarks/AgentEndToEnd/Run1-5, which execute both flows live.");
 
     return new EfficiencyEstimate(scenarios,
         "Modeled estimate grounded in this run's actual SemanticGraph node/field counts, not a live conventional comparison. " +
@@ -330,7 +349,7 @@ EfficiencyEstimate PrintAndBuildEfficiencyEstimate()
 void WriteJsonReport(IReadOnlyList<StageResult> stageResults, EfficiencyEstimate efficiency)
 {
     var reportDir = Environment.GetEnvironmentVariable("SUPPLY_CHAIN_SEMANTIC_REPORT_DIRECTORY")
-        ?? Path.Combine(AppContext.BaseDirectory, "reports");
+                    ?? Path.Combine(AppContext.BaseDirectory, "reports");
     Directory.CreateDirectory(reportDir);
 
     var full = stageResults[^1];
@@ -340,9 +359,10 @@ void WriteJsonReport(IReadOnlyList<StageResult> stageResults, EfficiencyEstimate
         utc = DateTimeOffset.UtcNow,
         iterations,
         warmup,
-        stages = stageResults.Select(s => new { s.Name, s.AvgMicros, s.MinMicros, s.MaxMicros, avgKb = s.AvgBytes / 1024.0 }),
+        stages = stageResults.Select(s => new
+            { s.Name, s.AvgMicros, s.MinMicros, s.MaxMicros, avgKb = s.AvgBytes / 1024.0 }),
         fullPipeline = new { full.AvgMicros, avgKb = full.AvgBytes / 1024.0 },
-        efficiencyEstimate = efficiency,
+        efficiencyEstimate = efficiency
     };
 
     var path = Path.Combine(reportDir, "pipeline-benchmark.json");
@@ -377,14 +397,12 @@ void PrintTable(IReadOnlyList<StageResult> stageResults)
     Console.WriteLine($"{"Stage",-58} {"avg µs",8} {"min µs",8} {"max µs",8} {"avg KB",8}");
     Console.WriteLine(new string('-', 96));
     foreach (var r in stageResults)
-    {
         Console.WriteLine(
             $"{r.Name,-58} " +
             $"{r.AvgMicros.ToString("N1", CultureInfo.InvariantCulture),8} " +
             $"{r.MinMicros.ToString("N1", CultureInfo.InvariantCulture),8} " +
             $"{r.MaxMicros.ToString("N1", CultureInfo.InvariantCulture),8} " +
             $"{(r.AvgBytes / 1024.0).ToString("N2", CultureInfo.InvariantCulture),8}");
-    }
 }
 
 void PrintFullPipelineShare(IReadOnlyList<StageResult> stageResults)
@@ -412,10 +430,17 @@ void PrintFullPipelineShare(IReadOnlyList<StageResult> stageResults)
         if (a[i] == "--iterations" && int.TryParse(a[i + 1], out var it)) iters = it;
         if (a[i] == "--warmup" && int.TryParse(a[i + 1], out var wu)) warm = wu;
     }
+
     return (iters, warm);
 }
 
-internal sealed record StageResult(string Name, double AvgMicros, double MinMicros, double MaxMicros, double AvgBytes, long Checksum);
+internal sealed record StageResult(
+    string Name,
+    double AvgMicros,
+    double MinMicros,
+    double MaxMicros,
+    double AvgBytes,
+    long Checksum);
 
 internal sealed record ReadScenarioEstimate(
     string Name,

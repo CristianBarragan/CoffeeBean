@@ -1,7 +1,5 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Resolution;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -71,8 +69,9 @@ public sealed class SemanticApproximateRetrievalTests
             source.LastRequest.Relationship);
     }
 
-    private static SemanticModel Model() =>
-        new SemanticModelBuilder()
+    private static SemanticModel Model()
+    {
+        return new SemanticModelBuilder()
             .Entity(
                 new EntityId(1),
                 "Product",
@@ -80,22 +79,13 @@ public sealed class SemanticApproximateRetrievalTests
                     .Identity(new FieldId(1), "Id")
                     .Field(new FieldId(2), "Name", typeof(string)))
             .Build();
+    }
 
     private sealed class FakeSource : ICandidateSource, IApproximateCandidateSource
     {
         public int Calls { get; private set; }
 
         public SemanticRetrievalRequest? LastRequest { get; private set; }
-
-        public IReadOnlyList<IdentityCandidate> FindByIdentity(
-            EntityId entityType,
-            string identityValue) =>
-            [];
-
-        public IReadOnlyList<IdentityCandidate> FindByRelationship(
-            RelationshipId relationshipId,
-            string sourceIdentityValue) =>
-            [];
 
         public IReadOnlyList<RetrievalCandidate> Retrieve(
             SemanticRetrievalRequest request)
@@ -123,6 +113,20 @@ public sealed class SemanticApproximateRetrievalTests
                     new FieldId(2),
                     "7")
             ];
+        }
+
+        public IReadOnlyList<IdentityCandidate> FindByIdentity(
+            EntityId entityType,
+            string identityValue)
+        {
+            return [];
+        }
+
+        public IReadOnlyList<IdentityCandidate> FindByRelationship(
+            RelationshipId relationshipId,
+            string sourceIdentityValue)
+        {
+            return [];
         }
     }
 }

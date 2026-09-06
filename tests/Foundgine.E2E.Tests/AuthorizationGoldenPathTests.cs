@@ -1,28 +1,27 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Security;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Security;
+using Foundgine.E2E.Tests.Banking;
 using Foundgine.Runtime;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-/// The repository-level authorization proof: capability discovery is
-/// descriptive, authorization is applied again to the semantic graph, the
-/// conditional predicate survives planning, and the provider receives the
-/// predicate rather than a pre-authorized result.
+///     The repository-level authorization proof: capability discovery is
+///     descriptive, authorization is applied again to the semantic graph, the
+///     conditional predicate survives planning, and the provider receives the
+///     predicate rather than a pre-authorized result.
 /// </summary>
 public sealed class AuthorizationGoldenPathTests
 {
     [Fact]
     public void Capability_discovery_does_not_authorize_execution()
     {
-        var model = Banking.BankingSemanticModel.Build();
+        var model = BankingSemanticModel.Build();
         var policy = new TenantPolicy();
         var compiler = new CapturingCompiler();
         var provider = new CapturingProvider();
@@ -32,7 +31,7 @@ public sealed class AuthorizationGoldenPathTests
             provider);
 
         var capabilities = engine.DescribeCapabilities();
-        Assert.Contains(capabilities.Entities, x => x.EntityId == Banking.BankingSemanticModel.Customer);
+        Assert.Contains(capabilities.Entities, x => x.EntityId == BankingSemanticModel.Customer);
 
         // Discovery does not invoke the provider or compile an execution plan.
         // The actual request below still passes through SemanticAuthorizer.
@@ -46,14 +45,14 @@ public sealed class AuthorizationGoldenPathTests
         var compiler = new CapturingCompiler();
         var provider = new CapturingProvider();
         var engine = new FoundgineEngine(
-            new FoundgineOptions { Model = Banking.BankingSemanticModel.Build(), AuthorizationPolicy = policy },
+            new FoundgineOptions { Model = BankingSemanticModel.Build(), AuthorizationPolicy = policy },
             compiler,
             provider);
 
         var entityChecksBeforeExecution = policy.EntityChecks;
 
         var request = new SemanticRequest(
-            Banking.BankingSemanticModel.Customer,
+            BankingSemanticModel.Customer,
             [new SemanticSelection(new FieldId(1), null, [])]);
 
         await engine.ExecuteAsync(request, new ExecutionContext(
@@ -79,34 +78,22 @@ public sealed class AuthorizationGoldenPathTests
 
         public override AuthorizationPredicate? GetPredicate(
             EntityId entityId,
-            AuthorizationOperation operation) =>
-            operation == AuthorizationOperation.Read && entityId == Banking.BankingSemanticModel.Customer
+            AuthorizationOperation operation)
+        {
+            return operation == AuthorizationOperation.Read && entityId == BankingSemanticModel.Customer
                 ? AuthorizationPredicate.Equal(
                     AuthorizationPredicate.Member(
                         AuthorizationPredicate.ResourceParameter("resource"), "TenantId"),
                     AuthorizationPredicate.Member(
                         AuthorizationPredicate.ContextParameter("user"), "TenantId"))
                 : null;
+        }
     }
 
-    private sealed class CapturingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class CapturingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
-        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
-            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
-
         public ExecutionIR? IR { get; private set; }
-
-        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-
-            new(
-
-                plan.Provider,
-
-                ir.RequiredSecurityInvariants,
-
-                ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
-
-                Array.Empty<string>());
 
 
         public ProviderPlan Compile(ExecutionIR ir)
@@ -114,6 +101,18 @@ public sealed class AuthorizationGoldenPathTests
             IR = ir;
             return new TestPlan();
         }
+
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
+        {
+            return new ProviderSecurityConformanceResult(
+                plan.Provider,
+                ir.RequiredSecurityInvariants,
+                ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
+                Array.Empty<string>());
+        }
+
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
     }
 
     private sealed class CapturingProvider : IExecutionProvider

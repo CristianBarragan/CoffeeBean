@@ -1,8 +1,6 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Execution;
 using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Query;
-using Xunit;
 
 namespace Foundgine.E2E.Tests;
 
@@ -39,7 +37,8 @@ public sealed class AggregateStrategyInvalidationTests
             SemanticFilterOperator.Eq,
             true);
         var filter = new SemanticAndFilter([
-            new SemanticAggregateFilter(relationship, SemanticFilterAggregate.Count, null, SemanticAggregateFilterOperator.Gt, 0, null),
+            new SemanticAggregateFilter(relationship, SemanticFilterAggregate.Count, null,
+                SemanticAggregateFilterOperator.Gt, 0, null),
             new SemanticRelationshipFilter(relationship, SemanticRelationshipQuantifier.Some, predicate)
         ]);
 
@@ -55,8 +54,9 @@ public sealed class AggregateStrategyInvalidationTests
 
     private static SemanticPlan CreatePlan(
         SemanticFilterExpression filter,
-        AggregateExecutionStrategy strategy = AggregateExecutionStrategy.Default) =>
-        new(new SemanticPlanNode(
+        AggregateExecutionStrategy strategy = AggregateExecutionStrategy.Default)
+    {
+        return new SemanticPlan(new SemanticPlanNode(
             1,
             ExecutionOperation.Scan,
             new EntityId(1),
@@ -64,6 +64,7 @@ public sealed class AggregateStrategyInvalidationTests
             null,
             null,
             [],
-            new SemanticQueryOptions(Filter: filter),
+            new SemanticQueryOptions(filter),
             AggregateExecutionStrategy: strategy));
+    }
 }

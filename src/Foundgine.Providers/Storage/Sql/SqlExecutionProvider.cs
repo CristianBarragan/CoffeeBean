@@ -1,14 +1,12 @@
-using Foundgine.Core.Abstractions;
-using System.Data.Common;
-using System.Diagnostics;
 using Foundgine.Core.Execution;
+using Foundgine.Providers.Storage.Sql.Query;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.Providers.Storage.Sql;
 
 /// <summary>
-/// Executes an already-compiled SQL plan against an ADO.NET connection.
-/// Compilation and execution remain separate responsibilities.
+///     Executes an already-compiled SQL plan against an ADO.NET connection.
+///     Compilation and execution remain separate responsibilities.
 /// </summary>
 public sealed class SqlExecutionProvider : IExecutionProvider
 {
@@ -49,16 +47,15 @@ public sealed class SqlExecutionProvider : IExecutionProvider
             if (binding.ContextPath is { } contextPath)
             {
                 if (!context.TryGetValue(contextPath, out value))
-                    throw new InvalidOperationException($"Execution context does not contain authorization value '{contextPath}'.");
+                    throw new InvalidOperationException(
+                        $"Execution context does not contain authorization value '{contextPath}'.");
 
                 // Forward pagination fetches one extra row so the provider can
                 // determine HasNextPage without changing the requested page size.
                 if (string.Equals(contextPath, ExecutionContextKeys.PaginationLimit, StringComparison.Ordinal) &&
                     sqlPlan.Pagination is not null &&
                     value is not null)
-                {
                     value = Convert.ToInt32(value, System.Globalization.CultureInfo.InvariantCulture) + 1;
-                }
             }
 
             parameter.Value = value ?? DBNull.Value;
@@ -83,13 +80,10 @@ public sealed class SqlExecutionProvider : IExecutionProvider
                     string.Equals(x.ResultName, name, StringComparison.Ordinal));
 
                 if (binding is not null)
-                {
                     cells[new ExecutionCellKey(
                         binding.NodeId,
                         binding.EntityId,
                         binding.FieldId)] = value;
-
-                }
             }
 
             rows.Add(new ExecutionRow(values, cells));
@@ -102,9 +96,7 @@ public sealed class SqlExecutionProvider : IExecutionProvider
             var hasCursor = paging.After is not null;
             if (context.TryGetValue(ExecutionContextKeys.PaginationLimit, out var runtimeLimit) &&
                 runtimeLimit is not null)
-            {
                 first = Convert.ToInt32(runtimeLimit, System.Globalization.CultureInfo.InvariantCulture);
-            }
 
             if (context.TryGetValue(ExecutionContextKeys.PaginationHasCursor, out var cursorValue) &&
                 cursorValue is bool runtimeCursor)
@@ -117,18 +109,19 @@ public sealed class SqlExecutionProvider : IExecutionProvider
             if (rows.Count > 0)
             {
                 var firstValues = paging.CursorValues
-                .Select(binding => rows[0].Values[binding.ResultName])
-                .ToArray();
-            var lastValues = paging.CursorValues
-                .Select(binding => rows[^1].Values[binding.ResultName])
-                .ToArray();
+                    .Select(binding => rows[0].Values[binding.ResultName])
+                    .ToArray();
+                var lastValues = paging.CursorValues
+                    .Select(binding => rows[^1].Values[binding.ResultName])
+                    .ToArray();
 
-            if (firstValues.Any(value => value is null) || lastValues.Any(value => value is null))
-                throw new InvalidOperationException("Cursor ordering fields cannot contain null values.");
+                if (firstValues.Any(value => value is null) || lastValues.Any(value => value is null))
+                    throw new InvalidOperationException("Cursor ordering fields cannot contain null values.");
 
-            start = Query.CursorCodec.Encode(firstValues);
-            end = Query.CursorCodec.Encode(lastValues);
+                start = CursorCodec.Encode(firstValues);
+                end = CursorCodec.Encode(lastValues);
             }
+
             pageInfo = new ExecutionPageInfo(start, end, hasNext, hasCursor);
         }
 

@@ -1,16 +1,14 @@
 using Foundgine.CoffeeBeanery.BenchmarkApi;
 using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Mutation;
-using Foundgine.Extensions.GraphQL.HotChocolate;
-using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Semantic.Planning;
-using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.IR;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Core.Semantic.Resolution;
+using Foundgine.Extensions.GraphQL.HotChocolate;
 using Foundgine.Providers.Storage.Sql;
 using Foundgine.Providers.Storage.Sql.Mutation.Postgres;
-using Npgsql;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,9 +41,7 @@ app.MapPost("/graphql/{mode}", async (
 {
     if (!string.Equals(mode, "cold", StringComparison.OrdinalIgnoreCase) &&
         !string.Equals(mode, "warm", StringComparison.OrdinalIgnoreCase))
-    {
         return Results.BadRequest(new { error = "Mode must be 'cold' or 'warm'." });
-    }
 
     try
     {
@@ -122,26 +118,26 @@ app.MapPost("/graphql/{mode}", async (
             planQuery));
     }
     catch (Exception ex)
-	{
-		app.Logger.LogError(
-			ex,
-			"GraphQL request failed. Mode={Mode}, OperationName={OperationName}",
-			mode,
-			request.OperationName);
+    {
+        app.Logger.LogError(
+            ex,
+            "GraphQL request failed. Mode={Mode}, OperationName={OperationName}",
+            mode,
+            request.OperationName);
 
-		return Results.Json(
-			new
-			{
-				errors = new[]
-				{
-					new
-					{
-						message = ex.Message
-					}
-				}
-			},
-			statusCode: 400);
-	}
+        return Results.Json(
+            new
+            {
+                errors = new[]
+                {
+                    new
+                    {
+                        message = ex.Message
+                    }
+                }
+            },
+            statusCode: 400);
+    }
 });
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
@@ -164,7 +160,7 @@ app.MapGet("/health/ready", async (CancellationToken cancellationToken) =>
 });
 app.Run();
 
-static ExecutionContext BuildExecutionContext(Foundgine.Core.Semantic.Planning.SemanticPlan plan)
+static ExecutionContext BuildExecutionContext(SemanticPlan plan)
 {
     var options = plan.Root.QueryOptions;
     if (options?.Limit is null && options?.Offset is null)
@@ -172,11 +168,11 @@ static ExecutionContext BuildExecutionContext(Foundgine.Core.Semantic.Planning.S
 
     var values = new Dictionary<string, object?>(StringComparer.Ordinal);
     if (options.Limit is { } limit)
-        values[Foundgine.Core.Execution.ExecutionContextKeys.PaginationLimit] =
+        values[ExecutionContextKeys.PaginationLimit] =
             limit + (options.After is not null ? 1 : 0);
     if (options.Offset is { } offset)
-        values[Foundgine.Core.Execution.ExecutionContextKeys.PaginationOffset] = offset;
-    values[Foundgine.Core.Execution.ExecutionContextKeys.PaginationHasCursor] = options.After is not null;
+        values[ExecutionContextKeys.PaginationOffset] = offset;
+    values[ExecutionContextKeys.PaginationHasCursor] = options.After is not null;
 
     return new ExecutionContext(values);
 }
@@ -203,5 +199,7 @@ internal sealed class NoOpProviderPlanCache : IProviderPlanCache
         return false;
     }
 
-    public void Set(string key, ProviderPlan plan) { }
+    public void Set(string key, ProviderPlan plan)
+    {
+    }
 }

@@ -2,7 +2,6 @@ using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.IR;
 using Foundgine.Core.Semantic.IR.Graph;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -81,10 +80,9 @@ public sealed class SemanticOperationGraphAuthorizationTests
 
     private sealed class DenyTransactionsPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId) =>
-            relationshipId != RelationshipId.Create("Customer", "Transactions");
+        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId)
+        {
+            return relationshipId != RelationshipId.Create("Customer", "Transactions");
+        }
     }
 }
-
-
-

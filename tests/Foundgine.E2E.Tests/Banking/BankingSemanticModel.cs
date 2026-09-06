@@ -1,13 +1,12 @@
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic;
 
 namespace Foundgine.E2E.Tests.Banking;
 
 /// <summary>
-/// Minimal port of the archived Banking semantic proof. Only the semantic
-/// topology required by the new Foundgine structure is retained.
-/// SQL joins, provider metadata and old planning types remain archived.
+///     Minimal port of the archived Banking semantic proof. Only the semantic
+///     topology required by the new Foundgine structure is retained.
+///     SQL joins, provider metadata and old planning types remain archived.
 /// </summary>
 public static class BankingSemanticModel
 {
@@ -20,8 +19,9 @@ public static class BankingSemanticModel
     public static readonly RelationshipId AccountCustomer = new(3);
     public static readonly RelationshipId TransactionAccount = new(4);
 
-    public static SemanticModel Build() =>
-        new SemanticModelBuilder()
+    public static SemanticModel Build()
+    {
+        return new SemanticModelBuilder()
             .Entity(Customer, "Customer", customer => customer
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(2), "Name", typeof(string))
@@ -54,4 +54,5 @@ public static class BankingSemanticModel
                     Account,
                     RelationshipCardinality.One))
             .Build();
+    }
 }

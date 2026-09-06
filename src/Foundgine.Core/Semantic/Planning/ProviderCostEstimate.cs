@@ -1,9 +1,9 @@
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Provider-specific estimate for executing a candidate semantic plan.
-/// The estimate is advisory: it may influence selection, but it cannot weaken
-/// semantic equivalence or security requirements.
+///     Provider-specific estimate for executing a candidate semantic plan.
+///     The estimate is advisory: it may influence selection, but it cannot weaken
+///     semantic equivalence or security requirements.
 /// </summary>
 public readonly record struct ProviderCostEstimate(
     string Provider,

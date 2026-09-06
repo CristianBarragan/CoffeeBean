@@ -1,10 +1,10 @@
-using System.Globalization;
+using Foundgine.Core.Abstractions;
 
 namespace Foundgine.Core.Semantic.Mutation;
 
 /// <summary>
-/// Canonical semantic mutation planner. It validates and organizes mutation
-/// meaning, including value-flow dependencies. Physical schema lowering happens later.
+///     Canonical semantic mutation planner. It validates and organizes mutation
+///     meaning, including value-flow dependencies. Physical schema lowering happens later.
 /// </summary>
 public sealed class SemanticMutationPlanner
 {
@@ -42,7 +42,8 @@ public sealed class SemanticMutationPlanner
                     continue;
 
                 ValidateSourceIndex(source.SourceOperationIndex, targetIndex, graph.Operations.Count);
-                ValidateSourceFieldIsReturned(graph.Operations[source.SourceOperationIndex], source.SourceField, source.SourceOperationIndex, targetIndex);
+                ValidateSourceFieldIsReturned(graph.Operations[source.SourceOperationIndex], source.SourceField,
+                    source.SourceOperationIndex, targetIndex);
 
                 var dependency = new SemanticMutationDependencyPlan(
                     Id(source.SourceOperationIndex),
@@ -60,7 +61,8 @@ public sealed class SemanticMutationPlanner
             foreach (var dependency in operation.Dependencies)
             {
                 ValidateSourceIndex(dependency.SourceOperationIndex, targetIndex, graph.Operations.Count);
-                ValidateSourceFieldIsReturned(graph.Operations[dependency.SourceOperationIndex], dependency.SourceField, dependency.SourceOperationIndex, targetIndex);
+                ValidateSourceFieldIsReturned(graph.Operations[dependency.SourceOperationIndex], dependency.SourceField,
+                    dependency.SourceOperationIndex, targetIndex);
 
                 var planned = new SemanticMutationDependencyPlan(
                     Id(dependency.SourceOperationIndex),
@@ -78,13 +80,9 @@ public sealed class SemanticMutationPlanner
                 if (dependencyMap.TryGetValue(key, out var existing) &&
                     existing.Relationship is null &&
                     planned.Relationship is not null)
-                {
                     dependencyMap[key] = existing with { Relationship = planned.Relationship };
-                }
                 else
-                {
                     dependencyMap[key] = planned;
-                }
             }
         }
 
@@ -102,7 +100,10 @@ public sealed class SemanticMutationPlanner
         return new SemanticMutationPlan(operations, dependencies);
     }
 
-    private static string Id(int index) => index.ToString(CultureInfo.InvariantCulture);
+    private static string Id(int index)
+    {
+        return index.ToString(CultureInfo.InvariantCulture);
+    }
 
     private static void ValidateSourceIndex(int source, int target, int count)
     {
@@ -114,7 +115,7 @@ public sealed class SemanticMutationPlanner
 
     private static void ValidateSourceFieldIsReturned(
         SemanticMutationOperation source,
-        Foundgine.Core.Abstractions.FieldId sourceField,
+        FieldId sourceField,
         int sourceIndex,
         int targetIndex)
     {
@@ -127,6 +128,6 @@ public sealed class SemanticMutationPlanner
     private readonly record struct DependencyKey(
         string FromOperationId,
         string ToOperationId,
-        Foundgine.Core.Abstractions.FieldId SourceField,
-        Foundgine.Core.Abstractions.FieldId TargetField);
+        FieldId SourceField,
+        FieldId TargetField);
 }

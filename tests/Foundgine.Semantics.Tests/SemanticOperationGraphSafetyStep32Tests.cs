@@ -2,7 +2,6 @@
 using Foundgine.Core.Semantic.IR;
 using Foundgine.Core.Semantic.IR.Graph;
 using Foundgine.Core.Semantic.Security.Execution;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -15,7 +14,8 @@ public sealed class SemanticOperationGraphSafetyStep32Tests
         var root = graph.AddRoot(new EntityId(1UL), [new FieldId(11UL)]);
         var current = root;
         for (var i = 0; i < 4; i++)
-            current = graph.Add(new EntityId((ulong)(2 + i)), new RelationshipId((ulong)(20 + i)), current, [new FieldId((ulong)(30 + i))]);
+            current = graph.Add(new EntityId((ulong)(2 + i)), new RelationshipId((ulong)(20 + i)), current,
+                [new FieldId((ulong)(30 + i))]);
 
         var operationGraph = SemanticOperationGraph.Create(SemanticOperationCompiler.Compile(graph));
 
@@ -59,5 +59,3 @@ public sealed class SemanticOperationGraphSafetyStep32Tests
         });
     }
 }
-
-

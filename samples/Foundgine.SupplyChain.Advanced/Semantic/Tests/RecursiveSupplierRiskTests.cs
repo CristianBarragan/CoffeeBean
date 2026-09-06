@@ -1,7 +1,6 @@
 using Foundgine.SupplyChain.Advanced.Data;
 using Foundgine.SupplyChain.Advanced.Domain;
 using Foundgine.SupplyChain.Advanced.Scenarios;
-using Xunit;
 
 namespace Foundgine.SupplyChain.Advanced.Tests;
 

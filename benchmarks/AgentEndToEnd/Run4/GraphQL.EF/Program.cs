@@ -1,8 +1,8 @@
 using CoffeeBeanery.Database;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-var cs = builder.Configuration.GetConnectionString("BankingConnectionString") ?? throw new InvalidOperationException("Missing connection string.");
+var cs = builder.Configuration.GetConnectionString("BankingConnectionString") ??
+         throw new InvalidOperationException("Missing connection string.");
 builder.Services.AddPooledDbContextFactory<BankingEntityContext>(o => o.UseNpgsql(cs));
 builder.Services.AddGraphQLServer().AddQueryType<Query>();
 var app = builder.Build();
@@ -18,7 +18,11 @@ app.Run();
 public sealed class Query
 {
     private readonly IDbContextFactory<BankingEntityContext> _factory;
-    public Query(IDbContextFactory<BankingEntityContext> factory) => _factory = factory;
+
+    public Query(IDbContextFactory<BankingEntityContext> factory)
+    {
+        _factory = factory;
+    }
 
     public async Task<CustomerDto?> Customer(int id, CancellationToken ct)
     {
@@ -44,25 +48,35 @@ public sealed class Query
     public async Task<IReadOnlyList<TransactionDto>> Transactions(int customerId, CancellationToken ct)
     {
         await using var db = await _factory.CreateDbContextAsync(ct);
-        return await db.Transaction.AsNoTracking().Where(x => x.Contract!.CustomerBankingRelationship!.CustomerId == customerId)
+        return await db.Transaction.AsNoTracking()
+            .Where(x => x.Contract!.CustomerBankingRelationship!.CustomerId == customerId)
             .Select(x => new TransactionDto(x.Id, x.TransactionKey, x.Amount, x.Balance)).ToListAsync(ct);
     }
 
     public async Task<ExposureDto> Exposure(int customerId, CancellationToken ct)
     {
         await using var db = await _factory.CreateDbContextAsync(ct);
-        var contracts = await db.Contract.AsNoTracking().Where(x => x.CustomerBankingRelationship!.CustomerId == customerId)
+        var contracts = await db.Contract.AsNoTracking()
+            .Where(x => x.CustomerBankingRelationship!.CustomerId == customerId)
             .Select(x => x.Amount ?? 0m).ToListAsync(ct);
-        var balances = await db.Transaction.AsNoTracking().Where(x => x.Contract!.CustomerBankingRelationship!.CustomerId == customerId)
+        var balances = await db.Transaction.AsNoTracking()
+            .Where(x => x.Contract!.CustomerBankingRelationship!.CustomerId == customerId)
             .Select(x => x.Balance ?? 0m).ToListAsync(ct);
         return new(contracts.Count, contracts.Sum(), balances.Sum());
     }
 
-    public async Task<CustomerDto?> CustomerVerify(int id, CancellationToken ct) => await Customer(id, ct);
+    public async Task<CustomerDto?> CustomerVerify(int id, CancellationToken ct)
+    {
+        return await Customer(id, ct);
+    }
 }
 
 public record CustomerDto(int Id, Guid CustomerKey, string? FullName);
+
 public record RelationshipDto(int Id, Guid RelationshipKey);
+
 public record ContractDto(int Id, Guid ContractKey, decimal? Amount);
+
 public record TransactionDto(int Id, Guid TransactionKey, decimal? Amount, decimal? Balance);
+
 public record ExposureDto(int ContractCount, decimal ContractAmount, decimal TransactionBalance);

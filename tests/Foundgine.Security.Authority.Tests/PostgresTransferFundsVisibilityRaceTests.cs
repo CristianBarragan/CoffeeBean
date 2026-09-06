@@ -1,16 +1,12 @@
 using Foundgine.HighAssurance.Banking;
 using Foundgine.HighAssurance.Postgres;
 using Foundgine.HighAssurance.Postgres.Execution;
-using Foundgine.Core.Semantic.Authorization;
-using Npgsql;
-using System.Data;
-using Xunit;
 
 namespace Foundgine.Runtime.ControlPlane.Tests;
 
 /// <summary>
-/// Verifies that execution-time authorization and account state are read from the
-/// post-lock PostgreSQL view, rather than from a stale pre-lock observation.
+///     Verifies that execution-time authorization and account state are read from the
+///     post-lock PostgreSQL view, rather than from a stale pre-lock observation.
 /// </summary>
 public sealed class PostgresTransferFundsVisibilityRaceTests
 {
@@ -173,7 +169,8 @@ public sealed class PostgresTransferFundsVisibilityRaceTests
 
 
     [PostgresFact]
-    public async Task Tenant_reassignment_committed_before_lock_acquisition_is_observed_and_blocks_cross_tenant_transfer()
+    public async Task
+        Tenant_reassignment_committed_before_lock_acquisition_is_observed_and_blocks_cross_tenant_transfer()
     {
         await using var dataSource = NpgsqlDataSource.Create(PostgresTestEnvironment.ConnectionString);
         await PrepareAsync(dataSource);
@@ -222,7 +219,8 @@ public sealed class PostgresTransferFundsVisibilityRaceTests
     }
 
     [PostgresFact]
-    public async Task Account_deleted_before_lock_acquisition_is_observed_and_transfer_cannot_cross_missing_account_boundary()
+    public async Task
+        Account_deleted_before_lock_acquisition_is_observed_and_transfer_cannot_cross_missing_account_boundary()
     {
         await using var dataSource = NpgsqlDataSource.Create(PostgresTestEnvironment.ConnectionString);
         await PrepareAsync(dataSource);
@@ -268,9 +266,11 @@ public sealed class PostgresTransferFundsVisibilityRaceTests
         Assert.False(await AccountExistsAsync(dataSource, source));
     }
 
-    private static async Task ChangeTenantAsync(NpgsqlConnection connection, NpgsqlTransaction tx, Guid accountId, int tenant)
+    private static async Task ChangeTenantAsync(NpgsqlConnection connection, NpgsqlTransaction tx, Guid accountId,
+        int tenant)
     {
-        await using var command = new NpgsqlCommand("UPDATE banking.bank_account SET tenant_id = @tenant WHERE id = @id;", connection, tx);
+        await using var command =
+            new NpgsqlCommand("UPDATE banking.bank_account SET tenant_id = @tenant WHERE id = @id;", connection, tx);
         command.Parameters.AddWithValue("tenant", tenant);
         command.Parameters.AddWithValue("id", accountId);
         await command.ExecuteNonQueryAsync();
@@ -283,17 +283,24 @@ public sealed class PostgresTransferFundsVisibilityRaceTests
         await command.ExecuteNonQueryAsync();
     }
 
-    private static async Task LockAccountsAsync(NpgsqlConnection connection, NpgsqlTransaction tx, Guid source, Guid destination)
+    private static async Task LockAccountsAsync(NpgsqlConnection connection, NpgsqlTransaction tx, Guid source,
+        Guid destination)
     {
-        await using var command = new NpgsqlCommand("SELECT id FROM banking.bank_account WHERE id = ANY(@ids) ORDER BY id FOR UPDATE;", connection, tx);
+        await using var command =
+            new NpgsqlCommand("SELECT id FROM banking.bank_account WHERE id = ANY(@ids) ORDER BY id FOR UPDATE;",
+                connection, tx);
         command.Parameters.AddWithValue("ids", new[] { source, destination });
         await using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync()) { }
+        while (await reader.ReadAsync())
+        {
+        }
     }
 
-    private static async Task ChangeOwnerAsync(NpgsqlConnection connection, NpgsqlTransaction tx, Guid accountId, Guid newOwner)
+    private static async Task ChangeOwnerAsync(NpgsqlConnection connection, NpgsqlTransaction tx, Guid accountId,
+        Guid newOwner)
     {
-        await using var command = new NpgsqlCommand("UPDATE banking.bank_account SET owner_id = @owner WHERE id = @id;", connection, tx);
+        await using var command = new NpgsqlCommand("UPDATE banking.bank_account SET owner_id = @owner WHERE id = @id;",
+            connection, tx);
         command.Parameters.AddWithValue("owner", newOwner);
         command.Parameters.AddWithValue("id", accountId);
         await command.ExecuteNonQueryAsync();
@@ -301,7 +308,8 @@ public sealed class PostgresTransferFundsVisibilityRaceTests
 
     private static async Task SetFrozenAsync(NpgsqlConnection connection, NpgsqlTransaction tx, Guid accountId)
     {
-        await using var command = new NpgsqlCommand("UPDATE banking.bank_account SET is_frozen = true WHERE id = @id;", connection, tx);
+        await using var command = new NpgsqlCommand("UPDATE banking.bank_account SET is_frozen = true WHERE id = @id;",
+            connection, tx);
         command.Parameters.AddWithValue("id", accountId);
         await command.ExecuteNonQueryAsync();
     }
@@ -311,17 +319,20 @@ public sealed class PostgresTransferFundsVisibilityRaceTests
         var sql = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "schema.sql"));
         await using var command = dataSource.CreateCommand(sql);
         await command.ExecuteNonQueryAsync();
-        await using var clear = dataSource.CreateCommand("TRUNCATE banking.transfer_audit, banking.transfer_idempotency, banking.bank_account;");
+        await using var clear =
+            dataSource.CreateCommand(
+                "TRUNCATE banking.transfer_audit, banking.transfer_idempotency, banking.bank_account;");
         await clear.ExecuteNonQueryAsync();
     }
 
-    private static async Task SeedAsync(NpgsqlDataSource dataSource, int tenant, Guid actor, Guid source, Guid destination)
+    private static async Task SeedAsync(NpgsqlDataSource dataSource, int tenant, Guid actor, Guid source,
+        Guid destination)
     {
         const string sql = """
-            INSERT INTO banking.bank_account(id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold, daily_transferred, daily_limit, is_frozen)
-            VALUES (@source, @tenant, @actor, 1000, 0, 0, 0, 1000000, false),
-                   (@destination, @tenant, @actor, 1000, 0, 0, 0, 1000000, false);
-            """;
+                           INSERT INTO banking.bank_account(id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold, daily_transferred, daily_limit, is_frozen)
+                           VALUES (@source, @tenant, @actor, 1000, 0, 0, 0, 1000000, false),
+                                  (@destination, @tenant, @actor, 1000, 0, 0, 0, 1000000, false);
+                           """;
         await using var command = dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("source", source);
         command.Parameters.AddWithValue("destination", destination);
@@ -333,7 +344,8 @@ public sealed class PostgresTransferFundsVisibilityRaceTests
     private static async Task<Guid> ReadOwnerAsync(NpgsqlDataSource dataSource, Guid accountId)
     {
         await using var connection = await dataSource.OpenConnectionAsync();
-        await using var command = new NpgsqlCommand("SELECT owner_id FROM banking.bank_account WHERE id = @id;", connection);
+        await using var command =
+            new NpgsqlCommand("SELECT owner_id FROM banking.bank_account WHERE id = @id;", connection);
         command.Parameters.AddWithValue("id", accountId);
         return (Guid)(await command.ExecuteScalarAsync())!;
     }
@@ -342,12 +354,12 @@ public sealed class PostgresTransferFundsVisibilityRaceTests
     {
         await using var connection = await dataSource.OpenConnectionAsync();
         const string sql = """
-            SELECT
-              (SELECT balance FROM banking.bank_account WHERE id = @source),
-              (SELECT balance FROM banking.bank_account WHERE id = @destination),
-              (SELECT count(*) FROM banking.transfer_idempotency),
-              (SELECT count(*) FROM banking.transfer_audit);
-            """;
+                           SELECT
+                             (SELECT balance FROM banking.bank_account WHERE id = @source),
+                             (SELECT balance FROM banking.bank_account WHERE id = @destination),
+                             (SELECT count(*) FROM banking.transfer_idempotency),
+                             (SELECT count(*) FROM banking.transfer_audit);
+                           """;
         await using var command = new NpgsqlCommand(sql, connection);
         command.Parameters.AddWithValue("source", source);
         command.Parameters.AddWithValue("destination", destination);
@@ -360,7 +372,8 @@ public sealed class PostgresTransferFundsVisibilityRaceTests
     private static async Task<int> ReadTenantAsync(NpgsqlDataSource dataSource, Guid accountId)
     {
         await using var connection = await dataSource.OpenConnectionAsync();
-        await using var command = new NpgsqlCommand("SELECT tenant_id FROM banking.bank_account WHERE id = @id;", connection);
+        await using var command =
+            new NpgsqlCommand("SELECT tenant_id FROM banking.bank_account WHERE id = @id;", connection);
         command.Parameters.AddWithValue("id", accountId);
         return (int)(await command.ExecuteScalarAsync())!;
     }
@@ -368,7 +381,8 @@ public sealed class PostgresTransferFundsVisibilityRaceTests
     private static async Task<decimal> ReadBalanceAsync(NpgsqlDataSource dataSource, Guid accountId)
     {
         await using var connection = await dataSource.OpenConnectionAsync();
-        await using var command = new NpgsqlCommand("SELECT balance FROM banking.bank_account WHERE id = @id;", connection);
+        await using var command =
+            new NpgsqlCommand("SELECT balance FROM banking.bank_account WHERE id = @id;", connection);
         command.Parameters.AddWithValue("id", accountId);
         return (decimal)(await command.ExecuteScalarAsync())!;
     }
@@ -383,10 +397,15 @@ public sealed class PostgresTransferFundsVisibilityRaceTests
     private static async Task<bool> AccountExistsAsync(NpgsqlDataSource dataSource, Guid accountId)
     {
         await using var connection = await dataSource.OpenConnectionAsync();
-        await using var command = new NpgsqlCommand("SELECT EXISTS (SELECT 1 FROM banking.bank_account WHERE id = @id);", connection);
+        await using var command =
+            new NpgsqlCommand("SELECT EXISTS (SELECT 1 FROM banking.bank_account WHERE id = @id);", connection);
         command.Parameters.AddWithValue("id", accountId);
         return (bool)(await command.ExecuteScalarAsync())!;
     }
 
-    private sealed record State(decimal SourceBalance, decimal DestinationBalance, long IdempotencyCount, long AuditCount);
+    private sealed record State(
+        decimal SourceBalance,
+        decimal DestinationBalance,
+        long IdempotencyCount,
+        long AuditCount);
 }

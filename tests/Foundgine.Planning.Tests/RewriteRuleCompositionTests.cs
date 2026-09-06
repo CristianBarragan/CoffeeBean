@@ -1,16 +1,18 @@
 using Foundgine.Core.Abstractions;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed class RewriteRuleCompositionTests
 {
-    private static SemanticPlan Plan() => new(new SemanticPlanNode(
-        1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [],
-        Authorization: AuthorizationPredicate.Not(AuthorizationPredicate.Not(
-            AuthorizationPredicate.Equal(
-                AuthorizationPredicate.Member(AuthorizationPredicate.ResourceParameter("resource"), "TenantId"),
-                AuthorizationPredicate.Member(AuthorizationPredicate.ContextParameter("user"), "TenantId"))))));
+    private static SemanticPlan Plan()
+    {
+        return new SemanticPlan(new SemanticPlanNode(
+            1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [],
+            Authorization: AuthorizationPredicate.Not(AuthorizationPredicate.Not(
+                AuthorizationPredicate.Equal(
+                    AuthorizationPredicate.Member(AuthorizationPredicate.ResourceParameter("resource"), "TenantId"),
+                    AuthorizationPredicate.Member(AuthorizationPredicate.ContextParameter("user"), "TenantId"))))));
+    }
 
     [Fact]
     public void Composer_respects_dependency_order()
@@ -85,29 +87,44 @@ public sealed class RewriteRuleCompositionTests
 
     private sealed class NamedRule : IPlanRewriteRule
     {
-        private readonly string _name;
-        private readonly IReadOnlyList<string> _after;
-        private readonly IReadOnlyList<string> _conflicts;
-        private readonly double _cost;
-
-        public NamedRule(string name, IReadOnlyList<string>? after = null, IReadOnlyList<string>? conflicts = null, double cost = 5d, int priority = 0)
+        public NamedRule(string name, IReadOnlyList<string>? after = null, IReadOnlyList<string>? conflicts = null,
+            double cost = 5d, int priority = 0)
         {
-            _name = name;
-            _after = after ?? [];
-            _conflicts = conflicts ?? [];
-            _cost = cost;
+            Name = name;
+            MustRunAfter = after ?? [];
+            ConflictsWith = conflicts ?? [];
+            CostImpact = cost;
             Priority = priority;
         }
 
-        public string Name => _name;
+        public string Name { get; }
+
         public IReadOnlyList<string> Preconditions => ["test plan"];
         public IReadOnlyList<string> SecurityObligations => ["authorization.required"];
-        public double CostImpact => _cost;
-        public IReadOnlyList<string> MustRunAfter => _after;
-        public IReadOnlyList<string> ConflictsWith => _conflicts;
+        public double CostImpact { get; }
+
+        public IReadOnlyList<string> MustRunAfter { get; }
+
+        public IReadOnlyList<string> ConflictsWith { get; }
+
         public int Priority { get; }
-        public bool CanApply(SemanticPlan plan) => true;
-        public SemanticPlan Apply(SemanticPlan plan) => plan with { Root = plan.Root with { Authorization = AuthorizationPredicate.Not(AuthorizationPredicate.Not(plan.Root.Authorization!)) } };
+
+        public bool CanApply(SemanticPlan plan)
+        {
+            return true;
+        }
+
+        public SemanticPlan Apply(SemanticPlan plan)
+        {
+            return plan with
+            {
+                Root = plan.Root with
+                {
+                    Authorization =
+                    AuthorizationPredicate.Not(AuthorizationPredicate.Not(plan.Root.Authorization!))
+                }
+            };
+        }
     }
 
     private sealed class OscillatingRule : IPlanRewriteRule
@@ -118,7 +135,12 @@ public sealed class RewriteRuleCompositionTests
         public IReadOnlyList<string> SecurityObligations => ["authorization.required"];
         public double CostImpact => 1d;
         public bool IsIdempotent => false;
-        public bool CanApply(SemanticPlan plan) => true;
+
+        public bool CanApply(SemanticPlan plan)
+        {
+            return true;
+        }
+
         public SemanticPlan Apply(SemanticPlan plan)
         {
             _toggle = !_toggle;
@@ -129,17 +151,20 @@ public sealed class RewriteRuleCompositionTests
 
 public sealed class RewriteRuleSelectionTests
 {
-    private static SemanticPlan SelectionPlan() => new(new SemanticPlanNode(
-        1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [],
-        Authorization: AuthorizationPredicate.Equal(
-            AuthorizationPredicate.Member(AuthorizationPredicate.ResourceParameter("resource"), "TenantId"),
-            AuthorizationPredicate.Member(AuthorizationPredicate.ContextParameter("user"), "TenantId"))));
+    private static SemanticPlan SelectionPlan()
+    {
+        return new SemanticPlan(new SemanticPlanNode(
+            1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [],
+            Authorization: AuthorizationPredicate.Equal(
+                AuthorizationPredicate.Member(AuthorizationPredicate.ResourceParameter("resource"), "TenantId"),
+                AuthorizationPredicate.Member(AuthorizationPredicate.ContextParameter("user"), "TenantId"))));
+    }
 
     [Xunit.Fact]
     public void Selector_prefers_higher_benefit_when_cost_is_equal()
     {
-        var low = new SelectionRule("low", benefit: 1d, cost: 1d, priority: 10);
-        var high = new SelectionRule("high", benefit: 3d, cost: 1d, priority: -10);
+        var low = new SelectionRule("low", 1d, 1d, 10);
+        var high = new SelectionRule("high", 3d, 1d, -10);
         var selected = new RewriteRuleSelector().Select(SelectionPlan(), [low, high]);
 
         Xunit.Assert.Equal("high", selected!.RuleName);
@@ -149,8 +174,8 @@ public sealed class RewriteRuleSelectionTests
     [Xunit.Fact]
     public void Selector_penalizes_expensive_rewrites()
     {
-        var cheap = new SelectionRule("cheap", benefit: 2d, cost: 0d);
-        var expensive = new SelectionRule("expensive", benefit: 10d, cost: 10d);
+        var cheap = new SelectionRule("cheap", 2d, 0d);
+        var expensive = new SelectionRule("expensive", 10d, 10d);
         var selected = new RewriteRuleSelector().Select(SelectionPlan(), [cheap, expensive]);
 
         Xunit.Assert.Equal("cheap", selected!.RuleName);
@@ -159,8 +184,8 @@ public sealed class RewriteRuleSelectionTests
     [Xunit.Fact]
     public void Composer_records_selection_history()
     {
-        var low = new SelectionRule("test.low", benefit: 1d, cost: 1d, priority: 0);
-        var high = new SelectionRule("test.high", benefit: 4d, cost: 1d, priority: 0);
+        var low = new SelectionRule("test.low", 1d, 1d, 0);
+        var high = new SelectionRule("test.high", 4d, 1d, 0);
         var result = new RewriteRuleComposer([low, high]).Compose(SelectionPlan());
 
         Xunit.Assert.NotEmpty(result.Candidates);
@@ -169,25 +194,32 @@ public sealed class RewriteRuleSelectionTests
 
     private sealed class SelectionRule : IPlanRewriteRule
     {
-        private readonly string _name;
-        private readonly double _benefit;
-        private readonly double _cost;
-
         public SelectionRule(string name, double benefit, double cost, int priority = 0)
         {
-            _name = name;
-            _benefit = benefit;
-            _cost = cost;
+            Name = name;
+            BenefitEstimate = benefit;
+            CostImpact = cost;
             Priority = priority;
         }
 
-        public string Name => _name;
+        public string Name { get; }
+
         public IReadOnlyList<string> Preconditions => ["selection test plan"];
         public IReadOnlyList<string> SecurityObligations => ["authorization.required"];
-        public double CostImpact => _cost;
-        public double BenefitEstimate => _benefit;
+        public double CostImpact { get; }
+
+        public double BenefitEstimate { get; }
+
         public int Priority { get; }
-        public bool CanApply(SemanticPlan plan) => true;
-        public SemanticPlan Apply(SemanticPlan plan) => plan;
+
+        public bool CanApply(SemanticPlan plan)
+        {
+            return true;
+        }
+
+        public SemanticPlan Apply(SemanticPlan plan)
+        {
+            return plan;
+        }
     }
 }

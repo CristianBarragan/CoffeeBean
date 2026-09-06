@@ -1,8 +1,8 @@
 namespace Foundgine.Core.Semantic.Query;
 
 /// <summary>
-/// Protocol-neutral query controls, including filters, ordering, limits,
-/// offsets, and forward cursor pagination.
+///     Protocol-neutral query controls, including filters, ordering, limits,
+///     offsets, and forward cursor pagination.
 /// </summary>
 public sealed record SemanticQueryOptions(
     SemanticFilterExpression? Filter = null,

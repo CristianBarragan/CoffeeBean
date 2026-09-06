@@ -1,24 +1,20 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Execution;
-using Foundgine.Providers.Storage.InMemory;
-using Foundgine.Core.Serialization;
-using Foundgine.Core.Semantic.Planning;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Intent;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Resolution;
-using Foundgine.Providers.Storage.Sql;
-using Microsoft.Data.Sqlite;
-using Xunit;
+using Foundgine.Core.Serialization;
 using Foundgine.E2E.Tests.Banking;
+using Foundgine.Providers.Storage.InMemory;
+using Foundgine.Providers.Storage.Sql;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-/// The single repository proof of the Foundgine thesis: a semantic intent is
-/// resolved and authorized once, compiled into one provider-independent plan,
-/// and then lowered independently to SQL and CLR-backed execution.
+///     The single repository proof of the Foundgine thesis: a semantic intent is
+///     resolved and authorized once, compiled into one provider-independent plan,
+///     and then lowered independently to SQL and CLR-backed execution.
 /// </summary>
 public sealed class FlagshipProofTests
 {
@@ -26,24 +22,24 @@ public sealed class FlagshipProofTests
     public async Task One_semantic_intent_crosses_authorization_planning_and_two_providers()
     {
         const string json = """
-        {
-          "rootEntity": "Customer",
-          "selections": [
-            { "field": "Id" },
-            { "field": "Name" }
-          ],
-          "filter": {
-            "kind": "field",
-            "field": "Name",
-            "operator": "Eq",
-            "value": "Alice"
-          },
-          "order": [
-            { "field": "Name", "direction": "Asc" }
-          ],
-          "limit": 1
-        }
-        """;
+                            {
+                              "rootEntity": "Customer",
+                              "selections": [
+                                { "field": "Id" },
+                                { "field": "Name" }
+                              ],
+                              "filter": {
+                                "kind": "field",
+                                "field": "Name",
+                                "operator": "Eq",
+                                "value": "Alice"
+                              },
+                              "order": [
+                                { "field": "Name", "direction": "Asc" }
+                              ],
+                              "limit": 1
+                            }
+                            """;
 
         var model = BankingSemanticModel.Build();
         var metadata = BankingRelationalMetadata.Build();
@@ -114,24 +110,28 @@ public sealed class FlagshipProofTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" (
-                "Id" INTEGER PRIMARY KEY,
-                "Name" TEXT NOT NULL,
-                "TenantId" INTEGER NOT NULL
-            );
-            INSERT INTO "Customer" VALUES (1, 'Alice', 7);
-            INSERT INTO "Customer" VALUES (2, 'Bob', 9);
-            """;
+                              CREATE TABLE "Customer" (
+                                  "Id" INTEGER PRIMARY KEY,
+                                  "Name" TEXT NOT NULL,
+                                  "TenantId" INTEGER NOT NULL
+                              );
+                              INSERT INTO "Customer" VALUES (1, 'Alice', 7);
+                              INSERT INTO "Customer" VALUES (2, 'Bob', 9);
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 
     private sealed class CustomerReadPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessEntity(EntityId entityId) => entityId == BankingSemanticModel.Customer;
+        public override bool CanAccessEntity(EntityId entityId)
+        {
+            return entityId == BankingSemanticModel.Customer;
+        }
 
-        public override bool CanAccessField(EntityId entityId, FieldId fieldId) =>
-            entityId == BankingSemanticModel.Customer &&
-            fieldId == new FieldId(1) || fieldId == new FieldId(2);
+        public override bool CanAccessField(EntityId entityId, FieldId fieldId)
+        {
+            return entityId == BankingSemanticModel.Customer &&
+                fieldId == new FieldId(1) || fieldId == new FieldId(2);
+        }
     }
 }
-

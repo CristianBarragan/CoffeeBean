@@ -1,11 +1,9 @@
-using Foundgine.Core.Semantic;
-
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Provider-neutral description of an authorized plan suitable for inspection
-/// before execution. This is deliberately derived from the canonical plan;
-/// it is not a second planning representation.
+///     Provider-neutral description of an authorized plan suitable for inspection
+///     before execution. This is deliberately derived from the canonical plan;
+///     it is not a second planning representation.
 /// </summary>
 public sealed record PlanInspection(
     SemanticPlan Plan,
@@ -24,8 +22,8 @@ public sealed record PlanInspectionNode(
     IReadOnlyList<PlanInspectionNode> Children);
 
 /// <summary>
-/// Conservative effect summary. It reports what the semantic plan declares;
-/// it does not claim provider-side effects that the plan cannot establish.
+///     Conservative effect summary. It reports what the semantic plan declares;
+///     it does not claim provider-side effects that the plan cannot establish.
 /// </summary>
 public sealed record PlanEffectSummary(
     bool HasWrites,
@@ -47,10 +45,10 @@ public static class PlanInspector
             SemanticPlanFingerprint.Create(plan),
             nodes.Select(ToInspection).ToArray(),
             new PlanEffectSummary(
-                HasWrites: false,
-                HasExternalSideEffects: false,
-                AffectedPlanNodes: nodes.Length,
-                Effects: effects));
+                false,
+                false,
+                nodes.Length,
+                effects));
     }
 
     private static IEnumerable<SemanticPlanNode> Flatten(SemanticPlanNode node)
@@ -61,8 +59,9 @@ public static class PlanInspector
             yield return descendant;
     }
 
-    private static PlanInspectionNode ToInspection(SemanticPlanNode node) =>
-        new(
+    private static PlanInspectionNode ToInspection(SemanticPlanNode node)
+    {
+        return new(
             node.Id,
             node.Operation.ToString(),
             node.EntityId.Value,
@@ -71,4 +70,5 @@ public static class PlanInspector
             node.ViaConnection?.Value,
             node.Authorization is not null,
             node.Children.Select(ToInspection).ToArray());
+    }
 }

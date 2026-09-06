@@ -1,10 +1,10 @@
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Applies a deterministic composition of provider-neutral rewrite rules.
-/// Every accepted rule application is independently checked for semantic and
-/// security preservation; composition additionally enforces ordering, conflicts,
-/// idempotence and termination budgets.
+///     Applies a deterministic composition of provider-neutral rewrite rules.
+///     Every accepted rule application is independently checked for semantic and
+///     security preservation; composition additionally enforces ordering, conflicts,
+///     idempotence and termination budgets.
 /// </summary>
 public sealed class SemanticPlanOptimizer : IPlanOptimizer
 {
@@ -15,7 +15,12 @@ public sealed class SemanticPlanOptimizer : IPlanOptimizer
         RewriteRuleCompositionOptions? options = null)
     {
         _composer = new RewriteRuleComposer(
-            rules ?? [new AuthorizationCanonicalizationRule(), new PredicatePushdownRule(), new ProjectionPruningRule(), new RelationshipTraversalOptimizationRule(), new RelationshipJoinOrderingRule(), new AggregateRelationshipFilterPushdownRule(), new AggregateCardinalityOptimizationRule()],
+            rules ??
+            [
+                new AuthorizationCanonicalizationRule(), new PredicatePushdownRule(), new ProjectionPruningRule(),
+                new RelationshipTraversalOptimizationRule(), new RelationshipJoinOrderingRule(),
+                new AggregateRelationshipFilterPushdownRule(), new AggregateCardinalityOptimizationRule()
+            ],
             options);
     }
 

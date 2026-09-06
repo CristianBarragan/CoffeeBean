@@ -35,11 +35,6 @@ public sealed record ResolvedReference(
 
 public sealed record ResolutionResult
 {
-    public ResolutionOutcome Outcome { get; }
-    public ResolvedReference? Resolved { get; }
-    public string? UnresolvedReason { get; }
-    public IReadOnlyList<ResolutionEvidence> Evidence { get; }
-
     private ResolutionResult(
         ResolutionOutcome outcome,
         ResolvedReference? resolved,
@@ -52,16 +47,27 @@ public sealed record ResolutionResult
         Evidence = evidence;
     }
 
-    public static ResolutionResult Success(ResolvedReference reference) =>
-        new(ResolutionOutcome.Resolved, reference, null, reference.Evidence);
+    public ResolutionOutcome Outcome { get; }
+    public ResolvedReference? Resolved { get; }
+    public string? UnresolvedReason { get; }
+    public IReadOnlyList<ResolutionEvidence> Evidence { get; }
+
+    public static ResolutionResult Success(ResolvedReference reference)
+    {
+        return new ResolutionResult(ResolutionOutcome.Resolved, reference, null, reference.Evidence);
+    }
 
     public static ResolutionResult Ambiguous(
         string reason,
-        IReadOnlyList<ResolutionEvidence> evidence) =>
-        new(ResolutionOutcome.Ambiguous, null, reason, evidence);
+        IReadOnlyList<ResolutionEvidence> evidence)
+    {
+        return new ResolutionResult(ResolutionOutcome.Ambiguous, null, reason, evidence);
+    }
 
     public static ResolutionResult NotFound(
         string reason,
-        IReadOnlyList<ResolutionEvidence> evidence) =>
-        new(ResolutionOutcome.NotFound, null, reason, evidence);
+        IReadOnlyList<ResolutionEvidence> evidence)
+    {
+        return new ResolutionResult(ResolutionOutcome.NotFound, null, reason, evidence);
+    }
 }

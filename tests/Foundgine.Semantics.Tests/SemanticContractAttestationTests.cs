@@ -1,5 +1,4 @@
 using Foundgine.Core.Abstractions;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -35,11 +34,14 @@ public sealed class SemanticContractAttestationTests
         Assert.True(SemanticContractAttestation.Matches(model, version.SemanticModelVersion));
     }
 
-    private static SemanticModel BuildModel() => new SemanticModelBuilder()
-        .Entity<TestCustomer>(EntityId.Create("Customer"), "Customer", e => e
-            .Identity(x => x.Id)
-            .Field(x => x.Name))
-        .Build();
+    private static SemanticModel BuildModel()
+    {
+        return new SemanticModelBuilder()
+            .Entity<TestCustomer>(EntityId.Create("Customer"), "Customer", e => e
+                .Identity(x => x.Id)
+                .Field(x => x.Name))
+            .Build();
+    }
 
     private sealed class TestCustomer
     {

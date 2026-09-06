@@ -1,24 +1,21 @@
-using System.Linq.Expressions;
-using System.Reflection;
-using System.ComponentModel;
 using Foundgine.Core.Abstractions;
 
 namespace Foundgine.Core.Semantic;
 
 /// <summary>
-/// Small hand-authored construction path. AOT generation can target these
-/// same semantic shapes later.
+///     Small hand-authored construction path. AOT generation can target these
+///     same semantic shapes later.
 /// </summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
 [Obsolete("Use SemanticEntityBuilder<TModel> with property selectors for domain-aligned semantic declarations.", false)]
 public sealed class SemanticEntityBuilder
 {
+    private readonly List<SemanticAlias> _aliases = [];
+    private readonly List<SemanticField> _fields = [];
     private readonly EntityId _id;
     private readonly string _name;
-    private readonly List<SemanticField> _fields = [];
     private readonly List<SemanticRelationship> _relationships = [];
     private SemanticFieldIdentity? _identity;
-    private readonly List<SemanticAlias> _aliases = [];
 
     internal SemanticEntityBuilder(EntityId id, string name)
     {
@@ -38,8 +35,10 @@ public sealed class SemanticEntityBuilder
         return this;
     }
 
-    /// <summary>Declares multiple aliases in one call, e.g. <c>.Aliases("Item", "Item2")</c>
-    /// or <c>.Aliases(["Item", "Item2"])</c>. Equivalent to calling <see cref="Alias"/> once per name.</summary>
+    /// <summary>
+    ///     Declares multiple aliases in one call, e.g. <c>.Aliases("Item", "Item2")</c>
+    ///     or <c>.Aliases(["Item", "Item2"])</c>. Equivalent to calling <see cref="Alias" /> once per name.
+    /// </summary>
     public SemanticEntityBuilder Aliases(params string[] aliases)
     {
         ArgumentNullException.ThrowIfNull(aliases);
@@ -106,15 +105,17 @@ public sealed class SemanticEntityBuilder
     public SemanticEntityBuilder RelationshipAlias(RelationshipId relationshipId, string alias, int? weight = null)
     {
         var index = _relationships.FindIndex(x => x.Id == relationshipId);
-        if (index < 0) throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
+        if (index < 0)
+            throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
         var relationship = _relationships[index];
         var aliases = relationship.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray();
         _relationships[index] = relationship with { Aliases = aliases };
         return this;
     }
 
-    internal SemanticEntity Build() =>
-        new(
+    internal SemanticEntity Build()
+    {
+        return new SemanticEntity(
             _id,
             _name,
             _identity ?? throw new InvalidOperationException(
@@ -122,6 +123,7 @@ public sealed class SemanticEntityBuilder
             _fields.ToArray(),
             _relationships.ToArray(),
             _aliases.ToArray());
+    }
 
     private static void AddAlias(List<SemanticAlias> aliases, string alias, int? weight)
     {
@@ -133,19 +135,19 @@ public sealed class SemanticEntityBuilder
 }
 
 /// <summary>
-/// Strongly typed manual semantic builder. Property selectors target the
-/// application/domain model type <typeparamref name="TModel"/>; they do not
-/// target Foundgine's semantic entity metadata or a provider's entity type.
+///     Strongly typed manual semantic builder. Property selectors target the
+///     application/domain model type <typeparamref name="TModel" />; they do not
+///     target Foundgine's semantic entity metadata or a provider's entity type.
 /// </summary>
 /// <typeparam name="TModel">The application/domain model represented by the semantic entity.</typeparam>
 public sealed class SemanticEntityBuilder<TModel>
 {
+    private readonly List<SemanticAlias> _aliases = [];
+    private readonly List<SemanticField> _fields = [];
     private readonly EntityId _id;
     private readonly string _name;
-    private readonly List<SemanticField> _fields = [];
     private readonly List<SemanticRelationship> _relationships = [];
     private SemanticFieldIdentity? _identity;
-    private readonly List<SemanticAlias> _aliases = [];
 
     internal SemanticEntityBuilder(EntityId id, string name)
     {
@@ -159,18 +161,18 @@ public sealed class SemanticEntityBuilder<TModel>
 
         if (_aliases.Any(x =>
                 string.Equals(x.Name, alias, StringComparison.OrdinalIgnoreCase)))
-        {
             throw new ArgumentException(
                 $"Duplicate semantic alias '{alias}'.",
                 nameof(alias));
-        }
 
         _aliases.Add(new SemanticAlias(alias, weight));
         return this;
     }
 
-    /// <summary>Declares multiple aliases in one call, e.g. <c>.Aliases("Item", "Item2")</c>
-    /// or <c>.Aliases(["Item", "Item2"])</c>. Equivalent to calling <see cref="Alias"/> once per name.</summary>
+    /// <summary>
+    ///     Declares multiple aliases in one call, e.g. <c>.Aliases("Item", "Item2")</c>
+    ///     or <c>.Aliases(["Item", "Item2"])</c>. Equivalent to calling <see cref="Alias" /> once per name.
+    /// </summary>
     public SemanticEntityBuilder<TModel> Aliases(params string[] aliases)
     {
         ArgumentNullException.ThrowIfNull(aliases);
@@ -180,12 +182,13 @@ public sealed class SemanticEntityBuilder<TModel>
     }
 
     /// <summary>
-    /// Declares the semantic identity using a property on <typeparamref name="TModel"/>.
-    /// Foundgine derives the identity field id deterministically from the
-    /// semantic entity and field name; callers do not need to construct a
-    /// <see cref="FieldId"/>.
+    ///     Declares the semantic identity using a property on <typeparamref name="TModel" />.
+    ///     Foundgine derives the identity field id deterministically from the
+    ///     semantic entity and field name; callers do not need to construct a
+    ///     <see cref="FieldId" />.
     /// </summary>
-    public SemanticEntityBuilder<TModel> Identity<TProperty>(Expression<Func<TModel, TProperty>> property, string? semanticName = null)
+    public SemanticEntityBuilder<TModel> Identity<TProperty>(Expression<Func<TModel, TProperty>> property,
+        string? semanticName = null)
     {
         var metadata = GetProperty(property);
         var fieldName = semanticName ?? metadata.Name;
@@ -196,9 +199,9 @@ public sealed class SemanticEntityBuilder<TModel>
     }
 
     /// <summary>
-    /// Exposes a property from <typeparamref name="TModel"/> as a semantic field.
-    /// The CLR type, field name, and entity-local field identity are derived from
-    /// the property selector.
+    ///     Exposes a property from <typeparamref name="TModel" /> as a semantic field.
+    ///     The CLR type, field name, and entity-local field identity are derived from
+    ///     the property selector.
     /// </summary>
     public SemanticEntityBuilder<TModel> Field<TProperty>(
         Expression<Func<TModel, TProperty>> property,
@@ -216,7 +219,8 @@ public sealed class SemanticEntityBuilder<TModel>
         return this;
     }
 
-    public SemanticEntityBuilder<TModel> Constraint<TProperty>(Expression<Func<TModel, TProperty>> property, SemanticConstraint constraint)
+    public SemanticEntityBuilder<TModel> Constraint<TProperty>(Expression<Func<TModel, TProperty>> property,
+        SemanticConstraint constraint)
     {
         ArgumentNullException.ThrowIfNull(constraint);
         var fieldId = FieldId.Create(_name, GetProperty(property).Name);
@@ -227,18 +231,23 @@ public sealed class SemanticEntityBuilder<TModel>
         return this;
     }
 
-    public SemanticEntityBuilder<TModel> FieldAlias<TProperty>(Expression<Func<TModel, TProperty>> property, string alias, int? weight = null)
+    public SemanticEntityBuilder<TModel> FieldAlias<TProperty>(Expression<Func<TModel, TProperty>> property,
+        string alias, int? weight = null)
     {
         var fieldId = FieldId.Create(_name, GetProperty(property).Name);
         var index = _fields.FindIndex(x => x.Id == fieldId);
         if (index < 0) throw new InvalidOperationException($"Field '{fieldId}' is not declared on '{_name}'.");
         var field = _fields[index];
-        _fields[index] = field with { Aliases = field.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray() };
+        _fields[index] = field with
+        {
+            Aliases = field.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray()
+        };
         return this;
     }
 
     /// <summary>Declares multiple field aliases in one call.</summary>
-    public SemanticEntityBuilder<TModel> FieldAliases<TProperty>(Expression<Func<TModel, TProperty>> property, params string[] aliases)
+    public SemanticEntityBuilder<TModel> FieldAliases<TProperty>(Expression<Func<TModel, TProperty>> property,
+        params string[] aliases)
     {
         ArgumentNullException.ThrowIfNull(aliases);
         var fieldId = FieldId.Create(_name, GetProperty(property).Name);
@@ -251,30 +260,32 @@ public sealed class SemanticEntityBuilder<TModel>
     }
 
     /// <summary>
-    /// Declares a relationship with strongly typed property selectors on both
-    /// sides. <typeparamref name="TModel"/> is the source/domain model and
-    /// <typeparamref name="TTargetModel"/> is the target/domain model. The
-    /// selected properties are validated during semantic-model construction;
-    /// they are not semantic-entity or provider metadata properties.
+    ///     Declares a relationship with strongly typed property selectors on both
+    ///     sides. <typeparamref name="TModel" /> is the source/domain model and
+    ///     <typeparamref name="TTargetModel" /> is the target/domain model. The
+    ///     selected properties are validated during semantic-model construction;
+    ///     they are not semantic-entity or provider metadata properties.
     /// </summary>
     /// <summary>
-    /// Declares a relationship and derives its stable identity from the source
-    /// semantic entity name and relationship name. Manual numeric relationship
-    /// identities are intentionally not required for new code.
+    ///     Declares a relationship and derives its stable identity from the source
+    ///     semantic entity name and relationship name. Manual numeric relationship
+    ///     identities are intentionally not required for new code.
     /// </summary>
     public SemanticEntityBuilder<TModel> Relationship<TTargetModel>(
         string name,
         Expression<Func<TModel, object?>> fromProperty,
         Expression<Func<TTargetModel, object?>> toProperty,
         EntityId target,
-        RelationshipCardinality cardinality) =>
-        Relationship(
+        RelationshipCardinality cardinality)
+    {
+        return Relationship(
             RelationshipId.Create(_name, name),
             name,
             fromProperty,
             toProperty,
             target,
             cardinality);
+    }
 
     public SemanticEntityBuilder<TModel> Relationship<TTargetModel>(
         RelationshipId id,
@@ -288,21 +299,24 @@ public sealed class SemanticEntityBuilder<TModel>
         var to = GetProperty<TTargetModel>(toProperty);
 
         if (from.PropertyType != to.PropertyType)
-        {
             throw new ArgumentException(
                 $"Relationship '{_name}.{name}' maps '{typeof(TModel).Name}.{from.Name}' ({from.PropertyType.Name}) to '{typeof(TTargetModel).Name}.{to.Name}' ({to.PropertyType.Name}); both properties must have the same CLR type.");
-        }
 
         _relationships.Add(new SemanticRelationship(id, name, target, cardinality));
         return this;
     }
 
-    public SemanticEntityBuilder<TModel> RelationshipAlias(RelationshipId relationshipId, string alias, int? weight = null)
+    public SemanticEntityBuilder<TModel> RelationshipAlias(RelationshipId relationshipId, string alias,
+        int? weight = null)
     {
         var index = _relationships.FindIndex(x => x.Id == relationshipId);
-        if (index < 0) throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
+        if (index < 0)
+            throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
         var relationship = _relationships[index];
-        _relationships[index] = relationship with { Aliases = relationship.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray() };
+        _relationships[index] = relationship with
+        {
+            Aliases = relationship.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray()
+        };
         return this;
     }
 
@@ -311,7 +325,8 @@ public sealed class SemanticEntityBuilder<TModel>
     {
         ArgumentNullException.ThrowIfNull(aliases);
         var index = _relationships.FindIndex(x => x.Id == relationshipId);
-        if (index < 0) throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
+        if (index < 0)
+            throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
         var relationship = _relationships[index];
         var merged = relationship.EffectiveAliases.Concat(aliases.Select(a => new SemanticAlias(a, null))).ToArray();
         _relationships[index] = relationship with { Aliases = merged };
@@ -328,16 +343,18 @@ public sealed class SemanticEntityBuilder<TModel>
         return this;
     }
 
-    internal SemanticEntity Build() =>
-        new(
-            _id,
-            _name,
-            _identity ?? throw new InvalidOperationException(
-                $"Semantic entity '{_name}' must declare an identity."),
-            _fields.ToArray(),
-            _relationships.ToArray(),
-            _aliases.ToArray())
-        { ModelType = typeof(TModel) };
+    internal SemanticEntity Build()
+    {
+        return new SemanticEntity(
+                _id,
+                _name,
+                _identity ?? throw new InvalidOperationException(
+                    $"Semantic entity '{_name}' must declare an identity."),
+                _fields.ToArray(),
+                _relationships.ToArray(),
+                _aliases.ToArray())
+            { ModelType = typeof(TModel) };
+    }
 
     private static PropertyInfo GetProperty<TTargetModel>(Expression<Func<TTargetModel, object?>> expression)
     {
@@ -348,18 +365,14 @@ public sealed class SemanticEntityBuilder<TModel>
             body = conversion.Operand;
 
         if (body is not MemberExpression { Member: PropertyInfo property })
-        {
             throw new ArgumentException(
                 $"The semantic relationship property selector must be a direct property access on {typeof(TTargetModel).Name}, such as x => x.Id.",
                 nameof(expression));
-        }
 
         if (property.DeclaringType is null || !property.DeclaringType.IsAssignableFrom(typeof(TTargetModel)))
-        {
             throw new ArgumentException(
                 $"Property '{property.Name}' does not belong to model type '{typeof(TTargetModel).FullName}'.",
                 nameof(expression));
-        }
 
         return property;
     }
@@ -382,10 +395,13 @@ public sealed class SemanticEntityBuilder<TModel>
         };
     }
 
-    private static PropertyInfo GetProperty<TProperty>(Expression<Func<TModel, TProperty>> expression) =>
-        GetProperty(expression, nameof(expression));
+    private static PropertyInfo GetProperty<TProperty>(Expression<Func<TModel, TProperty>> expression)
+    {
+        return GetProperty(expression, nameof(expression));
+    }
 
-    private static PropertyInfo GetProperty<TProperty>(Expression<Func<TModel, TProperty>> expression, string parameterName)
+    private static PropertyInfo GetProperty<TProperty>(Expression<Func<TModel, TProperty>> expression,
+        string parameterName)
     {
         ArgumentNullException.ThrowIfNull(expression);
 
@@ -394,20 +410,15 @@ public sealed class SemanticEntityBuilder<TModel>
             body = conversion.Operand;
 
         if (body is not MemberExpression { Member: PropertyInfo property })
-        {
             throw new ArgumentException(
                 $"The semantic property selector must be a direct property access on {typeof(TModel).Name}, such as x => x.Id.",
                 nameof(expression));
-        }
 
         if (property.DeclaringType is null || !property.DeclaringType.IsAssignableFrom(typeof(TModel)))
-        {
             throw new ArgumentException(
                 $"Property '{property.Name}' does not belong to model type '{typeof(TModel).FullName}'.",
                 nameof(expression));
-        }
 
         return property;
     }
 }
-

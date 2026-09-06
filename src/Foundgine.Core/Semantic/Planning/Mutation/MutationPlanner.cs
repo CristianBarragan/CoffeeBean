@@ -5,20 +5,22 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.Planning.Mutation;
 
 /// <summary>
-/// Converts mutation intent into a provider-neutral mutation plan.
-/// Physical storage and SQL are deliberately outside this planner.
+///     Converts mutation intent into a provider-neutral mutation plan.
+///     Physical storage and SQL are deliberately outside this planner.
 /// </summary>
 public sealed class MutationPlanner
 {
     private readonly IMutationSchema _schema;
 
-    public MutationPlanner(IMutationSchema schema) =>
+    public MutationPlanner(IMutationSchema schema)
+    {
         _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+    }
 
     /// <summary>
-    /// Canonical mutation planning entry point. Semantic mutation IR is the source of
-    /// truth; this method only lowers semantic identities to the provider-neutral
-    /// planning representation required by the existing mutation execution pipeline.
+    ///     Canonical mutation planning entry point. Semantic mutation IR is the source of
+    ///     truth; this method only lowers semantic identities to the provider-neutral
+    ///     planning representation required by the existing mutation execution pipeline.
     /// </summary>
     public MutationBatchPlan Plan(SemanticMutationOperationGraph graph)
     {
@@ -67,6 +69,7 @@ public sealed class MutationPlanner
                         $"Semantic conflict field '{field.Value}' is not mapped on '{entity.Name}'.");
                 conflictColumns.Add(column.Value);
             }
+
             conflicts = conflictColumns;
         }
 
@@ -170,10 +173,8 @@ public sealed class MutationPlanner
                                        x.TargetOperationIndex == dependency.Index &&
                                        x.SourceField == d.SourceField &&
                                        x.TargetColumn == targetColumn.Value))
-            {
                 dependencies.Add(new MutationDependency(
                     d.SourceOperationIndex, dependency.Index, d.SourceField, targetColumn.Value));
-            }
         }
 
         return dependencies;
@@ -187,10 +188,8 @@ public sealed class MutationPlanner
 
         if (intent.Kind is MutationKind.Update or MutationKind.Delete &&
             intent.Filter is null)
-        {
             throw new InvalidOperationException(
                 $"Unfiltered {intent.Kind} mutations are not permitted for '{entity.Name}'.");
-        }
 
         if (intent.Kind == MutationKind.Delete && intent.Fields.Count != 0)
             throw new InvalidOperationException("Delete mutations cannot contain field values.");
@@ -200,37 +199,35 @@ public sealed class MutationPlanner
                 $"{intent.Kind} mutations must contain at least one field value.");
 
         foreach (var field in intent.Fields)
-        {
             if (!entity.Columns.Contains(field.Column))
                 throw new InvalidOperationException(
                     $"Column '{field.Column.Value}' is not registered on '{entity.Name}'.");
-        }
 
         ValidateFilter(intent.Filter, entity);
 
         var returnFields = intent.ReturnFields?.ToArray()
-            ?? (intent.Kind == MutationKind.Delete
-                ? Array.Empty<FieldId>()
-                : entity.Fields
-                    .Where(f => f.Value is not null)
-                    .Select(f => f.Key)
-                    .ToArray());
+                           ?? (intent.Kind == MutationKind.Delete
+                               ? Array.Empty<FieldId>()
+                               : entity.Fields
+                                   .Where(f => f.Value is not null)
+                                   .Select(f => f.Key)
+                                   .ToArray());
 
         foreach (var field in returnFields)
-        {
             if (!entity.Fields.ContainsKey(field))
                 throw new InvalidOperationException(
                     $"Return field '{field.Value}' is not registered on '{entity.Name}'.");
-        }
 
         return new MutationPlan(
-            [new MutationOperation(
+        [
+            new MutationOperation(
                 entity,
                 intent.Kind,
                 intent.Fields,
                 intent.Filter,
                 null,
-                returnFields)]);
+                returnFields)
+        ]);
     }
 
     public MutationPlan Plan(UpsertIntent intent)
@@ -243,38 +240,32 @@ public sealed class MutationPlanner
                 $"Upserts for '{entity.Name}' must contain at least one field value.");
 
         foreach (var field in intent.Fields)
-        {
             if (!entity.Columns.Contains(field.Column))
                 throw new InvalidOperationException(
                     $"Column '{field.Column.Value}' is not registered on '{entity.Name}'.");
-        }
 
         var conflicts = intent.ConflictColumns?.ToArray()
-            ?? (entity.PrimaryKeyColumn is { } pk ? [pk] : Array.Empty<ColumnId>());
+                        ?? (entity.PrimaryKeyColumn is { } pk ? [pk] : Array.Empty<ColumnId>());
 
         if (conflicts.Length == 0)
             throw new InvalidOperationException(
                 $"Upsert for '{entity.Name}' requires conflict columns or a primary key.");
 
         foreach (var column in conflicts)
-        {
             if (!entity.Columns.Contains(column))
                 throw new InvalidOperationException(
                     $"Conflict column '{column.Value}' is not registered on '{entity.Name}'.");
-        }
 
         var returnFields = intent.ReturnFields?.ToArray()
-            ?? entity.Fields
-                .Where(f => f.Value is not null)
-                .Select(f => f.Key)
-                .ToArray();
+                           ?? entity.Fields
+                               .Where(f => f.Value is not null)
+                               .Select(f => f.Key)
+                               .ToArray();
 
         foreach (var field in returnFields)
-        {
             if (!entity.Fields.ContainsKey(field))
                 throw new InvalidOperationException(
                     $"Return field '{field.Value}' is not registered on '{entity.Name}'.");
-        }
 
         return new MutationPlan(
         [
@@ -289,17 +280,16 @@ public sealed class MutationPlanner
     }
 
     /// <summary>
-    /// Combines N independent mutation trees (e.g. one per aliased root field in a batched
-    /// GraphQL mutation document) into ONE flat, dependency-aware MutationBatchPlan, so the
-    /// whole batch can go through a single-round-trip execution path (PostgresBatchedMutationCompiler
-    /// / PipelinedMutationBatchExecutor) instead of planning and executing each item separately.
-    ///
-    /// Each item is flattened independently via the existing Plan(NestedMutationIntent)
-    /// (so nested children within one batch item still work exactly as before), then the
-    /// per-item operation lists are concatenated and each item's internal dependency indices
-    /// are shifted by the running operation-count offset. Items never depend on each other -
-    /// only nesting *within* one item produces a MutationDependency - so no cross-item edges
-    /// need to be computed here.
+    ///     Combines N independent mutation trees (e.g. one per aliased root field in a batched
+    ///     GraphQL mutation document) into ONE flat, dependency-aware MutationBatchPlan, so the
+    ///     whole batch can go through a single-round-trip execution path (PostgresBatchedMutationCompiler
+    ///     / PipelinedMutationBatchExecutor) instead of planning and executing each item separately.
+    ///     Each item is flattened independently via the existing Plan(NestedMutationIntent)
+    ///     (so nested children within one batch item still work exactly as before), then the
+    ///     per-item operation lists are concatenated and each item's internal dependency indices
+    ///     are shifted by the running operation-count offset. Items never depend on each other -
+    ///     only nesting *within* one item produces a MutationDependency - so no cross-item edges
+    ///     need to be computed here.
     /// </summary>
     public MutationBatchPlan Plan(IReadOnlyList<NestedMutationIntent> batch)
     {
@@ -343,9 +333,9 @@ public sealed class MutationPlanner
     }
 
     /// <summary>
-    /// Flattens a mutation tree into the existing dependency-aware batch model.
-    /// A child receives the parent primary-key value through the relationship's
-    /// provider-neutral join mapping.
+    ///     Flattens a mutation tree into the existing dependency-aware batch model.
+    ///     A child receives the parent primary-key value through the relationship's
+    ///     provider-neutral join mapping.
     /// </summary>
     public MutationBatchPlan Plan(NestedMutationIntent intent)
     {
@@ -384,10 +374,7 @@ public sealed class MutationPlanner
         Visit(intent, null, null);
 
         var operations = new List<MutationOperation>(intents.Count);
-        foreach (var source in intents)
-        {
-            operations.Add(PlanSingle(source));
-        }
+        foreach (var source in intents) operations.Add(PlanSingle(source));
 
         foreach (var binding in bindings)
         {
@@ -410,8 +397,8 @@ public sealed class MutationPlanner
                     $"Relationship '{relationship.Name}' does not map distinct parent and child entities.");
 
             var primaryKey = parent.Entity.PrimaryKeyColumn
-                ?? throw new InvalidOperationException(
-                    $"Parent entity '{parent.Entity.Name}' requires a primary key for nested mutation propagation.");
+                             ?? throw new InvalidOperationException(
+                                 $"Parent entity '{parent.Entity.Name}' requires a primary key for nested mutation propagation.");
 
             if (primaryKey != parentColumn)
                 throw new InvalidOperationException(
@@ -466,7 +453,6 @@ public sealed class MutationPlanner
         var dependencies = new List<MutationDependency>();
 
         for (var targetIndex = 0; targetIndex < operations.Count; targetIndex++)
-        {
             foreach (var field in operations[targetIndex].Fields)
             {
                 if (field.Source is null)
@@ -490,7 +476,6 @@ public sealed class MutationPlanner
                     field.Source.SourceField,
                     field.Column));
             }
-        }
 
         return dependencies;
     }

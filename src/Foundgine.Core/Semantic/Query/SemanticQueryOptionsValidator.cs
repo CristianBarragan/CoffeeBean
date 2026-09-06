@@ -1,10 +1,8 @@
-using Foundgine.Core.Abstractions;
-
 namespace Foundgine.Core.Semantic.Query;
 
 /// <summary>
-/// Validates query controls before provider planning. Provider-specific
-/// limits remain provider policy; semantic invariants are enforced here.
+///     Validates query controls before provider planning. Provider-specific
+///     limits remain provider policy; semantic invariants are enforced here.
 /// </summary>
 public static class SemanticQueryOptionsValidator
 {
@@ -32,7 +30,8 @@ public static class SemanticQueryOptionsValidator
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var term in terms)
         {
-            var key = $"{string.Join('/', term.EffectivePath.Select(x => x.Value))}:{term.Field.Value}:{term.Direction}:{term.Aggregate}";
+            var key =
+                $"{string.Join('/', term.EffectivePath.Select(x => x.Value))}:{term.Field.Value}:{term.Direction}:{term.Aggregate}";
             if (!seen.Add(key))
                 throw new InvalidOperationException("Semantic query ordering contains a duplicate term.");
         }

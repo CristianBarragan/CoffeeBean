@@ -1,31 +1,34 @@
-using Foundgine.Core.Semantic.Resolution;
 using Foundgine.SupplyChain.Advanced.Semantics;
-using Xunit;
 
 namespace Foundgine.SupplyChain.Advanced.Tests.Grounding;
 
 /// <summary>
-/// Case study for the README / walkthrough headline example — "show me overdue
-/// purchase orders from our top supplier in Texas" — run against the real
-/// generated Supply Chain semantic contract, the same contract
-/// <c>find_top_supplier_overdue_orders</c> resolves against in
-/// <c>MCP.Foundgine/Program.cs</c>.
-///
-/// Unlike <see cref="SupplyChainGroundingAmbiguityTests"/> and
-/// <see cref="SupplyChainGroundingUnresolvedTests"/>, which hand-write fake
-/// candidates, this suite proves the alias declarations actually live in
-/// <c>Semantic/Domain/Domain.cs</c>:
-///   - <c>[FoundgineEntity("Supplier", ...)] [FoundgineAlias("Vendor")]
-///     [FoundgineAlias("Seller")]</c>
-///   - <c>[FoundgineEntity("PurchaseOrder", ...)] [FoundgineAlias(["PO", "POs"])]
-///     [FoundgineAlias(["Buy", "Buys"])]</c>
-/// and that they survive AOT metadata generation into
-/// <see cref="SemanticLexiconProjection"/> output, and from there into
-/// <see cref="SemanticLexicalResolver.Ground(string)"/> committing "seller"/"buys" to
-/// the exact same interpretation as "supplier"/"PurchaseOrder" — a paraphrase
-/// like "show me overdue buys from our top seller in Texas" is not a
-/// coincidentally-similar second meaning, it is the declared alias path to
-/// the one meaning "purchase orders"/"supplier" already commit to.
+///     Case study for the README / walkthrough headline example — "show me overdue
+///     purchase orders from our top supplier in Texas" — run against the real
+///     generated Supply Chain semantic contract, the same contract
+///     <c>find_top_supplier_overdue_orders</c> resolves against in
+///     <c>MCP.Foundgine/Program.cs</c>.
+///     Unlike <see cref="SupplyChainGroundingAmbiguityTests" /> and
+///     <see cref="SupplyChainGroundingUnresolvedTests" />, which hand-write fake
+///     candidates, this suite proves the alias declarations actually live in
+///     <c>Semantic/Domain/Domain.cs</c>:
+///     -
+///     <c>
+///         [FoundgineEntity("Supplier", ...)] [FoundgineAlias("Vendor")]
+///         [FoundgineAlias("Seller")]
+///     </c>
+///     -
+///     <c>
+///         [FoundgineEntity("PurchaseOrder", ...)] [FoundgineAlias(["PO", "POs"])]
+///         [FoundgineAlias(["Buy", "Buys"])]
+///     </c>
+///     and that they survive AOT metadata generation into
+///     <see cref="SemanticLexiconProjection" /> output, and from there into
+///     <see cref="SemanticLexicalResolver.Ground(string)" /> committing "seller"/"buys" to
+///     the exact same interpretation as "supplier"/"PurchaseOrder" — a paraphrase
+///     like "show me overdue buys from our top seller in Texas" is not a
+///     coincidentally-similar second meaning, it is the declared alias path to
+///     the one meaning "purchase orders"/"supplier" already commit to.
 /// </summary>
 public sealed class SupplyChainGroundingAliasTests
 {
@@ -157,24 +160,26 @@ public sealed class SupplyChainGroundingAliasTests
     }
 
     /// <summary>
-    /// Stand-in retrieval provider that matches a token against either an
-    /// entry's canonical name or any of its declared aliases — the same
-    /// lookup an Elasticsearch/pgvector index built from
-    /// <see cref="SemanticLexiconProjection"/> output performs. Not a set of
-    /// hand-picked fake candidates: it reads only what
-    /// <see cref="SemanticLexiconProjection.Build"/> actually derived from
-    /// the real contract, so "seller"/"buys" only resolve here because
-    /// Domain.cs declared them.
+    ///     Stand-in retrieval provider that matches a token against either an
+    ///     entry's canonical name or any of its declared aliases — the same
+    ///     lookup an Elasticsearch/pgvector index built from
+    ///     <see cref="SemanticLexiconProjection" /> output performs. Not a set of
+    ///     hand-picked fake candidates: it reads only what
+    ///     <see cref="SemanticLexiconProjection.Build" /> actually derived from
+    ///     the real contract, so "seller"/"buys" only resolve here because
+    ///     Domain.cs declared them.
     /// </summary>
     private sealed class AliasAwareLexicalSource(IReadOnlyList<SemanticLexiconEntry> lexicon)
         : ISemanticLexicalCandidateSource
     {
-        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request) =>
-            lexicon
+        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request)
+        {
+            return lexicon
                 .Where(entry => request.EffectiveKinds.Contains(entry.Kind))
                 .Where(entry =>
                     string.Equals(entry.CanonicalName, request.Token, StringComparison.OrdinalIgnoreCase) ||
-                    entry.EffectiveAliases.Any(a => string.Equals(a, request.Token, StringComparison.OrdinalIgnoreCase)))
+                    entry.EffectiveAliases.Any(a =>
+                        string.Equals(a, request.Token, StringComparison.OrdinalIgnoreCase)))
                 .Select(entry => new SemanticLexicalCandidate(
                     request.Token,
                     entry.Kind,
@@ -187,5 +192,6 @@ public sealed class SupplyChainGroundingAliasTests
                     TargetEntityId: entry.TargetEntityId,
                     Value: entry.Value))
                 .ToArray();
+        }
     }
 }

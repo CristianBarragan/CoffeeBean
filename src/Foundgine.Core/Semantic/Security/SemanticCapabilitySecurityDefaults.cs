@@ -1,3 +1,4 @@
+using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Capabilities;
 
 namespace Foundgine.Core.Semantic.Security;
@@ -17,7 +18,7 @@ public static class SemanticCapabilitySecurityDefaults
             ids.Add(SecurityInvariantIds.FieldVisibility);
         if (capability.Relationships.Count > 0)
             ids.Add(SecurityInvariantIds.RelationshipVisibility);
-        if (capability.HasSideEffects || capability.Access.Access == Foundgine.Core.Abstractions.AuthorizationAccess.Conditional)
+        if (capability.HasSideEffects || capability.Access.Access == AuthorizationAccess.Conditional)
             ids.Add(SecurityInvariantIds.RuntimeAuthorization);
 
         return ids.OrderBy(x => x, StringComparer.Ordinal).ToArray();

@@ -3,11 +3,11 @@ using Foundgine.Core.Semantic.Security.Execution;
 namespace Foundgine.Runtime.ControlPlane.RiskScoring;
 
 /// <summary>
-/// A single, independently-testable risk factor (e.g. "tool is tagged
-/// destructive", "caller has no prior successful calls this session").
-/// Unlike <c>IRoutingRule</c> and <c>IPolicyRule</c>, risk rules don't
-/// abstain — every rule contributes a signal (possibly zero-weight), so
-/// scoring is a pure sum, not a resolution order.
+///     A single, independently-testable risk factor (e.g. "tool is tagged
+///     destructive", "caller has no prior successful calls this session").
+///     Unlike <c>IRoutingRule</c> and <c>IPolicyRule</c>, risk rules don't
+///     abstain — every rule contributes a signal (possibly zero-weight), so
+///     scoring is a pure sum, not a resolution order.
 /// </summary>
 public interface IRiskRule
 {
@@ -15,8 +15,8 @@ public interface IRiskRule
 }
 
 /// <summary>
-/// Evaluates every registered <see cref="IRiskRule"/> and aggregates the
-/// resulting signals into a single <see cref="RiskScore"/>.
+///     Evaluates every registered <see cref="IRiskRule" /> and aggregates the
+///     resulting signals into a single <see cref="RiskScore" />.
 /// </summary>
 public sealed class CompositeRiskScorer
 {

@@ -2,7 +2,6 @@ using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Capabilities;
 using Foundgine.Core.Semantic.Security;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests.Security;
 
@@ -11,12 +10,17 @@ public sealed class SecurityInvariantRegistryTests
     [Fact]
     public void Registry_contains_canonical_invariants()
     {
-        Assert.Contains(SecurityInvariantIds.AuthorizationRequired, SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
-        Assert.Contains(SecurityInvariantIds.RuntimeAuthorization, SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
-        Assert.Contains(SecurityInvariantIds.TenantIsolation, SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
-        Assert.Contains(SecurityInvariantIds.PlanCacheContextIsolation, SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
+        Assert.Contains(SecurityInvariantIds.AuthorizationRequired,
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
+        Assert.Contains(SecurityInvariantIds.RuntimeAuthorization,
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
+        Assert.Contains(SecurityInvariantIds.TenantIsolation,
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
+        Assert.Contains(SecurityInvariantIds.PlanCacheContextIsolation,
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
         Assert.Contains(SecurityInvariantIds.AtomicMutation, SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
-        Assert.Contains(SecurityInvariantIds.ExecutionEvidenceRequired, SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
+        Assert.Contains(SecurityInvariantIds.ExecutionEvidenceRequired,
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
     }
 
     [Fact]

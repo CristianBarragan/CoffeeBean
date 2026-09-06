@@ -1,34 +1,31 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
-using Foundgine.Providers.Storage.InMemory;
 using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic.Planning;
-using Xunit;
+using Foundgine.Testing;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.Providers.Storage.InMemory.Tests;
 
 /// <summary>
-/// Step 37 escape-boundary regression tests.
-///
-/// Before the fix, <see cref="InMemoryExecutionProvider"/>'s
-/// <c>ToExecutionRow</c> built <see cref="ExecutionRow.Values"/> from the
-/// full unauthorized backing <see cref="InMemoryRow.Values"/> dictionary,
-/// while <see cref="ExecutionRow.Cells"/>/<see cref="ExecutionRow.EffectiveCells"/>
-/// were correctly restricted to the authorized <c>ExecutionIRNode.Fields</c>
-/// set. Any backing-store column that a data source carries for internal
-/// purposes (foreign keys, risk scores, join keys, etc.) but that is not part
-/// of the semantic model's selectable field surface would leak into
-/// <c>Values</c> even though it was never authorized, never selected, and
-/// never discoverable through the capability contract.
-///
-/// These tests pin the fix directly against the provider, independent of
-/// planner/authorizer wiring, by constructing <see cref="ExecutionIR"/> nodes
-/// whose <c>Fields</c> deliberately omit a backing-only field that the
-/// in-memory rows nonetheless carry (exactly the shape of
-/// <c>Foundgine.E2E.Tests.Banking.BankingRelationalMetadata</c>'s
-/// <c>Account.CustomerId</c>, which exists only for relationship traversal
-/// and has no corresponding semantic field).
+///     Step 37 escape-boundary regression tests.
+///     Before the fix, <see cref="InMemoryExecutionProvider" />'s
+///     <c>ToExecutionRow</c> built <see cref="ExecutionRow.Values" /> from the
+///     full unauthorized backing <see cref="InMemoryRow.Values" /> dictionary,
+///     while <see cref="ExecutionRow.Cells" />/<see cref="ExecutionRow.EffectiveCells" />
+///     were correctly restricted to the authorized <c>ExecutionIRNode.Fields</c>
+///     set. Any backing-store column that a data source carries for internal
+///     purposes (foreign keys, risk scores, join keys, etc.) but that is not part
+///     of the semantic model's selectable field surface would leak into
+///     <c>Values</c> even though it was never authorized, never selected, and
+///     never discoverable through the capability contract.
+///     These tests pin the fix directly against the provider, independent of
+///     planner/authorizer wiring, by constructing <see cref="ExecutionIR" /> nodes
+///     whose <c>Fields</c> deliberately omit a backing-only field that the
+///     in-memory rows nonetheless carry (exactly the shape of
+///     <c>Foundgine.E2E.Tests.Banking.BankingRelationalMetadata</c>'s
+///     <c>Account.CustomerId</c>, which exists only for relationship traversal
+///     and has no corresponding semantic field).
 /// </summary>
 public sealed class ExecutionRowCapabilityBoundaryTests
 {
@@ -77,7 +74,7 @@ public sealed class ExecutionRowCapabilityBoundaryTests
             }));
 
         // The plan only ever authorizes/selects Balance.
-        var ir = Foundgine.Testing.ExecutionIRTestFactory.Create(
+        var ir = ExecutionIRTestFactory.Create(
             new ExecutionIRNode(0, ExecutionOperation.Scan, Account, [Balance], null, null, []),
             []);
 
@@ -146,7 +143,8 @@ public sealed class ExecutionRowCapabilityBoundaryTests
             new ColumnReference(Account, new ColumnId(2))));
 
         var data = new InMemoryDataSet()
-            .Add(new InMemoryRow(Customer, new Dictionary<FieldId, object?> { [CustomerId] = 1, [CustomerName] = "Alice" }))
+            .Add(new InMemoryRow(Customer,
+                new Dictionary<FieldId, object?> { [CustomerId] = 1, [CustomerName] = "Alice" }))
             .Add(new InMemoryRow(Account, new Dictionary<FieldId, object?>
             {
                 [AccountId] = 100,
@@ -154,7 +152,7 @@ public sealed class ExecutionRowCapabilityBoundaryTests
                 [customerFk] = 1 // join key; never authorized as a selectable field
             }));
 
-        var ir = Foundgine.Testing.ExecutionIRTestFactory.Create(
+        var ir = ExecutionIRTestFactory.Create(
             new ExecutionIRNode(
                 0, ExecutionOperation.Scan, Customer, [CustomerName], null, null,
                 [

@@ -1,8 +1,5 @@
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Resolution;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -81,10 +78,9 @@ public sealed class SemanticRequestResolverTests
             customer,
             [new SemanticSelection(null, new RelationshipId(99), [])]);
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request));
 
         Assert.Contains("does not declare relationship", ex.Message);
     }
 }
-

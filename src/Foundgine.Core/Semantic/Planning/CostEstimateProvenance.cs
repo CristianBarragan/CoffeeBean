@@ -8,8 +8,10 @@ public readonly record struct CostEstimateProvenance(
     TimeSpan? StatisticsAge,
     CostStatisticsFreshness Freshness)
 {
-    public static CostEstimateProvenance Heuristic(string source = "heuristic", DateTimeOffset? estimatedAtUtc = null) =>
-        new(source, null, estimatedAtUtc ?? DateTimeOffset.UtcNow, null, CostStatisticsFreshness.Unknown);
+    public static CostEstimateProvenance Heuristic(string source = "heuristic", DateTimeOffset? estimatedAtUtc = null)
+    {
+        return new(source, null, estimatedAtUtc ?? DateTimeOffset.UtcNow, null, CostStatisticsFreshness.Unknown);
+    }
 
     public static CostEstimateProvenance FromStatistics(
         string source,
@@ -19,7 +21,8 @@ public readonly record struct CostEstimateProvenance(
         TimeSpan? staleAfter = null)
     {
         if (string.IsNullOrWhiteSpace(source)) throw new ArgumentException("Source is required.", nameof(source));
-        if (string.IsNullOrWhiteSpace(statisticsVersion)) throw new ArgumentException("Statistics version is required.", nameof(statisticsVersion));
+        if (string.IsNullOrWhiteSpace(statisticsVersion))
+            throw new ArgumentException("Statistics version is required.", nameof(statisticsVersion));
         var now = estimatedAtUtc ?? DateTimeOffset.UtcNow;
         if (observedAtUtc > now) throw new ArgumentOutOfRangeException(nameof(observedAtUtc));
         var age = now - observedAtUtc;

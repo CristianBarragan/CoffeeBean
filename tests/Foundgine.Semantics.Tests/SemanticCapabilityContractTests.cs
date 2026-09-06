@@ -1,14 +1,12 @@
-using System.Text.Json;
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Capabilities;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
 /// <summary>
-/// Locks the semantic capability contract used by application and AI adapters.
-/// These tests deliberately stay provider- and transport-independent.
+///     Locks the semantic capability contract used by application and AI adapters.
+///     These tests deliberately stay provider- and transport-independent.
 /// </summary>
 public sealed class SemanticCapabilityContractTests
 {
@@ -156,21 +154,30 @@ public sealed class SemanticCapabilityContractTests
 
     private sealed class ReadOnlyPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanWriteEntity(EntityId entityId) => false;
-        public override bool CanWriteField(EntityId entityId, FieldId fieldId) => false;
+        public override bool CanWriteEntity(EntityId entityId)
+        {
+            return false;
+        }
+
+        public override bool CanWriteField(EntityId entityId, FieldId fieldId)
+        {
+            return false;
+        }
     }
 
     private sealed class ConditionalCustomerPolicy : AllowAllSemanticAuthorizationPolicy
     {
         public override AuthorizationPredicate? GetPredicate(
             EntityId entityId,
-            AuthorizationOperation operation) =>
-            entityId == new EntityId(1) && operation == AuthorizationOperation.Read
+            AuthorizationOperation operation)
+        {
+            return entityId == new EntityId(1) && operation == AuthorizationOperation.Read
                 ? AuthorizationPredicate.Equal(
                     AuthorizationPredicate.Member(
                         AuthorizationPredicate.Parameter("customer"), "TenantId"),
                     AuthorizationPredicate.ContextParameter("tenantId"))
                 : null;
+        }
     }
 }
 
@@ -193,7 +200,7 @@ public sealed class SemanticVersioningTests
     public void Semantic_model_version_changes_when_topology_changes()
     {
         var first = SemanticVersionSet.For(BuildModel());
-        var changed = SemanticVersionSet.For(BuildModel(includeExtraEntity: true));
+        var changed = SemanticVersionSet.For(BuildModel(true));
 
         Assert.NotEqual(first.SemanticModelVersion, changed.SemanticModelVersion);
     }

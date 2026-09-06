@@ -1,7 +1,5 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Query;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
@@ -106,6 +104,7 @@ public sealed class ExecutionAlgebraInvariantTests
         Assert.NotNull(plan.Root.QueryOptions!.Filter);
         Assert.Equal(5, plan.Root.QueryOptions.Limit);
     }
+
     [Fact]
     public void Frozen_read_algebra_contains_only_structural_operations()
     {
@@ -116,5 +115,4 @@ public sealed class ExecutionAlgebraInvariantTests
         Assert.Contains(ExecutionOperation.Traverse, operations);
         Assert.Contains(ExecutionOperation.TraverseConnection, operations);
     }
-
 }

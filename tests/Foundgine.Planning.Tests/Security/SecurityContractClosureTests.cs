@@ -1,9 +1,7 @@
-using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Security;
-using Xunit;
+using Foundgine.Testing;
 
 namespace Foundgine.Core.Semantic.Planning.Tests.Security;
 
@@ -43,7 +41,7 @@ public sealed class SecurityContractClosureTests
     {
         var plan = new UnprovedPlan();
 
-        var ir = Foundgine.Testing.ExecutionIRTestFactory.Create(
+        var ir = ExecutionIRTestFactory.Create(
             new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [], null, null, []),
             [SecurityInvariantIds.AuthorizationRequired]);
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -61,7 +59,7 @@ public sealed class SecurityContractClosureTests
             []);
         var plan = new UnprovedPlan { SecurityProof = proof };
 
-        var ir = Foundgine.Testing.ExecutionIRTestFactory.Create(
+        var ir = ExecutionIRTestFactory.Create(
             new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [], null, null, []),
             [SecurityInvariantIds.AuthorizationRequired]);
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -72,5 +70,3 @@ public sealed class SecurityContractClosureTests
 
     private sealed record UnprovedPlan() : ProviderPlan("test");
 }
-
-

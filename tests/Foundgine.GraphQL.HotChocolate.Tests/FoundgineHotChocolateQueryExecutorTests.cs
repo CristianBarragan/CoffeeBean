@@ -3,22 +3,33 @@ using Foundgine.Core.Execution;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Capabilities;
+using Foundgine.Core.Semantic.Intent;
 using Foundgine.Core.Semantic.Security.Execution;
 using Foundgine.Core.Semantic.Security.Warrants;
-using Foundgine.Extensions.GraphQL.HotChocolate;
+using Foundgine.Runtime;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
-using Xunit;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
 public sealed class FoundgineHotChocolateQueryExecutorTests
 {
-    private static SemanticModel BuildModel() =>
-        new SemanticModelBuilder()
+    private const string Query = """
+                                 query {
+                                   customer {
+                                     id
+                                     name
+                                   }
+                                 }
+                                 """;
+
+    private static SemanticModel BuildModel()
+    {
+        return new SemanticModelBuilder()
             .Entity(new EntityId(1), "Customer", e => e
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(2), "Name", typeof(string)))
             .Build();
+    }
 
     private static SecurityExecutionContext CreateContext(string subject = "subject-1", string tenant = "tenant-a")
     {
@@ -31,43 +42,6 @@ public sealed class FoundgineHotChocolateQueryExecutorTests
         return new SecurityExecutionContext(warrant, subject, "graphql", tenant);
     }
 
-    private sealed class FixedProvider(SecurityExecutionContext? context) : ISecurityExecutionContextProvider
-    {
-        public SecurityExecutionContext? GetSecurityExecutionContext() => context;
-    }
-
-    private sealed class RecordingFoundgine : Foundgine.Runtime.IFoundgine
-    {
-        public SemanticRequest? ReceivedRequest { get; private set; }
-        public ExecutionResult ResultToReturn { get; set; } = new([]);
-
-        public SemanticAuthorizationCapabilities DescribeCapabilities() => throw new NotImplementedException();
-        public SemanticCapabilityContract DescribeCapabilityContract() => throw new NotImplementedException();
-        public SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security) => throw new NotImplementedException();
-        public SemanticVersionSet DescribeVersionSet() => throw new NotImplementedException();
-        public Foundgine.Runtime.DryRunResult DryRun(SemanticRequest request) => throw new NotImplementedException();
-        public Foundgine.Runtime.PlanApproval ApprovePlan(SemanticRequest request, string approvedBy) => throw new NotImplementedException();
-        public Task<ExecutionResult> ExecuteApprovedAsync(Foundgine.Runtime.PlanApproval approval, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-
-        public Task<ExecutionResult> ExecuteAsync(SemanticRequest request, ExecutionContext? context = null, CancellationToken cancellationToken = default)
-        {
-            ReceivedRequest = request;
-            return Task.FromResult(ResultToReturn);
-        }
-
-        public Task<ExecutionResult> ExecuteAsync(Foundgine.Core.Semantic.Intent.ReadIntent intent, ExecutionContext? context = null, CancellationToken cancellationToken = default) =>
-            throw new NotImplementedException();
-    }
-
-    private const string Query = """
-        query {
-          customer {
-            id
-            name
-          }
-        }
-        """;
-
     [Fact]
     public async Task ExecuteAsync_throws_when_no_security_context_is_established()
     {
@@ -76,8 +50,7 @@ public sealed class FoundgineHotChocolateQueryExecutorTests
             new HotChocolateSemanticAdapter(BuildModel()),
             new FixedProvider(null));
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => executor.ExecuteAsync(Query));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => executor.ExecuteAsync(Query));
     }
 
     [Fact]
@@ -103,7 +76,7 @@ public sealed class FoundgineHotChocolateQueryExecutorTests
         // identity/tenant/warrant data; this test asserts the invariant holds
         // even though there is no such field to attack today.
         var foundgine = new RecordingFoundgine();
-        var hostContext = CreateContext(subject: "trusted-host-subject", tenant: "trusted-tenant");
+        var hostContext = CreateContext("trusted-host-subject", "trusted-tenant");
         var executor = new FoundgineHotChocolateQueryExecutor(
             foundgine,
             new HotChocolateSemanticAdapter(BuildModel()),
@@ -183,5 +156,68 @@ public sealed class FoundgineHotChocolateQueryExecutorTests
             new RecordingFoundgine(),
             new HotChocolateSemanticAdapter(BuildModel()),
             securityContextProvider: null!));
+    }
+
+    private sealed class FixedProvider(SecurityExecutionContext? context) : ISecurityExecutionContextProvider
+    {
+        public SecurityExecutionContext? GetSecurityExecutionContext()
+        {
+            return context;
+        }
+    }
+
+    private sealed class RecordingFoundgine : IFoundgine
+    {
+        public SemanticRequest? ReceivedRequest { get; private set; }
+        public ExecutionResult ResultToReturn { get; set; } = new([]);
+
+        public SemanticAuthorizationCapabilities DescribeCapabilities()
+        {
+            throw new NotImplementedException();
+        }
+
+        public SemanticCapabilityContract DescribeCapabilityContract()
+        {
+            throw new NotImplementedException();
+        }
+
+        public SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security)
+        {
+            throw new NotImplementedException();
+        }
+
+        public SemanticVersionSet DescribeVersionSet()
+        {
+            throw new NotImplementedException();
+        }
+
+        public DryRunResult DryRun(SemanticRequest request)
+        {
+            throw new NotImplementedException();
+        }
+
+        public PlanApproval ApprovePlan(SemanticRequest request, string approvedBy)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ExecutionResult> ExecuteApprovedAsync(PlanApproval approval, ExecutionContext? context = null,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ExecutionResult> ExecuteAsync(SemanticRequest request, ExecutionContext? context = null,
+            CancellationToken cancellationToken = default)
+        {
+            ReceivedRequest = request;
+            return Task.FromResult(ResultToReturn);
+        }
+
+        public Task<ExecutionResult> ExecuteAsync(ReadIntent intent, ExecutionContext? context = null,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

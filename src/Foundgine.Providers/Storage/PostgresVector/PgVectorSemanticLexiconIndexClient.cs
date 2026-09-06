@@ -1,16 +1,15 @@
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Resolution;
-using Npgsql;
 
 namespace Foundgine.Providers.Storage.PostgresVector;
 
 /// <summary>
-/// Indexes the derived semantic lexicon projection into a pgvector-backed
-/// table. The table is a retrieval projection only — a searchable copy of
-/// canonical names, aliases, and embeddings derived from a frozen
-/// <see cref="SemanticContractSnapshot"/>. Graph topology (which entities,
-/// relationships, and fields exist and how they connect) stays owned by the
-/// semantic contract; this table never becomes the authority for it.
+///     Indexes the derived semantic lexicon projection into a pgvector-backed
+///     table. The table is a retrieval projection only — a searchable copy of
+///     canonical names, aliases, and embeddings derived from a frozen
+///     <see cref="SemanticContractSnapshot" />. Graph topology (which entities,
+///     relationships, and fields exist and how they connect) stays owned by the
+///     semantic contract; this table never becomes the authority for it.
 /// </summary>
 public sealed class PgVectorSemanticLexiconIndexClient
 {
@@ -29,8 +28,8 @@ public sealed class PgVectorSemanticLexiconIndexClient
     }
 
     /// <summary>
-    /// Creates the vector extension, table, and an approximate-nearest-neighbor
-    /// index if they do not already exist. Safe to call on every startup.
+    ///     Creates the vector extension, table, and an approximate-nearest-neighbor
+    ///     index if they do not already exist. Safe to call on every startup.
     /// </summary>
     public async Task EnsureSchemaAsync(CancellationToken cancellationToken = default)
     {
@@ -41,49 +40,49 @@ public sealed class PgVectorSemanticLexiconIndexClient
         await extension.ExecuteNonQueryAsync(cancellationToken);
 
         var createTable = $"""
-            CREATE TABLE IF NOT EXISTS {table} (
-                id                bigserial PRIMARY KEY,
-                canonical_name    text NOT NULL,
-                kind              text NOT NULL,
-                search_text       text NOT NULL,
-                aliases           text[] NOT NULL DEFAULT ARRAY[]::text[],
-                description       text NULL,
-                entity_id         bigint NULL,
-                relationship_id   bigint NULL,
-                field_id          bigint NULL,
-                source_entity_id  bigint NULL,
-                target_entity_id  bigint NULL,
-                value             text NULL,
-                embedding         vector({_options.Dimensions}) NOT NULL
-            )
-            """;
+                           CREATE TABLE IF NOT EXISTS {table} (
+                               id                bigserial PRIMARY KEY,
+                               canonical_name    text NOT NULL,
+                               kind              text NOT NULL,
+                               search_text       text NOT NULL,
+                               aliases           text[] NOT NULL DEFAULT ARRAY[]::text[],
+                               description       text NULL,
+                               entity_id         bigint NULL,
+                               relationship_id   bigint NULL,
+                               field_id          bigint NULL,
+                               source_entity_id  bigint NULL,
+                               target_entity_id  bigint NULL,
+                               value             text NULL,
+                               embedding         vector({_options.Dimensions}) NOT NULL
+                           )
+                           """;
 
         await using var createTableCmd = _dataSource.CreateCommand(createTable);
         await createTableCmd.ExecuteNonQueryAsync(cancellationToken);
 
         var createKindIndex = $"""
-            CREATE INDEX IF NOT EXISTS
-                {Identifier(_options.TableName + "_kind_idx")}
-                ON {table} (kind)
-            """;
+                               CREATE INDEX IF NOT EXISTS
+                                   {Identifier(_options.TableName + "_kind_idx")}
+                                   ON {table} (kind)
+                               """;
         await using var kindIndexCmd = _dataSource.CreateCommand(createKindIndex);
         await kindIndexCmd.ExecuteNonQueryAsync(cancellationToken);
 
         var createVectorIndex = $"""
-            CREATE INDEX IF NOT EXISTS
-                {Identifier(_options.TableName + "_embedding_hnsw_idx")}
-                ON {table}
-                USING hnsw (embedding {vectorOps})
-            """;
+                                 CREATE INDEX IF NOT EXISTS
+                                     {Identifier(_options.TableName + "_embedding_hnsw_idx")}
+                                     ON {table}
+                                     USING hnsw (embedding {vectorOps})
+                                 """;
         await using var vectorIndexCmd = _dataSource.CreateCommand(createVectorIndex);
         await vectorIndexCmd.ExecuteNonQueryAsync(cancellationToken);
     }
 
     /// <summary>
-    /// Replaces the entire indexed projection with entries derived from the
-    /// given frozen contract snapshot. This is the intended path when a new
-    /// contract version is published: reproject and reindex, never edit the
-    /// index in place as if it were authoritative.
+    ///     Replaces the entire indexed projection with entries derived from the
+    ///     given frozen contract snapshot. This is the intended path when a new
+    ///     contract version is published: reproject and reindex, never edit the
+    ///     index in place as if it were authoritative.
     /// </summary>
     public async Task IndexContractAsync(
         SemanticContractSnapshot contract,
@@ -99,25 +98,21 @@ public sealed class PgVectorSemanticLexiconIndexClient
             cancellationToken);
 
         if (embeddings.Count != entries.Count)
-        {
             throw new InvalidOperationException(
                 "Embedding generator returned a different number of vectors " +
                 "than lexicon entries.");
-        }
 
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
         await using (var truncate = new NpgsqlCommand(
-            $"TRUNCATE TABLE {_options.QualifiedTableName}", connection, transaction))
+                         $"TRUNCATE TABLE {_options.QualifiedTableName}", connection, transaction))
         {
             await truncate.ExecuteNonQueryAsync(cancellationToken);
         }
 
         for (var i = 0; i < entries.Count; i++)
-        {
             await InsertEntryAsync(connection, transaction, entries[i], embeddings[i], cancellationToken);
-        }
 
         await transaction.CommitAsync(cancellationToken);
     }
@@ -143,13 +138,13 @@ public sealed class PgVectorSemanticLexiconIndexClient
         CancellationToken cancellationToken)
     {
         var sql = $"""
-            INSERT INTO {_options.QualifiedTableName}
-                (canonical_name, kind, search_text, aliases, description,
-                 entity_id, relationship_id, field_id, source_entity_id,
-                 target_entity_id, value, embedding)
-            VALUES
-                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-            """;
+                   INSERT INTO {_options.QualifiedTableName}
+                       (canonical_name, kind, search_text, aliases, description,
+                        entity_id, relationship_id, field_id, source_entity_id,
+                        target_entity_id, value, embedding)
+                   VALUES
+                       ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                   """;
 
         await using var command = transaction is null
             ? new NpgsqlCommand(sql, connection)
@@ -172,23 +167,30 @@ public sealed class PgVectorSemanticLexiconIndexClient
     }
 
     /// <summary>
-    /// Foundgine identity values are 64-bit unsigned hashes; PostgreSQL
-    /// bigint is signed 64-bit. This reinterprets the bit pattern rather
-    /// than narrowing the value, so it round-trips exactly through
-    /// <see cref="PgVectorSemanticLexicalCandidateSource"/>'s equivalent
-    /// unchecked cast back to ulong.
+    ///     Foundgine identity values are 64-bit unsigned hashes; PostgreSQL
+    ///     bigint is signed 64-bit. This reinterprets the bit pattern rather
+    ///     than narrowing the value, so it round-trips exactly through
+    ///     <see cref="PgVectorSemanticLexicalCandidateSource" />'s equivalent
+    ///     unchecked cast back to ulong.
     /// </summary>
-    private static object ToBigInt(ulong? value) =>
-        value.HasValue ? unchecked((long)value.Value) : DBNull.Value;
-
-    internal static string VectorOpsClass(PgVectorDistance distance) => distance switch
+    private static object ToBigInt(ulong? value)
     {
-        PgVectorDistance.Cosine => "vector_cosine_ops",
-        PgVectorDistance.L2 => "vector_l2_ops",
-        PgVectorDistance.InnerProduct => "vector_ip_ops",
-        _ => throw new ArgumentOutOfRangeException(nameof(distance), distance, null)
-    };
+        return value.HasValue ? unchecked((long)value.Value) : DBNull.Value;
+    }
 
-    private static string Identifier(string value) =>
-        "\"" + value.Replace("\"", "\"\"") + "\"";
+    internal static string VectorOpsClass(PgVectorDistance distance)
+    {
+        return distance switch
+        {
+            PgVectorDistance.Cosine => "vector_cosine_ops",
+            PgVectorDistance.L2 => "vector_l2_ops",
+            PgVectorDistance.InnerProduct => "vector_ip_ops",
+            _ => throw new ArgumentOutOfRangeException(nameof(distance), distance, null)
+        };
+    }
+
+    private static string Identifier(string value)
+    {
+        return "\"" + value.Replace("\"", "\"\"") + "\"";
+    }
 }

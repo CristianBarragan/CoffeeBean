@@ -1,23 +1,19 @@
-using System.Globalization;
-using System.Text.RegularExpressions;
-using Foundgine.SupplyChain.Advanced.Authorization;
-
 namespace Foundgine.SupplyChain.Advanced.Authorization.Claims;
 
 /// <summary>
-/// Builds the <see cref="ClaimSchema"/> for the SupplyChain vertical. This is
-/// the only file that encodes SupplyChain-specific claim rules; everything
-/// that consumes a <see cref="ClaimSchema"/> (identity spoofing checks,
-/// format validation, cross-field/expiry validation) is generic and would
-/// work unchanged against a different vertical's schema.
+///     Builds the <see cref="ClaimSchema" /> for the SupplyChain vertical. This is
+///     the only file that encodes SupplyChain-specific claim rules; everything
+///     that consumes a <see cref="ClaimSchema" /> (identity spoofing checks,
+///     format validation, cross-field/expiry validation) is generic and would
+///     work unchanged against a different vertical's schema.
 /// </summary>
 public static class SupplyChainClaimSchema
 {
     private static readonly Regex ChangeTicketPattern = new(@"^CHG-\d{4,}$", RegexOptions.Compiled);
 
     /// <summary>
-    /// The default schema instance used by <see cref="ClientClaimsValidator"/>
-    /// when none is supplied explicitly.
+    ///     The default schema instance used by <see cref="ClientClaimsValidator" />
+    ///     when none is supplied explicitly.
     /// </summary>
     public static ClaimSchema Default { get; } = Build();
 
@@ -102,17 +98,17 @@ public static class SupplyChainClaimSchema
         };
 
         return new ClaimSchema(
-            verticalName: "SupplyChain",
-            reservedIdentityKeys: reserved,
-            hostileReservedIdentityKeys: hostile,
-            validators: validators,
-            expiryKey: SupplyChainClaimKey.NotAfter.WireName(),
+            "SupplyChain",
+            reserved,
+            hostile,
+            validators,
+            SupplyChainClaimKey.NotAfter.WireName(),
             // Evidence claims (reason, change_ticket) are only ever meaningful
             // alongside a bounded, recent expiry — without a ceiling here a
             // caller could set not_after decades out and have the evidence
             // trusted as if it never expired.
-            maxExpiryHorizon: TimeSpan.FromDays(7),
-            evidenceKeysBoundByExpiry: new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            TimeSpan.FromDays(7),
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 SupplyChainClaimKey.Reason.WireName(),
                 SupplyChainClaimKey.ChangeTicket.WireName()

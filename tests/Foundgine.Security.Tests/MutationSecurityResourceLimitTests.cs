@@ -1,8 +1,7 @@
-using Foundgine.Runtime;
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Mutation;
 using Foundgine.Core.Semantic.Security.Execution;
-using Xunit;
+using Foundgine.Runtime;
 
 namespace Foundgine.Security.Tests;
 
@@ -44,7 +43,9 @@ public sealed class MutationSecurityResourceLimitTests
         var operation = CreateOperation() with
         {
             Dependencies = Enumerable.Range(0, 3)
-                .Select(i => new SemanticMutationDependency(0, 0, new FieldId((ushort)(100 + i)), new FieldId((ushort)(200 + i))))
+                .Select(i =>
+                    new SemanticMutationDependency(0, 0, new FieldId((ushort)(100 + i)),
+                        new FieldId((ushort)(200 + i))))
                 .ToArray()
         };
         var request = new SemanticMutationRequest(new SemanticMutationOperationGraph([operation]));
@@ -55,13 +56,16 @@ public sealed class MutationSecurityResourceLimitTests
             MutationSecurityResourceLimitValidator.Validate(request, limits));
     }
 
-    private static SemanticMutationOperation CreateOperation() => new(
-        new EntityId(1),
-        SemanticMutationKind.Create,
-        [new SemanticMutationField(new FieldId(1), "x")],
-        null,
-        [],
-        [],
-        [],
-        []);
+    private static SemanticMutationOperation CreateOperation()
+    {
+        return new(
+            new EntityId(1),
+            SemanticMutationKind.Create,
+            [new SemanticMutationField(new FieldId(1), "x")],
+            null,
+            [],
+            [],
+            [],
+            []);
+    }
 }

@@ -1,9 +1,3 @@
-using System.Diagnostics;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-using Npgsql;
-
 internal static class Program
 {
     public static async Task Main()
@@ -210,7 +204,7 @@ internal static class Program
                     _ => "CA"
                 };
                 var supplierName = pick == 3
-                    ? (rng.Next(2) == 0 ? "Northstar Supply" : "Southline Parts")
+                    ? rng.Next(2) == 0 ? "Northstar Supply" : "Southline Parts"
                     : null;
 
                 toolArguments = supplierName is null
@@ -226,7 +220,7 @@ internal static class Program
 
                 var customer =
                     actor.Name is "alice"
-                        || actor.Name.StartsWith("customer")
+                    || actor.Name.StartsWith("customer")
                         ? rng.Next(100) < 75
                             ? actor.CustomerId
                             : rng.Next(1, customers + 1)
@@ -250,11 +244,11 @@ internal static class Program
 
                 expectedAllowed =
                     actor.Name is "bob" or "admin"
-                    || (
-                        actor.Name is "alice"
-                        || actor.Name.StartsWith("customer")
-                    )
-                    && customer == actor.CustomerId;
+                    || ((
+                            actor.Name is "alice"
+                            || actor.Name.StartsWith("customer")
+                        )
+                        && customer == actor.CustomerId);
             }
             else if (choice < 88)
             {
@@ -262,7 +256,7 @@ internal static class Program
 
                 var customer =
                     actor.Name is "alice"
-                        || actor.Name.StartsWith("customer")
+                    || actor.Name.StartsWith("customer")
                         ? actor.CustomerId
                         : Math.Min(2, customers);
 
@@ -356,18 +350,18 @@ internal static class Program
 
                 records.Add(
                     new Record(
-                        Step: i + 1,
-                        Actor: actor.Name,
-                        Capability: capability,
-                        ExpectedAllowed: expectedAllowed,
-                        Success: !toolError,
-                        LatencyMs: stopwatch.Elapsed.TotalMilliseconds,
-                        OrdersBefore: ordersBefore,
-                        OrdersAfter: ordersAfter,
-                        ResponseBytes: Encoding.UTF8.GetByteCount(responseBody),
-                        Error: toolError ? responseBody : null,
-                        RequestText: requestText,
-                        ResponseText: responseBody));
+                        i + 1,
+                        actor.Name,
+                        capability,
+                        expectedAllowed,
+                        !toolError,
+                        stopwatch.Elapsed.TotalMilliseconds,
+                        ordersBefore,
+                        ordersAfter,
+                        Encoding.UTF8.GetByteCount(responseBody),
+                        toolError ? responseBody : null,
+                        requestText,
+                        responseBody));
             }
             catch (Exception ex)
             {
@@ -375,18 +369,18 @@ internal static class Program
 
                 records.Add(
                     new Record(
-                        Step: i + 1,
-                        Actor: actor.Name,
-                        Capability: capability,
-                        ExpectedAllowed: expectedAllowed,
-                        Success: false,
-                        LatencyMs: stopwatch.Elapsed.TotalMilliseconds,
-                        OrdersBefore: -1,
-                        OrdersAfter: -1,
-                        ResponseBytes: 0,
-                        Error: ex.Message,
-                        RequestText: requestText,
-                        ResponseText: null));
+                        i + 1,
+                        actor.Name,
+                        capability,
+                        expectedAllowed,
+                        false,
+                        stopwatch.Elapsed.TotalMilliseconds,
+                        -1,
+                        -1,
+                        0,
+                        ex.Message,
+                        requestText,
+                        null));
             }
         }
 
@@ -513,8 +507,7 @@ internal static class Program
                 records.Count(x => x.ExpectedAllowed),
 
             unexpectedUnauthorizedSuccesses =
-                records.Count(
-                    x => !x.ExpectedAllowed && x.Success),
+                records.Count(x => !x.ExpectedAllowed && x.Success),
 
             avgLatencyMs =
                 records
@@ -571,7 +564,7 @@ internal static class Program
         Console.WriteLine(
             $"Expected allowed:       {summary.expectedAllowed}");
         Console.WriteLine(
-            $"Unexpected unauthorized successes: " +
+            "Unexpected unauthorized successes: " +
             $"{summary.unexpectedUnauthorizedSuccesses}");
         Console.WriteLine(
             $"Average latency:        {summary.avgLatencyMs:F1} ms");
@@ -581,11 +574,11 @@ internal static class Program
             "Efficiency estimate (MODELED, not measured):");
 
         Console.WriteLine(
-            $"  Tool-call reduction:   " +
+            "  Tool-call reduction:   " +
             $"{efficiencyEstimate.modeledToolCallReductionPercent:F1}%");
 
         Console.WriteLine(
-            $"  Context-load reduction: " +
+            "  Context-load reduction: " +
             $"{efficiencyEstimate.modeledContextLoadReductionPercent:F1}%");
 
         Console.WriteLine();
@@ -643,10 +636,8 @@ internal static class Program
             await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
-        {
             return
                 $"HTTP {(int)response.StatusCode}: {body}";
-        }
 
         return body;
     }
@@ -663,9 +654,7 @@ internal static class Program
             if (root.TryGetProperty(
                     "error",
                     out _))
-            {
                 return true;
-            }
 
             if (root.TryGetProperty(
                     "result",
@@ -674,10 +663,8 @@ internal static class Program
                     "isError",
                     out var isError)
                 && isError.ValueKind ==
-                   JsonValueKind.True)
-            {
+                JsonValueKind.True)
                 return true;
-            }
         }
         catch
         {
@@ -723,10 +710,7 @@ internal static class Program
                 var response =
                     await http.GetAsync(url);
 
-                if (response.IsSuccessStatusCode)
-                {
-                    return;
-                }
+                if (response.IsSuccessStatusCode) return;
             }
             catch
             {
@@ -754,29 +738,29 @@ internal static class Program
     private static string Markdown(dynamic report)
     {
         return $"""
-        # Supply Chain E2E
+                # Supply Chain E2E
 
-        - Seed: {report.seed}
-        - Steps: {report.steps}
-        - Customers: {report.customers}
-        - Success: {report.summary.success}
-        - Failures: {report.summary.failures}
-        - Unexpected unauthorized successes: {report.summary.unexpectedUnauthorizedSuccesses}
-        - Average latency: {report.summary.avgLatencyMs:F1} ms
+                - Seed: {report.seed}
+                - Steps: {report.steps}
+                - Customers: {report.customers}
+                - Success: {report.summary.success}
+                - Failures: {report.summary.failures}
+                - Unexpected unauthorized successes: {report.summary.unexpectedUnauthorizedSuccesses}
+                - Average latency: {report.summary.avgLatencyMs:F1} ms
 
-        ## Efficiency estimate (MODELED, not measured)
+                ## Efficiency estimate (MODELED, not measured)
 
-        - Measured Foundgine tool calls: {report.efficiencyEstimate.measuredFoundgine.toolCalls}
-        - Measured Foundgine estimated context load: {report.efficiencyEstimate.measuredFoundgine.totalEstimatedContextLoadTokens} tokens ({report.efficiencyEstimate.measuredFoundgine.avgEstimatedContextLoadTokensPerCall} avg/call)
-        - Modeled conventional tool calls ({report.efficiencyEstimate.modeledConventional.stepsPerCapabilityMultiplier}x/capability): {report.efficiencyEstimate.modeledConventional.estimatedToolCalls}
-        - Modeled conventional estimated context load: {report.efficiencyEstimate.modeledConventional.estimatedContextLoadTokens} tokens
-        - **Modeled tool-call reduction: {report.efficiencyEstimate.modeledToolCallReductionPercent}%**
-        - **Modeled context-load reduction: {report.efficiencyEstimate.modeledContextLoadReductionPercent}%**
+                - Measured Foundgine tool calls: {report.efficiencyEstimate.measuredFoundgine.toolCalls}
+                - Measured Foundgine estimated context load: {report.efficiencyEstimate.measuredFoundgine.totalEstimatedContextLoadTokens} tokens ({report.efficiencyEstimate.measuredFoundgine.avgEstimatedContextLoadTokensPerCall} avg/call)
+                - Modeled conventional tool calls ({report.efficiencyEstimate.modeledConventional.stepsPerCapabilityMultiplier}x/capability): {report.efficiencyEstimate.modeledConventional.estimatedToolCalls}
+                - Modeled conventional estimated context load: {report.efficiencyEstimate.modeledConventional.estimatedContextLoadTokens} tokens
+                - **Modeled tool-call reduction: {report.efficiencyEstimate.modeledToolCallReductionPercent}%**
+                - **Modeled context-load reduction: {report.efficiencyEstimate.modeledContextLoadReductionPercent}%**
 
-        > This run has no live conventional flow to compare against, so the conventional side above is modeled from the discover/authorize/execute/verify choreography used by Run1 — not re-executed here.
+                > This run has no live conventional flow to compare against, so the conventional side above is modeled from the discover/authorize/execute/verify choreography used by Run1 — not re-executed here.
 
-        > For a measured comparison, see the AgentEndToEnd Run1-5 reports.
-        """;
+                > For a measured comparison, see the AgentEndToEnd Run1-5 reports.
+                """;
     }
 
     private static class TokenEstimator
@@ -785,18 +769,15 @@ internal static class Program
         // so benchmark reports use the same estimation scale.
         public static int Estimate(string? text)
         {
-            if (string.IsNullOrEmpty(text))
-            {
-                return 0;
-            }
+            if (string.IsNullOrEmpty(text)) return 0;
 
             var characters = text.Length;
 
             var words =
                 text.Split(
-                    (char[]?)null,
-                    StringSplitOptions.RemoveEmptyEntries)
-                .Length;
+                        (char[]?)null,
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .Length;
 
             return (int)Math.Round(
                 Math.Max(

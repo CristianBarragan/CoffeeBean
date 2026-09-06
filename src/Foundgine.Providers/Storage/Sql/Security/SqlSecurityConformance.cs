@@ -4,9 +4,9 @@ using Foundgine.Core.Semantic.Security;
 namespace Foundgine.Providers.Storage.Sql.Security;
 
 /// <summary>
-/// Structural conformance checks for a compiled SQL plan. These checks do not
-/// prove arbitrary provider correctness; they verify that the SQL plan exposes
-/// the concrete evidence required by the Foundgine security contract.
+///     Structural conformance checks for a compiled SQL plan. These checks do not
+///     prove arbitrary provider correctness; they verify that the SQL plan exposes
+///     the concrete evidence required by the Foundgine security contract.
 /// </summary>
 public sealed record SqlSecurityConformanceResult(
     IReadOnlyList<string> Required,
@@ -83,8 +83,10 @@ public static class SqlSecurityConformance
         return new SqlSecurityConformanceResult(required, satisfied, violations);
     }
 
-    public static void EnsureSatisfied(ExecutionIR ir, SqlPlan plan) =>
+    public static void EnsureSatisfied(ExecutionIR ir, SqlPlan plan)
+    {
         Verify(ir, plan).EnsureSatisfied();
+    }
 
     private static void VerifyAuthorization(
         string invariant,
@@ -113,7 +115,8 @@ public static class SqlSecurityConformance
             if (authorizationParameters.Length == 0 ||
                 authorizationParameters.Any(x => string.IsNullOrWhiteSpace(x.ContextPath) && x.Value is null))
             {
-                violations.Add("authorization.runtime requires authorization context values to remain bound parameters.");
+                violations.Add(
+                    "authorization.runtime requires authorization context values to remain bound parameters.");
                 return;
             }
         }
@@ -192,13 +195,11 @@ public static class SqlSecurityConformance
         // bindings, never embedded into CommandText. This check is structural:
         // it cannot prove the absence of every possible provider bug.
         foreach (var binding in plan.EffectiveParameters.Where(x => x.ContextPath is not null))
-        {
             if (plan.CommandText.Contains(binding.Value?.ToString() ?? "\u0000", StringComparison.Ordinal))
             {
                 violations.Add("planning.cache-context-isolation found a context value embedded in CommandText.");
                 return;
             }
-        }
 
         satisfied.Add(SecurityInvariantIds.PlanCacheContextIsolation);
     }

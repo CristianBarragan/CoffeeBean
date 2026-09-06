@@ -18,11 +18,13 @@ foundgine_capabilities
 foundgine_query
 ```
 
-The model supplies intent; Foundgine remains responsible for semantic resolution, authorization, planning, and provider execution.
+The model supplies intent; Foundgine remains responsible for semantic resolution, authorization, planning, and provider
+execution.
 
 ## Security boundary
 
-Capability discovery is not authorization. The host supplies security execution context; the model cannot choose or replace the caller's authority.
+Capability discovery is not authorization. The host supplies security execution context; the model cannot choose or
+replace the caller's authority.
 
 ## Install
 

@@ -16,22 +16,22 @@ public sealed record ToolCallGovernanceResult(
     ApprovalRequest? PendingApproval);
 
 /// <summary>
-/// Governs a single tool call end to end: looks the tool up in the
-/// registry, scores its risk, evaluates policy, and either denies it, opens
-/// a human approval request, or routes it to a <see cref="TaskContract"/> —
-/// auditing every step along the way. This sits in front of
-/// <c>Foundgine.Providers.Tools.MCP</c>; it does not call
-/// <c>FoundgineEngine</c> or participate in the compile/authorize/execute
-/// pipeline. An unknown or non-active tool is always denied.
+///     Governs a single tool call end to end: looks the tool up in the
+///     registry, scores its risk, evaluates policy, and either denies it, opens
+///     a human approval request, or routes it to a <see cref="TaskContract" /> —
+///     auditing every step along the way. This sits in front of
+///     <c>Foundgine.Providers.Tools.MCP</c>; it does not call
+///     <c>FoundgineEngine</c> or participate in the compile/authorize/execute
+///     pipeline. An unknown or non-active tool is always denied.
 /// </summary>
 public sealed class ToolCallGovernor
 {
+    private readonly IApprovalStore _approvals;
+    private readonly IAuditLog _auditLog;
+    private readonly IPolicyGateway _policyGateway;
     private readonly IToolRegistry _registry;
     private readonly CompositeRiskScorer _riskScorer;
-    private readonly IPolicyGateway _policyGateway;
-    private readonly IApprovalStore _approvals;
     private readonly IRoutingEngine _routing;
-    private readonly IAuditLog _auditLog;
 
     public ToolCallGovernor(
         IToolRegistry registry,
@@ -57,8 +57,8 @@ public sealed class ToolCallGovernor
         if (!_registry.TryGet(toolName, out var tool) || tool is null || tool.Status != ToolStatus.Active)
         {
             var reason = $"Tool '{toolName}' is not registered or is not active.";
-            Audit(AuditCategory.Denied, toolName, security, fingerprint: "unregistered", summary: reason);
-            return new ToolCallGovernanceResult(PolicyOutcome.Deny, reason, Contract: null, PendingApproval: null);
+            Audit(AuditCategory.Denied, toolName, security, "unregistered", reason);
+            return new ToolCallGovernanceResult(PolicyOutcome.Deny, reason, null, null);
         }
 
         var riskScore = _riskScorer.Score(toolName, security);
@@ -73,20 +73,20 @@ public sealed class ToolCallGovernor
         {
             case PolicyOutcome.Deny:
                 Audit(AuditCategory.Denied, toolName, security, security.AuthorityCachePartition, decision.Reason);
-                return new ToolCallGovernanceResult(PolicyOutcome.Deny, decision.Reason, Contract: null, PendingApproval: null);
+                return new ToolCallGovernanceResult(PolicyOutcome.Deny, decision.Reason, null, null);
 
             case PolicyOutcome.RequireApproval:
                 var approval = _approvals.Create(security.AuthorityCachePartition);
                 Audit(AuditCategory.ApprovalRequested, toolName, security, security.AuthorityCachePartition,
                     $"Approval '{approval.ApprovalId}' opened ({approval.RequiredApprovals} required).");
-                return new ToolCallGovernanceResult(PolicyOutcome.RequireApproval, decision.Reason, Contract: null, PendingApproval: approval);
+                return new ToolCallGovernanceResult(PolicyOutcome.RequireApproval, decision.Reason, null, approval);
 
             case PolicyOutcome.Allow:
                 var routingContext = new RoutingContext(toolName, security, riskScore);
                 var contract = _routing.Route(routingContext);
                 Audit(AuditCategory.Routed, toolName, security, security.AuthorityCachePartition,
                     $"Routed as {contract.Mode}/{contract.Runtime}/{contract.Worker} (task '{contract.TaskId}').");
-                return new ToolCallGovernanceResult(PolicyOutcome.Allow, decision.Reason, contract, PendingApproval: null);
+                return new ToolCallGovernanceResult(PolicyOutcome.Allow, decision.Reason, contract, null);
 
             default:
                 throw new InvalidOperationException($"Unknown policy outcome '{decision.Outcome}'.");
@@ -94,11 +94,12 @@ public sealed class ToolCallGovernor
     }
 
     /// <summary>
-    /// Resumes a call that was previously placed in <see cref="PolicyOutcome.RequireApproval"/>
-    /// once its <see cref="ApprovalRequest"/> reaches <see cref="ApprovalStatus.Granted"/>. Routing
-    /// only happens here, after a human has signed off — never during the initial request-approval step.
+    ///     Resumes a call that was previously placed in <see cref="PolicyOutcome.RequireApproval" />
+    ///     once its <see cref="ApprovalRequest" /> reaches <see cref="ApprovalStatus.Granted" />. Routing
+    ///     only happens here, after a human has signed off — never during the initial request-approval step.
     /// </summary>
-    public ToolCallGovernanceResult ResumeAfterApproval(string toolName, SecurityExecutionContext security, string approvalId)
+    public ToolCallGovernanceResult ResumeAfterApproval(string toolName, SecurityExecutionContext security,
+        string approvalId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(toolName);
         ArgumentNullException.ThrowIfNull(security);
@@ -113,7 +114,7 @@ public sealed class ToolCallGovernor
         if (approval.Status != ApprovalStatus.Granted)
         {
             var reason = $"Approval '{approvalId}' is '{approval.Status}', not granted.";
-            return new ToolCallGovernanceResult(PolicyOutcome.Deny, reason, Contract: null, PendingApproval: approval);
+            return new ToolCallGovernanceResult(PolicyOutcome.Deny, reason, null, approval);
         }
 
         var riskScore = _riskScorer.Score(toolName, security);
@@ -125,6 +126,10 @@ public sealed class ToolCallGovernor
         return new ToolCallGovernanceResult(PolicyOutcome.Allow, "Approved by human reviewer.", contract, approval);
     }
 
-    private void Audit(AuditCategory category, string toolName, SecurityExecutionContext security, string fingerprint, string summary) =>
-        _auditLog.Record(AuditEvent.Create(category, toolName, security.Subject, security.Tenant, fingerprint, summary));
+    private void Audit(AuditCategory category, string toolName, SecurityExecutionContext security, string fingerprint,
+        string summary)
+    {
+        _auditLog.Record(AuditEvent.Create(category, toolName, security.Subject, security.Tenant, fingerprint,
+            summary));
+    }
 }

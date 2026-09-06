@@ -2,9 +2,8 @@ using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Security;
 using Foundgine.Core.Semantic.Planning;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Security;
-using Xunit;
+using Foundgine.Testing;
 
 namespace Foundgine.Security.Tests.Penetration;
 
@@ -74,8 +73,9 @@ public sealed class SecurityProofRailsPenetrationTests
             SecurityInvariantProofGate.AttachAndValidate(new TestPlan("p1"), ir, new GoodCompiler()));
     }
 
-    private static ExecutionIR CreateIr(params string[] invariants) =>
-        Foundgine.Testing.ExecutionIRTestFactory.Create(
+    private static ExecutionIR CreateIr(params string[] invariants)
+    {
+        return ExecutionIRTestFactory.Create(
             new ExecutionIRNode(
                 1,
                 ExecutionOperation.Scan,
@@ -85,21 +85,35 @@ public sealed class SecurityProofRailsPenetrationTests
                 null,
                 []),
             invariants);
+    }
 
     private sealed record TestPlan(string Provider) : ProviderPlan(Provider);
 
     private sealed class DeclarationOnlyCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
     {
-        public IReadOnlyCollection<string> PreservedSecurityInvariants => SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
-        public ProviderPlan Compile(ExecutionIR ir) => new TestPlan("weak");
+        public ProviderPlan Compile(ExecutionIR ir)
+        {
+            return new TestPlan("weak");
+        }
+
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
     }
 
-    private sealed class GoodCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class GoodCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
-        public IReadOnlyCollection<string> PreservedSecurityInvariants => SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
-        public ProviderPlan Compile(ExecutionIR ir) => new TestPlan("p1");
-        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-            new(plan.Provider, ir.RequiredSecurityInvariants, ir.RequiredSecurityInvariants, []);
+        public ProviderPlan Compile(ExecutionIR ir)
+        {
+            return new TestPlan("p1");
+        }
+
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
+        {
+            return new(plan.Provider, ir.RequiredSecurityInvariants, ir.RequiredSecurityInvariants, []);
+        }
+
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
     }
 }
-

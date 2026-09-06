@@ -1,4 +1,3 @@
-using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.IR;
 using Foundgine.Core.Semantic.IR.Graph;
 using Foundgine.Core.Semantic.Query;
@@ -6,8 +5,8 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.Planning.Algebra;
 
 /// <summary>
-/// Deterministic, provider-neutral algebra over semantic operation graphs.
-/// Every operation returns a new graph; the input graph is never mutated.
+///     Deterministic, provider-neutral algebra over semantic operation graphs.
+///     Every operation returns a new graph; the input graph is never mutated.
 /// </summary>
 public static class SemanticOperationAlgebra
 {
@@ -24,8 +23,8 @@ public static class SemanticOperationAlgebra
     }
 
     /// <summary>
-    /// Conjoins an additional root predicate with the existing root predicate.
-    /// This is semantic composition, not provider-specific predicate rewriting.
+    ///     Conjoins an additional root predicate with the existing root predicate.
+    ///     This is semantic composition, not provider-specific predicate rewriting.
     /// </summary>
     public static SemanticOperationGraph Where(
         SemanticOperationGraph graph,
@@ -47,9 +46,9 @@ public static class SemanticOperationAlgebra
     }
 
     /// <summary>
-    /// Returns a canonical graph with duplicate selected/required fields removed
-    /// while preserving their first occurrence. This operation is safe because
-    /// field identity, rather than provider column identity, defines projection.
+    ///     Returns a canonical graph with duplicate selected/required fields removed
+    ///     while preserving their first occurrence. This operation is safe because
+    ///     field identity, rather than provider column identity, defines projection.
     /// </summary>
     public static SemanticOperationGraph Normalize(SemanticOperationGraph graph)
     {
@@ -104,7 +103,7 @@ public static class SemanticOperationAlgebra
 }
 
 /// <summary>
-/// Canonical composition helpers for semantic query predicates.
+///     Canonical composition helpers for semantic query predicates.
 /// </summary>
 public static class SemanticPredicateAlgebra
 {
@@ -130,4 +129,3 @@ public static class SemanticPredicateAlgebra
         return new SemanticOrFilter(terms);
     }
 }
-

@@ -1,8 +1,8 @@
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Selects the best currently applicable rewrite candidate without bypassing
-/// rule ordering, proof obligations, or deterministic tie-breaking.
+///     Selects the best currently applicable rewrite candidate without bypassing
+///     rule ordering, proof obligations, or deterministic tie-breaking.
 /// </summary>
 public sealed class RewriteRuleSelector
 {
@@ -15,9 +15,9 @@ public sealed class RewriteRuleSelector
         IProviderCostEstimator? providerCostEstimator = null,
         ProviderCostSelectionPolicy? providerPolicy = null)
     {
-        _policy = (policy ?? new()).Validate();
+        _policy = (policy ?? new RuleSelectionPolicy()).Validate();
         _providerCostEstimator = providerCostEstimator;
-        _providerPolicy = (providerPolicy ?? new()).Validate();
+        _providerPolicy = (providerPolicy ?? new ProviderCostSelectionPolicy()).Validate();
     }
 
     public RewriteRuleCandidate? Select(
@@ -45,9 +45,9 @@ public sealed class RewriteRuleSelector
     }
 
     /// <summary>
-    /// Selects using provider-specific execution estimates. The provider model
-    /// can influence ranking only; proof obligations remain enforced after the
-    /// candidate is actually applied.
+    ///     Selects using provider-specific execution estimates. The provider model
+    ///     can influence ranking only; proof obligations remain enforced after the
+    ///     candidate is actually applied.
     /// </summary>
     public ProviderAwareRewriteRuleCandidate? SelectProviderAware(
         SemanticPlan plan,

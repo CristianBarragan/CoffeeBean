@@ -1,56 +1,22 @@
 using Foundgine.Core.Abstractions;
-using System.Data;
-using System.Data.Common;
-using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Mutation;
 using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Semantic.Security;
 using Foundgine.Providers.Storage.Sql.Query;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.Providers.Storage.Sql.Mutation;
 
 /// <summary>
-/// Executes one compiled mutation through ADO.NET and materializes RETURNING
-/// values into the provider-neutral MutationResult.
+///     Executes one compiled mutation through ADO.NET and materializes RETURNING
+///     values into the provider-neutral MutationResult.
 /// </summary>
-public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, IMutationBatchExecutionProvider, IMutationSecurityConformanceEvaluator
+public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, IMutationBatchExecutionProvider,
+    IMutationSecurityConformanceEvaluator
 {
+    private readonly SqlMutationCompiler? _compiler;
     private readonly DbConnection _connection;
     private readonly DbTransaction? _transaction;
-    private readonly SqlMutationCompiler? _compiler;
-
-    public MutationSecurityConformanceResult Evaluate(ExecutionMutationIR ir)
-    {
-        ArgumentNullException.ThrowIfNull(ir);
-
-        if (_compiler is null)
-            throw new InvalidOperationException(
-                "Mutation security conformance requires metadata. Construct SqlMutationExecutionProvider with an IMetadataProvider.");
-
-        // The concrete SQL compiler emits parameter bindings for every mutation
-        // value, and batch execution owns/participates in a transaction spanning
-        // the complete batch. These are provider guarantees, not declarations.
-        var plan = _compiler.Compile(ir);
-        var satisfied = new List<string>();
-        var violations = new List<string>();
-
-        var parameterized = plan.Operations
-            .Select((operation, index) => new { operation, semantic = ir.Operations[index] })
-            .All(x => x.semantic.Fields.Count == 0 || x.operation.Parameters.Count >= x.semantic.Fields.Count);
-
-        if (parameterized)
-            satisfied.Add(Foundgine.Core.Semantic.Security.SecurityInvariantIds.ParameterizedValues);
-        else
-            violations.Add("SQL mutation compilation did not parameterize all mutation field values.");
-
-        satisfied.Add(Foundgine.Core.Semantic.Security.SecurityInvariantIds.AtomicMutation);
-
-        return new MutationSecurityConformanceResult(
-            GetType().FullName ?? GetType().Name,
-            satisfied,
-            violations);
-    }
 
     public SqlMutationExecutionProvider(
         DbConnection connection,
@@ -63,8 +29,8 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
     }
 
     /// <summary>
-    /// Canonical batch execution entry point. Physical SQL lowering is owned by
-    /// this provider and therefore occurs only after the execution-IR boundary.
+    ///     Canonical batch execution entry point. Physical SQL lowering is owned by
+    ///     this provider and therefore occurs only after the execution-IR boundary.
     /// </summary>
     public MutationBatchResult ExecuteBatch(
         ExecutionMutationIR ir,
@@ -173,6 +139,38 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
             returned.Count == 0 ? null : returned);
     }
 
+    public MutationSecurityConformanceResult Evaluate(ExecutionMutationIR ir)
+    {
+        ArgumentNullException.ThrowIfNull(ir);
+
+        if (_compiler is null)
+            throw new InvalidOperationException(
+                "Mutation security conformance requires metadata. Construct SqlMutationExecutionProvider with an IMetadataProvider.");
+
+        // The concrete SQL compiler emits parameter bindings for every mutation
+        // value, and batch execution owns/participates in a transaction spanning
+        // the complete batch. These are provider guarantees, not declarations.
+        var plan = _compiler.Compile(ir);
+        var satisfied = new List<string>();
+        var violations = new List<string>();
+
+        var parameterized = plan.Operations
+            .Select((operation, index) => new { operation, semantic = ir.Operations[index] })
+            .All(x => x.semantic.Fields.Count == 0 || x.operation.Parameters.Count >= x.semantic.Fields.Count);
+
+        if (parameterized)
+            satisfied.Add(SecurityInvariantIds.ParameterizedValues);
+        else
+            violations.Add("SQL mutation compilation did not parameterize all mutation field values.");
+
+        satisfied.Add(SecurityInvariantIds.AtomicMutation);
+
+        return new MutationSecurityConformanceResult(
+            GetType().FullName ?? GetType().Name,
+            satisfied,
+            violations);
+    }
+
     public MutationBatchResult ExecuteBatch(
         ProviderMutationBatchPlan plan,
         ExecutionContext context,
@@ -218,7 +216,8 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
                     command.Parameters.Add(parameter);
                 }
 
-                using var cancellationRegistration = cancellationToken.Register(static state => ((DbCommand)state!).Cancel(), command);
+                using var cancellationRegistration =
+                    cancellationToken.Register(static state => ((DbCommand)state!).Cancel(), command);
                 var result = ExecuteCommand(command, sqlPlan);
                 cancellationToken.ThrowIfCancellationRequested();
                 results.Add(result);
@@ -232,9 +231,14 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
         catch
         {
             if (ownsTransaction)
-            {
-                try { transaction.Rollback(); } catch { }
-            }
+                try
+                {
+                    transaction.Rollback();
+                }
+                catch
+                {
+                }
+
             throw;
         }
         finally
@@ -399,13 +403,10 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
         var source = results[sourceIndex];
         if (source.ReturnedValues is null ||
             !source.ReturnedValues.TryGetValue(binding.Source.SourceField, out var value))
-        {
             throw new InvalidOperationException(
                 $"Mutation parameter '{binding.Name}' references field " +
                 $"'{binding.Source.SourceField.Value}' that was not returned by operation {sourceIndex}.");
-        }
 
         return value;
     }
-
 }

@@ -1,32 +1,30 @@
-using Foundgine.Core.Semantic.Resolution;
-using Foundgine.SupplyChain.Advanced.Semantics;
 using Foundgine.Providers.Storage.Sql.Retrieval;
-using Npgsql;
-using Xunit;
+using Foundgine.SupplyChain.Advanced.Semantics;
 
 namespace Foundgine.SupplyChain.Advanced.Tests.Retrieval;
 
 /// <summary>
-/// Provider-wiring coverage for <see cref="PostgresRetrievalCandidateSource"/>
-/// against the Supply Chain semantic model that requires no live database:
-/// every strategy either short-circuits before touching PostgreSQL (an
-/// opt-in gate that is off, a request-shape validation failure, or the
-/// intentionally-reserved Vector strategy) or is a documented no-op
-/// (Relational). Strategies that do reach PostgreSQL (Fuzzy, FullText,
-/// opted-in Search/GraphSimilarity) are covered by the sibling
-/// PostgresRetrieval*/PgSearchRetrieval*/GraphSimilarityRetrieval*
-/// integration tests, gated behind FOUNDGINE_POSTGRES_CONNECTION.
-///
-/// The <see cref="NpgsqlDataSource"/> built below is never opened or
-/// queried: every case here is rejected before the provider issues a
-/// command, so a syntactically valid but unreachable connection string is
-/// sufficient and no real PostgreSQL instance is required.
+///     Provider-wiring coverage for <see cref="PostgresRetrievalCandidateSource" />
+///     against the Supply Chain semantic model that requires no live database:
+///     every strategy either short-circuits before touching PostgreSQL (an
+///     opt-in gate that is off, a request-shape validation failure, or the
+///     intentionally-reserved Vector strategy) or is a documented no-op
+///     (Relational). Strategies that do reach PostgreSQL (Fuzzy, FullText,
+///     opted-in Search/GraphSimilarity) are covered by the sibling
+///     PostgresRetrieval*/PgSearchRetrieval*/GraphSimilarityRetrieval*
+///     integration tests, gated behind FOUNDGINE_POSTGRES_CONNECTION.
+///     The <see cref="NpgsqlDataSource" /> built below is never opened or
+///     queried: every case here is rejected before the provider issues a
+///     command, so a syntactically valid but unreachable connection string is
+///     sufficient and no real PostgreSQL instance is required.
 /// </summary>
 public sealed class SupplyChainRetrievalCapabilityTests
 {
-    private static NpgsqlDataSource CreateUnreachableDataSource() =>
-        NpgsqlDataSource.Create(
+    private static NpgsqlDataSource CreateUnreachableDataSource()
+    {
+        return NpgsqlDataSource.Create(
             "Host=127.0.0.1;Port=1;Database=unused;Username=unused;Password=unused;Timeout=1");
+    }
 
     [Fact]
     public async Task Vector_strategy_is_reserved_for_a_future_pgvector_provider()
@@ -42,8 +40,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             "gasket",
             RetrievalStrategy.Vector);
 
-        var ex = await Assert.ThrowsAsync<NotSupportedException>(
-            () => source.RetrieveAsync(request));
+        var ex = await Assert.ThrowsAsync<NotSupportedException>(() => source.RetrieveAsync(request));
 
         Assert.Contains("pgvector", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -74,7 +71,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
         var source = new PostgresRetrievalCandidateSource(
             dataSource,
             SupplyChainSemanticModel.Metadata,
-            new PostgresRetrievalOptions(EnablePgTrgm: false));
+            new PostgresRetrievalOptions(false));
 
         var request = new SemanticRetrievalRequest(
             SupplyChainSemanticModel.Supplier,
@@ -82,8 +79,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             "Acme Suplies",
             RetrievalStrategy.Fuzzy);
 
-        await Assert.ThrowsAsync<NotSupportedException>(
-            () => source.RetrieveAsync(request));
+        await Assert.ThrowsAsync<NotSupportedException>(() => source.RetrieveAsync(request));
     }
 
     [Fact]
@@ -101,8 +97,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             "hydraulic fitting",
             RetrievalStrategy.FullText);
 
-        await Assert.ThrowsAsync<NotSupportedException>(
-            () => source.RetrieveAsync(request));
+        await Assert.ThrowsAsync<NotSupportedException>(() => source.RetrieveAsync(request));
     }
 
     [Fact]
@@ -120,8 +115,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             "acme",
             RetrievalStrategy.Search);
 
-        var ex = await Assert.ThrowsAsync<NotSupportedException>(
-            () => source.RetrieveAsync(request));
+        var ex = await Assert.ThrowsAsync<NotSupportedException>(() => source.RetrieveAsync(request));
 
         Assert.Contains("Search", ex.Message, StringComparison.Ordinal);
     }
@@ -143,8 +137,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             relationship: SupplyChainSemanticModel.Relationship("Supplier", "purchaseOrders"),
             referenceIdentity: "1");
 
-        var ex = await Assert.ThrowsAsync<NotSupportedException>(
-            () => source.RetrieveAsync(request));
+        var ex = await Assert.ThrowsAsync<NotSupportedException>(() => source.RetrieveAsync(request));
 
         Assert.Contains("GraphSimilarity", ex.Message, StringComparison.Ordinal);
     }
@@ -165,8 +158,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             RetrievalStrategy.GraphSimilarity,
             referenceIdentity: "1");
 
-        var ex = await Assert.ThrowsAsync<ArgumentException>(
-            () => source.RetrieveAsync(request));
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => source.RetrieveAsync(request));
 
         Assert.Contains("Relationship", ex.Message, StringComparison.Ordinal);
     }
@@ -187,8 +179,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             RetrievalStrategy.GraphSimilarity,
             relationship: SupplyChainSemanticModel.Relationship("Supplier", "purchaseOrders"));
 
-        var ex = await Assert.ThrowsAsync<ArgumentException>(
-            () => source.RetrieveAsync(request));
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => source.RetrieveAsync(request));
 
         Assert.Contains("ReferenceIdentity", ex.Message, StringComparison.Ordinal);
     }
@@ -196,10 +187,9 @@ public sealed class SupplyChainRetrievalCapabilityTests
     [Fact]
     public void Constructor_rejects_a_null_data_source()
     {
-        Assert.Throws<ArgumentNullException>(
-            () => new PostgresRetrievalCandidateSource(
-                null!,
-                SupplyChainSemanticModel.Metadata));
+        Assert.Throws<ArgumentNullException>(() => new PostgresRetrievalCandidateSource(
+            null!,
+            SupplyChainSemanticModel.Metadata));
     }
 
     [Fact]
@@ -207,10 +197,9 @@ public sealed class SupplyChainRetrievalCapabilityTests
     {
         using var dataSource = CreateUnreachableDataSource();
 
-        Assert.Throws<ArgumentNullException>(
-            () => new PostgresRetrievalCandidateSource(
-                dataSource,
-                null!));
+        Assert.Throws<ArgumentNullException>(() => new PostgresRetrievalCandidateSource(
+            dataSource,
+            null!));
     }
 
     [Fact]

@@ -3,7 +3,7 @@ using Foundgine.Core.Abstractions;
 namespace Foundgine.Core.Semantic;
 
 /// <summary>
-/// A named semantic relationship between two entities.
+///     A named semantic relationship between two entities.
 /// </summary>
 public sealed record SemanticRelationship(
     RelationshipId Id,

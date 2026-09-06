@@ -1,7 +1,5 @@
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Query;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 

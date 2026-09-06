@@ -7,14 +7,14 @@ public enum ToolStatus
 {
     Active,
     Deprecated,
-    Disabled,
+    Disabled
 }
 
 /// <summary>
-/// Declares that a tool exists and what it's capable of, independent of any
-/// particular call. This is the governance-side record; the actual callable
-/// implementation lives in <c>Foundgine.Providers.Tools.MCP</c> — the
-/// registry does not invoke tools, it only describes them.
+///     Declares that a tool exists and what it's capable of, independent of any
+///     particular call. This is the governance-side record; the actual callable
+///     implementation lives in <c>Foundgine.Providers.Tools.MCP</c> — the
+///     registry does not invoke tools, it only describes them.
 /// </summary>
 public sealed record ToolDescriptor(
     string ToolName,

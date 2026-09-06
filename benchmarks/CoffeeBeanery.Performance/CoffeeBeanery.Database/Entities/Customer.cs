@@ -1,19 +1,14 @@
-using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
 namespace CoffeeBeanery.Database;
 
-public partial class Customer : Process
+public class Customer : Process
 {
     public Customer()
     {
-        Schema = CoffeeBeanery.Database.Schema.Banking;
+        Schema = Database.Schema.Banking;
     }
-    
+
     public int Id { get; set; }
-    
+
     public Guid CustomerKey { get; set; }
 
     public string? FirstName { get; set; }
@@ -23,13 +18,13 @@ public partial class Customer : Process
     public string? FullName { get; set; }
 
     public CustomerType? CustomerType { get; set; }
-    
+
     public List<ContactPoint>? ContactPoint { get; set; }
-    
+
     public List<CustomerBankingRelationship>? CustomerBankingRelationship { get; set; } = [];
-    
+
     public List<CustomerCustomerRelationship>? OuterCustomerCustomerRelationship { get; set; }
-    
+
     public List<CustomerCustomerRelationship>? InnerCustomerCustomerRelationship { get; set; }
 }
 
@@ -62,7 +57,7 @@ public class CustomerEntityConfiguration : IEntityTypeConfiguration<Customer>
 
         builder.HasMany(c => c.OuterCustomerCustomerRelationship).WithOne(c => c.OuterCustomer)
             .HasForeignKey(c => c.OuterCustomerId);
-        
+
         builder.HasMany(c => c.InnerCustomerCustomerRelationship).WithOne(c => c.InnerCustomer)
             .HasForeignKey(c => c.InnerCustomerId);
 

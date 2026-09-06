@@ -14,8 +14,9 @@ internal static class CoffeeBeanerySemanticModel
     internal static readonly RelationshipId RelationshipContracts = new(2);
     internal static readonly RelationshipId ContractTransactions = new(3);
 
-    internal static SemanticModel Build() =>
-        new SemanticModelBuilder()
+    internal static SemanticModel Build()
+    {
+        return new SemanticModelBuilder()
             .Entity(Customer, "Customer", e => e
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(2), "CustomerKey", typeof(Guid))
@@ -54,4 +55,5 @@ internal static class CoffeeBeanerySemanticModel
                 .Field(new FieldId(4), "Balance", typeof(decimal?))
                 .Field(new FieldId(5), "ContractId", typeof(int?)))
             .Build();
+    }
 }

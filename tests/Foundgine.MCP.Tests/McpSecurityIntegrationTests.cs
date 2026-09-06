@@ -1,10 +1,3 @@
-using Foundgine.Runtime;
-using Foundgine.Core.Execution;
-using Foundgine.Providers.Tools.MCP;
-using Foundgine.Core.Semantic.Mutation;
-using Foundgine.Core.Semantic.Security.Execution;
-using Foundgine.Core.Semantic.Security.Warrants;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.Providers.Tools.MCP.Tests;
@@ -34,8 +27,9 @@ public sealed class McpSecurityIntegrationTests
         Assert.Throws<UnauthorizedAccessException>(() => tools.Approve(json, "attacker"));
     }
 
-    private static SecurityExecutionContext CreateSecurityContext(string subject) =>
-        new(
+    private static SecurityExecutionContext CreateSecurityContext(string subject)
+    {
+        return new(
             new SecurityWarrant(
                 "warrant-1", "issuer", subject, "mcp", [],
                 SecurityWarrantConstraints.Unrestricted, DateTimeOffset.UtcNow.AddMinutes(-1),
@@ -44,6 +38,7 @@ public sealed class McpSecurityIntegrationTests
             "mcp",
             "tenant-1",
             null);
+    }
 
     private sealed class RecordingMutations : IFoundgineMutations
     {
@@ -53,8 +48,10 @@ public sealed class McpSecurityIntegrationTests
         public Task<MutationExecutionResult> ExecuteAsync(
             SemanticMutationRequest request,
             ExecutionContext? context = null,
-            CancellationToken cancellationToken = default) =>
+            CancellationToken cancellationToken = default)
+        {
             throw new NotImplementedException();
+        }
 
         public MutationDryRunResult DryRun(SemanticMutationRequest request)
         {
@@ -72,7 +69,9 @@ public sealed class McpSecurityIntegrationTests
         public Task<MutationExecutionResult> ExecuteApprovedAsync(
             MutationPlanApproval approval,
             ExecutionContext? context = null,
-            CancellationToken cancellationToken = default) =>
+            CancellationToken cancellationToken = default)
+        {
             throw new NotImplementedException();
+        }
     }
 }

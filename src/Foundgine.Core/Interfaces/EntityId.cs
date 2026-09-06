@@ -1,20 +1,18 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
 namespace Foundgine.Core.Abstractions;
 
 /// <summary>
-/// Stable identity of a semantic entity. The value is derived from the
-/// canonical semantic entity name and is independent of declaration order,
-/// CLR metadata tokens, or registration order.
+///     Stable identity of a semantic entity. The value is derived from the
+///     canonical semantic entity name and is independent of declaration order,
+///     CLR metadata tokens, or registration order.
 /// </summary>
 [JsonConverter(typeof(EntityIdJsonConverter))]
 public readonly record struct EntityId(ulong Value)
 {
-    public static EntityId Create(string semanticName) =>
-        new(SemanticIdentity.Hash(SemanticIdentity.EntityKey(semanticName)));
+    public static EntityId Create(string semanticName)
+    {
+        return new EntityId(SemanticIdentity.Hash(SemanticIdentity.EntityKey(semanticName)));
+    }
 }
-
 
 public sealed class EntityIdJsonConverter : JsonConverter<EntityId>
 {
@@ -33,12 +31,19 @@ public sealed class EntityIdJsonConverter : JsonConverter<EntityId>
         throw new JsonException("Expected a EntityId numeric value or a legacy {\"Value\":...} object.");
     }
 
-    public override void Write(Utf8JsonWriter writer, EntityId value, JsonSerializerOptions options) =>
+    public override void Write(Utf8JsonWriter writer, EntityId value, JsonSerializerOptions options)
+    {
         writer.WriteNumberValue(value.Value);
+    }
 
-    public override EntityId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        new(ulong.Parse(reader.GetString()!));
+    public override EntityId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert,
+        JsonSerializerOptions options)
+    {
+        return new EntityId(ulong.Parse(reader.GetString()!));
+    }
 
-    public override void WriteAsPropertyName(Utf8JsonWriter writer, EntityId value, JsonSerializerOptions options) =>
+    public override void WriteAsPropertyName(Utf8JsonWriter writer, EntityId value, JsonSerializerOptions options)
+    {
         writer.WritePropertyName(value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
 }

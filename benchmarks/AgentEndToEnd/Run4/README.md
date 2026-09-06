@@ -18,8 +18,10 @@ At C > customer count, customer IDs are reused round-robin, matching Run 2's loa
 
 ## Flows
 
-1. **GraphQL + Hot Chocolate + EF Core** — every conventional-agent operation crosses the real GraphQL HTTP API backed by EF Core and PostgreSQL. The agent flow performs six GraphQL tool calls.
-2. **MCP + Foundgine** — the semantic agent flow performs one `foundgine_query` MCP tool call with the complete provider-neutral graph intent.
+1. **GraphQL + Hot Chocolate + EF Core** — every conventional-agent operation crosses the real GraphQL HTTP API backed
+   by EF Core and PostgreSQL. The agent flow performs six GraphQL tool calls.
+2. **MCP + Foundgine** — the semantic agent flow performs one `foundgine_query` MCP tool call with the complete
+   provider-neutral graph intent.
 
 Both flows operate on the same PostgreSQL fixture and the same customer-exposure scenario.
 
@@ -31,15 +33,20 @@ Six GraphQL + Hot Chocolate + EF Core tool calls vs one MCP + Foundgine semantic
 
 ### Protocol mode
 
-One full-graph GraphQL request vs one full-graph MCP request, isolating protocol/runtime overhead from tool-count differences.
+One full-graph GraphQL request vs one full-graph MCP request, isolating protocol/runtime overhead from tool-count
+differences.
 
 ## Reliability
 
-Each concurrency cell has independent warmups and measured runs. The benchmark uses a shared pooled `HttpClient`, bounded connection pooling, transient HTTP retry, concurrent-worker error accounting, and p50/p95/p99 reporting. A failed worker is recorded rather than immediately terminating the measurement batch.
+Each concurrency cell has independent warmups and measured runs. The benchmark uses a shared pooled `HttpClient`,
+bounded connection pooling, transient HTTP retry, concurrent-worker error accounting, and p50/p95/p99 reporting. A
+failed worker is recorded rather than immediately terminating the measurement batch.
 
-Docker metrics are collected separately for PostgreSQL, Hot Chocolate + EF Core, and MCP + Foundgine for every customer/concurrency cell.
+Docker metrics are collected separately for PostgreSQL, Hot Chocolate + EF Core, and MCP + Foundgine for every
+customer/concurrency cell.
 
-Replay mode does not invoke an LLM. Token estimates are heuristic character/4 estimates; they are not provider billing measurements.
+Replay mode does not invoke an LLM. Token estimates are heuristic character/4 estimates; they are not provider billing
+measurements.
 
 ## Run
 

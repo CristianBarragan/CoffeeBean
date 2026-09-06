@@ -1,23 +1,19 @@
-using System.Text.Json;
 using Foundgine.Core.Abstractions;
-using Xunit;
 
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-/// Regression coverage for a bug where mutation execution results
-/// (IReadOnlyDictionary&lt;FieldId, object?&gt; ReturnedValues, see
-/// Foundgine.Core.Execution.Mutation.MutationResult) threw
-///
+///     Regression coverage for a bug where mutation execution results
+///     (IReadOnlyDictionary&lt;FieldId, object?&gt; ReturnedValues, see
+///     Foundgine.Core.Execution.Mutation.MutationResult) threw
 ///     System.NotSupportedException: The type 'Foundgine.Core.Abstractions.FieldId'
 ///     is not a supported dictionary key using converter of type
 ///     'ObjectDefaultConverter`1[FieldId]' ...
-///
-/// the moment they were serialized (e.g. by an MCP tool response or a
-/// GraphQL AnyType field). System.Text.Json's default converter for a
-/// struct cannot double as a dictionary-key converter unless it explicitly
-/// overrides ReadAsPropertyName/WriteAsPropertyName - see
-/// FieldIdJsonConverter in FieldId.cs.
+///     the moment they were serialized (e.g. by an MCP tool response or a
+///     GraphQL AnyType field). System.Text.Json's default converter for a
+///     struct cannot double as a dictionary-key converter unless it explicitly
+///     overrides ReadAsPropertyName/WriteAsPropertyName - see
+///     FieldIdJsonConverter in FieldId.cs.
 /// </summary>
 public sealed class FieldIdJsonSerializationTests
 {
@@ -48,7 +44,7 @@ public sealed class FieldIdJsonSerializationTests
         var values = new Dictionary<FieldId, object?>
         {
             [new FieldId(1)] = "TRK-1'; DROP TABLE shipments; --",
-            [new FieldId(2)] = 42,
+            [new FieldId(2)] = 42
         };
         var wrapped = new { shipment = new { ReturnedValues = values } };
 
@@ -62,7 +58,7 @@ public sealed class FieldIdJsonSerializationTests
     {
         var values = new Dictionary<FieldId, object?>
         {
-            [new FieldId(3)] = "some-value",
+            [new FieldId(3)] = "some-value"
         };
 
         var json = JsonSerializer.Serialize(values);

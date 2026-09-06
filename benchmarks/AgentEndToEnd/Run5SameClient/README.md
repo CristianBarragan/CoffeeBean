@@ -41,9 +41,11 @@ Therefore:
 
 ## Why this version exists
 
-Previous `Run5SameClient` attempts introduced `ModelContextProtocol.Client.McpClient`. Those attempts failed during MCP initialization because the SDK's discovery/handshake behavior is not identical to the proven Run 5 manual transport.
+Previous `Run5SameClient` attempts introduced `ModelContextProtocol.Client.McpClient`. Those attempts failed during MCP
+initialization because the SDK's discovery/handshake behavior is not identical to the proven Run 5 manual transport.
 
-This benchmark deliberately does **not** introduce a new MCP client implementation. It reuses the known-good Run 5 client code so the experiment isolates the execution capability rather than client compatibility.
+This benchmark deliberately does **not** introduce a new MCP client implementation. It reuses the known-good Run 5
+client code so the experiment isolates the execution capability rather than client compatibility.
 
 ## Smoke test
 
@@ -71,10 +73,10 @@ The report is written as `run5-same-client-metadata.json`.
 
 ## Important interpretation
 
-This test does **not** claim that batching is free. It measures the effect of giving the same client a semantic batch capability at the MCP boundary.
+This test does **not** claim that batching is free. It measures the effect of giving the same client a semantic batch
+capability at the MCP boundary.
 
 It is complementary to the original Run 5 throughput benchmark.
-
 
 ## Payload interpretation
 

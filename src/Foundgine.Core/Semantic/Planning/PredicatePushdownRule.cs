@@ -3,13 +3,12 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Pushes a conjunctive predicate into an OR predicate using the distributive
-/// law: (A OR B) AND C becomes (A AND C) OR (B AND C).
-///
-/// This is a provider-neutral logical pushdown. It does not move predicates
-/// across relationship boundaries, authorization boundaries, pagination, or
-/// cardinality-changing operations. Those transformations require richer
-/// relationship and cardinality contracts.
+///     Pushes a conjunctive predicate into an OR predicate using the distributive
+///     law: (A OR B) AND C becomes (A AND C) OR (B AND C).
+///     This is a provider-neutral logical pushdown. It does not move predicates
+///     across relationship boundaries, authorization boundaries, pagination, or
+///     cardinality-changing operations. Those transformations require richer
+///     relationship and cardinality contracts.
 /// </summary>
 public sealed class PredicatePushdownRule : IPlanRewriteRule
 {

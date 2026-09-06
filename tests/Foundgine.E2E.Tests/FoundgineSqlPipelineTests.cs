@@ -1,16 +1,13 @@
-using Foundgine.Core.Execution;
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Execution;
 using Foundgine.Core.Semantic;
-using Foundgine.Core.Semantic.Results;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic.Resolution;
-using Foundgine.Providers.Storage.Sql;
-using Microsoft.Data.Sqlite;
-using Xunit;
-using BankingModel = Foundgine.E2E.Tests.Banking.BankingSemanticModel;
 using Foundgine.E2E.Tests.Banking;
+using Foundgine.Providers.Storage.Sql;
+using BankingModel = Foundgine.E2E.Tests.Banking.BankingSemanticModel;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
@@ -82,14 +79,16 @@ public sealed class FoundgineSqlPipelineTests
                 new SemanticSelection(new FieldId(1), null, []),
                 new SemanticSelection(new FieldId(2), null, [])
             ],
-            new Foundgine.Core.Semantic.Query.SemanticQueryOptions(
-                new Foundgine.Core.Semantic.Query.SemanticFieldFilter(
+            new SemanticQueryOptions(
+                new SemanticFieldFilter(
                     new FieldId(2),
-                    Foundgine.Core.Semantic.Query.SemanticFilterOperator.Eq,
+                    SemanticFilterOperator.Eq,
                     "Alice"),
-                [new Foundgine.Core.Semantic.Query.SemanticOrderTerm(
-                    new FieldId(2),
-                    Foundgine.Core.Semantic.Query.SemanticSortDirection.Desc)],
+                [
+                    new SemanticOrderTerm(
+                        new FieldId(2),
+                        SemanticSortDirection.Desc)
+                ],
                 Limit: 1));
 
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
@@ -170,28 +169,27 @@ public sealed class FoundgineSqlPipelineTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" (
-                "Id" INTEGER PRIMARY KEY,
-                "Name" TEXT NOT NULL
-            );
-            CREATE TABLE "Account" (
-                "Id" INTEGER PRIMARY KEY,
-                "CustomerId" INTEGER NOT NULL,
-                "Balance" DECIMAL NOT NULL
-            );
-            CREATE TABLE "Transaction" (
-                "Id" INTEGER PRIMARY KEY,
-                "AccountId" INTEGER NOT NULL,
-                "Amount" DECIMAL NOT NULL,
-                "TransactionDate" TEXT NOT NULL
-            );
-            INSERT INTO "Customer" VALUES (1, 'Alice');
-            INSERT INTO "Customer" VALUES (2, 'Bob');
-            INSERT INTO "Account" VALUES (10, 1, 100.50);
-            INSERT INTO "Transaction" VALUES (100, 10, 25.00, '2026-01-01');
-            INSERT INTO "Transaction" VALUES (101, 10, 75.50, '2026-01-02');
-            """;
+                              CREATE TABLE "Customer" (
+                                  "Id" INTEGER PRIMARY KEY,
+                                  "Name" TEXT NOT NULL
+                              );
+                              CREATE TABLE "Account" (
+                                  "Id" INTEGER PRIMARY KEY,
+                                  "CustomerId" INTEGER NOT NULL,
+                                  "Balance" DECIMAL NOT NULL
+                              );
+                              CREATE TABLE "Transaction" (
+                                  "Id" INTEGER PRIMARY KEY,
+                                  "AccountId" INTEGER NOT NULL,
+                                  "Amount" DECIMAL NOT NULL,
+                                  "TransactionDate" TEXT NOT NULL
+                              );
+                              INSERT INTO "Customer" VALUES (1, 'Alice');
+                              INSERT INTO "Customer" VALUES (2, 'Bob');
+                              INSERT INTO "Account" VALUES (10, 1, 100.50);
+                              INSERT INTO "Transaction" VALUES (100, 10, 25.00, '2026-01-01');
+                              INSERT INTO "Transaction" VALUES (101, 10, 75.50, '2026-01-02');
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

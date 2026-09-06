@@ -1,5 +1,4 @@
 using Foundgine.Core.Abstractions;
-
 using Foundgine.Core.Semantic.Expressions;
 
 namespace Foundgine.Core.Semantic.Query;
@@ -14,7 +13,7 @@ public sealed record SemanticFieldFilter(
     SemanticFilterOperator Operator,
     object? Value) : SemanticFilterExpression
 {
-    public SemanticValue SemanticValue => global::Foundgine.Core.Semantic.SemanticValue.From(Value);
+    public SemanticValue SemanticValue => SemanticValue.From(Value);
 }
 
 public sealed record SemanticRelationshipFilter(
@@ -23,8 +22,8 @@ public sealed record SemanticRelationshipFilter(
     SemanticFilterExpression Predicate) : SemanticFilterExpression;
 
 /// <summary>
-/// Filters a collection relationship by an aggregate over its target rows.
-/// The semantic layer describes the aggregate; providers decide how to render it.
+///     Filters a collection relationship by an aggregate over its target rows.
+///     The semantic layer describes the aggregate; providers decide how to render it.
 /// </summary>
 public sealed record SemanticAggregateFilter(
     RelationshipId Relationship,
@@ -34,7 +33,7 @@ public sealed record SemanticAggregateFilter(
     object? Value,
     SemanticFilterExpression? Predicate = null) : SemanticFilterExpression
 {
-    public SemanticValue SemanticValue => global::Foundgine.Core.Semantic.SemanticValue.From(Value);
+    public SemanticValue SemanticValue => SemanticValue.From(Value);
 }
 
 public sealed record SemanticAndFilter(

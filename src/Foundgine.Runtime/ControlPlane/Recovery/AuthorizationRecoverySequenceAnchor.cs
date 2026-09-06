@@ -1,9 +1,9 @@
 namespace Foundgine.Runtime.ControlPlane;
 
 /// <summary>
-/// Durable monotonic anchor for recovery checkpoints. In production this must be backed
-/// by storage whose rollback/fork guarantees are stronger than the PostgreSQL database being
-/// protected (for example a managed KMS/HSM, append-only ledger, or independent control plane).
+///     Durable monotonic anchor for recovery checkpoints. In production this must be backed
+///     by storage whose rollback/fork guarantees are stronger than the PostgreSQL database being
+///     protected (for example a managed KMS/HSM, append-only ledger, or independent control plane).
 /// </summary>
 public interface IAuthorizationRecoverySequenceAnchor
 {
@@ -17,7 +17,9 @@ public sealed class InMemoryAuthorizationRecoverySequenceAnchor : IAuthorization
     private long _sequence;
 
     public ValueTask<long> ReadAsync(CancellationToken cancellationToken = default)
-        => ValueTask.FromResult(Interlocked.Read(ref _sequence));
+    {
+        return ValueTask.FromResult(Interlocked.Read(ref _sequence));
+    }
 
     public ValueTask<bool> AdvanceAsync(long sequence, CancellationToken cancellationToken = default)
     {

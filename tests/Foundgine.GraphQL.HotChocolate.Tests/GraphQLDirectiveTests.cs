@@ -1,8 +1,6 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Extensions.GraphQL.HotChocolate;
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic;
-using Xunit;
+using Foundgine.Core.Semantic.Metadata;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
@@ -13,8 +11,8 @@ public sealed class GraphQLDirectiveTests
     {
         var model = BuildModel();
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query { customer { id name @include(if: false) } }
-            """);
+                                                                   query { customer { id name @include(if: false) } }
+                                                                   """);
 
         Assert.Single(request.Selections);
         Assert.Equal(new FieldId(1), request.Selections[0].Field);
@@ -25,8 +23,8 @@ public sealed class GraphQLDirectiveTests
     {
         var model = BuildModel();
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query { customer { id name @skip(if: true) } }
-            """);
+                                                                   query { customer { id name @skip(if: true) } }
+                                                                   """);
 
         Assert.Single(request.Selections);
         Assert.Equal(new FieldId(1), request.Selections[0].Field);
@@ -37,10 +35,11 @@ public sealed class GraphQLDirectiveTests
     {
         var model = BuildModel();
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query Customer($withName: Boolean!) {
-              customer { id name @include(if: $withName) }
-            }
-            """, new Dictionary<string, object?> { ["withName"] = true });
+                                                                   query Customer($withName: Boolean!) {
+                                                                     customer { id name @include(if: $withName) }
+                                                                   }
+                                                                   """,
+            new Dictionary<string, object?> { ["withName"] = true });
 
         Assert.Equal(2, request.Selections.Count);
     }
@@ -50,10 +49,11 @@ public sealed class GraphQLDirectiveTests
     {
         var model = BuildModel();
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query Customer($hideName: Boolean!) {
-              customer { id name @skip(if: $hideName) }
-            }
-            """, new Dictionary<string, object?> { ["hideName"] = true });
+                                                                   query Customer($hideName: Boolean!) {
+                                                                     customer { id name @skip(if: $hideName) }
+                                                                   }
+                                                                   """,
+            new Dictionary<string, object?> { ["hideName"] = true });
 
         Assert.Single(request.Selections);
     }
@@ -64,10 +64,10 @@ public sealed class GraphQLDirectiveTests
     {
         var model = BuildModel();
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query Customer($withName: Boolean! = true) {
-              customer { id name @include(if: $withName) }
-            }
-            """);
+                                                                   query Customer($withName: Boolean! = true) {
+                                                                     customer { id name @include(if: $withName) }
+                                                                   }
+                                                                   """);
 
         Assert.Equal(2, request.Selections.Count);
     }
@@ -77,11 +77,12 @@ public sealed class GraphQLDirectiveTests
     {
         var model = BuildModel();
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query Customer($includeDetails: Boolean!) {
-              customer { id ...Details @include(if: $includeDetails) }
-            }
-            fragment Details on Customer { name }
-            """, new Dictionary<string, object?> { ["includeDetails"] = false });
+                                                                   query Customer($includeDetails: Boolean!) {
+                                                                     customer { id ...Details @include(if: $includeDetails) }
+                                                                   }
+                                                                   fragment Details on Customer { name }
+                                                                   """,
+            new Dictionary<string, object?> { ["includeDetails"] = false });
 
         Assert.Single(request.Selections);
     }
@@ -114,11 +115,14 @@ public sealed class GraphQLDirectiveTests
         Assert.Contains("@deprecated", ex.Message);
     }
 
-    private static SemanticModel BuildModel() => new SemanticModelBuilder()
-        .Entity(new EntityId(1), "Customer", e => e
-            .Identity(new FieldId(1), "Id")
-            .Field(new FieldId(2), "Name", typeof(string)))
-        .Build();
+    private static SemanticModel BuildModel()
+    {
+        return new SemanticModelBuilder()
+            .Entity(new EntityId(1), "Customer", e => e
+                .Identity(new FieldId(1), "Id")
+                .Field(new FieldId(2), "Name", typeof(string)))
+            .Build();
+    }
 
     private static (SemanticModel Model, MetadataRegistry Metadata) BuildCustomer()
     {
@@ -126,9 +130,11 @@ public sealed class GraphQLDirectiveTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 

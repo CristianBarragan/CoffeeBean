@@ -1,34 +1,25 @@
-using Foundgine.Core.Abstractions;
-using Foundgine.Core.Execution;
 using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Semantic.Planning.Mutation;
-using Foundgine.Core.Semantic;
-using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Mutation;
+using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Providers.Storage.Sql;
 using Foundgine.Providers.Storage.Sql.Mutation;
 using Foundgine.Providers.Storage.Sql.Mutation.Postgres;
-using Npgsql;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-/// PostgreSQL E2E integration proof for a stateful interaction sequence:
-///
-///   query -> mutation -> query -> mutation
-///
-/// The same PostgreSQL transaction is shared by every operation. The first
-/// mutation creates a customer/account graph; the first query must observe the
-/// newly-created state. A second semantic mutation then changes the account
-/// status, and the second query must observe the changed state and exclude that
-/// customer. The entire scenario is rolled back at the end.
-///
-/// This proves that the semantic, execution, SQL compilation and PostgreSQL
-/// layers agree on state across multiple requests rather than only proving each
-/// operation in isolation.
+///     PostgreSQL E2E integration proof for a stateful interaction sequence:
+///     query -> mutation -> query -> mutation
+///     The same PostgreSQL transaction is shared by every operation. The first
+///     mutation creates a customer/account graph; the first query must observe the
+///     newly-created state. A second semantic mutation then changes the account
+///     status, and the second query must observe the changed state and exclude that
+///     customer. The entire scenario is rolled back at the end.
+///     This proves that the semantic, execution, SQL compilation and PostgreSQL
+///     layers agree on state across multiple requests rather than only proving each
+///     operation in isolation.
 /// </summary>
 public sealed class QueryMutationQueryMutationIntegrationE2ETests
 {
@@ -169,29 +160,27 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
     }
 
     /// <summary>
-    /// Negative counterpart to the main scenario above. It exists to prove
-    /// that scoping the second mutation's filter by CustomerId (in addition
-    /// to Name/Status) is doing real work, not just defensive-looking
-    /// decoration.
-    ///
-    /// The main test's second mutation filters on
-    /// Name == "Primary" AND Status == "Open" AND CustomerId == created.
-    /// If the CustomerId condition were ever dropped, the main test would
-    /// still pass by coincidence, because it only ever creates one such
-    /// account. Here we run ComplexSemanticMutationE2ETests'
-    /// Create/Upsert graph *twice* against the same transaction, producing
-    /// two independent customers who each get an Account named "Primary"
-    /// with Status "Open" (the values BuildGraph() always uses). We then
-    /// block only the first customer's account and assert the second is
-    /// untouched — an unscoped filter would match both rows and either fail
-    /// AffectedRows == 1 or block the wrong customer's account.
-    ///
-    /// This is built via two independent mutations rather than a raw SQL
-    /// decoy row because PrepareUnifiedDatabaseAsync declares a genuinely
-    /// unique index on Account.CustomerId (required as the ON CONFLICT
-    /// arbiter for the Upsert in mutation #1) — a customer can only ever
-    /// have one Account row in this schema, so two customers are needed to
-    /// produce two "Primary"/"Open" rows.
+    ///     Negative counterpart to the main scenario above. It exists to prove
+    ///     that scoping the second mutation's filter by CustomerId (in addition
+    ///     to Name/Status) is doing real work, not just defensive-looking
+    ///     decoration.
+    ///     The main test's second mutation filters on
+    ///     Name == "Primary" AND Status == "Open" AND CustomerId == created.
+    ///     If the CustomerId condition were ever dropped, the main test would
+    ///     still pass by coincidence, because it only ever creates one such
+    ///     account. Here we run ComplexSemanticMutationE2ETests'
+    ///     Create/Upsert graph *twice* against the same transaction, producing
+    ///     two independent customers who each get an Account named "Primary"
+    ///     with Status "Open" (the values BuildGraph() always uses). We then
+    ///     block only the first customer's account and assert the second is
+    ///     untouched — an unscoped filter would match both rows and either fail
+    ///     AffectedRows == 1 or block the wrong customer's account.
+    ///     This is built via two independent mutations rather than a raw SQL
+    ///     decoy row because PrepareUnifiedDatabaseAsync declares a genuinely
+    ///     unique index on Account.CustomerId (required as the ON CONFLICT
+    ///     arbiter for the Upsert in mutation #1) — a customer can only ever
+    ///     have one Account row in this schema, so two customers are needed to
+    ///     produce two "Primary"/"Open" rows.
     /// </summary>
     [PostgreSqlFact]
     public async Task Second_mutation_only_blocks_the_intended_customers_account()
@@ -210,7 +199,7 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
         try
         {
             await SeedQueryBaselineAsync(connection, transaction);
-            
+
             var mutationProvider = new PostgresBatchedMutationExecutionProvider(
                 connection, metadata, transaction);
 
@@ -232,8 +221,8 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
             Assert.Equal(1, blockResult.Results[0].AffectedRows);
 
             const string statusCheckSql = """
-                SELECT "Status" FROM "Account" WHERE "CustomerId" = @customerId;
-                """;
+                                          SELECT "Status" FROM "Account" WHERE "CustomerId" = @customerId;
+                                          """;
 
             await using var firstCheck = new NpgsqlCommand(statusCheckSql, connection, transaction);
             firstCheck.Parameters.AddWithValue("customerId", firstCustomerId);
@@ -295,7 +284,8 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
                 Effects:
                 [
                     new(SemanticMutationEffectKind.UpdateEntity, ComplexSemanticMutationE2ETests.Account),
-                    new(SemanticMutationEffectKind.SetField, ComplexSemanticMutationE2ETests.Account, ComplexSemanticMutationE2ETests.Status)
+                    new(SemanticMutationEffectKind.SetField, ComplexSemanticMutationE2ETests.Account,
+                        ComplexSemanticMutationE2ETests.Status)
                 ],
                 Dependencies: [])
         ]);
@@ -351,10 +341,10 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
         string status)
     {
         const string sql = """
-            INSERT INTO "Customer" ("Name", "Status")
-            VALUES (@name, @status)
-            RETURNING "Id";
-            """;
+                           INSERT INTO "Customer" ("Name", "Status")
+                           VALUES (@name, @status)
+                           RETURNING "Id";
+                           """;
 
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("name", name);
@@ -371,10 +361,10 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
         string status)
     {
         const string sql = """
-            INSERT INTO "Account" ("CustomerId", "Name", "Balance", "Status")
-            VALUES (@customerId, @name, @balance, @status)
-            RETURNING "Id";
-            """;
+                           INSERT INTO "Account" ("CustomerId", "Name", "Balance", "Status")
+                           VALUES (@customerId, @name, @balance, @status)
+                           RETURNING "Id";
+                           """;
 
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("customerId", customerId);
@@ -392,10 +382,10 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
         DateTime transactionDate)
     {
         const string sql = """
-            INSERT INTO "Transaction" ("AccountId", "Amount", "TransactionDate")
-            VALUES (@accountId, @amount, @transactionDate)
-            RETURNING "Id";
-            """;
+                           INSERT INTO "Transaction" ("AccountId", "Amount", "TransactionDate")
+                           VALUES (@accountId, @amount, @transactionDate)
+                           RETURNING "Id";
+                           """;
 
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("accountId", accountId);
@@ -416,5 +406,4 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
         long Customer1Id,
         long Customer2Id,
         long Customer3Id);
-
 }

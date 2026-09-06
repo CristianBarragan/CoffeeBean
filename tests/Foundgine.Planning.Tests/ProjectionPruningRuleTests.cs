@@ -1,6 +1,5 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Query;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
@@ -73,8 +72,9 @@ public sealed class ProjectionPruningRuleTests
     private static SemanticPlan CreatePlan(
         IReadOnlyList<FieldId> fields,
         SemanticQueryOptions? options = null,
-        IReadOnlyList<string>? invariants = null) =>
-        new(
+        IReadOnlyList<string>? invariants = null)
+    {
+        return new SemanticPlan(
             new SemanticPlanNode(
                 1,
                 ExecutionOperation.Scan,
@@ -85,4 +85,5 @@ public sealed class ProjectionPruningRuleTests
                 [],
                 options),
             invariants);
+    }
 }

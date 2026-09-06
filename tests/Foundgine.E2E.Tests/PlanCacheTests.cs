@@ -1,19 +1,19 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Security;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
-using Foundgine.Core.Semantic.Security;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Query;
+using Foundgine.Core.Semantic.Security;
+using Foundgine.E2E.Tests.Banking;
 using Foundgine.Runtime;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-///  proves that provider compilation may be cached without bypassing
-/// semantic authorization or removing runtime authorization predicates.
+///     proves that provider compilation may be cached without bypassing
+///     semantic authorization or removing runtime authorization predicates.
 /// </summary>
 public sealed class PlanCacheTests
 {
@@ -25,7 +25,7 @@ public sealed class PlanCacheTests
         var engine = new FoundgineEngine(
             new FoundgineOptions
             {
-                Model = Banking.BankingSemanticModel.Build(),
+                Model = BankingSemanticModel.Build(),
                 AuthorizationPolicy = new TenantPolicy(),
                 PlanCache = cache
             },
@@ -50,7 +50,7 @@ public sealed class PlanCacheTests
         var engine = new FoundgineEngine(
             new FoundgineOptions
             {
-                Model = Banking.BankingSemanticModel.Build(),
+                Model = BankingSemanticModel.Build(),
                 AuthorizationPolicy = policy,
                 PlanCache = new MemoryProviderPlanCache()
             },
@@ -74,7 +74,7 @@ public sealed class PlanCacheTests
         var engine = new FoundgineEngine(
             new FoundgineOptions
             {
-                Model = Banking.BankingSemanticModel.Build(),
+                Model = BankingSemanticModel.Build(),
                 AuthorizationPolicy = new TenantPolicy(),
                 PlanCache = new MemoryProviderPlanCache()
             },
@@ -91,14 +91,14 @@ public sealed class PlanCacheTests
     {
         var options = tenantId is null
             ? null
-            : new Foundgine.Core.Semantic.Query.SemanticQueryOptions(
-                Filter: new Foundgine.Core.Semantic.Query.SemanticFieldFilter(
+            : new SemanticQueryOptions(
+                new SemanticFieldFilter(
                     new FieldId(1),
-                    Foundgine.Core.Semantic.Query.SemanticFilterOperator.Eq,
+                    SemanticFilterOperator.Eq,
                     tenantId));
 
         return new SemanticRequest(
-            Banking.BankingSemanticModel.Customer,
+            BankingSemanticModel.Customer,
             [new SemanticSelection(new FieldId(1), null, [])],
             options);
     }
@@ -107,14 +107,16 @@ public sealed class PlanCacheTests
     {
         public override AuthorizationPredicate? GetPredicate(
             EntityId entityId,
-            AuthorizationOperation operation) =>
-            operation == AuthorizationOperation.Read && entityId == Banking.BankingSemanticModel.Customer
+            AuthorizationOperation operation)
+        {
+            return operation == AuthorizationOperation.Read && entityId == BankingSemanticModel.Customer
                 ? AuthorizationPredicate.Equal(
                     AuthorizationPredicate.Member(
                         AuthorizationPredicate.ResourceParameter("resource"), "TenantId"),
                     AuthorizationPredicate.Member(
                         AuthorizationPredicate.ContextParameter("user"), "TenantId"))
                 : null;
+        }
     }
 
     private sealed class CountingPolicy : AllowAllSemanticAuthorizationPolicy
@@ -132,23 +134,10 @@ public sealed class PlanCacheTests
         }
     }
 
-    private sealed class CountingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class CountingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
-        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
-            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
         public int Count { get; private set; }
-
-        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-
-            new(
-
-                plan.Provider,
-
-                ir.RequiredSecurityInvariants,
-
-                ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
-
-                Array.Empty<string>());
 
 
         public ProviderPlan Compile(ExecutionIR ir)
@@ -156,6 +145,18 @@ public sealed class PlanCacheTests
             Count++;
             return new TestPlan();
         }
+
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
+        {
+            return new ProviderSecurityConformanceResult(
+                plan.Provider,
+                ir.RequiredSecurityInvariants,
+                ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
+                Array.Empty<string>());
+        }
+
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
     }
 
     private sealed class TestExecutionProvider : IExecutionProvider
@@ -163,8 +164,10 @@ public sealed class PlanCacheTests
         public Task<ExecutionResult> ExecuteAsync(
             ProviderPlan plan,
             ExecutionContext context,
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult(new ExecutionResult(Array.Empty<ExecutionRow>()));
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new ExecutionResult(Array.Empty<ExecutionRow>()));
+        }
     }
 
     private sealed record TestPlan() : ProviderPlan("test");

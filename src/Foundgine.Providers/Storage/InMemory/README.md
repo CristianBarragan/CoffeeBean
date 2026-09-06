@@ -7,7 +7,8 @@
 - `InMemoryDataSet` — an in-memory collection of provider rows.
 - `InMemoryRow` — CLR-backed row/value representation.
 - `InMemoryPlan` — physical representation of the supported in-memory execution subset.
-- `InMemoryCompiler` — lowers Foundgine execution IR/plans into in-memory operations and performs provider security-conformance checks.
+- `InMemoryCompiler` — lowers Foundgine execution IR/plans into in-memory operations and performs provider
+  security-conformance checks.
 - `InMemoryExecutionProvider` — the `IExecutionProvider` integration.
 
 ## Purpose

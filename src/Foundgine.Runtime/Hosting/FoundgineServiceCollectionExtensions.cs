@@ -1,20 +1,19 @@
 using Foundgine.Core.Execution;
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
-using Microsoft.Extensions.DependencyInjection;
+using Foundgine.Core.Semantic.Metadata;
 
 namespace Foundgine.Runtime;
 
 /// <summary>
-/// Dependency-injection registration for the application-facing Foundgine API.
-/// Provider adapters register IProviderPlanCompiler and IExecutionProvider.
+///     Dependency-injection registration for the application-facing Foundgine API.
+///     Provider adapters register IProviderPlanCompiler and IExecutionProvider.
 /// </summary>
 public static class FoundgineServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers Foundgine with the supplied semantic model and the default allow-all policy.
-    /// Applications that require authorization should use the overload that supplies an explicit policy.
+    ///     Registers Foundgine with the supplied semantic model and the default allow-all policy.
+    ///     Applications that require authorization should use the overload that supplies an explicit policy.
     /// </summary>
     public static IServiceCollection AddFoundgine(
         this IServiceCollection services,
@@ -73,11 +72,9 @@ public static class FoundgineServiceCollectionExtensions
         var contract = options.Model.Freeze().CreateSnapshot();
 
         if (options.AuthorizationPolicy is null && options.AuthorizationConfiguration is not null)
-        {
             options.AuthorizationPolicy = new ConfiguredSemanticAuthorizationPolicy(
                 options.AuthorizationConfiguration,
                 options.AuthorizationContext);
-        }
 
         if (options.AuthorizationPolicy is null)
             throw new InvalidOperationException(

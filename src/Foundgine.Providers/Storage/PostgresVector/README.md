@@ -1,6 +1,7 @@
 # Foundgine.Providers.Storage.PostgresVector
 
-`Foundgine.Providers.Storage.PostgresVector` is the optional PostgreSQL `pgvector` provider for Foundgine lexical grounding.
+`Foundgine.Providers.Storage.PostgresVector` is the optional PostgreSQL `pgvector` provider for Foundgine lexical
+grounding.
 
 ## What is in this package
 
@@ -25,9 +26,11 @@ SemanticLexicalResolver
 authorization / planning / execution
 ```
 
-Vector similarity is a retrieval signal, not semantic authority. The frozen contract remains authoritative for topology and legal semantic paths.
+Vector similarity is a retrieval signal, not semantic authority. The frozen contract remains authoritative for topology
+and legal semantic paths.
 
-This package is separate from `Foundgine.Providers.Storage.Sql`: SQL execution and PostgreSQL relational retrieval live in `Foundgine.Providers.Storage.Sql`, while this package supplies pgvector-backed approximate retrieval.
+This package is separate from `Foundgine.Providers.Storage.Sql`: SQL execution and PostgreSQL relational retrieval live
+in `Foundgine.Providers.Storage.Sql`, while this package supplies pgvector-backed approximate retrieval.
 
 ## Install
 

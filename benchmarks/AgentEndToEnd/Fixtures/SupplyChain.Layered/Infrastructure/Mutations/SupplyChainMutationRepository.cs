@@ -1,26 +1,19 @@
-using System.Security.Cryptography;
-using System.Text;
 using Foundgine.Core.Abstractions;
-using Foundgine.Providers.Aot;
-using Foundgine.Core.Execution;
-using Foundgine.Core.Execution.Mutation;
 using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Core.Semantic.Mutation;
+using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Providers.Storage.Sql.Mutation;
 using Foundgine.SupplyChain.Application;
-using Foundgine.Generated;
-using Npgsql;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.SupplyChain.Infrastructure.Mutations;
 
 /// <summary>
-/// Supply-chain mutation adapter. Simple mutations are expressed semantically and
-/// lowered through Foundgine.Core.Semantic.Planning.Mutation + Foundgine.Providers.Storage.Sql.Mutation. The two
-/// high-assurance workflows retain explicit transaction orchestration because they
-/// combine idempotency, locking, conditional inventory allocation and evidence.
+///     Supply-chain mutation adapter. Simple mutations are expressed semantically and
+///     lowered through Foundgine.Core.Semantic.Planning.Mutation + Foundgine.Providers.Storage.Sql.Mutation. The two
+///     high-assurance workflows retain explicit transaction orchestration because they
+///     combine idempotency, locking, conditional inventory allocation and evidence.
 /// </summary>
 public sealed class SupplyChainMutationRepository : ISupplyChainMutations
 {
@@ -136,34 +129,6 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
             ct);
     }
 
-    private async Task<object> ExecuteSemantic(
-        SemanticMutationOperation operation,
-        Func<object, object> projection,
-        CancellationToken ct)
-    {
-        var graph = new SemanticMutationOperationGraph([operation]);
-
-        var plan = new MutationPlanner(
-            (IMutationSchema)_metadata)
-            .Plan(graph);
-
-        var sqlPlan = new SqlMutationCompiler(_metadata)
-            .Compile(plan);
-
-        await using var connection =
-            await _dataSource.OpenConnectionAsync(ct);
-
-        var result = new SqlMutationExecutionProvider(
-                connection,
-                metadata: _metadata)
-            .ExecuteBatch(
-                sqlPlan,
-                new ExecutionContext(),
-                ct);
-
-        return projection(result.Results.Single());
-    }
-
     // High-assurance transaction paths deliberately preserve explicit orchestration.
     // Their SQL remains parameterized and transaction-scoped because they require
     // PostgreSQL advisory locks, FOR UPDATE/SKIP LOCKED and multi-table invariants.
@@ -202,10 +167,10 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
             await connection.BeginTransactionAsync(ct);
 
         await using (var lockCommand =
-            new NpgsqlCommand(
-                "SELECT pg_advisory_xact_lock(hashtext(@k));",
-                connection,
-                tx))
+                     new NpgsqlCommand(
+                         "SELECT pg_advisory_xact_lock(hashtext(@k));",
+                         connection,
+                         tx))
         {
             lockCommand.Parameters.AddWithValue("k", key);
 
@@ -213,11 +178,11 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
         }
 
         await using (var existing =
-            new NpgsqlCommand(
-                "SELECT order_id FROM supply_chain_idempotency " +
-                "WHERE idempotency_key=@k FOR SHARE",
-                connection,
-                tx))
+                     new NpgsqlCommand(
+                         "SELECT order_id FROM supply_chain_idempotency " +
+                         "WHERE idempotency_key=@k FOR SHARE",
+                         connection,
+                         tx))
         {
             existing.Parameters.AddWithValue("k", key);
 
@@ -237,11 +202,11 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
         }
 
         await using (var customer =
-            new NpgsqlCommand(
-                "SELECT customer_id FROM customers " +
-                "WHERE customer_id=@id",
-                connection,
-                tx))
+                     new NpgsqlCommand(
+                         "SELECT customer_id FROM customers " +
+                         "WHERE customer_id=@id",
+                         connection,
+                         tx))
         {
             customer.Parameters.AddWithValue(
                 "id",
@@ -318,12 +283,12 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
         int orderId;
 
         await using (var insertOrder =
-            new NpgsqlCommand(
-                "INSERT INTO orders(customer_id,status,total_amount) " +
-                "VALUES(@c,'Pending',@t) " +
-                "RETURNING order_id",
-                connection,
-                tx))
+                     new NpgsqlCommand(
+                         "INSERT INTO orders(customer_id,status,total_amount) " +
+                         "VALUES(@c,'Pending',@t) " +
+                         "RETURNING order_id",
+                         connection,
+                         tx))
         {
             insertOrder.Parameters.AddWithValue(
                 "c",
@@ -343,13 +308,13 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
             int itemId;
 
             await using (var insertItem =
-                new NpgsqlCommand(
-                    "INSERT INTO order_items(" +
-                    "order_id,product_id,quantity,unit_price) " +
-                    "VALUES(@o,@p,@q,@u) " +
-                    "RETURNING order_item_id",
-                    connection,
-                    tx))
+                         new NpgsqlCommand(
+                             "INSERT INTO order_items(" +
+                             "order_id,product_id,quantity,unit_price) " +
+                             "VALUES(@o,@p,@q,@u) " +
+                             "RETURNING order_item_id",
+                             connection,
+                             tx))
             {
                 insertItem.Parameters.AddWithValue(
                     "o",
@@ -408,12 +373,12 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
         }
 
         await using (var idem =
-            new NpgsqlCommand(
-                "INSERT INTO supply_chain_idempotency(" +
-                "idempotency_key,actor_id,operation,order_id) " +
-                "VALUES(@k,@a,'place_order',@o)",
-                connection,
-                tx))
+                     new NpgsqlCommand(
+                         "INSERT INTO supply_chain_idempotency(" +
+                         "idempotency_key,actor_id,operation,order_id) " +
+                         "VALUES(@k,@a,'place_order',@o)",
+                         connection,
+                         tx))
         {
             idem.Parameters.AddWithValue(
                 "k",
@@ -455,15 +420,15 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
             await connection.BeginTransactionAsync(ct);
 
         await using (var update =
-            new NpgsqlCommand(
-                "UPDATE orders " +
-                "SET status='Cancelled' " +
-                "WHERE order_id=@o " +
-                "AND customer_id=@c " +
-                "AND status='Pending' " +
-                "RETURNING order_id",
-                connection,
-                tx))
+                     new NpgsqlCommand(
+                         "UPDATE orders " +
+                         "SET status='Cancelled' " +
+                         "WHERE order_id=@o " +
+                         "AND customer_id=@c " +
+                         "AND status='Pending' " +
+                         "RETURNING order_id",
+                         connection,
+                         tx))
         {
             update.Parameters.AddWithValue(
                 "o",
@@ -479,18 +444,18 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
         }
 
         await using (var restore =
-            new NpgsqlCommand(
-                "UPDATE inventory i " +
-                "SET quantity_on_hand=i.quantity_on_hand+a.quantity," +
-                "last_updated=CURRENT_TIMESTAMP " +
-                "FROM order_allocations a " +
-                "JOIN order_items oi " +
-                "ON oi.order_item_id=a.order_item_id " +
-                "WHERE oi.order_id=@o " +
-                "AND i.warehouse_id=a.warehouse_id " +
-                "AND i.product_id=oi.product_id",
-                connection,
-                tx))
+                     new NpgsqlCommand(
+                         "UPDATE inventory i " +
+                         "SET quantity_on_hand=i.quantity_on_hand+a.quantity," +
+                         "last_updated=CURRENT_TIMESTAMP " +
+                         "FROM order_allocations a " +
+                         "JOIN order_items oi " +
+                         "ON oi.order_item_id=a.order_item_id " +
+                         "WHERE oi.order_id=@o " +
+                         "AND i.warehouse_id=a.warehouse_id " +
+                         "AND i.product_id=oi.product_id",
+                         connection,
+                         tx))
         {
             restore.Parameters.AddWithValue(
                 "o",
@@ -509,8 +474,37 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
         };
     }
 
-    private static int ActorNumber(string actor) =>
-        actor switch
+    private async Task<object> ExecuteSemantic(
+        SemanticMutationOperation operation,
+        Func<object, object> projection,
+        CancellationToken ct)
+    {
+        var graph = new SemanticMutationOperationGraph([operation]);
+
+        var plan = new MutationPlanner(
+                (IMutationSchema)_metadata)
+            .Plan(graph);
+
+        var sqlPlan = new SqlMutationCompiler(_metadata)
+            .Compile(plan);
+
+        await using var connection =
+            await _dataSource.OpenConnectionAsync(ct);
+
+        var result = new SqlMutationExecutionProvider(
+                connection,
+                metadata: _metadata)
+            .ExecuteBatch(
+                sqlPlan,
+                new ExecutionContext(),
+                ct);
+
+        return projection(result.Results.Single());
+    }
+
+    private static int ActorNumber(string actor)
+    {
+        return actor switch
         {
             "alice" => 1,
             "bob" => 2,
@@ -519,19 +513,22 @@ public sealed class SupplyChainMutationRepository : ISupplyChainMutations
             "admin" => 5,
 
             _ when actor.StartsWith(
-                        "customer",
-                        StringComparison.OrdinalIgnoreCase)
-                     && int.TryParse(
-                         actor[8..],
-                         out var id)
+                       "customer",
+                       StringComparison.OrdinalIgnoreCase)
+                   && int.TryParse(
+                       actor[8..],
+                       out var id)
                 => id,
 
             _ => 0
         };
+    }
 
-    private static string Hash(string value) =>
-        Convert.ToHexString(
-            SHA256.HashData(
-                Encoding.UTF8.GetBytes(value)))
-        .ToLowerInvariant()[..24];
+    private static string Hash(string value)
+    {
+        return Convert.ToHexString(
+                SHA256.HashData(
+                    Encoding.UTF8.GetBytes(value)))
+            .ToLowerInvariant()[..24];
+    }
 }

@@ -1,14 +1,11 @@
-using Foundgine.Core.Execution;
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic.Resolution;
 using Foundgine.Providers.Storage.Sql;
-using Microsoft.Data.Sqlite;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
@@ -32,7 +29,7 @@ public sealed class AggregateFilterTests
             Customer,
             [new SemanticSelection(new FieldId(1), null, [])],
             new SemanticQueryOptions(
-                Filter: new SemanticAggregateFilter(
+                new SemanticAggregateFilter(
                     CustomerAccounts,
                     SemanticFilterAggregate.Count,
                     null,
@@ -69,7 +66,7 @@ public sealed class AggregateFilterTests
             Customer,
             [new SemanticSelection(new FieldId(1), null, [])],
             new SemanticQueryOptions(
-                Filter: new SemanticAggregateFilter(
+                new SemanticAggregateFilter(
                     CustomerAccounts,
                     SemanticFilterAggregate.Max,
                     new FieldId(3),
@@ -88,8 +85,9 @@ public sealed class AggregateFilterTests
         Assert.Equal(2, Convert.ToInt32(result.Rows[0].Values["__fg_0_Id"]));
     }
 
-    private static SemanticModel BuildModel() =>
-        new SemanticModelBuilder()
+    private static SemanticModel BuildModel()
+    {
+        return new SemanticModelBuilder()
             .Entity(Customer, "Customer", e => e
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(2), "Name", typeof(string))
@@ -99,24 +97,35 @@ public sealed class AggregateFilterTests
                 .Field(new FieldId(2), "CustomerId", typeof(int))
                 .Field(new FieldId(3), "Balance", typeof(decimal)))
             .Build();
+    }
 
     private static MetadataRegistry BuildMetadata()
     {
         var customer = new EntityMetadata(
             Customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(Customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(Customer, new ColumnId(2)))],
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(Customer, new ColumnId(2)))
+            ],
             PrimaryKey: new ColumnReference(Customer, new ColumnId(1)));
 
         var account = new EntityMetadata(
             Account, "Account",
-            [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"), new ColumnMetadata(new ColumnId(3), "Balance")],
-            Fields: [
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"),
+                new ColumnMetadata(new ColumnId(3), "Balance")
+            ],
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(Account, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "CustomerId", typeof(int), new ColumnReference(Account, new ColumnId(2))),
-                new FieldMetadata(new FieldId(3), "Balance", typeof(decimal), new ColumnReference(Account, new ColumnId(3)))],
+                new FieldMetadata(new FieldId(2), "CustomerId", typeof(int),
+                    new ColumnReference(Account, new ColumnId(2))),
+                new FieldMetadata(new FieldId(3), "Balance", typeof(decimal),
+                    new ColumnReference(Account, new ColumnId(3)))
+            ],
             PrimaryKey: new ColumnReference(Account, new ColumnId(1)));
 
         var relationship = new RelationshipMetadata(
@@ -135,18 +144,17 @@ public sealed class AggregateFilterTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
-            CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Balance" REAL NOT NULL);
-            INSERT INTO "Customer" VALUES (1, 'A');
-            INSERT INTO "Customer" VALUES (2, 'B');
-            INSERT INTO "Customer" VALUES (3, 'C');
-            INSERT INTO "Account" VALUES (11, 1, 10.0);
-            INSERT INTO "Account" VALUES (12, 1, 20.0);
-            INSERT INTO "Account" VALUES (21, 2, 150.0);
-            INSERT INTO "Account" VALUES (22, 2, 90.0);
-            INSERT INTO "Account" VALUES (31, 3, 50.0);
-            """;
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
+                              CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Balance" REAL NOT NULL);
+                              INSERT INTO "Customer" VALUES (1, 'A');
+                              INSERT INTO "Customer" VALUES (2, 'B');
+                              INSERT INTO "Customer" VALUES (3, 'C');
+                              INSERT INTO "Account" VALUES (11, 1, 10.0);
+                              INSERT INTO "Account" VALUES (12, 1, 20.0);
+                              INSERT INTO "Account" VALUES (21, 2, 150.0);
+                              INSERT INTO "Account" VALUES (22, 2, 90.0);
+                              INSERT INTO "Account" VALUES (31, 3, 50.0);
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

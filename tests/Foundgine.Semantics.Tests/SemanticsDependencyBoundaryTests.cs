@@ -1,6 +1,3 @@
-using System.Reflection;
-using Xunit;
-
 namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticsDependencyBoundaryTests
@@ -8,7 +5,7 @@ public sealed class SemanticsDependencyBoundaryTests
     [Fact]
     public void SemanticAssembly_does_not_reference_metadata_assembly()
     {
-        var assembly = typeof(Foundgine.Core.Semantic.SemanticModel).Assembly;
+        var assembly = typeof(SemanticModel).Assembly;
 
         Assert.DoesNotContain(
             assembly.GetReferencedAssemblies(),

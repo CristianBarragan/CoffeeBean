@@ -1,36 +1,33 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
-using Foundgine.Providers.Storage.InMemory;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Capabilities;
 using Foundgine.Core.Semantic.IR;
-using Xunit;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.E2E.Tests.Banking;
+using Foundgine.Providers.Storage.InMemory;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-/// Step 37: a discovery-driven escape-boundary harness.
-///
-/// Rather than hard-coding "the result must not contain field X", this test
-/// asks the same <see cref="SemanticCapabilityContractDiscovery"/> surface an
-/// MCP agent would call during capability discovery what fields it is
-/// authorized to see for each entity in the result, and then asserts the
-/// actual executed result never exceeds that self-declared boundary. This
-/// pins the class of bug fixed in <c>InMemoryExecutionProvider.ToExecutionRow</c>
-/// (leaking the full unauthorized backing row into <c>ExecutionRow.Values</c>)
-/// without needing to know in advance which internal/backing-only fields a
-/// given provider happens to carry.
-///
-/// The scenario runs the real end-to-end pipeline - resolve, authorize with
-/// evidence, plan, lower to Execution IR, execute in-memory - against the
-/// Banking fixture, whose <c>Account.CustomerId</c> is exactly this shape: a
-/// real backing/relational column needed to resolve the CustomerAccounts
-/// join, but never a selectable semantic field and never discoverable
-/// through the capability contract.
+///     Step 37: a discovery-driven escape-boundary harness.
+///     Rather than hard-coding "the result must not contain field X", this test
+///     asks the same <see cref="SemanticCapabilityContractDiscovery" /> surface an
+///     MCP agent would call during capability discovery what fields it is
+///     authorized to see for each entity in the result, and then asserts the
+///     actual executed result never exceeds that self-declared boundary. This
+///     pins the class of bug fixed in <c>InMemoryExecutionProvider.ToExecutionRow</c>
+///     (leaking the full unauthorized backing row into <c>ExecutionRow.Values</c>)
+///     without needing to know in advance which internal/backing-only fields a
+///     given provider happens to carry.
+///     The scenario runs the real end-to-end pipeline - resolve, authorize with
+///     evidence, plan, lower to Execution IR, execute in-memory - against the
+///     Banking fixture, whose <c>Account.CustomerId</c> is exactly this shape: a
+///     real backing/relational column needed to resolve the CustomerAccounts
+///     join, but never a selectable semantic field and never discoverable
+///     through the capability contract.
 /// </summary>
 public sealed class DiscoveryDrivenCapabilityBoundaryTests
 {
@@ -75,7 +72,7 @@ public sealed class DiscoveryDrivenCapabilityBoundaryTests
             {
                 [new FieldId(1)] = 100,
                 [new FieldId(3)] = 250.75m, // Balance
-                [new FieldId(4)] = 1        // CustomerId FK - backing-only, join key
+                [new FieldId(4)] = 1 // CustomerId FK - backing-only, join key
             }));
 
         var result = await new InMemoryExecutionProvider(metadata, data)
@@ -93,11 +90,11 @@ public sealed class DiscoveryDrivenCapabilityBoundaryTests
     }
 
     /// <summary>
-    /// Reusable discovery-driven escape-boundary assertion: every field a
-    /// provider actually returns for an entity must have been advertised as
-    /// readable by that entity's discovered read capability, and Values must
-    /// never carry more entries than Cells/EffectiveCells - the exact
-    /// invariant restored by the Step 37 <c>ToExecutionRow</c> fix.
+    ///     Reusable discovery-driven escape-boundary assertion: every field a
+    ///     provider actually returns for an entity must have been advertised as
+    ///     readable by that entity's discovered read capability, and Values must
+    ///     never carry more entries than Cells/EffectiveCells - the exact
+    ///     invariant restored by the Step 37 <c>ToExecutionRow</c> fix.
     /// </summary>
     private static void AssertResultRespectsDiscoveredFieldBoundary(
         SemanticCapabilityContract capabilityContract,

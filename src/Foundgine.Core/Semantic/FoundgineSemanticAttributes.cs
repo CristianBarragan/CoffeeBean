@@ -1,6 +1,9 @@
 namespace Foundgine.Core.Semantic;
 
-/// <summary>Optional declarative semantic metadata. Configuration is preferred when metadata cannot naturally live with the model.</summary>
+/// <summary>
+///     Optional declarative semantic metadata. Configuration is preferred when metadata cannot naturally live with
+///     the model.
+/// </summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class SemanticEntityAttribute : Attribute;
 

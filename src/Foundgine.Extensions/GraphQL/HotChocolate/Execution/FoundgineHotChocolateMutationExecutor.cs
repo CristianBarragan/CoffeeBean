@@ -1,24 +1,23 @@
-using Foundgine.Runtime;
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Mutation;
 using Foundgine.Core.Semantic.Security.Execution;
+using Foundgine.Runtime;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate;
 
 /// <summary>
-/// Secure GraphQL mutation execution boundary. GraphQL is an untrusted transport:
-/// caller identity, tenant, audience and warrant data come only from the host-owned
-/// security context provider and never from GraphQL input.
+///     Secure GraphQL mutation execution boundary. GraphQL is an untrusted transport:
+///     caller identity, tenant, audience and warrant data come only from the host-owned
+///     security context provider and never from GraphQL input.
 /// </summary>
 public sealed class FoundgineHotChocolateMutationExecutor
 {
-    private readonly IFoundgineMutations _mutations;
     private readonly HotChocolateMutationAdapter _adapter;
+    private readonly Func<ExecutionContext> _contextFactory;
+    private readonly IFoundgineMutations _mutations;
     private readonly IMutationSchema _schema;
     private readonly ISecurityExecutionContextProvider _securityContextProvider;
-    private readonly Func<ExecutionContext> _contextFactory;
 
     public FoundgineHotChocolateMutationExecutor(
         IFoundgineMutations mutations,
@@ -31,7 +30,7 @@ public sealed class FoundgineHotChocolateMutationExecutor
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
         _schema = schema ?? throw new ArgumentNullException(nameof(schema));
         _securityContextProvider = securityContextProvider
-            ?? throw new ArgumentNullException(nameof(securityContextProvider));
+                                   ?? throw new ArgumentNullException(nameof(securityContextProvider));
         _contextFactory = contextFactory ?? (() => new ExecutionContext());
     }
 

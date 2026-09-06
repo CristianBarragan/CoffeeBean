@@ -1,24 +1,19 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Execution;
-using FoundgineExecutionContext = Foundgine.Core.Execution.ExecutionContext;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
-using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic.Resolution;
-using Foundgine.Providers.Storage.Sql;
-using Microsoft.Data.Sqlite;
-using Xunit;
-using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
-using BankingModel = Foundgine.E2E.Tests.Banking.BankingSemanticModel;
 using Foundgine.E2E.Tests.Banking;
+using Foundgine.Providers.Storage.Sql;
+using FoundgineExecutionContext = Foundgine.Core.Execution.ExecutionContext;
+using BankingModel = Foundgine.E2E.Tests.Banking.BankingSemanticModel;
 
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-/// : the canonical Foundgine core proof. A single request exercises
-/// AOT-known domain topology, collection traversal, authorization, planning,
-/// provider execution, and evidence.
+///     : the canonical Foundgine core proof. A single request exercises
+///     AOT-known domain topology, collection traversal, authorization, planning,
+///     provider execution, and evidence.
 /// </summary>
 public sealed class FoundgineCoreProofTests
 {
@@ -94,20 +89,19 @@ public sealed class FoundgineCoreProofTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL, "TenantId" INTEGER NOT NULL);
-            CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Balance" DECIMAL NOT NULL);
-            CREATE TABLE "Transaction" ("Id" INTEGER PRIMARY KEY, "AccountId" INTEGER NOT NULL, "Amount" DECIMAL NOT NULL, "TransactionDate" TEXT NOT NULL);
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL, "TenantId" INTEGER NOT NULL);
+                              CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Balance" DECIMAL NOT NULL);
+                              CREATE TABLE "Transaction" ("Id" INTEGER PRIMARY KEY, "AccountId" INTEGER NOT NULL, "Amount" DECIMAL NOT NULL, "TransactionDate" TEXT NOT NULL);
 
-            INSERT INTO "Customer" VALUES (1, 'Alice', 7);
-            INSERT INTO "Customer" VALUES (2, 'Bob', 9);
+                              INSERT INTO "Customer" VALUES (1, 'Alice', 7);
+                              INSERT INTO "Customer" VALUES (2, 'Bob', 9);
 
-            INSERT INTO "Account" VALUES (10, 1, 100.50);
-            INSERT INTO "Account" VALUES (20, 2, 500.00);
+                              INSERT INTO "Account" VALUES (10, 1, 100.50);
+                              INSERT INTO "Account" VALUES (20, 2, 500.00);
 
-            INSERT INTO "Transaction" VALUES (100, 10, 15000.00, '2026-01-01');
-            INSERT INTO "Transaction" VALUES (101, 20, 25000.00, '2026-01-02');
-            """;
+                              INSERT INTO "Transaction" VALUES (100, 10, 15000.00, '2026-01-01');
+                              INSERT INTO "Transaction" VALUES (101, 20, 25000.00, '2026-01-02');
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

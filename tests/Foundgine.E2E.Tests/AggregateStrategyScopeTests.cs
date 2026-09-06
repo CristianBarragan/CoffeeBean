@@ -1,10 +1,8 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Execution;
 using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Query;
-using Foundgine.Providers.Storage.Sql;
 using Foundgine.E2E.Tests.Banking;
-using Xunit;
+using Foundgine.Providers.Storage.Sql;
 
 namespace Foundgine.E2E.Tests;
 
@@ -74,8 +72,9 @@ public sealed class AggregateStrategyScopeTests
         Assert.Contains("COUNT(*)", sql, StringComparison.Ordinal);
     }
 
-    private static SemanticPlan CreatePlan(SemanticFilterExpression filter) =>
-        new(
+    private static SemanticPlan CreatePlan(SemanticFilterExpression filter)
+    {
+        return new SemanticPlan(
             new SemanticPlanNode(
                 1,
                 ExecutionOperation.Scan,
@@ -84,6 +83,7 @@ public sealed class AggregateStrategyScopeTests
                 null,
                 null,
                 [],
-                new SemanticQueryOptions(Filter: filter)),
+                new SemanticQueryOptions(filter)),
             AuthorizationBinding: new SemanticPlanAuthorizationBinding("test-contract", "test-authorization"));
+    }
 }

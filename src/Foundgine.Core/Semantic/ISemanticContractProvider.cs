@@ -1,8 +1,8 @@
 namespace Foundgine.Core.Semantic;
 
 /// <summary>
-/// Supplies the trusted immutable semantic contract used by runtime components.
-/// Construction and configuration APIs are deliberately absent from this port.
+///     Supplies the trusted immutable semantic contract used by runtime components.
+///     Construction and configuration APIs are deliberately absent from this port.
 /// </summary>
 public interface ISemanticContractProvider
 {

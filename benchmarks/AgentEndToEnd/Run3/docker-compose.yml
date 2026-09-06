@@ -28,7 +28,7 @@ services:
       - agent-e2e-postgres-data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U benchmark -d foundgine_benchmark"]
+      test: [ "CMD-SHELL", "pg_isready -U benchmark -d foundgine_benchmark" ]
       interval: 2s
       timeout: 5s
       retries: 30
@@ -54,7 +54,7 @@ services:
       - "${FOUNDGINE_HOST_PORT:-0}:4302"
 
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:4302/health/ready || exit 1"]
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:4302/health/ready || exit 1" ]
       interval: 2s
       timeout: 5s
       retries: 30

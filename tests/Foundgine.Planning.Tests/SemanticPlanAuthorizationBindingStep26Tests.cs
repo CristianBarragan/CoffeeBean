@@ -1,8 +1,6 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.IR;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
@@ -19,7 +17,8 @@ public sealed class SemanticPlanAuthorizationBindingStep26Tests
 
         Assert.NotNull(plan.AuthorizationBinding);
         Assert.Equal(contract.ContractFingerprint, plan.AuthorizationBinding!.ContractFingerprint);
-        Assert.Equal(authorization.Evidence.AuthorizationFingerprint, plan.AuthorizationBinding.AuthorizationFingerprint);
+        Assert.Equal(authorization.Evidence.AuthorizationFingerprint,
+            plan.AuthorizationBinding.AuthorizationFingerprint);
     }
 
     [Fact]
@@ -65,9 +64,11 @@ public sealed class SemanticPlanAuthorizationBindingStep26Tests
 
     private static SemanticAuthorizationResult Authorize(
         SemanticContractSnapshot contract,
-        SemanticOperation operation) =>
-        new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy())
+        SemanticOperation operation)
+    {
+        return new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy())
             .AuthorizeWithEvidence(contract, operation);
+    }
 
     private static SemanticOperation CreateOperation()
     {

@@ -1,13 +1,12 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
 namespace Foundgine.Core.Abstractions;
 
 [JsonConverter(typeof(FieldIdJsonConverter))]
 public readonly record struct FieldId(ulong Value)
 {
-    public static FieldId Create(string semanticEntityName, string semanticFieldName) =>
-        new(SemanticIdentity.Hash(SemanticIdentity.FieldKey(semanticEntityName, semanticFieldName)));
+    public static FieldId Create(string semanticEntityName, string semanticFieldName)
+    {
+        return new FieldId(SemanticIdentity.Hash(SemanticIdentity.FieldKey(semanticEntityName, semanticFieldName)));
+    }
 }
 
 public sealed class FieldIdJsonConverter : JsonConverter<FieldId>
@@ -22,15 +21,23 @@ public sealed class FieldIdJsonConverter : JsonConverter<FieldId>
             if (document.RootElement.TryGetProperty("Value", out var value))
                 return new FieldId(value.GetUInt64());
         }
+
         throw new JsonException("Expected a FieldId numeric value or a legacy {\"Value\":...} object.");
     }
 
     public override void Write(Utf8JsonWriter writer, FieldId value, JsonSerializerOptions options)
-        => writer.WriteNumberValue(value.Value);
+    {
+        writer.WriteNumberValue(value.Value);
+    }
 
-    public override FieldId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        => new(ulong.Parse(reader.GetString()!));
+    public override FieldId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert,
+        JsonSerializerOptions options)
+    {
+        return new FieldId(ulong.Parse(reader.GetString()!));
+    }
 
     public override void WriteAsPropertyName(Utf8JsonWriter writer, FieldId value, JsonSerializerOptions options)
-        => writer.WritePropertyName(value.Value.ToString());
+    {
+        writer.WritePropertyName(value.Value.ToString());
+    }
 }

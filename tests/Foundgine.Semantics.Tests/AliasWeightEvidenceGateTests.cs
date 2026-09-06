@@ -1,7 +1,6 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Resolution;
-using Xunit;
 
 namespace Foundgine.Semantics.Tests;
 
@@ -34,14 +33,15 @@ public sealed class AliasWeightEvidenceGateTests
         var model = BuildModel(e => e.Alias("Vendor", 50));
         var resolution = ResolveEntity("Vendor", new EntityId(1), .91);
 
-        var result = AliasWeightEvidenceGate.Evaluate(model, 90, resolution, modelKnownWithCertainty: true);
+        var result = AliasWeightEvidenceGate.Evaluate(model, 90, resolution, true);
 
         Assert.Equal(AliasEvidenceStatus.Insufficient, result.Status);
         Assert.False(result.IsConclusive);
         Assert.Equal(ModelResolutionEvidence.KnownWithCertainty, result.ModelEvidence);
         Assert.Equal(100, result.ModelWeight); // compatibility projection only
         Assert.Equal(50, result.EntityWeights[new EntityId(1)]);
-        Assert.Contains(new EntityId(1), result.ViolatingEntities); // entity evidence remains 50; model certainty does not inflate it
+        Assert.Contains(new EntityId(1),
+            result.ViolatingEntities); // entity evidence remains 50; model certainty does not inflate it
     }
 
     [Fact]
@@ -94,12 +94,18 @@ public sealed class AliasWeightEvidenceGateTests
     [Theory]
     [InlineData(1)]
     [InlineData(100)]
-    public void Alias_weight_accepts_inclusive_boundaries(int weight) => Assert.Equal(weight, new SemanticAlias("Vendor", weight).Weight);
+    public void Alias_weight_accepts_inclusive_boundaries(int weight)
+    {
+        Assert.Equal(weight, new SemanticAlias("Vendor", weight).Weight);
+    }
 
     [Theory]
     [InlineData(0)]
     [InlineData(101)]
-    public void Alias_weight_rejects_outside_range(int weight) => Assert.Throws<ArgumentOutOfRangeException>(() => new SemanticAlias("Vendor", weight));
+    public void Alias_weight_rejects_outside_range(int weight)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new SemanticAlias("Vendor", weight));
+    }
 
     [Fact]
     public void Multiple_weighted_alias_steps_for_one_identity_use_the_strongest_declared_evidence()
@@ -109,9 +115,11 @@ public sealed class AliasWeightEvidenceGateTests
             SemanticLexicalResolutionOutcome.Resolved,
             [
                 new SemanticLexicalStep("Vendor",
-                    new SemanticLexicalCandidate("Vendor", SemanticLexicalCandidateKind.Entity, "Supplier", .81, EntityId: new EntityId(1)), .81, []),
+                    new SemanticLexicalCandidate("Vendor", SemanticLexicalCandidateKind.Entity, "Supplier", .81,
+                        EntityId: new EntityId(1)), .81, []),
                 new SemanticLexicalStep("Seller",
-                    new SemanticLexicalCandidate("Seller", SemanticLexicalCandidateKind.Entity, "Supplier", .97, EntityId: new EntityId(1)), .97, [])
+                    new SemanticLexicalCandidate("Seller", SemanticLexicalCandidateKind.Entity, "Supplier", .97,
+                        EntityId: new EntityId(1)), .97, [])
             ],
             .89,
             new EntityId(1),
@@ -152,9 +160,11 @@ public sealed class AliasWeightEvidenceGateTests
             SemanticLexicalResolutionOutcome.Resolved,
             [
                 new SemanticLexicalStep("Vendor",
-                    new SemanticLexicalCandidate("Vendor", SemanticLexicalCandidateKind.Entity, "Supplier", .81, EntityId: new EntityId(1)), .81, []),
+                    new SemanticLexicalCandidate("Vendor", SemanticLexicalCandidateKind.Entity, "Supplier", .81,
+                        EntityId: new EntityId(1)), .81, []),
                 new SemanticLexicalStep("Seller",
-                    new SemanticLexicalCandidate("Seller", SemanticLexicalCandidateKind.Entity, "Supplier", .70, EntityId: new EntityId(1)), .70, [])
+                    new SemanticLexicalCandidate("Seller", SemanticLexicalCandidateKind.Entity, "Supplier", .70,
+                        EntityId: new EntityId(1)), .70, [])
             ],
             .75,
             new EntityId(1),
@@ -179,9 +189,11 @@ public sealed class AliasWeightEvidenceGateTests
             SemanticLexicalResolutionOutcome.Resolved,
             [
                 new SemanticLexicalStep("Supplier",
-                    new SemanticLexicalCandidate("Supplier", SemanticLexicalCandidateKind.Entity, "Supplier", .99, EntityId: new EntityId(1)), .99, []),
+                    new SemanticLexicalCandidate("Supplier", SemanticLexicalCandidateKind.Entity, "Supplier", .99,
+                        EntityId: new EntityId(1)), .99, []),
                 new SemanticLexicalStep("Vendor",
-                    new SemanticLexicalCandidate("Vendor", SemanticLexicalCandidateKind.Entity, "Supplier", .81, EntityId: new EntityId(1)), .81, [])
+                    new SemanticLexicalCandidate("Vendor", SemanticLexicalCandidateKind.Entity, "Supplier", .81,
+                        EntityId: new EntityId(1)), .81, [])
             ],
             .90,
             new EntityId(1),
@@ -214,14 +226,14 @@ public sealed class AliasWeightEvidenceGateTests
             .Entity<SupplierModel>(new EntityId(1), "Supplier", e =>
             {
                 e.Identity(x => x.Id)
-                 .Field(x => x.State)
-                 .Relationship<OrderModel>(
-                     new RelationshipId(12),
-                     "Orders",
-                     x => x.OrderId,
-                     x => x.SupplierId,
-                     new EntityId(2),
-                     RelationshipCardinality.Many);
+                    .Field(x => x.State)
+                    .Relationship<OrderModel>(
+                        new RelationshipId(12),
+                        "Orders",
+                        x => x.OrderId,
+                        x => x.SupplierId,
+                        new EntityId(2),
+                        RelationshipCardinality.Many);
                 configure(e);
             })
             .Entity<OrderModel>(new EntityId(2), "Order", e => e.Identity(x => x.Id))
@@ -231,18 +243,21 @@ public sealed class AliasWeightEvidenceGateTests
 
     private static SemanticLexicalResolution ResolveEntity(string token, EntityId entityId, double score)
     {
-        var candidate = new SemanticLexicalCandidate(token, SemanticLexicalCandidateKind.Entity, "Supplier", score, EntityId: entityId);
+        var candidate = new SemanticLexicalCandidate(token, SemanticLexicalCandidateKind.Entity, "Supplier", score,
+            EntityId: entityId);
         return new SemanticLexicalResolution(SemanticLexicalResolutionOutcome.Resolved,
             [new SemanticLexicalStep(token, candidate, score, [])], score, entityId, null);
     }
 
-    private static SemanticLexicalResolution ResolveField(string token, EntityId entityId, FieldId fieldId, double score)
+    private static SemanticLexicalResolution ResolveField(string token, EntityId entityId, FieldId fieldId,
+        double score)
     {
         var candidate = new SemanticLexicalCandidate(token, SemanticLexicalCandidateKind.Field, "Supplier State", score,
             EntityId: entityId, FieldId: fieldId);
         return new SemanticLexicalResolution(SemanticLexicalResolutionOutcome.Resolved,
             [new SemanticLexicalStep(token, candidate, score, [])], score, entityId, null);
     }
+
     private sealed class SupplierModel
     {
         public int Id { get; set; }
@@ -255,6 +270,5 @@ public sealed class AliasWeightEvidenceGateTests
         public int Id { get; set; }
         public int SupplierId { get; set; }
     }
-
 }
 #pragma warning restore CS0618

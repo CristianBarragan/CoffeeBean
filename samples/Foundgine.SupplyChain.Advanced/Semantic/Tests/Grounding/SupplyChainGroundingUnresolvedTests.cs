@@ -1,23 +1,20 @@
-using Foundgine.Core.Semantic.Resolution;
 using Foundgine.SupplyChain.Advanced.Semantics;
-using Xunit;
 
 namespace Foundgine.SupplyChain.Advanced.Tests.Grounding;
 
 /// <summary>
-/// Case study for the two "fails closed on missing vocabulary/capability"
-/// adversarial examples from docs/LEXICAL-GROUNDING.md ("customers with big
-/// accounts" and "... last summer"), run against the real generated Supply
-/// Chain semantic contract rather than the toy model used in the core
-/// library's <c>SemanticLexicalResolverTests</c>.
-///
-/// Both examples in the doc are refusals for a different reason than the
-/// tied-confidence case in <see cref="SupplyChainGroundingAmbiguityTests"/>:
-/// here there is no candidate for the token at all, so the resolver has
-/// nothing to be ambiguous about. It must report
-/// <see cref="GroundingOutcome.Unresolved"/> and name the exact token that
-/// had no candidate, rather than silently dropping that part of the
-/// expression and executing the rest.
+///     Case study for the two "fails closed on missing vocabulary/capability"
+///     adversarial examples from docs/LEXICAL-GROUNDING.md ("customers with big
+///     accounts" and "... last summer"), run against the real generated Supply
+///     Chain semantic contract rather than the toy model used in the core
+///     library's <c>SemanticLexicalResolverTests</c>.
+///     Both examples in the doc are refusals for a different reason than the
+///     tied-confidence case in <see cref="SupplyChainGroundingAmbiguityTests" />:
+///     here there is no candidate for the token at all, so the resolver has
+///     nothing to be ambiguous about. It must report
+///     <see cref="GroundingOutcome.Unresolved" /> and name the exact token that
+///     had no candidate, rather than silently dropping that part of the
+///     expression and executing the rest.
 /// </summary>
 public sealed class SupplyChainGroundingUnresolvedTests
 {
@@ -85,11 +82,13 @@ public sealed class SupplyChainGroundingUnresolvedTests
     private sealed class FakeLexicalSource(params SemanticLexicalCandidate[] candidates)
         : ISemanticLexicalCandidateSource
     {
-        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request) =>
-            candidates
+        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request)
+        {
+            return candidates
                 .Where(x => string.Equals(x.Token, request.Token, StringComparison.OrdinalIgnoreCase))
                 .Where(x => request.EffectiveKinds.Contains(x.Kind))
                 .OrderByDescending(x => x.Score)
                 .ToArray();
+        }
     }
 }

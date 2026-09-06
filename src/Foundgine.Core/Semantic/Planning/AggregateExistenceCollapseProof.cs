@@ -1,13 +1,12 @@
 using Foundgine.Core.Semantic.Aggregates;
-using Foundgine.Core.Semantic.Query;
 
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Fail-closed proof for collapsing a predicate-bearing COUNT comparison into a relationship
-/// quantifier (SOME/NONE). Unlike aggregate substitution, this rewrite changes the surface
-/// operation from an aggregate predicate to a relationship quantifier, so provider support for
-/// relationship quantifiers is an explicit proof dimension.
+///     Fail-closed proof for collapsing a predicate-bearing COUNT comparison into a relationship
+///     quantifier (SOME/NONE). Unlike aggregate substitution, this rewrite changes the surface
+///     operation from an aggregate predicate to a relationship quantifier, so provider support for
+///     relationship quantifiers is an explicit proof dimension.
 /// </summary>
 public sealed record AggregateExistenceCollapseProof(
     SemanticEquivalenceProof SemanticEquivalence,

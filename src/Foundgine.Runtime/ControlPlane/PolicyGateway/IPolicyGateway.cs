@@ -5,10 +5,10 @@ using Foundgine.Runtime.ControlPlane.ToolRegistry;
 namespace Foundgine.Runtime.ControlPlane.PolicyGateway;
 
 /// <summary>
-/// A single policy concern. Rules abstain (return null) rather than allow by
-/// default, so silence never grants access — only an explicit
-/// <see cref="PolicyDecision.Allow"/> from some rule, or the gateway's own
-/// no-rules-registered default, does.
+///     A single policy concern. Rules abstain (return null) rather than allow by
+///     default, so silence never grants access — only an explicit
+///     <see cref="PolicyDecision.Allow" /> from some rule, or the gateway's own
+///     no-rules-registered default, does.
 /// </summary>
 public interface IPolicyRule
 {
@@ -21,12 +21,12 @@ public interface IPolicyGateway
 }
 
 /// <summary>
-/// Evaluates every registered rule and resolves conflicts with a fixed
-/// precedence: any <see cref="PolicyOutcome.Deny"/> wins outright; otherwise
-/// any <see cref="PolicyOutcome.RequireApproval"/> wins; otherwise the call
-/// is allowed only if at least one rule explicitly allowed it. An empty
-/// rule set denies by default — governance with no configured policy must
-/// not silently permit everything.
+///     Evaluates every registered rule and resolves conflicts with a fixed
+///     precedence: any <see cref="PolicyOutcome.Deny" /> wins outright; otherwise
+///     any <see cref="PolicyOutcome.RequireApproval" /> wins; otherwise the call
+///     is allowed only if at least one rule explicitly allowed it. An empty
+///     rule set denies by default — governance with no configured policy must
+///     not silently permit everything.
 /// </summary>
 public sealed class DefaultPolicyGateway : IPolicyGateway
 {
@@ -62,7 +62,7 @@ public sealed class DefaultPolicyGateway : IPolicyGateway
             return allow;
 
         return PolicyDecision.Deny(
-            policyId: "control-plane.default",
-            reason: "No policy rule explicitly allowed this tool call.");
+            "control-plane.default",
+            "No policy rule explicitly allowed this tool call.");
     }
 }

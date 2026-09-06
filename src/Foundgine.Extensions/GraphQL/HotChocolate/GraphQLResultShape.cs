@@ -1,4 +1,5 @@
 using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate;
 
@@ -13,6 +14,5 @@ public sealed record GraphQLResultShape(
     IReadOnlyList<GraphQLResultField> Fields);
 
 public sealed record GraphQLQueryAdaptation(
-    Foundgine.Core.Semantic.SemanticRequest Request,
+    SemanticRequest Request,
     GraphQLResultShape Result);
-

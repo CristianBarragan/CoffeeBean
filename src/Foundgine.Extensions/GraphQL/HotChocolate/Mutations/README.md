@@ -1,11 +1,13 @@
 # Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Mutations
 
-`Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Mutations` is the translation layer for Hot Chocolate GraphQL mutations.
+`Foundgine.Extensions.GraphQL.HotChocolate.HotChocolate.Mutations` is the translation layer for Hot Chocolate GraphQL
+mutations.
 
 ## What is in this package
 
 - `HotChocolateMutationAdapter` — adapts GraphQL mutation operations into Foundgine mutation intent.
-- `GraphQLMutationSemanticConverter` — converts GraphQL mutation input into provider-independent semantic mutation operations.
+- `GraphQLMutationSemanticConverter` — converts GraphQL mutation input into provider-independent semantic mutation
+  operations.
 - `GraphQLMutationResultShaping` — shapes Foundgine mutation results for GraphQL.
 
 ## Boundary

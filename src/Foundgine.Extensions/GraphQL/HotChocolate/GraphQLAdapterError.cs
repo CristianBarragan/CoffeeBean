@@ -1,8 +1,8 @@
 namespace Foundgine.Extensions.GraphQL.HotChocolate;
 
 /// <summary>
-/// Structured GraphQL-facing adapter error. The core Foundgine pipeline remains
-/// exception/transport agnostic; hosts can map this error to GraphQL errors.
+///     Structured GraphQL-facing adapter error. The core Foundgine pipeline remains
+///     exception/transport agnostic; hosts can map this error to GraphQL errors.
 /// </summary>
 public sealed record GraphQLAdapterError(
     string Code,
@@ -18,11 +18,15 @@ public sealed record GraphQLAdapterResult<T>(
     public bool IsSuccess => Succeeded;
     public GraphQLAdapterError? Error => Errors.FirstOrDefault();
 
-    public static GraphQLAdapterResult<T> Success(T data) =>
-        new(data, Array.Empty<GraphQLAdapterError>());
+    public static GraphQLAdapterResult<T> Success(T data)
+    {
+        return new GraphQLAdapterResult<T>(data, Array.Empty<GraphQLAdapterError>());
+    }
 
-    public static GraphQLAdapterResult<T> Failure(GraphQLAdapterError error) =>
-        new(default, [error]);
+    public static GraphQLAdapterResult<T> Failure(GraphQLAdapterError error)
+    {
+        return new(default, [error]);
+    }
 }
 
 public static class GraphQLAdapterErrorCode
@@ -34,7 +38,7 @@ public static class GraphQLAdapterErrorCode
 }
 
 /// <summary>
-/// Converts adapter failures into stable GraphQL-facing error categories.
+///     Converts adapter failures into stable GraphQL-facing error categories.
 /// </summary>
 public static class GraphQLAdapterErrors
 {

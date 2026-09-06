@@ -8,7 +8,7 @@ services:
     ports:
       - "${POSTGRES_HOST_PORT:-54329}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U benchmark -d foundgine_benchmark"]
+      test: [ "CMD-SHELL", "pg_isready -U benchmark -d foundgine_benchmark" ]
       interval: 2s
       timeout: 5s
       retries: 30
@@ -20,7 +20,7 @@ services:
       BankingConnectionString: Host=postgres;Port=5432;Database=foundgine_benchmark;Username=benchmark;Password=benchmark
     depends_on:
       postgres: { condition: service_healthy }
-    ports: ["4411:8080"]
+    ports: [ "4411:8080" ]
   mcp-foundgine:
     build:
       context: ../../../
@@ -29,4 +29,4 @@ services:
       BankingConnectionString: Host=postgres;Port=5432;Database=foundgine_benchmark;Username=benchmark;Password=benchmark
     depends_on:
       postgres: { condition: service_healthy }
-    ports: ["4412:8080"]
+    ports: [ "4412:8080" ]

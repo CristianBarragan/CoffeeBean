@@ -8,15 +8,15 @@ public enum AuditCategory
     ApprovalRequested,
     ApprovalDecided,
     Routed,
-    Denied,
+    Denied
 }
 
 /// <summary>
-/// An immutable record of one governance step for one tool call. Events
-/// carry a fingerprint rather than raw request/result payloads, the same
-/// evidence-not-payload discipline used by
-/// <see cref="Foundgine.Core.Execution.ExecutionReceipt"/>, so the audit
-/// log can be retained and shipped without duplicating domain data.
+///     An immutable record of one governance step for one tool call. Events
+///     carry a fingerprint rather than raw request/result payloads, the same
+///     evidence-not-payload discipline used by
+///     <see cref="Foundgine.Core.Execution.ExecutionReceipt" />, so the audit
+///     log can be retained and shipped without duplicating domain data.
 /// </summary>
 public sealed record AuditEvent(
     AuditCategory Category,
@@ -33,6 +33,8 @@ public sealed record AuditEvent(
         string actor,
         string? tenant,
         string fingerprint,
-        string summary) =>
-        new(category, toolName, actor, tenant, fingerprint, summary, DateTimeOffset.UtcNow);
+        string summary)
+    {
+        return new AuditEvent(category, toolName, actor, tenant, fingerprint, summary, DateTimeOffset.UtcNow);
+    }
 }

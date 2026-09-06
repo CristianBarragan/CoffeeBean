@@ -1,7 +1,6 @@
 using Foundgine.SupplyChain.Advanced.Data;
 using Foundgine.SupplyChain.Advanced.Domain;
 using Foundgine.SupplyChain.Advanced.Scenarios;
-using Xunit;
 
 namespace Foundgine.SupplyChain.Advanced.Tests;
 
@@ -20,7 +19,8 @@ public sealed class AdversarialInvariantTests
     public void Fails_when_authorization_context_leaks_a_cross_tenant_warehouse()
     {
         var data = SupplyChainData.Seed();
-        var leakyAuth = new AuthorizationContext("tenant-a", new HashSet<WarehouseId> { new(1), new(2), new(3) }, true, true);
+        var leakyAuth =
+            new AuthorizationContext("tenant-a", new HashSet<WarehouseId> { new(1), new(2), new(3) }, true, true);
         var exception = Record.Exception(() => SupplyChainScenarios.AssertAdversarialInvariants(data, leakyAuth));
         Assert.IsType<InvalidOperationException>(exception);
         Assert.Contains("tenant-b", exception!.Message, StringComparison.OrdinalIgnoreCase);
@@ -34,7 +34,8 @@ public sealed class AdversarialInvariantTests
         data.Products.Add(new Product(new ProductId(1), "MOTOR-X", "Industrial Motor", "Motors", 30));
         data.Products.Add(new Product(new ProductId(2), "CTRL-X", "Motor Controller", "Controls", 40));
         data.Components.Add(new ProductComponent(new ProductId(1), new ProductId(2), 1));
-        data.Certifications.Add(new SupplierCertification(new CertificationId(1), new SupplierId(1), "ISO9001", new DateOnly(2024, 1, 1), new DateOnly(2024, 12, 31)));
+        data.Certifications.Add(new SupplierCertification(new CertificationId(1), new SupplierId(1), "ISO9001",
+            new DateOnly(2024, 1, 1), new DateOnly(2024, 12, 31)));
         var auth = new AuthorizationContext("tenant-a", new HashSet<WarehouseId> { new(1) }, true, true);
         var exception = Record.Exception(() => SupplyChainScenarios.AssertAdversarialInvariants(data, auth));
         Assert.IsType<InvalidOperationException>(exception);
@@ -53,7 +54,8 @@ public sealed class AdversarialInvariantTests
         data.Components.Add(new ProductComponent(new ProductId(1), new ProductId(2), 1));
         data.Components.Add(new ProductComponent(new ProductId(2), new ProductId(3), 1));
         data.Components.Add(new ProductComponent(new ProductId(3), new ProductId(1), 1));
-        data.Certifications.Add(new SupplierCertification(new CertificationId(1), new SupplierId(3), "ISO9001", new DateOnly(2026, 1, 1), new DateOnly(2027, 12, 31)));
+        data.Certifications.Add(new SupplierCertification(new CertificationId(1), new SupplierId(3), "ISO9001",
+            new DateOnly(2026, 1, 1), new DateOnly(2027, 12, 31)));
         var auth = new AuthorizationContext("tenant-a", new HashSet<WarehouseId> { new(1) }, true, true);
         var exception = Record.Exception(() => SupplyChainScenarios.AssertAdversarialInvariants(data, auth));
         Assert.IsType<InvalidOperationException>(exception);

@@ -1,13 +1,10 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using Foundgine.Core.Semantic.IR;
 
 namespace Foundgine.Core.Semantic.Authorization;
 
 /// <summary>
-/// Immutable authorization evidence bound to the exact semantic contract that
-/// was evaluated. Evidence from one contract cannot be replayed against another.
+///     Immutable authorization evidence bound to the exact semantic contract that
+///     was evaluated. Evidence from one contract cannot be replayed against another.
 /// </summary>
 public sealed record SemanticAuthorizationEvidence(
     string ContractFingerprint,

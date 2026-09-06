@@ -1,14 +1,12 @@
-using Foundgine.Core.Semantic;
-
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Adds a cardinality-aware traversal hint to relationship nodes.
-/// One-to-one traversals are marked as SingleHop; collection traversals are
-/// marked SetBased. The rule never changes topology, fields, filters,
-/// authorization, pagination, or relationship identity. Providers may use the
-/// hint to choose a cheaper physical traversal strategy when they can prove it
-/// is safe.
+///     Adds a cardinality-aware traversal hint to relationship nodes.
+///     One-to-one traversals are marked as SingleHop; collection traversals are
+///     marked SetBased. The rule never changes topology, fields, filters,
+///     authorization, pagination, or relationship identity. Providers may use the
+///     hint to choose a cheaper physical traversal strategy when they can prove it
+///     is safe.
 /// </summary>
 public sealed class RelationshipTraversalOptimizationRule : IPlanRewriteRule
 {
@@ -80,7 +78,9 @@ public sealed class RelationshipTraversalOptimizationRule : IPlanRewriteRule
             : node;
     }
 
-    private static bool ContainsEligible(SemanticPlanNode node) =>
-        (node.ViaRelationship is not null && node.RelationshipCardinality is not null) ||
-        node.Children.Any(ContainsEligible);
+    private static bool ContainsEligible(SemanticPlanNode node)
+    {
+        return (node.ViaRelationship is not null && node.RelationshipCardinality is not null) ||
+               node.Children.Any(ContainsEligible);
+    }
 }

@@ -1,12 +1,10 @@
-using Microsoft.EntityFrameworkCore;
-
 namespace Foundgine.HighAssurance.EfCore;
 
 /// <summary>
-/// EF Core mapping onto the same `banking` schema used by
-/// Foundgine.HighAssurance.Postgres (schema.sql). No shadow migrations are
-/// generated from this context — the schema is owned by schema.sql and this
-/// context is mapped onto it read/write.
+///     EF Core mapping onto the same `banking` schema used by
+///     Foundgine.HighAssurance.Postgres (schema.sql). No shadow migrations are
+///     generated from this context — the schema is owned by schema.sql and this
+///     context is mapped onto it read/write.
 /// </summary>
 public sealed class BankingDbContext : DbContext
 {

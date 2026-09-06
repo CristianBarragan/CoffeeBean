@@ -1,9 +1,6 @@
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
-using Foundgine.Extensions.GraphQL.HotChocolate;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Query;
-using Xunit;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
@@ -26,13 +23,13 @@ public sealed class RelationshipOrderingTests
             .Build();
 
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query {
-              customer(order: { profile: { displayName: DESC } }) {
-                id
-                profile { displayName }
-              }
-            }
-            """);
+                                                                   query {
+                                                                     customer(order: { profile: { displayName: DESC } }) {
+                                                                       id
+                                                                       profile { displayName }
+                                                                     }
+                                                                   }
+                                                                   """);
 
         var term = Assert.Single(request.Options!.EffectiveOrder);
         Assert.Equal(new FieldId(2), term.Field);
@@ -58,13 +55,13 @@ public sealed class RelationshipOrderingTests
 
         var exception = Assert.Throws<NotSupportedException>(() =>
             new HotChocolateSemanticAdapter(model).Adapt("""
-                query {
-                  customer(order: { accounts: { balance: DESC } }) {
-                    id
-                    accounts { balance }
-                  }
-                }
-                """));
+                                                         query {
+                                                           customer(order: { accounts: { balance: DESC } }) {
+                                                             id
+                                                             accounts { balance }
+                                                           }
+                                                         }
+                                                         """));
 
         Assert.Contains("collection relationship", exception.Message, StringComparison.OrdinalIgnoreCase);
     }

@@ -1,6 +1,5 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Authorization;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -66,30 +65,6 @@ public sealed class SemanticAuthorizationCapabilityCompositionTests
 
 public sealed class AuthorizationOperationNamePolicyTests
 {
-    private sealed class CoarseOnlyPolicy : ISemanticAuthorizationPolicy
-    {
-        public bool CanAccessEntity(EntityId entityId) => true;
-        public bool CanAccessField(EntityId entityId, FieldId fieldId) => true;
-        public bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId) => true;
-        public bool CanWriteEntity(EntityId entityId) => true;
-    }
-
-    private sealed class NamedOperationPolicy : ISemanticAuthorizationPolicy
-    {
-        public bool CanAccessEntity(EntityId entityId) => true;
-        public bool CanAccessField(EntityId entityId, FieldId fieldId) => true;
-        public bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId) => true;
-        public bool CanWriteEntity(EntityId entityId) => true;
-
-        public AuthorizationDecision GetEntityAccess(
-            EntityId entityId,
-            AuthorizationOperation operation,
-            AuthorizationOperationName? name) =>
-            name is { Value: "Invoice.Pay" }
-                ? AuthorizationDecision.Denied
-                : AuthorizationDecision.Allowed;
-    }
-
     [Fact]
     public void Default_named_overload_falls_back_to_coarse_decision()
     {
@@ -113,5 +88,61 @@ public sealed class AuthorizationOperationNamePolicyTests
 
         Assert.False(pay.IsAllowed);
         Assert.True(update.IsAllowed);
+    }
+
+    private sealed class CoarseOnlyPolicy : ISemanticAuthorizationPolicy
+    {
+        public bool CanAccessEntity(EntityId entityId)
+        {
+            return true;
+        }
+
+        public bool CanAccessField(EntityId entityId, FieldId fieldId)
+        {
+            return true;
+        }
+
+        public bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId)
+        {
+            return true;
+        }
+
+        public bool CanWriteEntity(EntityId entityId)
+        {
+            return true;
+        }
+    }
+
+    private sealed class NamedOperationPolicy : ISemanticAuthorizationPolicy
+    {
+        public bool CanAccessEntity(EntityId entityId)
+        {
+            return true;
+        }
+
+        public bool CanAccessField(EntityId entityId, FieldId fieldId)
+        {
+            return true;
+        }
+
+        public bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId)
+        {
+            return true;
+        }
+
+        public bool CanWriteEntity(EntityId entityId)
+        {
+            return true;
+        }
+
+        public AuthorizationDecision GetEntityAccess(
+            EntityId entityId,
+            AuthorizationOperation operation,
+            AuthorizationOperationName? name)
+        {
+            return name is { Value: "Invoice.Pay" }
+                ? AuthorizationDecision.Denied
+                : AuthorizationDecision.Allowed;
+        }
     }
 }

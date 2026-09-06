@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-
 namespace Foundgine.Core.Semantic.Security.Warrants;
 
 public interface ISecurityWarrantKeyResolver
@@ -59,7 +57,8 @@ public static class SecurityWarrantVerifier
         if (expectedAudience is not null && !StringComparer.Ordinal.Equals(warrant.Audience, expectedAudience))
             throw new InvalidOperationException("Security warrant audience is not trusted.");
 
-        var key = keys.Resolve(warrant.KeyId) ?? throw new InvalidOperationException($"Unknown warrant key '{warrant.KeyId}'.");
+        var key = keys.Resolve(warrant.KeyId) ??
+                  throw new InvalidOperationException($"Unknown warrant key '{warrant.KeyId}'.");
         var valid = key.VerifyData(
             SecurityWarrantCanonicalizer.UnsignedBytes(warrant with { Signature = [] }),
             warrant.Signature,

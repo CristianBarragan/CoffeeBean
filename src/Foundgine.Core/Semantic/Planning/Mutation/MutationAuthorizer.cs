@@ -6,14 +6,14 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.Planning.Mutation;
 
 /// <summary>
-/// Applies semantic write authorization to a provider-independent mutation
-/// plan. It deliberately sits outside MutationPlanner so planning remains a
-/// structural concern while policy remains a semantic concern.
+///     Applies semantic write authorization to a provider-independent mutation
+///     plan. It deliberately sits outside MutationPlanner so planning remains a
+///     structural concern while policy remains a semantic concern.
 /// </summary>
 public sealed class MutationAuthorizer
 {
-    private readonly IMutationSchema _schema;
     private readonly ISemanticAuthorizationPolicy _policy;
+    private readonly IMutationSchema _schema;
 
     public MutationAuthorizer(IMutationSchema schema, ISemanticAuthorizationPolicy policy)
     {
@@ -31,10 +31,10 @@ public sealed class MutationAuthorizer
 
 
     /// <summary>
-    /// Authorizes the canonical semantic mutation plan directly. The authorized
-    /// semantic representation is therefore the same representation that is
-    /// subsequently lowered for execution; no independently reconstructed batch
-    /// can become the execution source of truth.
+    ///     Authorizes the canonical semantic mutation plan directly. The authorized
+    ///     semantic representation is therefore the same representation that is
+    ///     subsequently lowered for execution; no independently reconstructed batch
+    ///     can become the execution source of truth.
     /// </summary>
     public SemanticMutationPlan Authorize(SemanticMutationPlan plan)
     {
@@ -116,11 +116,9 @@ public sealed class MutationAuthorizer
         }
 
         foreach (var fieldId in operation.ReturnFields ?? Array.Empty<FieldId>())
-        {
             RequireAllowed(
                 _policy.GetFieldAccess(entity.Id, fieldId, AuthorizationOperation.Read),
                 $"read return field '{entity.Name}.{fieldId.Value}'");
-        }
 
         ValidateFilter(operation.Filter, entity);
     }
@@ -154,9 +152,11 @@ public sealed class MutationAuthorizer
                 {
                     var aggregateRelationshipSchema = _schema.GetRelationship(aggregate.Relationship);
                     RequireAllowed(
-                        _policy.GetFieldAccess(aggregateRelationshipSchema.Target, aggregateField, AuthorizationOperation.Read),
+                        _policy.GetFieldAccess(aggregateRelationshipSchema.Target, aggregateField,
+                            AuthorizationOperation.Read),
                         $"aggregate filter field '{aggregateField.Value}'");
                 }
+
                 break;
 
             case SemanticAndFilter and:

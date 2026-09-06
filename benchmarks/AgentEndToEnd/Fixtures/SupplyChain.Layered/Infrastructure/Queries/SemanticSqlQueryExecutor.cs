@@ -1,13 +1,10 @@
-using System.Security.Cryptography;
-using System.Text;
 using Foundgine.Core.Execution;
-using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.IR;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Providers.Storage.Sql;
-using Npgsql;
 using Foundgine.Providers.Storage.Sql.Query;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
@@ -15,10 +12,10 @@ namespace Foundgine.SupplyChain.Infrastructure.Queries;
 
 public sealed class SemanticSqlQueryExecutor
 {
-    private readonly NpgsqlDataSource _dataSource;
-    private readonly Planner _planner;
-    private readonly IMetadataProvider _metadata;
     private readonly SemanticContractSnapshot _contract;
+    private readonly NpgsqlDataSource _dataSource;
+    private readonly IMetadataProvider _metadata;
+    private readonly Planner _planner;
 
     public SemanticSqlQueryExecutor(
         NpgsqlDataSource dataSource,
@@ -33,12 +30,11 @@ public sealed class SemanticSqlQueryExecutor
     }
 
     /// <summary>
-    /// Executes a canonical operation for the legacy SupplyChain sample.
-    ///
-    /// The application capability layer is the caller-facing authorization
-    /// boundary for this sample. The executor still converts the operation into
-    /// an authorization-bound result before planning, so the provider never
-    /// receives an unbound operation.
+    ///     Executes a canonical operation for the legacy SupplyChain sample.
+    ///     The application capability layer is the caller-facing authorization
+    ///     boundary for this sample. The executor still converts the operation into
+    ///     an authorization-bound result before planning, so the provider never
+    ///     receives an unbound operation.
     /// </summary>
     public Task<(IReadOnlyList<ExecutionRow> Rows, string Fingerprint)> ExecuteAsync(
         SemanticOperation operation,
@@ -87,14 +83,16 @@ public sealed class SemanticSqlQueryExecutor
 
     private static string Fingerprint(
         string sql,
-        IEnumerable<SqlParameterBinding> parameters) =>
-        Convert.ToHexString(
-            SHA256.HashData(
-                Encoding.UTF8.GetBytes(
-                    sql + "|" +
-                    string.Join(
-                        ';',
-                        parameters.Select(x =>
-                            $"{x.Name}:{x.Value}")))))
-        .ToLowerInvariant()[..24];
+        IEnumerable<SqlParameterBinding> parameters)
+    {
+        return Convert.ToHexString(
+                SHA256.HashData(
+                    Encoding.UTF8.GetBytes(
+                        sql + "|" +
+                        string.Join(
+                            ';',
+                            parameters.Select(x =>
+                                $"{x.Name}:{x.Value}")))))
+            .ToLowerInvariant()[..24];
+    }
 }

@@ -1,17 +1,16 @@
 ﻿using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Query;
 
 namespace Foundgine.Core.Execution;
 
 /// <summary>
-/// Canonical provider-neutral execution representation.
-///
-/// Semantic IR answers what the operation means. Execution IR answers what
-/// provider-neutral work must be performed. It deliberately contains no SQL,
-/// storage names, provider types, aliases, or connection details.
+///     Canonical provider-neutral execution representation.
+///     Semantic IR answers what the operation means. Execution IR answers what
+///     provider-neutral work must be performed. It deliberately contains no SQL,
+///     storage names, provider types, aliases, or connection details.
 /// </summary>
 public sealed record ExecutionIR(
     ExecutionIRNode Root,
@@ -23,8 +22,8 @@ public sealed record ExecutionIR(
         ArgumentNullException.ThrowIfNull(plan);
 
         var binding = plan.AuthorizationBinding
-            ?? throw new InvalidOperationException(
-                "An executable plan must carry authorization provenance.");
+                      ?? throw new InvalidOperationException(
+                          "An executable plan must carry authorization provenance.");
 
         return new ExecutionIR(
             ExecutionIRNode.From(plan.Root),
@@ -45,8 +44,9 @@ public sealed record ExecutionIRNode(
     AuthorizationPredicate? Authorization = null,
     AggregateExecutionStrategy AggregateExecutionStrategy = AggregateExecutionStrategy.Default)
 {
-    internal static ExecutionIRNode From(SemanticPlanNode node) =>
-        new(
+    internal static ExecutionIRNode From(SemanticPlanNode node)
+    {
+        return new(
             node.Id,
             node.Operation,
             node.EntityId,
@@ -57,11 +57,12 @@ public sealed record ExecutionIRNode(
             node.QueryOptions,
             node.Authorization,
             node.AggregateExecutionStrategy);
+    }
 }
 
 /// <summary>
-/// Explicit lowering boundary from the planner's semantic plan to the
-/// provider-neutral execution representation.
+///     Explicit lowering boundary from the planner's semantic plan to the
+///     provider-neutral execution representation.
 /// </summary>
 public static class ExecutionIRCompiler
 {

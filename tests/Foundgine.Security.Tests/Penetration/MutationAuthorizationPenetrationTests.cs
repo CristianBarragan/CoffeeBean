@@ -1,9 +1,8 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Mutation;
+using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Core.Semantic.Query;
-using Xunit;
 
 namespace Foundgine.Security.Tests.Penetration;
 
@@ -15,11 +14,13 @@ public sealed class MutationAuthorizationPenetrationTests
     {
         var entity = Entity(1, "Account", (1, 11), (2, 12));
         var schema = new TestSchema(entity);
-        var plan = new MutationPlan([new MutationOperation(
-            entity,
-            MutationKind.Update,
-            [new MutationFieldValue(new ColumnId(12), "attacker")],
-            null)]);
+        var plan = new MutationPlan([
+            new MutationOperation(
+                entity,
+                MutationKind.Update,
+                [new MutationFieldValue(new ColumnId(12), "attacker")],
+                null)
+        ]);
 
         var exception = Assert.Throws<SemanticAuthorizationException>(() =>
             new MutationAuthorizer(schema, new AllowOnlyFieldPolicy(new FieldId(1))).Authorize(plan));
@@ -32,12 +33,14 @@ public sealed class MutationAuthorizationPenetrationTests
     {
         var entity = Entity(1, "Account", (1, 11), (2, 12));
         var schema = new TestSchema(entity);
-        var plan = new MutationPlan([new MutationOperation(
-            entity,
-            MutationKind.Update,
-            [],
-            null,
-            ReturnFields: [new FieldId(2)])]);
+        var plan = new MutationPlan([
+            new MutationOperation(
+                entity,
+                MutationKind.Update,
+                [],
+                null,
+                ReturnFields: [new FieldId(2)])
+        ]);
 
         Assert.Throws<SemanticAuthorizationException>(() =>
             new MutationAuthorizer(schema, new AllowOnlyFieldPolicy(new FieldId(1))).Authorize(plan));
@@ -120,21 +123,40 @@ public sealed class MutationAuthorizationPenetrationTests
 
     private static MutationEntitySchema Entity(int id, string name, params (int Field, int Column)[] fields)
     {
-        var map = fields.ToDictionary(x => new FieldId((ushort)x.Field), x => (ColumnId?)new ColumnId((ushort)x.Column));
+        var map = fields.ToDictionary(x => new FieldId((ushort)x.Field),
+            x => (ColumnId?)new ColumnId((ushort)x.Column));
         var columns = map.Values.Select(x => x!.Value).ToHashSet();
         return new MutationEntitySchema(new EntityId((ushort)id), name, columns, map, columns.First());
     }
 
     private sealed class AllowOnlyFieldPolicy(FieldId allowed) : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanWriteEntity(EntityId entityId) => true;
-        public override bool CanWriteField(EntityId entityId, FieldId fieldId) => fieldId == allowed;
-        public override bool CanAccessField(EntityId entityId, FieldId fieldId) => fieldId == allowed;
+        public override bool CanWriteEntity(EntityId entityId)
+        {
+            return true;
+        }
+
+        public override bool CanWriteField(EntityId entityId, FieldId fieldId)
+        {
+            return fieldId == allowed;
+        }
+
+        public override bool CanAccessField(EntityId entityId, FieldId fieldId)
+        {
+            return fieldId == allowed;
+        }
     }
 
     private sealed class TestSchema(MutationEntitySchema entity) : IMutationSchema
     {
-        public MutationEntitySchema GetEntity(EntityId entityId) => entity.Id == entityId ? entity : throw new KeyNotFoundException();
-        public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId) => throw new KeyNotFoundException();
+        public MutationEntitySchema GetEntity(EntityId entityId)
+        {
+            return entity.Id == entityId ? entity : throw new KeyNotFoundException();
+        }
+
+        public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId)
+        {
+            throw new KeyNotFoundException();
+        }
     }
 }

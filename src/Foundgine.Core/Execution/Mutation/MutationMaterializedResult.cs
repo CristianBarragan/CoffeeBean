@@ -3,8 +3,8 @@ using Foundgine.Core.Abstractions;
 namespace Foundgine.Core.Execution.Mutation;
 
 /// <summary>
-/// Semantic result of a mutation tree. The tree mirrors the nested mutation
-/// intent rather than the provider's flat operation list.
+///     Semantic result of a mutation tree. The tree mirrors the nested mutation
+///     intent rather than the provider's flat operation list.
 /// </summary>
 public sealed record MutationMaterializedResult(
     IReadOnlyList<MutationMaterializedNode> Roots)
@@ -35,8 +35,10 @@ public sealed class MutationMaterializedNode
             x => x.Key,
             x => (IReadOnlyList<MutationMaterializedNode>)x.Value);
 
-    internal List<MutationMaterializedNode> GetChildren(RelationshipId relationshipId) =>
-        _children.TryGetValue(relationshipId, out var children)
+    internal List<MutationMaterializedNode> GetChildren(RelationshipId relationshipId)
+    {
+        return _children.TryGetValue(relationshipId, out var children)
             ? children
             : _children[relationshipId] = [];
+    }
 }

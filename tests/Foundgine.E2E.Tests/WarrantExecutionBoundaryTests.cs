@@ -1,7 +1,4 @@
-using System.Security.Cryptography;
-using Foundgine.Core.Semantic.Security.Execution;
 using Foundgine.Core.Semantic.Security.Warrants;
-using Xunit;
 
 namespace Foundgine.E2E.Tests;
 
@@ -72,7 +69,9 @@ public sealed class WarrantExecutionBoundaryTests
 
     private sealed class TestKeyResolver(string id, RSA key) : ISecurityWarrantKeyResolver
     {
-        public RSA Resolve(string keyId) =>
-            StringComparer.Ordinal.Equals(id, keyId) ? key : throw new InvalidOperationException();
+        public RSA Resolve(string keyId)
+        {
+            return StringComparer.Ordinal.Equals(id, keyId) ? key : throw new InvalidOperationException();
+        }
     }
 }

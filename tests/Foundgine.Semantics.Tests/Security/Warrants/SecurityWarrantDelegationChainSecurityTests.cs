@@ -1,5 +1,4 @@
 using Foundgine.Core.Semantic.Security.Warrants;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests.Security.Warrants;
 
@@ -107,28 +106,38 @@ public sealed class SecurityWarrantDelegationChainSecurityTests
     {
         var now = DateTimeOffset.UtcNow;
         var root = Create(now);
-        var duplicate = root with { ParentId = root.Id, ParentDigest = root.Digest, Issuer = root.Subject, DelegationPath = [root.Digest] };
+        var duplicate = root with
+        {
+            ParentId = root.Id, ParentDigest = root.Digest, Issuer = root.Subject, DelegationPath = [root.Digest]
+        };
 
         Assert.Throws<InvalidOperationException>(() =>
             SecurityWarrantDelegationChainValidator.Validate([root, duplicate], now));
     }
 
-    private static SecurityWarrant Child(SecurityWarrant parent, string id, string subject) => parent with
+    private static SecurityWarrant Child(SecurityWarrant parent, string id, string subject)
     {
-        Id = id,
-        Subject = subject,
-        Issuer = parent.Subject,
-        ParentId = parent.Id,
-        ParentDigest = parent.Digest,
-        DelegationPath = [.. parent.DelegationPath, parent.Digest],
-        IssuedAt = parent.IssuedAt,
-        ExpiresAt = parent.ExpiresAt.AddMinutes(-1),
-        Signature = []
-    };
+        return parent with
+        {
+            Id = id,
+            Subject = subject,
+            Issuer = parent.Subject,
+            ParentId = parent.Id,
+            ParentDigest = parent.Digest,
+            DelegationPath = [.. parent.DelegationPath, parent.Digest],
+            IssuedAt = parent.IssuedAt,
+            ExpiresAt = parent.ExpiresAt.AddMinutes(-1),
+            Signature = []
+        };
+    }
 
-    private static SecurityWarrant Create(DateTimeOffset now) => new(
-        "root", "root-issuer", "agent-a", "foundgine",
-        [new CapabilityGrant("Customer.read", "read", ["customer/*"])],
-        new SecurityWarrantConstraints(allowedTenants: ["tenant-1"], resourceScopes: ["customer/*"], maxResults: 100),
-        now.AddMinutes(-1), now.AddHours(1), "nonce-root", "key-root", null, []);
+    private static SecurityWarrant Create(DateTimeOffset now)
+    {
+        return new(
+            "root", "root-issuer", "agent-a", "foundgine",
+            [new CapabilityGrant("Customer.read", "read", ["customer/*"])],
+            new SecurityWarrantConstraints(allowedTenants: ["tenant-1"], resourceScopes: ["customer/*"],
+                maxResults: 100),
+            now.AddMinutes(-1), now.AddHours(1), "nonce-root", "key-root", null, []);
+    }
 }

@@ -1,7 +1,4 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning;
-using Foundgine.Core.Semantic;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
@@ -75,6 +72,8 @@ public sealed class ConnectionPlanningTests
         Assert.Equal("TenantId", child.Authorization.Right!.Name);
     }
 
-    private static SemanticPlanNode childPlan(SemanticPlan plan) =>
-        Assert.Single(plan.Root.Children);
+    private static SemanticPlanNode childPlan(SemanticPlan plan)
+    {
+        return Assert.Single(plan.Root.Children);
+    }
 }

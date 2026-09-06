@@ -1,27 +1,29 @@
 using Foundgine.Core.Abstractions;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed class ProviderAwareCostSelectionTests
 {
-    private static SemanticPlan Plan() => new(new SemanticPlanNode(
-        1,
-        ExecutionOperation.Scan,
-        new EntityId(1),
-        [new FieldId(1)],
-        null,
-        null,
-        [],
-        Authorization: AuthorizationPredicate.Equal(
-            AuthorizationPredicate.Member(AuthorizationPredicate.ResourceParameter("resource"), "TenantId"),
-            AuthorizationPredicate.Member(AuthorizationPredicate.ContextParameter("user"), "TenantId"))));
+    private static SemanticPlan Plan()
+    {
+        return new SemanticPlan(new SemanticPlanNode(
+            1,
+            ExecutionOperation.Scan,
+            new EntityId(1),
+            [new FieldId(1)],
+            null,
+            null,
+            [],
+            Authorization: AuthorizationPredicate.Equal(
+                AuthorizationPredicate.Member(AuthorizationPredicate.ResourceParameter("resource"), "TenantId"),
+                AuthorizationPredicate.Member(AuthorizationPredicate.ContextParameter("user"), "TenantId"))));
+    }
 
     [Fact]
     public void Provider_cost_can_change_rule_selection()
     {
-        var cheap = new SelectionRule("test.cheap", benefit: 5d, cost: 0d);
-        var expensive = new SelectionRule("test.expensive", benefit: 8d, cost: 0d);
+        var cheap = new SelectionRule("test.cheap", 5d, 0d);
+        var expensive = new SelectionRule("test.expensive", 8d, 0d);
         var estimator = new FakeProviderCostEstimator((_, _, rule) =>
             rule.Name == "test.expensive"
                 ? ProviderCostEstimate.From("test-provider", 100d, 10d, 0.9d)
@@ -42,7 +44,7 @@ public sealed class ProviderAwareCostSelectionTests
     [Fact]
     public void Provider_cost_is_advisory_and_does_not_replace_proof_checks()
     {
-        var rule = new SelectionRule("test.invalid", benefit: 1000d, cost: 0d, changesMeaning: true);
+        var rule = new SelectionRule("test.invalid", 1000d, 0d, true);
         var estimator = new FakeProviderCostEstimator((_, _, _) =>
             ProviderCostEstimate.From("test-provider", 0d, 1d, 1d));
 
@@ -56,7 +58,7 @@ public sealed class ProviderAwareCostSelectionTests
     [Fact]
     public void Provider_selection_history_contains_estimate_and_score()
     {
-        var rule = new SelectionRule("test.rule", benefit: 4d, cost: 2d);
+        var rule = new SelectionRule("test.rule", 4d, 2d);
         var estimator = new FakeProviderCostEstimator((_, _, _) =>
             ProviderCostEstimate.From("test-provider", 3d, 12d, 0.75d));
 
@@ -77,8 +79,10 @@ public sealed class ProviderAwareCostSelectionTests
     {
         public string Provider => "test-provider";
 
-        public ProviderCostEstimate Estimate(SemanticPlan before, SemanticPlan candidate, IPlanRewriteRule rule) =>
-            estimate(before, candidate, rule);
+        public ProviderCostEstimate Estimate(SemanticPlan before, SemanticPlan candidate, IPlanRewriteRule rule)
+        {
+            return estimate(before, candidate, rule);
+        }
     }
 
     private sealed class SelectionRule(
@@ -92,10 +96,17 @@ public sealed class ProviderAwareCostSelectionTests
         public IReadOnlyList<string> SecurityObligations => ["authorization.required"];
         public double CostImpact => cost;
         public double BenefitEstimate => benefit;
-        public bool CanApply(SemanticPlan plan) => true;
 
-        public SemanticPlan Apply(SemanticPlan plan) => changesMeaning
-            ? plan with { Root = plan.Root with { Fields = [new FieldId(99)] } }
-            : plan;
+        public bool CanApply(SemanticPlan plan)
+        {
+            return true;
+        }
+
+        public SemanticPlan Apply(SemanticPlan plan)
+        {
+            return changesMeaning
+                ? plan with { Root = plan.Root with { Fields = [new FieldId(99)] } }
+                : plan;
+        }
     }
 }

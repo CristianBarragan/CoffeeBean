@@ -1,7 +1,3 @@
-using System.Collections.Concurrent;
-using System.Security.Cryptography;
-using System.Text;
-
 namespace Foundgine.Core.Semantic.Security.Warrants;
 
 /// <summary>Lifecycle state of a delegation issuer signing key.</summary>
@@ -34,8 +30,8 @@ public sealed record DelegationIssuerTrustSnapshot(
 }
 
 /// <summary>
-/// Provides a versioned, execution-time view of delegation trust. Implementations must
-/// publish trust and key-state changes atomically under one monotonically increasing sequence.
+///     Provides a versioned, execution-time view of delegation trust. Implementations must
+///     publish trust and key-state changes atomically under one monotonically increasing sequence.
 /// </summary>
 public interface ISecurityWarrantDelegationTrustStateResolver : ISecurityWarrantDelegationTrustResolver
 {
@@ -52,33 +48,20 @@ public sealed class MemorySecurityWarrantDelegationTrustStateStore : ISecurityWa
 
     public long CurrentSequence
     {
-        get { lock (_gate) return _sequence; }
+        get
+        {
+            lock (_gate)
+            {
+                return _sequence;
+            }
+        }
     }
 
     public DelegationIssuerTrust? Resolve(string issuer)
     {
         lock (_gate)
+        {
             return _trust.TryGetValue(issuer, out var value) ? value : null;
-    }
-
-    public void Set(DelegationIssuerTrust trust)
-    {
-        ArgumentNullException.ThrowIfNull(trust);
-        if (string.IsNullOrWhiteSpace(trust.Issuer))
-            throw new ArgumentException("Issuer is required.", nameof(trust));
-        lock (_gate)
-        {
-            _trust[trust.Issuer] = trust;
-            checked { _sequence++; }
-        }
-    }
-
-    public void Remove(string issuer)
-    {
-        lock (_gate)
-        {
-            _trust.Remove(issuer);
-            checked { _sequence++; }
         }
     }
 
@@ -98,6 +81,33 @@ public sealed class MemorySecurityWarrantDelegationTrustStateStore : ISecurityWa
                 Fingerprint(trust),
                 keyId,
                 state);
+        }
+    }
+
+    public void Set(DelegationIssuerTrust trust)
+    {
+        ArgumentNullException.ThrowIfNull(trust);
+        if (string.IsNullOrWhiteSpace(trust.Issuer))
+            throw new ArgumentException("Issuer is required.", nameof(trust));
+        lock (_gate)
+        {
+            _trust[trust.Issuer] = trust;
+            checked
+            {
+                _sequence++;
+            }
+        }
+    }
+
+    public void Remove(string issuer)
+    {
+        lock (_gate)
+        {
+            _trust.Remove(issuer);
+            checked
+            {
+                _sequence++;
+            }
         }
     }
 

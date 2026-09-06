@@ -1,12 +1,13 @@
 using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Query;
 
 namespace Foundgine.Core.Semantic;
 
 /// <summary>
-/// The canonical request graph. It contains only semantic/domain topology.
-/// It must not contain SQL, GraphQL, provider nodes, aliases, or storage SQL.
-/// A node may be reached through either a relational relationship or an AOT
-/// semantic connection. A connection is a pre-resolved communication edge.
+///     The canonical request graph. It contains only semantic/domain topology.
+///     It must not contain SQL, GraphQL, provider nodes, aliases, or storage SQL.
+///     A node may be reached through either a relational relationship or an AOT
+///     semantic connection. A connection is a pre-resolved communication edge.
 /// </summary>
 public sealed class SemanticGraph
 {
@@ -17,7 +18,7 @@ public sealed class SemanticGraph
     {
     }
 
-    internal SemanticGraph(IEnumerable<SemanticGraphNode> nodes, Foundgine.Core.Semantic.Query.SemanticQueryOptions? options)
+    internal SemanticGraph(IEnumerable<SemanticGraphNode> nodes, SemanticQueryOptions? options)
     {
         _nodes.AddRange(nodes);
         Options = options;
@@ -25,13 +26,13 @@ public sealed class SemanticGraph
 
     public IReadOnlyList<SemanticGraphNode> Nodes => _nodes;
 
-    public Foundgine.Core.Semantic.Query.SemanticQueryOptions? Options { get; internal set; }
+    public SemanticQueryOptions? Options { get; internal set; }
 
     /// <summary>
-    /// Returns a semantic graph with an authorization predicate attached to an
-    /// existing node. The graph topology and query options are preserved.
-    /// This is the boundary used when policy is supplied after intent
-    /// resolution but before planning.
+    ///     Returns a semantic graph with an authorization predicate attached to an
+    ///     existing node. The graph topology and query options are preserved.
+    ///     This is the boundary used when policy is supplied after intent
+    ///     resolution but before planning.
     /// </summary>
     public SemanticGraph WithAuthorization(int nodeId, AuthorizationPredicate authorization)
     {
@@ -52,40 +53,48 @@ public sealed class SemanticGraph
     public SemanticGraphNode AddRoot(
         EntityId entityId,
         IEnumerable<FieldId>? fields = null,
-        AuthorizationPredicate? authorization = null) =>
-        Add(entityId, null, null, null, fields, authorization);
+        AuthorizationPredicate? authorization = null)
+    {
+        return Add(entityId, null, null, null, fields, authorization);
+    }
 
     /// <summary>
-    /// Adds a node reached through an AOT semantic connection. The connection
-    /// identifies the pre-resolved communication edge; the target entity is
-    /// already known and remains the only storage-side identity in the graph.
+    ///     Adds a node reached through an AOT semantic connection. The connection
+    ///     identifies the pre-resolved communication edge; the target entity is
+    ///     already known and remains the only storage-side identity in the graph.
     /// </summary>
     public SemanticGraphNode AddConnection(
         EntityId entityId,
         ConnectionId connectionId,
         SemanticGraphNode parent,
         IEnumerable<FieldId>? fields = null,
-        AuthorizationPredicate? authorization = null) =>
-        Add(entityId, null, connectionId, parent, fields, authorization);
+        AuthorizationPredicate? authorization = null)
+    {
+        return Add(entityId, null, connectionId, parent, fields, authorization);
+    }
 
     public SemanticGraphNode Add(
         EntityId entityId,
         RelationshipId? relationshipId,
         SemanticGraphNode? parent,
-        IEnumerable<FieldId>? fields = null) =>
-        Add(entityId, relationshipId, parent, fields, null);
+        IEnumerable<FieldId>? fields = null)
+    {
+        return Add(entityId, relationshipId, parent, fields, null);
+    }
 
     /// <summary>
-    /// Adds a node reached through a semantic relationship while preserving
-    /// the AOT authorization predicate attached to that node.
+    ///     Adds a node reached through a semantic relationship while preserving
+    ///     the AOT authorization predicate attached to that node.
     /// </summary>
     public SemanticGraphNode Add(
         EntityId entityId,
         RelationshipId? relationshipId,
         SemanticGraphNode? parent,
         IEnumerable<FieldId>? fields,
-        AuthorizationPredicate? authorization) =>
-        Add(entityId, relationshipId, null, parent, fields, authorization);
+        AuthorizationPredicate? authorization)
+    {
+        return Add(entityId, relationshipId, null, parent, fields, authorization);
+    }
 
     private SemanticGraphNode Add(
         EntityId entityId,
@@ -96,7 +105,8 @@ public sealed class SemanticGraph
         AuthorizationPredicate? authorization = null)
     {
         if (relationshipId is not null && connectionId is not null)
-            throw new ArgumentException("A semantic node cannot be reached through both a relationship and a connection.");
+            throw new ArgumentException(
+                "A semantic node cannot be reached through both a relationship and a connection.");
 
         if (parent is null && connectionId is not null)
             throw new ArgumentException("A root semantic node cannot be reached through a connection.");
@@ -143,9 +153,10 @@ public sealed record SemanticGraphNode(
 
     /// <summary>Provider-neutral semantic constraints relevant to this node.</summary>
     public IReadOnlyList<SemanticConstraint> SemanticConstraints { get; init; } = [];
+
     /// <summary>
-    /// Fields selected for this entity in the request. These are semantic
-    /// field identities only; no provider/storage information is carried.
+    ///     Fields selected for this entity in the request. These are semantic
+    ///     field identities only; no provider/storage information is carried.
     /// </summary>
     public IReadOnlyList<FieldId> Fields { get; init; } = [];
 }

@@ -1,27 +1,22 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Providers.Storage.PostgresVector;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Resolution;
-using Npgsql;
-using Xunit;
+using Foundgine.Providers.Storage.PostgresVector;
 
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-/// PostgreSQL + pgvector E2E physical proof for Foundgine's lexical grounding
-/// pipeline:
-///
-/// Semantic contract -> lexicon projection -> embedding -> pgvector index
-/// -> nearest-neighbor retrieval -> graph-constrained resolution.
-///
-/// The pgvector index/candidate source never decides what a token means; it
-/// only proposes ranked hypotheses. <see cref="SemanticLexicalResolver"/>
-/// remains authoritative for graph topology and path legality, which this
-/// test proves end-to-end against a real PostgreSQL 17 + pgvector instance.
-///
-/// Skipped unless FOUNDGINE_POSTGRES_CONNECTION_STRING is configured. The
-/// docker-compose image (pgvector/pgvector:pg17) is required because a
-/// vanilla postgres:17 image cannot satisfy `CREATE EXTENSION vector`.
+///     PostgreSQL + pgvector E2E physical proof for Foundgine's lexical grounding
+///     pipeline:
+///     Semantic contract -> lexicon projection -> embedding -> pgvector index
+///     -> nearest-neighbor retrieval -> graph-constrained resolution.
+///     The pgvector index/candidate source never decides what a token means; it
+///     only proposes ranked hypotheses. <see cref="SemanticLexicalResolver" />
+///     remains authoritative for graph topology and path legality, which this
+///     test proves end-to-end against a real PostgreSQL 17 + pgvector instance.
+///     Skipped unless FOUNDGINE_POSTGRES_CONNECTION_STRING is configured. The
+///     docker-compose image (pgvector/pgvector:pg17) is required because a
+///     vanilla postgres:17 image cannot satisfy `CREATE EXTENSION vector`.
 /// </summary>
 public sealed class PostgresVectorE2ETests
 {
@@ -49,9 +44,9 @@ public sealed class PostgresVectorE2ETests
         // (see PgVectorOptions default of 1536); the pipeline being proved
         // here does not depend on a specific dimension.
         var options = new PgVectorOptions(
-            TableName: $"fg_vector_lexicon_test_{Guid.NewGuid():N}",
-            Dimensions: 64,
-            Distance: PgVectorDistance.Cosine);
+            $"fg_vector_lexicon_test_{Guid.NewGuid():N}",
+            64,
+            PgVectorDistance.Cosine);
 
         var embeddings = new HashedBagOfWordsEmbeddingGenerator(options.Dimensions);
 
@@ -106,8 +101,8 @@ public sealed class PostgresVectorE2ETests
         var connectionString = Environment.GetEnvironmentVariable("FOUNDGINE_POSTGRES_CONNECTION_STRING")!;
 
         var options = new PgVectorOptions(
-            TableName: $"fg_vector_schema_test_{Guid.NewGuid():N}",
-            Dimensions: 8);
+            $"fg_vector_schema_test_{Guid.NewGuid():N}",
+            8);
 
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
         dataSourceBuilder.UseVector();
@@ -136,27 +131,31 @@ public sealed class PostgresVectorE2ETests
     }
 
     /// <summary>
-    /// Deterministic, dependency-free stand-in for a real embedding model.
-    /// Text is embedded as an L2-normalized bag-of-words vector hashed into a
-    /// fixed number of buckets, so shared words between the query token and
-    /// an indexed lexicon entry's search text increase cosine similarity —
-    /// enough signal to prove the real pgvector round trip without shipping
-    /// a production embedding dependency into the test suite.
+    ///     Deterministic, dependency-free stand-in for a real embedding model.
+    ///     Text is embedded as an L2-normalized bag-of-words vector hashed into a
+    ///     fixed number of buckets, so shared words between the query token and
+    ///     an indexed lexicon entry's search text increase cosine similarity —
+    ///     enough signal to prove the real pgvector round trip without shipping
+    ///     a production embedding dependency into the test suite.
     /// </summary>
     private sealed class HashedBagOfWordsEmbeddingGenerator(int dimensions) : ISemanticEmbeddingGenerator
     {
-        public Task<float[]> EmbedAsync(string text, CancellationToken cancellationToken = default) =>
-            Task.FromResult(Embed(text));
+        public Task<float[]> EmbedAsync(string text, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(Embed(text));
+        }
 
         public Task<IReadOnlyList<float[]>> EmbedManyAsync(
-            IReadOnlyList<string> texts, CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyList<float[]>>(texts.Select(Embed).ToArray());
+            IReadOnlyList<string> texts, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<float[]>>(texts.Select(Embed).ToArray());
+        }
 
         private float[] Embed(string text)
         {
             var vector = new float[dimensions];
             foreach (var word in text.ToLowerInvariant().Split(
-                (char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+                         (char[]?)null, StringSplitOptions.RemoveEmptyEntries))
             {
                 var bucket = (int)(StableHash(word) % (uint)dimensions);
                 vector[bucket] += 1f;
@@ -164,9 +163,8 @@ public sealed class PostgresVectorE2ETests
 
             var norm = MathF.Sqrt(vector.Sum(x => x * x));
             if (norm > 0f)
-            {
-                for (var i = 0; i < vector.Length; i++) vector[i] /= norm;
-            }
+                for (var i = 0; i < vector.Length; i++)
+                    vector[i] /= norm;
 
             return vector;
         }

@@ -10,15 +10,15 @@ public interface IApprovalStore
 }
 
 /// <summary>
-/// Process-local approval store. A production deployment with real
-/// human-in-the-loop approvers should back <see cref="IApprovalStore"/>
-/// with durable storage — pending approvals must survive a process
-/// restart — but the interface and workflow shape stay the same.
+///     Process-local approval store. A production deployment with real
+///     human-in-the-loop approvers should back <see cref="IApprovalStore" />
+///     with durable storage — pending approvals must survive a process
+///     restart — but the interface and workflow shape stay the same.
 /// </summary>
 public sealed class InMemoryApprovalStore : IApprovalStore
 {
-    private readonly Dictionary<string, ApprovalRequest> _requests = new(StringComparer.Ordinal);
     private readonly Lock _gate = new();
+    private readonly Dictionary<string, ApprovalRequest> _requests = new(StringComparer.Ordinal);
 
     public ApprovalRequest Create(string requestFingerprint, int requiredApprovals = 1)
     {
@@ -27,6 +27,7 @@ public sealed class InMemoryApprovalStore : IApprovalStore
         {
             _requests[request.ApprovalId] = request;
         }
+
         return request;
     }
 

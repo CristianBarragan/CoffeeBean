@@ -1,13 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using Foundgine.Core.Abstractions;
-using Foundgine.Providers.Aot;
-using Foundgine.Providers.Aot.Generator;
+﻿using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Metadata;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Xunit;
+using Foundgine.Providers.Aot.Generator;
 
 namespace Foundgine.Providers.Aot.Tests;
 
@@ -17,38 +10,38 @@ public sealed class IdentityDeterminismTests
     public void Generated_entity_and_field_ids_are_independent_of_declaration_order()
     {
         const string first = """
-            using Foundgine.Providers.Aot;
+                             using Foundgine.Providers.Aot;
 
-            [FoundgineEntity(StorageName = "customers")]
-            public sealed class Customer
-            {
-                [FoundgineField(StorageName = "id")]
-                public int Id { get; init; }
+                             [FoundgineEntity(StorageName = "customers")]
+                             public sealed class Customer
+                             {
+                                 [FoundgineField(StorageName = "id")]
+                                 public int Id { get; init; }
 
-                [FoundgineField(StorageName = "name")]
-                public string Name { get; init; } = "";
+                                 [FoundgineField(StorageName = "name")]
+                                 public string Name { get; init; } = "";
 
-                [FoundgineField(StorageName = "status")]
-                public string Status { get; init; } = "";
-            }
-            """;
+                                 [FoundgineField(StorageName = "status")]
+                                 public string Status { get; init; } = "";
+                             }
+                             """;
 
         const string reordered = """
-            using Foundgine.Providers.Aot;
+                                 using Foundgine.Providers.Aot;
 
-            [FoundgineEntity(StorageName = "customers")]
-            public sealed class Customer
-            {
-                [FoundgineField(StorageName = "status")]
-                public string Status { get; init; } = "";
+                                 [FoundgineEntity(StorageName = "customers")]
+                                 public sealed class Customer
+                                 {
+                                     [FoundgineField(StorageName = "status")]
+                                     public string Status { get; init; } = "";
 
-                [FoundgineField(StorageName = "name")]
-                public string Name { get; init; } = "";
+                                     [FoundgineField(StorageName = "name")]
+                                     public string Name { get; init; } = "";
 
-                [FoundgineField(StorageName = "id")]
-                public int Id { get; init; }
-            }
-            """;
+                                     [FoundgineField(StorageName = "id")]
+                                     public int Id { get; init; }
+                                 }
+                                 """;
 
         var firstIds = GenerateIds(first);
         var reorderedIds = GenerateIds(reordered);
@@ -74,32 +67,32 @@ public sealed class IdentityDeterminismTests
     public void Existing_generated_ids_survive_adding_an_unrelated_module()
     {
         const string customer = """
-            using Foundgine.Providers.Aot;
+                                using Foundgine.Providers.Aot;
 
-            [FoundgineEntity(StorageName = "customers")]
-            public sealed class Customer
-            {
-                [FoundgineField(StorageName = "id")]
-                public int Id { get; init; }
+                                [FoundgineEntity(StorageName = "customers")]
+                                public sealed class Customer
+                                {
+                                    [FoundgineField(StorageName = "id")]
+                                    public int Id { get; init; }
 
-                [FoundgineField(StorageName = "name")]
-                public string Name { get; init; } = "";
-            }
-            """;
+                                    [FoundgineField(StorageName = "name")]
+                                    public string Name { get; init; } = "";
+                                }
+                                """;
 
         const string order = """
-            using Foundgine.Providers.Aot;
+                             using Foundgine.Providers.Aot;
 
-            [FoundgineEntity(StorageName = "orders")]
-            public sealed class Order
-            {
-                [FoundgineField(StorageName = "id")]
-                public int Id { get; init; }
+                             [FoundgineEntity(StorageName = "orders")]
+                             public sealed class Order
+                             {
+                                 [FoundgineField(StorageName = "id")]
+                                 public int Id { get; init; }
 
-                [FoundgineField(StorageName = "number")]
-                public string Number { get; init; } = "";
-            }
-            """;
+                                 [FoundgineField(StorageName = "number")]
+                                 public string Number { get; init; } = "";
+                             }
+                             """;
 
         var independent = GenerateIds(customer);
         var composed = GenerateIds(customer, order);
@@ -121,30 +114,30 @@ public sealed class IdentityDeterminismTests
     public void Generated_ids_are_identical_across_independent_compilations()
     {
         const string source = """
-            using Foundgine.Providers.Aot;
+                              using Foundgine.Providers.Aot;
 
-            [FoundgineEntity(
-                Name = "Customer",
-                StorageName = "customers")]
-            public sealed class Customer
-            {
-                [FoundgineField(StorageName = "id")]
-                public int Id { get; init; }
+                              [FoundgineEntity(
+                                  Name = "Customer",
+                                  StorageName = "customers")]
+                              public sealed class Customer
+                              {
+                                  [FoundgineField(StorageName = "id")]
+                                  public int Id { get; init; }
 
-                [FoundgineField(StorageName = "name")]
-                public string Name { get; init; } = "";
-            }
-            """;
+                                  [FoundgineField(StorageName = "name")]
+                                  public string Name { get; init; } = "";
+                              }
+                              """;
 
         var first =
             GenerateIds(
                 source,
-                assemblyName: "IdentityModuleA");
+                "IdentityModuleA");
 
         var second =
             GenerateIds(
                 source,
-                assemblyName: "IdentityModuleB");
+                "IdentityModuleB");
 
         Assert.Equal(
             first.EntityId,
@@ -155,47 +148,45 @@ public sealed class IdentityDeterminismTests
             second.Fields.Keys.OrderBy(x => x));
 
         foreach (var fieldName in first.Fields.Keys)
-        {
             Assert.Equal(
                 first.Fields[fieldName],
                 second.Fields[fieldName]);
-        }
     }
 
     [Fact]
     public void Changing_aliases_does_not_change_generated_identity()
     {
         const string withoutAliases = """
-            using Foundgine.Providers.Aot;
+                                      using Foundgine.Providers.Aot;
 
-            [FoundgineEntity(
-                Name = "Customer",
-                StorageName = "customers")]
-            public sealed class Customer
-            {
-                [FoundgineField(
-                    Name = "Name",
-                    StorageName = "name")]
-                public string Name { get; init; } = "";
-            }
-            """;
+                                      [FoundgineEntity(
+                                          Name = "Customer",
+                                          StorageName = "customers")]
+                                      public sealed class Customer
+                                      {
+                                          [FoundgineField(
+                                              Name = "Name",
+                                              StorageName = "name")]
+                                          public string Name { get; init; } = "";
+                                      }
+                                      """;
 
         const string withAliases = """
-            using Foundgine.Providers.Aot;
+                                   using Foundgine.Providers.Aot;
 
-            [FoundgineEntity(
-                Name = "Customer",
-                StorageName = "customers")]
-            [FoundgineAlias("Client")]
-            public sealed class Customer
-            {
-                [FoundgineField(
-                    Name = "Name",
-                    StorageName = "name")]
-                [FoundgineAlias("DisplayName")]
-                public string Name { get; init; } = "";
-            }
-            """;
+                                   [FoundgineEntity(
+                                       Name = "Customer",
+                                       StorageName = "customers")]
+                                   [FoundgineAlias("Client")]
+                                   public sealed class Customer
+                                   {
+                                       [FoundgineField(
+                                           Name = "Name",
+                                           StorageName = "name")]
+                                       [FoundgineAlias("DisplayName")]
+                                       public string Name { get; init; } = "";
+                                   }
+                                   """;
 
         var canonical = GenerateIds(withoutAliases);
         var aliased = GenerateIds(withAliases);
@@ -244,88 +235,88 @@ public sealed class IdentityDeterminismTests
 
     [Theory]
     [InlineData("""
-        using Foundgine.Providers.Aot;
+                using Foundgine.Providers.Aot;
 
-        [FoundgineEntity(Id = 0)]
-        public sealed class Customer { }
-        """)]
+                [FoundgineEntity(Id = 0)]
+                public sealed class Customer { }
+                """)]
     [InlineData("""
-        using Foundgine.Providers.Aot;
+                using Foundgine.Providers.Aot;
 
-        [FoundgineEntity]
-        public sealed class Customer
-        {
-            [FoundgineField(Id = 0)]
-            public int Id { get; init; }
-        }
-        """)]
+                [FoundgineEntity]
+                public sealed class Customer
+                {
+                    [FoundgineField(Id = 0)]
+                    public int Id { get; init; }
+                }
+                """)]
     [InlineData("""
-        using Foundgine.Providers.Aot;
+                using Foundgine.Providers.Aot;
 
-        [FoundgineEntity]
-        public sealed class Customer
-        {
-            [FoundgineField]
-            public int Id { get; init; }
+                [FoundgineEntity]
+                public sealed class Customer
+                {
+                    [FoundgineField]
+                    public int Id { get; init; }
 
-            [FoundgineRelationship(
-                typeof(Order),
-                "CustomerId",
-                "Id",
-                Id = 0)]
-            public Order Orders { get; init; } = null!;
-        }
+                    [FoundgineRelationship(
+                        typeof(Order),
+                        "CustomerId",
+                        "Id",
+                        Id = 0)]
+                    public Order Orders { get; init; } = null!;
+                }
 
-        [FoundgineEntity]
-        public sealed class Order
-        {
-            [FoundgineField]
-            public int Id { get; init; }
+                [FoundgineEntity]
+                public sealed class Order
+                {
+                    [FoundgineField]
+                    public int Id { get; init; }
 
-            [FoundgineField]
-            public int CustomerId { get; init; }
-        }
-        """)]
+                    [FoundgineField]
+                    public int CustomerId { get; init; }
+                }
+                """)]
     [InlineData("""
-        using Foundgine.Providers.Aot;
+                using Foundgine.Providers.Aot;
 
-        [FoundgineEntity]
-        public sealed class Customer
-        {
-            [FoundgineField(ColumnId = 0)]
-            public int Id { get; init; }
-        }
-        """)]
+                [FoundgineEntity]
+                public sealed class Customer
+                {
+                    [FoundgineField(ColumnId = 0)]
+                    public int Id { get; init; }
+                }
+                """)]
     [InlineData("""
-        using System;
-        using System.Linq.Expressions;
-        using Foundgine.Providers.Aot;
+                using System;
+                using System.Linq.Expressions;
+                using Foundgine.Providers.Aot;
 
-        [FoundgineEntity(Id = 1)]
-        public sealed class Customer
-        {
-            public int Id { get; init; }
-        }
+                [FoundgineEntity(Id = 1)]
+                public sealed class Customer
+                {
+                    public int Id { get; init; }
+                }
 
-        [FoundgineModel(Id = 2)]
-        public sealed class CustomerModel
-        {
-            public object Customer => null!;
-        }
+                [FoundgineModel(Id = 2)]
+                public sealed class CustomerModel
+                {
+                    public object Customer => null!;
+                }
 
-        public static class CustomerAuthorization
-        {
-            [FoundgineAuthorization(1, Id = 0)]
-            public static Expression<Func<object, Customer, bool>> CanVisit =>
-                (context, customer) => true;
-        }
-        """)]
+                public static class CustomerAuthorization
+                {
+                    [FoundgineAuthorization(1, Id = 0)]
+                    public static Expression<Func<object, Customer, bool>> CanVisit =>
+                        (context, customer) => true;
+                }
+                """)]
     [InlineData("""
-        using Foundgine.Providers.Aot;
+                using Foundgine.Providers.Aot;
 
-        [FoundgineModel(Id = 0)]
-        public sealed class CustomerModel { }
-        """)]
+                [FoundgineModel(Id = 0)]
+                public sealed class CustomerModel { }
+                """)]
     public void Explicit_zero_ids_are_rejected_by_the_generator(
         string source)
     {
@@ -346,14 +337,14 @@ public sealed class IdentityDeterminismTests
     public void Duplicate_explicit_entity_ids_are_rejected()
     {
         const string source = """
-            using Foundgine.Providers.Aot;
+                              using Foundgine.Providers.Aot;
 
-            [FoundgineEntity(Id = 77)]
-            public sealed class Customer { }
+                              [FoundgineEntity(Id = 77)]
+                              public sealed class Customer { }
 
-            [FoundgineEntity(Id = 77)]
-            public sealed class Account { }
-            """;
+                              [FoundgineEntity(Id = 77)]
+                              public sealed class Account { }
+                              """;
 
         var result = RunGenerator(source);
 
@@ -368,16 +359,20 @@ public sealed class IdentityDeterminismTests
 
     private static IdentitySnapshot GenerateIds(
         params string[] sources)
-        => GenerateIds(
+    {
+        return GenerateIds(
             sources,
             "IdentityRegression");
+    }
 
     private static IdentitySnapshot GenerateIds(
         string source,
         string assemblyName)
-        => GenerateIds(
+    {
+        return GenerateIds(
             new[] { source },
             assemblyName);
+    }
 
     private static IdentitySnapshot GenerateIds(
         string[] sources,
@@ -392,10 +387,9 @@ public sealed class IdentityDeterminismTests
             result.OutputCompilation.SyntaxTrees
                 .Select(tree =>
                     tree.GetText().ToString())
-                .FirstOrDefault(
-                    text => text.Contains(
-                        "public static class GeneratedMetadata",
-                        System.StringComparison.Ordinal));
+                .FirstOrDefault(text => text.Contains(
+                    "public static class GeneratedMetadata",
+                    System.StringComparison.Ordinal));
 
         Assert.False(
             string.IsNullOrWhiteSpace(generated),
@@ -435,9 +429,11 @@ public sealed class IdentityDeterminismTests
     private static GeneratorRunResultSnapshot RunGenerator(
         string source,
         string assemblyName = "IdentityRegression")
-        => RunGenerator(
+    {
+        return RunGenerator(
             new[] { source },
             assemblyName);
+    }
 
     private static GeneratorRunResultSnapshot RunGenerator(
         IEnumerable<string> sources,
@@ -445,13 +441,12 @@ public sealed class IdentityDeterminismTests
     {
         var syntaxTrees =
             sources
-                .Select(
-                    (text, index) =>
-                        CSharpSyntaxTree.ParseText(
-                            text,
-                            new CSharpParseOptions(
-                                LanguageVersion.Preview),
-                            path: $"Module{index}.cs"))
+                .Select((text, index) =>
+                    CSharpSyntaxTree.ParseText(
+                        text,
+                        new CSharpParseOptions(
+                            LanguageVersion.Preview),
+                        path: $"Module{index}.cs"))
                 .ToArray();
 
         var references =
@@ -468,7 +463,7 @@ public sealed class IdentityDeterminismTests
 
                     MetadataReference.CreateFromFile(
                         typeof(
-                            Foundgine.Core.Abstractions.SemanticIdentity)
+                                SemanticIdentity)
                             .Assembly.Location)
                 })
                 .GroupBy(
@@ -493,8 +488,8 @@ public sealed class IdentityDeterminismTests
                         .AsSourceGenerator()
                 },
                 parseOptions:
-                    new CSharpParseOptions(
-                        LanguageVersion.Preview));
+                new CSharpParseOptions(
+                    LanguageVersion.Preview));
 
         driver = driver.RunGeneratorsAndUpdateCompilation(
             compilation,
@@ -520,9 +515,8 @@ public sealed class IdentityDeterminismTests
 
         return trusted!
             .Split(System.IO.Path.PathSeparator)
-            .Select(
-                path => (MetadataReference)
-                    MetadataReference.CreateFromFile(path));
+            .Select(path => (MetadataReference)
+                MetadataReference.CreateFromFile(path));
     }
 
     private sealed record IdentitySnapshot(

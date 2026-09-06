@@ -1,12 +1,10 @@
-using Foundgine.SupplyChain.Advanced.Authorization;
-
 namespace Foundgine.SupplyChain.Advanced.Authorization.Claims;
 
 /// <summary>
-/// Validates and parses the raw string value of one recognized claim key.
-/// Recognized keys are registered against an instance of this per key in a
-/// <see cref="ClaimSchema"/>, instead of being interleaved inside one large
-/// switch statement.
+///     Validates and parses the raw string value of one recognized claim key.
+///     Recognized keys are registered against an instance of this per key in a
+///     <see cref="ClaimSchema" />, instead of being interleaved inside one large
+///     switch statement.
 /// </summary>
 public interface IClaimValidator
 {
@@ -14,9 +12,9 @@ public interface IClaimValidator
     string Key { get; }
 
     /// <summary>
-    /// Validates <paramref name="rawValue"/>. Returns the typed, parsed value on
-    /// success so callers who want more than the raw string (see
-    /// <see cref="ClaimsValidationResult.TypedAccepted"/>) don't have to re-parse it.
+    ///     Validates <paramref name="rawValue" />. Returns the typed, parsed value on
+    ///     success so callers who want more than the raw string (see
+    ///     <see cref="ClaimsValidationResult.TypedAccepted" />) don't have to re-parse it.
     /// </summary>
     (bool Ok, string? Reason, object? Value) Validate(string rawValue);
 }
@@ -24,20 +22,23 @@ public interface IClaimValidator
 /// <summary>Typed base class for a single claim key's validator.</summary>
 public abstract class ClaimValidator<T> : IClaimValidator
 {
-    protected ClaimValidator(string key) => Key = key;
+    protected ClaimValidator(string key)
+    {
+        Key = key;
+    }
 
     public string Key { get; }
-
-    public abstract (bool Ok, string? Reason, T? Value) Parse(string rawValue);
 
     (bool Ok, string? Reason, object? Value) IClaimValidator.Validate(string rawValue)
     {
         var (ok, reason, value) = Parse(rawValue);
         return (ok, reason, value);
     }
+
+    public abstract (bool Ok, string? Reason, T? Value) Parse(string rawValue);
 }
 
-/// <summary>A <see cref="ClaimValidator{T}"/> built from a plain parsing function, to avoid a class-per-key.</summary>
+/// <summary>A <see cref="ClaimValidator{T}" /> built from a plain parsing function, to avoid a class-per-key.</summary>
 public sealed class DelegateClaimValidator<T> : ClaimValidator<T>
 {
     private readonly Func<string, (bool Ok, string? Reason, T? Value)> _parse;
@@ -48,5 +49,8 @@ public sealed class DelegateClaimValidator<T> : ClaimValidator<T>
         _parse = parse ?? throw new ArgumentNullException(nameof(parse));
     }
 
-    public override (bool Ok, string? Reason, T? Value) Parse(string rawValue) => _parse(rawValue);
+    public override (bool Ok, string? Reason, T? Value) Parse(string rawValue)
+    {
+        return _parse(rawValue);
+    }
 }

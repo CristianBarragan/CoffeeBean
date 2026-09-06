@@ -26,17 +26,19 @@ public sealed class InMemoryDataSet
         return this;
     }
 
-    internal IReadOnlyList<InMemoryRow> Get(EntityId entityId) =>
-        _rows.TryGetValue(entityId, out var rows) ? rows : [];
+    internal IReadOnlyList<InMemoryRow> Get(EntityId entityId)
+    {
+        return _rows.TryGetValue(entityId, out var rows) ? rows : [];
+    }
 }
 
 public sealed record InMemoryPlan(ExecutionIR IR) : ProviderPlan("in-memory");
 
 /// <summary>
-/// Executes the provider-neutral execution IR directly over CLR data. It deliberately
-/// has no SQL dependency and uses metadata only to resolve relationships.
-/// This provider is intentionally small: its purpose is to prove that the
-/// execution plan is not merely SQL with the SQL removed.
+///     Executes the provider-neutral execution IR directly over CLR data. It deliberately
+///     has no SQL dependency and uses metadata only to resolve relationships.
+///     This provider is intentionally small: its purpose is to prove that the
+///     execution plan is not merely SQL with the SQL removed.
 /// </summary>
 public sealed class InMemoryExecutionProvider : IExecutionProvider
 {
@@ -50,31 +52,34 @@ public sealed class InMemoryExecutionProvider : IExecutionProvider
     public Task<ExecutionResult> ExecuteAsync(
         ProviderPlan plan,
         ExecutionContext context,
-        CancellationToken cancellationToken = default) =>
-        _compiler.ExecuteAsync(plan, context, cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        return _compiler.ExecuteAsync(plan, context, cancellationToken);
+    }
 }
 
-public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+    IProviderSecurityConformanceEvaluator
 {
-    private readonly IMetadataProvider? _metadata;
     private readonly InMemoryDataSet? _data;
+    private readonly IMetadataProvider? _metadata;
 
-    public InMemoryCompiler() { }
-
-    public IReadOnlyCollection<string> PreservedSecurityInvariants =>
-    [
-        SecurityInvariantIds.AuthorizationRequired,
-        SecurityInvariantIds.RuntimeAuthorization,
-        SecurityInvariantIds.FieldVisibility,
-        SecurityInvariantIds.RelationshipVisibility,
-        SecurityInvariantIds.ParameterizedValues,
-        SecurityInvariantIds.PlanCacheContextIsolation
-    ];
+    public InMemoryCompiler()
+    {
+    }
 
     public InMemoryCompiler(IMetadataProvider metadata, InMemoryDataSet data)
     {
         _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
         _data = data ?? throw new ArgumentNullException(nameof(data));
+    }
+
+    public ProviderPlan Compile(ExecutionIR ir)
+    {
+        ArgumentNullException.ThrowIfNull(ir);
+        var plan = new InMemoryPlan(ir);
+        ExecutionIRBoundary.BindProviderPlan(ir, plan);
+        return plan;
     }
 
     public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
@@ -95,22 +100,30 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
 
         // The concrete plan must carry the same IR that was certified.
         if (!ReferenceEquals(memoryPlan.IR, ir))
-            violations = violations.Append("The certified InMemoryPlan does not reference the supplied ExecutionIR.").ToArray();
+            violations = violations.Append("The certified InMemoryPlan does not reference the supplied ExecutionIR.")
+                .ToArray();
 
         return new ProviderSecurityConformanceResult(
             memoryPlan.Provider, required, satisfied, violations);
     }
 
-    /// <summary>Compatibility bridge for callers holding a semantic plan.
-    /// Lowering remains explicit and provider-neutral.</summary>
-    public ProviderPlan Compile(SemanticPlan plan) => Compile(ExecutionIRCompiler.Compile(plan));
+    public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+    [
+        SecurityInvariantIds.AuthorizationRequired,
+        SecurityInvariantIds.RuntimeAuthorization,
+        SecurityInvariantIds.FieldVisibility,
+        SecurityInvariantIds.RelationshipVisibility,
+        SecurityInvariantIds.ParameterizedValues,
+        SecurityInvariantIds.PlanCacheContextIsolation
+    ];
 
-    public ProviderPlan Compile(ExecutionIR ir)
+    /// <summary>
+    ///     Compatibility bridge for callers holding a semantic plan.
+    ///     Lowering remains explicit and provider-neutral.
+    /// </summary>
+    public ProviderPlan Compile(SemanticPlan plan)
     {
-        ArgumentNullException.ThrowIfNull(ir);
-        var plan = new InMemoryPlan(ir);
-        ExecutionIRBoundary.BindProviderPlan(ir, plan);
-        return plan;
+        return Compile(ExecutionIRCompiler.Compile(plan));
     }
 
 
@@ -127,8 +140,9 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
 
         cancellationToken.ThrowIfCancellationRequested();
         if (_metadata is null || _data is null)
-            throw new InvalidOperationException("InMemoryCompiler execution requires metadata and data. Construct it with InMemoryCompiler(metadata, data).");
-        var rows = ExecuteNode(memoryPlan.IR.Root, context, cancellationToken, null, isRoot: true).ToList();
+            throw new InvalidOperationException(
+                "InMemoryCompiler execution requires metadata and data. Construct it with InMemoryCompiler(metadata, data).");
+        var rows = ExecuteNode(memoryPlan.IR.Root, context, cancellationToken, null, true).ToList();
         return Task.FromResult(new ExecutionResult(rows));
     }
 
@@ -155,7 +169,7 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
             cancellationToken.ThrowIfCancellationRequested();
             var childRows = new List<IReadOnlyList<ExecutionRow>>();
             foreach (var child in node.Children)
-                childRows.Add(ExecuteNode(child, context, cancellationToken, row, isRoot: false).ToArray());
+                childRows.Add(ExecuteNode(child, context, cancellationToken, row, false).ToArray());
 
             if (node.Children.Count == 0)
             {
@@ -178,7 +192,8 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
         if (child.ViaRelationship is not { } relationshipId)
             throw new NotSupportedException("The in-memory provider currently supports relationship traversal only.");
 
-        var metadata = _metadata ?? throw new InvalidOperationException("InMemoryCompiler requires metadata for execution.");
+        var metadata = _metadata ??
+                       throw new InvalidOperationException("InMemoryCompiler requires metadata for execution.");
         var data = _data ?? throw new InvalidOperationException("InMemoryCompiler requires data for execution.");
         var source = metadata.GetRelationship(relationshipId);
         var sourceField = FieldForColumn(source.Source, source.SourceKey.ColumnId);
@@ -205,9 +220,14 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
         {
             Func<InMemoryRow, object?> key = row => row.Values.TryGetValue(term.Field, out var value) ? value : null;
             ordered = ordered is null
-                ? (term.Direction == SemanticSortDirection.Asc ? rows.OrderBy(key, Comparer<object?>.Create(Compare)) : rows.OrderByDescending(key, Comparer<object?>.Create(Compare)))
-                : (term.Direction == SemanticSortDirection.Asc ? ordered.ThenBy(key, Comparer<object?>.Create(Compare)) : ordered.ThenByDescending(key, Comparer<object?>.Create(Compare)));
+                ? term.Direction == SemanticSortDirection.Asc
+                    ? rows.OrderBy(key, Comparer<object?>.Create(Compare))
+                    : rows.OrderByDescending(key, Comparer<object?>.Create(Compare))
+                : term.Direction == SemanticSortDirection.Asc
+                    ? ordered.ThenBy(key, Comparer<object?>.Create(Compare))
+                    : ordered.ThenByDescending(key, Comparer<object?>.Create(Compare));
         }
+
         rows = ordered ?? rows;
 
         if (options.Offset is { } offset)
@@ -217,32 +237,46 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
         return rows;
     }
 
-    private static bool EvaluateFilter(SemanticFilterExpression filter, InMemoryRow row, EntityId entityId) => filter switch
+    private static bool EvaluateFilter(SemanticFilterExpression filter, InMemoryRow row, EntityId entityId)
     {
-        SemanticFieldFilter f => CompareValue(row.Values.TryGetValue(f.Field, out var v) ? v : null, f.Operator, f.Value),
-        SemanticAndFilter a => a.Expressions.All(x => EvaluateFilter(x, row, entityId)),
-        SemanticOrFilter o => o.Expressions.Any(x => EvaluateFilter(x, row, entityId)),
-        _ => throw new NotSupportedException($"In-memory filter '{filter.GetType().Name}' is not implemented.")
-    };
-
-    private static bool CompareValue(object? actual, SemanticFilterOperator op, object? expected) => op switch
-    {
-        SemanticFilterOperator.Eq => Equals(actual, expected),
-        SemanticFilterOperator.Neq => !Equals(actual, expected),
-        SemanticFilterOperator.In => expected is System.Collections.IEnumerable values && values.Cast<object?>().Any(x => Equals(actual, x)),
-        _ => false
-    };
-
-    private bool EvaluateAuthorization(AuthorizationPredicate predicate, InMemoryRow row, ExecutionContext context) =>
-        predicate.Kind switch
+        return filter switch
         {
-            AuthorizationPredicateKind.Equal => Equals(EvaluateValue(predicate.Left!, row, context), EvaluateValue(predicate.Right!, row, context)),
-            AuthorizationPredicateKind.NotEqual => !Equals(EvaluateValue(predicate.Left!, row, context), EvaluateValue(predicate.Right!, row, context)),
-            AuthorizationPredicateKind.And => EvaluateAuthorization(predicate.Left!, row, context) && EvaluateAuthorization(predicate.Right!, row, context),
-            AuthorizationPredicateKind.Or => EvaluateAuthorization(predicate.Left!, row, context) || EvaluateAuthorization(predicate.Right!, row, context),
+            SemanticFieldFilter f => CompareValue(row.Values.TryGetValue(f.Field, out var v) ? v : null, f.Operator,
+                f.Value),
+            SemanticAndFilter a => a.Expressions.All(x => EvaluateFilter(x, row, entityId)),
+            SemanticOrFilter o => o.Expressions.Any(x => EvaluateFilter(x, row, entityId)),
+            _ => throw new NotSupportedException($"In-memory filter '{filter.GetType().Name}' is not implemented.")
+        };
+    }
+
+    private static bool CompareValue(object? actual, SemanticFilterOperator op, object? expected)
+    {
+        return op switch
+        {
+            SemanticFilterOperator.Eq => Equals(actual, expected),
+            SemanticFilterOperator.Neq => !Equals(actual, expected),
+            SemanticFilterOperator.In => expected is System.Collections.IEnumerable values &&
+                                         values.Cast<object?>().Any(x => Equals(actual, x)),
+            _ => false
+        };
+    }
+
+    private bool EvaluateAuthorization(AuthorizationPredicate predicate, InMemoryRow row, ExecutionContext context)
+    {
+        return predicate.Kind switch
+        {
+            AuthorizationPredicateKind.Equal => Equals(EvaluateValue(predicate.Left!, row, context),
+                EvaluateValue(predicate.Right!, row, context)),
+            AuthorizationPredicateKind.NotEqual => !Equals(EvaluateValue(predicate.Left!, row, context),
+                EvaluateValue(predicate.Right!, row, context)),
+            AuthorizationPredicateKind.And => EvaluateAuthorization(predicate.Left!, row, context) &&
+                                              EvaluateAuthorization(predicate.Right!, row, context),
+            AuthorizationPredicateKind.Or => EvaluateAuthorization(predicate.Left!, row, context) ||
+                                             EvaluateAuthorization(predicate.Right!, row, context),
             AuthorizationPredicateKind.Not => !EvaluateAuthorization(predicate.Left!, row, context),
             _ => Convert.ToBoolean(EvaluateValue(predicate, row, context))
         };
+    }
 
     private object? EvaluateValue(AuthorizationPredicate node, InMemoryRow row, ExecutionContext context)
     {
@@ -250,9 +284,13 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
         {
             AuthorizationPredicateKind.Constant => ParseConstant(node.Value),
             AuthorizationPredicateKind.ResourceParameter => row,
-            AuthorizationPredicateKind.ContextParameter => context.TryGetValue(node.Name ?? "", out var value) ? value : null,
+            AuthorizationPredicateKind.ContextParameter => context.TryGetValue(node.Name ?? "", out var value)
+                ? value
+                : null,
             AuthorizationPredicateKind.MemberAccess => ReadMember(node, row, context),
-            _ when node.Kind is AuthorizationPredicateKind.Equal or AuthorizationPredicateKind.NotEqual or AuthorizationPredicateKind.And or AuthorizationPredicateKind.Or or AuthorizationPredicateKind.Not => EvaluateAuthorization(node, row, context),
+            _ when node.Kind is AuthorizationPredicateKind.Equal or AuthorizationPredicateKind.NotEqual
+                or AuthorizationPredicateKind.And or AuthorizationPredicateKind.Or
+                or AuthorizationPredicateKind.Not => EvaluateAuthorization(node, row, context),
             _ => throw new NotSupportedException($"Authorization node '{node.Kind}' is not implemented.")
         };
     }
@@ -263,27 +301,35 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
         if (target.Kind == AuthorizationPredicateKind.ResourceParameter)
         {
             var name = node.Name ?? throw new InvalidOperationException("Resource member has no name.");
-            var entity = (_metadata ?? throw new InvalidOperationException("InMemoryCompiler requires metadata for execution.")).GetEntity(row.EntityId);
+            var entity =
+                (_metadata ?? throw new InvalidOperationException("InMemoryCompiler requires metadata for execution."))
+                .GetEntity(row.EntityId);
             var field = entity.EffectiveFields.FirstOrDefault(x => x.Name == name)
-                ?? throw new InvalidOperationException($"Authorization resource member '{entity.Name}.{name}' has no field mapping.");
+                        ?? throw new InvalidOperationException(
+                            $"Authorization resource member '{entity.Name}.{name}' has no field mapping.");
             return row.Values.TryGetValue(field.Id, out var value) ? value : null;
         }
+
         if (target.Kind == AuthorizationPredicateKind.ContextParameter)
         {
             var path = (target.Name ?? "") + "." + (node.Name ?? "");
             return context.TryGetValue(path, out var value) ? value : null;
         }
-        throw new NotSupportedException("Only context and resource member authorization is supported by this minimal provider.");
+
+        throw new NotSupportedException(
+            "Only context and resource member authorization is supported by this minimal provider.");
     }
 
-    private ExecutionRow ToExecutionRow(ExecutionIRNode node, InMemoryRow row) =>
-        new(
+    private ExecutionRow ToExecutionRow(ExecutionIRNode node, InMemoryRow row)
+    {
+        return new ExecutionRow(
             node.Fields.ToDictionary(
                 field => $"__fg_{node.Id}_{field}",
                 field => row.Values.TryGetValue(field, out var value) ? value : null),
             node.Fields.ToDictionary(
                 field => new ExecutionCellKey(node.Id, node.EntityId, field),
                 field => row.Values.TryGetValue(field, out var value) ? value : null));
+    }
 
     private static ExecutionRow MergeRows(IEnumerable<ExecutionRow> rows)
     {
@@ -295,7 +341,12 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
 
     private static IEnumerable<IReadOnlyList<ExecutionRow>> Cartesian(IReadOnlyList<IReadOnlyList<ExecutionRow>> groups)
     {
-        if (groups.Count == 0) { yield return []; yield break; }
+        if (groups.Count == 0)
+        {
+            yield return [];
+            yield break;
+        }
+
         IEnumerable<IReadOnlyList<ExecutionRow>> current = [[]];
         foreach (var group in groups)
             current = current.SelectMany(prefix => group.Select(item => prefix.Append(item).ToArray()));
@@ -311,20 +362,25 @@ public sealed class InMemoryCompiler : IProviderPlanCompiler, ISecurityInvariant
         return string.CompareOrdinal(left.ToString(), right.ToString());
     }
 
-    private static object? ParseConstant(string? value) => value switch
+    private static object? ParseConstant(string? value)
     {
-        null or "null" => null,
-        "true" => true,
-        "false" => false,
-        _ when int.TryParse(value, out var i) => i,
-        _ when long.TryParse(value, out var l) => l,
-        _ when decimal.TryParse(value, out var d) => d,
-        _ => value
-    };
+        return value switch
+        {
+            null or "null" => null,
+            "true" => true,
+            "false" => false,
+            _ when int.TryParse(value, out var i) => i,
+            _ when long.TryParse(value, out var l) => l,
+            _ when decimal.TryParse(value, out var d) => d,
+            _ => value
+        };
+    }
 
     private FieldId FieldForColumn(EntityId entityId, ColumnId columnId)
     {
-        var entity = (_metadata ?? throw new InvalidOperationException("InMemoryCompiler requires metadata for execution.")).GetEntity(entityId);
+        var entity =
+            (_metadata ?? throw new InvalidOperationException("InMemoryCompiler requires metadata for execution."))
+            .GetEntity(entityId);
         return entity.EffectiveFields.First(x => x.Column?.ColumnId == columnId).Id;
     }
 }

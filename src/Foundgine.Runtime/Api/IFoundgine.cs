@@ -2,13 +2,14 @@ using Foundgine.Core.Execution;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Capabilities;
+using Foundgine.Core.Semantic.Intent;
 using Foundgine.Core.Semantic.Security.Execution;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.Runtime;
 
 /// <summary>
-/// Stable application-facing entry point for semantic execution.
+///     Stable application-facing entry point for semantic execution.
 /// </summary>
 public interface IFoundgineExecutor
 {
@@ -18,26 +19,26 @@ public interface IFoundgineExecutor
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Executes external, provider-neutral read intent after compiling it into
-    /// the canonical semantic request. This overload is intended for adapters
-    /// such as JSON APIs and AI tools.
+    ///     Executes external, provider-neutral read intent after compiling it into
+    ///     the canonical semantic request. This overload is intended for adapters
+    ///     such as JSON APIs and AI tools.
     /// </summary>
     Task<ExecutionResult> ExecuteAsync(
-        Foundgine.Core.Semantic.Intent.ReadIntent intent,
+        ReadIntent intent,
         ExecutionContext? context = null,
         CancellationToken cancellationToken = default);
 }
 
 /// <summary>
-/// Full application-facing Foundgine surface. Most application code can depend
-/// on <see cref="IFoundgineExecutor"/> and use only ExecuteAsync.
+///     Full application-facing Foundgine surface. Most application code can depend
+///     on <see cref="IFoundgineExecutor" /> and use only ExecuteAsync.
 /// </summary>
 public interface IFoundgine : IFoundgineExecutor
 {
     /// <summary>
-    /// Describes the domain capabilities available under the configured
-    /// authorization policy. This is discovery context, not an authorization
-    /// decision cache; execution evaluates the policy again.
+    ///     Describes the domain capabilities available under the configured
+    ///     authorization policy. This is discovery context, not an authorization
+    ///     decision cache; execution evaluates the policy again.
     /// </summary>
     SemanticAuthorizationCapabilities DescribeCapabilities();
 
@@ -45,8 +46,8 @@ public interface IFoundgine : IFoundgineExecutor
     SemanticCapabilityContract DescribeCapabilityContract();
 
     /// <summary>
-    /// Returns the capability contract visible to a verified warrant-backed caller.
-    /// Discovery never consumes replay state; execution still re-authorizes.
+    ///     Returns the capability contract visible to a verified warrant-backed caller.
+    ///     Discovery never consumes replay state; execution still re-authorizes.
     /// </summary>
     SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security);
 

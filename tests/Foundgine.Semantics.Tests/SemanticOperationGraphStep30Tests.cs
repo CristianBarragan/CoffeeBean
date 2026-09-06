@@ -1,7 +1,6 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.IR;
 using Foundgine.Core.Semantic.IR.Graph;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 

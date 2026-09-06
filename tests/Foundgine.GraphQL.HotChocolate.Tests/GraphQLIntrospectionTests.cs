@@ -1,8 +1,5 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Extensions.GraphQL.HotChocolate;
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic;
-using Xunit;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 

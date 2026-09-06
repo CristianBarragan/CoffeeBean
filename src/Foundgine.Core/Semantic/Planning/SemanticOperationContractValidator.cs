@@ -1,14 +1,13 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.IR;
 using Foundgine.Core.Semantic.Query;
 
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Proves that canonical semantic IR belongs to the trusted contract that is
-/// being used for planning. This prevents a planner from accepting an IR tree
-/// whose identities were not present in the frozen runtime contract.
+///     Proves that canonical semantic IR belongs to the trusted contract that is
+///     being used for planning. This prevents a planner from accepting an IR tree
+///     whose identities were not present in the frozen runtime contract.
 /// </summary>
 internal static class SemanticOperationContractValidator
 {
@@ -18,7 +17,7 @@ internal static class SemanticOperationContractValidator
         ArgumentNullException.ThrowIfNull(contract);
 
         var visited = new HashSet<int>();
-        ValidateNode(operation.Root, contract, visited, isRoot: true);
+        ValidateNode(operation.Root, contract, visited, true);
     }
 
     private static void ValidateNode(
@@ -44,19 +43,14 @@ internal static class SemanticOperationContractValidator
                 $"Non-root semantic node {node.Id} must specify the relationship or connection used to reach it.");
 
         if (node.ViaRelationship is { } relationshipId)
-        {
             if (node.ViaConnection is not null)
                 throw new InvalidOperationException(
                     $"Semantic node {node.Id} cannot specify both a relationship and a connection.");
 
-        }
-
         foreach (var field in node.Fields.Concat(node.RequiredFields).Distinct())
-        {
             if (field != entity.Identity.FieldId && entity.Fields.All(x => x.Id != field))
                 throw new InvalidOperationException(
                     $"Semantic operation node {node.Id} selects unknown field '{field}' on '{entity.Name}'.");
-        }
 
         if (isRoot && node.QueryOptions is not null)
         {
@@ -77,7 +71,7 @@ internal static class SemanticOperationContractValidator
                         $"Semantic operation node {child.Id} targets '{child.EntityId}', but relationship '{relationship.Name}' targets '{relationship.Target}'.");
             }
 
-            ValidateNode(child, contract, visited, isRoot: false);
+            ValidateNode(child, contract, visited, false);
         }
     }
 
@@ -129,14 +123,17 @@ internal static class SemanticOperationContractValidator
                 var relationship = EnsureRelationship(entity, relationshipId);
                 entity = contract.Get(relationship.Target);
             }
+
             EnsureField(entity, term.Field, "order");
         }
     }
 
-    private static SemanticRelationship EnsureRelationship(SemanticEntity entity, RelationshipId id) =>
-        entity.Relationships.FirstOrDefault(x => x.Id == id)
-        ?? throw new InvalidOperationException(
-            $"Semantic operation references relationship '{id}' not declared on '{entity.Name}'.");
+    private static SemanticRelationship EnsureRelationship(SemanticEntity entity, RelationshipId id)
+    {
+        return entity.Relationships.FirstOrDefault(x => x.Id == id)
+               ?? throw new InvalidOperationException(
+                   $"Semantic operation references relationship '{id}' not declared on '{entity.Name}'.");
+    }
 
     private static void EnsureField(SemanticEntity entity, FieldId id, string context)
     {
@@ -145,4 +142,3 @@ internal static class SemanticOperationContractValidator
                 $"Semantic operation references unknown {context} field '{id}' on '{entity.Name}'.");
     }
 }
-

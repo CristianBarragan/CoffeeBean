@@ -1,4 +1,5 @@
 using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Security.Execution;
 using Foundgine.Runtime;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
@@ -6,36 +7,35 @@ using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 namespace Foundgine.Extensions.GraphQL.HotChocolate;
 
 /// <summary>
-/// The outcome of a secured GraphQL query execution: the raw provider-neutral
-/// execution result, plus the GraphQL result shape (aliases, nesting) needed to
-/// project it into a GraphQL response. Foundgine does not ship response
-/// materialization; the host maps <see cref="Execution"/> through
-/// <see cref="ResultShape"/> into its own GraphQL response representation.
+///     The outcome of a secured GraphQL query execution: the raw provider-neutral
+///     execution result, plus the GraphQL result shape (aliases, nesting) needed to
+///     project it into a GraphQL response. Foundgine does not ship response
+///     materialization; the host maps <see cref="Execution" /> through
+///     <see cref="ResultShape" /> into its own GraphQL response representation.
 /// </summary>
 public sealed record GraphQLQueryExecutionResult(
     ExecutionResult Execution,
     GraphQLResultShape ResultShape);
 
 /// <summary>
-/// Optional, secure-by-default execution entry point for GraphQL queries hosted
-/// on Hot Chocolate. This is the query-side counterpart to
-/// <c>Foundgine.Providers.Tools.MCP.FoundgineMcpTools</c>: it translates GraphQL text using
-/// <see cref="HotChocolateSemanticAdapter"/>, requires a host-supplied
-/// <see cref="SecurityExecutionContext"/> via <see cref="ISecurityExecutionContextProvider"/>,
-/// and calls <see cref="IFoundgine"/> directly. GraphQL request payloads can
-/// never supply identity, tenant, audience, or warrant material; that context
-/// is always established by the host before this class is invoked.
-///
-/// Using this class is optional. <see cref="HotChocolateSemanticAdapter"/> remains
-/// a pure GraphQL-to-<see cref="Foundgine.Core.Semantic.SemanticRequest"/> translator
-/// with no security opinion, for hosts that want to wire execution themselves.
+///     Optional, secure-by-default execution entry point for GraphQL queries hosted
+///     on Hot Chocolate. This is the query-side counterpart to
+///     <c>Foundgine.Providers.Tools.MCP.FoundgineMcpTools</c>: it translates GraphQL text using
+///     <see cref="HotChocolateSemanticAdapter" />, requires a host-supplied
+///     <see cref="SecurityExecutionContext" /> via <see cref="ISecurityExecutionContextProvider" />,
+///     and calls <see cref="IFoundgine" /> directly. GraphQL request payloads can
+///     never supply identity, tenant, audience, or warrant material; that context
+///     is always established by the host before this class is invoked.
+///     Using this class is optional. <see cref="HotChocolateSemanticAdapter" /> remains
+///     a pure GraphQL-to-<see cref="Foundgine.Core.Semantic.SemanticRequest" /> translator
+///     with no security opinion, for hosts that want to wire execution themselves.
 /// </summary>
 public sealed class FoundgineHotChocolateQueryExecutor
 {
-    private readonly IFoundgine _foundgine;
     private readonly HotChocolateSemanticAdapter _adapter;
-    private readonly ISecurityExecutionContextProvider _securityContextProvider;
     private readonly Func<ExecutionContext> _contextFactory;
+    private readonly IFoundgine _foundgine;
+    private readonly ISecurityExecutionContextProvider _securityContextProvider;
 
     public FoundgineHotChocolateQueryExecutor(
         IFoundgine foundgine,
@@ -46,17 +46,17 @@ public sealed class FoundgineHotChocolateQueryExecutor
         _foundgine = foundgine ?? throw new ArgumentNullException(nameof(foundgine));
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
         _securityContextProvider = securityContextProvider
-            ?? throw new ArgumentNullException(nameof(securityContextProvider));
+                                   ?? throw new ArgumentNullException(nameof(securityContextProvider));
         _contextFactory = contextFactory ?? (() => new ExecutionContext());
     }
 
     /// <summary>
-    /// Translates and executes a GraphQL query. Throws <see cref="UnauthorizedAccessException"/>
-    /// if the host has not established a <see cref="SecurityExecutionContext"/> for this call.
-    /// GraphQL syntax/translation errors propagate as the same exceptions
-    /// <see cref="HotChocolateSemanticAdapter.AdaptResultShape(string, IReadOnlyDictionary{string, object?}?, string?)"/>
-    /// would throw directly. Prefer <see cref="TryExecuteAsync"/> when you want these
-    /// mapped to stable GraphQL-facing error codes instead of thrown.
+    ///     Translates and executes a GraphQL query. Throws <see cref="UnauthorizedAccessException" />
+    ///     if the host has not established a <see cref="SecurityExecutionContext" /> for this call.
+    ///     GraphQL syntax/translation errors propagate as the same exceptions
+    ///     <see cref="HotChocolateSemanticAdapter.AdaptResultShape(string, IReadOnlyDictionary{string, object?}?, string?)" />
+    ///     would throw directly. Prefer <see cref="TryExecuteAsync" /> when you want these
+    ///     mapped to stable GraphQL-facing error codes instead of thrown.
     /// </summary>
     public Task<GraphQLQueryExecutionResult> ExecuteAsync(
         string graphql,
@@ -77,10 +77,10 @@ public sealed class FoundgineHotChocolateQueryExecutor
     }
 
     /// <summary>
-    /// Same as <see cref="ExecuteAsync"/>, but maps translation, security, and execution
-    /// failures into a stable <see cref="GraphQLAdapterError"/> via
-    /// <see cref="GraphQLAdapterErrors.FromException"/> instead of throwing, so hosts can
-    /// surface them as ordinary GraphQL response errors.
+    ///     Same as <see cref="ExecuteAsync" />, but maps translation, security, and execution
+    ///     failures into a stable <see cref="GraphQLAdapterError" /> via
+    ///     <see cref="GraphQLAdapterErrors.FromException" /> instead of throwing, so hosts can
+    ///     surface them as ordinary GraphQL response errors.
     /// </summary>
     public async Task<GraphQLAdapterResult<GraphQLQueryExecutionResult>> TryExecuteAsync(
         string graphql,
@@ -102,7 +102,7 @@ public sealed class FoundgineHotChocolateQueryExecutor
     }
 
     private async Task<GraphQLQueryExecutionResult> ExecuteAsyncCore(
-        Foundgine.Core.Semantic.SemanticRequest request,
+        SemanticRequest request,
         GraphQLResultShape resultShape,
         CancellationToken cancellationToken)
     {

@@ -1,6 +1,4 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Authorization;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
@@ -14,7 +12,8 @@ public sealed class AuthorizationCanonicalizationIdempotenceTests
             AuthorizationPredicate.Member(AuthorizationPredicate.ResourceParameter("resource"), "TenantId"),
             AuthorizationPredicate.Member(AuthorizationPredicate.ResourceParameter("resource"), "RegionId"));
         var plan = new SemanticPlan(
-            new SemanticPlanNode(1, ExecutionOperation.Scan, entity, [new FieldId(1)], null, null, [], Authorization: predicate),
+            new SemanticPlanNode(1, ExecutionOperation.Scan, entity, [new FieldId(1)], null, null, [],
+                Authorization: predicate),
             ["authorization.required", "authorization.runtime"]);
 
         var rule = new AuthorizationCanonicalizationRule();

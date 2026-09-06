@@ -1,6 +1,5 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Query;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
@@ -15,7 +14,8 @@ public sealed class PredicatePushdownRuleTests
 
         var filter = new SemanticAndFilter([
             new SemanticOrFilter([a, b]),
-            c]);
+            c
+        ]);
 
         var plan = CreatePlan(filter);
         var result = new PredicatePushdownRule().Apply(plan);
@@ -50,8 +50,10 @@ public sealed class PredicatePushdownRuleTests
         var filter = new SemanticAndFilter([
             new SemanticOrFilter([
                 new SemanticFieldFilter(new FieldId(1), SemanticFilterOperator.Eq, "A"),
-                new SemanticFieldFilter(new FieldId(2), SemanticFilterOperator.Eq, "B")]),
-            new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.Eq, "C")]);
+                new SemanticFieldFilter(new FieldId(2), SemanticFilterOperator.Eq, "B")
+            ]),
+            new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.Eq, "C")
+        ]);
 
         var plan = CreatePlan(filter, ["tenant.isolation", "authorization.runtime"]);
         var rewritten = new PredicatePushdownRule().Apply(plan);
@@ -70,7 +72,8 @@ public sealed class PredicatePushdownRuleTests
 
         var filter = new SemanticAndFilter([
             new SemanticOrFilter(branches),
-            new SemanticFieldFilter(new FieldId(100), SemanticFilterOperator.Eq, 100)]);
+            new SemanticFieldFilter(new FieldId(100), SemanticFilterOperator.Eq, 100)
+        ]);
 
         var plan = CreatePlan(filter);
         var rewritten = new PredicatePushdownRule().Apply(plan);
@@ -80,8 +83,9 @@ public sealed class PredicatePushdownRuleTests
 
     private static SemanticPlan CreatePlan(
         SemanticFilterExpression filter,
-        IReadOnlyList<string>? invariants = null) =>
-        new(
+        IReadOnlyList<string>? invariants = null)
+    {
+        return new SemanticPlan(
             new SemanticPlanNode(
                 1,
                 ExecutionOperation.Scan,
@@ -93,4 +97,5 @@ public sealed class PredicatePushdownRuleTests
                 new SemanticQueryOptions(filter),
                 null),
             invariants);
+    }
 }

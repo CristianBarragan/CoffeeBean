@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-
 namespace Foundgine.Core.Semantic.Security.Warrants;
 
 /// <summary>Single-use replay protection for a signed warrant nonce.</summary>
@@ -12,8 +10,10 @@ public sealed class MemorySecurityWarrantReplayStore : ISecurityWarrantReplaySto
 {
     private readonly ConcurrentDictionary<string, byte> _used = new(StringComparer.Ordinal);
 
-    public bool TryConsume(string warrantId, string nonce) =>
-        _used.TryAdd(warrantId + "\u001f" + nonce, 0);
+    public bool TryConsume(string warrantId, string nonce)
+    {
+        return _used.TryAdd(warrantId + "\u001f" + nonce, 0);
+    }
 }
 
 public static class SecurityWarrantReplayGuard

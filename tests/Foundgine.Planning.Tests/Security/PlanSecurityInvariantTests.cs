@@ -1,9 +1,7 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Security;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Security;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests.Security;
 
@@ -36,7 +34,7 @@ public sealed class PlanSecurityInvariantTests
             1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(2)], null, null, [], null, predicate);
 
         var plan = SecurityInvariantPlanRequirements.Attach(new SemanticPlan(node));
-        
+
         Assert.NotNull(plan.RequiredSecurityInvariants);
         Assert.Contains(SecurityInvariantIds.RuntimeAuthorization, plan.RequiredSecurityInvariants);
     }
@@ -87,7 +85,8 @@ public sealed class PlanSecurityInvariantTests
             1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(2)], null, null, []);
 
         var baseline = new SemanticPlan(node, [SecurityInvariantIds.ParameterizedValues]);
-        var stronger = new SemanticPlan(node, [SecurityInvariantIds.ParameterizedValues, SecurityInvariantIds.TenantIsolation]);
+        var stronger = new SemanticPlan(node,
+            [SecurityInvariantIds.ParameterizedValues, SecurityInvariantIds.TenantIsolation]);
 
         Assert.NotEqual(
             SemanticPlanFingerprint.CreateShapeKey(baseline),
@@ -96,19 +95,40 @@ public sealed class PlanSecurityInvariantTests
 
     private sealed class MissingInvariantCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
     {
+        public ProviderPlan Compile(ExecutionIR ir)
+        {
+            return new TestPlan();
+        }
+
         public IReadOnlyCollection<string> PreservedSecurityInvariants => [SecurityInvariantIds.AuthorizationRequired];
-        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-            new(
+
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
+        {
+            return new ProviderSecurityConformanceResult(
                 plan.Provider,
                 ir.RequiredSecurityInvariants,
                 ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
                 Array.Empty<string>());
-
-        public ProviderPlan Compile(ExecutionIR ir) => new TestPlan();
+        }
     }
 
-    private sealed class FullInvariantCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class FullInvariantCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
+        public ProviderPlan Compile(ExecutionIR ir)
+        {
+            return new TestPlan();
+        }
+
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
+        {
+            return new ProviderSecurityConformanceResult(
+                plan.Provider,
+                ir.RequiredSecurityInvariants,
+                ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
+                Array.Empty<string>());
+        }
+
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
         [
             SecurityInvariantIds.AuthorizationRequired,
@@ -116,14 +136,6 @@ public sealed class PlanSecurityInvariantTests
             SecurityInvariantIds.ParameterizedValues,
             SecurityInvariantIds.PlanCacheContextIsolation
         ];
-        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-            new(
-                plan.Provider,
-                ir.RequiredSecurityInvariants,
-                ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
-                Array.Empty<string>());
-
-        public ProviderPlan Compile(ExecutionIR ir) => new TestPlan();
     }
 
     private sealed record TestPlan() : ProviderPlan("test");

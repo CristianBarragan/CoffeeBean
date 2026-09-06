@@ -1,7 +1,7 @@
+using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Capabilities;
 using Foundgine.Core.Semantic.Security;
 using Foundgine.Core.Semantic.Security.Warrants;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests.Security;
 
@@ -10,7 +10,7 @@ public sealed class SecurityCapabilityCompositionTests
     [Fact]
     public void Composition_requires_every_capability_to_be_independently_authorized()
     {
-        var warrant = Warrant([new CapabilityGrant("Customer.read", "read", ["customer/*"]) ]);
+        var warrant = Warrant([new CapabilityGrant("Customer.read", "read", ["customer/*"])]);
         var customer = Capability("Customer.read", "read");
         var order = Capability("Order.read", "read");
 
@@ -25,12 +25,12 @@ public sealed class SecurityCapabilityCompositionTests
     public void Composition_never_unions_authority_across_tenants()
     {
         var warrant = Warrant([
-            new CapabilityGrant("Customer.read", "read", ["customer/*"]),
-            new CapabilityGrant("Order.read", "read", ["order/*"])
-        ]) with
-        {
-            Constraints = new SecurityWarrantConstraints(allowedTenants: ["tenant-1"])
-        };
+                new CapabilityGrant("Customer.read", "read", ["customer/*"]),
+                new CapabilityGrant("Order.read", "read", ["order/*"])
+            ]) with
+            {
+                Constraints = new SecurityWarrantConstraints(allowedTenants: ["tenant-1"])
+            };
 
         var result = SecurityCapabilityComposition.Validate(
             [Capability("Customer.read", "read"), Capability("Order.read", "read")],
@@ -74,7 +74,8 @@ public sealed class SecurityCapabilityCompositionTests
         };
 
         var result = SecurityCapabilityComposition.Validate(
-            [Capability("Customer.read", "read")], warrant, "agent", "foundgine", null, "customer/*", ["Id", "Balance"]);
+            [Capability("Customer.read", "read")], warrant, "agent", "foundgine", null, "customer/*",
+            ["Id", "Balance"]);
 
         Assert.False(result.IsSatisfied);
         Assert.Contains("field", result.FailureReason!, StringComparison.OrdinalIgnoreCase);
@@ -86,8 +87,8 @@ public sealed class SecurityCapabilityCompositionTests
         return new(
             id,
             id,
-            new Foundgine.Core.Abstractions.EntityId(1),
-            Foundgine.Core.Abstractions.AuthorizationDecision.Allowed,
+            new EntityId(1),
+            AuthorizationDecision.Allowed,
             [], [], [], effectiveFields, [])
         {
             Operation = operation,
@@ -97,9 +98,12 @@ public sealed class SecurityCapabilityCompositionTests
         };
     }
 
-    private static SecurityWarrant Warrant(IReadOnlyList<CapabilityGrant> grants) => new(
-        "warrant", "issuer", "agent", "foundgine", grants,
-        SecurityWarrantConstraints.Unrestricted,
-        DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddHours(1),
-        "nonce", "key", null, []);
+    private static SecurityWarrant Warrant(IReadOnlyList<CapabilityGrant> grants)
+    {
+        return new SecurityWarrant(
+            "warrant", "issuer", "agent", "foundgine", grants,
+            SecurityWarrantConstraints.Unrestricted,
+            DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddHours(1),
+            "nonce", "key", null, []);
+    }
 }

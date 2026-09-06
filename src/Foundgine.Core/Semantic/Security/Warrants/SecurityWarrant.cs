@@ -1,5 +1,3 @@
-using System.Collections.ObjectModel;
-
 namespace Foundgine.Core.Semantic.Security.Warrants;
 
 /// <summary>One capability granted by a security warrant.</summary>
@@ -12,19 +10,25 @@ public sealed record CapabilityGrant(
         : this(
             Require(capability, nameof(capability)),
             Require(operation, nameof(operation)),
-            Normalize(resourceScopes)) { }
+            Normalize(resourceScopes))
+    {
+    }
 
-    private static string Require(string value, string name) =>
-        string.IsNullOrWhiteSpace(value) ? throw new ArgumentException("Value is required.", name) : value;
+    private static string Require(string value, string name)
+    {
+        return string.IsNullOrWhiteSpace(value) ? throw new ArgumentException("Value is required.", name) : value;
+    }
 
-    private static IReadOnlyList<string> Normalize(IEnumerable<string>? values) =>
-        new ReadOnlyCollection<string>((values ?? []).Where(x => !string.IsNullOrWhiteSpace(x))
+    private static IReadOnlyList<string> Normalize(IEnumerable<string>? values)
+    {
+        return new ReadOnlyCollection<string>((values ?? []).Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToList());
+    }
 }
 
 /// <summary>
-/// Explicit, parameterized restrictions carried by a warrant. A child warrant
-/// can only remove authority from these constraints, never add it.
+///     Explicit, parameterized restrictions carried by a warrant. A child warrant
+///     can only remove authority from these constraints, never add it.
 /// </summary>
 public sealed record SecurityWarrantConstraints(
     IReadOnlyList<string> AllowedTenants,
@@ -34,9 +38,6 @@ public sealed record SecurityWarrantConstraints(
     long? MaxResults,
     decimal? MaxAmount)
 {
-    public static SecurityWarrantConstraints Unrestricted { get; } =
-        new([], [], [], [], null, null);
-
     public SecurityWarrantConstraints(
         IEnumerable<string>? allowedTenants = null,
         IEnumerable<string>? allowedFields = null,
@@ -50,41 +51,54 @@ public sealed record SecurityWarrantConstraints(
             Normalize(resourceScopes),
             Normalize(allowedOperations),
             Validate(maxResults, nameof(maxResults)),
-            Validate(maxAmount, nameof(maxAmount))) { }
+            Validate(maxAmount, nameof(maxAmount)))
+    {
+    }
 
-    private static IReadOnlyList<string> Normalize(IEnumerable<string>? values) =>
-        new ReadOnlyCollection<string>((values ?? []).Where(x => !string.IsNullOrWhiteSpace(x))
+    public static SecurityWarrantConstraints Unrestricted { get; } =
+        new([], [], [], [], null, null);
+
+    private static IReadOnlyList<string> Normalize(IEnumerable<string>? values)
+    {
+        return new ReadOnlyCollection<string>((values ?? []).Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToList());
+    }
 
-    private static T? Validate<T>(T? value, string name) where T : struct, IComparable<T> =>
-        value is { } v && v.CompareTo(default) < 0 ? throw new ArgumentOutOfRangeException(name) : value;
+    private static T? Validate<T>(T? value, string name) where T : struct, IComparable<T>
+    {
+        return value is { } v && v.CompareTo(default) < 0 ? throw new ArgumentOutOfRangeException(name) : value;
+    }
 
     /// <summary>Returns true when this constraint set is no more powerful than parent.</summary>
     public bool IsAtMostAsPowerfulAs(SecurityWarrantConstraints parent)
     {
         ArgumentNullException.ThrowIfNull(parent);
         return Subset(AllowedTenants, parent.AllowedTenants)
-            && Subset(AllowedFields, parent.AllowedFields)
-            && Subset(ResourceScopes, parent.ResourceScopes)
-            && Subset(AllowedOperations, parent.AllowedOperations)
-            && AtMost(MaxResults, parent.MaxResults)
-            && AtMost(MaxAmount, parent.MaxAmount);
+               && Subset(AllowedFields, parent.AllowedFields)
+               && Subset(ResourceScopes, parent.ResourceScopes)
+               && Subset(AllowedOperations, parent.AllowedOperations)
+               && AtMost(MaxResults, parent.MaxResults)
+               && AtMost(MaxAmount, parent.MaxAmount);
 
-        static bool Subset(IReadOnlyList<string> child, IReadOnlyList<string> parent) =>
-            parent.Count == 0
+        static bool Subset(IReadOnlyList<string> child, IReadOnlyList<string> parent)
+        {
+            return parent.Count == 0
                 ? true
                 : child.Count > 0 && child.All(x => parent.Contains(x, StringComparer.Ordinal));
+        }
 
-        static bool AtMost<T>(T? child, T? parent) where T : struct, IComparable<T> =>
-            parent is null
+        static bool AtMost<T>(T? child, T? parent) where T : struct, IComparable<T>
+        {
+            return parent is null
                 ? true
                 : child is not null && child.Value.CompareTo(parent.Value) <= 0;
+        }
     }
 }
 
 /// <summary>
-/// Cryptographically signed delegated authority. A warrant is evidence of
-/// authority; current execution policy remains authoritative at runtime.
+///     Cryptographically signed delegated authority. A warrant is evidence of
+///     authority; current execution policy remains authoritative at runtime.
 /// </summary>
 public sealed record SecurityWarrant(
     string Id,
@@ -111,5 +125,8 @@ public sealed record SecurityWarrant(
 
     public string Digest => SecurityWarrantCanonicalizer.Digest(this);
 
-    public bool IsTimeValid(DateTimeOffset now) => now >= IssuedAt && now < ExpiresAt;
+    public bool IsTimeValid(DateTimeOffset now)
+    {
+        return now >= IssuedAt && now < ExpiresAt;
+    }
 }

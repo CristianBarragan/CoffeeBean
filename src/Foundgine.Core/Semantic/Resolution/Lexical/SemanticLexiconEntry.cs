@@ -3,9 +3,9 @@ using Foundgine.Core.Abstractions;
 namespace Foundgine.Core.Semantic.Resolution;
 
 /// <summary>
-/// Provider-neutral document that can be projected into a lexical search
-/// index. The semantic contract is the source of truth; the index is a derived
-/// retrieval projection.
+///     Provider-neutral document that can be projected into a lexical search
+///     index. The semantic contract is the source of truth; the index is a derived
+///     retrieval projection.
 /// </summary>
 public sealed record SemanticLexiconEntry(
     string CanonicalName,

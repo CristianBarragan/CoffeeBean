@@ -1,13 +1,12 @@
-using Foundgine.Providers.Aot;
 using Foundgine.SupplyChain.Domain.Models;
 using Foundgine.SupplyChain.Domain.Storage;
 
 namespace Foundgine.SupplyChain.Domain;
 
 /// <summary>
-/// Schema-bound model/entity mappings. Keeping these declarations in their own
-/// file prevents either the application model or the ERP entity from depending
-/// on the other CLR type.
+///     Schema-bound model/entity mappings. Keeping these declarations in their own
+///     file prevents either the application model or the ERP entity from depending
+///     on the other CLR type.
 /// </summary>
 [FoundgineModelEntityMap(typeof(Customer), typeof(CustomerERP))]
 [FoundgineModelEntityMap(typeof(SalesOrder), typeof(SalesOrderERP))]
@@ -20,4 +19,6 @@ namespace Foundgine.SupplyChain.Domain;
 [FoundgineModelEntityMap(typeof(Shipment), typeof(ShipmentERP))]
 [FoundgineModelEntityMap(typeof(Carrier), typeof(CarrierERP))]
 [FoundgineConnectionMap(typeof(Customer), nameof(Customer.Orders), typeof(SalesOrderERP))]
-internal static class SupplyChainSchemaMappings { }
+internal static class SupplyChainSchemaMappings
+{
+}

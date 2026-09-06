@@ -1,5 +1,4 @@
 using Foundgine.Core.Semantic.Security.Warrants;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests.Security.Warrants;
 
@@ -15,10 +14,12 @@ public sealed class SecurityWarrantDelegationCompromiseSecurityTests
         var grandchildA = Child(childA, "grandchild-a", "agent-c");
         var store = new MemorySecurityWarrantDelegationCompromiseStore();
 
-        store.Compromise(childA, now, compromisedIssuer: childA.Issuer);
+        store.Compromise(childA, now, childA.Issuer);
 
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(childA, store, now));
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(grandchildA, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(childA, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(grandchildA, store, now));
         SecurityWarrantDelegationCompromiseGuard.Validate(childB, store, now);
     }
 
@@ -33,9 +34,12 @@ public sealed class SecurityWarrantDelegationCompromiseSecurityTests
 
         store.Compromise(root, now, compromisedKeyId: root.KeyId);
 
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(root, store, now));
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(child, store, now));
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(grandchild, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(root, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(child, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(grandchild, store, now));
     }
 
     [Fact]
@@ -65,7 +69,8 @@ public sealed class SecurityWarrantDelegationCompromiseSecurityTests
 
         store.Compromise(childA, now, compromisedKeyId: childA.KeyId);
 
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(childA, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(childA, store, now));
         SecurityWarrantDelegationCompromiseGuard.Validate(childB, store, now);
     }
 
@@ -79,7 +84,7 @@ public sealed class SecurityWarrantDelegationCompromiseSecurityTests
         SecurityWarrantDelegationCompromiseGuard.Validate(child, store, now);
         var snapshot = SecurityWarrantDelegationCompromiseGuard.Capture(store);
 
-        store.Compromise(child, now, compromisedIssuer: child.Issuer);
+        store.Compromise(child, now, child.Issuer);
 
         Assert.Throws<InvalidOperationException>(() =>
             SecurityWarrantDelegationCompromiseGuard.AssertUnchanged(store, snapshot));
@@ -96,25 +101,33 @@ public sealed class SecurityWarrantDelegationCompromiseSecurityTests
 
         Assert.Equal(first, second);
         Assert.True(store.CurrentSequence >= second.Sequence);
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(root, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(root, store, now));
     }
 
-    private static SecurityWarrant Child(SecurityWarrant parent, string id, string subject) => parent with
+    private static SecurityWarrant Child(SecurityWarrant parent, string id, string subject)
     {
-        Id = id,
-        Subject = subject,
-        Issuer = parent.Subject,
-        ParentId = parent.Id,
-        ParentDigest = parent.Digest,
-        DelegationPath = [.. parent.DelegationPath, parent.Digest],
-        IssuedAt = parent.IssuedAt,
-        ExpiresAt = parent.ExpiresAt.AddMinutes(-1),
-        Signature = []
-    };
+        return parent with
+        {
+            Id = id,
+            Subject = subject,
+            Issuer = parent.Subject,
+            ParentId = parent.Id,
+            ParentDigest = parent.Digest,
+            DelegationPath = [.. parent.DelegationPath, parent.Digest],
+            IssuedAt = parent.IssuedAt,
+            ExpiresAt = parent.ExpiresAt.AddMinutes(-1),
+            Signature = []
+        };
+    }
 
-    private static SecurityWarrant Create(DateTimeOffset now) => new(
-        "root", "root-issuer", "agent-a", "foundgine",
-        [new CapabilityGrant("Customer.read", "read", ["customer/*"])],
-        new SecurityWarrantConstraints(allowedTenants: ["tenant-1"], resourceScopes: ["customer/*"], maxResults: 100),
-        now.AddMinutes(-1), now.AddHours(1), "nonce-root", "key-root", null, []);
+    private static SecurityWarrant Create(DateTimeOffset now)
+    {
+        return new(
+            "root", "root-issuer", "agent-a", "foundgine",
+            [new CapabilityGrant("Customer.read", "read", ["customer/*"])],
+            new SecurityWarrantConstraints(allowedTenants: ["tenant-1"], resourceScopes: ["customer/*"],
+                maxResults: 100),
+            now.AddMinutes(-1), now.AddHours(1), "nonce-root", "key-root", null, []);
+    }
 }

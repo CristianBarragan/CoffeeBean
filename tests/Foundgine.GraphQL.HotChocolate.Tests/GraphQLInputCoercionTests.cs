@@ -1,9 +1,7 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Extensions.GraphQL.HotChocolate;
+using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic.Planning.Mutation;
-using Foundgine.Core.Semantic;
-using Xunit;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
@@ -16,10 +14,10 @@ public sealed class GraphQLInputCoercionTests
 
         var ex = Assert.Throws<InvalidOperationException>(() =>
             new HotChocolateMutationAdapter(model, metadata).Adapt("""
-                mutation CreateCustomer($input: CustomerInput!) {
-                  createCustomer(input: $input) { id }
-                }
-                """));
+                                                                   mutation CreateCustomer($input: CustomerInput!) {
+                                                                     createCustomer(input: $input) { id }
+                                                                   }
+                                                                   """));
 
         Assert.Contains("$input", ex.Message);
         Assert.Contains("non-null", ex.Message);
@@ -32,10 +30,10 @@ public sealed class GraphQLInputCoercionTests
 
         var ex = Assert.Throws<InvalidOperationException>(() =>
             new HotChocolateMutationAdapter(model, metadata).Adapt("""
-                mutation CreateCustomer($input: CustomerInput) {
-                  createCustomer(input: $input) { id }
-                }
-                """));
+                                                                   mutation CreateCustomer($input: CustomerInput) {
+                                                                     createCustomer(input: $input) { id }
+                                                                   }
+                                                                   """));
 
         Assert.Contains("input", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -46,10 +44,10 @@ public sealed class GraphQLInputCoercionTests
         var (model, metadata) = BuildCustomer();
 
         var intent = new HotChocolateMutationAdapter(model, metadata).Adapt("""
-            mutation CreateCustomer($input: CustomerInput = { name: "Ada" }) {
-              createCustomer(input: $input) { id name }
-            }
-            """);
+                                                                            mutation CreateCustomer($input: CustomerInput = { name: "Ada" }) {
+                                                                              createCustomer(input: $input) { id name }
+                                                                            }
+                                                                            """);
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Equal("Ada", Assert.Single(mutation.Fields).Value);
@@ -61,10 +59,11 @@ public sealed class GraphQLInputCoercionTests
         var (model, metadata) = BuildCustomer();
 
         var intent = new HotChocolateMutationAdapter(model, metadata).Adapt("""
-            mutation CreateCustomer($name: String!) {
-              createCustomer(input: { name: $name }) { id name }
-            }
-            """, new Dictionary<string, object?> { ["name"] = "Ada" });
+                                                                            mutation CreateCustomer($name: String!) {
+                                                                              createCustomer(input: { name: $name }) { id name }
+                                                                            }
+                                                                            """,
+            new Dictionary<string, object?> { ["name"] = "Ada" });
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Equal("Ada", Assert.Single(mutation.Fields).Value);
@@ -77,10 +76,11 @@ public sealed class GraphQLInputCoercionTests
 
         var ex = Assert.Throws<InvalidOperationException>(() =>
             new HotChocolateMutationAdapter(model, metadata).Adapt("""
-                mutation CreateCustomer($name: String!) {
-                  createCustomer(input: { name: $name }) { id name }
-                }
-                """, new Dictionary<string, object?> { ["name"] = 123 }));
+                                                                   mutation CreateCustomer($name: String!) {
+                                                                     createCustomer(input: { name: $name }) { id name }
+                                                                   }
+                                                                   """,
+                new Dictionary<string, object?> { ["name"] = 123 }));
 
         Assert.Contains("String", ex.Message);
     }
@@ -92,10 +92,11 @@ public sealed class GraphQLInputCoercionTests
 
         var ex = Assert.Throws<InvalidOperationException>(() =>
             new HotChocolateMutationAdapter(model, metadata).Adapt("""
-                mutation CreateCustomer($name: String!) {
-                  createCustomer(input: { name: $name }) { id name }
-                }
-                """, new Dictionary<string, object?> { ["name"] = null }));
+                                                                   mutation CreateCustomer($name: String!) {
+                                                                     createCustomer(input: { name: $name }) { id name }
+                                                                   }
+                                                                   """,
+                new Dictionary<string, object?> { ["name"] = null }));
 
         Assert.Contains("cannot be null", ex.Message);
     }
@@ -107,10 +108,11 @@ public sealed class GraphQLInputCoercionTests
 
         // The adapter-level coercion accepts GraphQL's singleton-to-list input coercion.
         var intent = new HotChocolateMutationAdapter(model, metadata).Adapt("""
-            mutation UpsertCustomer($names: [String!]!) {
-              upsertCustomer(input: { name: "Ada" }, onConflict: $names) { id name }
-            }
-            """, new Dictionary<string, object?> { ["names"] = "Name" });
+                                                                            mutation UpsertCustomer($names: [String!]!) {
+                                                                              upsertCustomer(input: { name: "Ada" }, onConflict: $names) { id name }
+                                                                            }
+                                                                            """,
+            new Dictionary<string, object?> { ["names"] = "Name" });
 
         var mutation = Assert.IsType<UpsertIntent>(intent.Mutation);
         Assert.Equal(new[] { new ColumnId(2) }, mutation.ConflictColumns);
@@ -122,14 +124,14 @@ public sealed class GraphQLInputCoercionTests
         var (model, metadata) = BuildCustomer();
 
         var intent = new HotChocolateMutationAdapter(model, metadata).Adapt("""
-            mutation CreateCustomer($name: String!) {
-              createCustomer(input: { name: $name }) { id name }
-            }
-            """, new Dictionary<string, object?>
-            {
-                ["name"] = "Ada",
-                ["unused"] = true
-            });
+                                                                            mutation CreateCustomer($name: String!) {
+                                                                              createCustomer(input: { name: $name }) { id name }
+                                                                            }
+                                                                            """, new Dictionary<string, object?>
+        {
+            ["name"] = "Ada",
+            ["unused"] = true
+        });
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Equal("Ada", Assert.Single(mutation.Fields).Value);
@@ -141,9 +143,11 @@ public sealed class GraphQLInputCoercionTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 

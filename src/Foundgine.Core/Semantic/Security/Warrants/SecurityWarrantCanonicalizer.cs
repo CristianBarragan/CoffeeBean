@@ -1,7 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-
 namespace Foundgine.Core.Semantic.Security.Warrants;
 
 /// <summary>Canonical, provider-neutral representation used for signing and hashing.</summary>
@@ -20,7 +16,11 @@ public static class SecurityWarrantCanonicalizer
             .OrderBy(x => x.Capability, StringComparer.Ordinal)
             .ThenBy(x => x.Operation, StringComparer.Ordinal)
             .ThenBy(x => string.Join("\u001f", x.ResourceScopes), StringComparer.Ordinal)
-            .Select(x => new { capability = x.Capability, operation = x.Operation, resourceScopes = x.ResourceScopes.OrderBy(v => v, StringComparer.Ordinal).ToArray() })
+            .Select(x => new
+            {
+                capability = x.Capability, operation = x.Operation,
+                resourceScopes = x.ResourceScopes.OrderBy(v => v, StringComparer.Ordinal).ToArray()
+            })
             .ToArray();
 
         var payload = new
@@ -54,6 +54,8 @@ public static class SecurityWarrantCanonicalizer
         });
     }
 
-    public static string Digest(SecurityWarrant warrant) =>
-        Convert.ToHexString(SHA256.HashData(UnsignedBytes(warrant)));
+    public static string Digest(SecurityWarrant warrant)
+    {
+        return Convert.ToHexString(SHA256.HashData(UnsignedBytes(warrant)));
+    }
 }

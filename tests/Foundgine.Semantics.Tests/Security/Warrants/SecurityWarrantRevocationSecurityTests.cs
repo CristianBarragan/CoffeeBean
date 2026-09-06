@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace Foundgine.Core.Semantic.Security.Warrants;
 
 public sealed class SecurityWarrantRevocationSecurityTests
@@ -118,22 +116,28 @@ public sealed class SecurityWarrantRevocationSecurityTests
         Assert.Equal(2, store.CurrentSequence); // attempted transitions remain monotonic
     }
 
-    private static SecurityWarrant Create(DateTimeOffset now) => new(
-        "root", "issuer", "agent-a", "foundgine",
-        [new CapabilityGrant("Customer.read", "read", ["customer/*"])],
-        new SecurityWarrantConstraints(allowedTenants: ["tenant-1"], maxResults: 100),
-        now.AddMinutes(-1), now.AddHours(1), "nonce-root", "key-1", null, []);
-
-    private static SecurityWarrant Child(SecurityWarrant parent, string id, string subject) => parent with
+    private static SecurityWarrant Create(DateTimeOffset now)
     {
-        Id = id,
-        Subject = subject,
-        Issuer = parent.Subject,
-        ParentId = parent.Id,
-        ParentDigest = parent.Digest,
-        DelegationPath = [.. parent.DelegationPath, parent.Digest],
-        Signature = [],
-        Nonce = "nonce-" + id,
-        ExpiresAt = parent.ExpiresAt.AddMinutes(-1)
-    };
+        return new(
+            "root", "issuer", "agent-a", "foundgine",
+            [new CapabilityGrant("Customer.read", "read", ["customer/*"])],
+            new SecurityWarrantConstraints(allowedTenants: ["tenant-1"], maxResults: 100),
+            now.AddMinutes(-1), now.AddHours(1), "nonce-root", "key-1", null, []);
+    }
+
+    private static SecurityWarrant Child(SecurityWarrant parent, string id, string subject)
+    {
+        return parent with
+        {
+            Id = id,
+            Subject = subject,
+            Issuer = parent.Subject,
+            ParentId = parent.Id,
+            ParentDigest = parent.Digest,
+            DelegationPath = [.. parent.DelegationPath, parent.Digest],
+            Signature = [],
+            Nonce = "nonce-" + id,
+            ExpiresAt = parent.ExpiresAt.AddMinutes(-1)
+        };
+    }
 }

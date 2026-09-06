@@ -1,6 +1,5 @@
+using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Expressions;
-using Foundgine.Core.Semantic.Query;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -10,11 +9,11 @@ public sealed class SemanticAlgebraTests
     public void LogicalNormalization_FlattensSortsAndDeduplicates()
     {
         var a = new SemanticBinaryExpression("eq",
-            new SemanticFieldReferenceExpression(new Foundgine.Core.Abstractions.FieldId(1), new SemanticType.Scalar(SemanticScalarKind.Int32)),
+            new SemanticFieldReferenceExpression(new FieldId(1), new SemanticType.Scalar(SemanticScalarKind.Int32)),
             new SemanticLiteralExpression(SemanticValue.From(1), new SemanticType.Scalar(SemanticScalarKind.Int32)),
             SemanticExpressionTypes.Boolean);
         var b = new SemanticBinaryExpression("eq",
-            new SemanticFieldReferenceExpression(new Foundgine.Core.Abstractions.FieldId(2), new SemanticType.Scalar(SemanticScalarKind.Int32)),
+            new SemanticFieldReferenceExpression(new FieldId(2), new SemanticType.Scalar(SemanticScalarKind.Int32)),
             new SemanticLiteralExpression(SemanticValue.From(2), new SemanticType.Scalar(SemanticScalarKind.Int32)),
             SemanticExpressionTypes.Boolean);
         var expression = new SemanticLogicalExpression(
@@ -27,7 +26,8 @@ public sealed class SemanticAlgebraTests
         Assert.Equal(2, logical.Operands.Count);
         Assert.Equal(
             SemanticExpressionNormalizer.Canonicalize(logical.Operands[0]),
-            SemanticExpressionNormalizer.Canonicalize(logical.Operands.OrderBy(SemanticExpressionNormalizer.Canonicalize).First()));
+            SemanticExpressionNormalizer.Canonicalize(logical.Operands
+                .OrderBy(SemanticExpressionNormalizer.Canonicalize).First()));
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public sealed class SemanticAlgebraTests
     public void CountOrdering_DoesNotRequireAFieldSemantically()
     {
         var source = new SemanticFieldReferenceExpression(
-            new Foundgine.Core.Abstractions.FieldId(7),
+            new FieldId(7),
             new SemanticType.Collection(new SemanticType.Object("Order")));
 
         var expression = new SemanticAggregateExpression(SemanticAggregateExpressionKind.Count, source);

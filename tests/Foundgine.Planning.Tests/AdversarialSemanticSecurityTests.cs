@@ -1,15 +1,13 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Capabilities;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
 /// <summary>
-/// Provider-independent adversarial checks for the semantic security boundary.
-/// These are intentionally small: the goal is to lock the invariants that must
-/// hold before SQL/GraphQL/MCP execution is allowed to occur.
+///     Provider-independent adversarial checks for the semantic security boundary.
+///     These are intentionally small: the goal is to lock the invariants that must
+///     hold before SQL/GraphQL/MCP execution is allowed to occur.
 /// </summary>
 public sealed class AdversarialSemanticSecurityTests
 {
@@ -65,17 +63,20 @@ public sealed class AdversarialSemanticSecurityTests
         Assert.Contains(create.Constraints, x => x.Name == "writable-fields");
     }
 
-    private static SemanticModel Model() =>
-        new SemanticModelBuilder()
+    private static SemanticModel Model()
+    {
+        return new SemanticModelBuilder()
             .Entity(new EntityId(1), "Customer", e => e
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(2), "Name", typeof(string))
                 .Field(new FieldId(3), "Balance", typeof(decimal))
                 .Field(new FieldId(4), "TenantId", typeof(int)))
             .Build();
+    }
 
-    private static SemanticModel ModelWithAccount() =>
-        new SemanticModelBuilder()
+    private static SemanticModel ModelWithAccount()
+    {
+        return new SemanticModelBuilder()
             .Entity(new EntityId(1), "Customer", e => e
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(2), "Name", typeof(string))
@@ -84,21 +85,29 @@ public sealed class AdversarialSemanticSecurityTests
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(2), "Balance", typeof(decimal)))
             .Build();
+    }
 
     private sealed class TenantPolicy(AuthorizationPredicate predicate) : AllowAllSemanticAuthorizationPolicy
     {
-        public override AuthorizationPredicate? GetPredicate(EntityId entityId, AuthorizationOperation operation) =>
-            operation == AuthorizationOperation.Read ? predicate : null;
+        public override AuthorizationPredicate? GetPredicate(EntityId entityId, AuthorizationOperation operation)
+        {
+            return operation == AuthorizationOperation.Read ? predicate : null;
+        }
     }
 
     private sealed class HiddenFieldPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessField(EntityId entityId, FieldId fieldId) => fieldId != new FieldId(3);
+        public override bool CanAccessField(EntityId entityId, FieldId fieldId)
+        {
+            return fieldId != new FieldId(3);
+        }
     }
 
     private sealed class DenyAccountTraversalPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId) =>
-            relationshipId != new RelationshipId(10);
+        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId)
+        {
+            return relationshipId != new RelationshipId(10);
+        }
     }
 }

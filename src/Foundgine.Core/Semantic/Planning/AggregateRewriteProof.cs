@@ -4,29 +4,36 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// The composite, fail-closed proof gate for a rewrite that substitutes one aggregate for
-/// another (including substituting an aggregate for itself against a different candidate plan
-/// or provider).
-///
-/// A rewrite of this shape touches four independent dimensions, and every one of them must be
-/// satisfied before the rewrite is allowed to fire:
-/// <list type="bullet">
-///   <item>provider-neutral semantic equivalence of the surrounding plan
-///     (<see cref="SemanticEquivalence"/>, via <see cref="SemanticEquivalenceProof"/>)</item>
-///   <item>aggregate semantics — empty-collection result, NULL-input behavior, duplicate
-///     sensitivity, and any cardinality requirement — preserved by the substitution
-///     (<see cref="EmptySetEquivalence"/>, <see cref="NullEquivalence"/>,
-///     <see cref="DuplicateEquivalence"/>, <see cref="CardinalityProof"/>, via
-///     <see cref="AggregateRewriteLegality"/>)</item>
-///   <item>the target provider actually declares support for the resulting aggregate
-///     (via <see cref="AggregateProviderCapability"/>)</item>
-///   <item>the rewrite does not regress the plan's security contract
-///     (<see cref="AuthorizationPreservation"/>, via <see cref="AuthorizationPreservationProof"/>)</item>
-/// </list>
-/// <see cref="Create"/> fails closed: it throws <see cref="InvalidOperationException"/> the
-/// moment any dimension is violated, rather than returning a proof callers might forget to
-/// check. Semantic equivalence is checked first because nothing else about the rewrite is
-/// meaningful if the rewritten plan does not even mean the same thing.
+///     The composite, fail-closed proof gate for a rewrite that substitutes one aggregate for
+///     another (including substituting an aggregate for itself against a different candidate plan
+///     or provider).
+///     A rewrite of this shape touches four independent dimensions, and every one of them must be
+///     satisfied before the rewrite is allowed to fire:
+///     <list type="bullet">
+///         <item>
+///             provider-neutral semantic equivalence of the surrounding plan
+///             (<see cref="SemanticEquivalence" />, via <see cref="SemanticEquivalenceProof" />)
+///         </item>
+///         <item>
+///             aggregate semantics — empty-collection result, NULL-input behavior, duplicate
+///             sensitivity, and any cardinality requirement — preserved by the substitution
+///             (<see cref="EmptySetEquivalence" />, <see cref="NullEquivalence" />,
+///             <see cref="DuplicateEquivalence" />, <see cref="CardinalityProof" />, via
+///             <see cref="AggregateRewriteLegality" />)
+///         </item>
+///         <item>
+///             the target provider actually declares support for the resulting aggregate
+///             (via <see cref="AggregateProviderCapability" />)
+///         </item>
+///         <item>
+///             the rewrite does not regress the plan's security contract
+///             (<see cref="AuthorizationPreservation" />, via <see cref="AuthorizationPreservationProof" />)
+///         </item>
+///     </list>
+///     <see cref="Create" /> fails closed: it throws <see cref="InvalidOperationException" /> the
+///     moment any dimension is violated, rather than returning a proof callers might forget to
+///     check. Semantic equivalence is checked first because nothing else about the rewrite is
+///     meaningful if the rewritten plan does not even mean the same thing.
 /// </summary>
 public sealed record AggregateRewriteProof(
     SemanticEquivalenceProof SemanticEquivalence,
@@ -49,9 +56,9 @@ public sealed record AggregateRewriteProof(
         && AuthorizationPreservation.IsSatisfied;
 
     /// <summary>
-    /// Builds and validates the full proof for substituting aggregate <paramref name="to"/> for
-    /// aggregate <paramref name="from"/> when rewriting <paramref name="before"/> into
-    /// <paramref name="after"/> under <paramref name="providerCapability"/>.
+    ///     Builds and validates the full proof for substituting aggregate <paramref name="to" /> for
+    ///     aggregate <paramref name="from" /> when rewriting <paramref name="before" /> into
+    ///     <paramref name="after" /> under <paramref name="providerCapability" />.
     /// </summary>
     public static AggregateRewriteProof Create(
         SemanticPlan before,

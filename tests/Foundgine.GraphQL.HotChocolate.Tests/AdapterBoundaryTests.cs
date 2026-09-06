@@ -1,7 +1,3 @@
-using Foundgine.Core.Abstractions;
-using Foundgine.Extensions.GraphQL.HotChocolate;
-using Xunit;
-
 namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
 public sealed class AdapterBoundaryTests

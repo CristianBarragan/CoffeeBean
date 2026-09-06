@@ -1,9 +1,9 @@
 namespace Foundgine.SupplyChain.Advanced.Application;
 
 /// <summary>
-/// Application execution limits for the Supply Chain showcase.
-/// These are operational/security policy, not structural metadata and not
-/// generated semantic topology.
+///     Application execution limits for the Supply Chain showcase.
+///     These are operational/security policy, not structural metadata and not
+///     generated semantic topology.
 /// </summary>
 public static class SupplyChainExecutionLimits
 {

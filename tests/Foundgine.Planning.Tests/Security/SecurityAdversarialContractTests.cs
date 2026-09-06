@@ -1,17 +1,16 @@
-using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Security;
-using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Capabilities;
 using Foundgine.Core.Semantic.Security;
-using Foundgine.Core.Abstractions;
-using Xunit;
+using Foundgine.Testing;
 
 namespace Foundgine.Core.Semantic.Planning.Tests.Security;
 
 /// <summary>
-/// M2 adversarial tests. These tests deliberately mutate or weaken the
-/// security contract and assert that the earliest enforceable boundary rejects
-/// the attack rather than merely producing a different result later.
+///     M2 adversarial tests. These tests deliberately mutate or weaken the
+///     security contract and assert that the earliest enforceable boundary rejects
+///     the attack rather than merely producing a different result later.
 /// </summary>
 public sealed class SecurityAdversarialContractTests
 {
@@ -56,10 +55,10 @@ public sealed class SecurityAdversarialContractTests
     {
         var before = SecuredPlan(SecurityInvariantIds.FieldVisibility);
         var after = new SemanticPlan(
-            before.Root with
-            {
-                Fields = [new FieldId(999)]
-            })
+                before.Root with
+                {
+                    Fields = [new FieldId(999)]
+                })
             with
             {
                 RequiredSecurityInvariants = before.EffectiveSecurityInvariants
@@ -137,7 +136,7 @@ public sealed class SecurityAdversarialContractTests
     [Fact]
     public void Proofless_provider_plan_is_rejected_at_execution_boundary()
     {
-        var ir = Foundgine.Testing.ExecutionIRTestFactory.Create(
+        var ir = ExecutionIRTestFactory.Create(
             new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [], null, null, []),
             [SecurityInvariantIds.AuthorizationRequired]);
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -155,7 +154,7 @@ public sealed class SecurityAdversarialContractTests
             []);
         var plan = new UnprovedPlan { SecurityProof = proof };
 
-        var ir = Foundgine.Testing.ExecutionIRTestFactory.Create(
+        var ir = ExecutionIRTestFactory.Create(
             new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [], null, null, []),
             [SecurityInvariantIds.TenantIsolation]);
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -167,11 +166,11 @@ public sealed class SecurityAdversarialContractTests
     [Fact]
     public void Capability_contract_rejects_unknown_invariant_before_planning()
     {
-        var capability = new Foundgine.Core.Semantic.Capabilities.SemanticCapability(
+        var capability = new SemanticCapability(
             "Customer.read",
             "Read Customer",
             new EntityId(1),
-            Foundgine.Core.Abstractions.AuthorizationDecision.Allowed,
+            AuthorizationDecision.Allowed,
             [], [], [], ["Name"], [])
         {
             RequiredSecurityInvariants = ["security.attacker-added"]
@@ -201,5 +200,3 @@ public sealed class SecurityAdversarialContractTests
 
     private sealed record UnprovedPlan() : ProviderPlan("adversarial-provider");
 }
-
-

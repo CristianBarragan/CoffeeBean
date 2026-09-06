@@ -1,11 +1,8 @@
-using System.Linq.Expressions;
-using Foundgine.Providers.Aot;
-
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-/// A small AOT fixture owned by the E2E test project so the generated metadata
-/// used by  contains the authorization being exercised by the SQL execution tests.
+///     A small AOT fixture owned by the E2E test project so the generated metadata
+///     used by  contains the authorization being exercised by the SQL execution tests.
 /// </summary>
 [FoundgineEntity(Id = 3, StorageName = "contracts")]
 public sealed class Contract

@@ -18,6 +18,7 @@ traversing this relationship) that only get turned into SQL at the very last
 step, by a compiler that knows your schema.
 
 Why does that matter in practice?
+
 - An LLM-driven agent calling `place_order` can't SQL-inject anything — there
   is no SQL for it to inject into. It can only invoke named, typed capabilities.
 - If you rename a column (`email` → `email_address`), you edit **one
@@ -30,10 +31,10 @@ Why does that matter in practice?
 
 ## 1. Prerequisites — what each one is for
 
-| Requirement | Why you need it |
-|---|---|
-| **.NET 9 SDK** | Foundgine's generator is a Roslyn *source generator*, which only runs inside a .NET/Roslyn compilation. You cannot use an older SDK — Roslyn incremental generators need a modern SDK/compiler. |
-| **Docker Desktop** | The sample stores data in real PostgreSQL, not an in-memory fake, so the SQL compiler output is exercised against a real engine (real types, real constraints, real query plans). |
+| Requirement                     | Why you need it                                                                                                                                                                                                                        |
+|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **.NET 9 SDK**                  | Foundgine's generator is a Roslyn *source generator*, which only runs inside a .NET/Roslyn compilation. You cannot use an older SDK — Roslyn incremental generators need a modern SDK/compiler.                                        |
+| **Docker Desktop**              | The sample stores data in real PostgreSQL, not an in-memory fake, so the SQL compiler output is exercised against a real engine (real types, real constraints, real query plans).                                                      |
 | **Git clone with project refs** | Because `Foundgine.Core/Runtime/Providers` are still evolving alongside the sample, the tutorial deliberately uses `<ProjectReference>` instead of published NuGet versions, so you always build against the exact source in the repo. |
 
 **Verify** with `dotnet --version` / `docker --version` before doing anything
@@ -87,6 +88,7 @@ worth understanding why the tutorial keeps them separate:
    boundary is leaking.
 
 **IDs matter, and here's the actual rule, precisely:**
+
 - `[FoundgineModel(..., Id = N)]` — unique across all models.
 - `[FoundgineEntity(..., Id = N)]` — unique across all entities.
 - `[FoundgineField(..., Id = N)]` — unique *within its entity* (two different
@@ -111,6 +113,7 @@ files later when a query mysteriously returns nothing.
 ## 6. Why there's no semantic-model file to write — and why the mapping still is
 
 ### The short version
+
 Earlier revisions of this sample had you hand-write
 `Semantics/SupplyChainSemanticModel.cs` — a "front door" file so nothing in
 `Infrastructure`/`Application` imported `Foundgine.Generated` directly or
@@ -121,6 +124,7 @@ code (`SupplyChainQueryRepository`, `SupplyChainMutationRepository`,
 for the wrapper to do.
 
 ### Why it became unnecessary
+
 The wrapper originally earned its place two ways:
 
 1. **`EntityId` passthrough properties** (`Customer`, `SalesOrder`, …) — low
@@ -314,6 +318,7 @@ dotnet test tests/Foundgine.Aot.Tests
 ## 12. Where the starter stops, on purpose
 
 The tutorial is explicit that it's not implementing:
+
 - Claim-based (as opposed to capability-name-based) authorization,
 - The full `PlaceOrder` inventory/idempotency guarantee logic,
 - Ambiguity resolution for vague natural-language questions,

@@ -1,20 +1,17 @@
-using System.Security.Cryptography;
-using System.Text;
 using Foundgine.Runtime.ControlPlane;
-using Npgsql;
 
 namespace Foundgine.HighAssurance.Postgres.Execution;
 
 /// <summary>
-/// Crash-recovery boundary for durable authorization state. PostgreSQL is the source of
-/// truth; an application process must never restore pre-crash in-memory authority without
-/// first validating the durable security-state checkpoint.
+///     Crash-recovery boundary for durable authorization state. PostgreSQL is the source of
+///     truth; an application process must never restore pre-crash in-memory authority without
+///     first validating the durable security-state checkpoint.
 /// </summary>
 public sealed class PostgresAuthorizationRecoveryCoordinator
 {
     private const long CheckpointId = 1;
-    private readonly NpgsqlDataSource _dataSource;
     private readonly IAuthorizationRecoverySequenceAnchor _anchor;
+    private readonly NpgsqlDataSource _dataSource;
 
     public PostgresAuthorizationRecoveryCoordinator(
         NpgsqlDataSource dataSource,
@@ -32,10 +29,11 @@ public sealed class PostgresAuthorizationRecoveryCoordinator
     }
 
     /// <summary>
-    /// Seals the exact database state inside the caller's transaction. The checkpoint is
-    /// therefore committed atomically with the security transition.
+    ///     Seals the exact database state inside the caller's transaction. The checkpoint is
+    ///     therefore committed atomically with the security transition.
     /// </summary>
-    public async Task SealAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, long sequence, CancellationToken cancellationToken = default)
+    public async Task SealAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, long sequence,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(connection);
         ArgumentNullException.ThrowIfNull(transaction);
@@ -43,18 +41,19 @@ public sealed class PostgresAuthorizationRecoveryCoordinator
 
         var anchored = await _anchor.ReadAsync(cancellationToken);
         if (sequence <= anchored)
-            throw new InvalidOperationException($"Recovery checkpoint sequence {sequence} is not greater than durable anchor {anchored}; rollback/replay rejected.");
+            throw new InvalidOperationException(
+                $"Recovery checkpoint sequence {sequence} is not greater than durable anchor {anchored}; rollback/replay rejected.");
 
         var digest = await ComputeStateDigestAsync(connection, transaction, cancellationToken);
         const string sql = """
-            INSERT INTO banking.authorization_security_recovery_checkpoint(checkpoint_id, sequence, state_digest, status)
-            VALUES (1, @sequence, @digest, 'sealed')
-            ON CONFLICT (checkpoint_id) DO UPDATE
-            SET sequence = EXCLUDED.sequence,
-                state_digest = EXCLUDED.state_digest,
-                status = EXCLUDED.status,
-                updated_at = now();
-            """;
+                           INSERT INTO banking.authorization_security_recovery_checkpoint(checkpoint_id, sequence, state_digest, status)
+                           VALUES (1, @sequence, @digest, 'sealed')
+                           ON CONFLICT (checkpoint_id) DO UPDATE
+                           SET sequence = EXCLUDED.sequence,
+                               state_digest = EXCLUDED.state_digest,
+                               status = EXCLUDED.status,
+                               updated_at = now();
+                           """;
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("sequence", sequence);
         command.Parameters.AddWithValue("digest", digest);
@@ -73,38 +72,45 @@ public sealed class PostgresAuthorizationRecoveryCoordinator
     }
 
     /// <summary>
-    /// Validates durable state after process/database recovery. Any mismatch fails closed.
+    ///     Validates durable state after process/database recovery. Any mismatch fails closed.
     /// </summary>
     public async Task<AuthorizationRecoveryResult> VerifyAsync(CancellationToken cancellationToken = default)
     {
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
-        const string sql = "SELECT sequence, state_digest, status FROM banking.authorization_security_recovery_checkpoint WHERE checkpoint_id = 1;";
+        const string sql =
+            "SELECT sequence, state_digest, status FROM banking.authorization_security_recovery_checkpoint WHERE checkpoint_id = 1;";
         await using var command = new NpgsqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
-            return AuthorizationRecoveryResult.Fail("No durable authorization recovery checkpoint exists; authority must not be restored.");
+            return AuthorizationRecoveryResult.Fail(
+                "No durable authorization recovery checkpoint exists; authority must not be restored.");
 
         var sequence = reader.GetInt64(0);
         var anchored = await _anchor.ReadAsync(cancellationToken);
         if (sequence < anchored)
-            return AuthorizationRecoveryResult.Fail("Recovery checkpoint sequence is older than the durable monotonic anchor; rollback/resurrection rejected.");
+            return AuthorizationRecoveryResult.Fail(
+                "Recovery checkpoint sequence is older than the durable monotonic anchor; rollback/resurrection rejected.");
         if (sequence > anchored)
-            return AuthorizationRecoveryResult.Fail("Recovery checkpoint is ahead of the durable monotonic anchor; commit/anchor reconciliation is required.");
+            return AuthorizationRecoveryResult.Fail(
+                "Recovery checkpoint is ahead of the durable monotonic anchor; commit/anchor reconciliation is required.");
 
         var expected = reader.GetString(1);
         var status = reader.GetString(2);
         if (!string.Equals(status, "sealed", StringComparison.Ordinal))
-            return AuthorizationRecoveryResult.Fail("Authorization recovery checkpoint is not sealed; authority must not be restored.");
+            return AuthorizationRecoveryResult.Fail(
+                "Authorization recovery checkpoint is not sealed; authority must not be restored.");
 
         await reader.CloseAsync();
         var actual = await ComputeStateDigestAsync(connection, null, cancellationToken);
         if (!CryptographicOperations.FixedTimeEquals(Convert.FromHexString(expected), Convert.FromHexString(actual)))
-            return AuthorizationRecoveryResult.Fail("Durable authorization state differs from the last committed checkpoint; fail closed.");
+            return AuthorizationRecoveryResult.Fail(
+                "Durable authorization state differs from the last committed checkpoint; fail closed.");
 
         return AuthorizationRecoveryResult.Success(sequence, actual);
     }
 
-    private static async Task<string> ComputeStateDigestAsync(NpgsqlConnection connection, NpgsqlTransaction? transaction, CancellationToken cancellationToken)
+    private static async Task<string> ComputeStateDigestAsync(NpgsqlConnection connection,
+        NpgsqlTransaction? transaction, CancellationToken cancellationToken)
     {
         var canonical = new StringBuilder(4096);
         await AppendRowsAsync(connection, transaction, cancellationToken, canonical,
@@ -116,7 +122,8 @@ public sealed class PostgresAuthorizationRecoveryCoordinator
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical.ToString()))).ToLowerInvariant();
     }
 
-    private static async Task AppendRowsAsync(NpgsqlConnection connection, NpgsqlTransaction? transaction, CancellationToken cancellationToken, StringBuilder canonical, string sql)
+    private static async Task AppendRowsAsync(NpgsqlConnection connection, NpgsqlTransaction? transaction,
+        CancellationToken cancellationToken, StringBuilder canonical, string sql)
     {
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -128,13 +135,25 @@ public sealed class PostgresAuthorizationRecoveryCoordinator
                 var value = reader.IsDBNull(i) ? "<NULL>" : reader.GetValue(i).ToString()!;
                 canonical.Append(value.Length).Append(':').Append(value).Append(';');
             }
+
             canonical.Append('\n');
         }
     }
 }
 
-public sealed record AuthorizationRecoveryResult(bool IsConsistent, long Sequence, string? Digest, string? FailureReason)
+public sealed record AuthorizationRecoveryResult(
+    bool IsConsistent,
+    long Sequence,
+    string? Digest,
+    string? FailureReason)
 {
-    public static AuthorizationRecoveryResult Success(long sequence, string digest) => new(true, sequence, digest, null);
-    public static AuthorizationRecoveryResult Fail(string reason) => new(false, 0, null, reason);
+    public static AuthorizationRecoveryResult Success(long sequence, string digest)
+    {
+        return new AuthorizationRecoveryResult(true, sequence, digest, null);
+    }
+
+    public static AuthorizationRecoveryResult Fail(string reason)
+    {
+        return new(false, 0, null, reason);
+    }
 }

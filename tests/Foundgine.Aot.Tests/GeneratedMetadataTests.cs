@@ -1,10 +1,6 @@
-﻿using System.Linq;
-using System.Linq.Expressions;
-using Foundgine.Providers.Aot;
-using Foundgine.Generated;
+﻿using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Abstractions;
-using Xunit;
 
 namespace Foundgine.Providers.Aot.Tests;
 
@@ -54,13 +50,16 @@ public enum ContractType
 public static class ProductConversions
 {
     [FoundgineConversion(typeof(ProductType), typeof(ContractType))]
-    public static ContractType ToContractType(ProductType value) => value switch
+    public static ContractType ToContractType(ProductType value)
     {
-        ProductType.CreditCard => ContractType.CreditCard,
-        ProductType.Mortgage => ContractType.Mortgage,
-        ProductType.PersonalLoan => ContractType.PersonalLoan,
-        _ => throw new ArgumentOutOfRangeException(nameof(value))
-    };
+        return value switch
+        {
+            ProductType.CreditCard => ContractType.CreditCard,
+            ProductType.Mortgage => ContractType.Mortgage,
+            ProductType.PersonalLoan => ContractType.PersonalLoan,
+            _ => throw new ArgumentOutOfRangeException(nameof(value))
+        };
+    }
 }
 
 [FoundgineModel(Id = 10)]
@@ -103,7 +102,6 @@ public sealed class Contract
     public int TenantId { get; init; }
 }
 
-
 [FoundgineModel(Id = 20)]
 public sealed class DecoupledCustomer
 {
@@ -133,7 +131,6 @@ internal static class DecoupledSchemaMap
 {
 }
 
-
 [FoundgineEntity(Id = 30, StorageName = "implicit_columns")]
 public sealed class ImplicitColumnIdentityEntity
 {
@@ -158,8 +155,6 @@ public sealed class StableColumnIdEntity
     [FoundgineField(StorageName = "value")]
     public string Value { get; init; } = string.Empty;
 }
-
-
 
 [FoundgineEntity(StorageName = "identity_regression_parents")]
 public sealed class IdentityRegressionParent
@@ -186,7 +181,7 @@ public sealed class IdentityRegressionChild
 // form, both on the class and on a member, including a duplicate across
 // the two forms to confirm the generator dedupes case-insensitively.
 [FoundgineEntity(Id = 40, StorageName = "sales_orders")]
-[FoundgineAlias(["SalesOrder", "Order"])]
+[FoundgineAlias("SalesOrder", "Order")]
 [FoundgineAlias("order")]
 public sealed class SalesOrderFixture
 {
@@ -197,8 +192,6 @@ public sealed class SalesOrderFixture
     [FoundgineAlias("State", "Stage")]
     public string Status { get; init; } = string.Empty;
 }
-
-
 
 [FoundgineModel(Id = 50, MinimumWeight = 80)]
 public sealed class WeightedAliasModel
@@ -219,7 +212,7 @@ public sealed class GeneratedMetadataTests
         var model = GeneratedMetadata.Registry.Discover();
 
         Assert.Equal(model.ContractFingerprint, GeneratedSemanticModel.ContractFingerprint);
-        Assert.True(Foundgine.Core.Semantic.SemanticContractAttestation.Matches(
+        Assert.True(SemanticContractAttestation.Matches(
             model, GeneratedSemanticModel.ContractFingerprint));
     }
 
@@ -232,8 +225,10 @@ public sealed class GeneratedMetadataTests
         Assert.Equal(new EntityId(1), customer.Id);
         Assert.Equal("Customer", customer.Name);
         Assert.Equal(["Client"], customer.EffectiveAliases.Select(x => x.Name));
-        Assert.Equal(["DisplayName"], customer.Fields.Single(x => x.Id == new FieldId(2)).EffectiveAliases.Select(x => x.Name));
-        Assert.Equal(["CustomerAccounts"], customer.Relationships.Single(x => x.Id == new RelationshipId(1)).EffectiveAliases.Select(x => x.Name));
+        Assert.Equal(["DisplayName"],
+            customer.Fields.Single(x => x.Id == new FieldId(2)).EffectiveAliases.Select(x => x.Name));
+        Assert.Equal(["CustomerAccounts"],
+            customer.Relationships.Single(x => x.Id == new RelationshipId(1)).EffectiveAliases.Select(x => x.Name));
     }
 
     [Fact]
@@ -254,7 +249,8 @@ public sealed class GeneratedMetadataTests
         Assert.Equal("customers", customer.EffectiveStorageName);
         Assert.Equal("id", customer.Columns.Single(x => x.EffectiveStorageName == "id").EffectiveStorageName);
         Assert.Equal("name", customer.Columns.Single(x => x.EffectiveStorageName == "name").EffectiveStorageName);
-        Assert.Equal(customer.Columns.Single(x => x.EffectiveStorageName == "id").Id, customer.EffectiveFields.Single(x => x.Name == "Id").Column!.ColumnId);
+        Assert.Equal(customer.Columns.Single(x => x.EffectiveStorageName == "id").Id,
+            customer.EffectiveFields.Single(x => x.Name == "Id").Column!.ColumnId);
         Assert.Equal(customer.Columns.Single(x => x.EffectiveStorageName == "id").Id, customer.PrimaryKey!.ColumnId);
     }
 
@@ -263,7 +259,8 @@ public sealed class GeneratedMetadataTests
     {
         var customer = GeneratedMetadata.Registry.GetEntity(new EntityId(1));
         Assert.Equal(["Client"], customer.Aliases?.Select(a => a.Name));
-        Assert.Equal(["DisplayName"], customer.EffectiveFields.Single(x => x.Id == new FieldId(2)).Aliases?.Select(a => a.Name));
+        Assert.Equal(["DisplayName"],
+            customer.EffectiveFields.Single(x => x.Id == new FieldId(2)).Aliases?.Select(a => a.Name));
 
         var relationship = GeneratedMetadata.Registry.GetRelationship(new RelationshipId(1));
         Assert.Equal(["CustomerAccounts"], relationship.Aliases?.Select(a => a.Name));
@@ -309,9 +306,13 @@ public sealed class GeneratedMetadataTests
         Assert.Equal(new EntityId(1), relationship.Source);
         Assert.Equal(new EntityId(2), relationship.Target);
         Assert.Equal(new EntityId(1), relationship.SourceKey.EntityId);
-        Assert.Equal(GeneratedMetadata.Registry.GetEntity(new EntityId(1)).Columns.Single(x => x.EffectiveStorageName == "id").Id, relationship.SourceKey.ColumnId);
+        Assert.Equal(
+            GeneratedMetadata.Registry.GetEntity(new EntityId(1)).Columns.Single(x => x.EffectiveStorageName == "id")
+                .Id, relationship.SourceKey.ColumnId);
         Assert.Equal(new EntityId(2), relationship.TargetKey.EntityId);
-        Assert.Equal(GeneratedMetadata.Registry.GetEntity(new EntityId(2)).Columns.Single(x => x.EffectiveStorageName == "customer_id").Id, relationship.TargetKey.ColumnId);
+        Assert.Equal(
+            GeneratedMetadata.Registry.GetEntity(new EntityId(2)).Columns
+                .Single(x => x.EffectiveStorageName == "customer_id").Id, relationship.TargetKey.ColumnId);
     }
 
     [Fact]
@@ -321,9 +322,13 @@ public sealed class GeneratedMetadataTests
         Assert.Equal(new EntityId(2), relationship.Source);
         Assert.Equal(new EntityId(1), relationship.Target);
         Assert.Equal(new EntityId(2), relationship.SourceKey.EntityId);
-        Assert.Equal(GeneratedMetadata.Registry.GetEntity(new EntityId(2)).Columns.Single(x => x.EffectiveStorageName == "customer_id").Id, relationship.SourceKey.ColumnId);
+        Assert.Equal(
+            GeneratedMetadata.Registry.GetEntity(new EntityId(2)).Columns
+                .Single(x => x.EffectiveStorageName == "customer_id").Id, relationship.SourceKey.ColumnId);
         Assert.Equal(new EntityId(1), relationship.TargetKey.EntityId);
-        Assert.Equal(GeneratedMetadata.Registry.GetEntity(new EntityId(1)).Columns.Single(x => x.EffectiveStorageName == "id").Id, relationship.TargetKey.ColumnId);
+        Assert.Equal(
+            GeneratedMetadata.Registry.GetEntity(new EntityId(1)).Columns.Single(x => x.EffectiveStorageName == "id")
+                .Id, relationship.TargetKey.ColumnId);
     }
 
     [Fact]
@@ -334,6 +339,7 @@ public sealed class GeneratedMetadataTests
         Assert.Equal("Product", provider.GetModel(new ModelId(10)).Name);
         Assert.Equal(new EntityId(3), provider.GetConnection(new ConnectionId(10)).Target);
     }
+
     [Fact]
     public void Generator_emits_model_connections_without_materialization_contracts()
     {
@@ -450,7 +456,6 @@ public sealed class GeneratedMetadataTests
     }
 
 
-
     [Fact]
     public void Aot_generated_automatic_ids_match_runtime_canonical_identity()
     {
@@ -477,5 +482,3 @@ public sealed class GeneratedMetadataTests
             relationship.Id.Value);
     }
 }
-
-

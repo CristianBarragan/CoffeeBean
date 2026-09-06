@@ -1,16 +1,14 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
 namespace Foundgine.Core.Abstractions;
 
 /// <summary>Stable identity of a physical column.</summary>
 [JsonConverter(typeof(ColumnIdJsonConverter))]
 public readonly record struct ColumnId(ulong Value)
 {
-    public static ColumnId Create(string storageName, string columnName) =>
-        new(SemanticIdentity.Hash(SemanticIdentity.ColumnKey(storageName, columnName)));
+    public static ColumnId Create(string storageName, string columnName)
+    {
+        return new ColumnId(SemanticIdentity.Hash(SemanticIdentity.ColumnKey(storageName, columnName)));
+    }
 }
-
 
 public sealed class ColumnIdJsonConverter : JsonConverter<ColumnId>
 {
@@ -29,12 +27,19 @@ public sealed class ColumnIdJsonConverter : JsonConverter<ColumnId>
         throw new JsonException("Expected a ColumnId numeric value or a legacy {\"Value\":...} object.");
     }
 
-    public override void Write(Utf8JsonWriter writer, ColumnId value, JsonSerializerOptions options) =>
+    public override void Write(Utf8JsonWriter writer, ColumnId value, JsonSerializerOptions options)
+    {
         writer.WriteNumberValue(value.Value);
+    }
 
-    public override ColumnId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        new(ulong.Parse(reader.GetString()!));
+    public override ColumnId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert,
+        JsonSerializerOptions options)
+    {
+        return new ColumnId(ulong.Parse(reader.GetString()!));
+    }
 
-    public override void WriteAsPropertyName(Utf8JsonWriter writer, ColumnId value, JsonSerializerOptions options) =>
+    public override void WriteAsPropertyName(Utf8JsonWriter writer, ColumnId value, JsonSerializerOptions options)
+    {
         writer.WritePropertyName(value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
 }

@@ -4,8 +4,8 @@ using Foundgine.Core.Semantic.Authorization;
 namespace Foundgine.Core.Execution;
 
 /// <summary>
-/// Current authorization authority state observed immediately before provider execution.
-/// A state change invalidates previously issued authorization evidence.
+///     Current authorization authority state observed immediately before provider execution.
+///     A state change invalidates previously issued authorization evidence.
 /// </summary>
 public sealed record ExecutionAuthorizationAuthorityState(
     long Version,
@@ -13,8 +13,8 @@ public sealed record ExecutionAuthorizationAuthorityState(
     bool Allowed = true);
 
 /// <summary>
-/// Revalidates authorization at the final execution boundary. Implementations may
-/// consult a database, distributed authority, cache, or another trusted control plane.
+///     Revalidates authorization at the final execution boundary. Implementations may
+///     consult a database, distributed authority, cache, or another trusted control plane.
 /// </summary>
 public interface IExecutionAuthorizationRevalidator
 {

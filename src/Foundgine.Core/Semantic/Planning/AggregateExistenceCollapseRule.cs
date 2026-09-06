@@ -1,16 +1,15 @@
-using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic.Aggregates;
+using Foundgine.Core.Semantic.Query;
 
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Collapses a bare COUNT comparison with an embedded relationship predicate into the
-/// equivalent relationship quantifier:
-/// COUNT(R WHERE P) > 0 / greater or equal 1 / different than 0 -> SOME(R, P)
-/// COUNT(R WHERE P) = 0 / smaller than 1 / smaller than 0 -> NONE(R, P)
-///
-/// The rule is provider-aware by design: relationship-quantifier support must be explicitly
-/// declared by the target provider before the rewrite is allowed to fire.
+///     Collapses a bare COUNT comparison with an embedded relationship predicate into the
+///     equivalent relationship quantifier:
+///     COUNT(R WHERE P) > 0 / greater or equal 1 / different than 0 -> SOME(R, P)
+///     COUNT(R WHERE P) = 0 / smaller than 1 / smaller than 0 -> NONE(R, P)
+///     The rule is provider-aware by design: relationship-quantifier support must be explicitly
+///     declared by the target provider before the rewrite is allowed to fire.
 /// </summary>
 public sealed class AggregateExistenceCollapseRule : IPlanRewriteRule
 {
@@ -108,99 +107,102 @@ public sealed class AggregateExistenceCollapseRule : IPlanRewriteRule
     }
 
     private static SemanticFilterExpression RewriteFilter(
-    SemanticFilterExpression filter,
-    ref bool changed)
-{
-    switch (filter)
+        SemanticFilterExpression filter,
+        ref bool changed)
     {
-        case SemanticAggregateFilter aggregate when IsEligible(aggregate):
+        switch (filter)
         {
-            changed = true;
-
-            var quantifier = IsEmptyStrategy(aggregate)
-                ? SemanticRelationshipQuantifier.None
-                : SemanticRelationshipQuantifier.Some;
-
-            return new SemanticRelationshipFilter(
-                aggregate.Relationship,
-                quantifier,
-                aggregate.Predicate!);
-        }
-
-        case SemanticAndFilter and:
-        {
-            var expressions = new SemanticFilterExpression[and.Expressions.Count];
-            var nodeChanged = false;
-
-            for (var i = 0; i < and.Expressions.Count; i++)
+            case SemanticAggregateFilter aggregate when IsEligible(aggregate):
             {
-                var expression = RewriteFilter(
-                    and.Expressions[i],
-                    ref changed);
+                changed = true;
 
-                expressions[i] = expression;
+                var quantifier = IsEmptyStrategy(aggregate)
+                    ? SemanticRelationshipQuantifier.None
+                    : SemanticRelationshipQuantifier.Some;
 
-                if (!ReferenceEquals(expression, and.Expressions[i]))
-                    nodeChanged = true;
+                return new SemanticRelationshipFilter(
+                    aggregate.Relationship,
+                    quantifier,
+                    aggregate.Predicate!);
             }
 
-            if (!nodeChanged)
-                return filter;
-
-            changed = true;
-            return new SemanticAndFilter(expressions);
-        }
-
-        case SemanticOrFilter or:
-        {
-            var expressions = new SemanticFilterExpression[or.Expressions.Count];
-            var nodeChanged = false;
-
-            for (var i = 0; i < or.Expressions.Count; i++)
+            case SemanticAndFilter and:
             {
-                var expression = RewriteFilter(
-                    or.Expressions[i],
-                    ref changed);
+                var expressions = new SemanticFilterExpression[and.Expressions.Count];
+                var nodeChanged = false;
 
-                expressions[i] = expression;
+                for (var i = 0; i < and.Expressions.Count; i++)
+                {
+                    var expression = RewriteFilter(
+                        and.Expressions[i],
+                        ref changed);
 
-                if (!ReferenceEquals(expression, or.Expressions[i]))
-                    nodeChanged = true;
+                    expressions[i] = expression;
+
+                    if (!ReferenceEquals(expression, and.Expressions[i]))
+                        nodeChanged = true;
+                }
+
+                if (!nodeChanged)
+                    return filter;
+
+                changed = true;
+                return new SemanticAndFilter(expressions);
             }
 
-            if (!nodeChanged)
-                return filter;
-
-            changed = true;
-            return new SemanticOrFilter(expressions);
-        }
-
-        case SemanticRelationshipFilter relationship:
-        {
-            var predicate = RewriteFilter(
-                relationship.Predicate,
-                ref changed);
-
-            if (ReferenceEquals(predicate, relationship.Predicate))
-                return filter;
-
-            return relationship with
+            case SemanticOrFilter or:
             {
-                Predicate = predicate
-            };
-        }
+                var expressions = new SemanticFilterExpression[or.Expressions.Count];
+                var nodeChanged = false;
 
-        default:
-            return filter;
+                for (var i = 0; i < or.Expressions.Count; i++)
+                {
+                    var expression = RewriteFilter(
+                        or.Expressions[i],
+                        ref changed);
+
+                    expressions[i] = expression;
+
+                    if (!ReferenceEquals(expression, or.Expressions[i]))
+                        nodeChanged = true;
+                }
+
+                if (!nodeChanged)
+                    return filter;
+
+                changed = true;
+                return new SemanticOrFilter(expressions);
+            }
+
+            case SemanticRelationshipFilter relationship:
+            {
+                var predicate = RewriteFilter(
+                    relationship.Predicate,
+                    ref changed);
+
+                if (ReferenceEquals(predicate, relationship.Predicate))
+                    return filter;
+
+                return relationship with
+                {
+                    Predicate = predicate
+                };
+            }
+
+            default:
+                return filter;
+        }
     }
-}
 
-    private static bool ContainsEligible(SemanticPlanNode node) =>
-        (node.QueryOptions?.Filter is not null && ContainsEligible(node.QueryOptions.Filter)) ||
-        node.Children.Any(ContainsEligible);
+    private static bool ContainsEligible(SemanticPlanNode node)
+    {
+        return (node.QueryOptions?.Filter is not null && ContainsEligible(node.QueryOptions.Filter)) ||
+               node.Children.Any(ContainsEligible);
+    }
 
-    private static bool ContainsEligible(SemanticFilterExpression filter) =>
-        filter switch
+    private static bool ContainsEligible(SemanticFilterExpression filter)
+    {
+        return filter switch
         {
             SemanticAggregateFilter aggregate => IsEligible(aggregate),
             SemanticAndFilter and => and.Expressions.Any(ContainsEligible),
@@ -208,18 +210,23 @@ public sealed class AggregateExistenceCollapseRule : IPlanRewriteRule
             SemanticRelationshipFilter relationship => ContainsEligible(relationship.Predicate),
             _ => false
         };
+    }
 
-    private static bool IsEligible(SemanticAggregateFilter aggregate) =>
-        aggregate.Aggregate == SemanticFilterAggregate.Count &&
-        aggregate.Field is null &&
-        aggregate.Predicate is not null &&
-        AggregateExecutionStrategyResolver.Resolve(aggregate.Operator, aggregate.Value) is
-            AggregateExecutionStrategy.CountExistsShortCircuit or
-            AggregateExecutionStrategy.CountEmptyShortCircuit;
+    private static bool IsEligible(SemanticAggregateFilter aggregate)
+    {
+        return aggregate.Aggregate == SemanticFilterAggregate.Count &&
+               aggregate.Field is null &&
+               aggregate.Predicate is not null &&
+               AggregateExecutionStrategyResolver.Resolve(aggregate.Operator, aggregate.Value) is
+                   AggregateExecutionStrategy.CountExistsShortCircuit or
+                   AggregateExecutionStrategy.CountEmptyShortCircuit;
+    }
 
-    private static bool IsEmptyStrategy(SemanticAggregateFilter aggregate) =>
-        AggregateExecutionStrategyResolver.Resolve(aggregate.Operator, aggregate.Value) ==
-        AggregateExecutionStrategy.CountEmptyShortCircuit;
+    private static bool IsEmptyStrategy(SemanticAggregateFilter aggregate)
+    {
+        return AggregateExecutionStrategyResolver.Resolve(aggregate.Operator, aggregate.Value) ==
+               AggregateExecutionStrategy.CountEmptyShortCircuit;
+    }
 
     private static bool PredicateShapeMatches(SemanticPlan before, SemanticPlan after)
     {
@@ -227,16 +234,15 @@ public sealed class AggregateExistenceCollapseRule : IPlanRewriteRule
         // This additional structural guard ensures the rule did not accidentally drop the
         // relationship predicate while changing only the outer quantifier.
         return CollectExistencePredicates(before.Root).OrderBy(x => x, StringComparer.Ordinal)
-            .SequenceEqual(CollectExistencePredicates(after.Root).OrderBy(x => x, StringComparer.Ordinal), StringComparer.Ordinal);
+            .SequenceEqual(CollectExistencePredicates(after.Root).OrderBy(x => x, StringComparer.Ordinal),
+                StringComparer.Ordinal);
     }
 
     private static IEnumerable<string> CollectExistencePredicates(SemanticPlanNode node)
     {
         if (node.QueryOptions?.Filter is not null)
-        {
             foreach (var value in CollectExistencePredicates(node.QueryOptions.Filter))
                 yield return value;
-        }
 
         foreach (var child in node.Children)
         foreach (var value in CollectExistencePredicates(child))

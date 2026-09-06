@@ -1,9 +1,9 @@
 namespace Foundgine.Core.Semantic.Security;
 
 /// <summary>
-/// Stable machine-readable security invariant attached to a semantic capability
-/// or execution plan. Invariants describe required guarantees; they do not
-/// grant authorization and never replace execution-time policy evaluation.
+///     Stable machine-readable security invariant attached to a semantic capability
+///     or execution plan. Invariants describe required guarantees; they do not
+///     grant authorization and never replace execution-time policy evaluation.
 /// </summary>
 public sealed record SecurityInvariant(
     string Id,
@@ -44,8 +44,8 @@ public static class SecurityInvariantIds
 }
 
 /// <summary>
-/// Canonical registry. The registry is deliberately provider-neutral so every
-/// adapter, planner and provider can reason about the same invariant vocabulary.
+///     Canonical registry. The registry is deliberately provider-neutral so every
+///     adapter, planner and provider can reason about the same invariant vocabulary.
 /// </summary>
 public static class SecurityInvariantRegistry
 {
@@ -120,21 +120,32 @@ public static class SecurityInvariantRegistry
 
     public static IReadOnlyCollection<SecurityInvariant> AllInvariants => All.Values.ToList().AsReadOnly();
 
-    public static SecurityInvariant Get(string id) =>
-        All.TryGetValue(id, out var invariant)
+    public static SecurityInvariant Get(string id)
+    {
+        return All.TryGetValue(id, out var invariant)
             ? invariant
             : throw new KeyNotFoundException($"Unknown security invariant '{id}'.");
+    }
 
-    public static bool Contains(string id) => All.ContainsKey(id);
+    public static bool Contains(string id)
+    {
+        return All.ContainsKey(id);
+    }
 
-    public static SecurityInvariantSet CreateSet(IEnumerable<string> ids) =>
-        new(ids.Distinct(StringComparer.Ordinal).Select(Get).OrderBy(x => x.Id, StringComparer.Ordinal).ToArray());
+    public static SecurityInvariantSet CreateSet(IEnumerable<string> ids)
+    {
+        return new SecurityInvariantSet(
+            ids.Distinct(StringComparer.Ordinal).Select(Get).OrderBy(x => x.Id, StringComparer.Ordinal).ToArray());
+    }
 }
 
 /// <summary>Immutable, deterministically ordered invariant requirements.</summary>
 public sealed record SecurityInvariantSet(IReadOnlyList<SecurityInvariant> Invariants)
 {
-    public bool Contains(string id) => Invariants.Any(x => x.Id == id);
+    public bool Contains(string id)
+    {
+        return Invariants.Any(x => x.Id == id);
+    }
 
     public void Require(string id)
     {

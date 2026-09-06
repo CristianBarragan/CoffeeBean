@@ -1,13 +1,9 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-
 namespace Foundgine.Core.Execution;
 
 /// <summary>
-/// Immutable, provider-neutral evidence that a semantic execution occurred.
-/// The receipt deliberately contains fingerprints rather than request/result
-/// payloads so it can be persisted or transported without copying domain data.
+///     Immutable, provider-neutral evidence that a semantic execution occurred.
+///     The receipt deliberately contains fingerprints rather than request/result
+///     payloads so it can be persisted or transported without copying domain data.
 /// </summary>
 public sealed record ExecutionReceipt(
     string RequestId,
@@ -67,9 +63,11 @@ public static class ExecutionReceiptFactory
             capabilityVersion,
             intentVersion,
             planVersion,
-            evidence.IntentFingerprint ?? throw new InvalidOperationException("Execution evidence is missing an intent fingerprint."),
+            evidence.IntentFingerprint ??
+            throw new InvalidOperationException("Execution evidence is missing an intent fingerprint."),
             evidence.PlanFingerprint,
-            evidence.AuthorizationFingerprint ?? throw new InvalidOperationException("Execution evidence is missing an authorization fingerprint."),
+            evidence.AuthorizationFingerprint ??
+            throw new InvalidOperationException("Execution evidence is missing an authorization fingerprint."),
             evidence.Provider,
             startedAt,
             completedAt,
@@ -97,17 +95,16 @@ public static class ExecutionReceiptFactory
                 AppendValue(canonical, pair.Value);
                 canonical.Append('|');
             }
+
             canonical.Append("row;");
         }
 
         if (result.PageInfo is { } page)
-        {
             canonical.Append("page[")
                 .Append(page.StartCursor).Append('|')
                 .Append(page.EndCursor).Append('|')
                 .Append(page.HasNextPage).Append('|')
                 .Append(page.HasPreviousPage).Append(']');
-        }
 
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical.ToString())));
     }

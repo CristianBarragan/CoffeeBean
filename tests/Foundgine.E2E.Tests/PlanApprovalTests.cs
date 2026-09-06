@@ -1,12 +1,12 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Security;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
-using Foundgine.Core.Semantic.Security;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Security;
+using Foundgine.E2E.Tests.Banking;
 using Foundgine.Runtime;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
@@ -58,29 +58,39 @@ public sealed class PlanApprovalTests
     {
         provider = new TestExecutionProvider();
         return new FoundgineEngine(
-            Banking.BankingSemanticModel.Build(),
+            BankingSemanticModel.Build(),
             new AllowAllSemanticAuthorizationPolicy(),
             new Planner(),
             new TestProviderPlanCompiler(),
             provider);
     }
 
-    private static SemanticRequest Request() => new(
-        Banking.BankingSemanticModel.Customer,
-        [new SemanticSelection(new FieldId(2), null, [])]);
-
-    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private static SemanticRequest Request()
     {
-        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
-            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
-        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-            new(
+        return new(
+            BankingSemanticModel.Customer,
+            [new SemanticSelection(new FieldId(2), null, [])]);
+    }
+
+    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
+    {
+        public ProviderPlan Compile(ExecutionIR ir)
+        {
+            return new TestPlan();
+        }
+
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
+        {
+            return new ProviderSecurityConformanceResult(
                 plan.Provider,
                 ir.RequiredSecurityInvariants,
                 ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
                 Array.Empty<string>());
+        }
 
-        public ProviderPlan Compile(ExecutionIR ir) => new TestPlan();
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
     }
 
     private sealed class TestExecutionProvider : IExecutionProvider

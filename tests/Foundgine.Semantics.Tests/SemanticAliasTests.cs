@@ -1,5 +1,4 @@
 using Foundgine.Core.Abstractions;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -40,7 +39,8 @@ public sealed class SemanticAliasTests
 
         var entity = model.Get(customer);
         Assert.Equal(field, entity.Fields.Single(x => x.EffectiveAliases.Any(a => a.Name == "DisplayName")).Id);
-        Assert.Equal(relationship, entity.Relationships.Single(x => x.EffectiveAliases.Any(a => a.Name == "CustomerAccounts")).Id);
+        Assert.Equal(relationship,
+            entity.Relationships.Single(x => x.EffectiveAliases.Any(a => a.Name == "CustomerAccounts")).Id);
     }
 
     [Fact]

@@ -3,8 +3,8 @@ using Foundgine.Core.Semantic.Planning.Mutation;
 namespace Foundgine.Core.Execution.Mutation;
 
 /// <summary>
-/// Computes execution levels directly from canonical mutation dependencies.
-/// No correlation-shaped compatibility model is involved.
+///     Computes execution levels directly from canonical mutation dependencies.
+///     No correlation-shaped compatibility model is involved.
 /// </summary>
 public static class MutationDependencyLevels
 {
@@ -23,7 +23,7 @@ public static class MutationDependencyLevels
                 dependency.TargetOperationIndex < 0 ||
                 dependency.TargetOperationIndex >= operationCount)
                 throw new InvalidOperationException(
-                    $"Mutation dependency indexes are outside the execution graph: " +
+                    "Mutation dependency indexes are outside the execution graph: " +
                     $"{dependency.SourceOperationIndex} -> {dependency.TargetOperationIndex}.");
 
             if (dependency.SourceOperationIndex == dependency.TargetOperationIndex)
@@ -40,13 +40,11 @@ public static class MutationDependencyLevels
             .ToDictionary(i => i, _ => new List<int>());
 
         foreach (var dependency in edges)
-        {
             if (!outgoing[dependency.SourceOperationIndex].Contains(dependency.TargetOperationIndex))
             {
                 outgoing[dependency.SourceOperationIndex].Add(dependency.TargetOperationIndex);
                 incoming[dependency.TargetOperationIndex]++;
             }
-        }
 
         var remaining = Enumerable.Range(0, operationCount).ToHashSet();
         var levels = new List<IReadOnlyList<int>>();

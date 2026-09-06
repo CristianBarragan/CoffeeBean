@@ -1,9 +1,9 @@
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Records that a rewrite preserved the provider-neutral semantic meaning of
-/// a plan. This is an equivalence check over Foundgine's canonical semantic
-/// representation; it is not a proof that a provider implementation is bug-free.
+///     Records that a rewrite preserved the provider-neutral semantic meaning of
+///     a plan. This is an equivalence check over Foundgine's canonical semantic
+///     representation; it is not a proof that a provider implementation is bug-free.
 /// </summary>
 public sealed record SemanticEquivalenceProof(
     string BeforeFingerprint,

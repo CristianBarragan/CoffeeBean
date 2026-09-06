@@ -1,40 +1,36 @@
-using Foundgine.Core.Semantic.Resolution;
 using Foundgine.SupplyChain.Advanced.Semantics;
-using Xunit;
 
 namespace Foundgine.SupplyChain.Advanced.Tests.Grounding;
 
 /// <summary>
-/// Case study for <see>
-///     <cref>SemanticLexicalResolver.Ground</cref>
-/// </see>
-/// against the real
-/// generated Supply Chain semantic contract (see docs/GROUNDING-DECISIONS.md).
-/// 
-/// This is not a retrieval-provider test — no Elasticsearch or pgvector is
-/// involved, and the two tests below use a fixed <see cref="FakeLexicalSource"/>
-/// instead. The point is narrower: given candidates a retrieval provider could
-/// plausibly return for this exact schema, does the resolver correctly tell a
-/// materially ambiguous business term apart from two pieces of evidence for the
-/// same term?
-/// 
-/// "Show me our active suppliers" is a realistic operator question, and
-/// "active" is genuinely ambiguous against this schema:
-/// 
-///   - a supplier with an open purchase order right now
+///     Case study for
+///     <see>
+///         <cref>SemanticLexicalResolver.Ground</cref>
+///     </see>
+///     against the real
+///     generated Supply Chain semantic contract (see docs/GROUNDING-DECISIONS.md).
+///     This is not a retrieval-provider test — no Elasticsearch or pgvector is
+///     involved, and the two tests below use a fixed <see cref="FakeLexicalSource" />
+///     instead. The point is narrower: given candidates a retrieval provider could
+///     plausibly return for this exact schema, does the resolver correctly tell a
+///     materially ambiguous business term apart from two pieces of evidence for the
+///     same term?
+///     "Show me our active suppliers" is a realistic operator question, and
+///     "active" is genuinely ambiguous against this schema:
+///     - a supplier with an open purchase order right now
 ///     (PurchaseOrder.Status == Open, reached via Supplier.purchaseOrders); or
-///   - a supplier whose certification hasn't lapsed
+///     - a supplier whose certification hasn't lapsed
 ///     (SupplierCertification.ValidTo, reached via Supplier.certifications).
-/// 
-/// Both are legitimate, both are structurally valid against the frozen
-/// contract, and they are not the same meaning — a supplier can satisfy one
-/// and not the other. A resolver that just returns the top-scored candidate
-/// would silently pick one interpretation and authorize/execute a query the
-/// caller never asked for. <see>
-///     <cref>SemanticLexicalResolver.Ground</cref>
-/// </see>
-/// is
-/// designed to catch exactly this and refuse to commit.
+///     Both are legitimate, both are structurally valid against the frozen
+///     contract, and they are not the same meaning — a supplier can satisfy one
+///     and not the other. A resolver that just returns the top-scored candidate
+///     would silently pick one interpretation and authorize/execute a query the
+///     caller never asked for.
+///     <see>
+///         <cref>SemanticLexicalResolver.Ground</cref>
+///     </see>
+///     is
+///     designed to catch exactly this and refuse to commit.
 /// </summary>
 public sealed class SupplyChainGroundingAmbiguityTests
 {
@@ -109,11 +105,13 @@ public sealed class SupplyChainGroundingAmbiguityTests
     private sealed class FakeLexicalSource(params SemanticLexicalCandidate[] candidates)
         : ISemanticLexicalCandidateSource
     {
-        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request) =>
-            candidates
+        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request)
+        {
+            return candidates
                 .Where(x => string.Equals(x.Token, request.Token, StringComparison.OrdinalIgnoreCase))
                 .Where(x => request.EffectiveKinds.Contains(x.Kind))
                 .OrderByDescending(x => x.Score)
                 .ToArray();
+        }
     }
 }

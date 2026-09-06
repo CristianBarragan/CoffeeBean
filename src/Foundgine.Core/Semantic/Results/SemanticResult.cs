@@ -3,9 +3,9 @@ using Foundgine.Core.Abstractions;
 namespace Foundgine.Core.Semantic.Results;
 
 /// <summary>
-/// Provider-independent result of a resolved semantic operation.
-/// Transport adapters may reshape this tree, but the semantic topology and
-/// selected field values remain stable.
+///     Provider-independent result of a resolved semantic operation.
+///     Transport adapters may reshape this tree, but the semantic topology and
+///     selected field values remain stable.
 /// </summary>
 public sealed record SemanticResult(
     IReadOnlyList<SemanticResultNode> Roots,
@@ -39,10 +39,12 @@ public sealed class SemanticResultNode
             x => x.Key,
             x => (IReadOnlyList<SemanticResultNode>)x.Value);
 
-    internal List<SemanticResultNode> GetChildren(RelationshipId relationshipId) =>
-        _children.TryGetValue(relationshipId, out var children)
+    internal List<SemanticResultNode> GetChildren(RelationshipId relationshipId)
+    {
+        return _children.TryGetValue(relationshipId, out var children)
             ? children
             : _children[relationshipId] = [];
+    }
 }
 
 /// <summary>Semantic pagination state, independent of a transport protocol.</summary>
@@ -53,8 +55,8 @@ public sealed record SemanticResultPageInfo(
     bool HasPreviousPage);
 
 /// <summary>
-/// Optional provenance retained after execution without exposing provider
-/// objects or transport-specific result types.
+///     Optional provenance retained after execution without exposing provider
+///     objects or transport-specific result types.
 /// </summary>
 public sealed record SemanticResultEvidence(
     string Provider,

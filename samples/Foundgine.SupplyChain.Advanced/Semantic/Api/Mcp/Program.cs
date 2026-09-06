@@ -1,11 +1,5 @@
-using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
-using Foundgine.Core.Semantic.Authorization;
-using Foundgine.Core.Semantic.IR;
 using Foundgine.SupplyChain.Advanced.Authorization;
 using Foundgine.SupplyChain.Advanced.Semantics;
-using Microsoft.AspNetCore.Builder;
-using ModelContextProtocol.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton(SupplyChainSemanticModel.Build());
@@ -18,7 +12,9 @@ app.MapMcp("/mcp");
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.Run();
 
-public partial class Program { }
+public partial class Program
+{
+}
 
 [McpServerToolType]
 public sealed class SupplyChainMcpTools(SemanticModel model)
@@ -50,42 +46,53 @@ public sealed class SupplyChainMcpTools(SemanticModel model)
         return diff == 0;
     }
 
-    private ConfiguredSemanticAuthorizationPolicy Policy(string actor, string token) =>
-        Policy(actor, token, ClaimsValidationResult.Empty);
+    private ConfiguredSemanticAuthorizationPolicy Policy(string actor, string token)
+    {
+        return Policy(actor, token, ClaimsValidationResult.Empty);
+    }
 
-    private ConfiguredSemanticAuthorizationPolicy Policy(string actor, string token, ClaimsValidationResult validatedClaims)
+    private ConfiguredSemanticAuthorizationPolicy Policy(string actor, string token,
+        ClaimsValidationResult validatedClaims)
     {
         var identity = Authenticate(actor, token);
         return SupplyChainAuthorization.Create(identity.TenantId, identity.Role, validatedClaims.Accepted);
     }
 
     /// <summary>
-    /// Validates a raw, client-supplied claim dictionary. This is the only
-    /// place claims cross from "whatever the MCP caller sent" into
-    /// "something a policy is allowed to consider" — see
-    /// <see>
-    ///     <cref>ClientClaimsValidator</cref>
-    /// </see>
-    /// for the fail-closed rules.
-    /// Identity/tenant/role are never taken from <paramref name="claims"/>;
-    /// they always come from <c>Authenticate(actor, token)</c>.
+    ///     Validates a raw, client-supplied claim dictionary. This is the only
+    ///     place claims cross from "whatever the MCP caller sent" into
+    ///     "something a policy is allowed to consider" — see
+    ///     <see>
+    ///         <cref>ClientClaimsValidator</cref>
+    ///     </see>
+    ///     for the fail-closed rules.
+    ///     Identity/tenant/role are never taken from <paramref name="claims" />;
+    ///     they always come from <c>Authenticate(actor, token)</c>.
     /// </summary>
-    private static ClaimsValidationResult ValidateClaims(Dictionary<string, string>? claims) =>
-        ClientClaimsValidator.Validate(claims, DateTimeOffset.UtcNow);
-
-    private static object WithClaimDiagnostics(object payload, ClaimsValidationResult result) => new
+    private static ClaimsValidationResult ValidateClaims(Dictionary<string, string>? claims)
     {
-        result = payload,
-        acceptedClaims = result.Accepted,
-        rejectedClaims = result.Rejected.Select(r => new { r.Key, r.Value, r.Reason }).ToArray()
-    };
+        return ClientClaimsValidator.Validate(claims, DateTimeOffset.UtcNow);
+    }
+
+    private static object WithClaimDiagnostics(object payload, ClaimsValidationResult result)
+    {
+        return new
+        {
+            result = payload,
+            acceptedClaims = result.Accepted,
+            rejectedClaims = result.Rejected.Select(r => new { r.Key, r.Value, r.Reason }).ToArray()
+        };
+    }
 
     [McpServerTool(Name = "describe_capabilities")]
-    public object DescribeCapabilities(string actor, string token) =>
-        SemanticAuthorizationCapabilityDiscovery.Describe(model, Policy(actor, token));
+    public object DescribeCapabilities(string actor, string token)
+    {
+        return SemanticAuthorizationCapabilityDiscovery.Describe(model, Policy(actor, token));
+    }
 
     [McpServerTool(Name = "read_entity")]
-    public object ReadEntity(string actor, string token, string entity, string[] fields, Dictionary<string, string>? claims = null)
+    public object ReadEntity(string actor, string token, string entity, string[] fields,
+        Dictionary<string, string>? claims = null)
     {
         var validatedClaims = ValidateClaims(claims);
         if (validatedClaims.IsSpoofingAttempt)
@@ -119,7 +126,8 @@ public sealed class SupplyChainMcpTools(SemanticModel model)
     {
         var source = model.Entities.SingleOrDefault(x => x.Name.Equals(entity, StringComparison.OrdinalIgnoreCase));
         if (source is null) return Error("Unknown semantic entity.");
-        var relation = source.Relationships.SingleOrDefault(x => x.Name.Equals(relationship, StringComparison.OrdinalIgnoreCase));
+        var relation =
+            source.Relationships.SingleOrDefault(x => x.Name.Equals(relationship, StringComparison.OrdinalIgnoreCase));
         if (relation is null) return Error("Unknown semantic relationship.");
 
         var graph = new SemanticGraph();
@@ -138,7 +146,8 @@ public sealed class SupplyChainMcpTools(SemanticModel model)
     }
 
     [McpServerTool(Name = "write_entity")]
-    public object WriteEntity(string actor, string token, string entity, string operation = "update", Dictionary<string, string>? claims = null)
+    public object WriteEntity(string actor, string token, string entity, string operation = "update",
+        Dictionary<string, string>? claims = null)
     {
         var validatedClaims = ValidateClaims(claims);
         if (validatedClaims.IsSpoofingAttempt)
@@ -169,17 +178,24 @@ public sealed class SupplyChainMcpTools(SemanticModel model)
         object? result = attack switch
         {
             "cross-tenant" => policy.GetPredicate(SupplyChainSemanticModel.Warehouse, AuthorizationOperation.Read),
-            "sensitive-field" => policy.GetFieldAccess(SupplyChainSemanticModel.InventoryLot, SupplyChainAuthorization.FieldIds.InventoryQuarantined, AuthorizationOperation.Read),
-            "relationship-escalation" => policy.GetRelationshipAccess(SupplyChainSemanticModel.Supplier, SupplyChainAuthorization.RelationshipIds.SupplierIncidents, AuthorizationOperation.Read),
-            "write-escalation" => policy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write),
-            "named-operation" => policy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write, new AuthorizationOperationName("inventory.reconcile")),
+            "sensitive-field" => policy.GetFieldAccess(SupplyChainSemanticModel.InventoryLot,
+                SupplyChainAuthorization.FieldIds.InventoryQuarantined, AuthorizationOperation.Read),
+            "relationship-escalation" => policy.GetRelationshipAccess(SupplyChainSemanticModel.Supplier,
+                SupplyChainAuthorization.RelationshipIds.SupplierIncidents, AuthorizationOperation.Read),
+            "write-escalation" => policy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot,
+                AuthorizationOperation.Write),
+            "named-operation" => policy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot,
+                AuthorizationOperation.Write, new AuthorizationOperationName("inventory.reconcile")),
             // Claims-driven probes. All of these route through the same
             // Authenticate(actor, token) identity as every other probe; only
             // the claim set changes. See GUIDE.md "Claims validation" for the
             // full attack/legitimate-use matrix these correspond to.
-            "claims-scope-narrowing" => policy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write),
-            "claims-warehouse-scoping" => policy.GetPredicate(SupplyChainSemanticModel.Warehouse, AuthorizationOperation.Read),
-            "claims-reconcile" => policy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write, new AuthorizationOperationName("inventory.reconcile")),
+            "claims-scope-narrowing" => policy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot,
+                AuthorizationOperation.Write),
+            "claims-warehouse-scoping" => policy.GetPredicate(SupplyChainSemanticModel.Warehouse,
+                AuthorizationOperation.Read),
+            "claims-reconcile" => policy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot,
+                AuthorizationOperation.Write, new AuthorizationOperationName("inventory.reconcile")),
             _ => null
         };
 
@@ -194,20 +210,28 @@ public sealed class SupplyChainMcpTools(SemanticModel model)
     }
 
     /// <summary>
-    /// A raw claim set tried to assert identity or privilege directly
-    /// (role, tenant, admin flags, ...). This is rejected before
-    /// authentication's own tenant/role is even consulted, and the whole
-    /// call fails closed — see <see>
-    ///     <cref>ClientClaimsValidator</cref>
-    /// </see>
-    /// .
+    ///     A raw claim set tried to assert identity or privilege directly
+    ///     (role, tenant, admin flags, ...). This is rejected before
+    ///     authentication's own tenant/role is even consulted, and the whole
+    ///     call fails closed — see
+    ///     <see>
+    ///         <cref>ClientClaimsValidator</cref>
+    ///     </see>
+    ///     .
     /// </summary>
-    private static object ClaimSpoofingError(ClaimsValidationResult result) => new
+    private static object ClaimSpoofingError(ClaimsValidationResult result)
     {
-        isError = true,
-        message = "Rejected: claims attempted to assert identity or privilege directly. Identity comes only from actor/token authentication.",
-        rejectedClaims = result.Rejected.Select(r => new { r.Key, r.Value, r.Reason }).ToArray()
-    };
+        return new
+        {
+            isError = true,
+            message =
+                "Rejected: claims attempted to assert identity or privilege directly. Identity comes only from actor/token authentication.",
+            rejectedClaims = result.Rejected.Select(r => new { r.Key, r.Value, r.Reason }).ToArray()
+        };
+    }
 
-    private static object Error(string message) => new { isError = true, message };
+    private static object Error(string message)
+    {
+        return new { isError = true, message };
+    }
 }

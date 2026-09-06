@@ -1,18 +1,14 @@
-﻿
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿namespace CoffeeBeanery.Database;
 
-namespace CoffeeBeanery.Database;
-
-public partial class ContactPoint : Process
+public class ContactPoint : Process
 {
     public ContactPoint()
     {
-        Schema = CoffeeBeanery.Database.Schema.Banking;
+        Schema = Database.Schema.Banking;
     }
-    
+
     public int Id { get; set; }
-    
+
     public Guid ContactPointKey { get; set; }
 
     public ContactPointType? ContactPointType { get; set; }
@@ -22,7 +18,7 @@ public partial class ContactPoint : Process
     public int? CustomerKey { get; set; }
 
     public int? CustomerId { get; set; }
-    
+
     public Customer? Customer { get; set; }
 }
 
@@ -47,7 +43,7 @@ public class ContactPointEntityConfiguration : IEntityTypeConfiguration<ContactP
         builder.ToTable(nameof(ContactPoint), _schema);
 
         builder.HasKey(c => c.Id);
-        
+
         builder.HasOne(c => c.Customer)
             .WithMany(cu => cu.ContactPoint)
             .HasForeignKey(c => c.CustomerId);

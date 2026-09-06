@@ -1,9 +1,9 @@
 namespace Foundgine.Core.Abstractions;
 
 /// <summary>
-/// Narrow, provider-neutral schema contract required by mutation planning.
-/// It deliberately exposes stable identities and key mappings only; concrete
-/// metadata types remain outside the planning layer.
+///     Narrow, provider-neutral schema contract required by mutation planning.
+///     It deliberately exposes stable identities and key mappings only; concrete
+///     metadata types remain outside the planning layer.
 /// </summary>
 public interface IMutationSchema
 {

@@ -1,6 +1,5 @@
 using Foundgine.SupplyChain.Advanced.Data;
 using Foundgine.SupplyChain.Advanced.Domain;
-using Xunit;
 
 namespace Foundgine.SupplyChain.Advanced.Tests;
 
@@ -25,6 +24,7 @@ public sealed class SupplyChainDataFixtureTests
                     if (visited.Add(child)) stack.Push(child);
                 }
             }
+
             return false;
         }
 

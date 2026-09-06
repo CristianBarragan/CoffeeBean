@@ -1,6 +1,4 @@
-using System.Text;
-
-static class GuidUtility
+internal static class GuidUtility
 {
     public static readonly Guid UrlNamespace =
         new("6ba7b811-9dad-11d1-80b4-00c04fd430c8");
@@ -33,22 +31,23 @@ static class GuidUtility
     }
 }
 
-record Target(
+internal record Target(
     string Name,
     string Url);
 
-enum BenchmarkOperation
+internal enum BenchmarkOperation
 {
     QueryTop50,
     MutationWholeGraph,
     MutationThenQuery
 }
 
-static class BenchmarkOperationExtensions
+internal static class BenchmarkOperationExtensions
 {
     public static string DisplayName(
-        this BenchmarkOperation operation) =>
-        operation switch
+        this BenchmarkOperation operation)
+    {
+        return operation switch
         {
             BenchmarkOperation.QueryTop50 =>
                 "Query top 50 graph",
@@ -61,9 +60,10 @@ static class BenchmarkOperationExtensions
 
             _ => operation.ToString()
         };
+    }
 }
 
-record RunResult(
+internal record RunResult(
     long Requests,
     int Errors,
     int Timeouts,
@@ -81,14 +81,14 @@ record RunResult(
     public double RequestsPerSecond => Requests / (double)Math.Max(1, DurationSeconds);
 }
 
-record DockerMetrics(
+internal record DockerMetrics(
     double CpuAveragePercent = 0,
     double CpuMaxPercent = 0,
     double MemoryAverageMb = 0,
     double MemoryMaxMb = 0,
     double MemoryEndMb = 0);
 
-record BenchmarkResult(
+internal record BenchmarkResult(
     BenchmarkOperation Operation,
     string Target,
     int Concurrency,
@@ -106,11 +106,14 @@ record BenchmarkResult(
     double MemoryEndMb,
     bool Successful)
 {
-    public static BenchmarkResult Failed(BenchmarkOperation operation, Target target, int concurrency, int batchSize, int errors) =>
-        new(operation, target.Name, concurrency, batchSize, 0, 0, 0, 0, 0, errors, 0, 0, 0, 0, 0, false);
+    public static BenchmarkResult Failed(BenchmarkOperation operation, Target target, int concurrency, int batchSize,
+        int errors)
+    {
+        return new(operation, target.Name, concurrency, batchSize, 0, 0, 0, 0, 0, errors, 0, 0, 0, 0, 0, false);
+    }
 }
 
-record BenchmarkReport(
+internal record BenchmarkReport(
     DateTimeOffset GeneratedAt,
     int WarmupSeconds,
     int DurationSeconds,

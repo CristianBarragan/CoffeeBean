@@ -1,6 +1,4 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -9,8 +7,8 @@ public sealed class SemanticModelFingerprintTests
     [Fact]
     public void Fingerprint_is_stable_when_declarations_are_reordered()
     {
-        var first = BuildModel(reordered: false);
-        var second = BuildModel(reordered: true);
+        var first = BuildModel(false);
+        var second = BuildModel(true);
 
         Assert.Equal(first.ContractFingerprint, second.ContractFingerprint);
     }
@@ -18,12 +16,13 @@ public sealed class SemanticModelFingerprintTests
     [Fact]
     public void Fingerprint_changes_when_semantic_contract_changes()
     {
-        var first = BuildModel(reordered: false);
+        var first = BuildModel(false);
         var changed = new SemanticModelBuilder()
             .Entity<TestProduct>(EntityId.Create("Product"), "Product", e => e
                 .Identity(x => x.Id)
                 .Field(x => x.Name)
-                .Field(x => x.Price, capabilities: SemanticFieldCapabilities.Default | SemanticFieldCapabilities.Writable))
+                .Field(x => x.Price,
+                    capabilities: SemanticFieldCapabilities.Default | SemanticFieldCapabilities.Writable))
             .Build();
 
         Assert.NotEqual(first.ContractFingerprint, changed.ContractFingerprint);
@@ -32,7 +31,7 @@ public sealed class SemanticModelFingerprintTests
     [Fact]
     public void Fingerprint_does_not_depend_on_clr_model_type_identity()
     {
-        var typed = BuildModel(reordered: false);
+        var typed = BuildModel(false);
         var untyped = new SemanticModelBuilder()
             .Entity(EntityId.Create("Product"), "Product", e => e
                 .Identity(FieldId.Create("Product", "Id"), "Id")
@@ -71,7 +70,8 @@ public sealed class SemanticModelFingerprintTests
             .Build();
 
         Assert.NotEqual(first.ContractFingerprint, changed.ContractFingerprint);
-        Assert.NotEqual(SemanticVersionSet.For(first).SemanticModelVersion, SemanticVersionSet.For(changed).SemanticModelVersion);
+        Assert.NotEqual(SemanticVersionSet.For(first).SemanticModelVersion,
+            SemanticVersionSet.For(changed).SemanticModelVersion);
     }
 
     [Fact]
@@ -130,22 +130,25 @@ public sealed class SemanticModelFingerprintTests
         Assert.Matches("^[0-9a-f]{64}$", fingerprint);
     }
 
-    private static SemanticModel BuildModel(bool reordered) => new SemanticModelBuilder()
-        .Entity<TestProduct>(EntityId.Create("Product"), "Product", e =>
-        {
-            e.Identity(x => x.Id);
-            if (reordered)
+    private static SemanticModel BuildModel(bool reordered)
+    {
+        return new SemanticModelBuilder()
+            .Entity<TestProduct>(EntityId.Create("Product"), "Product", e =>
             {
-                e.Field(x => x.Price);
-                e.Field(x => x.Name);
-            }
-            else
-            {
-                e.Field(x => x.Name);
-                e.Field(x => x.Price);
-            }
-        })
-        .Build();
+                e.Identity(x => x.Id);
+                if (reordered)
+                {
+                    e.Field(x => x.Price);
+                    e.Field(x => x.Name);
+                }
+                else
+                {
+                    e.Field(x => x.Name);
+                    e.Field(x => x.Price);
+                }
+            })
+            .Build();
+    }
 
     private sealed class TestProduct
     {
@@ -166,5 +169,3 @@ public sealed class SemanticModelFingerprintTests
         public string Name { get; init; } = "";
     }
 }
-
-

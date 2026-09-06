@@ -16,9 +16,9 @@ public enum AuthorizationAccess : byte
 }
 
 /// <summary>
-/// Provider-independent authorization result. Conditional access carries a
-/// predicate that must remain part of execution semantics and be evaluated at
-/// the provider boundary with the current execution context.
+///     Provider-independent authorization result. Conditional access carries a
+///     predicate that must remain part of execution semantics and be evaluated at
+///     the provider boundary with the current execution context.
 /// </summary>
 public sealed record AuthorizationDecision(
     AuthorizationAccess Access,
@@ -27,13 +27,13 @@ public sealed record AuthorizationDecision(
     public static AuthorizationDecision Denied { get; } = new(AuthorizationAccess.Denied);
     public static AuthorizationDecision Allowed { get; } = new(AuthorizationAccess.Allowed);
 
+    public bool IsAllowed => Access is AuthorizationAccess.Allowed or AuthorizationAccess.Conditional;
+
     public static AuthorizationDecision Conditional(AuthorizationPredicate predicate)
     {
         ArgumentNullException.ThrowIfNull(predicate);
         return new AuthorizationDecision(AuthorizationAccess.Conditional, predicate);
     }
-
-    public bool IsAllowed => Access is AuthorizationAccess.Allowed or AuthorizationAccess.Conditional;
 
     public static AuthorizationDecision Combine(AuthorizationDecision left, AuthorizationDecision right)
     {

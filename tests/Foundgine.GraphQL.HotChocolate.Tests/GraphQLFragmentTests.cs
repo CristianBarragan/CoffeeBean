@@ -1,9 +1,7 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Extensions.GraphQL.HotChocolate;
+using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic.Planning.Mutation;
-using Foundgine.Core.Semantic;
-using Xunit;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
@@ -25,23 +23,23 @@ public sealed class GraphQLFragmentTests
             .Build();
 
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query {
-              customer {
-                ...CustomerFields
-                accounts { ...AccountFields }
-              }
-            }
+                                                                   query {
+                                                                     customer {
+                                                                       ...CustomerFields
+                                                                       accounts { ...AccountFields }
+                                                                     }
+                                                                   }
 
-            fragment CustomerFields on Customer {
-              id
-              name
-            }
+                                                                   fragment CustomerFields on Customer {
+                                                                     id
+                                                                     name
+                                                                   }
 
-            fragment AccountFields on Account {
-              id
-              name
-            }
-            """);
+                                                                   fragment AccountFields on Account {
+                                                                     id
+                                                                     name
+                                                                   }
+                                                                   """);
 
         Assert.Equal(new[] { new FieldId(1), new FieldId(2) },
             request.Selections.Where(x => x.Field is not null).Select(x => x.Field!.Value));
@@ -55,20 +53,20 @@ public sealed class GraphQLFragmentTests
     {
         var (model, metadata) = BuildCustomer();
         var intent = new HotChocolateMutationAdapter(model, metadata).Adapt("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) {
-                ...CustomerFields
-              }
-            }
+                                                                            mutation CreateCustomer($input: CustomerInput!) {
+                                                                              createCustomer(input: $input) {
+                                                                                ...CustomerFields
+                                                                              }
+                                                                            }
 
-            fragment CustomerFields on Customer {
-              id
-              name
-            }
-            """, new Dictionary<string, object?>
-            {
-                ["input"] = new Dictionary<string, object?> { ["name"] = "Ada" }
-            });
+                                                                            fragment CustomerFields on Customer {
+                                                                              id
+                                                                              name
+                                                                            }
+                                                                            """, new Dictionary<string, object?>
+        {
+            ["input"] = new Dictionary<string, object?> { ["name"] = "Ada" }
+        });
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Equal(new[] { new FieldId(1), new FieldId(2) }, mutation.ReturnFields);
@@ -85,19 +83,19 @@ public sealed class GraphQLFragmentTests
             .Build();
 
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query {
-              customer { ...Outer }
-            }
+                                                                   query {
+                                                                     customer { ...Outer }
+                                                                   }
 
-            fragment Outer on Customer {
-              ...Inner
-              name
-            }
+                                                                   fragment Outer on Customer {
+                                                                     ...Inner
+                                                                     name
+                                                                   }
 
-            fragment Inner on Customer {
-              id
-            }
-            """);
+                                                                   fragment Inner on Customer {
+                                                                     id
+                                                                   }
+                                                                   """);
 
         Assert.Equal(new[] { new FieldId(1), new FieldId(2) },
             request.Selections.Select(x => x.Field!.Value));
@@ -113,10 +111,10 @@ public sealed class GraphQLFragmentTests
 
         var ex = Assert.Throws<InvalidOperationException>(() =>
             new HotChocolateSemanticAdapter(model).Adapt("""
-                query { customer { ...A } }
-                fragment A on Customer { ...B }
-                fragment B on Customer { ...A }
-                """));
+                                                         query { customer { ...A } }
+                                                         fragment A on Customer { ...B }
+                                                         fragment B on Customer { ...A }
+                                                         """));
 
         Assert.Contains("cycle", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -133,9 +131,9 @@ public sealed class GraphQLFragmentTests
 
         var ex = Assert.Throws<InvalidOperationException>(() =>
             new HotChocolateSemanticAdapter(model).Adapt("""
-                query { customer { ...AccountFields } }
-                fragment AccountFields on Account { id }
-                """));
+                                                         query { customer { ...AccountFields } }
+                                                         fragment AccountFields on Account { id }
+                                                         """));
 
         Assert.Contains("targets", ex.Message);
     }
@@ -146,14 +144,17 @@ public sealed class GraphQLFragmentTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 
         var model = new SemanticModelBuilder()
-            .Entity(customer, "Customer", e => e.Identity(new FieldId(1), "Id").Field(new FieldId(2), "Name", typeof(string)))
+            .Entity(customer, "Customer",
+                e => e.Identity(new FieldId(1), "Id").Field(new FieldId(2), "Name", typeof(string)))
             .Build();
 
         return (model, registry);

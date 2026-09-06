@@ -1,17 +1,13 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Foundgine.Core.Semantic.Capabilities;
 using Foundgine.Core.Semantic.Intent;
 
 namespace Foundgine.Providers.Tools.MCP.Client;
 
 /// <summary>
-/// Minimal provider-neutral MCP client for the Foundgine capability-discovery workflow.
-/// The client is intentionally transport-only: it discovers the host-visible capability
-/// contract, lets the caller construct a dynamic ReadIntent from that contract, and sends
-/// the intent to the canonical Foundgine MCP query tool. It never supplies security context.
+///     Minimal provider-neutral MCP client for the Foundgine capability-discovery workflow.
+///     The client is intentionally transport-only: it discovers the host-visible capability
+///     contract, lets the caller construct a dynamic ReadIntent from that contract, and sends
+///     the intent to the canonical Foundgine MCP query tool. It never supplies security context.
 /// </summary>
 public sealed class FoundgineMcpAgentClient
 {
@@ -20,8 +16,9 @@ public sealed class FoundgineMcpAgentClient
         Converters = { new JsonStringEnumConverter() }
     };
 
-    private readonly HttpClient _httpClient;
     private readonly string _endpoint;
+
+    private readonly HttpClient _httpClient;
     private int _requestId;
 
     public FoundgineMcpAgentClient(HttpClient httpClient, string endpoint = "/mcp")
@@ -41,9 +38,9 @@ public sealed class FoundgineMcpAgentClient
     }
 
     /// <summary>
-    /// Executes a dynamic read intent. The caller remains responsible for constructing the
-    /// intent from discovered capabilities; authentication, tenant and authorization context
-    /// are supplied by the MCP host and are never serialized here.
+    ///     Executes a dynamic read intent. The caller remains responsible for constructing the
+    ///     intent from discovered capabilities; authentication, tenant and authorization context
+    ///     are supplied by the MCP host and are never serialized here.
     /// </summary>
     public async Task<JsonElement> ExecuteQueryAsync(
         ReadIntent intent,
@@ -58,9 +55,9 @@ public sealed class FoundgineMcpAgentClient
     }
 
     /// <summary>
-    /// Convenience workflow: discover capabilities, construct a dynamic intent from the
-    /// discovered contract, then execute it. The builder receives only the discovered
-    /// contract and cannot manufacture host security context through this API.
+    ///     Convenience workflow: discover capabilities, construct a dynamic intent from the
+    ///     discovered contract, then execute it. The builder receives only the discovered
+    ///     contract and cannot manufacture host security context through this API.
     /// </summary>
     public async Task<JsonElement> DiscoverAndExecuteAsync(
         Func<SemanticCapabilityContract, ReadIntent> intentFactory,
@@ -68,7 +65,8 @@ public sealed class FoundgineMcpAgentClient
     {
         ArgumentNullException.ThrowIfNull(intentFactory);
         var contract = await DiscoverCapabilitiesAsync(cancellationToken);
-        var intent = intentFactory(contract) ?? throw new InvalidOperationException("The intent factory returned null.");
+        var intent = intentFactory(contract) ??
+                     throw new InvalidOperationException("The intent factory returned null.");
         return await ExecuteQueryAsync(intent, cancellationToken);
     }
 
@@ -133,7 +131,7 @@ public sealed class FoundgineMcpAgentClient
                 if (typeof(T) == typeof(JsonElement))
                     return (T)(object)nested.RootElement.Clone();
                 return nested.RootElement.Deserialize<T>(JsonOptions)
-                    ?? throw new InvalidOperationException("MCP tool result deserialized to null.");
+                       ?? throw new InvalidOperationException("MCP tool result deserialized to null.");
             }
             catch (JsonException)
             {

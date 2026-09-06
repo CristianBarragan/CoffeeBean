@@ -1,22 +1,17 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
 /// <summary>
-/// Covers the plural alias-declaration surface added to <see cref="SemanticEntityBuilder{TModel}"/>
-/// (and its untyped/obsolete counterpart): <c>Aliases(params string[])</c>,
-/// <c>FieldAliases(...)</c> and <c>RelationshipAliases(...)</c>. These sit alongside the
-/// pre-existing singular <c>Alias</c>/<c>FieldAlias</c>/<c>RelationshipAlias</c> methods and
-/// are expected to behave identically to calling the singular form once per name, including
-/// duplicate rejection.
+///     Covers the plural alias-declaration surface added to <see cref="SemanticEntityBuilder{TModel}" />
+///     (and its untyped/obsolete counterpart): <c>Aliases(params string[])</c>,
+///     <c>FieldAliases(...)</c> and <c>RelationshipAliases(...)</c>. These sit alongside the
+///     pre-existing singular <c>Alias</c>/<c>FieldAlias</c>/<c>RelationshipAlias</c> methods and
+///     are expected to behave identically to calling the singular form once per name, including
+///     duplicate rejection.
 /// </summary>
 public sealed class SemanticEntityBuilderAliasTests
 {
-    private sealed record TestSalesOrder(int Id, string Status);
-    private sealed record TestSalesOrderLine(int OrderId, int LineNumber);
-
     [Fact]
     public void Typed_builder_declares_multiple_entity_aliases_in_one_call()
     {
@@ -132,6 +127,11 @@ public sealed class SemanticEntityBuilderAliasTests
 
         var entity = model.Get(order);
         Assert.Equal(["aa", "bb"], entity.EffectiveAliases.Select(a => a.Name));
-        Assert.Equal(["State", "Stage"], entity.Fields.Single(f => f.Name == "Status").EffectiveAliases.Select(a => a.Name));
+        Assert.Equal(["State", "Stage"],
+            entity.Fields.Single(f => f.Name == "Status").EffectiveAliases.Select(a => a.Name));
     }
+
+    private sealed record TestSalesOrder(int Id, string Status);
+
+    private sealed record TestSalesOrderLine(int OrderId, int LineNumber);
 }

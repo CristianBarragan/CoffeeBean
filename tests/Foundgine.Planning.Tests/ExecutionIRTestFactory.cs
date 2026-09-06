@@ -1,15 +1,18 @@
+using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic.Planning;
+
 namespace Foundgine.Testing;
 
 public static class ExecutionIRTestFactory
 {
-    public static Foundgine.Core.Execution.ExecutionIR Create(
-        Foundgine.Core.Execution.ExecutionIRNode root,
+    public static ExecutionIR Create(
+        ExecutionIRNode root,
         IReadOnlyList<string> requiredSecurityInvariants)
     {
-        return new Foundgine.Core.Execution.ExecutionIR(
+        return new ExecutionIR(
             root,
             requiredSecurityInvariants,
-            new Foundgine.Core.Semantic.Planning.SemanticPlanAuthorizationBinding(
+            new SemanticPlanAuthorizationBinding(
                 "test-contract",
                 "test-authorization"));
     }

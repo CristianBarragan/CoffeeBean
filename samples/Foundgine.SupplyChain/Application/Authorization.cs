@@ -18,7 +18,7 @@ public sealed class SupplyChainAuthorizer : ICapabilityAuthorizer
         ["bob"] = Environment.GetEnvironmentVariable("SUPPLYCHAIN_TOKEN_BOB") ?? "bob-demo-token",
         ["carol"] = Environment.GetEnvironmentVariable("SUPPLYCHAIN_TOKEN_CAROL") ?? "carol-demo-token",
         ["dave"] = Environment.GetEnvironmentVariable("SUPPLYCHAIN_TOKEN_DAVE") ?? "dave-demo-token",
-        ["admin"] = Environment.GetEnvironmentVariable("SUPPLYCHAIN_TOKEN_ADMIN") ?? "admin-demo-token",
+        ["admin"] = Environment.GetEnvironmentVariable("SUPPLYCHAIN_TOKEN_ADMIN") ?? "admin-demo-token"
     };
 
     // Fixed, server-side actor -> customer mapping. Nobody gets to grant
@@ -28,7 +28,7 @@ public sealed class SupplyChainAuthorizer : ICapabilityAuthorizer
     private static readonly Dictionary<string, int> ActorCustomerMap = new(StringComparer.Ordinal)
     {
         ["alice"] = 1,
-        ["bob"] = 2,
+        ["bob"] = 2
     };
 
     private static readonly HashSet<string> CustomerScopedCapabilities = new(StringComparer.Ordinal)
@@ -42,11 +42,9 @@ public sealed class SupplyChainAuthorizer : ICapabilityAuthorizer
             || string.IsNullOrEmpty(token)
             || !ActorTokens.TryGetValue(actor, out var expectedToken)
             || !FixedTimeEquals(token, expectedToken))
-        {
             // Same generic message whether the actor exists or not, so the
             // error itself can't be used to enumerate valid actor names.
             throw new UnauthorizedAccessException("Invalid actor credentials.");
-        }
     }
 
     public void Demand(string actor, string token, string capability, int? customerId = null)
@@ -55,11 +53,22 @@ public sealed class SupplyChainAuthorizer : ICapabilityAuthorizer
 
         var allowed = actor switch
         {
-            "alice" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order" },
-            "bob" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order", "list_customers" },
-            "carol" => new[] { "get_product", "get_inventory", "update_inventory", "create_shipment", "update_shipment" },
+            "alice" => new[]
+                { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order" },
+            "bob" => new[]
+            {
+                "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order",
+                "list_customers"
+            },
+            "carol" => new[]
+                { "get_product", "get_inventory", "update_inventory", "create_shipment", "update_shipment" },
             "dave" => new[] { "get_product", "get_inventory", "list_products", "list_suppliers", "update_inventory" },
-            "admin" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order", "list_customers", "get_inventory", "update_inventory", "create_shipment", "update_shipment", "list_products", "list_suppliers" },
+            "admin" => new[]
+            {
+                "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order",
+                "list_customers", "get_inventory", "update_inventory", "create_shipment", "update_shipment",
+                "list_products", "list_suppliers"
+            },
             _ => Array.Empty<string>()
         };
 
@@ -71,10 +80,8 @@ public sealed class SupplyChainAuthorizer : ICapabilityAuthorizer
         if (customerId is not null
             && CustomerScopedCapabilities.Contains(capability)
             && !actor.Equals("admin", StringComparison.Ordinal))
-        {
             if (!ActorCustomerMap.TryGetValue(actor, out var ownCustomerId) || ownCustomerId != customerId)
                 throw new UnauthorizedAccessException("Actor is not authorized for the requested customer.");
-        }
     }
 
     // Constant-time comparison so token checks don't leak length/prefix

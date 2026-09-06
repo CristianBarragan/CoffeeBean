@@ -11,20 +11,20 @@ public interface IToolRegistry
 }
 
 /// <summary>
-/// Process-local tool registry. Suitable for a single host instance; a
-/// distributed deployment should back <see cref="IToolRegistry"/> with a
-/// shared store instead, the same substitution pattern used by
-/// <c>IProviderPlanCache</c> / <c>MemoryProviderPlanCache</c>.
+///     Process-local tool registry. Suitable for a single host instance; a
+///     distributed deployment should back <see cref="IToolRegistry" /> with a
+///     shared store instead, the same substitution pattern used by
+///     <c>IProviderPlanCache</c> / <c>MemoryProviderPlanCache</c>.
 /// </summary>
 public sealed class InMemoryToolRegistry : IToolRegistry
 {
-    private readonly Dictionary<string, ToolDescriptor> _tools = new(StringComparer.Ordinal);
     private readonly Lock _gate = new();
+    private readonly Dictionary<string, ToolDescriptor> _tools = new(StringComparer.Ordinal);
 
     /// <param name="seed">
-    /// Descriptors to register immediately, e.g. from DI-collected
-    /// <see cref="ToolDescriptor"/> registrations made via
-    /// <c>ToolGovernanceBuilder.RegisterTool</c>.
+    ///     Descriptors to register immediately, e.g. from DI-collected
+    ///     <see cref="ToolDescriptor" /> registrations made via
+    ///     <c>ToolGovernanceBuilder.RegisterTool</c>.
     /// </param>
     public InMemoryToolRegistry(IEnumerable<ToolDescriptor>? seed = null)
     {

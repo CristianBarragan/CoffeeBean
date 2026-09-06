@@ -1,6 +1,5 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Resolution;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -29,11 +28,14 @@ public sealed class SemanticReferenceGroundingTests
 
     private sealed class FakeSource : IApproximateCandidateSource
     {
-        public IReadOnlyList<RetrievalCandidate> Retrieve(SemanticRetrievalRequest request) =>
-        [
-            new(new EntityId(1), "42", .94, new FieldId(2), "42",
-                [new ResolutionEvidence("BM25 matched Customer.Name.", CandidateEvidenceKind.Bm25, .94)],
-                CandidateEvidenceKind.Bm25)
-        ];
+        public IReadOnlyList<RetrievalCandidate> Retrieve(SemanticRetrievalRequest request)
+        {
+            return
+            [
+                new(new EntityId(1), "42", .94, new FieldId(2), "42",
+                    [new ResolutionEvidence("BM25 matched Customer.Name.", CandidateEvidenceKind.Bm25, .94)],
+                    CandidateEvidenceKind.Bm25)
+            ];
+        }
     }
 }

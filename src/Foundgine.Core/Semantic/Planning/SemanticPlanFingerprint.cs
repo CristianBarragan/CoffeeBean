@@ -1,16 +1,13 @@
-using System.Globalization;
-using System.Text;
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Query;
-using Foundgine.Core.Semantic.Security;
 
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Produces a deterministic key for an execution plan. The complete authorized
-/// plan is represented, including authorization predicates and request values.
-/// This intentionally keys exact plans rather than pretending that arbitrary
-/// filter values can safely share a compiled provider plan.
+///     Produces a deterministic key for an execution plan. The complete authorized
+///     plan is represented, including authorization predicates and request values.
+///     This intentionally keys exact plans rather than pretending that arbitrary
+///     filter values can safely share a compiled provider plan.
 /// </summary>
 public static class SemanticPlanFingerprint
 {
@@ -20,17 +17,17 @@ public static class SemanticPlanFingerprint
 
         var builder = new StringBuilder(512);
         builder.Append("plan-v2|");
-        AppendSecurityInvariants(builder, plan.RequiredSecurityInvariants != null ? 
-            plan.RequiredSecurityInvariants : new string[0]);
-        AppendNode(builder, plan.Root, includePaginationValues: true);
+        AppendSecurityInvariants(builder,
+            plan.RequiredSecurityInvariants != null ? plan.RequiredSecurityInvariants : new string[0]);
+        AppendNode(builder, plan.Root, true);
         return builder.ToString();
     }
 
     /// <summary>
-    /// Creates a cache key for the static query shape. Pagination values are
-    /// deliberately excluded because the SQL provider binds LIMIT/OFFSET at
-    /// execution time. Filters, ordering and authorization remain part of the
-    /// key so unrelated query shapes do not share a provider plan.
+    ///     Creates a cache key for the static query shape. Pagination values are
+    ///     deliberately excluded because the SQL provider binds LIMIT/OFFSET at
+    ///     execution time. Filters, ordering and authorization remain part of the
+    ///     key so unrelated query shapes do not share a provider plan.
     /// </summary>
     public static string CreateShapeKey(SemanticPlan plan)
     {
@@ -39,7 +36,7 @@ public static class SemanticPlanFingerprint
         var builder = new StringBuilder(512);
         builder.Append("plan-v2|");
         AppendSecurityInvariants(builder, plan.RequiredSecurityInvariants);
-        AppendNode(builder, plan.Root, includePaginationValues: false);
+        AppendNode(builder, plan.Root, false);
         return builder.ToString();
     }
 
@@ -50,14 +47,10 @@ public static class SemanticPlanFingerprint
         builder.Append("security[");
 
         if (invariants is not null)
-        {
             foreach (var invariant in invariants.OrderBy(
                          x => x,
                          StringComparer.Ordinal))
-            {
                 builder.Append(invariant).Append(',');
-            }
-        }
 
         builder.Append(']');
     }
@@ -89,7 +82,8 @@ public static class SemanticPlanFingerprint
         builder.Append(']');
     }
 
-    private static void AppendQueryOptions(StringBuilder builder, SemanticQueryOptions? options, bool includePaginationValues)
+    private static void AppendQueryOptions(StringBuilder builder, SemanticQueryOptions? options,
+        bool includePaginationValues)
     {
         if (options is null)
         {
@@ -108,6 +102,7 @@ public static class SemanticPlanFingerprint
         {
             builder.Append("pagination-parameterized|");
         }
+
         builder.Append('|');
 
         builder.Append("order[");
@@ -120,6 +115,7 @@ public static class SemanticPlanFingerprint
                 builder.Append(relationship.Value).Append('.');
             builder.Append(',');
         }
+
         builder.Append("]|");
         AppendFilter(builder, options.Filter);
         builder.Append(']');
@@ -220,6 +216,7 @@ public static class SemanticPlanFingerprint
                     AppendValue(builder, item);
                     builder.Append(',');
                 }
+
                 builder.Append(']');
                 break;
             case IFormattable formattable:

@@ -1,20 +1,18 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Planning;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Query;
-using Foundgine.Providers.Storage.Sql;
 using Foundgine.E2E.Tests.Banking;
-using Xunit;
+using Foundgine.Providers.Storage.Sql;
 
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-/// Proves that the AggregateExecutionStrategy hint set by
-/// AggregateCardinalityOptimizationRule is actually consumed downstream: it used to be
-/// dropped silently at the SemanticPlan -> ExecutionIR lowering boundary and never reached
-/// any provider compiler. These tests exercise the full path (rule -> ExecutionIRCompiler ->
-/// SqlCompiler) so a future regression that drops the hint again fails loudly here rather
-/// than only being visible as a missed optimization at runtime.
+///     Proves that the AggregateExecutionStrategy hint set by
+///     AggregateCardinalityOptimizationRule is actually consumed downstream: it used to be
+///     dropped silently at the SemanticPlan -> ExecutionIR lowering boundary and never reached
+///     any provider compiler. These tests exercise the full path (rule -> ExecutionIRCompiler ->
+///     SqlCompiler) so a future regression that drops the hint again fails loudly here rather
+///     than only being visible as a missed optimization at runtime.
 /// </summary>
 public sealed class AggregateExistenceSqlRenderingTests
 {
@@ -104,11 +102,14 @@ public sealed class AggregateExistenceSqlRenderingTests
         Assert.DoesNotContain("EXISTS", sql, StringComparison.Ordinal);
     }
 
-    private static SqlPlan Compile(SemanticPlan plan) =>
-        new SqlCompiler(BankingRelationalMetadata.Build()).Compile(plan);
+    private static SqlPlan Compile(SemanticPlan plan)
+    {
+        return new SqlCompiler(BankingRelationalMetadata.Build()).Compile(plan);
+    }
 
-    private static SemanticPlan CreatePlan(SemanticFilterExpression filter) =>
-        new(
+    private static SemanticPlan CreatePlan(SemanticFilterExpression filter)
+    {
+        return new SemanticPlan(
             new SemanticPlanNode(
                 1,
                 ExecutionOperation.Scan,
@@ -117,6 +118,7 @@ public sealed class AggregateExistenceSqlRenderingTests
                 null,
                 null,
                 [],
-                new SemanticQueryOptions(Filter: filter)),
+                new SemanticQueryOptions(filter)),
             AuthorizationBinding: new SemanticPlanAuthorizationBinding("test-contract", "test-authorization"));
+    }
 }

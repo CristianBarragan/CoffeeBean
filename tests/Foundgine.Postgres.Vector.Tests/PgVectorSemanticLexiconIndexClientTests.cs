@@ -1,7 +1,5 @@
-using Foundgine.Providers.Storage.PostgresVector;
 using Foundgine.Core.Semantic.Resolution;
-using Npgsql;
-using Xunit;
+using Foundgine.Providers.Storage.PostgresVector;
 
 namespace Foundgine.Postgres.Vector.Tests;
 
@@ -20,15 +18,15 @@ public sealed class PgVectorSemanticLexiconIndexClientTests
     [Fact]
     public void VectorOpsClass_rejects_an_undefined_distance_value()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => PgVectorSemanticLexiconIndexClient.VectorOpsClass((PgVectorDistance)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            PgVectorSemanticLexiconIndexClient.VectorOpsClass((PgVectorDistance)99));
     }
 
     [Fact]
     public void Constructor_throws_when_data_source_is_null()
     {
-        Assert.Throws<ArgumentNullException>(
-            () => new PgVectorSemanticLexiconIndexClient(null!, new StubEmbeddingGenerator()));
+        Assert.Throws<ArgumentNullException>(() =>
+            new PgVectorSemanticLexiconIndexClient(null!, new StubEmbeddingGenerator()));
     }
 
     [Fact]
@@ -36,8 +34,7 @@ public sealed class PgVectorSemanticLexiconIndexClientTests
     {
         using var dataSource = new NpgsqlDataSourceBuilder("Host=localhost;Database=unused").Build();
 
-        Assert.Throws<ArgumentNullException>(
-            () => new PgVectorSemanticLexiconIndexClient(dataSource, null!));
+        Assert.Throws<ArgumentNullException>(() => new PgVectorSemanticLexiconIndexClient(dataSource, null!));
     }
 
     [Fact]
@@ -45,7 +42,7 @@ public sealed class PgVectorSemanticLexiconIndexClientTests
     {
         using var dataSource = new NpgsqlDataSourceBuilder("Host=localhost;Database=unused").Build();
 
-        _ = new PgVectorSemanticLexiconIndexClient(dataSource, new StubEmbeddingGenerator(), options: null);
+        _ = new PgVectorSemanticLexiconIndexClient(dataSource, new StubEmbeddingGenerator(), null);
     }
 
     [Fact]
@@ -68,11 +65,15 @@ public sealed class PgVectorSemanticLexiconIndexClientTests
 
     private sealed class StubEmbeddingGenerator : ISemanticEmbeddingGenerator
     {
-        public Task<float[]> EmbedAsync(string text, CancellationToken cancellationToken = default) =>
-            Task.FromResult(new float[] { 1f });
+        public Task<float[]> EmbedAsync(string text, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new[] { 1f });
+        }
 
         public Task<IReadOnlyList<float[]>> EmbedManyAsync(
-            IReadOnlyList<string> texts, CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyList<float[]>>(texts.Select(_ => new float[] { 1f }).ToArray());
+            IReadOnlyList<string> texts, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<float[]>>(texts.Select(_ => new[] { 1f }).ToArray());
+        }
     }
 }

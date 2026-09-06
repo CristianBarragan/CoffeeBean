@@ -1,6 +1,4 @@
-using System.Collections.ObjectModel;
 using Foundgine.Core.Abstractions;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -88,7 +86,8 @@ public sealed class SemanticModelFreezeTests
     public void Traversal_path_is_defensively_immutable()
     {
         var model = new SemanticModelBuilder()
-            .Entity<TestCustomer>(EntityId.Create("Customer"), "Customer", e => e.Identity(x => x.Id).Field(x => x.Name))
+            .Entity<TestCustomer>(EntityId.Create("Customer"), "Customer",
+                e => e.Identity(x => x.Id).Field(x => x.Name))
             .Entity<TestOrder>(EntityId.Create("Order"), "Order", e => e.Identity(x => x.Id).Field(x => x.CustomerId))
             .Relationship<TestCustomer, TestOrder>(
                 EntityId.Create("Customer"), "Orders", x => x.Id,
@@ -103,11 +102,14 @@ public sealed class SemanticModelFreezeTests
         Assert.Throws<NotSupportedException>(() => ((IList<RelationshipId>)traversal.Path).Clear());
     }
 
-    private static SemanticModel BuildModel() => new SemanticModelBuilder()
-        .Entity<TestCustomer>(EntityId.Create("Customer"), "Customer", e => e
-            .Identity(x => x.Id)
-            .Field(x => x.Name))
-        .Build();
+    private static SemanticModel BuildModel()
+    {
+        return new SemanticModelBuilder()
+            .Entity<TestCustomer>(EntityId.Create("Customer"), "Customer", e => e
+                .Identity(x => x.Id)
+                .Field(x => x.Name))
+            .Build();
+    }
 
     private sealed class TestCustomer
     {

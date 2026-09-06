@@ -1,12 +1,9 @@
-using System.Security.Cryptography;
-using System.Text;
-
 namespace Foundgine.Core.Execution;
 
 /// <summary>
-/// Provider-neutral provenance for one execution. Evidence describes what was
-/// executed and which authorization boundaries were present without retaining
-/// request objects, expression trees, or provider-specific runtime state.
+///     Provider-neutral provenance for one execution. Evidence describes what was
+///     executed and which authorization boundaries were present without retaining
+///     request objects, expression trees, or provider-specific runtime state.
 /// </summary>
 public sealed record ExecutionEvidence(
     string Provider,
@@ -44,6 +41,8 @@ public static class ExecutionEvidenceFactory
             providerOperation is null ? null : Hash(providerOperation));
     }
 
-    public static string Hash(string value) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
+    public static string Hash(string value)
+    {
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
+    }
 }

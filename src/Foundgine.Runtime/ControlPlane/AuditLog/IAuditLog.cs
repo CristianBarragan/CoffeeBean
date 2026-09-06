@@ -8,10 +8,10 @@ public interface IAuditLog
 }
 
 /// <summary>
-/// Process-local, append-only audit log. Entries are never mutated or
-/// removed once recorded. A deployment that needs durable or tamper-evident
-/// audit history should back <see cref="IAuditLog"/> with external storage —
-/// the append-only contract is what callers can rely on either way.
+///     Process-local, append-only audit log. Entries are never mutated or
+///     removed once recorded. A deployment that needs durable or tamper-evident
+///     audit history should back <see cref="IAuditLog" /> with external storage —
+///     the append-only contract is what callers can rely on either way.
 /// </summary>
 public sealed class InMemoryAuditLog : IAuditLog
 {

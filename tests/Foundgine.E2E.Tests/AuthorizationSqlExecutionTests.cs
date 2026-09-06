@@ -1,13 +1,8 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Execution;
-using FoundgineExecutionContext = Foundgine.Core.Execution.ExecutionContext;
-using Foundgine.Generated;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Providers.Storage.Sql;
-using Microsoft.Data.Sqlite;
-using Xunit;
-using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
+using FoundgineExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -21,7 +16,8 @@ public sealed class AuthorizationSqlExecutionTests
 
         await using (var command = connection.CreateCommand())
         {
-            command.CommandText = "CREATE TABLE contracts (id INTEGER NOT NULL, contract_type INTEGER NOT NULL, tenant_id INTEGER NOT NULL);";
+            command.CommandText =
+                "CREATE TABLE contracts (id INTEGER NOT NULL, contract_type INTEGER NOT NULL, tenant_id INTEGER NOT NULL);";
             await command.ExecuteNonQueryAsync();
             command.CommandText = "INSERT INTO contracts (id, contract_type, tenant_id) VALUES (1, 0, 7), (2, 1, 9);";
             await command.ExecuteNonQueryAsync();
@@ -50,6 +46,7 @@ public sealed class AuthorizationSqlExecutionTests
         Assert.Single(result.Rows);
         Assert.Equal(1L, result.Rows[0].Values["__fg_0_Id"]);
     }
+
     [Fact]
     public async Task Missing_authorization_context_value_fails_closed()
     {
@@ -58,7 +55,8 @@ public sealed class AuthorizationSqlExecutionTests
 
         await using (var command = connection.CreateCommand())
         {
-            command.CommandText = "CREATE TABLE contracts (id INTEGER NOT NULL, contract_type INTEGER NOT NULL, tenant_id INTEGER NOT NULL);";
+            command.CommandText =
+                "CREATE TABLE contracts (id INTEGER NOT NULL, contract_type INTEGER NOT NULL, tenant_id INTEGER NOT NULL);";
             await command.ExecuteNonQueryAsync();
             command.CommandText = "INSERT INTO contracts (id, contract_type, tenant_id) VALUES (1, 0, 7);";
             await command.ExecuteNonQueryAsync();
@@ -89,10 +87,9 @@ public sealed class AuthorizationSqlExecutionTests
             AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
         };
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => new SqlCompiler(GeneratedMetadata.Registry).Compile(plan));
+        var exception =
+            Assert.Throws<InvalidOperationException>(() => new SqlCompiler(GeneratedMetadata.Registry).Compile(plan));
 
         Assert.Contains("selects no fields", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
-
 }

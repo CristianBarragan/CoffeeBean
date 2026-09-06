@@ -1,55 +1,48 @@
-using System.Linq;
-using System.Text.RegularExpressions;
 using Foundgine.Core.Abstractions;
-using Foundgine.Providers.Aot;
 using Foundgine.Core.Semantic.Metadata;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Xunit;
+using Foundgine.Providers.Aot.Generator;
 
 namespace Foundgine.Providers.Aot.Tests;
 
 /// <summary>
-/// Fix: <c>Foundgine.Providers.Aot.Generator</c> can no longer reference the runtime
-/// <see cref="Foundgine.Core.Abstractions.SemanticIdentity"/> hashing helper directly
-/// (analyzers running inside the compiler process must not carry a hard
-/// dependency on the consuming compilation's runtime assemblies), so the fix
-/// introduced <c>Foundgine.Providers.Aot.Generator.GeneratorSemanticIdentity</c> as an
-/// independent copy of the same namespaces, key-building rules, and FNV-1a
-/// hash used at runtime.
-///
-/// That is the actual "id uniqueness" risk this branch is repairing: nothing
-/// stops the two copies from drifting apart. If they ever disagree, an
-/// entity/field defined via <c>[FoundgineEntity]</c>/<c>[FoundgineField]</c>
-/// (compile-time, hashed by <c>GeneratorSemanticIdentity</c>) and the same
-/// logically-named entity/field defined via the manual
-/// <see cref="Foundgine.Core.Semantic.SemanticModelBuilder"/> path (runtime,
-/// hashed by <see cref="SemanticIdentity"/>) would silently compute
-/// different numeric IDs for what is supposed to be the same identity -
-/// exactly the kind of confusion a security capability contract or a plan
-/// cache partition key must never be exposed to.
-///
-/// This test runs the real generator (reusing the harness pattern from
-/// <see cref="IdentityDeterminismTests"/>) against a small module and asserts
-/// the emitted EntityId/FieldId values equal what
-/// <see cref="SemanticIdentity"/> computes independently for the same
-/// canonical keys at runtime.
+///     Fix: <c>Foundgine.Providers.Aot.Generator</c> can no longer reference the runtime
+///     <see cref="Foundgine.Core.Abstractions.SemanticIdentity" /> hashing helper directly
+///     (analyzers running inside the compiler process must not carry a hard
+///     dependency on the consuming compilation's runtime assemblies), so the fix
+///     introduced <c>Foundgine.Providers.Aot.Generator.GeneratorSemanticIdentity</c> as an
+///     independent copy of the same namespaces, key-building rules, and FNV-1a
+///     hash used at runtime.
+///     That is the actual "id uniqueness" risk this branch is repairing: nothing
+///     stops the two copies from drifting apart. If they ever disagree, an
+///     entity/field defined via <c>[FoundgineEntity]</c>/<c>[FoundgineField]</c>
+///     (compile-time, hashed by <c>GeneratorSemanticIdentity</c>) and the same
+///     logically-named entity/field defined via the manual
+///     <see cref="Foundgine.Core.Semantic.SemanticModelBuilder" /> path (runtime,
+///     hashed by <see cref="SemanticIdentity" />) would silently compute
+///     different numeric IDs for what is supposed to be the same identity -
+///     exactly the kind of confusion a security capability contract or a plan
+///     cache partition key must never be exposed to.
+///     This test runs the real generator (reusing the harness pattern from
+///     <see cref="IdentityDeterminismTests" />) against a small module and asserts
+///     the emitted EntityId/FieldId values equal what
+///     <see cref="SemanticIdentity" /> computes independently for the same
+///     canonical keys at runtime.
 /// </summary>
 public sealed class GeneratorRuntimeIdentityParityTests
 {
     private const string Source = """
-        using Foundgine.Providers.Aot;
+                                  using Foundgine.Providers.Aot;
 
-        [FoundgineEntity(StorageName = "customers")]
-        public sealed class Customer
-        {
-            [FoundgineField(StorageName = "id")]
-            public int Id { get; init; }
+                                  [FoundgineEntity(StorageName = "customers")]
+                                  public sealed class Customer
+                                  {
+                                      [FoundgineField(StorageName = "id")]
+                                      public int Id { get; init; }
 
-            [FoundgineField(StorageName = "name")]
-            public string Name { get; init; } = "";
-        }
-        """;
+                                      [FoundgineField(StorageName = "name")]
+                                      public string Name { get; init; } = "";
+                                  }
+                                  """;
 
     [Fact]
     public void Generator_entity_id_matches_the_runtime_hasher_for_the_same_canonical_key()
@@ -188,12 +181,11 @@ public sealed class GeneratorRuntimeIdentityParityTests
             CSharpGeneratorDriver.Create(
                 new ISourceGenerator[]
                 {
-                    new Foundgine.Providers.Aot.Generator
-                        .FoundgineMetadataGenerator()
+                    new FoundgineMetadataGenerator()
                         .AsSourceGenerator()
                 },
                 parseOptions:
-                    new CSharpParseOptions(LanguageVersion.Preview));
+                new CSharpParseOptions(LanguageVersion.Preview));
 
         driver = driver.RunGeneratorsAndUpdateCompilation(
             compilation,
@@ -207,10 +199,9 @@ public sealed class GeneratorRuntimeIdentityParityTests
 
         var generatedText = outputCompilation.SyntaxTrees
             .Select(tree => tree.GetText().ToString())
-            .FirstOrDefault(
-                text => text.Contains(
-                    "public static class GeneratedMetadata",
-                    System.StringComparison.Ordinal));
+            .FirstOrDefault(text => text.Contains(
+                "public static class GeneratedMetadata",
+                System.StringComparison.Ordinal));
 
         Assert.False(
             string.IsNullOrWhiteSpace(generatedText),
@@ -231,8 +222,7 @@ public sealed class GeneratorRuntimeIdentityParityTests
 
         return trusted!
             .Split(System.IO.Path.PathSeparator)
-            .Select(
-                path => (MetadataReference)
-                    MetadataReference.CreateFromFile(path));
+            .Select(path => (MetadataReference)
+                MetadataReference.CreateFromFile(path));
     }
 }

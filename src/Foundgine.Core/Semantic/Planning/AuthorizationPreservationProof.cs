@@ -1,11 +1,11 @@
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Records that a rewrite did not weaken the source plan's security contract: every security
-/// invariant required by the plan before rewriting is still required after. A rewrite is free
-/// to add invariants (e.g. because it introduces a new authorization-sensitive shape) but must
-/// never silently drop one — dropping an invariant is exactly how a "purely semantic"
-/// optimization could quietly regress a security guarantee.
+///     Records that a rewrite did not weaken the source plan's security contract: every security
+///     invariant required by the plan before rewriting is still required after. A rewrite is free
+///     to add invariants (e.g. because it introduces a new authorization-sensitive shape) but must
+///     never silently drop one — dropping an invariant is exactly how a "purely semantic"
+///     optimization could quietly regress a security guarantee.
 /// </summary>
 public sealed record AuthorizationPreservationProof(bool IsSatisfied, IReadOnlyList<string> Violations)
 {

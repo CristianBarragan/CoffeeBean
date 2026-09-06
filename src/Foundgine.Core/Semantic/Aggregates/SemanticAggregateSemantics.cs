@@ -3,7 +3,7 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.Aggregates;
 
 /// <summary>
-/// What an aggregate evaluates to when the underlying collection has zero rows.
+///     What an aggregate evaluates to when the underlying collection has zero rows.
 /// </summary>
 public enum SemanticEmptyCollectionResult : byte
 {
@@ -15,25 +15,28 @@ public enum SemanticEmptyCollectionResult : byte
 }
 
 /// <summary>
-/// How an aggregate treats NULL values that appear among its inputs.
+///     How an aggregate treats NULL values that appear among its inputs.
 /// </summary>
 public enum SemanticNullInputBehavior : byte
 {
-    /// <summary>The aggregate can never itself produce or be affected by a NULL input value
-    /// (e.g. COUNT(*) counts rows, not values, so it is unaffected by NULL fields).</summary>
+    /// <summary>
+    ///     The aggregate can never itself produce or be affected by a NULL input value
+    ///     (e.g. COUNT(*) counts rows, not values, so it is unaffected by NULL fields).
+    /// </summary>
     NeverNull,
 
-    /// <summary>NULL input values are ignored. The aggregate result is NULL only when no
-    /// non-NULL value remains after NULLs are discarded (e.g. MIN, MAX).</summary>
+    /// <summary>
+    ///     NULL input values are ignored. The aggregate result is NULL only when no
+    ///     non-NULL value remains after NULLs are discarded (e.g. MIN, MAX).
+    /// </summary>
     IgnoresNull
 }
 
 /// <summary>
-/// Whether an aggregate's result can change when the input collection contains duplicate
-/// rows/values that would otherwise be considered equivalent.
-///
-/// COUNT is duplicate sensitive: COUNT(R) changes if a duplicate row is added or removed.
-/// MIN/MAX are duplicate insensitive: duplicate values do not change the minimum or maximum.
+///     Whether an aggregate's result can change when the input collection contains duplicate
+///     rows/values that would otherwise be considered equivalent.
+///     COUNT is duplicate sensitive: COUNT(R) changes if a duplicate row is added or removed.
+///     MIN/MAX are duplicate insensitive: duplicate values do not change the minimum or maximum.
 /// </summary>
 public enum SemanticDuplicateSensitivity : byte
 {
@@ -42,13 +45,12 @@ public enum SemanticDuplicateSensitivity : byte
 }
 
 /// <summary>
-/// Whether a rewrite that substitutes one aggregate for another (or collapses an aggregate
-/// against a relationship) additionally requires a proof about the cardinality of the
-/// underlying relationship (e.g. "at most one row") before it can be considered safe.
-///
-/// This milestone does not perform cardinality-dependent rewrites. The flag exists so that
-/// <see cref="AggregateRewriteLegality"/> can fail closed once such rewrites are introduced,
-/// rather than silently assuming cardinality it was never given proof of.
+///     Whether a rewrite that substitutes one aggregate for another (or collapses an aggregate
+///     against a relationship) additionally requires a proof about the cardinality of the
+///     underlying relationship (e.g. "at most one row") before it can be considered safe.
+///     This milestone does not perform cardinality-dependent rewrites. The flag exists so that
+///     <see cref="AggregateRewriteLegality" /> can fail closed once such rewrites are introduced,
+///     rather than silently assuming cardinality it was never given proof of.
 /// </summary>
 public enum SemanticCardinalityRequirement : byte
 {
@@ -60,9 +62,9 @@ public enum SemanticCardinalityRequirement : byte
 }
 
 /// <summary>
-/// What is known, at rewrite time, about the cardinality of the relationship an aggregate is
-/// evaluated over. This is supplied by the caller (planner/optimizer); the semantic layer never
-/// infers it implicitly.
+///     What is known, at rewrite time, about the cardinality of the relationship an aggregate is
+///     evaluated over. This is supplied by the caller (planner/optimizer); the semantic layer never
+///     infers it implicitly.
 /// </summary>
 public enum SemanticCardinalityKnowledge : byte
 {
@@ -77,13 +79,12 @@ public enum SemanticCardinalityKnowledge : byte
 }
 
 /// <summary>
-/// The explicit, centralized semantic contract for a single aggregate function.
-///
-/// This is the single source of truth for empty-collection, NULL-input, and
-/// duplicate-sensitivity behavior. Optimizer and provider code must consult this
-/// contract (via <see cref="SemanticAggregateSemanticsCatalog"/>) instead of
-/// independently re-deriving these rules, so that every rewrite rule and every
-/// provider agrees on what each aggregate means at the edges.
+///     The explicit, centralized semantic contract for a single aggregate function.
+///     This is the single source of truth for empty-collection, NULL-input, and
+///     duplicate-sensitivity behavior. Optimizer and provider code must consult this
+///     contract (via <see cref="SemanticAggregateSemanticsCatalog" />) instead of
+///     independently re-deriving these rules, so that every rewrite rule and every
+///     provider agrees on what each aggregate means at the edges.
 /// </summary>
 public sealed record SemanticAggregateSemantics(
     SemanticFilterAggregate Aggregate,
@@ -98,15 +99,15 @@ public sealed record SemanticAggregateSemantics(
 }
 
 /// <summary>
-/// Central, machine-readable catalog of <see cref="SemanticAggregateSemantics"/> for every
-/// aggregate the semantic layer understands. Optimizer rules and providers must look up
-/// semantics here rather than hard-coding assumptions about empty/NULL/duplicate behavior.
+///     Central, machine-readable catalog of <see cref="SemanticAggregateSemantics" /> for every
+///     aggregate the semantic layer understands. Optimizer rules and providers must look up
+///     semantics here rather than hard-coding assumptions about empty/NULL/duplicate behavior.
 /// </summary>
 public static class SemanticAggregateSemanticsCatalog
 {
     /// <summary>
-    /// COUNT: zero for an empty collection, never itself NULL, and sensitive to duplicates
-    /// (adding or removing a duplicate row changes the count).
+    ///     COUNT: zero for an empty collection, never itself NULL, and sensitive to duplicates
+    ///     (adding or removing a duplicate row changes the count).
     /// </summary>
     public static readonly SemanticAggregateSemantics Count = new(
         SemanticFilterAggregate.Count,
@@ -115,8 +116,8 @@ public static class SemanticAggregateSemanticsCatalog
         SemanticDuplicateSensitivity.Sensitive);
 
     /// <summary>
-    /// MIN: NULL for an empty collection, ignores NULL inputs (NULL only when no non-NULL
-    /// value remains), and insensitive to duplicates.
+    ///     MIN: NULL for an empty collection, ignores NULL inputs (NULL only when no non-NULL
+    ///     value remains), and insensitive to duplicates.
     /// </summary>
     public static readonly SemanticAggregateSemantics Min = new(
         SemanticFilterAggregate.Min,
@@ -125,8 +126,8 @@ public static class SemanticAggregateSemanticsCatalog
         SemanticDuplicateSensitivity.Insensitive);
 
     /// <summary>
-    /// MAX: NULL for an empty collection, ignores NULL inputs (NULL only when no non-NULL
-    /// value remains), and insensitive to duplicates.
+    ///     MAX: NULL for an empty collection, ignores NULL inputs (NULL only when no non-NULL
+    ///     value remains), and insensitive to duplicates.
     /// </summary>
     public static readonly SemanticAggregateSemantics Max = new(
         SemanticFilterAggregate.Max,
@@ -147,20 +148,24 @@ public static class SemanticAggregateSemanticsCatalog
         [Count, Min, Max];
 
     /// <summary>
-    /// Looks up the semantic contract for <paramref name="aggregate"/>.
-    /// Throws if the aggregate has no registered contract, so that new aggregates can never
-    /// be silently treated as COUNT/MIN/MAX-equivalent by omission.
+    ///     Looks up the semantic contract for <paramref name="aggregate" />.
+    ///     Throws if the aggregate has no registered contract, so that new aggregates can never
+    ///     be silently treated as COUNT/MIN/MAX-equivalent by omission.
     /// </summary>
-    public static SemanticAggregateSemantics For(SemanticFilterAggregate aggregate) =>
-        ByAggregate.TryGetValue(aggregate, out var semantics)
+    public static SemanticAggregateSemantics For(SemanticFilterAggregate aggregate)
+    {
+        return ByAggregate.TryGetValue(aggregate, out var semantics)
             ? semantics
             : throw new NotSupportedException(
                 $"No semantic contract is registered for aggregate '{aggregate}'. " +
                 "Register one in SemanticAggregateSemanticsCatalog before using it in a rewrite rule.");
+    }
 
     /// <summary>
-    /// Attempts to look up the semantic contract for <paramref name="aggregate"/> without throwing.
+    ///     Attempts to look up the semantic contract for <paramref name="aggregate" /> without throwing.
     /// </summary>
-    public static bool TryGet(SemanticFilterAggregate aggregate, out SemanticAggregateSemantics? semantics) =>
-        ByAggregate.TryGetValue(aggregate, out semantics);
+    public static bool TryGet(SemanticFilterAggregate aggregate, out SemanticAggregateSemantics? semantics)
+    {
+        return ByAggregate.TryGetValue(aggregate, out semantics);
+    }
 }

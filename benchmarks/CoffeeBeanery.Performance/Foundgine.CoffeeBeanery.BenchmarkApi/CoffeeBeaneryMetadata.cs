@@ -107,12 +107,14 @@ internal static class CoffeeBeaneryMetadata
         EntityId target,
         string name,
         int sourceKey,
-        int targetKey) =>
-        new(
+        int targetKey)
+    {
+        return new RelationshipMetadata(
             id,
             source,
             target,
             name,
             new ColumnReference(source, new ColumnId(ushort.Parse(sourceKey.ToString()))),
             new ColumnReference(target, new ColumnId(ushort.Parse(targetKey.ToString()))));
+    }
 }

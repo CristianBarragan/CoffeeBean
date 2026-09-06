@@ -1,6 +1,4 @@
 ﻿using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -34,5 +32,3 @@ public sealed class SemanticContractProviderTests
         Assert.DoesNotContain(typeof(SemanticModelBuilder), members);
     }
 }
-
-

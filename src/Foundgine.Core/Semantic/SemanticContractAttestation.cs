@@ -1,9 +1,9 @@
 namespace Foundgine.Core.Semantic;
 
 /// <summary>
-/// Verifies that a semantic model is the contract expected by a generated or
-/// otherwise trusted semantic artifact. The fingerprint is an integrity
-/// identifier only; it does not grant authorization.
+///     Verifies that a semantic model is the contract expected by a generated or
+///     otherwise trusted semantic artifact. The fingerprint is an integrity
+///     identifier only; it does not grant authorization.
 /// </summary>
 public static class SemanticContractAttestation
 {

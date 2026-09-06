@@ -1,12 +1,8 @@
-using System.Security.Cryptography;
-using System.Text;
 using Foundgine.Core.Execution;
+using Foundgine.Core.Semantic.IR;
 using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic.Planning;
-using Foundgine.Core.Semantic.IR;
 using Foundgine.Providers.Storage.Sql;
-using Npgsql;
-using Foundgine.SupplyChain.Application;
 using Foundgine.Providers.Storage.Sql.Query;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
@@ -15,8 +11,8 @@ namespace Foundgine.SupplyChain.Infrastructure.Queries;
 public sealed class SemanticSqlQueryExecutor
 {
     private readonly NpgsqlDataSource _dataSource;
-    private readonly Planner _planner;
     private readonly IMetadataProvider _metadata;
+    private readonly Planner _planner;
 
     public SemanticSqlQueryExecutor(
         NpgsqlDataSource dataSource,
@@ -54,15 +50,16 @@ public sealed class SemanticSqlQueryExecutor
 
     private static string Fingerprint(
         string sql,
-        IEnumerable<SqlParameterBinding> parameters) =>
-        Convert.ToHexString(
-            SHA256.HashData(
-                Encoding.UTF8.GetBytes(
-                    sql +
-                    "|" +
-                    string.Join(
-                        ';',
-                        parameters.Select(
-                            x => $"{x.Name}:{x.Value}")))))
-        .ToLowerInvariant()[..24];
+        IEnumerable<SqlParameterBinding> parameters)
+    {
+        return Convert.ToHexString(
+                SHA256.HashData(
+                    Encoding.UTF8.GetBytes(
+                        sql +
+                        "|" +
+                        string.Join(
+                            ';',
+                            parameters.Select(x => $"{x.Name}:{x.Value}")))))
+            .ToLowerInvariant()[..24];
+    }
 }

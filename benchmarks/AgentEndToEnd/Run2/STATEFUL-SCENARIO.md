@@ -24,7 +24,8 @@ The benchmark's expected-state file records the baseline, intermediate, and fina
 
 ## Concurrency
 
-For concurrency 8/16/32/64, run with at least 64 isolated customers (recommended: 128) so customer IDs are not reused across concurrent workers.
+For concurrency 8/16/32/64, run with at least 64 isolated customers (recommended: 128) so customer IDs are not reused
+across concurrent workers.
 
 Example:
 
@@ -42,6 +43,8 @@ Replay mode uses the existing benchmark token estimator:
 
 Provider-reported token usage remains authoritative in live mode.
 
-
 ## Runner diagnostic fix
-The PowerShell runner captures dotnet stdout/stderr through `cmd.exe` into `agent-benchmark-console.log`. This prevents PowerShell native stderr handling from masking the actual benchmark exception. A non-zero dotnet exit now prints the last 40 log lines before cleanup.
+
+The PowerShell runner captures dotnet stdout/stderr through `cmd.exe` into `agent-benchmark-console.log`. This prevents
+PowerShell native stderr handling from masking the actual benchmark exception. A non-zero dotnet exit now prints the
+last 40 log lines before cleanup.

@@ -1,11 +1,10 @@
-using Foundgine.Core.Execution;
 using Foundgine.HighAssurance.Banking;
 
 namespace Foundgine.HighAssurance.Postgres.Execution;
 
 /// <summary>
-/// Versioned authorization evidence returned by a high-assurance authorization
-/// decision. The evidence is execution-time data, not semantic plan identity.
+///     Versioned authorization evidence returned by a high-assurance authorization
+///     decision. The evidence is execution-time data, not semantic plan identity.
 /// </summary>
 public sealed record AuthorizationDecision(
     bool Allowed,
@@ -13,9 +12,9 @@ public sealed record AuthorizationDecision(
     string Fingerprint)
 {
     /// <summary>
-    /// Creates deterministic compatibility evidence for the legacy boolean
-    /// authorization callback. New authorization integrations should provide
-    /// their own monotonic version and fingerprint.
+    ///     Creates deterministic compatibility evidence for the legacy boolean
+    ///     authorization callback. New authorization integrations should provide
+    ///     their own monotonic version and fingerprint.
     /// </summary>
     public static AuthorizationDecision FromBoolean(
         bool allowed,

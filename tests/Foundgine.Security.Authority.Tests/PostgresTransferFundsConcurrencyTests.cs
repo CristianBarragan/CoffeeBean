@@ -1,8 +1,6 @@
 using Foundgine.HighAssurance.Banking;
 using Foundgine.HighAssurance.Postgres;
 using Foundgine.HighAssurance.Postgres.Execution;
-using Npgsql;
-using Xunit;
 
 namespace Foundgine.Runtime.ControlPlane.Tests;
 
@@ -20,7 +18,7 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var actor = Guid.NewGuid();
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
-        await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 0m);
+        await SeedAsync(dataSource, tenant, actor, source, destination, 1000m, 0m);
 
         var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource,
             static (id, a, b) => id == a.OwnerId && id == b.OwnerId));
@@ -52,7 +50,7 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var actor = Guid.NewGuid();
         var a = Guid.NewGuid();
         var b = Guid.NewGuid();
-        await SeedAsync(dataSource, tenant, actor, a, b, sourceBalance: 1000m, destinationBalance: 1000m);
+        await SeedAsync(dataSource, tenant, actor, a, b, 1000m, 1000m);
 
         var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource,
             static (id, x, y) => id == x.OwnerId && id == y.OwnerId));
@@ -105,7 +103,7 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var actor = Guid.NewGuid();
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
-        await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 1000m,
+        await SeedAsync(dataSource, tenant, actor, source, destination, 1000m, 1000m,
             destinationFrozen: true);
 
         var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource,
@@ -130,8 +128,8 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var actor = Guid.NewGuid();
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
-        await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m,
-            destinationBalance: 1000m);
+        await SeedAsync(dataSource, tenant, actor, source, destination, 1000m,
+            1000m);
 
         var authorize = false;
         var service =
@@ -161,7 +159,7 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var actor = Guid.NewGuid();
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
-        await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 0m,
+        await SeedAsync(dataSource, tenant, actor, source, destination, 1000m, 0m,
             pendingTransactions: 400m, regulatoryHold: 300m);
 
         var service = new PostgresTransferFundsService(new PostgresTransferFundsExecutor(dataSource,
@@ -237,12 +235,6 @@ public sealed class PostgresTransferFundsConcurrencyTests
         return new State(reader.GetDecimal(0), reader.GetDecimal(1), reader.GetInt64(2), reader.GetInt64(3));
     }
 
-    private sealed record State(
-        decimal SourceBalance,
-        decimal DestinationBalance,
-        long IdempotencyCount,
-        long AuditCount);
-
     [PostgresFact]
     public async Task Same_idempotency_key_fault_rollback_allows_waiting_request_to_execute_once()
     {
@@ -253,7 +245,7 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var actor = Guid.NewGuid();
         var source = Guid.NewGuid();
         var destination = Guid.NewGuid();
-        await SeedAsync(dataSource, tenant, actor, source, destination, sourceBalance: 1000m, destinationBalance: 0m);
+        await SeedAsync(dataSource, tenant, actor, source, destination, 1000m, 0m);
 
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -306,7 +298,7 @@ public sealed class PostgresTransferFundsConcurrencyTests
         var actor = Guid.NewGuid();
         var a = Guid.NewGuid();
         var b = Guid.NewGuid();
-        await SeedAsync(dataSource, tenant, actor, a, b, sourceBalance: 1000m, destinationBalance: 1000m);
+        await SeedAsync(dataSource, tenant, actor, a, b, 1000m, 1000m);
 
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -346,4 +338,10 @@ public sealed class PostgresTransferFundsConcurrencyTests
         Assert.Equal(1, state.IdempotencyCount);
         Assert.Equal(1, state.AuditCount);
     }
+
+    private sealed record State(
+        decimal SourceBalance,
+        decimal DestinationBalance,
+        long IdempotencyCount,
+        long AuditCount);
 }

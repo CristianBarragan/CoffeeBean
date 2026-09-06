@@ -1,18 +1,20 @@
-﻿using System.Collections.ObjectModel;
-using Foundgine.Core.Abstractions;
+﻿using Foundgine.Core.Abstractions;
 
 namespace Foundgine.Core.Semantic;
 
 /// <summary>
-/// Immutable runtime representation of a validated and frozen semantic contract.
-/// A snapshot deliberately separates trusted runtime consumption from the
-/// <see cref="SemanticModel"/> construction/lifecycle representation.
+///     Immutable runtime representation of a validated and frozen semantic contract.
+///     A snapshot deliberately separates trusted runtime consumption from the
+///     <see cref="SemanticModel" /> construction/lifecycle representation.
 /// </summary>
 public sealed class SemanticContractSnapshot
 {
     private readonly IReadOnlyDictionary<EntityId, SemanticEntity> _entities;
     private readonly IReadOnlyDictionary<EntityId, IReadOnlyDictionary<string, int>> _entityAliasWeights;
-    private readonly IReadOnlyDictionary<EntityId, IReadOnlyDictionary<FieldId, IReadOnlyDictionary<string, int>>> _fieldAliasWeights;
+
+    private readonly IReadOnlyDictionary<EntityId, IReadOnlyDictionary<FieldId, IReadOnlyDictionary<string, int>>>
+        _fieldAliasWeights;
+
     private readonly IReadOnlyDictionary<RelationshipId, IReadOnlyDictionary<string, int>> _relationshipAliasWeights;
     private readonly IReadOnlyList<SemanticTraversal> _traversals;
 
@@ -30,7 +32,7 @@ public sealed class SemanticContractSnapshot
     }
 
     /// <summary>
-    /// The canonical fingerprint of the frozen semantic contract represented by this snapshot.
+    ///     The canonical fingerprint of the frozen semantic contract represented by this snapshot.
     /// </summary>
     public string ContractFingerprint { get; }
 
@@ -40,13 +42,17 @@ public sealed class SemanticContractSnapshot
     /// <summary>Logical caller-facing traversals in the contract.</summary>
     public IReadOnlyList<SemanticTraversal> Traversals => _traversals;
 
-    public bool TryGet(EntityId id, out SemanticEntity entity) =>
-        _entities.TryGetValue(id, out entity!);
+    public bool TryGet(EntityId id, out SemanticEntity entity)
+    {
+        return _entities.TryGetValue(id, out entity!);
+    }
 
-    public SemanticEntity Get(EntityId id) =>
-        _entities.TryGetValue(id, out var entity)
+    public SemanticEntity Get(EntityId id)
+    {
+        return _entities.TryGetValue(id, out var entity)
             ? entity
             : throw new KeyNotFoundException($"Entity {id} has no semantic descriptor.");
+    }
 
     public bool TryResolveEntity(string name, out SemanticEntity entity)
     {
@@ -56,10 +62,12 @@ public sealed class SemanticContractSnapshot
         return entity is not null;
     }
 
-    public SemanticEntity ResolveEntity(string name) =>
-        TryResolveEntity(name, out var entity)
+    public SemanticEntity ResolveEntity(string name)
+    {
+        return TryResolveEntity(name, out var entity)
             ? entity
             : throw new KeyNotFoundException($"Semantic entity '{name}' is not defined.");
+    }
 
     public bool TryGetTraversal(EntityId source, string name, out SemanticTraversal traversal)
     {
@@ -68,15 +76,19 @@ public sealed class SemanticContractSnapshot
         return traversal is not null;
     }
 
-    public SemanticTraversal GetTraversal(EntityId source, string name) =>
-        TryGetTraversal(source, name, out var traversal)
+    public SemanticTraversal GetTraversal(EntityId source, string name)
+    {
+        return TryGetTraversal(source, name, out var traversal)
             ? traversal
-            : throw new KeyNotFoundException($"Semantic traversal '{name}' is not defined on entity '{Get(source).Name}'.");
+            : throw new KeyNotFoundException(
+                $"Semantic traversal '{name}' is not defined on entity '{Get(source).Name}'.");
+    }
 
 
-
-    public bool TryGetAlias(EntityId entityId, string alias, out int weight) =>
-        TryGetWeight(_entityAliasWeights, entityId, alias, out weight);
+    public bool TryGetAlias(EntityId entityId, string alias, out int weight)
+    {
+        return TryGetWeight(_entityAliasWeights, entityId, alias, out weight);
+    }
 
     public bool TryGetAlias(EntityId entityId, FieldId fieldId, string alias, out int weight)
     {
@@ -87,8 +99,10 @@ public sealed class SemanticContractSnapshot
         return false;
     }
 
-    public bool TryGetAlias(RelationshipId relationshipId, string alias, out int weight) =>
-        TryGetWeight(_relationshipAliasWeights, relationshipId, alias, out weight);
+    public bool TryGetAlias(RelationshipId relationshipId, string alias, out int weight)
+    {
+        return TryGetWeight(_relationshipAliasWeights, relationshipId, alias, out weight);
+    }
 
     private static bool TryGetWeight<TKey>(
         IReadOnlyDictionary<TKey, IReadOnlyDictionary<string, int>> index,
@@ -105,23 +119,30 @@ public sealed class SemanticContractSnapshot
     }
 
     private static IReadOnlyDictionary<EntityId, IReadOnlyDictionary<string, int>> BuildEntityAliasIndex(
-        IEnumerable<SemanticEntity> entities) =>
-        entities.ToDictionary(
+        IEnumerable<SemanticEntity> entities)
+    {
+        return entities.ToDictionary(
             x => x.Id,
             x => BuildAliasMap(x.EffectiveAliases),
             EqualityComparer<EntityId>.Default);
+    }
 
-    private static IReadOnlyDictionary<EntityId, IReadOnlyDictionary<FieldId, IReadOnlyDictionary<string, int>>> BuildFieldAliasIndex(
-        IEnumerable<SemanticEntity> entities) =>
-        entities.ToDictionary(
+    private static IReadOnlyDictionary<EntityId, IReadOnlyDictionary<FieldId, IReadOnlyDictionary<string, int>>>
+        BuildFieldAliasIndex(
+            IEnumerable<SemanticEntity> entities)
+    {
+        return entities.ToDictionary(
             e => e.Id,
             e => (IReadOnlyDictionary<FieldId, IReadOnlyDictionary<string, int>>)e.Fields
                 .ToDictionary(f => f.Id, f => BuildAliasMap(f.EffectiveAliases)));
+    }
 
     private static IReadOnlyDictionary<RelationshipId, IReadOnlyDictionary<string, int>> BuildRelationshipAliasIndex(
-        IEnumerable<SemanticEntity> entities) =>
-        entities.SelectMany(x => x.Relationships)
+        IEnumerable<SemanticEntity> entities)
+    {
+        return entities.SelectMany(x => x.Relationships)
             .ToDictionary(x => x.Id, x => BuildAliasMap(x.EffectiveAliases));
+    }
 
     private static IReadOnlyDictionary<string, int> BuildAliasMap(IEnumerable<SemanticAlias> aliases)
     {
@@ -143,7 +164,6 @@ public sealed class SemanticContractSnapshot
     {
         var copy = new Dictionary<EntityId, SemanticEntity>();
         foreach (var entity in entities)
-        {
             copy[entity.Id] = entity with
             {
                 Fields = new ReadOnlyCollection<SemanticField>(
@@ -153,26 +173,31 @@ public sealed class SemanticContractSnapshot
                 Aliases = new ReadOnlyCollection<SemanticAlias>(
                     entity.EffectiveAliases.Select(x => new SemanticAlias(x.Name, x.Weight)).ToArray())
             };
-        }
 
         return new ReadOnlyDictionary<EntityId, SemanticEntity>(copy);
     }
 
-    private static SemanticField FreezeField(SemanticField field) => field with
+    private static SemanticField FreezeField(SemanticField field)
     {
-        Aliases = new ReadOnlyCollection<SemanticAlias>(
-            field.EffectiveAliases.Select(x => new SemanticAlias(x.Name, x.Weight)).ToArray()),
-        Constraints = new ReadOnlyCollection<SemanticConstraint>(
-            field.EffectiveConstraints
-                .Select(x => new SemanticConstraint(x.Kind, x.Value, x.Minimum, x.Maximum))
-                .ToArray())
-    };
+        return field with
+        {
+            Aliases = new ReadOnlyCollection<SemanticAlias>(
+                field.EffectiveAliases.Select(x => new SemanticAlias(x.Name, x.Weight)).ToArray()),
+            Constraints = new ReadOnlyCollection<SemanticConstraint>(
+                field.EffectiveConstraints
+                    .Select(x => new SemanticConstraint(x.Kind, x.Value, x.Minimum, x.Maximum))
+                    .ToArray())
+        };
+    }
 
-    private static SemanticRelationship FreezeRelationship(SemanticRelationship relationship) => relationship with
+    private static SemanticRelationship FreezeRelationship(SemanticRelationship relationship)
     {
-        Aliases = new ReadOnlyCollection<SemanticAlias>(
-            relationship.EffectiveAliases.Select(x => new SemanticAlias(x.Name, x.Weight)).ToArray())
-    };
+        return relationship with
+        {
+            Aliases = new ReadOnlyCollection<SemanticAlias>(
+                relationship.EffectiveAliases.Select(x => new SemanticAlias(x.Name, x.Weight)).ToArray())
+        };
+    }
 
     private static IReadOnlyList<SemanticTraversal> FreezeTraversals(
         IEnumerable<SemanticTraversal> traversals)
@@ -188,4 +213,3 @@ public sealed class SemanticContractSnapshot
         return new ReadOnlyCollection<SemanticTraversal>(copy);
     }
 }
-

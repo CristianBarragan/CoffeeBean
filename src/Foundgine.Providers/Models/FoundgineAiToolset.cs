@@ -1,28 +1,24 @@
-using System.ComponentModel;
-using System.Text.Json;
 using Foundgine.Core.Execution;
-using Foundgine.Core.Serialization;
 using Foundgine.Core.Semantic.Security.Execution;
-using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Serialization;
 using Foundgine.Runtime;
-using Microsoft.Extensions.AI;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.Providers.Models;
 
 /// <summary>
-/// Exposes Foundgine as a small, provider-neutral AI toolset.
-/// The model can discover the authorized semantic surface and submit
-/// provider-neutral read intent. Authentication/tenant context remains owned
-/// by the host application and is never supplied by the model.
+///     Exposes Foundgine as a small, provider-neutral AI toolset.
+///     The model can discover the authorized semantic surface and submit
+///     provider-neutral read intent. Authentication/tenant context remains owned
+///     by the host application and is never supplied by the model.
 /// </summary>
 public sealed class FoundgineAiToolset
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-
-    private readonly IFoundgine _foundgine;
     private readonly JsonReadIntentAdapter _adapter;
     private readonly Func<ExecutionContext> _contextFactory;
+
+    private readonly IFoundgine _foundgine;
     private readonly Func<SecurityExecutionContext?> _securityContextFactory;
 
     public FoundgineAiToolset(
@@ -38,28 +34,31 @@ public sealed class FoundgineAiToolset
     }
 
     /// <summary>
-    /// Creates the tools that can be supplied to any Microsoft.Extensions.AI
-    /// compatible chat client or agent.
+    ///     Creates the tools that can be supplied to any Microsoft.Extensions.AI
+    ///     compatible chat client or agent.
     /// </summary>
-    public IReadOnlyList<AIFunction> CreateTools() =>
-    [
-        AIFunctionFactory.Create(
-            DescribeCapabilities,
-            "foundgine_capabilities",
-            "Discover the semantic entities, fields and relationships available to the current caller. This is descriptive only; execution re-checks authorization."),
+    public IReadOnlyList<AIFunction> CreateTools()
+    {
+        return
+        [
+            AIFunctionFactory.Create(
+                DescribeCapabilities,
+                "foundgine_capabilities",
+                "Discover the semantic entities, fields and relationships available to the current caller. This is descriptive only; execution re-checks authorization."),
 
-        AIFunctionFactory.Create(
-            ExecuteQueryAsync,
-            "foundgine_query",
-            "Execute a provider-neutral Foundgine read intent. The intent must use only entities, fields and relationships discovered through foundgine_capabilities. Do not provide tenant, identity or authorization context; the application supplies that.")
-    ];
+            AIFunctionFactory.Create(
+                ExecuteQueryAsync,
+                "foundgine_query",
+                "Execute a provider-neutral Foundgine read intent. The intent must use only entities, fields and relationships discovered through foundgine_capabilities. Do not provide tenant, identity or authorization context; the application supplies that.")
+        ];
+    }
 
     [Description("Returns the canonical semantic capability contract available to the current caller.")]
     public string DescribeCapabilities()
     {
         var security = _securityContextFactory()
-            ?? throw new UnauthorizedAccessException(
-                "AI capability discovery requires a host-supplied SecurityExecutionContext. The model cannot supply identity, tenant, audience, or warrant context.");
+                       ?? throw new UnauthorizedAccessException(
+                           "AI capability discovery requires a host-supplied SecurityExecutionContext. The model cannot supply identity, tenant, audience, or warrant context.");
 
         return JsonSerializer.Serialize(
             _foundgine.DescribeCapabilityContract(security),
@@ -68,7 +67,9 @@ public sealed class FoundgineAiToolset
 
     [Description("Executes a Foundgine read intent represented as JSON and returns rows plus execution evidence.")]
     public async Task<string> ExecuteQueryAsync(
-        [Description("JSON read intent with rootEntity, selections, optional filter/order/limit/offset/after. Do not include authentication, tenant or authorization context.")] string intentJson,
+        [Description(
+            "JSON read intent with rootEntity, selections, optional filter/order/limit/offset/after. Do not include authentication, tenant or authorization context.")]
+        string intentJson,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(intentJson))
@@ -76,8 +77,8 @@ public sealed class FoundgineAiToolset
 
         var intent = _adapter.Parse(intentJson);
         var security = _securityContextFactory()
-            ?? throw new UnauthorizedAccessException(
-                "AI query execution requires a host-supplied SecurityExecutionContext. The model cannot supply identity, tenant, audience, or warrant context.");
+                       ?? throw new UnauthorizedAccessException(
+                           "AI query execution requires a host-supplied SecurityExecutionContext. The model cannot supply identity, tenant, audience, or warrant context.");
         intent = intent with { Security = security };
         var result = await _foundgine.ExecuteAsync(
             intent,
@@ -87,10 +88,13 @@ public sealed class FoundgineAiToolset
         return JsonSerializer.Serialize(ToToolResult(result), JsonOptions);
     }
 
-    private static object ToToolResult(ExecutionResult result) => new
+    private static object ToToolResult(ExecutionResult result)
     {
-        rows = result.Rows.Select(row => row.Values).ToArray(),
-        pageInfo = result.PageInfo,
-        evidence = result.Evidence
-    };
+        return new
+        {
+            rows = result.Rows.Select(row => row.Values).ToArray(),
+            pageInfo = result.PageInfo,
+            evidence = result.Evidence
+        };
+    }
 }

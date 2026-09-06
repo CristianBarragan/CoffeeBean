@@ -1,14 +1,16 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Security;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed class AuthorizationPreservationProofTests
 {
-    private static SemanticPlan Plan(params string[] invariants) => new(
-        new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, []),
-        invariants);
+    private static SemanticPlan Plan(params string[] invariants)
+    {
+        return new(
+            new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, []),
+            invariants);
+    }
 
     [Fact]
     public void Identical_invariant_sets_are_preserved()
@@ -42,7 +44,8 @@ public sealed class AuthorizationPreservationProofTests
         var proof = AuthorizationPreservationProof.Create(before, after);
 
         Assert.False(proof.IsSatisfied);
-        Assert.Contains(proof.Violations, v => v.Contains(SecurityInvariantIds.TenantIsolation, StringComparison.Ordinal));
+        Assert.Contains(proof.Violations,
+            v => v.Contains(SecurityInvariantIds.TenantIsolation, StringComparison.Ordinal));
     }
 
     [Fact]

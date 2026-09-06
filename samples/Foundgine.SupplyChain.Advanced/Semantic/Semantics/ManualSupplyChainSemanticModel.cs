@@ -5,17 +5,15 @@ using D = Foundgine.SupplyChain.Advanced.Domain;
 namespace Foundgine.SupplyChain.Advanced.Semantics;
 
 /// <summary>
-/// Small hand-authored semantic overlay used by the running Supply Chain sample.
-///
-/// The complete structural graph is still discovered from AOT metadata by
-/// <see cref="SupplyChainSemanticModel"/>. This class intentionally declares
-/// only two entities so the sample demonstrates the typed semantic API without
-/// recreating the entire supply-chain schema a second time.
-///
-/// The two entities are composed onto the metadata-discovered graph at startup.
-/// The overlay adds application meaning (aliases, constraints, capabilities and
-/// strongly typed relationships) while the metadata graph remains the source of
-/// structural truth.
+///     Small hand-authored semantic overlay used by the running Supply Chain sample.
+///     The complete structural graph is still discovered from AOT metadata by
+///     <see cref="SupplyChainSemanticModel" />. This class intentionally declares
+///     only two entities so the sample demonstrates the typed semantic API without
+///     recreating the entire supply-chain schema a second time.
+///     The two entities are composed onto the metadata-discovered graph at startup.
+///     The overlay adds application meaning (aliases, constraints, capabilities and
+///     strongly typed relationships) while the metadata graph remains the source of
+///     structural truth.
 /// </summary>
 public static class ManualSupplyChainSemanticModel
 {
@@ -73,15 +71,19 @@ public static class ManualSupplyChainSemanticModel
         return builder.Build();
     }
 
-    public static FieldId Field(string entityName, string fieldName) =>
-        Model.Entities.Single(entity =>
-            string.Equals(entity.Name, entityName, StringComparison.OrdinalIgnoreCase))
+    public static FieldId Field(string entityName, string fieldName)
+    {
+        return Model.Entities.Single(entity =>
+                string.Equals(entity.Name, entityName, StringComparison.OrdinalIgnoreCase))
             .Fields.Single(field =>
                 string.Equals(field.Name, fieldName, StringComparison.OrdinalIgnoreCase)).Id;
+    }
 
-    public static RelationshipId Relationship(string entityName, string relationshipName) =>
-        Model.Entities.Single(entity =>
-            string.Equals(entity.Name, entityName, StringComparison.OrdinalIgnoreCase))
+    public static RelationshipId Relationship(string entityName, string relationshipName)
+    {
+        return Model.Entities.Single(entity =>
+                string.Equals(entity.Name, entityName, StringComparison.OrdinalIgnoreCase))
             .Relationships.Single(relationship =>
                 string.Equals(relationship.Name, relationshipName, StringComparison.OrdinalIgnoreCase)).Id;
+    }
 }

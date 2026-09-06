@@ -1,6 +1,5 @@
 using Foundgine.Core.Semantic.Aggregates;
 using Foundgine.Core.Semantic.Query;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 

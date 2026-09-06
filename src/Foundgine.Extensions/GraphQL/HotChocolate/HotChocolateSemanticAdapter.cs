@@ -1,35 +1,42 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Query;
-using HotChocolate.Language;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate;
 
 /// <summary>
-/// Translates GraphQL query syntax into provider-neutral SemanticRequest
-/// objects. GraphQL aliases, fragments, directives and variables are consumed
-/// here and never leak into Foundgine core.
+///     Translates GraphQL query syntax into provider-neutral SemanticRequest
+///     objects. GraphQL aliases, fragments, directives and variables are consumed
+///     here and never leak into Foundgine core.
 /// </summary>
 public sealed class HotChocolateSemanticAdapter
 {
     private readonly SemanticModel _model;
 
-    public HotChocolateSemanticAdapter(SemanticModel model) =>
+    public HotChocolateSemanticAdapter(SemanticModel model)
+    {
         _model = model ?? throw new ArgumentNullException(nameof(model));
+    }
 
-    public SemanticRequest Adapt(string graphql) =>
-        AdaptResultShape(graphql).Request;
+    public SemanticRequest Adapt(string graphql)
+    {
+        return AdaptResultShape(graphql).Request;
+    }
 
     public SemanticRequest Adapt(
         string graphql,
         IReadOnlyDictionary<string, object?>? variables,
-        string? operationName = null) =>
-        AdaptResultShape(graphql, variables, operationName).Request;
+        string? operationName = null)
+    {
+        return AdaptResultShape(graphql, variables, operationName).Request;
+    }
 
     public SemanticRequest Adapt(
         string graphql,
-        string? operationName) =>
-        AdaptResultShape(graphql, null, operationName).Request;
+        string? operationName)
+    {
+        return AdaptResultShape(graphql, null, operationName).Request;
+    }
 
     public GraphQLQueryAdaptation AdaptResultShape(
         string graphql,
@@ -141,10 +148,12 @@ public sealed class HotChocolateSemanticAdapter
                 new Dictionary<string, VariableDefinitionNode>()));
     }
 
-    private SemanticEntity FindEntity(string name) =>
-        _model.Entities.FirstOrDefault(x => NamesEqual(x.Name, name))
-        ?? throw new InvalidOperationException(
-            $"GraphQL entity '{name}' is not defined in the semantic model.");
+    private SemanticEntity FindEntity(string name)
+    {
+        return _model.Entities.FirstOrDefault(x => NamesEqual(x.Name, name))
+               ?? throw new InvalidOperationException(
+                   $"GraphQL entity '{name}' is not defined in the semantic model.");
+    }
 
     private static OperationDefinitionNode SelectOperation(
         DocumentNode document,
@@ -163,9 +172,9 @@ public sealed class HotChocolateSemanticAdapter
         if (operationName is not null)
         {
             operation = operations.FirstOrDefault(x =>
-                string.Equals(x.Name?.Value, operationName, StringComparison.Ordinal))
-                ?? throw new InvalidOperationException(
-                    $"GraphQL operation '{operationName}' was not found.");
+                            string.Equals(x.Name?.Value, operationName, StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            $"GraphQL operation '{operationName}' was not found.");
         }
         else
         {
@@ -196,7 +205,6 @@ public sealed class HotChocolateSemanticAdapter
         var responseNames = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var selection in selectionSet.Selections)
-        {
             switch (selection)
             {
                 case FieldNode field:
@@ -283,7 +291,6 @@ public sealed class HotChocolateSemanticAdapter
                     throw new InvalidOperationException(
                         $"GraphQL selection '{selection.GetType().Name}' is not supported.");
             }
-        }
 
         return (request, new GraphQLResultShape(resultFields));
     }
@@ -316,8 +323,7 @@ public sealed class HotChocolateSemanticAdapter
                     field.Alias?.Value ?? field.Name.Value));
         }
 
-        var relationship = entity.Relationships.FirstOrDefault(
-            r => NamesEqual(r.Name, field.Name.Value));
+        var relationship = entity.Relationships.FirstOrDefault(r => NamesEqual(r.Name, field.Name.Value));
 
         if (relationship is null)
             throw new InvalidOperationException(
@@ -445,8 +451,7 @@ public sealed class HotChocolateSemanticAdapter
                 continue;
             }
 
-            var relationship = entity.Relationships.FirstOrDefault(
-                x => NamesEqual(x.Name, pair.Key));
+            var relationship = entity.Relationships.FirstOrDefault(x => NamesEqual(x.Name, pair.Key));
             if (relationship is not null)
             {
                 expressions.AddRange(
@@ -455,8 +460,8 @@ public sealed class HotChocolateSemanticAdapter
             }
 
             var semanticField = FindField(entity, pair.Key)
-                ?? throw new InvalidOperationException(
-                    $"Filter field '{pair.Key}' is not defined on '{entity.Name}'.");
+                                ?? throw new InvalidOperationException(
+                                    $"Filter field '{pair.Key}' is not defined on '{entity.Name}'.");
 
             if (pair.Value is IReadOnlyDictionary<string, object?> operators)
             {
@@ -522,8 +527,8 @@ public sealed class HotChocolateSemanticAdapter
                     $"Collection filter field '{aggregateField.Key}' must specify min or max.");
 
             var targetField = FindField(target, aggregateField.Key)
-                ?? throw new InvalidOperationException(
-                    $"Aggregate filter field '{aggregateField.Key}' is not defined on '{target.Name}'.");
+                              ?? throw new InvalidOperationException(
+                                  $"Aggregate filter field '{aggregateField.Key}' is not defined on '{target.Name}'.");
 
             foreach (var aggregate in fieldAggregate)
             {
@@ -540,14 +545,12 @@ public sealed class HotChocolateSemanticAdapter
                         $"Aggregate filter '{aggregate.Key}' for '{targetField.Name}' must be an input object.");
 
                 foreach (var op in operators)
-                {
                     expressions.Add(new SemanticAggregateFilter(
                         relationship.Id,
                         aggregateKind,
                         targetField.Id,
                         ParseAggregateOperator(op.Key),
                         op.Value));
-                }
             }
         }
 
@@ -628,8 +631,7 @@ public sealed class HotChocolateSemanticAdapter
                     $"Order field '{pair.Key}' must use ASC/DESC or an aggregate object.");
             }
 
-            var relationship = entity.Relationships.FirstOrDefault(
-                r => NamesEqual(r.Name, pair.Key));
+            var relationship = entity.Relationships.FirstOrDefault(r => NamesEqual(r.Name, pair.Key));
 
             if (relationship is null)
                 throw new InvalidOperationException(
@@ -661,8 +663,8 @@ public sealed class HotChocolateSemanticAdapter
                     }
 
                     var targetField = FindField(target, aggregateField.Key)
-                        ?? throw new InvalidOperationException(
-                            $"Aggregate order field '{aggregateField.Key}' is not defined on '{target.Name}'.");
+                                      ?? throw new InvalidOperationException(
+                                          $"Aggregate order field '{aggregateField.Key}' is not defined on '{target.Name}'.");
 
                     if (aggregateField.Value is not IReadOnlyDictionary<string, object?> aggregateObject)
                         throw new NotSupportedException(
@@ -701,25 +703,23 @@ public sealed class HotChocolateSemanticAdapter
 
     private static SemanticField? FindField(SemanticEntity entity, string name)
     {
-        var field = entity.Fields.FirstOrDefault(
-            x => NamesEqual(x.Name, name));
+        var field = entity.Fields.FirstOrDefault(x => NamesEqual(x.Name, name));
         if (field is not null)
             return field;
 
         if (NamesEqual(entity.Identity.Name, name) ||
             string.Equals(name, "id", StringComparison.OrdinalIgnoreCase))
-        {
             return new SemanticField(
                 entity.Identity.FieldId,
                 entity.Identity.Name,
                 typeof(object));
-        }
 
         return null;
     }
 
-    private static SemanticFilterOperator ParseFilterOperator(string value) =>
-        value.ToLowerInvariant() switch
+    private static SemanticFilterOperator ParseFilterOperator(string value)
+    {
+        return value.ToLowerInvariant() switch
         {
             "eq" => SemanticFilterOperator.Eq,
             "neq" => SemanticFilterOperator.Neq,
@@ -727,9 +727,11 @@ public sealed class HotChocolateSemanticAdapter
             _ => throw new InvalidOperationException(
                 $"Filter operator '{value}' is not supported.")
         };
+    }
 
-    private static SemanticAggregateFilterOperator ParseAggregateOperator(string value) =>
-        value.ToLowerInvariant() switch
+    private static SemanticAggregateFilterOperator ParseAggregateOperator(string value)
+    {
+        return value.ToLowerInvariant() switch
         {
             "eq" => SemanticAggregateFilterOperator.Eq,
             "neq" => SemanticAggregateFilterOperator.Neq,
@@ -740,17 +742,21 @@ public sealed class HotChocolateSemanticAdapter
             _ => throw new InvalidOperationException(
                 $"Aggregate filter operator '{value}' is not supported.")
         };
+    }
 
-    private static SemanticSortDirection ParseSortDirection(string value) =>
-        value.Equals("DESC", StringComparison.OrdinalIgnoreCase)
+    private static SemanticSortDirection ParseSortDirection(string value)
+    {
+        return value.Equals("DESC", StringComparison.OrdinalIgnoreCase)
             ? SemanticSortDirection.Desc
             : value.Equals("ASC", StringComparison.OrdinalIgnoreCase)
                 ? SemanticSortDirection.Asc
                 : throw new InvalidOperationException(
                     $"Order direction '{value}' is not supported.");
+    }
 
-    private static int ReadInt(object? value, string name) =>
-        value switch
+    private static int ReadInt(object? value, string name)
+    {
+        return value switch
         {
             byte v => v,
             short v => v,
@@ -761,6 +767,7 @@ public sealed class HotChocolateSemanticAdapter
             _ => throw new InvalidOperationException(
                 $"GraphQL argument '{name}' must be an integer.")
         };
+    }
 
     private static void ValidateFieldShape(FieldNode field)
     {
@@ -802,13 +809,19 @@ public sealed class HotChocolateSemanticAdapter
         fields.Add(field);
     }
 
-    private static bool IsMetaField(string name) =>
-        name.StartsWith("__", StringComparison.Ordinal);
+    private static bool IsMetaField(string name)
+    {
+        return name.StartsWith("__", StringComparison.Ordinal);
+    }
 
-    private static bool NamesEqual(string schemaName, string graphqlName) =>
-        string.Equals(schemaName, graphqlName, StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(ToGraphQLName(schemaName), graphqlName, StringComparison.Ordinal);
+    private static bool NamesEqual(string schemaName, string graphqlName)
+    {
+        return string.Equals(schemaName, graphqlName, StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(ToGraphQLName(schemaName), graphqlName, StringComparison.Ordinal);
+    }
 
-    private static string ToGraphQLName(string name) =>
-        string.IsNullOrEmpty(name) ? name : char.ToLowerInvariant(name[0]) + name[1..];
+    private static string ToGraphQLName(string name)
+    {
+        return string.IsNullOrEmpty(name) ? name : char.ToLowerInvariant(name[0]) + name[1..];
+    }
 }

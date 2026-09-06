@@ -1,26 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿namespace CoffeeBeanery.Database;
 
-namespace CoffeeBeanery.Database;
-
-public partial class CustomerCustomerRelationship : Process
+public class CustomerCustomerRelationship : Process
 {
     public CustomerCustomerRelationship()
     {
-        Schema = CoffeeBeanery.Database.Schema.Banking;
+        Schema = Database.Schema.Banking;
     }
-    
+
     public int Id { get; set; }
-    
+
     public Guid? CustomerCustomerRelationshipKey { get; set; }
-    
+
     public int? OuterCustomerId { get; set; }
     public Customer? OuterCustomer { get; set; }
-    
+
     public int? InnerCustomerId { get; set; }
-    
+
     public Customer? InnerCustomer { get; set; }
 
     public CustomerCustomerRelationshipType? CustomerCustomerRelationshipType { get; set; }

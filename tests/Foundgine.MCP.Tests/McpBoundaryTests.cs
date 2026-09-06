@@ -1,8 +1,3 @@
-using System.Reflection;
-using Foundgine.Providers.Tools.MCP;
-using ModelContextProtocol.Server;
-using Xunit;
-
 namespace Foundgine.Providers.Tools.MCP.Tests;
 
 public sealed class McpBoundaryTests
@@ -28,7 +23,8 @@ public sealed class McpBoundaryTests
             .Where(x => x is not null)
             .ToArray();
 
-        Assert.DoesNotContain(references, x => x!.Contains("Foundgine.Providers.Storage.Sql", StringComparison.Ordinal));
+        Assert.DoesNotContain(references,
+            x => x!.Contains("Foundgine.Providers.Storage.Sql", StringComparison.Ordinal));
         Assert.DoesNotContain(references, x => x!.Contains("HotChocolate", StringComparison.Ordinal));
         Assert.DoesNotContain(references, x => x!.Contains("EntityFramework", StringComparison.Ordinal));
     }

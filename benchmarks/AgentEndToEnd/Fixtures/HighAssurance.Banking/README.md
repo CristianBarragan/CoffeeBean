@@ -6,6 +6,9 @@ This benchmark fixture is the M16 consequential-mutation proof for Foundgine.
 
 `available_funds = balance - pending_transactions - regulatory_hold`
 
-The execution boundary revalidates tenant, ownership, frozen state, available funds, daily limits and idempotency while holding deterministic locks for both accounts. Debit and credit are applied together, then an audit entry and execution receipt are produced.
+The execution boundary revalidates tenant, ownership, frozen state, available funds, daily limits and idempotency while
+holding deterministic locks for both accounts. Debit and credit are applied together, then an audit entry and execution
+receipt are produced.
 
-The sample demonstrates the boundary without claiming that Foundgine can infer financial business policy from natural language.
+The sample demonstrates the boundary without claiming that Foundgine can infer financial business policy from natural
+language.

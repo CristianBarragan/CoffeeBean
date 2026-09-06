@@ -1,9 +1,7 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Planning;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic.Security;
-using Xunit;
 
 namespace Foundgine.E2E.Tests;
 
@@ -140,15 +138,17 @@ public sealed class AggregateCardinalityOptimizationRuleTests
             new SemanticAggregateFilter(new RelationshipId(10), SemanticFilterAggregate.Count, null,
                 SemanticAggregateFilterOperator.Gt, 0),
             new SemanticAggregateFilter(new RelationshipId(11), SemanticFilterAggregate.Count, null,
-                SemanticAggregateFilterOperator.Eq, 0)]);
+                SemanticAggregateFilterOperator.Eq, 0)
+        ]);
 
         var optimized = new AggregateCardinalityOptimizationRule().Apply(CreatePlan(filter));
 
         Assert.Equal(AggregateExecutionStrategy.Default, optimized.Root.AggregateExecutionStrategy);
     }
 
-    private static SemanticPlan CreatePlan(SemanticFilterExpression filter) =>
-        new(new SemanticPlanNode(
+    private static SemanticPlan CreatePlan(SemanticFilterExpression filter)
+    {
+        return new SemanticPlan(new SemanticPlanNode(
             1,
             ExecutionOperation.Scan,
             new EntityId(1),
@@ -156,5 +156,6 @@ public sealed class AggregateCardinalityOptimizationRuleTests
             null,
             null,
             [],
-            new SemanticQueryOptions(Filter: filter)));
+            new SemanticQueryOptions(filter)));
+    }
 }

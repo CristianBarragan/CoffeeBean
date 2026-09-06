@@ -1,8 +1,6 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic.Resolution;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -57,7 +55,11 @@ public sealed class SemanticSemanticContractTests
             new EntityId(1),
             [new SemanticSelection(new FieldId(1), null, [])],
             new SemanticQueryOptions(
-                Order: [new SemanticOrderTerm(new FieldId(999), SemanticSortDirection.Desc, [new RelationshipId(10)], SemanticOrderAggregate.Count)],
+                Order:
+                [
+                    new SemanticOrderTerm(new FieldId(999), SemanticSortDirection.Desc, [new RelationshipId(10)],
+                        SemanticOrderAggregate.Count)
+                ],
                 Limit: 10,
                 After: "cursor"));
 
@@ -83,7 +85,8 @@ public sealed class SemanticSemanticContractTests
             [new SemanticSelection(new FieldId(1), null, [])],
             new SemanticQueryOptions(Limit: -1));
 
-        var ex = Assert.Throws<InvalidOperationException>(() => new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request));
         Assert.Contains("limit", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }
@@ -108,5 +111,3 @@ public sealed class SemanticGraphValidationTests
         Assert.Contains("targets entity", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }
-
-

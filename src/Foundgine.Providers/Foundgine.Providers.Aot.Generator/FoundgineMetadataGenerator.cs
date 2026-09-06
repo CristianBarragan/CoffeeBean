@@ -1,10 +1,3 @@
-using System.Collections.Immutable;
-using System.Text;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Foundgine.Providers.Aot;
-
 namespace Foundgine.Providers.Aot.Generator;
 
 [Generator(LanguageNames.CSharp)]
@@ -161,9 +154,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 authorizations.IsDefaultOrEmpty &&
                 connectionMaps.IsDefaultOrEmpty &&
                 modelEntityMaps.IsDefaultOrEmpty)
-            {
                 return;
-            }
 
             string? generated;
             try
@@ -245,15 +236,11 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
             if (modelEntityMap.TryGetValue(model.ToDisplayString(), out var modelEntity) &&
                 entityIds.TryGetValue(modelEntity.ToDisplayString(), out var mappedEntityId))
-            {
                 sb.AppendLine(
                     $"        registry.Register(new ModelMetadata(new ModelId({modelId}), \"{Escape(modelName)}\", new EntityId({mappedEntityId}), {minimumWeightArg}));");
-            }
             else
-            {
                 sb.AppendLine(
                     $"        registry.Register(new ModelMetadata(new ModelId({modelId}), \"{Escape(modelName)}\", MinimumWeight: {minimumWeightArg}));");
-            }
         }
 
         foreach (var entity in ordered)
@@ -271,8 +258,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
             var scalar = properties
                 .Where(p =>
-                    p.GetAttributes().All(
-                        a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
+                    p.GetAttributes().All(a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
                 .ToArray();
 
             var fieldIds = AllocateFieldIds(entity);
@@ -306,10 +292,9 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             sb.AppendLine($"            StorageName: \"{Escape(storageName)}\",");
             sb.AppendLine($"            Aliases: {FormatAliases(entity)},");
 
-            var primaryKey = scalar.FirstOrDefault(
-                p => GetNamedBool(
-                    GetAttribute(p, FieldAttribute),
-                    "IsPrimaryKey"));
+            var primaryKey = scalar.FirstOrDefault(p => GetNamedBool(
+                GetAttribute(p, FieldAttribute),
+                "IsPrimaryKey"));
 
             if (primaryKey is not null)
             {
@@ -376,8 +361,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 var occurredAtProperty =
                     occurredAtField is null
                         ? null
-                        : scalar.FirstOrDefault(
-                            p => p.Name == occurredAtField);
+                        : scalar.FirstOrDefault(p => p.Name == occurredAtField);
 
                 if (occurredAtProperty is not null)
                 {
@@ -529,9 +513,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
             if (delegateType is null ||
                 delegateType.TypeArguments.Length != 3)
-            {
                 continue;
-            }
 
             var contextType = delegateType.TypeArguments[0];
             var resourceType = delegateType.TypeArguments[1];
@@ -542,7 +524,9 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
             var id =
                 explicitId
-                ?? GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.AuthorizationKey(authorization.ContainingType.ToDisplayString(), authorization.Name));
+                ?? GeneratorSemanticIdentity.Hash(
+                    GeneratorSemanticIdentity.AuthorizationKey(authorization.ContainingType.ToDisplayString(),
+                        authorization.Name));
 
             var name =
                 GetNamedString(attribute, "Name")
@@ -584,9 +568,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                     !entityIds.TryGetValue(
                         target.ToDisplayString(),
                         out var targetId))
-                {
                     continue;
-                }
 
                 var connectionId =
                     GetNamedULong(connection, "Id")
@@ -608,9 +590,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                         : "new ConnectionFieldMetadata[] { " +
                           string.Join(
                               ", ",
-                              fields.Select(
-                                  f =>
-                                      $"new ConnectionFieldMetadata(\"{Escape(f.SourceMember)}\", \"{Escape(f.TargetMember)}\", typeof({f.SourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), typeof({f.TargetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), {ToNullableString(f.Converter)} )")) +
+                              fields.Select(f =>
+                                  $"new ConnectionFieldMetadata(\"{Escape(f.SourceMember)}\", \"{Escape(f.TargetMember)}\", typeof({f.SourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), typeof({f.TargetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), {ToNullableString(f.Converter)} )")) +
                           " }";
 
                 sb.AppendLine(
@@ -686,8 +667,10 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     {
         sb.AppendLine("public static class GeneratedSemanticModel");
         sb.AppendLine("{");
-        sb.AppendLine("    /// <summary>Canonical fingerprint of the semantic contract discovered from generated metadata.</summary>");
-        sb.AppendLine("    public static string ContractFingerprint => GeneratedMetadata.Registry.Discover().ContractFingerprint;");
+        sb.AppendLine(
+            "    /// <summary>Canonical fingerprint of the semantic contract discovered from generated metadata.</summary>");
+        sb.AppendLine(
+            "    public static string ContractFingerprint => GeneratedMetadata.Registry.Discover().ContractFingerprint;");
         sb.AppendLine();
 
         foreach (var model in models.OrderBy(
@@ -700,9 +683,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 !entityIds.TryGetValue(
                     entity.ToDisplayString(),
                     out var entityId))
-            {
                 continue;
-            }
 
             var modelName =
                 GetNamedString(
@@ -757,9 +738,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 if (!entityProperties.TryGetValue(
                         property.Name,
                         out var entityProperty))
-                {
                     continue;
-                }
 
                 var field =
                     GetAttribute(
@@ -836,9 +815,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                     if (!relationshipIds.TryGetValue(
                             relationshipKey,
                             out var relationshipId))
-                    {
                         continue;
-                    }
 
                     var attribute =
                         GetAttribute(property, RelationshipAttribute);
@@ -901,17 +878,14 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         foreach (var declaration in declarations.OrderBy(
                      x => x.ToDisplayString(),
                      StringComparer.Ordinal))
+        foreach (var attribute in declaration.GetAttributes().Where(a => a.AttributeClass?.ToDisplayString() ==
+                                                                         ModelEntityMapAttribute))
         {
-            foreach (var attribute in declaration.GetAttributes().Where(
-                         a => a.AttributeClass?.ToDisplayString() ==
-                              ModelEntityMapAttribute))
-            {
-                var model = GetTypeArgument(attribute, 0);
-                var entity = GetTypeArgument(attribute, 1);
+            var model = GetTypeArgument(attribute, 0);
+            var entity = GetTypeArgument(attribute, 1);
 
-                if (model is not null && entity is not null)
-                    result[model.ToDisplayString()] = entity;
-            }
+            if (model is not null && entity is not null)
+                result[model.ToDisplayString()] = entity;
         }
 
         return result;
@@ -927,23 +901,18 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         foreach (var declaration in declarations.OrderBy(
                      x => x.ToDisplayString(),
                      StringComparer.Ordinal))
+        foreach (var attribute in declaration.GetAttributes().Where(a => a.AttributeClass?.ToDisplayString() ==
+                                                                         ConnectionMapAttribute))
         {
-            foreach (var attribute in declaration.GetAttributes().Where(
-                         a => a.AttributeClass?.ToDisplayString() ==
-                              ConnectionMapAttribute))
-            {
-                var model = GetTypeArgument(attribute, 0);
-                var member = GetCtorString(attribute, 1);
-                var entity = GetTypeArgument(attribute, 2);
+            var model = GetTypeArgument(attribute, 0);
+            var member = GetCtorString(attribute, 1);
+            var entity = GetTypeArgument(attribute, 2);
 
-                if (model is not null &&
-                    entity is not null &&
-                    !string.IsNullOrWhiteSpace(member))
-                {
-                    result[
-                        model.ToDisplayString() + "." + member] = entity;
-                }
-            }
+            if (model is not null &&
+                entity is not null &&
+                !string.IsNullOrWhiteSpace(member))
+                result[
+                    model.ToDisplayString() + "." + member] = entity;
         }
 
         return result;
@@ -1012,15 +981,11 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
         if (syntax?.ExpressionBody?.Expression
             is not LambdaExpressionSyntax lambda)
-        {
             return null;
-        }
 
         if (lambda.Body
             is not AnonymousObjectCreationExpressionSyntax anonymous)
-        {
             return null;
-        }
 
         var sourceParameter = lambda switch
         {
@@ -1049,7 +1014,6 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 initializer.Expression;
 
             if (string.IsNullOrWhiteSpace(targetMember))
-            {
                 targetMember = expression switch
                 {
                     MemberAccessExpressionSyntax member =>
@@ -1060,7 +1024,6 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
                     _ => null
                 };
-            }
 
             if (string.IsNullOrWhiteSpace(targetMember))
                 continue;
@@ -1129,11 +1092,9 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     {
         if (expression is InvocationExpressionSyntax invocation &&
             invocation.ArgumentList.Arguments.Count == 1)
-        {
             return GetDirectSourceMember(
                 invocation.ArgumentList.Arguments[0].Expression,
                 sourceParameter);
-        }
 
         if (expression is IdentifierNameSyntax identifier)
             return identifier.Identifier.Text;
@@ -1143,9 +1104,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
         if (member.Expression is IdentifierNameSyntax receiver &&
             receiver.Identifier.Text == sourceParameter)
-        {
             return member.Name.Identifier.Text;
-        }
 
         return null;
     }
@@ -1165,9 +1124,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         {
             if (methodName is not null &&
                 method.Name != methodName)
-            {
                 return false;
-            }
 
             var attribute =
                 GetAttribute(
@@ -1192,8 +1149,9 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     }
 
     private static string? GetInvokedMethodName(
-        ExpressionSyntax expression) =>
-        expression switch
+        ExpressionSyntax expression)
+    {
+        return expression switch
         {
             IdentifierNameSyntax identifier =>
                 identifier.Identifier.Text,
@@ -1203,6 +1161,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
             _ => null
         };
+    }
 
     private static List<ConnectionField> BuildConventionConnectionFields(
         INamedTypeSymbol model,
@@ -1232,8 +1191,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         foreach (var destination in targetProperties)
         {
             var source =
-                sourceProperties.FirstOrDefault(
-                    p => p.Name == destination.Name);
+                sourceProperties.FirstOrDefault(p => p.Name == destination.Name);
 
             if (source is not null &&
                 SymbolEqualityComparer.Default.Equals(
@@ -1305,9 +1263,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         if (type is not INamedTypeSymbol named ||
             named.Name != "Expression" ||
             named.TypeArguments.Length != 1)
-        {
             return null;
-        }
 
         return named.TypeArguments[0] as INamedTypeSymbol;
     }
@@ -1323,9 +1279,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
         if (syntax?.ExpressionBody?.Expression
             is not LambdaExpressionSyntax lambda)
-        {
             return null;
-        }
 
         var parameters = lambda switch
         {
@@ -1481,8 +1435,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
         return syntax?.ExpressionBody?.Expression
             is LambdaExpressionSyntax lambda
-                ? lambda.ToString()
-                : null;
+            ? lambda.ToString()
+            : null;
     }
 
     private static ulong? GetConstructorULong(
@@ -1492,9 +1446,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         if (attribute is null ||
             index < 0 ||
             index >= attribute.ConstructorArguments.Length)
-        {
             return null;
-        }
 
         var value = attribute.ConstructorArguments[index].Value;
 
@@ -1509,10 +1461,12 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         };
     }
 
-    private static string ToNullableString(string? value) =>
-        value is null
+    private static string ToNullableString(string? value)
+    {
+        return value is null
             ? "null"
             : $"\"{Escape(value)}\"";
+    }
 
     private static Dictionary<string, ulong> AllocateModelIds(
         IReadOnlyList<INamedTypeSymbol> models)
@@ -1543,6 +1497,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 throw new InvalidOperationException($"Model identity collision for '{semanticName}' (ID {candidate}).");
             result[clrKey] = candidate;
         }
+
         return result;
     }
 
@@ -1553,17 +1508,17 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         var used = new HashSet<ulong>();
 
         var declarations = models.SelectMany(model => model.GetMembers()
-            .OfType<IPropertySymbol>()
-            .Where(p => GetAttribute(p, ConnectionAttribute) is not null)
-            .Select(p =>
-            {
-                var attribute = GetAttribute(p, ConnectionAttribute);
-                var name = GetNamedString(attribute, "Name") ?? p.Name;
-                return (Key: model.ToDisplayString() + "." + p.Name,
+                .OfType<IPropertySymbol>()
+                .Where(p => GetAttribute(p, ConnectionAttribute) is not null)
+                .Select(p =>
+                {
+                    var attribute = GetAttribute(p, ConnectionAttribute);
+                    var name = GetNamedString(attribute, "Name") ?? p.Name;
+                    return (Key: model.ToDisplayString() + "." + p.Name,
                         ModelName: GetNamedString(GetAttribute(model, ModelAttribute), "Name") ?? model.Name,
                         ConnectionName: name,
                         Attribute: attribute);
-            }))
+                }))
             .OrderBy(x => x.Key, StringComparer.Ordinal)
             .ToArray();
 
@@ -1582,27 +1537,30 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         foreach (var (key, modelName, connectionName, _) in declarations)
         {
             if (result.ContainsKey(key)) continue;
-            var candidate = GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.ConnectionKey(modelName, connectionName));
+            var candidate =
+                GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.ConnectionKey(modelName, connectionName));
             if (!used.Add(candidate))
-                throw new InvalidOperationException($"Connection identity collision for '{modelName}.{connectionName}' (ID {candidate}).");
+                throw new InvalidOperationException(
+                    $"Connection identity collision for '{modelName}.{connectionName}' (ID {candidate}).");
             result[key] = candidate;
         }
+
         return result;
     }
 
     /// <summary>
-    /// Assigns relationship identities from a stable hash of the semantic
-    /// entity and relationship name ("Entity.Relationship"), independent of
-    /// declaration order and CLR metadata layout.
-    /// This is what lets relationship authors omit <c>[FoundgineRelationship(..., Id = ...)]</c> entirely:
-    /// the identity is derived from the declaration itself, so it survives
-    /// reordering, module merges and new relationships being added elsewhere
-    /// without renumbering anything. Explicit ids are honored first (and
-    /// reserved against collision) so existing manually-numbered
-    /// relationships keep their identity; every other relationship is then
-    /// hash-allocated. Hash collisions are treated as generator errors rather
-    /// than resolved by probing, because probing would make identity depend on
-    /// the set and ordering of unrelated declarations.
+    ///     Assigns relationship identities from a stable hash of the semantic
+    ///     entity and relationship name ("Entity.Relationship"), independent of
+    ///     declaration order and CLR metadata layout.
+    ///     This is what lets relationship authors omit <c>[FoundgineRelationship(..., Id = ...)]</c> entirely:
+    ///     the identity is derived from the declaration itself, so it survives
+    ///     reordering, module merges and new relationships being added elsewhere
+    ///     without renumbering anything. Explicit ids are honored first (and
+    ///     reserved against collision) so existing manually-numbered
+    ///     relationships keep their identity; every other relationship is then
+    ///     hash-allocated. Hash collisions are treated as generator errors rather
+    ///     than resolved by probing, because probing would make identity depend on
+    ///     the set and ordering of unrelated declarations.
     /// </summary>
     private static Dictionary<string, ulong> AllocateRelationshipIds(
         IReadOnlyList<INamedTypeSymbol> entities)
@@ -1644,10 +1602,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             if (explicitId.HasValue)
             {
                 if (!used.Add(explicitId.Value))
-                {
                     throw new InvalidOperationException(
                         $"Duplicate Foundgine relationship ID {explicitId.Value}.");
-                }
 
                 result[key] = explicitId.Value;
             }
@@ -1662,10 +1618,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.RelationshipNamespace + ":" + semanticKey);
 
             if (candidate == 0 || !used.Add(candidate))
-            {
                 throw new InvalidOperationException(
                     $"Relationship identity collision for '{key}' (ID {candidate}).");
-            }
 
             result[key] = candidate;
         }
@@ -1674,12 +1628,12 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    /// Assigns stable semantic entity identities from the canonical entity name.
-    /// Identity is independent of declaration order and therefore survives
-    /// adding, removing, or reordering unrelated entities. Explicit legacy ids
-    /// remain supported for compatibility. Hash collisions are generator errors
-    /// rather than resolved by probing because probing would make identity depend
-    /// on unrelated entities.
+    ///     Assigns stable semantic entity identities from the canonical entity name.
+    ///     Identity is independent of declaration order and therefore survives
+    ///     adding, removing, or reordering unrelated entities. Explicit legacy ids
+    ///     remain supported for compatibility. Hash collisions are generator errors
+    ///     rather than resolved by probing because probing would make identity depend
+    ///     on unrelated entities.
     /// </summary>
     private static Dictionary<string, ulong> AllocateEntityIds(
         IReadOnlyList<INamedTypeSymbol> entities)
@@ -1734,14 +1688,14 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    /// Assigns stable semantic field identities from the entity semantic name
-    /// and field semantic name. Field identity is independent of declaration
-    /// order and therefore survives adding, removing, or reordering unrelated
-    /// fields. Explicit legacy ids remain supported for compatibility.
-    /// Hash collisions are treated as generator errors rather than resolved by
-    /// probing, because probing would make identity depend on unrelated fields.
-    /// Column identity is deliberately allocated separately: a semantic field
-    /// id must never implicitly become a physical column id.
+    ///     Assigns stable semantic field identities from the entity semantic name
+    ///     and field semantic name. Field identity is independent of declaration
+    ///     order and therefore survives adding, removing, or reordering unrelated
+    ///     fields. Explicit legacy ids remain supported for compatibility.
+    ///     Hash collisions are treated as generator errors rather than resolved by
+    ///     probing, because probing would make identity depend on unrelated fields.
+    ///     Column identity is deliberately allocated separately: a semantic field
+    ///     id must never implicitly become a physical column id.
     /// </summary>
     private static Dictionary<string, ulong> AllocateFieldIds(
         INamedTypeSymbol entity)
@@ -1752,8 +1706,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 p.DeclaredAccessibility == Accessibility.Public &&
                 !p.IsStatic)
             .Where(p =>
-                p.GetAttributes().All(
-                    a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
+                p.GetAttributes().All(a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
             .ToArray();
 
         var result = new Dictionary<string, ulong>(StringComparer.Ordinal);
@@ -1784,7 +1737,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             var attribute = GetAttribute(property, FieldAttribute);
             var fieldName = GetNamedString(attribute, "Name") ?? property.Name;
             var semanticKey = GetEntityName(entity) + "." + fieldName;
-            var candidate = GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.FieldNamespace + ":" + semanticKey);
+            var candidate =
+                GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.FieldNamespace + ":" + semanticKey);
 
             if (candidate == 0 || !used.Add(candidate))
                 throw new InvalidOperationException(
@@ -1806,8 +1760,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             .Where(p =>
                 p.DeclaredAccessibility == Accessibility.Public &&
                 !p.IsStatic)
-            .Where(p => p.GetAttributes().All(
-                a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
+            .Where(p => p.GetAttributes().All(a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
             .ToArray();
 
         var used = new HashSet<ulong>();
@@ -1851,11 +1804,12 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
     private static AttributeData? GetAttribute(
         ISymbol symbol,
-        string fullName) =>
-        symbol.GetAttributes()
-            .FirstOrDefault(
-                a => a.AttributeClass?.ToDisplayString() ==
-                     fullName);
+        string fullName)
+    {
+        return symbol.GetAttributes()
+            .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() ==
+                                 fullName);
+    }
 
     private static string FormatAliases(ISymbol symbol)
     {
@@ -1881,27 +1835,25 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             return "null";
 
         return "new AliasDeclaration[] { "
-            + string.Join(", ", entries.Select(a =>
-                $"new AliasDeclaration(\"{Escape(a.Name)}\", {(a.Weight is int w ? w.ToString() : "null")})"))
-            + " }";
+               + string.Join(", ", entries.Select(a =>
+                   $"new AliasDeclaration(\"{Escape(a.Name)}\", {(a.Weight is int w ? w.ToString() : "null")})"))
+               + " }";
     }
 
     /// <summary>
-    /// The alias attribute's <c>params string[] names</c> parameter is always
-    /// represented by Roslyn as a single <see cref="TypedConstantKind.Array"/>
-    /// constructor argument, whether the caller wrote a single name, several
-    /// positional names, or an array/collection-expression literal. This
-    /// flattens that argument back into the individual alias names.
+    ///     The alias attribute's <c>params string[] names</c> parameter is always
+    ///     represented by Roslyn as a single <see cref="TypedConstantKind.Array" />
+    ///     constructor argument, whether the caller wrote a single name, several
+    ///     positional names, or an array/collection-expression literal. This
+    ///     flattens that argument back into the individual alias names.
     /// </summary>
     private static IEnumerable<string> ExtractAliasNames(TypedConstant argument)
     {
         if (argument.Kind == TypedConstantKind.Array)
         {
             foreach (var element in argument.Values)
-            {
                 if (element.Value is string name && !string.IsNullOrWhiteSpace(name))
                     yield return name;
-            }
         }
         else if (argument.Value is string single && !string.IsNullOrWhiteSpace(single))
         {
@@ -1910,26 +1862,32 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     }
 
     private static string GetEntityName(
-        INamedTypeSymbol type) =>
-        GetNamedString(
-            GetAttribute(type, EntityAttribute),
-            "Name")
-        ?? type.Name;
+        INamedTypeSymbol type)
+    {
+        return GetNamedString(
+                   GetAttribute(type, EntityAttribute),
+                   "Name")
+               ?? type.Name;
+    }
 
     private static string? GetEntityStorageName(
-        INamedTypeSymbol type) =>
-        GetNamedString(
+        INamedTypeSymbol type)
+    {
+        return GetNamedString(
             GetAttribute(type, EntityAttribute),
             "StorageName");
+    }
 
     private static string? GetNamedString(
         AttributeData? attribute,
-        string name) =>
-        attribute?
+        string name)
+    {
+        return attribute?
             .NamedArguments
             .FirstOrDefault(x => x.Key == name)
             .Value
             .Value as string;
+    }
 
     private static ulong? GetNamedULong(
         AttributeData? attribute,
@@ -1960,12 +1918,14 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
     private static bool GetNamedBool(
         AttributeData? attribute,
-        string name) =>
-        attribute?
+        string name)
+    {
+        return attribute?
             .NamedArguments
             .FirstOrDefault(x => x.Key == name)
             .Value
             .Value is true;
+    }
 
     private static int? GetNamedInt(
         AttributeData? attribute,
@@ -1994,19 +1954,23 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
     private static string? GetCtorString(
         AttributeData attribute,
-        int index) =>
-        index < attribute.ConstructorArguments.Length
+        int index)
+    {
+        return index < attribute.ConstructorArguments.Length
             ? attribute.ConstructorArguments[index].Value as string
             : null;
+    }
 
     private static INamedTypeSymbol? GetTypeArgument(
         AttributeData? attribute,
-        int index) =>
-        attribute is not null &&
-        index < attribute.ConstructorArguments.Length
+        int index)
+    {
+        return attribute is not null &&
+               index < attribute.ConstructorArguments.Length
             ? attribute.ConstructorArguments[index].Value
                 as INamedTypeSymbol
             : null;
+    }
 
     private static ulong ResolveColumnId(
         INamedTypeSymbol entity,
@@ -2044,10 +2008,12 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         return AllocateColumnIds(entity, storageName)[key];
     }
 
-    private static string Escape(string value) =>
-        value
+    private static string Escape(string value)
+    {
+        return value
             .Replace("\\", "\\\\")
             .Replace("\"", "\\\"");
+    }
 
     private static bool ValidateRelationships(
         SourceProductionContext spc,
@@ -2055,207 +2021,204 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     {
         var entitySet =
             new HashSet<string>(
-                entities.Select(
-                    x => x.ToDisplayString()),
+                entities.Select(x => x.ToDisplayString()),
                 StringComparer.Ordinal);
 
         var valid = true;
 
         foreach (var entity in entities)
+        foreach (var navigation in entity
+                     .GetMembers()
+                     .OfType<IPropertySymbol>())
         {
-            foreach (var navigation in entity
-                         .GetMembers()
-                         .OfType<IPropertySymbol>())
+            var relationship =
+                GetAttribute(
+                    navigation,
+                    RelationshipAttribute);
+
+            if (relationship is null)
+                continue;
+
+            var location = GetLocation(navigation);
+
+            var target =
+                GetTypeArgument(
+                    relationship,
+                    0);
+
+            if (target is null ||
+                !entitySet.Contains(
+                    target.ToDisplayString()))
             {
-                var relationship =
-                    GetAttribute(
-                        navigation,
-                        RelationshipAttribute);
+                spc.ReportDiagnostic(
+                    Diagnostic.Create(
+                        RelationshipTargetMustBeEntity,
+                        location,
+                        entity.Name,
+                        navigation.Name,
+                        target?.ToDisplayString()
+                        ?? "<missing>"));
 
-                if (relationship is null)
-                    continue;
+                valid = false;
+                continue;
+            }
 
-                var location = GetLocation(navigation);
+            var navigationTarget =
+                GetNavigationTargetType(
+                    navigation.Type);
 
-                var target =
-                    GetTypeArgument(
-                        relationship,
-                        0);
+            if (navigationTarget is null ||
+                !SymbolEqualityComparer.Default.Equals(
+                    navigationTarget,
+                    target))
+            {
+                spc.ReportDiagnostic(
+                    Diagnostic.Create(
+                        RelationshipNavigationTargetMismatch,
+                        location,
+                        entity.Name,
+                        navigation.Name,
+                        target.ToDisplayString(),
+                        navigationTarget?.ToDisplayString()
+                        ?? navigation.Type.ToDisplayString()));
 
-                if (target is null ||
-                    !entitySet.Contains(
-                        target.ToDisplayString()))
-                {
-                    spc.ReportDiagnostic(
-                        Diagnostic.Create(
-                            RelationshipTargetMustBeEntity,
-                            location,
-                            entity.Name,
-                            navigation.Name,
-                            target?.ToDisplayString()
-                                ?? "<missing>"));
+                valid = false;
+            }
 
-                    valid = false;
-                    continue;
-                }
+            var foreignKeyName =
+                GetCtorString(
+                    relationship,
+                    1)
+                ?? "Id";
 
-                var navigationTarget =
-                    GetNavigationTargetType(
-                        navigation.Type);
+            var principalKeyName =
+                GetCtorString(
+                    relationship,
+                    2)
+                ?? "Id";
 
-                if (navigationTarget is null ||
-                    !SymbolEqualityComparer.Default.Equals(
-                        navigationTarget,
-                        target))
-                {
-                    spc.ReportDiagnostic(
-                        Diagnostic.Create(
-                            RelationshipNavigationTargetMismatch,
-                            location,
-                            entity.Name,
-                            navigation.Name,
-                            target.ToDisplayString(),
-                            navigationTarget?.ToDisplayString()
-                                ?? navigation.Type.ToDisplayString()));
+            var sourceForeignKey =
+                entity.GetMembers(foreignKeyName)
+                    .OfType<IPropertySymbol>()
+                    .FirstOrDefault();
 
-                    valid = false;
-                }
+            var targetForeignKey =
+                target.GetMembers(foreignKeyName)
+                    .OfType<IPropertySymbol>()
+                    .FirstOrDefault();
 
-                var foreignKeyName =
-                    GetCtorString(
-                        relationship,
-                        1)
-                    ?? "Id";
+            if (sourceForeignKey is not null &&
+                targetForeignKey is not null)
+            {
+                spc.ReportDiagnostic(
+                    Diagnostic.Create(
+                        RelationshipForeignKeyAmbiguous,
+                        location,
+                        entity.Name,
+                        navigation.Name,
+                        foreignKeyName,
+                        entity.Name,
+                        target.Name));
 
-                var principalKeyName =
-                    GetCtorString(
-                        relationship,
-                        2)
-                    ?? "Id";
+                valid = false;
+                continue;
+            }
 
-                var sourceForeignKey =
-                    entity.GetMembers(foreignKeyName)
-                        .OfType<IPropertySymbol>()
-                        .FirstOrDefault();
+            var sourceOwnsForeignKey =
+                sourceForeignKey is not null;
 
-                var targetForeignKey =
-                    target.GetMembers(foreignKeyName)
-                        .OfType<IPropertySymbol>()
-                        .FirstOrDefault();
+            var foreignKey =
+                sourceForeignKey ??
+                targetForeignKey;
 
-                if (sourceForeignKey is not null &&
-                    targetForeignKey is not null)
-                {
-                    spc.ReportDiagnostic(
-                        Diagnostic.Create(
-                            RelationshipForeignKeyAmbiguous,
-                            location,
-                            entity.Name,
-                            navigation.Name,
-                            foreignKeyName,
-                            entity.Name,
-                            target.Name));
+            if (foreignKey is null)
+            {
+                spc.ReportDiagnostic(
+                    Diagnostic.Create(
+                        RelationshipForeignKeyMissing,
+                        location,
+                        entity.Name,
+                        navigation.Name,
+                        foreignKeyName));
 
-                    valid = false;
-                    continue;
-                }
+                valid = false;
+                continue;
+            }
 
-                var sourceOwnsForeignKey =
-                    sourceForeignKey is not null;
+            if (GetAttribute(
+                    foreignKey,
+                    RelationshipAttribute) is not null)
+            {
+                spc.ReportDiagnostic(
+                    Diagnostic.Create(
+                        RelationshipKeyMustBeScalar,
+                        location,
+                        entity.Name,
+                        navigation.Name,
+                        foreignKeyName));
 
-                var foreignKey =
-                    sourceForeignKey ??
-                    targetForeignKey;
+                valid = false;
+                continue;
+            }
 
-                if (foreignKey is null)
-                {
-                    spc.ReportDiagnostic(
-                        Diagnostic.Create(
-                            RelationshipForeignKeyMissing,
-                            location,
-                            entity.Name,
-                            navigation.Name,
-                            foreignKeyName));
+            var principalEntity =
+                sourceOwnsForeignKey
+                    ? target
+                    : entity;
 
-                    valid = false;
-                    continue;
-                }
+            var principalKey =
+                principalEntity
+                    .GetMembers(principalKeyName)
+                    .OfType<IPropertySymbol>()
+                    .FirstOrDefault();
 
-                if (GetAttribute(
-                        foreignKey,
-                        RelationshipAttribute) is not null)
-                {
-                    spc.ReportDiagnostic(
-                        Diagnostic.Create(
-                            RelationshipKeyMustBeScalar,
-                            location,
-                            entity.Name,
-                            navigation.Name,
-                            foreignKeyName));
+            if (principalKey is null)
+            {
+                spc.ReportDiagnostic(
+                    Diagnostic.Create(
+                        RelationshipPrincipalKeyMissing,
+                        location,
+                        entity.Name,
+                        navigation.Name,
+                        principalKeyName,
+                        principalEntity.Name));
 
-                    valid = false;
-                    continue;
-                }
+                valid = false;
+                continue;
+            }
 
-                var principalEntity =
-                    sourceOwnsForeignKey
-                        ? target
-                        : entity;
+            if (GetAttribute(
+                    principalKey,
+                    RelationshipAttribute) is not null)
+            {
+                spc.ReportDiagnostic(
+                    Diagnostic.Create(
+                        RelationshipKeyMustBeScalar,
+                        location,
+                        entity.Name,
+                        navigation.Name,
+                        principalKeyName));
 
-                var principalKey =
-                    principalEntity
-                        .GetMembers(principalKeyName)
-                        .OfType<IPropertySymbol>()
-                        .FirstOrDefault();
+                valid = false;
+                continue;
+            }
 
-                if (principalKey is null)
-                {
-                    spc.ReportDiagnostic(
-                        Diagnostic.Create(
-                            RelationshipPrincipalKeyMissing,
-                            location,
-                            entity.Name,
-                            navigation.Name,
-                            principalKeyName,
-                            principalEntity.Name));
+            if (!SymbolEqualityComparer.IncludeNullability.Equals(
+                    foreignKey.Type,
+                    principalKey.Type))
+            {
+                spc.ReportDiagnostic(
+                    Diagnostic.Create(
+                        RelationshipKeyTypesMismatch,
+                        location,
+                        entity.Name,
+                        navigation.Name,
+                        foreignKeyName,
+                        foreignKey.Type.ToDisplayString(),
+                        principalKeyName,
+                        principalKey.Type.ToDisplayString()));
 
-                    valid = false;
-                    continue;
-                }
-
-                if (GetAttribute(
-                        principalKey,
-                        RelationshipAttribute) is not null)
-                {
-                    spc.ReportDiagnostic(
-                        Diagnostic.Create(
-                            RelationshipKeyMustBeScalar,
-                            location,
-                            entity.Name,
-                            navigation.Name,
-                            principalKeyName));
-
-                    valid = false;
-                    continue;
-                }
-
-                if (!SymbolEqualityComparer.IncludeNullability.Equals(
-                        foreignKey.Type,
-                        principalKey.Type))
-                {
-                    spc.ReportDiagnostic(
-                        Diagnostic.Create(
-                            RelationshipKeyTypesMismatch,
-                            location,
-                            entity.Name,
-                            navigation.Name,
-                            foreignKeyName,
-                            foreignKey.Type.ToDisplayString(),
-                            principalKeyName,
-                            principalKey.Type.ToDisplayString()));
-
-                    valid = false;
-                }
+                valid = false;
             }
         }
 
@@ -2281,11 +2244,10 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         if (type is INamedTypeSymbol named)
         {
             var enumerable =
-                named.AllInterfaces.FirstOrDefault(
-                    i =>
-                        i.OriginalDefinition.SpecialType ==
-                        SpecialType.System_Collections_Generic_IEnumerable_T &&
-                        i.TypeArguments.Length == 1);
+                named.AllInterfaces.FirstOrDefault(i =>
+                    i.OriginalDefinition.SpecialType ==
+                    SpecialType.System_Collections_Generic_IEnumerable_T &&
+                    i.TypeArguments.Length == 1);
 
             if (enumerable is not null)
                 return enumerable.TypeArguments[0];
@@ -2300,15 +2262,11 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         if (type is IArrayTypeSymbol)
             return "true";
 
-        if (type.AllInterfaces.Any(
-                i =>
-                    i.OriginalDefinition.SpecialType ==
-                    SpecialType.System_Collections_Generic_IEnumerable_T))
-        {
+        if (type.AllInterfaces.Any(i =>
+                i.OriginalDefinition.SpecialType ==
+                SpecialType.System_Collections_Generic_IEnumerable_T))
             return "true";
-        }
 
         return "false";
     }
 }
-

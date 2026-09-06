@@ -1,16 +1,15 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
 namespace Foundgine.Core.Abstractions;
 
 /// <summary>Stable identifier for an AOT authorization predicate.</summary>
 [JsonConverter(typeof(AuthorizationIdJsonConverter))]
 public readonly record struct AuthorizationId(ulong Value)
 {
-    public static AuthorizationId Create(string declaringType, string authorizationName) =>
-        new(SemanticIdentity.Hash(SemanticIdentity.AuthorizationKey(declaringType, authorizationName)));
+    public static AuthorizationId Create(string declaringType, string authorizationName)
+    {
+        return new AuthorizationId(
+            SemanticIdentity.Hash(SemanticIdentity.AuthorizationKey(declaringType, authorizationName)));
+    }
 }
-
 
 public sealed class AuthorizationIdJsonConverter : JsonConverter<AuthorizationId>
 {
@@ -29,12 +28,20 @@ public sealed class AuthorizationIdJsonConverter : JsonConverter<AuthorizationId
         throw new JsonException("Expected a AuthorizationId numeric value or a legacy {\"Value\":...} object.");
     }
 
-    public override void Write(Utf8JsonWriter writer, AuthorizationId value, JsonSerializerOptions options) =>
+    public override void Write(Utf8JsonWriter writer, AuthorizationId value, JsonSerializerOptions options)
+    {
         writer.WriteNumberValue(value.Value);
+    }
 
-    public override AuthorizationId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        new(ulong.Parse(reader.GetString()!));
+    public override AuthorizationId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert,
+        JsonSerializerOptions options)
+    {
+        return new AuthorizationId(ulong.Parse(reader.GetString()!));
+    }
 
-    public override void WriteAsPropertyName(Utf8JsonWriter writer, AuthorizationId value, JsonSerializerOptions options) =>
+    public override void WriteAsPropertyName(Utf8JsonWriter writer, AuthorizationId value,
+        JsonSerializerOptions options)
+    {
         writer.WritePropertyName(value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
 }

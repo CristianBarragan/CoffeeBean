@@ -1,15 +1,13 @@
-using System.Globalization;
-using System.Text;
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Query;
 
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Produces a canonical semantic identity used to determine whether two plans
-/// have the same provider-neutral meaning. Unlike the execution fingerprint,
-/// this representation normalizes only transformations that Foundgine defines
-/// as semantically equivalent.
+///     Produces a canonical semantic identity used to determine whether two plans
+///     have the same provider-neutral meaning. Unlike the execution fingerprint,
+///     this representation normalizes only transformations that Foundgine defines
+///     as semantically equivalent.
 /// </summary>
 public static class SemanticEquivalenceFingerprint
 {
@@ -42,10 +40,8 @@ public static class SemanticEquivalenceFingerprint
         builder.Append("fields[");
         var seenFields = new HashSet<ulong>();
         foreach (var field in node.Fields)
-        {
             if (seenFields.Add(field.Value))
                 builder.Append(field.Value).Append(',');
-        }
         builder.Append("]|");
 
         AppendQueryOptions(builder, node.QueryOptions);
@@ -81,6 +77,7 @@ public static class SemanticEquivalenceFingerprint
                 builder.Append(relationship.Value).Append('.');
             builder.Append(',');
         }
+
         builder.Append("]|");
         AppendFilter(builder, options.Filter);
         builder.Append("]|");
@@ -125,7 +122,8 @@ public static class SemanticEquivalenceFingerprint
                 AppendCanonicalBooleanFilter(builder, or);
                 return;
             default:
-                throw new NotSupportedException($"Cannot establish semantic equivalence for filter '{filter.GetType().Name}'.");
+                throw new NotSupportedException(
+                    $"Cannot establish semantic equivalence for filter '{filter.GetType().Name}'.");
         }
     }
 
@@ -143,7 +141,6 @@ public static class SemanticEquivalenceFingerprint
         const int maxTerms = 32;
         var terms = ToDnf(filter, maxTerms);
         if (terms is null)
-        {
             switch (filter)
             {
                 case SemanticAndFilter and:
@@ -155,7 +152,6 @@ public static class SemanticEquivalenceFingerprint
                 default:
                     throw new InvalidOperationException("Expected a boolean filter.");
             }
-        }
 
         builder.Append("dnf[");
         foreach (var term in terms
@@ -167,6 +163,7 @@ public static class SemanticEquivalenceFingerprint
                 builder.Append(atom).Append(',');
             builder.Append(')');
         }
+
         builder.Append(']');
     }
 
@@ -209,10 +206,8 @@ public static class SemanticEquivalenceFingerprint
                         var pushed = aggregate with { Predicate = relationship.Predicate };
                         var remaining = new List<SemanticFilterExpression>();
                         for (var k = 0; k < raw.Count; k++)
-                        {
                             if (k == i) remaining.Add(pushed);
                             else if (k != j) remaining.Add(raw[k]);
-                        }
 
                         var merged = remaining.Count switch
                         {
@@ -244,17 +239,17 @@ public static class SemanticEquivalenceFingerprint
                     aggregate.Operator, aggregate.Value);
                 if (strategy is AggregateExecutionStrategy.CountExistsShortCircuit or
                     AggregateExecutionStrategy.CountEmptyShortCircuit)
-                {
                     return new SemanticRelationshipFilter(
                         aggregate.Relationship,
                         strategy == AggregateExecutionStrategy.CountEmptyShortCircuit
                             ? SemanticRelationshipQuantifier.None
                             : SemanticRelationshipQuantifier.Some,
                         CanonicalizeAggregateRelationshipPushdown(aggregate.Predicate));
-                }
 
                 return aggregate with
-                { Predicate = CanonicalizeAggregateRelationshipPushdown(aggregate.Predicate) };
+                {
+                    Predicate = CanonicalizeAggregateRelationshipPushdown(aggregate.Predicate)
+                };
             }
 
             case SemanticOrFilter or:
@@ -296,17 +291,33 @@ public static class SemanticEquivalenceFingerprint
     {
         switch (value)
         {
-            case byte v: result = v; return true;
-            case sbyte v: result = v; return true;
-            case short v: result = v; return true;
-            case ushort v: result = v; return true;
-            case int v: result = v; return true;
-            case uint v: result = v; return true;
+            case byte v:
+                result = v;
+                return true;
+            case sbyte v:
+                result = v;
+                return true;
+            case short v:
+                result = v;
+                return true;
+            case ushort v:
+                result = v;
+                return true;
+            case int v:
+                result = v;
+                return true;
+            case uint v:
+                result = v;
+                return true;
             case ulong v when v <= long.MaxValue:
                 result = (long)v;
                 return true;
-            case long v: result = v; return true;
-            default: result = 0; return false;
+            case long v:
+                result = v;
+                return true;
+            default:
+                result = 0;
+                return false;
         }
     }
 
@@ -332,8 +343,10 @@ public static class SemanticEquivalenceFingerprint
                         next.Add(combined);
                         if (next.Count > maxTerms) return null;
                     }
+
                     result = next;
                 }
+
                 return result;
             }
             case SemanticOrFilter or:
@@ -346,6 +359,7 @@ public static class SemanticEquivalenceFingerprint
                     result.AddRange(childTerms);
                     if (result.Count > maxTerms) return null;
                 }
+
                 return result;
             }
             default:
@@ -432,6 +446,7 @@ public static class SemanticEquivalenceFingerprint
                 FlattenAuthorization(kind, node.Right, destination);
             return;
         }
+
         destination.Add(node);
     }
 
@@ -482,6 +497,7 @@ public static class SemanticEquivalenceFingerprint
                     AppendValue(builder, item);
                     builder.Append(',');
                 }
+
                 builder.Append(']');
                 break;
             case IFormattable formattable:

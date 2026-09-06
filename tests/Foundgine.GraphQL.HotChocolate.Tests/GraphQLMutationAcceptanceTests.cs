@@ -1,17 +1,15 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution.Mutation;
-using Foundgine.Extensions.GraphQL.HotChocolate;
+using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic.Planning.Mutation;
-using Foundgine.Core.Semantic;
-using Xunit;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
 /// <summary>
-/// GraphQL mutation acceptance proof. The adapter must consume the
-/// complete protocol surface exercised by normal clients and converge on the
-/// existing provider-neutral mutation/result contracts.
+///     GraphQL mutation acceptance proof. The adapter must consume the
+///     complete protocol surface exercised by normal clients and converge on the
+///     existing provider-neutral mutation/result contracts.
 /// </summary>
 public sealed class GraphQLMutationAcceptanceTests
 {
@@ -22,33 +20,33 @@ public sealed class GraphQLMutationAcceptanceTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var document = """
-            query CustomerQuery {
-              customer { id }
-            }
+                       query CustomerQuery {
+                         customer { id }
+                       }
 
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) {
-                ...CustomerPayload
-              }
-            }
+                       mutation CreateCustomer($input: CustomerInput!) {
+                         createCustomer(input: $input) {
+                           ...CustomerPayload
+                         }
+                       }
 
-            mutation UpdateCustomer($input: CustomerInput!, $where: CustomerWhereInput!) {
-              updateCustomer(input: $input, where: $where) { id }
-            }
+                       mutation UpdateCustomer($input: CustomerInput!, $where: CustomerWhereInput!) {
+                         updateCustomer(input: $input, where: $where) { id }
+                       }
 
-            fragment CustomerPayload on Customer {
-              customerId: id
-              displayName: name
-              accounts {
-                ...AccountPayload
-              }
-            }
+                       fragment CustomerPayload on Customer {
+                         customerId: id
+                         displayName: name
+                         accounts {
+                           ...AccountPayload
+                         }
+                       }
 
-            fragment AccountPayload on Account {
-              accountId: id
-              accountName: name
-            }
-            """;
+                       fragment AccountPayload on Account {
+                         accountId: id
+                         accountName: name
+                       }
+                       """;
 
         var adapted = adapter.AdaptWithResultShape(
             document,
@@ -168,8 +166,8 @@ public sealed class GraphQLMutationAcceptanceTests
         var account =
             Assert.IsType<Dictionary<string, object?>>(
                 ((System.Collections.IEnumerable)accounts)
-                    .Cast<object>()
-                    .Single());
+                .Cast<object>()
+                .Single());
 
         Assert.Equal(
             7L,
@@ -186,14 +184,13 @@ public sealed class GraphQLMutationAcceptanceTests
         var (model, registry) = BuildCustomerAccount();
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => adapter.Adapt("""
-                mutation CreateCustomer {
-                  createCustomer(input: { name: "Ada" }) @skip(if: false) {
-                    id
-                  }
-                }
-                """));
+        var ex = Assert.Throws<InvalidOperationException>(() => adapter.Adapt("""
+                                                                              mutation CreateCustomer {
+                                                                                createCustomer(input: { name: "Ada" }) @skip(if: false) {
+                                                                                  id
+                                                                                }
+                                                                              }
+                                                                              """));
 
         Assert.Contains(
             "directives",
@@ -290,9 +287,9 @@ public sealed class GraphQLMutationAcceptanceTests
                             new ColumnId(2)))
                 ],
                 PrimaryKey:
-                    new ColumnReference(
-                        customer,
-                        new ColumnId(1))));
+                new ColumnReference(
+                    customer,
+                    new ColumnId(1))));
 
         registry.Register(
             new EntityMetadata(
@@ -338,9 +335,9 @@ public sealed class GraphQLMutationAcceptanceTests
                             new ColumnId(3)))
                 ],
                 PrimaryKey:
-                    new ColumnReference(
-                        account,
-                        new ColumnId(1))));
+                new ColumnReference(
+                    account,
+                    new ColumnId(1))));
 
         registry.Register(
             new RelationshipMetadata(
@@ -373,7 +370,6 @@ public sealed class GraphQLMutationAcceptanceTests
                             "Accounts",
                             account,
                             RelationshipCardinality.Many))
-
                 .Entity(
                     account,
                     "Account",
@@ -389,7 +385,6 @@ public sealed class GraphQLMutationAcceptanceTests
                             new FieldId(3),
                             "Name",
                             typeof(string)))
-
                 .Build();
 
         return (model, registry);

@@ -1,8 +1,8 @@
 namespace Foundgine.Core.Serialization;
 
 /// <summary>
-/// Bounds applied while parsing untrusted structured intent. These limits are
-/// intentionally enforced at the protocol boundary before semantic resolution.
+///     Bounds applied while parsing untrusted structured intent. These limits are
+///     intentionally enforced at the protocol boundary before semantic resolution.
 /// </summary>
 public sealed record JsonReadIntentAdapterOptions
 {

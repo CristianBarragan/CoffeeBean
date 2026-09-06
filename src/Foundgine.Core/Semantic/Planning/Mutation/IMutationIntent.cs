@@ -3,7 +3,7 @@ using Foundgine.Core.Abstractions;
 namespace Foundgine.Core.Semantic.Planning.Mutation;
 
 /// <summary>
-/// Common provider-neutral mutation input used when composing dependent mutation batches.
+///     Common provider-neutral mutation input used when composing dependent mutation batches.
 /// </summary>
 public interface IMutationIntent
 {

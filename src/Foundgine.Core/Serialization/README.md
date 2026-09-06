@@ -29,4 +29,5 @@ Semantic validation and authorization remain downstream responsibilities.
 dotnet add package Foundgine.Core.Serialization
 ```
 
-Use this package when an HTTP/JSON or other JSON-speaking caller needs to submit dynamic, provider-neutral Foundgine intent.
+Use this package when an HTTP/JSON or other JSON-speaking caller needs to submit dynamic, provider-neutral Foundgine
+intent.

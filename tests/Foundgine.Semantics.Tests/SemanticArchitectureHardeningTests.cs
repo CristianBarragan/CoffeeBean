@@ -1,26 +1,10 @@
-﻿using Xunit;
-using Foundgine.Core.Abstractions;
+﻿using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Resolution;
 
 namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticArchitectureHardeningTests
 {
-    [SemanticEntity]
-    private sealed class Customer
-    {
-        public long Id { get; set; }
-        public string Name { get; set; } = "";
-        public decimal CreditLimit { get; set; }
-    }
-
-    [SemanticEntity]
-    private sealed class Order
-    {
-        public long Id { get; set; }
-        public long CustomerId { get; set; }
-    }
-
     [Fact]
     public void Relationship_overload_derives_stable_identity()
     {
@@ -29,7 +13,8 @@ public sealed class SemanticArchitectureHardeningTests
         var model = new SemanticModelBuilder()
             .Entity<Customer>(customer, "Customer", e => e.Identity(x => x.Id).Field(x => x.Name))
             .Entity<Order>(order, "Order", e => e.Identity(x => x.Id).Field(x => x.CustomerId))
-            .Relationship<Customer, Order>(customer, "Orders", x => x.Id, order, x => x.CustomerId, RelationshipCardinality.Many)
+            .Relationship<Customer, Order>(customer, "Orders", x => x.Id, order, x => x.CustomerId,
+                RelationshipCardinality.Many)
             .Build();
 
         var relationship = Assert.Single(model.Get(customer).Relationships);
@@ -46,8 +31,10 @@ public sealed class SemanticArchitectureHardeningTests
         var builder = new SemanticModelBuilder()
             .Entity<Customer>(customer, "Customer", e => e.Identity(x => x.Id))
             .Entity<Order>(order, "Order", e => e.Identity(x => x.Id))
-            .Relationship<Customer, Order>(customer, sharedId, "Orders", x => x.Id, order, x => x.CustomerId, RelationshipCardinality.Many)
-            .Relationship<Order, Customer>(order, sharedId, "Customer", x => x.CustomerId, customer, x => x.Id, RelationshipCardinality.One);
+            .Relationship<Customer, Order>(customer, sharedId, "Orders", x => x.Id, order, x => x.CustomerId,
+                RelationshipCardinality.Many)
+            .Relationship<Order, Customer>(order, sharedId, "Customer", x => x.CustomerId, customer, x => x.Id,
+                RelationshipCardinality.One);
 
         var error = Assert.Throws<InvalidOperationException>(() => builder.Build());
         Assert.Contains("Relationship identity collision", error.Message);
@@ -62,13 +49,15 @@ public sealed class SemanticArchitectureHardeningTests
         var left = new SemanticModelBuilder()
             .Entity<Customer>(new EntityId(10), "Customer", e => e.Identity(x => x.Id))
             .Entity<Order>(new EntityId(11), "Order", e => e.Identity(x => x.Id))
-            .Relationship<Customer, Order>(new EntityId(10), sharedId, "Orders", x => x.Id, new EntityId(11), x => x.CustomerId, RelationshipCardinality.Many)
+            .Relationship<Customer, Order>(new EntityId(10), sharedId, "Orders", x => x.Id, new EntityId(11),
+                x => x.CustomerId, RelationshipCardinality.Many)
             .Build();
 
         var right = new SemanticModelBuilder()
             .Entity<Customer>(new EntityId(20), "Customer", e => e.Identity(x => x.Id))
             .Entity<Order>(new EntityId(21), "Order", e => e.Identity(x => x.Id))
-            .Relationship<Customer, Order>(new EntityId(20), sharedId, "Purchases", x => x.Id, new EntityId(21), x => x.CustomerId, RelationshipCardinality.Many)
+            .Relationship<Customer, Order>(new EntityId(20), sharedId, "Purchases", x => x.Id, new EntityId(21),
+                x => x.CustomerId, RelationshipCardinality.Many)
             .Build();
 
         var builder = new SemanticModelBuilder().Import(left);
@@ -91,8 +80,10 @@ public sealed class SemanticArchitectureHardeningTests
             .Build();
 
         var fields = model.Get(new EntityId(1)).Fields;
-        Assert.Contains(fields.Single(x => x.Name == "Name").EffectiveConstraints, x => x.Kind == SemanticConstraintKind.Pattern);
-        Assert.Contains(fields.Single(x => x.Name == "CreditLimit").EffectiveConstraints, x => x.Kind == SemanticConstraintKind.Range);
+        Assert.Contains(fields.Single(x => x.Name == "Name").EffectiveConstraints,
+            x => x.Kind == SemanticConstraintKind.Pattern);
+        Assert.Contains(fields.Single(x => x.Name == "CreditLimit").EffectiveConstraints,
+            x => x.Kind == SemanticConstraintKind.Range);
     }
 
     [Fact]
@@ -120,7 +111,8 @@ public sealed class SemanticArchitectureHardeningTests
         var model = new SemanticModelBuilder()
             .Entity<Customer>(customer, "Customer", e => e.Identity(x => x.Id))
             .Entity<Order>(order, "Order", e => e.Identity(x => x.Id))
-            .Relationship<Customer, Order>(customer, customerOrders, "Orders", x => x.Id, order, x => x.CustomerId, RelationshipCardinality.Many)
+            .Relationship<Customer, Order>(customer, customerOrders, "Orders", x => x.Id, order, x => x.CustomerId,
+                RelationshipCardinality.Many)
             .Traversal("Customer", "OrdersPath", "Orders")
             .Build();
 
@@ -134,12 +126,37 @@ public sealed class SemanticArchitectureHardeningTests
         Assert.Equal("9", resolved.Resolved!.IdentityValue);
     }
 
+    [SemanticEntity]
+    private sealed class Customer
+    {
+        public long Id { get; set; }
+        public string Name { get; set; } = "";
+        public decimal CreditLimit { get; set; }
+    }
+
+    [SemanticEntity]
+    private sealed class Order
+    {
+        public long Id { get; set; }
+        public long CustomerId { get; set; }
+    }
+
     private sealed class FakeCandidates : ICandidateSource
     {
         public List<(EntityId, string, IdentityCandidate)> IdentityMatches { get; } = [];
         public List<(RelationshipId, string, IdentityCandidate)> RelationshipMatches { get; } = [];
-        public IReadOnlyList<IdentityCandidate> FindByIdentity(EntityId entityType, string identityValue) => IdentityMatches.Where(x => x.Item1 == entityType && x.Item2 == identityValue).Select(x => x.Item3).ToArray();
-        public IReadOnlyList<IdentityCandidate> FindByRelationship(RelationshipId relationshipId, string sourceIdentityValue) => RelationshipMatches.Where(x => x.Item1 == relationshipId && x.Item2 == sourceIdentityValue).Select(x => x.Item3).ToArray();
+
+        public IReadOnlyList<IdentityCandidate> FindByIdentity(EntityId entityType, string identityValue)
+        {
+            return IdentityMatches.Where(x => x.Item1 == entityType && x.Item2 == identityValue).Select(x => x.Item3)
+                .ToArray();
+        }
+
+        public IReadOnlyList<IdentityCandidate> FindByRelationship(RelationshipId relationshipId,
+            string sourceIdentityValue)
+        {
+            return RelationshipMatches.Where(x => x.Item1 == relationshipId && x.Item2 == sourceIdentityValue)
+                .Select(x => x.Item3).ToArray();
+        }
     }
 }
-

@@ -22,7 +22,8 @@ It models **what exists** in an application/provider structure:
 - `IMetadataProvider`
 - `SemanticModelDiscovery`
 
-The registry supports registration and lookup of structural metadata. `SemanticModelDiscovery` can turn that metadata into a semantic model that the application can further enrich.
+The registry supports registration and lookup of structural metadata. `SemanticModelDiscovery` can turn that metadata
+into a semantic model that the application can further enrich.
 
 ## Boundary
 
@@ -40,4 +41,5 @@ The package does not execute queries and does not decide what a caller is allowe
 dotnet add package Foundgine.Core.Semantic.Metadata
 ```
 
-Use it when semantic structure should be discovered from application/provider metadata rather than assembled entirely by hand.
+Use it when semantic structure should be discovered from application/provider metadata rather than assembled entirely by
+hand.

@@ -3,9 +3,9 @@ using Foundgine.Core.Semantic.Security;
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Records that a semantic rewrite preserved the security contract of the
-/// input plan. This is a rewrite proof, not a claim that the provider is
-/// correct or that authorization has been granted.
+///     Records that a semantic rewrite preserved the security contract of the
+///     input plan. This is a rewrite proof, not a claim that the provider is
+///     correct or that authorization has been granted.
 /// </summary>
 public sealed record SecurityPreservationProof(
     IReadOnlyList<string> Before,
@@ -15,8 +15,8 @@ public sealed record SecurityPreservationProof(
     string AfterFingerprint)
 {
     public bool IsSatisfied => Missing.Count == 0 &&
-        Before.OrderBy(x => x, StringComparer.Ordinal).SequenceEqual(
-            After.OrderBy(x => x, StringComparer.Ordinal), StringComparer.Ordinal);
+                               Before.OrderBy(x => x, StringComparer.Ordinal).SequenceEqual(
+                                   After.OrderBy(x => x, StringComparer.Ordinal), StringComparer.Ordinal);
 
     public static SecurityPreservationProof Create(SemanticPlan before, SemanticPlan after)
     {

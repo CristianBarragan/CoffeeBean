@@ -1,30 +1,24 @@
-using Foundgine.Core.Abstractions;
-using Foundgine.Core.Execution;
 using Foundgine.Providers.Storage.InMemory;
-using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Semantic.Planning;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.SupplyChain.Advanced.Tests;
 
 /// <summary>
-/// Supply-Chain-flavored regression coverage for the Step 37 escape-boundary
-/// fix: a provider's <see cref="ExecutionRow.Values"/> and
-/// <see cref="ExecutionRow.EffectiveCells"/> must expose exactly the fields an
-/// <see cref="ExecutionIRNode"/> explicitly selects - never the full backing
-/// row a data source happens to carry.
-///
-/// The generated Supply Chain domain model (<c>Domain.cs</c>) does not itself
-/// have a hidden, backing-only column - every CLR property becomes a
-/// selectable semantic field. To pin the boundary invariant against this
-/// project's own domain shape, these tests build a small hand-authored
-/// <see cref="MetadataRegistry"/> mirroring the real Supplier/PurchaseOrder
-/// relationship, but with the join key modeled the way a legacy ERP
-/// integration column often is in practice: present on every backing row,
-/// required to resolve the relationship, and never exposed as a semantic
-/// field. See cref="Foundgine.Providers.Storage.InMemory.Tests.ExecutionRowCapabilityBoundaryTests"
-/// for the provider-neutral synthetic version of the same fix.
+///     Supply-Chain-flavored regression coverage for the Step 37 escape-boundary
+///     fix: a provider's <see cref="ExecutionRow.Values" /> and
+///     <see cref="ExecutionRow.EffectiveCells" /> must expose exactly the fields an
+///     <see cref="ExecutionIRNode" /> explicitly selects - never the full backing
+///     row a data source happens to carry.
+///     The generated Supply Chain domain model (<c>Domain.cs</c>) does not itself
+///     have a hidden, backing-only column - every CLR property becomes a
+///     selectable semantic field. To pin the boundary invariant against this
+///     project's own domain shape, these tests build a small hand-authored
+///     <see cref="MetadataRegistry" /> mirroring the real Supplier/PurchaseOrder
+///     relationship, but with the join key modeled the way a legacy ERP
+///     integration column often is in practice: present on every backing row,
+///     required to resolve the relationship, and never exposed as a semantic
+///     field. See cref="Foundgine.Providers.Storage.InMemory.Tests.ExecutionRowCapabilityBoundaryTests"
+///     for the provider-neutral synthetic version of the same fix.
 /// </summary>
 public sealed class CapabilityBoundaryTests
 {
@@ -121,12 +115,14 @@ public sealed class CapabilityBoundaryTests
             ],
             Fields:
             [
-                new FieldMetadata(PurchaseOrderStatus, "Status", typeof(string), new ColumnReference(PurchaseOrder, new ColumnId(3))),
+                new FieldMetadata(PurchaseOrderStatus, "Status", typeof(string),
+                    new ColumnReference(PurchaseOrder, new ColumnId(3))),
                 // Internal foreign-key mapping only, same shape as
                 // BankingRelationalMetadata.Account.CustomerId: no semantic
                 // field ever exposes it, it exists solely to resolve the
                 // SupplierPurchaseOrders relationship.
-                new FieldMetadata(PurchaseOrderSupplierFk, "SupplierId", typeof(int), new ColumnReference(PurchaseOrder, new ColumnId(2)))
+                new FieldMetadata(PurchaseOrderSupplierFk, "SupplierId", typeof(int),
+                    new ColumnReference(PurchaseOrder, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(PurchaseOrder, new ColumnId(1))));
 
@@ -139,7 +135,8 @@ public sealed class CapabilityBoundaryTests
             new ColumnReference(PurchaseOrder, new ColumnId(2))));
 
         var data = new InMemoryDataSet()
-            .Add(new InMemoryRow(Supplier, new Dictionary<FieldId, object?> { [SupplierId] = 1, [SupplierName] = "Kiwi Components" }))
+            .Add(new InMemoryRow(Supplier,
+                new Dictionary<FieldId, object?> { [SupplierId] = 1, [SupplierName] = "Kiwi Components" }))
             .Add(new InMemoryRow(PurchaseOrder, new Dictionary<FieldId, object?>
             {
                 [PurchaseOrderId] = 500,
@@ -151,7 +148,8 @@ public sealed class CapabilityBoundaryTests
             new ExecutionIRNode(
                 0, ExecutionOperation.Scan, Supplier, [SupplierName], null, null,
                 [
-                    new ExecutionIRNode(1, ExecutionOperation.Traverse, PurchaseOrder, [PurchaseOrderStatus], SupplierPurchaseOrders, null, [])
+                    new ExecutionIRNode(1, ExecutionOperation.Traverse, PurchaseOrder, [PurchaseOrderStatus],
+                        SupplierPurchaseOrders, null, [])
                 ]),
             []);
 
@@ -176,6 +174,9 @@ public sealed class CapabilityBoundaryTests
         Assert.DoesNotContain(row.EffectiveCells.Keys, key => key.FieldId == PurchaseOrderSupplierFk);
     }
 
-    private static ExecutionIR CreateIR(ExecutionIRNode root, IReadOnlyList<string> requiredSecurityInvariants) =>
-        new(root, requiredSecurityInvariants, new SemanticPlanAuthorizationBinding("test-contract", "test-authorization"));
+    private static ExecutionIR CreateIR(ExecutionIRNode root, IReadOnlyList<string> requiredSecurityInvariants)
+    {
+        return new(root, requiredSecurityInvariants,
+            new SemanticPlanAuthorizationBinding("test-contract", "test-authorization"));
+    }
 }

@@ -1,16 +1,14 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
 namespace Foundgine.Core.Abstractions;
 
 /// <summary>Stable identity of a semantic model.</summary>
 [JsonConverter(typeof(ModelIdJsonConverter))]
 public readonly record struct ModelId(ulong Value)
 {
-    public static ModelId Create(string semanticName) =>
-        new(SemanticIdentity.Hash(SemanticIdentity.ModelKey(semanticName)));
+    public static ModelId Create(string semanticName)
+    {
+        return new ModelId(SemanticIdentity.Hash(SemanticIdentity.ModelKey(semanticName)));
+    }
 }
-
 
 public sealed class ModelIdJsonConverter : JsonConverter<ModelId>
 {
@@ -29,12 +27,19 @@ public sealed class ModelIdJsonConverter : JsonConverter<ModelId>
         throw new JsonException("Expected a ModelId numeric value or a legacy {\"Value\":...} object.");
     }
 
-    public override void Write(Utf8JsonWriter writer, ModelId value, JsonSerializerOptions options) =>
+    public override void Write(Utf8JsonWriter writer, ModelId value, JsonSerializerOptions options)
+    {
         writer.WriteNumberValue(value.Value);
+    }
 
-    public override ModelId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        new(ulong.Parse(reader.GetString()!));
+    public override ModelId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert,
+        JsonSerializerOptions options)
+    {
+        return new ModelId(ulong.Parse(reader.GetString()!));
+    }
 
-    public override void WriteAsPropertyName(Utf8JsonWriter writer, ModelId value, JsonSerializerOptions options) =>
+    public override void WriteAsPropertyName(Utf8JsonWriter writer, ModelId value, JsonSerializerOptions options)
+    {
         writer.WritePropertyName(value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
 }

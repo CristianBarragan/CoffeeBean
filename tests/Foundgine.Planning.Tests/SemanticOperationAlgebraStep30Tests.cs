@@ -1,10 +1,8 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning.Algebra;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.IR;
 using Foundgine.Core.Semantic.IR.Graph;
+using Foundgine.Core.Semantic.Planning.Algebra;
 using Foundgine.Core.Semantic.Query;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
@@ -67,4 +65,3 @@ public sealed class SemanticOperationAlgebraStep30Tests
         Assert.Same(predicate, SemanticPredicateAlgebra.Or(predicate));
     }
 }
-

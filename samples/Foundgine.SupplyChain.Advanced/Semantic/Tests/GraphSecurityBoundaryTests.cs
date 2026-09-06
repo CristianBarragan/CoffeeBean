@@ -1,29 +1,25 @@
-using Foundgine.Core.Semantic.Authorization;
-using Foundgine.Core.Semantic.Intent;
-using Foundgine.Core.Semantic.Security.Execution;
 using Foundgine.SupplyChain.Advanced.Authorization;
 using Foundgine.SupplyChain.Advanced.Semantics;
-using Xunit;
 
 namespace Foundgine.SupplyChain.Advanced.Tests;
 
 /// <summary>
-/// Supply-Chain-flavored coverage for two of the recent semantic security
-/// boundaries, exercised against the real generated domain model rather than
-/// a synthetic one:
-/// 
-/// - Step 32, Semantic Traversal Safety &amp; Resource Bounds: a caller-supplied
-///   <see cref="ReadIntent"/> is bounded by <see cref="SecurityResourceLimits"/>
-///   before it ever reaches planning or execution, using the domain's own
-///   recursive bill-of-materials relationship (<c>Product.components</c> -&gt;
-///   <c>ProductComponent.componentProduct</c> -&gt; ...) as the deep traversal.
-/// - Step 33, Graph-Level Authorization: <see cref="SemanticAuthorizer"/>
-///   removes an entire denied relationship subtree - here, the
-///   <c>Supplier.incidents</c> edge that <see>
-///     <cref>SupplyChainAuthorization</cref>
-/// </see>
-/// denies to every role except Analyst and SupplyChainManager - while
-///   still returning the rest of the graph.
+///     Supply-Chain-flavored coverage for two of the recent semantic security
+///     boundaries, exercised against the real generated domain model rather than
+///     a synthetic one:
+///     - Step 32, Semantic Traversal Safety &amp; Resource Bounds: a caller-supplied
+///     <see cref="ReadIntent" /> is bounded by <see cref="SecurityResourceLimits" />
+///     before it ever reaches planning or execution, using the domain's own
+///     recursive bill-of-materials relationship (<c>Product.components</c> -&gt;
+///     <c>ProductComponent.componentProduct</c> -&gt; ...) as the deep traversal.
+///     - Step 33, Graph-Level Authorization: <see cref="SemanticAuthorizer" />
+///     removes an entire denied relationship subtree - here, the
+///     <c>Supplier.incidents</c> edge that
+///     <see>
+///         <cref>SupplyChainAuthorization</cref>
+///     </see>
+///     denies to every role except Analyst and SupplyChainManager - while
+///     still returning the rest of the graph.
 /// </summary>
 public sealed class GraphSecurityBoundaryTests
 {
@@ -86,7 +82,8 @@ public sealed class GraphSecurityBoundaryTests
 
         Assert.Single(operatorResult.Graph.Nodes);
         Assert.Equal(SupplyChainSemanticModel.Supplier, operatorResult.Graph.Root.EntityId);
-        Assert.DoesNotContain(operatorResult.Graph.Nodes, n => n.EntityId == SupplyChainSemanticModel.ComplianceIncident);
+        Assert.DoesNotContain(operatorResult.Graph.Nodes,
+            n => n.EntityId == SupplyChainSemanticModel.ComplianceIncident);
         operatorResult.EnsureMatches(contract);
 
         // The same graph, authorized for a role the policy does grant the

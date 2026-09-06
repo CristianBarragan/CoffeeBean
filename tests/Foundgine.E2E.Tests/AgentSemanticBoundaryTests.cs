@@ -4,7 +4,6 @@ using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Intent;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic.Resolution;
-using Xunit;
 
 namespace Foundgine.E2E.Tests;
 
@@ -28,12 +27,14 @@ public sealed class AgentSemanticBoundaryTests
 
         var intent = new ReadIntent(
             RootEntity: "Customer",
-            Selections: [
-                new ReadSelection(Field: "Id"),
-                new ReadSelection(Field: "Name"),
-                new ReadSelection(Relationship: "Transactions", Children: [
-                    new ReadSelection(Field: "Id"),
-                    new ReadSelection(Field: "Amount")
+            Selections:
+            [
+                new ReadSelection("Id"),
+                new ReadSelection("Name"),
+                new ReadSelection(Relationship: "Transactions", Children:
+                [
+                    new ReadSelection("Id"),
+                    new ReadSelection("Amount")
                 ])
             ],
             Filter: new ReadFieldFilter("Name", SemanticFilterOperator.Eq, "Alice"),
@@ -67,7 +68,7 @@ public sealed class AgentSemanticBoundaryTests
 
         var intent = new ReadIntent(
             "Account",
-            [new ReadSelection(Field: "Id"), new ReadSelection(Field: "Balance")]);
+            [new ReadSelection("Id"), new ReadSelection("Balance")]);
 
         var request = new ReadIntentCompiler(model).Compile(intent);
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
@@ -80,8 +81,9 @@ public sealed class AgentSemanticBoundaryTests
 
     private sealed class DenyBalancePolicy(EntityId account) : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessField(EntityId entityId, FieldId fieldId) =>
-            entityId != account || fieldId != new FieldId(2);
+        public override bool CanAccessField(EntityId entityId, FieldId fieldId)
+        {
+            return entityId != account || fieldId != new FieldId(2);
+        }
     }
 }
-

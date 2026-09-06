@@ -1,11 +1,14 @@
 # Foundgine Agent End-to-End Benchmark
 
-This benchmark is designed to measure a complex agent interaction as a **semantic-boundary experiment**, not just as an HTTP/RPS benchmark.
+This benchmark is designed to measure a complex agent interaction as a **semantic-boundary experiment**, not just as an
+HTTP/RPS benchmark.
 
 It compares two agents completing the same business request against the same PostgreSQL fixture:
 
-- **Conventional** — the agent discovers a physical application data surface and uses separate relationship/query/update tools.
-- **Foundgine** — the agent uses a semantic capability, an authorized graph operation, and a semantic mutation. Physical tables, joins and SQL are outside the agent tool contract.
+- **Conventional** — the agent discovers a physical application data surface and uses separate relationship/query/update
+  tools.
+- **Foundgine** — the agent uses a semantic capability, an authorized graph operation, and a semantic mutation. Physical
+  tables, joins and SQL are outside the agent tool contract.
 
 ## Scenario
 
@@ -13,13 +16,15 @@ Customer 1 is reviewed across:
 
 `Customer -> CustomerBankingRelationship -> Contract -> Transaction`
 
-Exposure is the sum of transaction `Balance` values. If exposure is at least `48,000`, the customer is marked as reviewed by setting:
+Exposure is the sum of transaction `Balance` values. If exposure is at least `48,000`, the customer is marked as
+reviewed by setting:
 
 `Customer.FullName = Customer 1 Benchmark | Reviewed`
 
 The benchmark then verifies the final state.
 
-The fixture is the existing CoffeeBeanery PostgreSQL benchmark fixture. Customer 1 deterministically contains 4 relationships, 12 contracts and 48 transactions with the default seed settings.
+The fixture is the existing CoffeeBeanery PostgreSQL benchmark fixture. Customer 1 deterministically contains 4
+relationships, 12 contracts and 48 transactions with the default seed settings.
 
 ## What is measured
 
@@ -37,11 +42,13 @@ The fixture is the existing CoffeeBeanery PostgreSQL benchmark fixture. Customer
 
 ### Correctness
 
-Both flows reset Customer 1 to the same baseline before every measured run. The benchmark then asserts that the final customer state is reviewed and that both flows operate on the same deterministic graph.
+Both flows reset Customer 1 to the same baseline before every measured run. The benchmark then asserts that the final
+customer state is reviewed and that both flows operate on the same deterministic graph.
 
 ## Token accounting
 
-`live` mode records provider-reported usage from an OpenAI-compatible chat-completions endpoint. It does **not** estimate tokens from characters.
+`live` mode records provider-reported usage from an OpenAI-compatible chat-completions endpoint. It does **not**
+estimate tokens from characters.
 
 The primary comparison is:
 
@@ -55,11 +62,13 @@ whole interaction token saving %
   / conventional total tokens * 100
 ```
 
-Tool definitions and prior tool results are part of the model context, so they are intentionally included in the provider-reported input-token count.
+Tool definitions and prior tool results are part of the model context, so they are intentionally included in the
+provider-reported input-token count.
 
 ## Run it from the repository root
 
-There is now a runner script. `publish-report.ps1` only publishes an existing JSON report; it does **not** run the benchmark.
+There is now a runner script. `publish-report.ps1` only publishes an existing JSON report; it does **not** run the
+benchmark.
 
 Replay/correctness harness (starts PostgreSQL + Foundgine warm API automatically):
 
@@ -83,6 +92,7 @@ $env:AGENT_MODEL = "your-model"
 ```
 
 The runner uses the benchmark compose fixture by default:
+
 - PostgreSQL: `localhost:55432`
 - Foundgine warm GraphQL: `http://localhost:4302/graphql/warm`
 
@@ -92,7 +102,8 @@ Use `-KeepInfrastructure` when running several experiments against the same cont
 
 ### Replay mode
 
-Replay validates the tool choreography and final-state harness without requiring a model endpoint. **Replay does not produce real model token evidence and must not be used for token-savings claims.**
+Replay validates the tool choreography and final-state harness without requiring a model endpoint. **Replay does not
+produce real model token evidence and must not be used for token-savings claims.**
 
 ```powershell
 $env:BankingConnectionString = "Host=localhost;Port=5432;Database=...;Username=...;Password=..."
@@ -104,7 +115,8 @@ dotnet run --project benchmarks/AgentEndToEnd/Foundgine.AgentEndToEnd.Benchmark.
 
 ### Live mode
 
-Point the benchmark at an OpenAI-compatible endpoint. The endpoint can be a hosted model service or a local compatible gateway.
+Point the benchmark at an OpenAI-compatible endpoint. The endpoint can be a hosted model service or a local compatible
+gateway.
 
 ```powershell
 $env:BankingConnectionString = "Host=localhost;Port=5432;Database=...;Username=...;Password=..."
@@ -124,21 +136,26 @@ The benchmark writes:
 - `artifacts/agent-benchmark/agent-benchmark.json`
 - `artifacts/agent-benchmark/agent-benchmark.md`
 
-
 ## Supply Chain E2E
 
-A separate full-stack E2E fixture now exercises a supply-chain domain through an agent-like stochastic bot → MCP → Foundgine semantic model → authorization → planner → execution → Npgsql → PostgreSQL. It supports up to five identities, mixes allowed and denied operations, and includes a high-assurance `place_order` mutation with atomic inventory decrement and idempotency. It lives at `samples/Foundgine.SupplyChain.Advanced` (not under `benchmarks/`) since it exercises a full sample application rather than measuring Foundgine vs. a conventional baseline.
+A separate full-stack E2E fixture now exercises a supply-chain domain through an agent-like stochastic bot → MCP →
+Foundgine semantic model → authorization → planner → execution → Npgsql → PostgreSQL. It supports up to five identities,
+mixes allowed and denied operations, and includes a high-assurance `place_order` mutation with atomic inventory
+decrement and idempotency. It lives at `samples/Foundgine.SupplyChain.Advanced` (not under `benchmarks/`) since it
+exercises a full sample application rather than measuring Foundgine vs. a conventional baseline.
 
 ```powershell
 cd samples/Foundgine.SupplyChain.Advanced
 ./run-supply-chain.ps1
 ```
 
-See `../../samples/Foundgine.SupplyChain.Advanced/README.md` for the actor matrix, schema, operation set and verification model.
+See `../../samples/Foundgine.SupplyChain.Advanced/README.md` for the actor matrix, schema, operation set and
+verification model.
 
 ## Experimental discipline
 
-For publishable evidence, run the same model, temperature, system prompt, user request, database fixture, model endpoint and network environment for both flows.
+For publishable evidence, run the same model, temperature, system prompt, user request, database fixture, model endpoint
+and network environment for both flows.
 
 Recommended:
 
@@ -152,4 +169,6 @@ Recommended:
 
 ## Important limitation
 
-This benchmark currently measures a real Foundgine graph/mutation path but uses the existing CoffeeBeanery benchmark domain. It is intentionally **not** presented as proof of tenant authorization or financial-transfer safety. A separate security scenario should be added before making those claims.
+This benchmark currently measures a real Foundgine graph/mutation path but uses the existing CoffeeBeanery benchmark
+domain. It is intentionally **not** presented as proof of tenant authorization or financial-transfer safety. A separate
+security scenario should be added before making those claims.

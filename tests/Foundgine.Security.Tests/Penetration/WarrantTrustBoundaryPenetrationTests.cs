@@ -1,14 +1,12 @@
-using System.Security.Cryptography;
 using Foundgine.Core.Semantic.Security.Warrants;
-using Xunit;
 
 namespace Foundgine.Security.Tests.Penetration;
 
 /// <summary>
-/// issuer, delegation and replay trust controls: attacks against the warrant trust boundary itself.
-/// These tests assert that issuer trust and delegation ancestry are now
-/// fail-closed, while the replay tests distinguish process-local memory state
-/// from the durable/shared implementations required for multi-instance hosts.
+///     issuer, delegation and replay trust controls: attacks against the warrant trust boundary itself.
+///     These tests assert that issuer trust and delegation ancestry are now
+///     fail-closed, while the replay tests distinguish process-local memory state
+///     from the durable/shared implementations required for multi-instance hosts.
 /// </summary>
 public sealed class WarrantTrustBoundaryPenetrationTests
 {
@@ -21,7 +19,7 @@ public sealed class WarrantTrustBoundaryPenetrationTests
     public void Forged_issuer_is_rejected_when_expected_issuer_is_configured()
     {
         using var key = RSA.Create(2048);
-        var forged = Sign(Create(DateTimeOffset.UtcNow, issuer: "attacker-controlled-issuer"), key);
+        var forged = Sign(Create(DateTimeOffset.UtcNow, "attacker-controlled-issuer"), key);
 
         // A correctly configured host supplies the trusted root issuer.
         Assert.Throws<InvalidOperationException>(() =>
@@ -36,7 +34,7 @@ public sealed class WarrantTrustBoundaryPenetrationTests
     public void ATTACK_forged_issuer_is_rejected_when_expected_issuer_is_left_unconfigured()
     {
         using var key = RSA.Create(2048);
-        var forged = Sign(Create(DateTimeOffset.UtcNow, issuer: "attacker-controlled-issuer"), key);
+        var forged = Sign(Create(DateTimeOffset.UtcNow, "attacker-controlled-issuer"), key);
 
         Assert.Throws<InvalidOperationException>(() =>
             SecurityWarrantVerifier.Verify(
@@ -57,12 +55,12 @@ public sealed class WarrantTrustBoundaryPenetrationTests
         using var key = RSA.Create(2048);
         var now = DateTimeOffset.UtcNow;
         var uncheckedChild = Sign(
-            Create(now, issuer: "root-issuer") with
+            Create(now, "root-issuer") with
             {
                 Id = "child-1",
                 ParentId = "never-verified-parent",
                 ParentDigest = new string('0', 128),
-                DelegationPath = [new string('0', 128)],
+                DelegationPath = [new string('0', 128)]
             },
             key);
 
@@ -131,24 +129,33 @@ public sealed class WarrantTrustBoundaryPenetrationTests
     private static SecurityWarrant Create(
         DateTimeOffset now,
         string issuer = "issuer",
-        string audience = "foundgine") => new(
-        "warrant-1", issuer, "agent-a", audience,
-        [new CapabilityGrant("Customer.read", "read", ["customer/*"])],
-        new SecurityWarrantConstraints(allowedTenants: ["tenant-1"], maxResults: 100, maxAmount: 1000m),
-        now.AddMinutes(-1), now.AddHours(1), "nonce-1", "key-1", null, []);
+        string audience = "foundgine")
+    {
+        return new(
+            "warrant-1", issuer, "agent-a", audience,
+            [new CapabilityGrant("Customer.read", "read", ["customer/*"])],
+            new SecurityWarrantConstraints(allowedTenants: ["tenant-1"], maxResults: 100, maxAmount: 1000m),
+            now.AddMinutes(-1), now.AddHours(1), "nonce-1", "key-1", null, []);
+    }
 
-    private static SecurityWarrant Sign(SecurityWarrant warrant, RSA key) =>
-        SecurityWarrantSigner.Sign(warrant, key);
+    private static SecurityWarrant Sign(SecurityWarrant warrant, RSA key)
+    {
+        return SecurityWarrantSigner.Sign(warrant, key);
+    }
 
     private sealed class TrustResolver : ISecurityWarrantDelegationTrustResolver
     {
-        public DelegationIssuerTrust? Resolve(string issuer) =>
-            new(issuer, new HashSet<string>(StringComparer.Ordinal) { "key-1" }, true);
+        public DelegationIssuerTrust? Resolve(string issuer)
+        {
+            return new DelegationIssuerTrust(issuer, new HashSet<string>(StringComparer.Ordinal) { "key-1" }, true);
+        }
     }
 
     private sealed class Resolver(string id, RSA key) : ISecurityWarrantKeyResolver
     {
-        public RSA Resolve(string keyId) =>
-            StringComparer.Ordinal.Equals(id, keyId) ? key : throw new InvalidOperationException("Unknown key");
+        public RSA Resolve(string keyId)
+        {
+            return StringComparer.Ordinal.Equals(id, keyId) ? key : throw new InvalidOperationException("Unknown key");
+        }
     }
 }

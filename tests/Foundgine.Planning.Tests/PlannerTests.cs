@@ -1,7 +1,6 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning;
-using Foundgine.Core.Semantic;
-using Xunit;
+using Foundgine.Core.Semantic.IR;
+using Foundgine.Core.Semantic.Query;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
@@ -64,7 +63,7 @@ public sealed class PlannerTests
     {
         var graph = new SemanticGraph
         {
-            Options = new Foundgine.Core.Semantic.Query.SemanticQueryOptions(
+            Options = new SemanticQueryOptions(
                 Filter: null,
                 Order: null,
                 Limit: 10,
@@ -135,9 +134,13 @@ public sealed class PlannerTests
                     .SelectMany(ctor => ctor.GetParameters().Select(parameter => parameter.ParameterType)))
                 .Select(type => type.FullName ?? type.Name);
 
-            Assert.DoesNotContain(exposedTypes, name => name.StartsWith("Foundgine.Core.Semantic.Metadata.EntityMetadata", StringComparison.Ordinal));
-            Assert.DoesNotContain(exposedTypes, name => name.StartsWith("Foundgine.Core.Semantic.Metadata.RelationshipMetadata", StringComparison.Ordinal));
-            Assert.DoesNotContain(exposedTypes, name => name.StartsWith("Foundgine.Core.Semantic.Metadata.ColumnReference", StringComparison.Ordinal));
+            Assert.DoesNotContain(exposedTypes,
+                name => name.StartsWith("Foundgine.Core.Semantic.Metadata.EntityMetadata", StringComparison.Ordinal));
+            Assert.DoesNotContain(exposedTypes,
+                name => name.StartsWith("Foundgine.Core.Semantic.Metadata.RelationshipMetadata",
+                    StringComparison.Ordinal));
+            Assert.DoesNotContain(exposedTypes,
+                name => name.StartsWith("Foundgine.Core.Semantic.Metadata.ColumnReference", StringComparison.Ordinal));
         }
     }
 
@@ -168,7 +171,7 @@ public sealed class PlannerTests
         var customer = graph.AddRoot(new EntityId(1), [new FieldId(1)]);
         graph.Add(new EntityId(2), new RelationshipId(1), customer, [new FieldId(2)]);
 
-        var operation = Foundgine.Core.Semantic.IR.SemanticOperationCompiler.Compile(graph);
+        var operation = SemanticOperationCompiler.Compile(graph);
         var plan = new Planner().Plan(operation);
 
         Assert.Equal(new EntityId(1), plan.Root.EntityId);
@@ -184,13 +187,11 @@ public sealed class PlannerTests
         var graph = new SemanticGraph();
         graph.AddRoot(new EntityId(1));
 
-        var operation = Foundgine.Core.Semantic.IR.SemanticOperationCompiler.Compile(graph);
+        var operation = SemanticOperationCompiler.Compile(graph);
         graph.AddRoot(new EntityId(99));
 
         var plan = new Planner().Plan(operation);
 
         Assert.Equal(new EntityId(1), plan.Root.EntityId);
     }
-
 }
-

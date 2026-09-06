@@ -1,11 +1,12 @@
 using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Query;
 
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Canonical semantic planning artifact produced from an authorized Semantic IR.
-/// It describes the provider-neutral execution strategy without representing
-/// physical provider work.
+///     Canonical semantic planning artifact produced from an authorized Semantic IR.
+///     It describes the provider-neutral execution strategy without representing
+///     physical provider work.
 /// </summary>
 public sealed record SemanticPlan(
     SemanticPlanNode Root,
@@ -17,7 +18,7 @@ public sealed record SemanticPlan(
 }
 
 /// <summary>
-/// One node in the canonical semantic planning artifact.
+///     One node in the canonical semantic planning artifact.
 /// </summary>
 public sealed record SemanticPlanNode(
     int Id,
@@ -27,9 +28,9 @@ public sealed record SemanticPlanNode(
     RelationshipId? ViaRelationship,
     ConnectionId? ViaConnection,
     IReadOnlyList<SemanticPlanNode> Children,
-    Foundgine.Core.Semantic.Query.SemanticQueryOptions? QueryOptions = null,
+    SemanticQueryOptions? QueryOptions = null,
     AuthorizationPredicate? Authorization = null,
-    Foundgine.Core.Semantic.RelationshipCardinality? RelationshipCardinality = null,
+    RelationshipCardinality? RelationshipCardinality = null,
     RelationshipTraversalMode TraversalMode = RelationshipTraversalMode.Default,
     int TraversalOrder = -1,
     AggregateExecutionStrategy AggregateExecutionStrategy = AggregateExecutionStrategy.Default)

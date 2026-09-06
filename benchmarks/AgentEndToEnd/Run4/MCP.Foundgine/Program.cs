@@ -1,17 +1,13 @@
-using Foundgine.Runtime;
-using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
-using Foundgine.Providers.Tools.MCP;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Providers.Storage.Sql;
-using Microsoft.Extensions.DependencyInjection;
-using Npgsql;
+using Foundgine.Providers.Tools.MCP;
 using Run4.McpFoundgine;
-using System.Data.Common;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 var builder = WebApplication.CreateBuilder(args);
-var cs = builder.Configuration.GetConnectionString("BankingConnectionString") ?? throw new InvalidOperationException("Missing connection string.");
+var cs = builder.Configuration.GetConnectionString("BankingConnectionString") ??
+         throw new InvalidOperationException("Missing connection string.");
 var model = CoffeeBeanerySemanticModel.Build();
 var metadata = CoffeeBeaneryMetadata.Build();
 var policy = new AllowAllSemanticAuthorizationPolicy();
@@ -35,11 +31,17 @@ app.MapGet("/health/ready", async (CancellationToken ct) =>
 });
 app.Run();
 
-sealed class PooledSqlExecutionProvider : IExecutionProvider
+internal sealed class PooledSqlExecutionProvider : IExecutionProvider
 {
     private readonly string _connectionString;
-    public PooledSqlExecutionProvider(string connectionString) => _connectionString = connectionString;
-    public async Task<ExecutionResult> ExecuteAsync(ProviderPlan plan, ExecutionContext context, CancellationToken cancellationToken = default)
+
+    public PooledSqlExecutionProvider(string connectionString)
+    {
+        _connectionString = connectionString;
+    }
+
+    public async Task<ExecutionResult> ExecuteAsync(ProviderPlan plan, ExecutionContext context,
+        CancellationToken cancellationToken = default)
     {
         await using var connection = new NpgsqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);

@@ -1,9 +1,8 @@
-using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
-using Foundgine.Extensions.GraphQL.HotChocolate;
 using Foundgine.Core.Semantic;
-using Foundgine.Core.Semantic.Results;
 using Foundgine.Core.Semantic.Planning;
+using Foundgine.Core.Semantic.Results;
+using Foundgine.Extensions.GraphQL.HotChocolate;
 
 namespace Foundgine.CoffeeBeanery.BenchmarkApi;
 

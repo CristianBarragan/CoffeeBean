@@ -1,10 +1,8 @@
-using System.Collections.Concurrent;
-
 namespace Foundgine.Core.Semantic.Security.Warrants;
 
 /// <summary>
-/// Records a security compromise rooted at an exact warrant subtree.  Compromise is
-/// monotonic: once an authority node is marked compromised it cannot be restored.
+///     Records a security compromise rooted at an exact warrant subtree.  Compromise is
+///     monotonic: once an authority node is marked compromised it cannot be restored.
 /// </summary>
 public sealed record SecurityWarrantDelegationCompromise(
     string RootWarrantId,
@@ -36,7 +34,9 @@ public interface ISecurityWarrantDelegationCompromiseStore
 public sealed class MemorySecurityWarrantDelegationCompromiseStore
     : ISecurityWarrantDelegationCompromiseStore
 {
-    private readonly ConcurrentDictionary<string, SecurityWarrantDelegationCompromise> _compromises = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, SecurityWarrantDelegationCompromise> _compromises =
+        new(StringComparer.Ordinal);
+
     private long _sequence;
 
     public long CurrentSequence => Interlocked.Read(ref _sequence);
@@ -49,7 +49,8 @@ public sealed class MemorySecurityWarrantDelegationCompromiseStore
     {
         ArgumentNullException.ThrowIfNull(root);
         if (string.IsNullOrWhiteSpace(root.Id) || string.IsNullOrWhiteSpace(root.Digest))
-            throw new InvalidOperationException("A warrant must have an identity and digest before compromise registration.");
+            throw new InvalidOperationException(
+                "A warrant must have an identity and digest before compromise registration.");
         if (compromisedIssuer is null && compromisedKeyId is null)
             throw new ArgumentException("A compromised issuer or key must be supplied.");
 
@@ -76,10 +77,8 @@ public sealed class MemorySecurityWarrantDelegationCompromiseStore
     {
         ArgumentNullException.ThrowIfNull(warrant);
         foreach (var ancestorDigest in warrant.DelegationPath)
-        {
             if (_compromises.Values.Any(x => StringComparer.Ordinal.Equals(x.RootWarrantDigest, ancestorDigest)))
                 return true;
-        }
         return false;
     }
 
@@ -99,16 +98,20 @@ public sealed class MemorySecurityWarrantDelegationCompromiseStore
                 StringComparer.Ordinal.Equals(compromise.CompromisedKeyId, warrant.KeyId))
                 return true;
         }
+
         return false;
     }
 
-    private static string Key(string id, string digest) => id + "\u001f" + digest;
+    private static string Key(string id, string digest)
+    {
+        return id + "\u001f" + digest;
+    }
 }
 
 /// <summary>
-/// Validates that a warrant remains inside an uncompromised delegation subtree.
-/// Compromise is intentionally path-bound: compromising one delegation node does
-/// not invalidate an unrelated sibling branch.
+///     Validates that a warrant remains inside an uncompromised delegation subtree.
+///     Compromise is intentionally path-bound: compromising one delegation node does
+///     not invalidate an unrelated sibling branch.
 /// </summary>
 public static class SecurityWarrantDelegationCompromiseGuard
 {

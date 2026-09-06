@@ -1,11 +1,11 @@
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Records the admissibility proof for a semantic-plan optimization.
-/// An optimization is admissible only when semantic meaning, security
-/// obligations, and authorization binding are preserved. Benefit/cost values
-/// are advisory selection inputs; this proof deliberately does not pretend
-/// that a provider-neutral estimate is a measured execution cost.
+///     Records the admissibility proof for a semantic-plan optimization.
+///     An optimization is admissible only when semantic meaning, security
+///     obligations, and authorization binding are preserved. Benefit/cost values
+///     are advisory selection inputs; this proof deliberately does not pretend
+///     that a provider-neutral estimate is a measured execution cost.
 /// </summary>
 public sealed record PlanOptimizationProof(
     string RuleName,

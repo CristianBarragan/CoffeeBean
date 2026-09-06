@@ -1,32 +1,25 @@
-using System.Text.Json;
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Execution;
-using Foundgine.Core.Execution.Mutation;
 using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Core.Semantic.Mutation;
+using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Providers.Storage.Sql.Mutation;
 using Foundgine.Providers.Storage.Sql.Mutation.Postgres;
-using Npgsql;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-/// PostgreSQL E2E physical proof: the flagship semantic graph is lowered all the
-/// way to PostgreSQL 17. The test is intentionally integration-only and uses
-/// FOUNDGINE_POSTGRES_CONNECTION_STRING so the repository remains runnable in
-/// environments that do not have PostgreSQL installed.
-///
-/// Pipeline proved here:
-/// Semantic graph -> semantic plan -> execution IR -> PostgreSQL batch compiler
-/// -> one physical PostgreSQL statement -> Npgsql -> PostgreSQL 17 -> RETURNING
-/// results -> transaction rollback.
-///
-/// EXPLAIN ANALYZE is executed in a separate rollback-only transaction, with
-/// BUFFERS/WAL/JSON enabled, so this test also emits the first measurement gate
-/// without changing the compiler.
+///     PostgreSQL E2E physical proof: the flagship semantic graph is lowered all the
+///     way to PostgreSQL 17. The test is intentionally integration-only and uses
+///     FOUNDGINE_POSTGRES_CONNECTION_STRING so the repository remains runnable in
+///     environments that do not have PostgreSQL installed.
+///     Pipeline proved here:
+///     Semantic graph -> semantic plan -> execution IR -> PostgreSQL batch compiler
+///     -> one physical PostgreSQL statement -> Npgsql -> PostgreSQL 17 -> RETURNING
+///     results -> transaction rollback.
+///     EXPLAIN ANALYZE is executed in a separate rollback-only transaction, with
+///     BUFFERS/WAL/JSON enabled, so this test also emits the first measurement gate
+///     without changing the compiler.
 /// </summary>
 public sealed class PostgresE2ETests
 {
@@ -324,26 +317,25 @@ public sealed class PostgresE2ETests
         foreach (var node in explain.Nodes.Where(n => n.EstimatedRows > 0 && n.ActualRows >= 0)
                      .OrderByDescending(n => Math.Max(n.ActualRows, 1) / Math.Max(n.EstimatedRows, 1))
                      .Take(5))
-            Console.WriteLine($"POSTGRES_E2E NODE type={node.NodeType} estimated_rows={node.EstimatedRows:F0} actual_rows={node.ActualRows:F0} loops={node.ActualLoops:F0} time_ms={node.ActualTotalTimeMs:F3} sort_method={node.SortMethod ?? "-"} sort_space={node.SortSpaceUsed?.ToString() ?? "-"} sort_space_type={node.SortSpaceType ?? "-"}");
+            Console.WriteLine(
+                $"POSTGRES_E2E NODE type={node.NodeType} estimated_rows={node.EstimatedRows:F0} actual_rows={node.ActualRows:F0} loops={node.ActualLoops:F0} time_ms={node.ActualTotalTimeMs:F3} sort_method={node.SortMethod ?? "-"} sort_space={node.SortSpaceUsed?.ToString() ?? "-"} sort_space_type={node.SortSpaceType ?? "-"}");
 
         Assert.True(explain.ExecutionTimeMs >= 0);
         Assert.True(explain.PlanningTimeMs >= 0);
     }
 
-    private sealed record DbSnapshot(
-        long CustomerCount, long ProfileCount, long AccountCount, long OrderCount, long PaymentCount, long AuditCount);
-
-    private static async Task<DbSnapshot> SnapshotAsync(NpgsqlConnection connection, NpgsqlTransaction? transaction = null)
+    private static async Task<DbSnapshot> SnapshotAsync(NpgsqlConnection connection,
+        NpgsqlTransaction? transaction = null)
     {
         const string sql = """
-            SELECT
-                (SELECT COUNT(*) FROM "Customer"),
-                (SELECT COUNT(*) FROM "Profile"),
-                (SELECT COUNT(*) FROM "Account"),
-                (SELECT COUNT(*) FROM "Order"),
-                (SELECT COUNT(*) FROM "Payment"),
-                (SELECT COUNT(*) FROM "Audit");
-            """;
+                           SELECT
+                               (SELECT COUNT(*) FROM "Customer"),
+                               (SELECT COUNT(*) FROM "Profile"),
+                               (SELECT COUNT(*) FROM "Account"),
+                               (SELECT COUNT(*) FROM "Order"),
+                               (SELECT COUNT(*) FROM "Payment"),
+                               (SELECT COUNT(*) FROM "Audit");
+                           """;
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         await using var reader = await command.ExecuteReaderAsync();
         if (!await reader.ReadAsync())
@@ -364,15 +356,21 @@ public sealed class PostgresE2ETests
         // increasing independent create operations to exercise batch cardinality.
         var selected = new List<SemanticMutationOperation> { baseOperations[0] };
         if (depth >= 2)
-            selected.Add(baseOperations[2] with {
+            selected.Add(baseOperations[2] with
+            {
                 Fields = baseOperations[2].Fields.Select(f => f with
                 {
                     Source = f.Source is null ? null : new SemanticMutationValueReference(0, f.Source.SourceField)
                 }).ToArray(),
-                Dependencies = [new SemanticMutationDependency(0, 1, ComplexSemanticMutationE2ETests.Id, ComplexSemanticMutationE2ETests.CustomerId, ComplexSemanticMutationE2ETests.CustomerAccounts)]
+                Dependencies =
+                [
+                    new SemanticMutationDependency(0, 1, ComplexSemanticMutationE2ETests.Id,
+                        ComplexSemanticMutationE2ETests.CustomerId, ComplexSemanticMutationE2ETests.CustomerAccounts)
+                ]
             });
         if (depth >= 3)
-            selected.Add(baseOperations[4] with {
+            selected.Add(baseOperations[4] with
+            {
                 Fields = baseOperations[4].Fields.Select(f => f with
                 {
                     Source = f.Source is null ? null : new SemanticMutationValueReference(1, f.Source.SourceField)
@@ -395,6 +393,7 @@ public sealed class PostgresE2ETests
             };
             operations.Add(op);
         }
+
         return new SemanticMutationOperationGraph(operations);
     }
 
@@ -470,29 +469,44 @@ public sealed class PostgresE2ETests
         if (type == "Sort") stats.SortCount++;
         if (type.Contains("Materialize", StringComparison.OrdinalIgnoreCase)) stats.MaterializeCount++;
         if (node.TryGetProperty("Plans", out var children))
-            foreach (var child in children.EnumerateArray()) WalkPlan(child, stats);
+            foreach (var child in children.EnumerateArray())
+                WalkPlan(child, stats);
     }
 
+    private sealed record DbSnapshot(
+        long CustomerCount,
+        long ProfileCount,
+        long AccountCount,
+        long OrderCount,
+        long PaymentCount,
+        long AuditCount);
+
     private sealed record PlanNodeStats(
-        string NodeType, double EstimatedRows, double ActualRows, double ActualLoops, double ActualTotalTimeMs,
-        string? SortMethod, long? SortSpaceUsed, string? SortSpaceType);
+        string NodeType,
+        double EstimatedRows,
+        double ActualRows,
+        double ActualLoops,
+        double ActualTotalTimeMs,
+        string? SortMethod,
+        long? SortSpaceUsed,
+        string? SortSpaceType);
 
     private sealed class PlanStats
     {
-        public double PlanningTimeMs;
         public double ExecutionTimeMs;
+        public int MaterializeCount;
+        public double PlanningTimeMs;
+        public long RootActualRows;
+        public long RootPlanRows;
         public long SharedHit;
         public long SharedRead;
         public long SharedWritten;
+        public int SortCount;
         public long TempRead;
         public long TempWritten;
         public long WalBytes;
-        public long WalRecords;
         public long WalFpi;
-        public long RootActualRows;
-        public long RootPlanRows;
-        public int SortCount;
-        public int MaterializeCount;
+        public long WalRecords;
         public HashSet<string> JoinStrategies { get; } = new(StringComparer.Ordinal);
         public List<PlanNodeStats> Nodes { get; } = new();
     }

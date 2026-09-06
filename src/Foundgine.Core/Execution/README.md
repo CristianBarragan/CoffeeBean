@@ -47,7 +47,8 @@
 
 ## Boundary
 
-Providers receive provider-specific plans only after Foundgine has established the required semantic and security obligations. A provider must satisfy the execution/security contract before execution proceeds.
+Providers receive provider-specific plans only after Foundgine has established the required semantic and security
+obligations. A provider must satisfy the execution/security contract before execution proceeds.
 
 This package contains no SQL implementation and no GraphQL/MCP transport implementation.
 

@@ -12,7 +12,9 @@
 
 ## Capability discovery
 
-The MCP surface can expose the semantic capabilities available to the current host/application. Discovery is not authorization: the host still supplies the security execution context, and Foundgine evaluates authorization before execution.
+The MCP surface can expose the semantic capabilities available to the current host/application. Discovery is not
+authorization: the host still supplies the security execution context, and Foundgine evaluates authorization before
+execution.
 
 ## Client workflow
 

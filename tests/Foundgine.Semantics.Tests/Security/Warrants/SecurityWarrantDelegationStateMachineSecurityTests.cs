@@ -1,5 +1,4 @@
 using Foundgine.Core.Semantic.Security.Warrants;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests.Security.Warrants;
 
@@ -73,8 +72,30 @@ public sealed class SecurityWarrantDelegationStateMachineSecurityTests
         using var gate = new Barrier(3);
         var errors = new System.Collections.Concurrent.ConcurrentBag<Exception>();
 
-        var revoke = Task.Run(() => { gate.SignalAndWait(); try { machine.Revoke(warrant); } catch (Exception e) { errors.Add(e); } });
-        var rotate = Task.Run(() => { gate.SignalAndWait(); try { machine.RotateKey(warrant, "key-v2"); } catch (Exception e) { errors.Add(e); } });
+        var revoke = Task.Run(() =>
+        {
+            gate.SignalAndWait();
+            try
+            {
+                machine.Revoke(warrant);
+            }
+            catch (Exception e)
+            {
+                errors.Add(e);
+            }
+        });
+        var rotate = Task.Run(() =>
+        {
+            gate.SignalAndWait();
+            try
+            {
+                machine.RotateKey(warrant, "key-v2");
+            }
+            catch (Exception e)
+            {
+                errors.Add(e);
+            }
+        });
         gate.SignalAndWait();
         await Task.WhenAll(revoke, rotate);
 
@@ -86,9 +107,13 @@ public sealed class SecurityWarrantDelegationStateMachineSecurityTests
             Assert.Contains("Illegal delegation state transition", errors.Single().Message, StringComparison.Ordinal);
     }
 
-    private static SecurityWarrant Create() => new(
-        "root", "root-issuer", "agent-a", "foundgine",
-        [new CapabilityGrant("Customer.read", "read", ["customer/*"])],
-        new SecurityWarrantConstraints(allowedTenants: ["tenant-1"], resourceScopes: ["customer/*"], maxResults: 100),
-        DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddHours(1), "nonce-root", "key-v1", null, []);
+    private static SecurityWarrant Create()
+    {
+        return new(
+            "root", "root-issuer", "agent-a", "foundgine",
+            [new CapabilityGrant("Customer.read", "read", ["customer/*"])],
+            new SecurityWarrantConstraints(allowedTenants: ["tenant-1"], resourceScopes: ["customer/*"],
+                maxResults: 100),
+            DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddHours(1), "nonce-root", "key-v1", null, []);
+    }
 }

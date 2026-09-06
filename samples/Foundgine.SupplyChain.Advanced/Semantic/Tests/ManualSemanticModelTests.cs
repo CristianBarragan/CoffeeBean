@@ -1,12 +1,10 @@
-using Foundgine.Core.Semantic;
 using Foundgine.SupplyChain.Advanced.Semantics;
-using Xunit;
 
 namespace Foundgine.SupplyChain.Advanced.Tests;
 
 /// <summary>
-/// The manual model is deliberately a tiny semantic overlay, not a second copy of
-/// the complete metadata-discovered Supply Chain schema.
+///     The manual model is deliberately a tiny semantic overlay, not a second copy of
+///     the complete metadata-discovered Supply Chain schema.
 /// </summary>
 public sealed class ManualSemanticModelTests
 {

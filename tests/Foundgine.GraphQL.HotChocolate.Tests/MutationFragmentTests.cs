@@ -1,9 +1,7 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Extensions.GraphQL.HotChocolate;
+using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic.Planning.Mutation;
-using Foundgine.Core.Semantic;
-using Xunit;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
@@ -16,17 +14,17 @@ public sealed class MutationFragmentTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var intent = adapter.Adapt("""
-            mutation CreateCustomer {
-              createCustomer(input: { name: "Ada" }) {
-                ...CustomerFields
-              }
-            }
+                                   mutation CreateCustomer {
+                                     createCustomer(input: { name: "Ada" }) {
+                                       ...CustomerFields
+                                     }
+                                   }
 
-            fragment CustomerFields on Customer {
-              id
-              name
-            }
-            """);
+                                   fragment CustomerFields on Customer {
+                                     id
+                                     name
+                                   }
+                                   """);
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Equal([new FieldId(1), new FieldId(2)], mutation.ReturnFields);
@@ -39,18 +37,18 @@ public sealed class MutationFragmentTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var intent = adapter.Adapt("""
-            mutation CreateCustomer {
-              createCustomer(input: { name: "Ada" }) {
-                id
-                ...CustomerFields
-              }
-            }
+                                   mutation CreateCustomer {
+                                     createCustomer(input: { name: "Ada" }) {
+                                       id
+                                       ...CustomerFields
+                                     }
+                                   }
 
-            fragment CustomerFields on Customer {
-              id
-              name
-            }
-            """);
+                                   fragment CustomerFields on Customer {
+                                     id
+                                     name
+                                   }
+                                   """);
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Equal([new FieldId(1), new FieldId(2)], mutation.ReturnFields);
@@ -63,12 +61,12 @@ public sealed class MutationFragmentTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var ex = Assert.Throws<InvalidOperationException>(() => adapter.Adapt("""
-            mutation CreateCustomer {
-              createCustomer(input: { name: "Ada" }) { ...A }
-            }
-            fragment A on Customer { ...B }
-            fragment B on Customer { ...A }
-            """));
+                                                                              mutation CreateCustomer {
+                                                                                createCustomer(input: { name: "Ada" }) { ...A }
+                                                                              }
+                                                                              fragment A on Customer { ...B }
+                                                                              fragment B on Customer { ...A }
+                                                                              """));
 
         Assert.Contains("cycle", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -80,10 +78,10 @@ public sealed class MutationFragmentTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var ex = Assert.Throws<InvalidOperationException>(() => adapter.Adapt("""
-            mutation CreateCustomer {
-              createCustomer(input: { name: "Ada" }) { ...MissingFields }
-            }
-            """));
+                                                                              mutation CreateCustomer {
+                                                                                createCustomer(input: { name: "Ada" }) { ...MissingFields }
+                                                                              }
+                                                                              """));
 
         Assert.Contains("MissingFields", ex.Message);
         Assert.Contains("not found", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -96,11 +94,11 @@ public sealed class MutationFragmentTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var ex = Assert.Throws<InvalidOperationException>(() => adapter.Adapt("""
-            mutation CreateCustomer {
-              createCustomer(input: { name: "Ada" }) { ...AccountFields }
-            }
-            fragment AccountFields on Account { id }
-            """));
+                                                                              mutation CreateCustomer {
+                                                                                createCustomer(input: { name: "Ada" }) { ...AccountFields }
+                                                                              }
+                                                                              fragment AccountFields on Account { id }
+                                                                              """));
 
         Assert.Contains("cannot be applied", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -112,12 +110,12 @@ public sealed class MutationFragmentTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var intent = adapter.Adapt("""
-            mutation CreateCustomer {
-              createCustomer(input: { name: "Ada" }) {
-                ... on Customer { id name }
-              }
-            }
-            """);
+                                   mutation CreateCustomer {
+                                     createCustomer(input: { name: "Ada" }) {
+                                       ... on Customer { id name }
+                                     }
+                                   }
+                                   """);
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Equal([new FieldId(1), new FieldId(2)], mutation.ReturnFields);
@@ -129,9 +127,11 @@ public sealed class MutationFragmentTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 

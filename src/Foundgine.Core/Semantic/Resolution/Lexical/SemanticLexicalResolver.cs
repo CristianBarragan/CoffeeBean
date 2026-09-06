@@ -1,76 +1,96 @@
 using Foundgine.Core.Abstractions;
-using System.Threading;
 
 namespace Foundgine.Core.Semantic.Resolution;
 
 /// <summary>
-/// Resolves free-form lexical tokens by first generating candidates across
-/// semantic kinds and then selecting a high-scoring path constrained by the
-/// frozen semantic graph. Retrieval scores order hypotheses; graph topology
-/// determines whether a hypothesis is legal.
+///     Resolves free-form lexical tokens by first generating candidates across
+///     semantic kinds and then selecting a high-scoring path constrained by the
+///     frozen semantic graph. Retrieval scores order hypotheses; graph topology
+///     determines whether a hypothesis is legal.
 /// </summary>
 public sealed class SemanticLexicalResolver
 {
-    private readonly SemanticContractSnapshot _contract;
-    private readonly ISemanticLexicalCandidateSource _source;
-    private readonly int _candidateLimit;
-    private readonly int _maxBridgeHops;
     private readonly double _ambiguityThreshold;
-    private readonly int _maxTokens;
+    private readonly int _candidateLimit;
+    private readonly SemanticContractSnapshot _contract;
+    private readonly int _maxBridgeHops;
     private readonly int _maxPathsExplored;
-    private readonly TimeSpan _timeout;
-    private readonly TimeSpan _retrievalTimeout;
+    private readonly int _maxTokens;
     private readonly int? _minimumAliasWeight;
+    private readonly TimeSpan _retrievalTimeout;
+    private readonly ISemanticLexicalCandidateSource _source;
+    private readonly TimeSpan _timeout;
 
     /// <param name="contract">The frozen semantic contract to resolve against.</param>
     /// <param name="source">The candidate retrieval boundary (Elasticsearch, pgvector, or a composite).</param>
-    /// <param name="candidateLimit">Maximum candidates retained per token across all semantic kinds. The
-    /// candidate source is queried once per token and the resulting candidates are normalized and then
-    /// truncated to this total limit before graph search.</param>
-    /// <param name="maxBridgeHops">Maximum relationship hops the bridging BFS will traverse to connect a
-    /// candidate back to the current entity. Bounds graph depth per transition.</param>
-    /// <param name="ambiguityThreshold">Interpretation-score gap below which two competing interpretations
-    /// are considered within the ambiguity margin and force <see cref="GroundingOutcome.RequiresClarification"/>.</param>
-    /// <param name="maxTokens">Maximum tokens an expression may contain. Checked before any retrieval or
-    /// search runs, since token count is the dominant term in the search's worst-case branching
-    /// (<c>candidateLimit ^ tokenCount</c>, before graph-legality pruning). Expressions over this limit
-    /// return <see cref="GroundingOutcome.BudgetExceeded"/> immediately.</param>
-    /// <param name="maxPathsExplored">Maximum total search-work units (DFS node expansions plus bridging
-    /// BFS dequeues, combined) across one see cref="Ground" call. This is the primary defence against
-    /// the combinatorial blow-up of <c>tokens times; semantic kinds times; candidates times; paths
-    /// times; backtracking</c> — it bounds total work regardless of how permissive the candidate source
-    /// or how connected the graph is. Backtracking branches are not budgeted separately: every backtrack
-    /// is a DFS re-entry and consumes this same shared limit.</param>
-    /// <param name="timeout">Wall-clock ceiling for the in-memory graph search portion of one
-    /// see cref="Ground" call, independent of the node-count budget. This clock starts only after
-    /// candidate retrieval has completed; see <paramref name="retrievalTimeout"/> for the stage before it.
-    /// Defaults to 250ms; pass a longer value for large contracts.</param>
-    /// <param name="minimumAliasWeight">Optional minimum declared alias weight required to commit an
-    /// interpretation. When null, weighted aliases remain diagnostic evidence only. When configured,
-    /// retrieval scores still rank interpretations, but a uniquely selected interpretation containing
-    /// a declared alias below this threshold cannot be committed and returns
-    /// <see cref="GroundingOutcome.RequiresClarification"/>. This is a commitment policy, not an
-    /// authorization decision.</param>
-    /// <param name="retrievalTimeout">Wall-clock ceiling for candidate retrieval across all tokens in one
-    /// <see>
-    ///     <cref>Ground</cref>
-    /// </see>
-    ///     call. Retrieval (Elasticsearch, pgvector, or any I/O-backed
-    /// <see cref="ISemanticLexicalCandidateSource"/>) happens entirely before the in-memory search budget
-    /// starts counting, so without this bound a slow or hung candidate source could block <see>
+    /// <param name="candidateLimit">
+    ///     Maximum candidates retained per token across all semantic kinds. The
+    ///     candidate source is queried once per token and the resulting candidates are normalized and then
+    ///     truncated to this total limit before graph search.
+    /// </param>
+    /// <param name="maxBridgeHops">
+    ///     Maximum relationship hops the bridging BFS will traverse to connect a
+    ///     candidate back to the current entity. Bounds graph depth per transition.
+    /// </param>
+    /// <param name="ambiguityThreshold">
+    ///     Interpretation-score gap below which two competing interpretations
+    ///     are considered within the ambiguity margin and force <see cref="GroundingOutcome.RequiresClarification" />.
+    /// </param>
+    /// <param name="maxTokens">
+    ///     Maximum tokens an expression may contain. Checked before any retrieval or
+    ///     search runs, since token count is the dominant term in the search's worst-case branching
+    ///     (<c>candidateLimit ^ tokenCount</c>, before graph-legality pruning). Expressions over this limit
+    ///     return <see cref="GroundingOutcome.BudgetExceeded" /> immediately.
+    /// </param>
+    /// <param name="maxPathsExplored">
+    ///     Maximum total search-work units (DFS node expansions plus bridging
+    ///     BFS dequeues, combined) across one see cref="Ground" call. This is the primary defence against
+    ///     the combinatorial blow-up of
+    ///     <c>
+    ///         tokens times; semantic kinds times; candidates times; paths
+    ///         times; backtracking
+    ///     </c>
+    ///     — it bounds total work regardless of how permissive the candidate source
+    ///     or how connected the graph is. Backtracking branches are not budgeted separately: every backtrack
+    ///     is a DFS re-entry and consumes this same shared limit.
+    /// </param>
+    /// <param name="timeout">
+    ///     Wall-clock ceiling for the in-memory graph search portion of one
+    ///     see cref="Ground" call, independent of the node-count budget. This clock starts only after
+    ///     candidate retrieval has completed; see <paramref name="retrievalTimeout" /> for the stage before it.
+    ///     Defaults to 250ms; pass a longer value for large contracts.
+    /// </param>
+    /// <param name="minimumAliasWeight">
+    ///     Optional minimum declared alias weight required to commit an
+    ///     interpretation. When null, weighted aliases remain diagnostic evidence only. When configured,
+    ///     retrieval scores still rank interpretations, but a uniquely selected interpretation containing
+    ///     a declared alias below this threshold cannot be committed and returns
+    ///     <see cref="GroundingOutcome.RequiresClarification" />. This is a commitment policy, not an
+    ///     authorization decision.
+    /// </param>
+    /// <param name="retrievalTimeout">
+    ///     Wall-clock ceiling for candidate retrieval across all tokens in one
+    ///     <see>
     ///         <cref>Ground</cref>
     ///     </see>
-    ///     indefinitely regardless of how aggressively <paramref name="maxPathsExplored"/> or <paramref name="timeout"/>
-    /// are configured. Defaults to 2 seconds — looser than the in-memory search timeout, since retrieval
-    /// legitimately involves network or database I/O.</param>
+    ///     call. Retrieval (Elasticsearch, pgvector, or any I/O-backed
+    ///     <see cref="ISemanticLexicalCandidateSource" />) happens entirely before the in-memory search budget
+    ///     starts counting, so without this bound a slow or hung candidate source could block
+    ///     <see>
+    ///         <cref>Ground</cref>
+    ///     </see>
+    ///     indefinitely regardless of how aggressively <paramref name="maxPathsExplored" /> or <paramref name="timeout" />
+    ///     are configured. Defaults to 2 seconds — looser than the in-memory search timeout, since retrieval
+    ///     legitimately involves network or database I/O.
+    /// </param>
     /// <remarks>
-    /// Every limit here fails closed: hitting <paramref name="maxTokens"/>, <paramref name="maxPathsExplored"/>,
-    /// <paramref name="timeout"/>, <paramref name="retrievalTimeout"/>, or a cancelled
-    /// <see cref="CancellationToken"/> produces <see cref="GroundingOutcome.BudgetExceeded"/> with
-    /// <c>Committed = null</c>, never a best-effort interpretation from a search that could not prove it was
-    /// the only legal one. Whatever interpretations a search-time limit had already constructed are still
-    /// exposed diagnostically via <see cref="GroundingDecision.PartialInterpretationsAtCutoff"/> — for
-    /// logging and budget tuning only, never for execution.
+    ///     Every limit here fails closed: hitting <paramref name="maxTokens" />, <paramref name="maxPathsExplored" />,
+    ///     <paramref name="timeout" />, <paramref name="retrievalTimeout" />, or a cancelled
+    ///     <see cref="CancellationToken" /> produces <see cref="GroundingOutcome.BudgetExceeded" /> with
+    ///     <c>Committed = null</c>, never a best-effort interpretation from a search that could not prove it was
+    ///     the only legal one. Whatever interpretations a search-time limit had already constructed are still
+    ///     exposed diagnostically via <see cref="GroundingDecision.PartialInterpretationsAtCutoff" /> — for
+    ///     logging and budget tuning only, never for execution.
     /// </remarks>
     public SemanticLexicalResolver(
         SemanticContractSnapshot contract,
@@ -92,8 +112,10 @@ public sealed class SemanticLexicalResolver
         if (maxTokens is < 1 or > 256) throw new ArgumentOutOfRangeException(nameof(maxTokens));
         if (maxPathsExplored is < 1 or > 1_000_000) throw new ArgumentOutOfRangeException(nameof(maxPathsExplored));
         if (timeout is { } t && t <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeout));
-        if (retrievalTimeout is { } rt && rt <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(retrievalTimeout));
-        if (minimumAliasWeight is { } maw && maw is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(minimumAliasWeight));
+        if (retrievalTimeout is { } rt && rt <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(retrievalTimeout));
+        if (minimumAliasWeight is { } maw && maw is < 1 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(minimumAliasWeight));
         _candidateLimit = candidateLimit;
         _maxBridgeHops = maxBridgeHops;
         _ambiguityThreshold = ambiguityThreshold;
@@ -105,25 +127,28 @@ public sealed class SemanticLexicalResolver
     }
 
     /// <summary>
-    /// Resolves an expression to its single best-scoring semantic path.
-    /// Kept for callers that only need "the answer" and are prepared to treat
-    /// <see cref="SemanticLexicalResolutionOutcome.Ambiguous"/> as a signal to
-    /// stop. Callers that need to inspect *why* it was ambiguous, or what the
-    /// competing meanings actually were, should call <see>
-    ///     <cref>Ground</cref>
-    /// </see>
-    /// instead —
-    /// this method only tells you a tie existed, not what it was between.
+    ///     Resolves an expression to its single best-scoring semantic path.
+    ///     Kept for callers that only need "the answer" and are prepared to treat
+    ///     <see cref="SemanticLexicalResolutionOutcome.Ambiguous" /> as a signal to
+    ///     stop. Callers that need to inspect *why* it was ambiguous, or what the
+    ///     competing meanings actually were, should call
+    ///     <see>
+    ///         <cref>Ground</cref>
+    ///     </see>
+    ///     instead —
+    ///     this method only tells you a tie existed, not what it was between.
     /// </summary>
     public SemanticLexicalResolution Resolve(string expression, CancellationToken cancellationToken = default)
     {
         var decision = Ground(expression, cancellationToken);
 
         if (decision.Outcome == GroundingOutcome.Unresolved)
-            return new(SemanticLexicalResolutionOutcome.Unresolved, [], 0, null, decision.Reason, decision.RootCandidates);
+            return new(SemanticLexicalResolutionOutcome.Unresolved, [], 0, null, decision.Reason,
+                decision.RootCandidates);
 
         if (decision.Outcome == GroundingOutcome.BudgetExceeded)
-            return new(SemanticLexicalResolutionOutcome.BudgetExceeded, [], 0, null, decision.Reason, decision.RootCandidates);
+            return new(SemanticLexicalResolutionOutcome.BudgetExceeded, [], 0, null, decision.Reason,
+                decision.RootCandidates);
 
         var leading = decision.Committed ?? decision.CompetingInterpretations[0];
         var outcome = decision.Outcome == GroundingOutcome.RequiresClarification
@@ -140,18 +165,21 @@ public sealed class SemanticLexicalResolver
     }
 
     /// <summary>
-    /// Grounds an expression against the semantic contract and returns every
-    /// structurally valid, semantically distinct interpretation — not just the
-    /// top-ranked one. Interpretations that reach the same relationship, field,
-    /// or value via different bridging routes are treated as one meaning (the
-    /// route is a retrieval/graph artifact, not part of what the user meant).
-    /// Interpretations that map a token onto a different field, value,
-    /// relationship, or root entity are treated as competing meanings: if two
-    /// or more of those remain within <c>ambiguityThreshold</c> interpretation-score
-    /// separation of each other, Foundgine reports <see cref="GroundingOutcome.RequiresClarification"/>
-    /// instead of committing to whichever one happened to score highest.
+    ///     Grounds an expression against the semantic contract and returns every
+    ///     structurally valid, semantically distinct interpretation — not just the
+    ///     top-ranked one. Interpretations that reach the same relationship, field,
+    ///     or value via different bridging routes are treated as one meaning (the
+    ///     route is a retrieval/graph artifact, not part of what the user meant).
+    ///     Interpretations that map a token onto a different field, value,
+    ///     relationship, or root entity are treated as competing meanings: if two
+    ///     or more of those remain within <c>ambiguityThreshold</c> interpretation-score
+    ///     separation of each other, Foundgine reports <see cref="GroundingOutcome.RequiresClarification" />
+    ///     instead of committing to whichever one happened to score highest.
     /// </summary>
-    public GroundingDecision Ground(string expression) => Ground(expression, CancellationToken.None);
+    public GroundingDecision Ground(string expression)
+    {
+        return Ground(expression, CancellationToken.None);
+    }
 
     public GroundingDecision Ground(string expression, CancellationToken cancellationToken)
     {
@@ -368,7 +396,6 @@ public sealed class SemanticLexicalResolver
         // evidence to commit?" Weight never changes the ranking itself.
         if (_minimumAliasWeight is { } minimumAliasWeight &&
             best.EffectiveAliasEvidence.Status == AliasEvidenceStatus.Insufficient)
-        {
             return new(
                 expression,
                 GroundingOutcome.RequiresClarification,
@@ -379,14 +406,12 @@ public sealed class SemanticLexicalResolver
                 GroundingBudgetLimit.None,
                 null,
                 best.EffectiveAliasEvidence);
-        }
 
         var withinAmbiguityMargin = interpretations
             .Where(x => Math.Abs(x.InterpretationScore - best.InterpretationScore) < _ambiguityThreshold)
             .ToArray();
 
         if (withinAmbiguityMargin.Length <= 1)
-        {
             return new(
                 expression,
                 GroundingOutcome.Committed,
@@ -399,7 +424,6 @@ public sealed class SemanticLexicalResolver
                 GroundingBudgetLimit.None,
                 null,
                 best.EffectiveAliasEvidence);
-        }
 
         return new(
             expression,
@@ -428,47 +452,61 @@ public sealed class SemanticLexicalResolver
             AliasInterpretationEvidence.From(aliasEvidence));
     }
 
-    /// <summary>Identifies what an interpretation means — the ordered mapping
-    /// to canonical contract identities — independent of caller wording and of
-    /// which bridging route the graph search used to get there. Aliases and
-    /// canonical spellings must therefore produce the same signature. Two paths
-    /// with the same signature are the same interpretation.</summary>
-    private static string Signature(IReadOnlyList<SemanticLexicalStep> steps) =>
-        string.Join(
+    /// <summary>
+    ///     Identifies what an interpretation means — the ordered mapping
+    ///     to canonical contract identities — independent of caller wording and of
+    ///     which bridging route the graph search used to get there. Aliases and
+    ///     canonical spellings must therefore produce the same signature. Two paths
+    ///     with the same signature are the same interpretation.
+    /// </summary>
+    private static string Signature(IReadOnlyList<SemanticLexicalStep> steps)
+    {
+        return string.Join(
             "|",
             steps.Select(s =>
                 $"{MeaningKind(s.Candidate.Kind)}:{s.Candidate.CanonicalName}:{s.Candidate.EntityId}:{s.Candidate.FieldId}:{s.Candidate.RelationshipId}:{s.Candidate.Value}"));
+    }
 
-    /// <summary>Returns the semantic identity represented by a retrieval
-    /// candidate. Entity and Node are intentionally the same identity because
-    /// the lexicon contains both a semantic entity document and a graph-node
-    /// document for the same declared entity. The remaining identity fields
-    /// distinguish genuinely different meanings.</summary>
-    private static string SemanticIdentityKey(SemanticLexicalCandidate candidate) =>
-        $"{MeaningKind(candidate.Kind)}:{candidate.CanonicalName}:{candidate.EntityId}:{candidate.FieldId}:{candidate.RelationshipId}:{candidate.Value}";
+    /// <summary>
+    ///     Returns the semantic identity represented by a retrieval
+    ///     candidate. Entity and Node are intentionally the same identity because
+    ///     the lexicon contains both a semantic entity document and a graph-node
+    ///     document for the same declared entity. The remaining identity fields
+    ///     distinguish genuinely different meanings.
+    /// </summary>
+    private static string SemanticIdentityKey(SemanticLexicalCandidate candidate)
+    {
+        return
+            $"{MeaningKind(candidate.Kind)}:{candidate.CanonicalName}:{candidate.EntityId}:{candidate.FieldId}:{candidate.RelationshipId}:{candidate.Value}";
+    }
 
-    private static int CandidateKindPreference(SemanticLexicalCandidateKind kind) =>
-        kind switch
+    private static int CandidateKindPreference(SemanticLexicalCandidateKind kind)
+    {
+        return kind switch
         {
             SemanticLexicalCandidateKind.Entity => 0,
             SemanticLexicalCandidateKind.Node => 1,
             _ => 2
         };
+    }
 
     /// <summary>
-    /// Normalizes retrieval-only representations that carry the same semantic
-    /// identity. An Entity lexicon document and its graph Node document are two
-    /// ways to retrieve the same declared entity, not two competing meanings.
-    /// Keeping that implementation detail in the ambiguity signature makes an
-    /// exact canonical name (and every alias of it) spuriously ambiguous.
+    ///     Normalizes retrieval-only representations that carry the same semantic
+    ///     identity. An Entity lexicon document and its graph Node document are two
+    ///     ways to retrieve the same declared entity, not two competing meanings.
+    ///     Keeping that implementation detail in the ambiguity signature makes an
+    ///     exact canonical name (and every alias of it) spuriously ambiguous.
     /// </summary>
-    private static SemanticLexicalCandidateKind MeaningKind(SemanticLexicalCandidateKind kind) =>
-        kind == SemanticLexicalCandidateKind.Node
+    private static SemanticLexicalCandidateKind MeaningKind(SemanticLexicalCandidateKind kind)
+    {
+        return kind == SemanticLexicalCandidateKind.Node
             ? SemanticLexicalCandidateKind.Entity
             : kind;
+    }
 
-    /// <summary>Returns the ranked candidate matrix used by the resolver.
-    /// Each token is queried once across all semantic kinds.
+    /// <summary>
+    ///     Returns the ranked candidate matrix used by the resolver.
+    ///     Each token is queried once across all semantic kinds.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<SemanticLexicalCandidate>> GetCandidates(string expression)
     {
@@ -479,28 +517,32 @@ public sealed class SemanticLexicalResolver
         return GetCandidates(Tokenize(expression), retrievalCts.Token, System.Diagnostics.Stopwatch.StartNew());
     }
 
-    /// <summary>Retrieves candidates for every token, bounded by
-    /// <see cref="_retrievalTimeout"/> and <paramref name="cancellationToken"/>.
-    /// This runs entirely before the in-memory search's <see cref="SearchBudget"/>
-    /// is constructed, so it needs its own independent bound — otherwise a slow
-    /// or hung candidate source could block <see>
-    ///     <cref>Ground</cref>
-    /// </see>
-    /// indefinitely regardless of how the search-time limits are configured. The resolver shares one
-    /// retrieval deadline across all token and compact-fallback lookups.</summary>
+    /// <summary>
+    ///     Retrieves candidates for every token, bounded by
+    ///     <see cref="_retrievalTimeout" /> and <paramref name="cancellationToken" />.
+    ///     This runs entirely before the in-memory search's <see cref="SearchBudget" />
+    ///     is constructed, so it needs its own independent bound — otherwise a slow
+    ///     or hung candidate source could block
+    ///     <see>
+    ///         <cref>Ground</cref>
+    ///     </see>
+    ///     indefinitely regardless of how the search-time limits are configured. The resolver shares one
+    ///     retrieval deadline across all token and compact-fallback lookups.
+    /// </summary>
     /// <param name="tokens">The lexical tokens to retrieve candidates for.</param>
     /// <param name="cancellationToken">Token observed between and after individual retrieval calls.</param>
     /// <param name="stopwatch">The shared clock the retrieval deadline is measured against.</param>
     /// <param name="stopOnFirstEmpty">
-    /// When <c>true</c>, retrieval stops as soon as any token comes back with
-    /// no candidates instead of continuing through the remaining tokens. The
-    /// caller (the initial per-token pass in <see>
-    ///     <cref>Ground</cref>
-    /// </see>
-    /// ) falls back to a single compact-token lookup whenever *any* token is
-    /// empty, so querying the rest of the tokens individually first would
-    /// only spend shared retrieval budget on results that are about to be
-    /// discarded — budget the compact-token fallback needs instead.
+    ///     When <c>true</c>, retrieval stops as soon as any token comes back with
+    ///     no candidates instead of continuing through the remaining tokens. The
+    ///     caller (the initial per-token pass in
+    ///     <see>
+    ///         <cref>Ground</cref>
+    ///     </see>
+    ///     ) falls back to a single compact-token lookup whenever *any* token is
+    ///     empty, so querying the rest of the tokens individually first would
+    ///     only spend shared retrieval budget on results that are about to be
+    ///     discarded — budget the compact-token fallback needs instead.
     /// </param>
     private IReadOnlyDictionary<string, IReadOnlyList<SemanticLexicalCandidate>> GetCandidates(
         IReadOnlyList<string> tokens,
@@ -555,7 +597,7 @@ public sealed class SemanticLexicalResolver
             // remain ambiguity-aware and are not affected by this preference.
             var exactEntityRoots = candidates
                 .Where(x =>
-                    (x.Kind is SemanticLexicalCandidateKind.Entity or SemanticLexicalCandidateKind.Node) &&
+                    x.Kind is SemanticLexicalCandidateKind.Entity or SemanticLexicalCandidateKind.Node &&
                     string.Equals(x.CanonicalName, token, StringComparison.OrdinalIgnoreCase))
                 .ToArray();
 
@@ -620,35 +662,41 @@ public sealed class SemanticLexicalResolver
         {
             SemanticLexicalCandidateKind.Entity or SemanticLexicalCandidateKind.Node
                 when candidate.EntityId is not null && _contract.TryGet(candidate.EntityId.Value, out _) =>
-                    new(candidate.EntityId.Value, candidate.EntityId.Value, [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
+                new(candidate.EntityId.Value, candidate.EntityId.Value,
+                    [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
 
             SemanticLexicalCandidateKind.Relationship
                 when candidate.SourceEntityId is not null && candidate.TargetEntityId is not null &&
                      _contract.TryGet(candidate.SourceEntityId.Value, out _) &&
                      _contract.TryGet(candidate.TargetEntityId.Value, out _) =>
-                    new(candidate.SourceEntityId.Value, candidate.TargetEntityId.Value, [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
+                new(candidate.SourceEntityId.Value, candidate.TargetEntityId.Value,
+                    [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
 
             SemanticLexicalCandidateKind.Traversal
                 when candidate.SourceEntityId is not null && candidate.TargetEntityId is not null &&
                      _contract.TryGet(candidate.SourceEntityId.Value, out _) &&
                      _contract.TryGet(candidate.TargetEntityId.Value, out _) =>
-                    new(candidate.SourceEntityId.Value, candidate.TargetEntityId.Value, [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
+                new(candidate.SourceEntityId.Value, candidate.TargetEntityId.Value,
+                    [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
 
             SemanticLexicalCandidateKind.Field or SemanticLexicalCandidateKind.Value
                 when candidate.EntityId is not null && _contract.TryGet(candidate.EntityId.Value, out _) =>
-                    new(candidate.EntityId.Value, candidate.EntityId.Value, [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
+                new(candidate.EntityId.Value, candidate.EntityId.Value,
+                    [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
 
             _ => null
         };
     }
 
-    private IReadOnlyList<Transition> ResolveTransition(SearchState state, SemanticLexicalCandidate candidate, SearchBudget budget)
+    private IReadOnlyList<Transition> ResolveTransition(SearchState state, SemanticLexicalCandidate candidate,
+        SearchBudget budget)
     {
         var owner = candidate.Kind switch
         {
             SemanticLexicalCandidateKind.Entity or SemanticLexicalCandidateKind.Node => candidate.EntityId,
             SemanticLexicalCandidateKind.Field or SemanticLexicalCandidateKind.Value => candidate.EntityId,
-            SemanticLexicalCandidateKind.Relationship or SemanticLexicalCandidateKind.Traversal => candidate.SourceEntityId,
+            SemanticLexicalCandidateKind.Relationship or SemanticLexicalCandidateKind.Traversal => candidate
+                .SourceEntityId,
             _ => null
         };
 
@@ -668,12 +716,15 @@ public sealed class SemanticLexicalResolver
         return [new(factor, path)];
     }
 
-    /// <summary>Bridging BFS between two entities. Bounded two ways: structurally
-    /// by <paramref name="maxHops"/> (graph depth), and by <paramref name="budget"/>
-    /// (total search work shared with the outer DFS) — a permissive candidate
-    /// source cannot turn a shallow-looking search into unbounded work just
-    /// because the underlying entity graph is densely connected.</summary>
-    private IReadOnlyList<SemanticLexicalCandidate> FindPath(EntityId source, EntityId target, int maxHops, SearchBudget budget)
+    /// <summary>
+    ///     Bridging BFS between two entities. Bounded two ways: structurally
+    ///     by <paramref name="maxHops" /> (graph depth), and by <paramref name="budget" />
+    ///     (total search work shared with the outer DFS) — a permissive candidate
+    ///     source cannot turn a shallow-looking search into unbounded work just
+    ///     because the underlying entity graph is densely connected.
+    /// </summary>
+    private IReadOnlyList<SemanticLexicalCandidate> FindPath(EntityId source, EntityId target, int maxHops,
+        SearchBudget budget)
     {
         if (source == target) return [];
 
@@ -711,11 +762,13 @@ public sealed class SemanticLexicalResolver
         return [];
     }
 
-    private static string[] Tokenize(string expression) =>
-        expression.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+    private static string[] Tokenize(string expression)
+    {
+        return expression.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
             .Select(x => x.Trim(',', '.', ';', ':', '?', '!', '(', ')', '[', ']', '{', '}'))
             .Where(x => x.Length > 0)
             .ToArray();
+    }
 
     private sealed record Transition(double Factor, IReadOnlyList<SemanticLexicalCandidate> BridgingPath);
 
@@ -725,33 +778,39 @@ public sealed class SemanticLexicalResolver
         IReadOnlyList<SemanticLexicalStep> Steps,
         double GraphFactor)
     {
-        public SearchState Add(SemanticLexicalStep step, double factor) =>
-            new(RootEntity, ResolveCurrent(step.Candidate), Steps.Append(step).ToArray(), GraphFactor * factor);
+        public SearchState Add(SemanticLexicalStep step, double factor)
+        {
+            return new SearchState(RootEntity, ResolveCurrent(step.Candidate), Steps.Append(step).ToArray(),
+                GraphFactor * factor);
+        }
 
-        private static EntityId ResolveCurrent(SemanticLexicalCandidate candidate) =>
-            candidate.TargetEntityId
-            ?? candidate.EntityId
-            ?? candidate.SourceEntityId
-            ?? throw new InvalidOperationException("Lexical candidate has no semantic entity context.");
+        private static EntityId ResolveCurrent(SemanticLexicalCandidate candidate)
+        {
+            return candidate.TargetEntityId
+                   ?? candidate.EntityId
+                   ?? candidate.SourceEntityId
+                   ?? throw new InvalidOperationException("Lexical candidate has no semantic entity context.");
+        }
     }
 
     /// <summary>
-    /// Tracks total search work across one <see>
-    ///     <cref>Ground</cref>
-    /// </see>
-    /// call so the
-    /// combined DFS (over tokens/candidates) and bridging BFS (over graph
-    /// hops) share a single resource ceiling. Once any limit is hit the
-    /// budget latches <see cref="Exceeded"/> permanently for that call —
-    /// callers must stop expanding and unwind rather than keep searching,
-    /// since a search that stopped early cannot prove it enumerated every
-    /// legal interpretation.
+    ///     Tracks total search work across one
+    ///     <see>
+    ///         <cref>Ground</cref>
+    ///     </see>
+    ///     call so the
+    ///     combined DFS (over tokens/candidates) and bridging BFS (over graph
+    ///     hops) share a single resource ceiling. Once any limit is hit the
+    ///     budget latches <see cref="Exceeded" /> permanently for that call —
+    ///     callers must stop expanding and unwind rather than keep searching,
+    ///     since a search that stopped early cannot prove it enumerated every
+    ///     legal interpretation.
     /// </summary>
     private sealed class SearchBudget
     {
-        private readonly int _maxNodes;
-        private readonly TimeSpan _maxElapsed;
         private readonly CancellationToken _cancellationToken;
+        private readonly TimeSpan _maxElapsed;
+        private readonly int _maxNodes;
         private readonly System.Diagnostics.Stopwatch _stopwatch = System.Diagnostics.Stopwatch.StartNew();
         private int _nodesVisited;
 
@@ -766,14 +825,16 @@ public sealed class SemanticLexicalResolver
 
         public GroundingBudgetLimit LimitHit { get; private set; } = GroundingBudgetLimit.None;
 
-        /// <summary>Call once per unit of search work (one DFS node expansion,
-        /// one BFS dequeue). Returns true the moment any limit has fired —
-        /// including on every subsequent call for the rest of this
-        /// <see>
-        ///     <cref>Ground</cref>
-        /// </see>
-        /// invocation — so callers can bail out
-        /// immediately instead of finishing the current loop.</summary>
+        /// <summary>
+        ///     Call once per unit of search work (one DFS node expansion,
+        ///     one BFS dequeue). Returns true the moment any limit has fired —
+        ///     including on every subsequent call for the rest of this
+        ///     <see>
+        ///         <cref>Ground</cref>
+        ///     </see>
+        ///     invocation — so callers can bail out
+        ///     immediately instead of finishing the current loop.
+        /// </summary>
         public bool Tick()
         {
             if (Exceeded)
@@ -805,10 +866,13 @@ public sealed class SemanticLexicalResolver
     }
 }
 
-/// <summary>Thrown internally when candidate retrieval for a single token
-/// exceeds the configured retrieval timeout. Caught at the <see cref="SemanticLexicalResolver.Ground(string, CancellationToken)"/>
-/// boundary and translated into a fail-closed <see cref="GroundingOutcome.BudgetExceeded"/>
-/// result rather than propagated to the caller as an exception.</summary>
+/// <summary>
+///     Thrown internally when candidate retrieval for a single token
+///     exceeds the configured retrieval timeout. Caught at the
+///     <see cref="SemanticLexicalResolver.Ground(string, CancellationToken)" />
+///     boundary and translated into a fail-closed <see cref="GroundingOutcome.BudgetExceeded" />
+///     result rather than propagated to the caller as an exception.
+/// </summary>
 public sealed class GroundingRetrievalTimeoutException(string token, TimeSpan elapsed) : Exception(
     $"Candidate retrieval for token '{token}' exceeded the retrieval timeout after {elapsed.TotalMilliseconds:0}ms.")
 {

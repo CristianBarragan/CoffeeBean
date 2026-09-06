@@ -1,14 +1,13 @@
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Query;
 
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Assigns a deterministic physical traversal order to sibling relationship
-/// nodes. The logical child collection is not reordered, so result shaping and
-/// requested field order remain unchanged. Providers may use the order when
-/// constructing an execution strategy, subject to their own semantic and
-/// security conformance checks.
+///     Assigns a deterministic physical traversal order to sibling relationship
+///     nodes. The logical child collection is not reordered, so result shaping and
+///     requested field order remain unchanged. Providers may use the order when
+///     constructing an execution strategy, subject to their own semantic and
+///     security conformance checks.
 /// </summary>
 public sealed class RelationshipJoinOrderingRule : IPlanRewriteRule
 {

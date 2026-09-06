@@ -4,9 +4,9 @@ using Foundgine.Core.Semantic.Metadata;
 namespace Foundgine.Providers.Storage.Sql.Query;
 
 /// <summary>
-/// Lowers the small AOT authorization predicate IR into provider-neutral SQL
-/// fragments. Context values remain parameterized and are resolved only at
-/// execution time.
+///     Lowers the small AOT authorization predicate IR into provider-neutral SQL
+///     fragments. Context values remain parameterized and are resolved only at
+///     execution time.
 /// </summary>
 internal static class SqlAuthorizationWriter
 {
@@ -29,23 +29,30 @@ internal static class SqlAuthorizationWriter
         EntityMetadata resource,
         string resourceAlias,
         ICollection<SqlParameterBinding> parameters,
-        ref int counter) => node.Kind switch
+        ref int counter)
     {
-        AuthorizationPredicateKind.ContextParameter =>
-            throw new InvalidOperationException("A context parameter must be followed by member access."),
-        AuthorizationPredicateKind.ResourceParameter =>
-            resourceAlias,
-        AuthorizationPredicateKind.Parameter =>
-            throw new NotSupportedException("Untyped authorization parameters are not supported by the SQL provider."),
-        AuthorizationPredicateKind.MemberAccess => WriteMember(node, resource, resourceAlias, parameters, ref counter),
-        AuthorizationPredicateKind.Constant => AddConstant(node.Value, parameters, ref counter),
-        AuthorizationPredicateKind.Equal => Binary(node, "=", resource, resourceAlias, parameters, ref counter),
-        AuthorizationPredicateKind.NotEqual => Binary(node, "<>", resource, resourceAlias, parameters, ref counter),
-        AuthorizationPredicateKind.And => Binary(node, "AND", resource, resourceAlias, parameters, ref counter),
-        AuthorizationPredicateKind.Or => Binary(node, "OR", resource, resourceAlias, parameters, ref counter),
-        AuthorizationPredicateKind.Not => $"NOT ({WriteRequired(node.Left, resource, resourceAlias, parameters, ref counter)})",
-        _ => throw new NotSupportedException($"Authorization predicate '{node.Kind}' is not supported by the SQL provider.")
-    };
+        return node.Kind switch
+        {
+            AuthorizationPredicateKind.ContextParameter =>
+                throw new InvalidOperationException("A context parameter must be followed by member access."),
+            AuthorizationPredicateKind.ResourceParameter =>
+                resourceAlias,
+            AuthorizationPredicateKind.Parameter =>
+                throw new NotSupportedException(
+                    "Untyped authorization parameters are not supported by the SQL provider."),
+            AuthorizationPredicateKind.MemberAccess => WriteMember(node, resource, resourceAlias, parameters,
+                ref counter),
+            AuthorizationPredicateKind.Constant => AddConstant(node.Value, parameters, ref counter),
+            AuthorizationPredicateKind.Equal => Binary(node, "=", resource, resourceAlias, parameters, ref counter),
+            AuthorizationPredicateKind.NotEqual => Binary(node, "<>", resource, resourceAlias, parameters, ref counter),
+            AuthorizationPredicateKind.And => Binary(node, "AND", resource, resourceAlias, parameters, ref counter),
+            AuthorizationPredicateKind.Or => Binary(node, "OR", resource, resourceAlias, parameters, ref counter),
+            AuthorizationPredicateKind.Not =>
+                $"NOT ({WriteRequired(node.Left, resource, resourceAlias, parameters, ref counter)})",
+            _ => throw new NotSupportedException(
+                $"Authorization predicate '{node.Kind}' is not supported by the SQL provider.")
+        };
+    }
 
     private static string WriteMember(
         AuthorizationPredicate node,
@@ -60,11 +67,14 @@ internal static class SqlAuthorizationWriter
             var name = node.Name ?? throw new InvalidOperationException("Resource member has no name.");
             var field = resource.EffectiveFields.FirstOrDefault(x => x.Name == name);
             if (field?.Column is null)
-                throw new InvalidOperationException($"Authorization resource member '{resource.Name}.{name}' has no storage column mapping.");
+                throw new InvalidOperationException(
+                    $"Authorization resource member '{resource.Name}.{name}' has no storage column mapping.");
 
             var column = resource.Columns.FirstOrDefault(x => x.Id == field.Column.ColumnId)
-                ?? throw new InvalidOperationException($"Authorization resource member '{resource.Name}.{name}' references a missing column.");
-            return $"{SqlCompiler.QuoteIdentifier(resourceAlias)}.{SqlCompiler.QuoteIdentifier(column.EffectiveStorageName)}";
+                         ?? throw new InvalidOperationException(
+                             $"Authorization resource member '{resource.Name}.{name}' references a missing column.");
+            return
+                $"{SqlCompiler.QuoteIdentifier(resourceAlias)}.{SqlCompiler.QuoteIdentifier(column.EffectiveStorageName)}";
         }
 
         if (target.Kind == AuthorizationPredicateKind.ContextParameter)
@@ -77,7 +87,8 @@ internal static class SqlAuthorizationWriter
             return "@" + name;
         }
 
-        throw new NotSupportedException("Only direct resource and context member access is supported by the SQL authorization provider.");
+        throw new NotSupportedException(
+            "Only direct resource and context member access is supported by the SQL authorization provider.");
     }
 
     private static string Binary(
@@ -100,25 +111,30 @@ internal static class SqlAuthorizationWriter
         return "@" + name;
     }
 
-    private static object? ParseConstant(string? value) => value switch
+    private static object? ParseConstant(string? value)
     {
-        null => null,
-        "null" => null,
-        "true" => true,
-        "false" => false,
-        _ when int.TryParse(value, out var i) => i,
-        _ when long.TryParse(value, out var l) => l,
-        _ when decimal.TryParse(value, out var d) => d,
-        _ => value
-    };
+        return value switch
+        {
+            null => null,
+            "null" => null,
+            "true" => true,
+            "false" => false,
+            _ when int.TryParse(value, out var i) => i,
+            _ when long.TryParse(value, out var l) => l,
+            _ when decimal.TryParse(value, out var d) => d,
+            _ => value
+        };
+    }
 
     private static string WriteRequired(
         AuthorizationPredicate? node,
         EntityMetadata resource,
         string resourceAlias,
         ICollection<SqlParameterBinding> parameters,
-        ref int counter) =>
-        node is null
+        ref int counter)
+    {
+        return node is null
             ? throw new InvalidOperationException("Authorization predicate node is incomplete.")
             : WriteNode(node, resource, resourceAlias, parameters, ref counter);
+    }
 }

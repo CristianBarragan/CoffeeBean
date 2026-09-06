@@ -1,21 +1,17 @@
-using Foundgine.Core.Semantic.Resolution;
-using Foundgine.SupplyChain.Advanced.Semantics;
 using Foundgine.Providers.Storage.Sql.Retrieval;
-using Npgsql;
-using Xunit;
+using Foundgine.SupplyChain.Advanced.Semantics;
 
 namespace Foundgine.SupplyChain.Advanced.Tests.Retrieval;
 
 /// <summary>
-/// Exercises <see cref="PostgresRetrievalCandidateSource"/> against a real
-/// PostgreSQL instance for the two providers that are enabled by default:
-/// pg_trgm-backed <see cref="RetrievalStrategy.Fuzzy"/> and native
-/// <see cref="RetrievalStrategy.FullText"/> search, seeded with data shaped
-/// like the Supply Chain sample's own Supplier/Product tables.
-///
-/// Opt in with FOUNDGINE_POSTGRES_CONNECTION (or
-/// FOUNDGINE_POSTGRES_CONNECTION_STRING); otherwise every test here is
-/// skipped rather than failed.
+///     Exercises <see cref="PostgresRetrievalCandidateSource" /> against a real
+///     PostgreSQL instance for the two providers that are enabled by default:
+///     pg_trgm-backed <see cref="RetrievalStrategy.Fuzzy" /> and native
+///     <see cref="RetrievalStrategy.FullText" /> search, seeded with data shaped
+///     like the Supply Chain sample's own Supplier/Product tables.
+///     Opt in with FOUNDGINE_POSTGRES_CONNECTION (or
+///     FOUNDGINE_POSTGRES_CONNECTION_STRING); otherwise every test here is
+///     skipped rather than failed.
 /// </summary>
 public sealed class SupplyChainFuzzyAndFullTextRetrievalTests
 {
@@ -139,12 +135,12 @@ public sealed class SupplyChainFuzzyAndFullTextRetrievalTests
     }
 
     /// <summary>
-    /// Recreates a minimal slice of the Supply Chain schema (only the columns
-    /// exercised by approximate retrieval) with the exact storage names the
-    /// generated metadata expects: table names come from each entity's
-    /// <c>StorageName</c>, and column names default to the CLR property name
-    /// when no explicit override is declared - see
-    /// <c>samples/Foundgine.SupplyChain.Advanced/Semantic/Domain/Domain.cs</c>.
+    ///     Recreates a minimal slice of the Supply Chain schema (only the columns
+    ///     exercised by approximate retrieval) with the exact storage names the
+    ///     generated metadata expects: table names come from each entity's
+    ///     <c>StorageName</c>, and column names default to the CLR property name
+    ///     when no explicit override is declared - see
+    ///     <c>samples/Foundgine.SupplyChain.Advanced/Semantic/Domain/Domain.cs</c>.
     /// </summary>
     private static async Task SeedAsync(NpgsqlDataSource dataSource)
     {
@@ -175,7 +171,9 @@ public sealed class SupplyChainFuzzyAndFullTextRetrievalTests
             """;
 
         await using (var command = new NpgsqlCommand(ddl, connection))
+        {
             await command.ExecuteNonQueryAsync();
+        }
 
         const string seed =
             """
@@ -193,6 +191,8 @@ public sealed class SupplyChainFuzzyAndFullTextRetrievalTests
             """;
 
         await using (var command = new NpgsqlCommand(seed, connection))
+        {
             await command.ExecuteNonQueryAsync();
+        }
     }
 }

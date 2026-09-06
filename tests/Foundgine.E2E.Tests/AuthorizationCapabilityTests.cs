@@ -1,12 +1,10 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Security;
-using Foundgine.Core.Semantic.Planning;
-using Foundgine.Core.Semantic;
-using Foundgine.Core.Semantic.Security;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Security;
+using Foundgine.E2E.Tests.Banking;
 using Foundgine.Runtime;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
@@ -18,7 +16,7 @@ public sealed class AuthorizationCapabilityTests
     [Fact]
     public void Public_facade_exposes_policy_scoped_capabilities_for_callers()
     {
-        var model = Banking.BankingSemanticModel.Build();
+        var model = BankingSemanticModel.Build();
         var policy = new ReadOnlyCustomerPolicy();
         var engine = new FoundgineEngine(
             new FoundgineOptions
@@ -30,7 +28,7 @@ public sealed class AuthorizationCapabilityTests
             new TestExecutionProvider());
 
         var capabilities = engine.DescribeCapabilities();
-        var customer = capabilities.Entities.Single(x => x.EntityId == Banking.BankingSemanticModel.Customer);
+        var customer = capabilities.Entities.Single(x => x.EntityId == BankingSemanticModel.Customer);
 
         Assert.Equal(AuthorizationAccess.Allowed, customer.Read.Access);
         Assert.Equal(AuthorizationAccess.Denied, customer.Write.Access);
@@ -40,22 +38,36 @@ public sealed class AuthorizationCapabilityTests
 
     private sealed class ReadOnlyCustomerPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanWriteEntity(EntityId entityId) => false;
-        public override bool CanWriteField(EntityId entityId, FieldId fieldId) => false;
+        public override bool CanWriteEntity(EntityId entityId)
+        {
+            return false;
+        }
+
+        public override bool CanWriteField(EntityId entityId, FieldId fieldId)
+        {
+            return false;
+        }
     }
 
-    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
-        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
-            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
-        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-            new(
+        public ProviderPlan Compile(ExecutionIR ir)
+        {
+            return new TestPlan();
+        }
+
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
+        {
+            return new ProviderSecurityConformanceResult(
                 plan.Provider,
                 ir.RequiredSecurityInvariants,
                 ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
                 Array.Empty<string>());
+        }
 
-        public ProviderPlan Compile(ExecutionIR ir) => new TestPlan();
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
     }
 
     private sealed class TestExecutionProvider : IExecutionProvider
@@ -63,8 +75,10 @@ public sealed class AuthorizationCapabilityTests
         public Task<ExecutionResult> ExecuteAsync(
             ProviderPlan plan,
             ExecutionContext context,
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult(new ExecutionResult(Array.Empty<ExecutionRow>()));
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new ExecutionResult(Array.Empty<ExecutionRow>()));
+        }
     }
 
     private sealed record TestPlan() : ProviderPlan("test");

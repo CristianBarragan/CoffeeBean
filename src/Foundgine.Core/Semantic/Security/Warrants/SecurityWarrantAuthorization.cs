@@ -1,9 +1,9 @@
 namespace Foundgine.Core.Semantic.Security.Warrants;
 
 /// <summary>
-/// Runtime authorization over a verified warrant. It deliberately requires the
-/// current subject, audience, tenant and resource rather than trusting values
-/// supplied by an agent or transport.
+///     Runtime authorization over a verified warrant. It deliberately requires the
+///     current subject, audience, tenant and resource rather than trusting values
+///     supplied by an agent or transport.
 /// </summary>
 public static class SecurityWarrantAuthorization
 {
@@ -48,10 +48,13 @@ public static class SecurityWarrantAuthorization
         // Fail closed: if the warrant restricts tenant/resource, a missing runtime
         // value is a missing constraint check, not an implicit pass. Only an
         // unrestricted warrant (empty constraint set) tolerates a null runtime value.
-        if (c.AllowedTenants.Count > 0 && (tenant is null || !c.AllowedTenants.Contains(tenant, StringComparer.Ordinal))) return false;
-        if (c.AllowedOperations.Count > 0 && !c.AllowedOperations.Contains(operation, StringComparer.Ordinal)) return false;
+        if (c.AllowedTenants.Count > 0 &&
+            (tenant is null || !c.AllowedTenants.Contains(tenant, StringComparer.Ordinal))) return false;
+        if (c.AllowedOperations.Count > 0 && !c.AllowedOperations.Contains(operation, StringComparer.Ordinal))
+            return false;
         if (requireResourceScopeMatch &&
-            c.ResourceScopes.Count > 0 && (resourceScope is null || !c.ResourceScopes.Contains(resourceScope, StringComparer.Ordinal))) return false;
+            c.ResourceScopes.Count > 0 &&
+            (resourceScope is null || !c.ResourceScopes.Contains(resourceScope, StringComparer.Ordinal))) return false;
         if (requestedResults is not null && c.MaxResults is not null && requestedResults > c.MaxResults) return false;
         if (requestedAmount is not null && c.MaxAmount is not null && requestedAmount > c.MaxAmount) return false;
         return true;
@@ -112,7 +115,9 @@ public static class SecurityWarrantAttenuator
 
         return child;
 
-        static bool SequenceEqual(IEnumerable<string> left, IEnumerable<string> right) =>
-            left.SequenceEqual(right, StringComparer.Ordinal);
+        static bool SequenceEqual(IEnumerable<string> left, IEnumerable<string> right)
+        {
+            return left.SequenceEqual(right, StringComparer.Ordinal);
+        }
     }
 }

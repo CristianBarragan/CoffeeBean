@@ -1,21 +1,18 @@
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.IR;
 using Foundgine.Core.Semantic.Resolution;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticAuthorizationTests
 {
-
     [Fact]
     public void Contract_aware_authorization_accepts_operation_from_same_contract()
     {
         var (model, request, customer, _, _) = CreateBankingRequest();
         var contract = model.Freeze().CreateSnapshot();
-        var operation = Foundgine.Core.Semantic.IR.SemanticOperationCompiler.Compile(
+        var operation = SemanticOperationCompiler.Compile(
             new SemanticRequestResolver(contract).Resolve(request));
 
         var authorized = new SemanticAuthorizer(new DenyAccountPolicy()).Authorize(contract, operation);
@@ -28,12 +25,12 @@ public sealed class SemanticAuthorizationTests
     {
         var (model, request, _, _, _) = CreateBankingRequest();
         var contract = model.Freeze().CreateSnapshot();
-        var operation = Foundgine.Core.Semantic.IR.SemanticOperationCompiler.Compile(
+        var operation = SemanticOperationCompiler.Compile(
             new SemanticRequestResolver(contract).Resolve(request));
         operation = operation with { Root = operation.Root with { EntityId = new EntityId(999) } };
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(contract, operation));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(contract, operation));
 
         Assert.Contains("999", ex.Message);
     }
@@ -43,7 +40,7 @@ public sealed class SemanticAuthorizationTests
     {
         var (model, request, _, account, _) = CreateBankingRequest();
         var contract = model.Freeze().CreateSnapshot();
-        var operation = Foundgine.Core.Semantic.IR.SemanticOperationCompiler.Compile(
+        var operation = SemanticOperationCompiler.Compile(
             new SemanticRequestResolver(contract).Resolve(request));
         var child = operation.Root.Children.Single();
         operation = operation with
@@ -54,8 +51,8 @@ public sealed class SemanticAuthorizationTests
             }
         };
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(contract, operation));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(contract, operation));
 
         Assert.Contains("targets", ex.Message);
         Assert.Equal(account, child.EntityId);
@@ -66,7 +63,7 @@ public sealed class SemanticAuthorizationTests
     {
         var (model, request, customer, account, _) = CreateBankingRequest();
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
-        var operation = Foundgine.Core.Semantic.IR.SemanticOperationCompiler.Compile(resolved);
+        var operation = SemanticOperationCompiler.Compile(resolved);
 
         var authorized = new SemanticAuthorizer(new DenyAccountPolicy()).Authorize(operation);
 
@@ -85,7 +82,7 @@ public sealed class SemanticAuthorizationTests
 
         var (model, request, _, _, _) = CreateBankingRequest();
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
-        var operation = Foundgine.Core.Semantic.IR.SemanticOperationCompiler.Compile(resolved);
+        var operation = SemanticOperationCompiler.Compile(resolved);
 
         var authorized = new SemanticAuthorizer(new ConditionalPolicy(predicate)).Authorize(operation);
 
@@ -151,13 +148,14 @@ public sealed class SemanticAuthorizationTests
 
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
 
-        var ex = Assert.Throws<SemanticAuthorizationException>(
-            () => new SemanticAuthorizer(new DenyCustomerPolicy()).Authorize(resolved));
+        var ex = Assert.Throws<SemanticAuthorizationException>(() =>
+            new SemanticAuthorizer(new DenyCustomerPolicy()).Authorize(resolved));
 
         Assert.Contains("Access denied", ex.Message);
     }
 
-    private static (SemanticModel Model, SemanticRequest Request, EntityId Customer, EntityId Account, EntityId Transaction)
+    private static (SemanticModel Model, SemanticRequest Request, EntityId Customer, EntityId Account, EntityId
+        Transaction)
         CreateBankingRequest()
     {
         var customer = new EntityId(1);
@@ -201,38 +199,52 @@ public sealed class SemanticAuthorizationTests
 
     private sealed class DenyBalancePolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessField(EntityId entityId, FieldId fieldId) =>
-            entityId != new EntityId(2) || fieldId != new FieldId(3);
+        public override bool CanAccessField(EntityId entityId, FieldId fieldId)
+        {
+            return entityId != new EntityId(2) || fieldId != new FieldId(3);
+        }
     }
 
     private sealed class DenyAllCustomerFieldsPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessField(EntityId entityId, FieldId fieldId) =>
-            entityId != new EntityId(1);
+        public override bool CanAccessField(EntityId entityId, FieldId fieldId)
+        {
+            return entityId != new EntityId(1);
+        }
     }
 
     private sealed class DenyTransactionsPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId) =>
-            sourceEntityId != new EntityId(2) || relationshipId != new RelationshipId(2);
+        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId)
+        {
+            return sourceEntityId != new EntityId(2) || relationshipId != new RelationshipId(2);
+        }
     }
 
     private sealed class DenyAccountPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessEntity(EntityId entityId) => entityId != new EntityId(2);
+        public override bool CanAccessEntity(EntityId entityId)
+        {
+            return entityId != new EntityId(2);
+        }
     }
 
     private sealed class ConditionalPolicy(AuthorizationPredicate predicate) : AllowAllSemanticAuthorizationPolicy
     {
         public override AuthorizationPredicate? GetPredicate(
             EntityId entityId,
-            AuthorizationOperation operation) =>
-            operation == AuthorizationOperation.Read ? predicate : null;
+            AuthorizationOperation operation)
+        {
+            return operation == AuthorizationOperation.Read ? predicate : null;
+        }
     }
 
     private sealed class DenyCustomerPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessEntity(EntityId entityId) => entityId != new EntityId(1);
+        public override bool CanAccessEntity(EntityId entityId)
+        {
+            return entityId != new EntityId(1);
+        }
     }
 }
 
@@ -307,26 +319,35 @@ public sealed class SemanticAuthorizationCapabilityTests
 
     private sealed class EmployeePolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanWriteEntity(EntityId entityId) => false;
+        public override bool CanWriteEntity(EntityId entityId)
+        {
+            return false;
+        }
 
-        public override bool CanWriteField(EntityId entityId, FieldId fieldId) => false;
+        public override bool CanWriteField(EntityId entityId, FieldId fieldId)
+        {
+            return false;
+        }
 
-        public override bool CanAccessField(EntityId entityId, FieldId fieldId) =>
-            entityId != new EntityId(1) || fieldId != new FieldId(3);
+        public override bool CanAccessField(EntityId entityId, FieldId fieldId)
+        {
+            return entityId != new EntityId(1) || fieldId != new FieldId(3);
+        }
     }
 
     private sealed class TenantPolicy : AllowAllSemanticAuthorizationPolicy
     {
         public override AuthorizationPredicate? GetPredicate(
             EntityId entityId,
-            AuthorizationOperation operation) =>
-            operation == AuthorizationOperation.Read && entityId == new EntityId(1)
+            AuthorizationOperation operation)
+        {
+            return operation == AuthorizationOperation.Read && entityId == new EntityId(1)
                 ? AuthorizationPredicate.Equal(
                     AuthorizationPredicate.Member(
                         AuthorizationPredicate.ResourceParameter("resource"), "TenantId"),
                     AuthorizationPredicate.Member(
                         AuthorizationPredicate.ContextParameter("context"), "TenantId"))
                 : null;
+        }
     }
 }
-

@@ -1,20 +1,15 @@
-using System.Globalization;
-using Foundgine.SupplyChain.Advanced.Authorization;
-
 namespace Foundgine.SupplyChain.Advanced.Authorization.Claims;
 
 /// <summary>
-/// Validates relationships between already-format-valid claims, driven by the
-/// expiry configuration on a <see cref="ClaimSchema"/> rather than hard-coded
-/// key names. Two things can retract an already-accepted expiry-bound claim:
-///
-///  1. The expiry has already passed — the evidence is stale.
-///  2. The expiry is further in the future than <see cref="ClaimSchema.MaxExpiryHorizon"/>
+///     Validates relationships between already-format-valid claims, driven by the
+///     expiry configuration on a <see cref="ClaimSchema" /> rather than hard-coded
+///     key names. Two things can retract an already-accepted expiry-bound claim:
+///     1. The expiry has already passed — the evidence is stale.
+///     2. The expiry is further in the future than <see cref="ClaimSchema.MaxExpiryHorizon" />
 ///     allows — without this ceiling, a caller could name an expiry decades out
 ///     and have evidence trusted as if it were valid indefinitely.
-///
-/// Either way, every claim in <see cref="ClaimSchema.EvidenceKeysBoundByExpiry"/>
-/// that the expiry was meant to bound is retracted along with it.
+///     Either way, every claim in <see cref="ClaimSchema.EvidenceKeysBoundByExpiry" />
+///     that the expiry was meant to bound is retracted along with it.
 /// </summary>
 public static class CrossFieldClaimValidator
 {
@@ -31,7 +26,8 @@ public static class CrossFieldClaimValidator
         if (!accepted.TryGetValue(expiryKey, out var expiryRaw))
             return;
 
-        if (!DateTimeOffset.TryParse(expiryRaw, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var expiry))
+        if (!DateTimeOffset.TryParse(expiryRaw, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal,
+                out var expiry))
             return;
 
         if (expiry < now)
@@ -63,14 +59,14 @@ public static class CrossFieldClaimValidator
     {
         accepted.Remove(expiryKey);
         foreach (var evidenceKey in schema.EvidenceKeysBoundByExpiry)
-        {
             if (accepted.Remove(evidenceKey))
                 rejected.Add(new RejectedClaim(evidenceKey, rawClaims.GetValueOrDefault(evidenceKey), reason));
-        }
     }
 
-    private static string DescribeHorizon(TimeSpan horizon) =>
-        horizon.TotalDays >= 1
+    private static string DescribeHorizon(TimeSpan horizon)
+    {
+        return horizon.TotalDays >= 1
             ? $"{horizon.TotalDays:0.##} day(s)"
             : $"{horizon.TotalHours:0.##} hour(s)";
+    }
 }

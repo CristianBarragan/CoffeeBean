@@ -1,15 +1,11 @@
-using Foundgine.Core.Execution;
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic.Resolution;
 using Foundgine.Providers.Storage.Sql;
-using Microsoft.Data.Sqlite;
-using Xunit;
-using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -30,7 +26,8 @@ public sealed class RelationshipOrderingTests
 
         var first = BuildRequest(1);
         var firstPlan = Compile(model, metadata, first);
-        Assert.Contains("ORDER BY \"t1\".\"DisplayName\" DESC, \"t0\".\"Id\" ASC", firstPlan.CommandText, StringComparison.Ordinal);
+        Assert.Contains("ORDER BY \"t1\".\"DisplayName\" DESC, \"t0\".\"Id\" ASC", firstPlan.CommandText,
+            StringComparison.Ordinal);
         Assert.Contains("LIMIT @__fg_limit", firstPlan.CommandText, StringComparison.Ordinal);
 
         var provider = new SqlExecutionProvider(providerConnection);
@@ -48,14 +45,16 @@ public sealed class RelationshipOrderingTests
         Assert.Contains("\"t0\".\"Id\" >", secondPlan.CommandText, StringComparison.Ordinal);
         Assert.Contains(" AND ", secondPlan.CommandText, StringComparison.Ordinal);
 
-        var secondResult = await provider.ExecuteAsync(secondPlan, PaginationExecutionContext.Create(1, firstResult.PageInfo.EndCursor));
+        var secondResult = await provider.ExecuteAsync(secondPlan,
+            PaginationExecutionContext.Create(1, firstResult.PageInfo.EndCursor));
         Assert.Single(secondResult.Rows);
         Assert.Equal("Alice", secondResult.Rows[0].Values["__fg_1_DisplayName"]);
         Assert.False(secondResult.PageInfo!.HasNextPage);
     }
 
-    private static SemanticModel BuildModel() =>
-        new SemanticModelBuilder()
+    private static SemanticModel BuildModel()
+    {
+        return new SemanticModelBuilder()
             .Entity(Customer, "Customer", e => e
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(2), "Name", typeof(string))
@@ -64,6 +63,7 @@ public sealed class RelationshipOrderingTests
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(2), "DisplayName", typeof(string)))
             .Build();
+    }
 
     private static MetadataRegistry BuildMetadata()
     {
@@ -78,7 +78,8 @@ public sealed class RelationshipOrderingTests
             Fields:
             [
                 new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(Customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(Customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(Customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(Customer, new ColumnId(1)));
 
@@ -92,7 +93,8 @@ public sealed class RelationshipOrderingTests
             Fields:
             [
                 new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(Profile, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "DisplayName", typeof(string), new ColumnReference(Profile, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "DisplayName", typeof(string),
+                    new ColumnReference(Profile, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(Profile, new ColumnId(1)));
 
@@ -111,19 +113,22 @@ public sealed class RelationshipOrderingTests
         return registry;
     }
 
-    private static SemanticRequest BuildRequest(int limit, string? after = null) => new(
-        Customer,
-        [
-            new SemanticSelection(new FieldId(1), null, []),
-            new SemanticSelection(
-                null,
-                CustomerProfile,
-                [new SemanticSelection(new FieldId(2), null, [])])
-        ],
-        new SemanticQueryOptions(
-            Order: [new SemanticOrderTerm(new FieldId(2), SemanticSortDirection.Desc, [CustomerProfile])],
-            Limit: limit,
-            After: after));
+    private static SemanticRequest BuildRequest(int limit, string? after = null)
+    {
+        return new(
+            Customer,
+            [
+                new SemanticSelection(new FieldId(1), null, []),
+                new SemanticSelection(
+                    null,
+                    CustomerProfile,
+                    [new SemanticSelection(new FieldId(2), null, [])])
+            ],
+            new SemanticQueryOptions(
+                Order: [new SemanticOrderTerm(new FieldId(2), SemanticSortDirection.Desc, [CustomerProfile])],
+                Limit: limit,
+                After: after));
+    }
 
     private static SqlPlan Compile(
         SemanticModel model,
@@ -142,14 +147,13 @@ public sealed class RelationshipOrderingTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Profile" ("Id" INTEGER PRIMARY KEY, "DisplayName" TEXT NOT NULL);
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL, "ProfileId" INTEGER NOT NULL);
-            INSERT INTO "Profile" VALUES (1, 'Alice');
-            INSERT INTO "Profile" VALUES (2, 'Zoe');
-            INSERT INTO "Customer" VALUES (1, 'Customer A', 1);
-            INSERT INTO "Customer" VALUES (2, 'Customer B', 2);
-            """;
+                              CREATE TABLE "Profile" ("Id" INTEGER PRIMARY KEY, "DisplayName" TEXT NOT NULL);
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL, "ProfileId" INTEGER NOT NULL);
+                              INSERT INTO "Profile" VALUES (1, 'Alice');
+                              INSERT INTO "Profile" VALUES (2, 'Zoe');
+                              INSERT INTO "Customer" VALUES (1, 'Customer A', 1);
+                              INSERT INTO "Customer" VALUES (2, 'Customer B', 2);
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

@@ -1,11 +1,11 @@
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Contract for one provider-neutral semantic plan rewrite.
-/// Rules are composable: they declare ordering constraints, conflicts,
-/// idempotence and cost so the optimizer can build a deterministic rewrite path.
-/// Every accepted application is independently checked for semantic and
-/// security preservation.
+///     Contract for one provider-neutral semantic plan rewrite.
+///     Rules are composable: they declare ordering constraints, conflicts,
+///     idempotence and cost so the optimizer can build a deterministic rewrite path.
+///     Every accepted application is independently checked for semantic and
+///     security preservation.
 /// </summary>
 public interface IPlanRewriteRule
 {

@@ -1,7 +1,4 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning;
-using Foundgine.Core.Semantic;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 

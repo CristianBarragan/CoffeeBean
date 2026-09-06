@@ -1,5 +1,6 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution.Mutation;
+using Foundgine.Core.Semantic.Planning.Mutation;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate;
 
@@ -8,12 +9,12 @@ public sealed record GraphQLMutationResultField(
     string GraphQLName,
     string Alias)
 {
-    public string ResponseName => Alias;
-
     public GraphQLMutationResultField(FieldId field, string responseName)
         : this(field, responseName, responseName)
     {
     }
+
+    public string ResponseName => Alias;
 }
 
 public sealed record GraphQLMutationResultShape(
@@ -31,18 +32,18 @@ public sealed record GraphQLMutationResultRelationship(
 }
 
 public sealed record GraphQLMutationAdaptation(
-    Foundgine.Core.Semantic.Planning.Mutation.NestedMutationIntent Intent,
+    NestedMutationIntent Intent,
     GraphQLMutationResultShape ResultShape)
 {
     public GraphQLMutationResultShape Result => ResultShape;
 }
 
 /// <summary>
-/// One entry of a batched GraphQL mutation document (see
-/// <c>HotChocolateMutationAdapter.AdaptBatchWithResultShape</c>). ResultKey is the field's
-/// GraphQL alias (or, for the single-unaliased-field convenience case, its field name) -
-/// use it both to key the response object per-item and to line up each item's planned
-/// operations with <c>MutationPlanner.Plan(IReadOnlyList&lt;NestedMutationIntent&gt;)</c>.
+///     One entry of a batched GraphQL mutation document (see
+///     <c>HotChocolateMutationAdapter.AdaptBatchWithResultShape</c>). ResultKey is the field's
+///     GraphQL alias (or, for the single-unaliased-field convenience case, its field name) -
+///     use it both to key the response object per-item and to line up each item's planned
+///     operations with <c>MutationPlanner.Plan(IReadOnlyList&lt;NestedMutationIntent&gt;)</c>.
 /// </summary>
 public sealed record GraphQLMutationBatchItem(
     string ResultKey,
@@ -71,18 +72,14 @@ public static class GraphQLMutationResultShaper
                 .ToArray();
 
             if (relationship.IsCollection)
-            {
                 result[relationship.ResponseName] = materializedChildren
                     .Select(child => Shape(child, relationship.Shape))
                     .Cast<object?>()
                     .ToArray();
-            }
             else
-            {
                 result[relationship.ResponseName] = materializedChildren.Length == 0
                     ? null
                     : Shape(materializedChildren[0], relationship.Shape);
-            }
         }
 
         return result;

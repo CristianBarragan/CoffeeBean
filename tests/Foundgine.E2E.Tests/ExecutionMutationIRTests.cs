@@ -1,8 +1,6 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution.Mutation;
-using Foundgine.Core.Execution;
 using Foundgine.Core.Semantic.Planning.Mutation;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
@@ -80,9 +78,9 @@ public sealed class ExecutionMutationIRTests
             new[] { operation },
             new[] { dependency });
 
-        Assert.Throws<InvalidOperationException>(
-            () => ExecutionMutationIRCompiler.Compile(plan));
+        Assert.Throws<InvalidOperationException>(() => ExecutionMutationIRCompiler.Compile(plan));
     }
+
     [Fact]
     public void ExecutionMutationIRIsTheProviderBatchContract()
     {
@@ -94,5 +92,4 @@ public sealed class ExecutionMutationIRTests
         Assert.NotNull(method);
         Assert.Equal(typeof(MutationBatchResult), method!.ReturnType);
     }
-
 }

@@ -4,9 +4,9 @@ using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-/// Supplies the runtime pagination values expected by the parameterized SQL
-/// provider when tests execute compiled plans directly instead of through
-/// FoundgineEngine. The provider adds one lookahead row for forward pagination.
+///     Supplies the runtime pagination values expected by the parameterized SQL
+///     provider when tests execute compiled plans directly instead of through
+///     FoundgineEngine. The provider adds one lookahead row for forward pagination.
 /// </summary>
 internal static class PaginationExecutionContext
 {

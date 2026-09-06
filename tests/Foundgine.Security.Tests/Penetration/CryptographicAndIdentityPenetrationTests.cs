@@ -1,6 +1,4 @@
-using System.Security.Cryptography;
 using Foundgine.Core.Semantic.Security.Warrants;
-using Xunit;
 
 namespace Foundgine.Security.Tests.Penetration;
 
@@ -14,7 +12,8 @@ public sealed class CryptographicAndIdentityPenetrationTests
         using var key = RSA.Create(2048);
         var warrant = Sign(Create(now, subject: "alice"), key);
 
-        Assert.False(SecurityWarrantAuthorization.Allows(warrant, "bob", "api", "Account.read", "read", "tenant-a", "account-1"));
+        Assert.False(SecurityWarrantAuthorization.Allows(warrant, "bob", "api", "Account.read", "read", "tenant-a",
+            "account-1"));
     }
 
     [Fact]
@@ -24,7 +23,8 @@ public sealed class CryptographicAndIdentityPenetrationTests
         using var key = RSA.Create(2048);
         var warrant = Sign(Create(now, audience: "api-a"), key);
 
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantVerifier.Verify(warrant, new Resolver(warrant.KeyId, key), now, "issuer", "api-b"));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantVerifier.Verify(warrant, new Resolver(warrant.KeyId, key), now, "issuer", "api-b"));
     }
 
     [Fact]
@@ -35,8 +35,10 @@ public sealed class CryptographicAndIdentityPenetrationTests
         var warrant = Sign(Create(now, constraints: new SecurityWarrantConstraints(
             allowedTenants: ["tenant-a"], resourceScopes: ["account-1"])), key);
 
-        Assert.False(SecurityWarrantAuthorization.Allows(warrant, "alice", "api", "Account.read", "read", null, "account-1"));
-        Assert.False(SecurityWarrantAuthorization.Allows(warrant, "alice", "api", "Account.read", "read", "tenant-a", null));
+        Assert.False(SecurityWarrantAuthorization.Allows(warrant, "alice", "api", "Account.read", "read", null,
+            "account-1"));
+        Assert.False(SecurityWarrantAuthorization.Allows(warrant, "alice", "api", "Account.read", "read", "tenant-a",
+            null));
     }
 
     [Fact]
@@ -80,9 +82,11 @@ public sealed class CryptographicAndIdentityPenetrationTests
     {
         // The warrant format has one fixed verification algorithm. There is no
         // algorithm field that an attacker can downgrade or substitute.
-        var canonical = typeof(SecurityWarrantCanonicalizer).GetMethod(nameof(SecurityWarrantCanonicalizer.UnsignedJson));
+        var canonical =
+            typeof(SecurityWarrantCanonicalizer).GetMethod(nameof(SecurityWarrantCanonicalizer.UnsignedJson));
         Assert.NotNull(canonical);
-        Assert.DoesNotContain("algorithm", SecurityWarrantCanonicalizer.UnsignedJson(Create(DateTimeOffset.UtcNow)), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("algorithm", SecurityWarrantCanonicalizer.UnsignedJson(Create(DateTimeOffset.UtcNow)),
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -100,17 +104,25 @@ public sealed class CryptographicAndIdentityPenetrationTests
         string issuer = "issuer",
         string subject = "alice",
         string audience = "api",
-        SecurityWarrantConstraints? constraints = null) =>
-        new(
+        SecurityWarrantConstraints? constraints = null)
+    {
+        return new(
             "warrant-1", issuer, subject, audience,
             [new CapabilityGrant("Account.read", "read", ["account-1"])],
             constraints ?? SecurityWarrantConstraints.Unrestricted,
             now.AddMinutes(-1), now.AddMinutes(10), "nonce-1", "key-1", null, []);
+    }
 
-    private static SecurityWarrant Sign(SecurityWarrant warrant, RSA key) => SecurityWarrantSigner.Sign(warrant, key);
+    private static SecurityWarrant Sign(SecurityWarrant warrant, RSA key)
+    {
+        return SecurityWarrantSigner.Sign(warrant, key);
+    }
 
     private sealed class Resolver(string id, RSA key) : ISecurityWarrantKeyResolver
     {
-        public RSA Resolve(string keyId) => StringComparer.Ordinal.Equals(id, keyId) ? key : throw new InvalidOperationException("unknown key");
+        public RSA Resolve(string keyId)
+        {
+            return StringComparer.Ordinal.Equals(id, keyId) ? key : throw new InvalidOperationException("unknown key");
+        }
     }
 }

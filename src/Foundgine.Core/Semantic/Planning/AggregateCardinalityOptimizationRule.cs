@@ -3,10 +3,10 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Adds a physical short-circuit hint for count predicates whose truth value
-/// depends only on whether a collection is empty. The semantic filter remains
-/// unchanged, so COUNT semantics, authorization, relationship visibility and
-/// null/empty behavior stay defined by the semantic layer.
+///     Adds a physical short-circuit hint for count predicates whose truth value
+///     depends only on whether a collection is empty. The semantic filter remains
+///     unchanged, so COUNT semantics, authorization, relationship visibility and
+///     null/empty behavior stay defined by the semantic layer.
 /// </summary>
 public sealed class AggregateCardinalityOptimizationRule : IPlanRewriteRule
 {
@@ -59,12 +59,9 @@ public sealed class AggregateCardinalityOptimizationRule : IPlanRewriteRule
         // Never retain a stale physical strategy merely because no new candidate
         // can be derived.
         var candidate = GetStrategy(node.QueryOptions?.Filter)
-            ?? AggregateExecutionStrategy.Default;
+                        ?? AggregateExecutionStrategy.Default;
         var strategy = candidate;
-        if (strategy != node.AggregateExecutionStrategy)
-        {
-            changed = true;
-        }
+        if (strategy != node.AggregateExecutionStrategy) changed = true;
 
         var children = new SemanticPlanNode[node.Children.Count];
         var childrenChanged = false;
@@ -86,7 +83,7 @@ public sealed class AggregateCardinalityOptimizationRule : IPlanRewriteRule
     private static bool RequiresRewrite(SemanticPlanNode node)
     {
         var desired = GetStrategy(node.QueryOptions?.Filter)
-            ?? AggregateExecutionStrategy.Default;
+                      ?? AggregateExecutionStrategy.Default;
 
         return desired != node.AggregateExecutionStrategy || node.Children.Any(RequiresRewrite);
     }
@@ -95,7 +92,8 @@ public sealed class AggregateCardinalityOptimizationRule : IPlanRewriteRule
     {
         var aggregates = new List<SemanticAggregateFilter>();
         CollectAggregates(filter, aggregates);
-        if (aggregates.Count == 0 || aggregates.Any(a => a.Aggregate != SemanticFilterAggregate.Count || a.Field is not null || a.Predicate is not null))
+        if (aggregates.Count == 0 || aggregates.Any(a =>
+                a.Aggregate != SemanticFilterAggregate.Count || a.Field is not null || a.Predicate is not null))
             return null;
 
         AggregateExecutionStrategy? result = null;
@@ -136,6 +134,8 @@ public sealed class AggregateCardinalityOptimizationRule : IPlanRewriteRule
 
     private static AggregateExecutionStrategy? GetCountStrategy(
         SemanticAggregateFilterOperator op,
-        object? value) =>
-        AggregateExecutionStrategyResolver.Resolve(op, value);
+        object? value)
+    {
+        return AggregateExecutionStrategyResolver.Resolve(op, value);
+    }
 }

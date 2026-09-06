@@ -29,13 +29,13 @@ services:
       - run4-postgres-data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U benchmark -d foundgine_benchmark"]
+      test: [ "CMD-SHELL", "pg_isready -U benchmark -d foundgine_benchmark" ]
       interval: 2s
       timeout: 5s
       retries: 30
       start_period: 5s
-      
-    restart: "no"           
+    
+    restart: "no"
   graphql-ef:
     build:
       context: ../../..
@@ -53,7 +53,7 @@ services:
       - "4401:4401"
 
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:4401/health/ready || exit 1"]
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:4401/health/ready || exit 1" ]
       interval: 2s
       timeout: 5s
       retries: 30
@@ -76,7 +76,7 @@ services:
       - "4402:4402"
 
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:4402/health/ready || exit 1"]
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:4402/health/ready || exit 1" ]
       interval: 2s
       timeout: 5s
       retries: 30

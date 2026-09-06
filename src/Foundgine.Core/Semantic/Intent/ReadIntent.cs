@@ -1,14 +1,13 @@
-using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic.Security.Execution;
 
 namespace Foundgine.Core.Semantic.Intent;
 
 /// <summary>
-/// External, provider-neutral read intent. This is deliberately simpler than
-/// GraphQL or an ORM expression tree so an API, agent, or other producer can
-/// create it without knowing physical storage. SecurityExecutionContext is
-/// carried through unchanged; warrant verification remains an engine concern.
+///     External, provider-neutral read intent. This is deliberately simpler than
+///     GraphQL or an ORM expression tree so an API, agent, or other producer can
+///     create it without knowing physical storage. SecurityExecutionContext is
+///     carried through unchanged; warrant verification remains an engine concern.
 /// </summary>
 public sealed record ReadIntent(
     string RootEntity,

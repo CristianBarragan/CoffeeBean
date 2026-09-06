@@ -1,11 +1,8 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
-using Foundgine.Providers.Storage.InMemory;
+using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic.Planning;
-using Foundgine.Core.Semantic;
-using Foundgine.Core.Semantic.Query;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.Providers.Storage.InMemory.Tests;
@@ -35,7 +32,7 @@ public sealed class InMemoryProviderTests
                 .Field(accountCustomerId, "CustomerId", typeof(int)))
             .Build();
 
-        var graph = new SemanticGraph { };
+        var graph = new SemanticGraph();
         var root = graph.AddRoot(customer, [customerId, customerName]);
         graph.Add(account, accounts, root, [accountId, balance]);
         graph = graph.WithAuthorization(0,
@@ -54,12 +51,16 @@ public sealed class InMemoryProviderTests
         metadata.Register(new EntityMetadata(
             account,
             "Account",
-            [new ColumnMetadata(new ColumnId(21), "Id"), new ColumnMetadata(new ColumnId(22), "Balance"), new ColumnMetadata(new ColumnId(23), "CustomerId")],
+            [
+                new ColumnMetadata(new ColumnId(21), "Id"), new ColumnMetadata(new ColumnId(22), "Balance"),
+                new ColumnMetadata(new ColumnId(23), "CustomerId")
+            ],
             Fields:
             [
                 new FieldMetadata(accountId, "Id", typeof(int), new ColumnReference(account, new ColumnId(21))),
                 new FieldMetadata(balance, "Balance", typeof(decimal), new ColumnReference(account, new ColumnId(22))),
-                new FieldMetadata(accountCustomerId, "CustomerId", typeof(int), new ColumnReference(account, new ColumnId(23)))
+                new FieldMetadata(accountCustomerId, "CustomerId", typeof(int),
+                    new ColumnReference(account, new ColumnId(23)))
             ],
             PrimaryKey: new ColumnReference(account, new ColumnId(21))));
         metadata.Register(new RelationshipMetadata(
@@ -68,11 +69,16 @@ public sealed class InMemoryProviderTests
             new ColumnReference(account, new ColumnId(23))));
 
         var data = new InMemoryDataSet()
-            .Add(new InMemoryRow(customer, new Dictionary<FieldId, object?> { [customerId] = 1, [customerName] = "Alice" }))
-            .Add(new InMemoryRow(customer, new Dictionary<FieldId, object?> { [customerId] = 2, [customerName] = "Bob" }))
-            .Add(new InMemoryRow(account, new Dictionary<FieldId, object?> { [accountId] = 1, [balance] = 100m, [accountCustomerId] = 1 }))
-            .Add(new InMemoryRow(account, new Dictionary<FieldId, object?> { [accountId] = 2, [balance] = 200m, [accountCustomerId] = 1 }))
-            .Add(new InMemoryRow(account, new Dictionary<FieldId, object?> { [accountId] = 3, [balance] = 300m, [accountCustomerId] = 2 }));
+            .Add(new InMemoryRow(customer,
+                new Dictionary<FieldId, object?> { [customerId] = 1, [customerName] = "Alice" }))
+            .Add(new InMemoryRow(customer,
+                new Dictionary<FieldId, object?> { [customerId] = 2, [customerName] = "Bob" }))
+            .Add(new InMemoryRow(account,
+                new Dictionary<FieldId, object?> { [accountId] = 1, [balance] = 100m, [accountCustomerId] = 1 }))
+            .Add(new InMemoryRow(account,
+                new Dictionary<FieldId, object?> { [accountId] = 2, [balance] = 200m, [accountCustomerId] = 1 }))
+            .Add(new InMemoryRow(account,
+                new Dictionary<FieldId, object?> { [accountId] = 3, [balance] = 300m, [accountCustomerId] = 2 }));
 
         var provider = new InMemoryExecutionProvider(metadata, data);
         var result = await provider.ExecuteAsync(
@@ -98,15 +104,22 @@ public sealed class InMemoryProviderTests
         Assert.Equal("in-memory", compiled.Provider);
     }
 
-    private static EntityMetadata Entity(EntityId entity, string name, FieldId id, FieldId value, int idColumn, int valueColumn) =>
-        new(
+    private static EntityMetadata Entity(EntityId entity, string name, FieldId id, FieldId value, int idColumn,
+        int valueColumn)
+    {
+        return new(
             entity,
             name,
-            [new ColumnMetadata(new ColumnId((ushort)idColumn), "Id"), new ColumnMetadata(new ColumnId((ushort)valueColumn), "Value")],
+            [
+                new ColumnMetadata(new ColumnId((ushort)idColumn), "Id"),
+                new ColumnMetadata(new ColumnId((ushort)valueColumn), "Value")
+            ],
             Fields:
             [
                 new FieldMetadata(id, "Id", typeof(int), new ColumnReference(entity, new ColumnId((ushort)idColumn))),
-                new FieldMetadata(value, "Value", typeof(string), new ColumnReference(entity, new ColumnId((ushort)valueColumn)))
+                new FieldMetadata(value, "Value", typeof(string),
+                    new ColumnReference(entity, new ColumnId((ushort)valueColumn)))
             ],
             PrimaryKey: new ColumnReference(entity, new ColumnId((ushort)idColumn)));
+    }
 }

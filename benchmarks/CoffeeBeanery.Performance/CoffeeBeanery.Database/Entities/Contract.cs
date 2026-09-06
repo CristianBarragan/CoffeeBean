@@ -1,31 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿namespace CoffeeBeanery.Database;
 
-namespace CoffeeBeanery.Database;
-
-public partial class Contract : Process
+public class Contract : Process
 {
     public Contract()
     {
-        Schema = CoffeeBeanery.Database.Schema.Lending;
+        Schema = Database.Schema.Lending;
     }
-    
+
     public int Id { get; set; }
-    
+
     public Guid ContractKey { get; set; }
 
     public ContractType? ContractType { get; set; }
 
     public decimal? Amount { get; set; }
-    
+
     public int? AccountId { get; set; }
 
     public Account? Account { get; set; }
 
     public CustomerBankingRelationship? CustomerBankingRelationship { get; set; }
-    
+
     public int? CustomerBankingRelationshipId { get; set; }
 
     public List<Transaction>? Transaction { get; set; } = [];
@@ -55,7 +50,7 @@ public class ContractEntityConfiguration : IEntityTypeConfiguration<Contract>
 
         builder.HasIndex(c => c.ContractKey).IsUnique();
         builder.HasIndex(c => new { c.CustomerBankingRelationshipId, c.Id });
-        
+
         builder.HasMany(c => c.Transaction).WithOne(c => c.Contract).HasForeignKey(c => c.ContractId);
 
         builder.Property(c => c.ProcessedDateTime).HasDefaultValueSql("(now() at time zone 'utc')");

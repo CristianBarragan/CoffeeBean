@@ -1,12 +1,12 @@
 using Foundgine.Core.Abstractions;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed partial class PlanRewriteRuleContractTests
 {
     private static SemanticPlan Plan(AuthorizationPredicate? authorization)
-        => new(new SemanticPlanNode(
+    {
+        return new SemanticPlan(new SemanticPlanNode(
             1,
             ExecutionOperation.Scan,
             new EntityId(1),
@@ -15,6 +15,7 @@ public sealed partial class PlanRewriteRuleContractTests
             null,
             [],
             Authorization: authorization));
+    }
 
     [Fact]
     public void Authorization_rule_exposes_auditable_contract()
@@ -92,11 +93,19 @@ public sealed partial class PlanRewriteRuleContractTests
         public IReadOnlyList<string> Preconditions => ["test"];
         public IReadOnlyList<string> SecurityObligations => ["authorization.required"];
         public double CostImpact => 100d;
-        public bool CanApply(SemanticPlan plan) => true;
-        public SemanticPlan Apply(SemanticPlan plan) => plan with
+
+        public bool CanApply(SemanticPlan plan)
         {
-            Root = plan.Root with { Fields = [new FieldId(99)] }
-        };
+            return true;
+        }
+
+        public SemanticPlan Apply(SemanticPlan plan)
+        {
+            return plan with
+            {
+                Root = plan.Root with { Fields = [new FieldId(99)] }
+            };
+        }
     }
 }
 
@@ -133,7 +142,15 @@ public sealed partial class PlanRewriteRuleContractTests
         public IReadOnlyList<string> Preconditions => [];
         public IReadOnlyList<string> SecurityObligations => ["security.this-does-not-exist"];
         public double CostImpact => 0d;
-        public bool CanApply(SemanticPlan plan) => true;
-        public SemanticPlan Apply(SemanticPlan plan) => plan;
+
+        public bool CanApply(SemanticPlan plan)
+        {
+            return true;
+        }
+
+        public SemanticPlan Apply(SemanticPlan plan)
+        {
+            return plan;
+        }
     }
 }

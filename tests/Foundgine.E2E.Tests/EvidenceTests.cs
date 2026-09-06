@@ -1,16 +1,14 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Security;
-using FoundgineExecutionContext = Foundgine.Core.Execution.ExecutionContext;
-using Foundgine.Generated;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Security;
+using Foundgine.E2E.Tests.Banking;
 using Foundgine.Providers.Storage.Sql;
-using Microsoft.Data.Sqlite;
-using Xunit;
-using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
+using Foundgine.Runtime;
+using FoundgineExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -24,7 +22,8 @@ public sealed class EvidenceTests
 
         await using (var command = connection.CreateCommand())
         {
-            command.CommandText = "CREATE TABLE contracts (id INTEGER NOT NULL, contract_type INTEGER NOT NULL, tenant_id INTEGER NOT NULL);";
+            command.CommandText =
+                "CREATE TABLE contracts (id INTEGER NOT NULL, contract_type INTEGER NOT NULL, tenant_id INTEGER NOT NULL);";
             await command.ExecuteNonQueryAsync();
             command.CommandText = "INSERT INTO contracts (id, contract_type, tenant_id) VALUES (1, 0, 7), (2, 1, 9);";
             await command.ExecuteNonQueryAsync();
@@ -85,7 +84,8 @@ public sealed class EvidenceTests
         await connection.OpenAsync();
         await using (var command = connection.CreateCommand())
         {
-            command.CommandText = "CREATE TABLE contracts (id INTEGER NOT NULL, contract_type INTEGER NOT NULL, tenant_id INTEGER NOT NULL);";
+            command.CommandText =
+                "CREATE TABLE contracts (id INTEGER NOT NULL, contract_type INTEGER NOT NULL, tenant_id INTEGER NOT NULL);";
             await command.ExecuteNonQueryAsync();
         }
 
@@ -104,17 +104,17 @@ public sealed class EvidenceTests
     {
         var compiler = new CapturingEvidenceCompiler();
         var provider = new CapturingEvidenceProvider();
-        var engine = new Foundgine.Runtime.FoundgineEngine(
-            new Foundgine.Runtime.FoundgineOptions
+        var engine = new FoundgineEngine(
+            new FoundgineOptions
             {
-                Model = Banking.BankingSemanticModel.Build(),
+                Model = BankingSemanticModel.Build(),
                 AuthorizationPolicy = new AllowAllSemanticAuthorizationPolicy()
             },
             compiler,
             provider);
 
         var request = new SemanticRequest(
-            Banking.BankingSemanticModel.Customer,
+            BankingSemanticModel.Customer,
             [new SemanticSelection(new FieldId(1), null, [])]);
 
         var result = await engine.ExecuteAsync(request);
@@ -129,25 +129,25 @@ public sealed class EvidenceTests
         Assert.False(string.IsNullOrWhiteSpace(result.Receipt.ResultFingerprint));
     }
 
-    private sealed class CapturingEvidenceCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class CapturingEvidenceCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
+        public ProviderPlan Compile(ExecutionIR ir)
+        {
+            return new TestProviderPlan();
+        }
+
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
+        {
+            return new ProviderSecurityConformanceResult(
+                plan.Provider,
+                ir.RequiredSecurityInvariants,
+                ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
+                Array.Empty<string>());
+        }
+
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
-
-        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-
-            new(
-
-                plan.Provider,
-
-                ir.RequiredSecurityInvariants,
-
-                ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
-
-                Array.Empty<string>());
-
-
-        public ProviderPlan Compile(ExecutionIR ir) => new TestProviderPlan();
     }
 
     private sealed class CapturingEvidenceProvider : IExecutionProvider
@@ -155,8 +155,9 @@ public sealed class EvidenceTests
         public Task<ExecutionResult> ExecuteAsync(
             ProviderPlan plan,
             FoundgineExecutionContext context,
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult(new ExecutionResult(
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new ExecutionResult(
                 Array.Empty<ExecutionRow>(),
                 Evidence: ExecutionEvidenceFactory.Create(
                     "test",
@@ -164,8 +165,8 @@ public sealed class EvidenceTests
                     Array.Empty<int>(),
                     0,
                     0)));
+        }
     }
 
     private sealed record TestProviderPlan() : ProviderPlan("test");
-
 }

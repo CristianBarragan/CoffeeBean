@@ -1,14 +1,13 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
-using Xunit;
+using Foundgine.Core.Semantic.Planning;
 
 namespace Foundgine.Security.Tests.Penetration;
 
 /// <summary>
-/// Penetration-style tests for the agent -> semantic model -> authorization -> planner boundary.
-/// The inputs are intentionally hostile and represent untrusted model/MCP output.
+///     Penetration-style tests for the agent -> semantic model -> authorization -> planner boundary.
+///     The inputs are intentionally hostile and represent untrusted model/MCP output.
 /// </summary>
 public sealed class SemanticBoundaryPenetrationTests
 {
@@ -90,23 +89,38 @@ public sealed class SemanticBoundaryPenetrationTests
 
     private sealed class DenyAllPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessEntity(EntityId entityId) => false;
+        public override bool CanAccessEntity(EntityId entityId)
+        {
+            return false;
+        }
     }
 
     private sealed class FieldAllowPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessField(EntityId entityId, FieldId fieldId) => fieldId == new FieldId(2);
+        public override bool CanAccessField(EntityId entityId, FieldId fieldId)
+        {
+            return fieldId == new FieldId(2);
+        }
     }
 
     private sealed class RootOnlyPolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanAccessEntity(EntityId entityId) => entityId == new EntityId(1);
-        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId) => false;
+        public override bool CanAccessEntity(EntityId entityId)
+        {
+            return entityId == new EntityId(1);
+        }
+
+        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId)
+        {
+            return false;
+        }
     }
 
     private sealed class PredicatePolicy(AuthorizationPredicate predicate) : AllowAllSemanticAuthorizationPolicy
     {
-        public override AuthorizationPredicate? GetPredicate(EntityId entityId, AuthorizationOperation operation) =>
-            operation == AuthorizationOperation.Read ? predicate : null;
+        public override AuthorizationPredicate? GetPredicate(EntityId entityId, AuthorizationOperation operation)
+        {
+            return operation == AuthorizationOperation.Read ? predicate : null;
+        }
     }
 }

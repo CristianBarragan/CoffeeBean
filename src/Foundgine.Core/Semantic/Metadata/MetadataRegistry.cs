@@ -3,28 +3,21 @@ using Foundgine.Core.Abstractions;
 namespace Foundgine.Core.Semantic.Metadata;
 
 /// <summary>
-/// In-memory registry of the static metadata used by resolution and planning.
-/// A future AOT generator can emit an implementation with the same contract.
+///     In-memory registry of the static metadata used by resolution and planning.
+///     A future AOT generator can emit an implementation with the same contract.
 /// </summary>
 public sealed class MetadataRegistry : IMetadataCatalog, IMutationSchema
 {
-    private readonly Dictionary<EntityId, EntityMetadata> _entities = new();
-
-    private readonly Dictionary<RelationshipId, RelationshipMetadata> _relationships = new();
-
-    private readonly Dictionary<ModelId, ModelMetadata> _models = new();
+    private readonly Dictionary<AuthorizationId, AuthorizationMetadata> _authorizations = new();
 
     private readonly Dictionary<ConnectionId, ConnectionMetadata> _connections = new();
 
     private readonly List<ConversionMetadata> _conversions = new();
+    private readonly Dictionary<EntityId, EntityMetadata> _entities = new();
 
-    private readonly Dictionary<AuthorizationId, AuthorizationMetadata> _authorizations = new();
+    private readonly Dictionary<ModelId, ModelMetadata> _models = new();
 
-    public IEnumerable<EntityMetadata> Entities =>
-        _entities.Values;
-
-    public IEnumerable<RelationshipMetadata> Relationships =>
-        _relationships.Values;
+    private readonly Dictionary<RelationshipId, RelationshipMetadata> _relationships = new();
 
     public IEnumerable<ModelMetadata> Models =>
         _models.Values;
@@ -37,6 +30,68 @@ public sealed class MetadataRegistry : IMetadataCatalog, IMutationSchema
 
     public IEnumerable<AuthorizationMetadata> Authorizations =>
         _authorizations.Values;
+
+    public IEnumerable<EntityMetadata> Entities =>
+        _entities.Values;
+
+    public IEnumerable<RelationshipMetadata> Relationships =>
+        _relationships.Values;
+
+    public AuthorizationMetadata GetAuthorization(
+        AuthorizationId id)
+    {
+        return _authorizations.TryGetValue(
+            id,
+            out var authorization)
+            ? authorization
+            : throw new KeyNotFoundException(
+                $"Authorization {id} was not registered.");
+    }
+
+    public EntityMetadata GetEntity(
+        EntityId entityId)
+    {
+        return Get(entityId);
+    }
+
+    public ModelMetadata GetModel(
+        ModelId id)
+    {
+        return Get(id);
+    }
+
+    public ConnectionMetadata GetConnection(
+        ConnectionId id)
+    {
+        return Get(id);
+    }
+
+    public ConversionMetadata? FindConversion(
+        Type sourceType,
+        Type targetType)
+    {
+        return _conversions.FirstOrDefault(x =>
+            x.SourceType == sourceType &&
+            x.TargetType == targetType);
+    }
+
+    public RelationshipMetadata GetRelationship(
+        RelationshipId relationshipId)
+    {
+        return Get(relationshipId);
+    }
+
+    MutationEntitySchema IMutationSchema.GetEntity(
+        EntityId entityId)
+    {
+        return GetEntitySchema(entityId);
+    }
+
+    MutationRelationshipSchema IMutationSchema.GetRelationship(
+        RelationshipId relationshipId)
+    {
+        return GetRelationshipSchema(relationshipId);
+    }
 
     public void Register(EntityMetadata metadata)
     {
@@ -73,30 +128,16 @@ public sealed class MetadataRegistry : IMetadataCatalog, IMutationSchema
         _authorizations[authorization.Id] = authorization;
     }
 
-    public AuthorizationMetadata GetAuthorization(
-        AuthorizationId id)
-    {
-        return _authorizations.TryGetValue(
-            id,
-            out var authorization)
-            ? authorization
-            : throw new KeyNotFoundException(
-                $"Authorization {id} was not registered.");
-    }
-
     public void Register(ConversionMetadata conversion)
     {
         ArgumentNullException.ThrowIfNull(conversion);
 
-        if (_conversions.Any(
-                x =>
-                    x.SourceType == conversion.SourceType &&
-                    x.TargetType == conversion.TargetType))
-        {
+        if (_conversions.Any(x =>
+                x.SourceType == conversion.SourceType &&
+                x.TargetType == conversion.TargetType))
             throw new InvalidOperationException(
-                $"Duplicate Foundgine conversion " +
+                "Duplicate Foundgine conversion " +
                 $"{conversion.SourceType} -> {conversion.TargetType}.");
-        }
 
         _conversions.Add(conversion);
     }
@@ -121,12 +162,6 @@ public sealed class MetadataRegistry : IMetadataCatalog, IMutationSchema
                 $"Entity {id} was not registered.");
     }
 
-    public EntityMetadata GetEntity(
-        EntityId entityId)
-    {
-        return Get(entityId);
-    }
-
     public bool TryGet(
         ModelId id,
         out ModelMetadata model)
@@ -134,12 +169,6 @@ public sealed class MetadataRegistry : IMetadataCatalog, IMutationSchema
         return _models.TryGetValue(
             id,
             out model!);
-    }
-
-    public ModelMetadata GetModel(
-        ModelId id)
-    {
-        return Get(id);
     }
 
     public ModelMetadata Get(
@@ -160,22 +189,6 @@ public sealed class MetadataRegistry : IMetadataCatalog, IMutationSchema
         return _connections.TryGetValue(
             id,
             out connection!);
-    }
-
-    public ConnectionMetadata GetConnection(
-        ConnectionId id)
-    {
-        return Get(id);
-    }
-
-    public ConversionMetadata? FindConversion(
-        Type sourceType,
-        Type targetType)
-    {
-        return _conversions.FirstOrDefault(
-            x =>
-                x.SourceType == sourceType &&
-                x.TargetType == targetType);
     }
 
     public ConnectionMetadata Get(
@@ -209,12 +222,6 @@ public sealed class MetadataRegistry : IMetadataCatalog, IMutationSchema
                 $"Relationship {id} was not registered.");
     }
 
-    public RelationshipMetadata GetRelationship(
-        RelationshipId relationshipId)
-    {
-        return Get(relationshipId);
-    }
-
     public MutationEntitySchema GetEntitySchema(
         EntityId entityId)
     {
@@ -236,12 +243,6 @@ public sealed class MetadataRegistry : IMetadataCatalog, IMutationSchema
             entity.PrimaryKey?.ColumnId);
     }
 
-    MutationEntitySchema IMutationSchema.GetEntity(
-        EntityId entityId)
-    {
-        return GetEntitySchema(entityId);
-    }
-
     public MutationRelationshipSchema GetRelationshipSchema(
         RelationshipId relationshipId)
     {
@@ -254,11 +255,5 @@ public sealed class MetadataRegistry : IMetadataCatalog, IMutationSchema
             relationship.Name,
             relationship.SourceKey.ColumnId,
             relationship.TargetKey.ColumnId);
-    }
-
-    MutationRelationshipSchema IMutationSchema.GetRelationship(
-        RelationshipId relationshipId)
-    {
-        return GetRelationshipSchema(relationshipId);
     }
 }

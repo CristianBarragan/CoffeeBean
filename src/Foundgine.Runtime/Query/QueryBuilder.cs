@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Foundgine.Core.Execution;
 using Foundgine.Core.Semantic.Intent;
 using Foundgine.Core.Semantic.Query;
@@ -9,31 +8,44 @@ namespace Foundgine.Runtime;
 /// <summary>Open, fluent query authoring surface. Typed and dynamic queries compile to the same ReadIntent.</summary>
 public static class FoundgineQueryExtensions
 {
-    public static TypedQuery<T> Query<T>(this IFoundgine foundgine) => new(foundgine);
-    public static DynamicQuery Query(this IFoundgine foundgine, string entity) => new(foundgine, entity);
+    public static TypedQuery<T> Query<T>(this IFoundgine foundgine)
+    {
+        return new TypedQuery<T>(foundgine);
+    }
+
+    public static DynamicQuery Query(this IFoundgine foundgine, string entity)
+    {
+        return new DynamicQuery(foundgine, entity);
+    }
 }
 
 public sealed class TypedQuery<T>
 {
     private readonly IFoundgine _foundgine;
-    private readonly List<ReadSelection> _selections = [];
-    private ReadFilter? _filter;
     private readonly List<ReadOrder> _order = [];
+    private readonly List<ReadSelection> _selections = [];
+    private string? _after;
+    private ReadFilter? _filter;
     private int? _limit;
     private int? _offset;
-    private string? _after;
 
-    internal TypedQuery(IFoundgine foundgine) => _foundgine = foundgine ?? throw new ArgumentNullException(nameof(foundgine));
+    private SecurityExecutionContext? _security;
+
+    internal TypedQuery(IFoundgine foundgine)
+    {
+        _foundgine = foundgine ?? throw new ArgumentNullException(nameof(foundgine));
+    }
 
     public TypedQuery<T> Select<TProjection>(Expression<Func<T, TProjection>> projection)
     {
         ArgumentNullException.ThrowIfNull(projection);
         foreach (var name in ExpressionMembers.GetMembers(projection.Body))
-            _selections.Add(new ReadSelection(Field: name));
+            _selections.Add(new ReadSelection(name));
         return this;
     }
 
-    public TypedQuery<T> Include<TChild>(Expression<Func<T, IEnumerable<TChild>>> relationship, Action<TypedQuery<TChild>> configure)
+    public TypedQuery<T> Include<TChild>(Expression<Func<T, IEnumerable<TChild>>> relationship,
+        Action<TypedQuery<TChild>> configure)
     {
         ArgumentNullException.ThrowIfNull(relationship);
         ArgumentNullException.ThrowIfNull(configure);
@@ -69,30 +81,59 @@ public sealed class TypedQuery<T>
         return this;
     }
 
-    public TypedQuery<T> Take(int limit) { if (limit < 0) throw new ArgumentOutOfRangeException(nameof(limit)); _limit = limit; return this; }
-    public TypedQuery<T> Skip(int offset) { if (offset < 0) throw new ArgumentOutOfRangeException(nameof(offset)); _offset = offset; return this; }
-    public TypedQuery<T> After(string cursor) { ArgumentException.ThrowIfNullOrWhiteSpace(cursor); _after = cursor; return this; }
-    public TypedQuery<T> WithSecurity(SecurityExecutionContext security) { ArgumentNullException.ThrowIfNull(security); _security = security; return this; }
+    public TypedQuery<T> Take(int limit)
+    {
+        if (limit < 0) throw new ArgumentOutOfRangeException(nameof(limit));
+        _limit = limit;
+        return this;
+    }
 
-    public Task<ExecutionResult> ExecuteAsync(CancellationToken cancellationToken = default) =>
-        _foundgine.ExecuteAsync(ToIntent(), cancellationToken: cancellationToken);
+    public TypedQuery<T> Skip(int offset)
+    {
+        if (offset < 0) throw new ArgumentOutOfRangeException(nameof(offset));
+        _offset = offset;
+        return this;
+    }
+
+    public TypedQuery<T> After(string cursor)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(cursor);
+        _after = cursor;
+        return this;
+    }
+
+    public TypedQuery<T> WithSecurity(SecurityExecutionContext security)
+    {
+        ArgumentNullException.ThrowIfNull(security);
+        _security = security;
+        return this;
+    }
+
+    public Task<ExecutionResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        return _foundgine.ExecuteAsync(ToIntent(), cancellationToken: cancellationToken);
+    }
 
     /// <summary>Returns the provider-neutral open intent without executing it.</summary>
-    public ReadIntent ToIntent() => new(typeof(T).Name, _selections.ToArray(), _filter, _order.ToArray(), _limit, _offset, _after, _security);
-
-    private SecurityExecutionContext? _security;
+    public ReadIntent ToIntent()
+    {
+        return new(typeof(T).Name, _selections.ToArray(), _filter, _order.ToArray(), _limit, _offset, _after,
+            _security);
+    }
 }
 
 public sealed class DynamicQuery
 {
-    private readonly IFoundgine _foundgine;
     private readonly string _entity;
-    private readonly List<ReadSelection> _selections = [];
-    private ReadFilter? _filter;
+    private readonly IFoundgine _foundgine;
     private readonly List<ReadOrder> _order = [];
+    private readonly List<ReadSelection> _selections = [];
+    private string? _after;
+    private ReadFilter? _filter;
     private int? _limit;
     private int? _offset;
-    private string? _after;
+
+    private SecurityExecutionContext? _security;
 
     internal DynamicQuery(IFoundgine foundgine, string entity)
     {
@@ -107,8 +148,9 @@ public sealed class DynamicQuery
         foreach (var field in fields)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(field);
-            _selections.Add(new ReadSelection(Field: field));
+            _selections.Add(new ReadSelection(field));
         }
+
         return this;
     }
 
@@ -179,18 +221,44 @@ public sealed class DynamicQuery
         return this;
     }
 
-    public DynamicQuery Take(int limit) { if (limit < 0) throw new ArgumentOutOfRangeException(nameof(limit)); _limit = limit; return this; }
-    public DynamicQuery Skip(int offset) { if (offset < 0) throw new ArgumentOutOfRangeException(nameof(offset)); _offset = offset; return this; }
-    public DynamicQuery After(string cursor) { ArgumentException.ThrowIfNullOrWhiteSpace(cursor); _after = cursor; return this; }
-    public DynamicQuery WithSecurity(SecurityExecutionContext security) { ArgumentNullException.ThrowIfNull(security); _security = security; return this; }
+    public DynamicQuery Take(int limit)
+    {
+        if (limit < 0) throw new ArgumentOutOfRangeException(nameof(limit));
+        _limit = limit;
+        return this;
+    }
 
-    public Task<ExecutionResult> ExecuteAsync(CancellationToken cancellationToken = default) =>
-        _foundgine.ExecuteAsync(ToIntent(), cancellationToken: cancellationToken);
+    public DynamicQuery Skip(int offset)
+    {
+        if (offset < 0) throw new ArgumentOutOfRangeException(nameof(offset));
+        _offset = offset;
+        return this;
+    }
+
+    public DynamicQuery After(string cursor)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(cursor);
+        _after = cursor;
+        return this;
+    }
+
+    public DynamicQuery WithSecurity(SecurityExecutionContext security)
+    {
+        ArgumentNullException.ThrowIfNull(security);
+        _security = security;
+        return this;
+    }
+
+    public Task<ExecutionResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        return _foundgine.ExecuteAsync(ToIntent(), cancellationToken: cancellationToken);
+    }
 
     /// <summary>Returns the provider-neutral open intent without executing it.</summary>
-    public ReadIntent ToIntent() => new(_entity, _selections.ToArray(), _filter, _order.ToArray(), _limit, _offset, _after, _security);
-
-    private SecurityExecutionContext? _security;
+    public ReadIntent ToIntent()
+    {
+        return new(_entity, _selections.ToArray(), _filter, _order.ToArray(), _limit, _offset, _after, _security);
+    }
 }
 
 internal static class ExpressionMembers
@@ -211,7 +279,12 @@ internal static class ExpressionMembers
         return [GetSingleMember(expression)];
     }
 
-    private static Expression Unwrap(Expression expression) => expression is UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked } u ? u.Operand : expression;
+    private static Expression Unwrap(Expression expression)
+    {
+        return expression is UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked } u
+            ? u.Operand
+            : expression;
+    }
 }
 
 internal static class ExpressionFilterCompiler
@@ -229,12 +302,14 @@ internal static class ExpressionFilterCompiler
             {
                 ExpressionType.Equal => SemanticFilterOperator.Eq,
                 ExpressionType.NotEqual => SemanticFilterOperator.Neq,
-                _ => throw new ArgumentException("Typed Where currently supports ==, !=, && and ||. Other operators belong in the semantic predicate algebra.")
+                _ => throw new ArgumentException(
+                    "Typed Where currently supports ==, !=, && and ||. Other operators belong in the semantic predicate algebra.")
             };
             var field = binary.Left;
             var value = Evaluate(binary.Right);
             return new ReadFieldFilter(ExpressionMembers.GetSingleMember(field), op, value);
         }
+
         throw new ArgumentException("Typed Where must be a property comparison, such as x => x.TenantId == tenantId.");
     }
 
@@ -247,5 +322,10 @@ internal static class ExpressionFilterCompiler
         throw new ArgumentException("Typed filter values must be constants or captured local values.");
     }
 
-    private static Expression Unwrap(Expression expression) => expression is UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked } u ? u.Operand : expression;
+    private static Expression Unwrap(Expression expression)
+    {
+        return expression is UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked } u
+            ? u.Operand
+            : expression;
+    }
 }

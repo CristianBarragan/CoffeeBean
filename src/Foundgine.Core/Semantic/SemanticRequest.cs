@@ -5,8 +5,8 @@ using Foundgine.Core.Semantic.Security.Execution;
 namespace Foundgine.Core.Semantic;
 
 /// <summary>
-/// Protocol-neutral description of what a caller wants. Adapters such as
-/// GraphQL translate into this shape; the engine never sees their ASTs.
+///     Protocol-neutral description of what a caller wants. Adapters such as
+///     GraphQL translate into this shape; the engine never sees their ASTs.
 /// </summary>
 public sealed record SemanticRequest(
     EntityId Root,

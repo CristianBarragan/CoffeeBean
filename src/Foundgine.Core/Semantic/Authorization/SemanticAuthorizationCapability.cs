@@ -18,9 +18,9 @@ public sealed record SemanticRelationshipAuthorizationCapability(
     AuthorizationDecision Write);
 
 /// <summary>
-/// Capability information for one entity. This is descriptive context for
-/// callers such as APIs and AI agents; it is not an authorization bypass.
-/// Execution still evaluates the policy independently.
+///     Capability information for one entity. This is descriptive context for
+///     callers such as APIs and AI agents; it is not an authorization bypass.
+///     Execution still evaluates the policy independently.
 /// </summary>
 public sealed record SemanticAuthorizationCapability(
     EntityId EntityId,
@@ -69,8 +69,10 @@ public static class SemanticAuthorizationCapabilityDiscovery
             .Select(field => new SemanticFieldAuthorizationCapability(
                 field.Id,
                 field.Name,
-                DescribeDecision(Effective(read, policy.GetFieldAccess(entity.Id, field.Id, AuthorizationOperation.Read))),
-                DescribeDecision(Effective(write, policy.GetFieldAccess(entity.Id, field.Id, AuthorizationOperation.Write)))))
+                DescribeDecision(Effective(read,
+                    policy.GetFieldAccess(entity.Id, field.Id, AuthorizationOperation.Read))),
+                DescribeDecision(Effective(write,
+                    policy.GetFieldAccess(entity.Id, field.Id, AuthorizationOperation.Write)))))
             .ToArray();
 
         var relationships = entity.Relationships
@@ -101,14 +103,20 @@ public static class SemanticAuthorizationCapabilityDiscovery
             relationships);
     }
 
-    private static AuthorizationDecision DescribeDecision(AuthorizationDecision decision) =>
-        new(decision.Access);
+    private static AuthorizationDecision DescribeDecision(AuthorizationDecision decision)
+    {
+        return new AuthorizationDecision(decision.Access);
+    }
 
-    private static AuthorizationDecision PredicateDecision(AuthorizationPredicate? predicate) =>
-        predicate is null
+    private static AuthorizationDecision PredicateDecision(AuthorizationPredicate? predicate)
+    {
+        return predicate is null
             ? AuthorizationDecision.Allowed
             : AuthorizationDecision.Conditional(predicate);
+    }
 
-    private static AuthorizationDecision Effective(params AuthorizationDecision[] decisions) =>
-        SemanticAuthorizationCapabilityComposition.Compose(decisions);
+    private static AuthorizationDecision Effective(params AuthorizationDecision[] decisions)
+    {
+        return SemanticAuthorizationCapabilityComposition.Compose(decisions);
+    }
 }

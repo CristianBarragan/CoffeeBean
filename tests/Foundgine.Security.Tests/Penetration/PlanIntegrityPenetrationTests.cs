@@ -2,10 +2,8 @@
 using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Security;
 using Foundgine.Core.Semantic.Planning;
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Security;
 using Foundgine.Testing;
-using Xunit;
 
 namespace Foundgine.Security.Tests.Penetration;
 
@@ -40,7 +38,8 @@ public sealed class PlanIntegrityPenetrationTests
     public void Security_proof_for_one_execution_ir_cannot_authorize_a_modified_ir()
     {
         var ir = CreateIr(SecurityInvariantIds.AuthorizationRequired);
-        var certified = SecurityInvariantProofGate.AttachAndValidate(new TestProviderPlan("pentest"), ir, new GoodCompiler());
+        var certified =
+            SecurityInvariantProofGate.AttachAndValidate(new TestProviderPlan("pentest"), ir, new GoodCompiler());
         var modified = CreateIr(SecurityInvariantIds.TenantIsolation);
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -55,7 +54,8 @@ public sealed class PlanIntegrityPenetrationTests
         var ir = CreateIr(SecurityInvariantIds.TenantIsolation);
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            SecurityInvariantProofGate.AttachAndValidate(new TestProviderPlan("weak"), ir, new DeclarationOnlyCompiler()));
+            SecurityInvariantProofGate.AttachAndValidate(new TestProviderPlan("weak"), ir,
+                new DeclarationOnlyCompiler()));
 
         Assert.Contains("conformance evaluator", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -71,26 +71,39 @@ public sealed class PlanIntegrityPenetrationTests
         Assert.Contains("Unknown required security invariant", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static ExecutionIR CreateIr(string invariant) => ExecutionIRTestFactory.Create(
-        new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, []),
-        [invariant]);
+    private static ExecutionIR CreateIr(string invariant)
+    {
+        return ExecutionIRTestFactory.Create(
+            new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, []),
+            [invariant]);
+    }
 
     private sealed record TestProviderPlan(string Provider) : ProviderPlan(Provider);
 
     private sealed class DeclarationOnlyCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
     {
+        public ProviderPlan Compile(ExecutionIR ir)
+        {
+            return new TestProviderPlan("weak");
+        }
+
         public IReadOnlyCollection<string> PreservedSecurityInvariants => [SecurityInvariantIds.TenantIsolation];
-        public ProviderPlan Compile(ExecutionIR ir) => new TestProviderPlan("weak");
     }
 
-    private sealed class GoodCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class GoodCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
-        public IReadOnlyCollection<string> PreservedSecurityInvariants => SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
-        public ProviderPlan Compile(ExecutionIR ir) => new TestProviderPlan("pentest");
+        public ProviderPlan Compile(ExecutionIR ir)
+        {
+            return new TestProviderPlan("pentest");
+        }
 
-        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-            new(plan.Provider, ir.RequiredSecurityInvariants, ir.RequiredSecurityInvariants, []);
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
+        {
+            return new(plan.Provider, ir.RequiredSecurityInvariants, ir.RequiredSecurityInvariants, []);
+        }
+
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
     }
 }
-
-

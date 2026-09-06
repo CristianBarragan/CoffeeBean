@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace Foundgine.Core.Semantic.Resolution;
 
 /// <summary>Semantic kinds that lexical retrieval may propose for a token.</summary>

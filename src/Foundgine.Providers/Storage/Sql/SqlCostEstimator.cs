@@ -5,9 +5,9 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Providers.Storage.Sql;
 
 /// <summary>
-/// Conservative provider-aware cost model for SQL plan selection.
-/// It is intentionally heuristic and provider-neutral at the planning API;
-/// deployments may replace it with statistics-backed estimates later.
+///     Conservative provider-aware cost model for SQL plan selection.
+///     It is intentionally heuristic and provider-neutral at the planning API;
+///     deployments may replace it with statistics-backed estimates later.
 /// </summary>
 public sealed record SqlCostModelOptions(
     double ScanBaseCost = 10d,
@@ -43,7 +43,8 @@ public sealed record SqlCostModelOptions(
         if (string.IsNullOrWhiteSpace(StatisticsSource))
             throw new ArgumentException("Statistics source is required.", nameof(StatisticsSource));
         if (StatisticsObservedAtUtc is not null && StatisticsVersion is null)
-            throw new ArgumentException("Statistics version is required when an observation timestamp is supplied.", nameof(StatisticsVersion));
+            throw new ArgumentException("Statistics version is required when an observation timestamp is supplied.",
+                nameof(StatisticsVersion));
         if (StatisticsStaleAfter is not null && StatisticsStaleAfter.Value < TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(StatisticsStaleAfter));
         return this;
@@ -57,8 +58,8 @@ public sealed record SqlCostModelOptions(
 }
 
 /// <summary>
-/// SQL provider cost estimator used by the provider-aware rewrite selector.
-/// It uses semantic plan shape and metadata, never SQL text or request authority.
+///     SQL provider cost estimator used by the provider-aware rewrite selector.
+///     It uses semantic plan shape and metadata, never SQL text or request authority.
 /// </summary>
 public sealed class SqlCostEstimator : IProviderCostEstimator
 {
@@ -104,16 +105,17 @@ public sealed class SqlCostEstimator : IProviderCostEstimator
     private double EstimateNode(SemanticPlanNode node)
     {
         var entity = _metadata.GetEntity(node.EntityId);
-        var cost = _options.ScanBaseCost + (node.Fields.Count * _options.FieldCost);
+        var cost = _options.ScanBaseCost + node.Fields.Count * _options.FieldCost;
 
         if (node.Operation is ExecutionOperation.Traverse or ExecutionOperation.TraverseConnection)
         {
             var traversalCost = _options.TraverseCost;
             if (node.TraversalOrder >= 0)
             {
-                var orderFactor = 1d - (_options.TraversalOrderDiscount / (node.TraversalOrder + 2d));
+                var orderFactor = 1d - _options.TraversalOrderDiscount / (node.TraversalOrder + 2d);
                 traversalCost *= Math.Max(0d, orderFactor);
             }
+
             cost += traversalCost;
         }
 
@@ -144,17 +146,20 @@ public sealed class SqlCostEstimator : IProviderCostEstimator
         return cost;
     }
 
-    private double EstimateFilter(SemanticFilterExpression expression) => expression switch
+    private double EstimateFilter(SemanticFilterExpression expression)
     {
-        SemanticFieldFilter => _options.FilterCost,
-        SemanticRelationshipFilter relationship =>
-            _options.RelationshipFilterCost + EstimateFilter(relationship.Predicate),
-        SemanticAggregateFilter aggregate =>
-            _options.AggregateFilterCost + (aggregate.Predicate is null ? 0d : EstimateFilter(aggregate.Predicate)),
-        SemanticAndFilter and => and.Expressions.Sum(EstimateFilter),
-        SemanticOrFilter or => or.Expressions.Sum(EstimateFilter),
-        _ => _options.FilterCost
-    };
+        return expression switch
+        {
+            SemanticFieldFilter => _options.FilterCost,
+            SemanticRelationshipFilter relationship =>
+                _options.RelationshipFilterCost + EstimateFilter(relationship.Predicate),
+            SemanticAggregateFilter aggregate =>
+                _options.AggregateFilterCost + (aggregate.Predicate is null ? 0d : EstimateFilter(aggregate.Predicate)),
+            SemanticAndFilter and => and.Expressions.Sum(EstimateFilter),
+            SemanticOrFilter or => or.Expressions.Sum(EstimateFilter),
+            _ => _options.FilterCost
+        };
+    }
 
     private static double EstimateRows(SemanticPlanNode node)
     {

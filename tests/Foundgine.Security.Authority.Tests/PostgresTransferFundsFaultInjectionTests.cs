@@ -1,8 +1,6 @@
 using Foundgine.HighAssurance.Banking;
 using Foundgine.HighAssurance.Postgres;
 using Foundgine.HighAssurance.Postgres.Execution;
-using Npgsql;
-using Xunit;
 
 namespace Foundgine.Runtime.ControlPlane.Tests;
 
@@ -55,7 +53,8 @@ public sealed class PostgresTransferFundsFaultInjectionTests
             point =>
             {
                 if (point == PostgresTransferFundsFaultPoint.AfterBatchMutationBeforeCommit)
-                    throw new InvalidOperationException("Injected provider failure after batch mutation before commit.");
+                    throw new InvalidOperationException(
+                        "Injected provider failure after batch mutation before commit.");
             });
         var service = new PostgresTransferFundsService(executor);
 
@@ -69,13 +68,13 @@ public sealed class PostgresTransferFundsFaultInjectionTests
 
         await using var connection = await dataSource.OpenConnectionAsync();
         const string sql = """
-            SELECT
-              (SELECT balance FROM banking.bank_account WHERE id = @a),
-              (SELECT balance FROM banking.bank_account WHERE id = @b),
-              (SELECT balance FROM banking.bank_account WHERE id = @c),
-              (SELECT count(*) FROM banking.transfer_idempotency),
-              (SELECT count(*) FROM banking.transfer_audit);
-            """;
+                           SELECT
+                             (SELECT balance FROM banking.bank_account WHERE id = @a),
+                             (SELECT balance FROM banking.bank_account WHERE id = @b),
+                             (SELECT balance FROM banking.bank_account WHERE id = @c),
+                             (SELECT count(*) FROM banking.transfer_idempotency),
+                             (SELECT count(*) FROM banking.transfer_audit);
+                           """;
         await using var command = new NpgsqlCommand(sql, connection);
         command.Parameters.AddWithValue("a", a);
         command.Parameters.AddWithValue("b", b);
@@ -94,17 +93,20 @@ public sealed class PostgresTransferFundsFaultInjectionTests
         var sql = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "schema.sql"));
         await using var command = dataSource.CreateCommand(sql);
         await command.ExecuteNonQueryAsync();
-        await using var clear = dataSource.CreateCommand("TRUNCATE banking.transfer_audit, banking.transfer_idempotency, banking.bank_account;");
+        await using var clear =
+            dataSource.CreateCommand(
+                "TRUNCATE banking.transfer_audit, banking.transfer_idempotency, banking.bank_account;");
         await clear.ExecuteNonQueryAsync();
     }
 
-    private static async Task SeedAsync(NpgsqlDataSource dataSource, int tenant, Guid actor, Guid source, Guid destination)
+    private static async Task SeedAsync(NpgsqlDataSource dataSource, int tenant, Guid actor, Guid source,
+        Guid destination)
     {
         const string sql = """
-            INSERT INTO banking.bank_account(id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold, daily_transferred, daily_limit, is_frozen)
-            VALUES (@source, @tenant, @actor, 100000, 0, 0, 0, 1000000, false),
-                   (@destination, @tenant, @actor, 50000, 0, 0, 0, 1000000, false);
-            """;
+                           INSERT INTO banking.bank_account(id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold, daily_transferred, daily_limit, is_frozen)
+                           VALUES (@source, @tenant, @actor, 100000, 0, 0, 0, 1000000, false),
+                                  (@destination, @tenant, @actor, 50000, 0, 0, 0, 1000000, false);
+                           """;
         await using var command = dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("source", source);
         command.Parameters.AddWithValue("destination", destination);
@@ -113,14 +115,15 @@ public sealed class PostgresTransferFundsFaultInjectionTests
         await command.ExecuteNonQueryAsync();
     }
 
-    private static async Task SeedThreeAsync(NpgsqlDataSource dataSource, int tenant, Guid actor, Guid a, Guid b, Guid c)
+    private static async Task SeedThreeAsync(NpgsqlDataSource dataSource, int tenant, Guid actor, Guid a, Guid b,
+        Guid c)
     {
         const string sql = """
-            INSERT INTO banking.bank_account(id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold, daily_transferred, daily_limit, is_frozen)
-            VALUES (@a, @tenant, @actor, 100000, 0, 0, 0, 1000000, false),
-                   (@b, @tenant, @actor, 50000, 0, 0, 0, 1000000, false),
-                   (@c, @tenant, @actor, 50000, 0, 0, 0, 1000000, false);
-            """;
+                           INSERT INTO banking.bank_account(id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold, daily_transferred, daily_limit, is_frozen)
+                           VALUES (@a, @tenant, @actor, 100000, 0, 0, 0, 1000000, false),
+                                  (@b, @tenant, @actor, 50000, 0, 0, 0, 1000000, false),
+                                  (@c, @tenant, @actor, 50000, 0, 0, 0, 1000000, false);
+                           """;
         await using var command = dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("a", a);
         command.Parameters.AddWithValue("b", b);
@@ -135,12 +138,12 @@ public sealed class PostgresTransferFundsFaultInjectionTests
     {
         await using var connection = await dataSource.OpenConnectionAsync();
         const string sql = """
-            SELECT
-              (SELECT balance FROM banking.bank_account WHERE id = @source),
-              (SELECT balance FROM banking.bank_account WHERE id = @destination),
-              (SELECT count(*) FROM banking.transfer_idempotency),
-              (SELECT count(*) FROM banking.transfer_audit);
-            """;
+                           SELECT
+                             (SELECT balance FROM banking.bank_account WHERE id = @source),
+                             (SELECT balance FROM banking.bank_account WHERE id = @destination),
+                             (SELECT count(*) FROM banking.transfer_idempotency),
+                             (SELECT count(*) FROM banking.transfer_audit);
+                           """;
         await using var command = new NpgsqlCommand(sql, connection);
         command.Parameters.AddWithValue("source", source);
         command.Parameters.AddWithValue("destination", destination);

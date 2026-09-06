@@ -5,9 +5,9 @@ public sealed record OrderLine(int ProductId, int Quantity);
 public interface ISupplyChainQueries
 {
     Task<object> GetOrders(
-            int customerId,
-            CancellationToken ct);
-    
+        int customerId,
+        CancellationToken ct);
+
     Task<object> GetOrder(
         int customerId,
         int orderId,
@@ -33,18 +33,17 @@ public interface ISupplyChainQueries
         CancellationToken ct);
 
     Task<object> ListSuppliers(
-            CancellationToken ct);
-
+        CancellationToken ct);
 }
 
 public interface ISupplyChainMutations
 {
     Task<object> UpdateInventory(
-            int warehouseId,
-            int productId,
-            int quantity,
-            CancellationToken ct);
-    
+        int warehouseId,
+        int productId,
+        int quantity,
+        CancellationToken ct);
+
     Task<object> CreateShipment(
         int orderId,
         int carrierId,
@@ -65,9 +64,8 @@ public interface ISupplyChainMutations
         CancellationToken ct);
 
     Task<object> CancelOrder(
-            string actor,
-            int customerId,
-            int orderId,
-            CancellationToken ct);
-
+        string actor,
+        int customerId,
+        int orderId,
+        CancellationToken ct);
 }

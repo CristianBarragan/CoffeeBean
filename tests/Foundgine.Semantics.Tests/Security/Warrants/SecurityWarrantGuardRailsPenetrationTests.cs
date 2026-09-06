@@ -1,13 +1,11 @@
-using System.Security.Cryptography;
 using Foundgine.Core.Semantic.Security.Warrants;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests.Security.Warrants;
 
 /// <summary>
-/// Guard-rail tests for authority monotonicity, fail-closed context handling,
-/// canonicalization and replay behavior. These tests intentionally attack the
-/// boundaries rather than only exercising successful authorization paths.
+///     Guard-rail tests for authority monotonicity, fail-closed context handling,
+///     canonicalization and replay behavior. These tests intentionally attack the
+///     boundaries rather than only exercising successful authorization paths.
 /// </summary>
 public sealed class SecurityWarrantGuardRailsPenetrationTests
 {
@@ -101,7 +99,8 @@ public sealed class SecurityWarrantGuardRailsPenetrationTests
 
         var second = first with
         {
-            Grants = [
+            Grants =
+            [
                 new CapabilityGrant("Customer.read", "read", ["customer/1", "customer/3"]),
                 new CapabilityGrant("Customer.write", "write", ["customer/1", "customer/2"])
             ],
@@ -238,7 +237,8 @@ public sealed class SecurityWarrantGuardRailsPenetrationTests
     public void Child_cannot_recover_a_removed_tenant()
     {
         var now = DateTimeOffset.UtcNow;
-        var parent = CreateWarrant(now, constraints: new SecurityWarrantConstraints(allowedTenants: ["tenant-a", "tenant-b"]));
+        var parent = CreateWarrant(now,
+            constraints: new SecurityWarrantConstraints(allowedTenants: ["tenant-a", "tenant-b"]));
         var attenuated = parent with
         {
             Id = "child",
@@ -263,7 +263,8 @@ public sealed class SecurityWarrantGuardRailsPenetrationTests
             Constraints = new SecurityWarrantConstraints(allowedTenants: ["tenant-a", "tenant-b"])
         };
 
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantAttenuator.Attenuate(attenuated, grandchild, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantAttenuator.Attenuate(attenuated, grandchild, now));
     }
 
     private static SecurityWarrant CreateWarrant(
@@ -289,12 +290,18 @@ public sealed class SecurityWarrantGuardRailsPenetrationTests
             []);
     }
 
-    private static SecurityWarrant CreateWarrant(DateTimeOffset issuedAt, DateTimeOffset expiresAt) =>
-        CreateWarrant(expiresAt.AddHours(-1)) with { IssuedAt = issuedAt, ExpiresAt = expiresAt };
+    private static SecurityWarrant CreateWarrant(DateTimeOffset issuedAt, DateTimeOffset expiresAt)
+    {
+        return CreateWarrant(expiresAt.AddHours(-1)) with { IssuedAt = issuedAt, ExpiresAt = expiresAt };
+    }
 
     private sealed class Resolver(string keyId, RSA key) : ISecurityWarrantKeyResolver
     {
-        public RSA Resolve(string requestedKeyId) =>
-            string.Equals(requestedKeyId, keyId, StringComparison.Ordinal) ? key : throw new InvalidOperationException("Unknown key.");
+        public RSA Resolve(string requestedKeyId)
+        {
+            return string.Equals(requestedKeyId, keyId, StringComparison.Ordinal)
+                ? key
+                : throw new InvalidOperationException("Unknown key.");
+        }
     }
 }

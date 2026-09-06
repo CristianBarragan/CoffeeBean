@@ -1,12 +1,11 @@
-using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
 
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Immutable provenance binding for a semantic plan. A bound plan may only be
-/// used as the product of authorization performed against the same contract
-/// and authorization decision.
+///     Immutable provenance binding for a semantic plan. A bound plan may only be
+///     used as the product of authorization performed against the same contract
+///     and authorization decision.
 /// </summary>
 public sealed record SemanticPlanAuthorizationBinding(
     string ContractFingerprint,

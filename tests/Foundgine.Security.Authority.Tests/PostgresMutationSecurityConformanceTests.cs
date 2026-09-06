@@ -1,5 +1,4 @@
 using Foundgine.HighAssurance.Postgres;
-using Xunit;
 
 namespace Foundgine.Runtime.ControlPlane.Tests;
 

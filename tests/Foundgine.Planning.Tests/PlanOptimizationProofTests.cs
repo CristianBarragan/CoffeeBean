@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
 public sealed class PlanOptimizationProofTests
@@ -9,11 +7,11 @@ public sealed class PlanOptimizationProofTests
     {
         var proof = new PlanOptimizationProof(
             "test-rule",
-            SemanticMeaningPreserved: true,
-            SecurityPreserved: true,
-            AuthorizationBindingPreserved: true,
-            EstimatedBenefit: 1d,
-            EstimatedRewriteCost: 0.5d);
+            true,
+            true,
+            true,
+            1d,
+            0.5d);
 
         Assert.True(proof.IsSatisfied);
     }
@@ -23,11 +21,11 @@ public sealed class PlanOptimizationProofTests
     {
         var proof = new PlanOptimizationProof(
             "test-rule",
-            SemanticMeaningPreserved: false,
-            SecurityPreserved: true,
-            AuthorizationBindingPreserved: true,
-            EstimatedBenefit: 10d,
-            EstimatedRewriteCost: 0d);
+            false,
+            true,
+            true,
+            10d,
+            0d);
 
         Assert.False(proof.IsSatisfied);
     }
@@ -37,11 +35,11 @@ public sealed class PlanOptimizationProofTests
     {
         var proof = new PlanOptimizationProof(
             "test-rule",
-            SemanticMeaningPreserved: true,
-            SecurityPreserved: true,
-            AuthorizationBindingPreserved: false,
-            EstimatedBenefit: 10d,
-            EstimatedRewriteCost: 0d);
+            true,
+            true,
+            false,
+            10d,
+            0d);
 
         Assert.False(proof.IsSatisfied);
     }

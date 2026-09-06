@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-
 [assembly: InternalsVisibleTo("Foundgine.Runtime.Tests")]
 [assembly: InternalsVisibleTo("Foundgine.Providers")]
 [assembly: InternalsVisibleTo("Foundgine.Extensions")]

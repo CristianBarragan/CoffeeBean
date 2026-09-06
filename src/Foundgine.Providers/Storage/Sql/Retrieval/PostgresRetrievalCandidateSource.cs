@@ -1,16 +1,14 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic.Resolution;
-using Npgsql;
 
 namespace Foundgine.Providers.Storage.Sql.Retrieval;
 
 /// <summary>
-/// PostgreSQL implementation of the semantic candidate boundary.
-///
-/// This provider generates retrieval candidates and evidence only.
-/// Authorization and final relational execution remain owned by
-/// Foundgine's semantic/execution pipeline.
+///     PostgreSQL implementation of the semantic candidate boundary.
+///     This provider generates retrieval candidates and evidence only.
+///     Authorization and final relational execution remain owned by
+///     Foundgine's semantic/execution pipeline.
 /// </summary>
 public sealed class PostgresRetrievalCandidateSource
     : IApproximateCandidateSource
@@ -34,7 +32,7 @@ public sealed class PostgresRetrievalCandidateSource
             metadata ??
             throw new ArgumentNullException(nameof(metadata));
 
-        _options = options ?? new();
+        _options = options ?? new PostgresRetrievalOptions();
     }
 
     public IReadOnlyList<RetrievalCandidate> Retrieve(
@@ -136,14 +134,14 @@ public sealed class PostgresRetrievalCandidateSource
 
         var sql =
             $"""
-            SELECT
-                {identity},
-                similarity({column}, $1) AS score
-            FROM {table}
-            WHERE {column} % $1
-            ORDER BY score DESC
-            LIMIT $2
-            """;
+             SELECT
+                 {identity},
+                 similarity({column}, $1) AS score
+             FROM {table}
+             WHERE {column} % $1
+             ORDER BY score DESC
+             LIMIT $2
+             """;
 
         await using var command =
             _dataSource.CreateCommand(sql);
@@ -184,29 +182,29 @@ public sealed class PostgresRetrievalCandidateSource
 
         var sql =
             $"""
-            SELECT
-                {identity},
-                ts_rank_cd(
-                    to_tsvector(
-                        {config},
-                        COALESCE({column}::text, '')
-                    ),
-                    websearch_to_tsquery(
-                        {config},
-                        $1
-                    )
-                ) AS score
-            FROM {table}
-            WHERE to_tsvector(
-                {config},
-                COALESCE({column}::text, '')
-            ) @@ websearch_to_tsquery(
-                {config},
-                $1
-            )
-            ORDER BY score DESC
-            LIMIT $2
-            """;
+             SELECT
+                 {identity},
+                 ts_rank_cd(
+                     to_tsvector(
+                         {config},
+                         COALESCE({column}::text, '')
+                     ),
+                     websearch_to_tsquery(
+                         {config},
+                         $1
+                     )
+                 ) AS score
+             FROM {table}
+             WHERE to_tsvector(
+                 {config},
+                 COALESCE({column}::text, '')
+             ) @@ websearch_to_tsquery(
+                 {config},
+                 $1
+             )
+             ORDER BY score DESC
+             LIMIT $2
+             """;
 
         await using var command =
             _dataSource.CreateCommand(sql);
@@ -256,14 +254,14 @@ public sealed class PostgresRetrievalCandidateSource
 
         var sql =
             $"""
-            SELECT
-                {identity},
-                pdb.score({identity}) AS score
-            FROM {table}
-            WHERE {column} ||| $1
-            ORDER BY score DESC
-            LIMIT $2
-            """;
+             SELECT
+                 {identity},
+                 pdb.score({identity}) AS score
+             FROM {table}
+             WHERE {column} ||| $1
+             ORDER BY score DESC
+             LIMIT $2
+             """;
 
         await using var command =
             _dataSource.CreateCommand(sql);
@@ -289,18 +287,14 @@ public sealed class PostgresRetrievalCandidateSource
             CancellationToken cancellationToken)
     {
         if (request.Relationship is null)
-        {
             throw new ArgumentException(
                 "GraphSimilarity requires Relationship.",
                 nameof(request));
-        }
 
         if (request.ReferenceIdentity is null)
-        {
             throw new ArgumentException(
                 "GraphSimilarity requires ReferenceIdentity.",
                 nameof(request));
-        }
 
         var relationship =
             _metadata.GetRelationship(
@@ -332,21 +326,21 @@ public sealed class PostgresRetrievalCandidateSource
 
         var cypher =
             $"""
-            MATCH
-                (reference:{sourceLabel})
-                -[:{edgeLabel}]->
-                (neighbor)
-                <-[:{edgeLabel}]-
-                (candidate:{sourceLabel})
-            WHERE
-                reference.id = "{reference}"
-                AND candidate.id <> "{reference}"
-            RETURN
-                candidate.id,
-                count(*) AS score
-            ORDER BY score DESC
-            LIMIT {request.Limit}
-            """;
+             MATCH
+                 (reference:{sourceLabel})
+                 -[:{edgeLabel}]->
+                 (neighbor)
+                 <-[:{edgeLabel}]-
+                 (candidate:{sourceLabel})
+             WHERE
+                 reference.id = "{reference}"
+                 AND candidate.id <> "{reference}"
+             RETURN
+                 candidate.id,
+                 count(*) AS score
+             ORDER BY score DESC
+             LIMIT {request.Limit}
+             """;
 
         await using var load =
             _dataSource.CreateCommand(
@@ -357,15 +351,15 @@ public sealed class PostgresRetrievalCandidateSource
 
         var sql =
             $"""
-            SELECT *
-            FROM cypher(
-                {QuoteLiteral(graph)},
-                $1
-            ) AS (
-                record_id text,
-                score bigint
-            )
-            """;
+             SELECT *
+             FROM cypher(
+                 {QuoteLiteral(graph)},
+                 $1
+             ) AS (
+                 record_id text,
+                 score bigint
+             )
+             """;
 
         await using var command =
             _dataSource.CreateCommand(sql);
@@ -438,23 +432,19 @@ public sealed class PostgresRetrievalCandidateSource
         FieldId? fieldId)
     {
         if (fieldId is { } id)
-        {
             return entity.EffectiveFields
-                .FirstOrDefault(
-                    x => x.Id == id)
-                ?? throw new KeyNotFoundException(
-                    $"Field {id} is not registered " +
-                    $"on entity {entity.Name}.");
-        }
+                       .FirstOrDefault(x => x.Id == id)
+                   ?? throw new KeyNotFoundException(
+                       $"Field {id} is not registered " +
+                       $"on entity {entity.Name}.");
 
         return entity.EffectiveFields
-            .FirstOrDefault(
-                x =>
-                    x.ClrType == typeof(string) &&
-                    x.Column is not null)
-            ?? throw new InvalidOperationException(
-                $"Entity {entity.Name} has no string field " +
-                $"available for approximate retrieval.");
+                   .FirstOrDefault(x =>
+                       x.ClrType == typeof(string) &&
+                       x.Column is not null)
+               ?? throw new InvalidOperationException(
+                   $"Entity {entity.Name} has no string field " +
+                   "available for approximate retrieval.");
     }
 
     private string GetColumnName(
@@ -462,38 +452,32 @@ public sealed class PostgresRetrievalCandidateSource
         FieldMetadata field)
     {
         if (field.Column is null)
-        {
             throw new InvalidOperationException(
                 $"Field {field.Name} has no storage column.");
-        }
 
         return entity.Columns
-            .FirstOrDefault(
-                x => x.Id == field.Column.ColumnId)
-            ?.EffectiveStorageName
-            ?? throw new InvalidOperationException(
-                $"Column {field.Column.ColumnId} for field " +
-                $"{field.Name} is not registered on entity " +
-                $"{entity.Name}.");
+                   .FirstOrDefault(x => x.Id == field.Column.ColumnId)
+                   ?.EffectiveStorageName
+               ?? throw new InvalidOperationException(
+                   $"Column {field.Column.ColumnId} for field " +
+                   $"{field.Name} is not registered on entity " +
+                   $"{entity.Name}.");
     }
 
     private string GetPrimaryKeyName(
         EntityMetadata entity)
     {
         if (entity.PrimaryKey is null)
-        {
             throw new InvalidOperationException(
                 $"Entity {entity.Name} has no primary key metadata.");
-        }
 
         return entity.Columns
-            .FirstOrDefault(
-                x => x.Id == entity.PrimaryKey.ColumnId)
-            ?.EffectiveStorageName
-            ?? throw new InvalidOperationException(
-                $"Primary key column " +
-                $"{entity.PrimaryKey.ColumnId} is not registered " +
-                $"on entity {entity.Name}.");
+                   .FirstOrDefault(x => x.Id == entity.PrimaryKey.ColumnId)
+                   ?.EffectiveStorageName
+               ?? throw new InvalidOperationException(
+                   "Primary key column " +
+                   $"{entity.PrimaryKey.ColumnId} is not registered " +
+                   $"on entity {entity.Name}.");
     }
 
     private static string Quote(
@@ -522,7 +506,7 @@ public sealed class PostgresRetrievalCandidateSource
         RetrievalStrategy strategy)
     {
         return new NotSupportedException(
-            $"PostgreSQL retrieval strategy " +
+            "PostgreSQL retrieval strategy " +
             $"{strategy} is disabled.");
     }
 }

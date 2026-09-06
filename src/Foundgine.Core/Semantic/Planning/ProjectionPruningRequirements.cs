@@ -4,11 +4,11 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Derives fields that must remain available to evaluate a semantic node.
-/// Output fields are always retained; query filters and ordering add their
-/// root-level field dependencies. Relationship and aggregate dependencies are
-/// represented as relationship-level requirements and are therefore not
-/// removed by the conservative projection rule.
+///     Derives fields that must remain available to evaluate a semantic node.
+///     Output fields are always retained; query filters and ordering add their
+///     root-level field dependencies. Relationship and aggregate dependencies are
+///     represented as relationship-level requirements and are therefore not
+///     removed by the conservative projection rule.
 /// </summary>
 public static class ProjectionPruningRequirements
 {
@@ -23,10 +23,8 @@ public static class ProjectionPruningRequirements
 
         CollectFilterFields(options.Filter, required);
         foreach (var order in options.EffectiveOrder)
-        {
             if (order.IsRootField && !order.IsAggregate)
                 required.Add(order.Field);
-        }
 
         return required;
     }

@@ -1,12 +1,9 @@
-using System.Security.Cryptography;
-using System.Text;
-
 namespace Foundgine.Core.Semantic.Security.Warrants;
 
 /// <summary>
-/// Validates the complete delegation chain represented by a set of warrants.
-/// The validator deliberately operates on the exact warrant objects that are about
-/// to be used; it does not infer ancestry from an untrusted path alone.
+///     Validates the complete delegation chain represented by a set of warrants.
+///     The validator deliberately operates on the exact warrant objects that are about
+///     to be used; it does not infer ancestry from an untrusted path alone.
 /// </summary>
 public static class SecurityWarrantDelegationChainValidator
 {
@@ -61,7 +58,8 @@ public static class SecurityWarrantDelegationChainValidator
             {
                 var expected = chain[pathIndex].Digest;
                 if (!StringComparer.Ordinal.Equals(child.DelegationPath[pathIndex], expected))
-                    throw new InvalidOperationException("Delegation path contains a splice, reorder, or substituted ancestor.");
+                    throw new InvalidOperationException(
+                        "Delegation path contains a splice, reorder, or substituted ancestor.");
             }
 
             if (child.DelegationPath.Distinct(StringComparer.Ordinal).Count() != child.DelegationPath.Count)
@@ -80,8 +78,8 @@ public static class SecurityWarrantDelegationChainValidator
     }
 
     /// <summary>
-    /// Returns a deterministic digest of the complete ordered chain. This digest is
-    /// execution-time evidence and must not be included in semantic/compiled plan identity.
+    ///     Returns a deterministic digest of the complete ordered chain. This digest is
+    ///     execution-time evidence and must not be included in semantic/compiled plan identity.
     /// </summary>
     public static string ChainDigest(IReadOnlyList<SecurityWarrant> chain)
     {
@@ -93,6 +91,7 @@ public static class SecurityWarrantDelegationChainValidator
             var digestBytes = Convert.FromHexString(warrant.Digest);
             WriteLengthPrefixed(stream, digestBytes);
         }
+
         return Convert.ToHexString(sha.ComputeHash(stream.ToArray()));
     }
 

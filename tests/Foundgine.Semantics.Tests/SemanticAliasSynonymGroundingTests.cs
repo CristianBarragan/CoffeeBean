@@ -1,36 +1,33 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Resolution;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 
 /// <summary>
-/// Case study for the README / walkthrough headline example — "show me overdue
-/// purchase orders from our top supplier in Texas" — proving the alias path a
-/// paraphrase of it takes through the real architecture, not just describing it.
-///
-/// The walkthrough's Step 3 ("Semantic Model") and Step 5 ("Retrieval") describe
-/// two different jobs that are easy to conflate:
-///   - the semantic contract declares <em>aliases</em> on an entity
-///     (<see cref="SemanticEntityBuilder{T}.Alias(string, int?)"/>), which
-///     <see cref="SemanticLexiconProjection"/> folds into every
-///     <see cref="SemanticLexiconEntry"/> it derives from that entity;
-///   - a retrieval provider (Elasticsearch, pgvector, or — as here — a fake,
+///     Case study for the README / walkthrough headline example — "show me overdue
+///     purchase orders from our top supplier in Texas" — proving the alias path a
+///     paraphrase of it takes through the real architecture, not just describing it.
+///     The walkthrough's Step 3 ("Semantic Model") and Step 5 ("Retrieval") describe
+///     two different jobs that are easy to conflate:
+///     - the semantic contract declares <em>aliases</em> on an entity
+///     (<see cref="SemanticEntityBuilder{T}.Alias(string, int?)" />), which
+///     <see cref="SemanticLexiconProjection" /> folds into every
+///     <see cref="SemanticLexiconEntry" /> it derives from that entity;
+///     - a retrieval provider (Elasticsearch, pgvector, or — as here — a fake,
 ///     in-memory stand-in) indexes that projection and is the thing an
-///     <see cref="ISemanticLexicalCandidateSource"/> actually queries.
-///
-/// A synonym in a caller's sentence therefore only grounds to the same meaning
-/// as the "canonical" word if it survived both hops: declared as an alias on
-/// the contract, *and* matched by whatever sits behind the candidate source.
-/// This test builds a minimal but real contract (Supplier aliased "Seller",
-/// PurchaseOrder aliased "Buys"), projects it with the production
-/// <see cref="SemanticLexiconProjection"/>, and backs
-/// <see cref="SemanticLexicalResolver.Ground(string)"/> with a source that matches a
-/// token against either an entry's canonical name or its
-/// <see cref="SemanticLexiconEntry.EffectiveAliases"/> — the same contract the
-/// canonical name is matched against, so canonical and alias tokens are proven
-/// to reach the identical committed interpretation rather than merely two
-/// interpretations that happen to look similar.
+///     <see cref="ISemanticLexicalCandidateSource" /> actually queries.
+///     A synonym in a caller's sentence therefore only grounds to the same meaning
+///     as the "canonical" word if it survived both hops: declared as an alias on
+///     the contract, *and* matched by whatever sits behind the candidate source.
+///     This test builds a minimal but real contract (Supplier aliased "Seller",
+///     PurchaseOrder aliased "Buys"), projects it with the production
+///     <see cref="SemanticLexiconProjection" />, and backs
+///     <see cref="SemanticLexicalResolver.Ground(string)" /> with a source that matches a
+///     token against either an entry's canonical name or its
+///     <see cref="SemanticLexiconEntry.EffectiveAliases" /> — the same contract the
+///     canonical name is matched against, so canonical and alias tokens are proven
+///     to reach the identical committed interpretation rather than merely two
+///     interpretations that happen to look similar.
 /// </summary>
 public sealed class SemanticAliasSynonymGroundingTests
 {
@@ -133,16 +130,17 @@ public sealed class SemanticAliasSynonymGroundingTests
     }
 
     /// <summary>
-    /// Stand-in for a real retrieval provider: matches a token against either
-    /// an entry's canonical name or any of its declared aliases, exactly the
-    /// lookup an Elasticsearch/pgvector index built from
-    /// <see cref="SemanticLexiconProjection"/> output performs.
+    ///     Stand-in for a real retrieval provider: matches a token against either
+    ///     an entry's canonical name or any of its declared aliases, exactly the
+    ///     lookup an Elasticsearch/pgvector index built from
+    ///     <see cref="SemanticLexiconProjection" /> output performs.
     /// </summary>
     private sealed class AliasAwareLexicalSource(IReadOnlyList<SemanticLexiconEntry> lexicon)
         : ISemanticLexicalCandidateSource
     {
-        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request) =>
-            lexicon
+        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request)
+        {
+            return lexicon
                 .Where(entry => request.EffectiveKinds.Contains(entry.Kind))
                 .Where(entry =>
                     string.Equals(entry.CanonicalName, request.Token, StringComparison.OrdinalIgnoreCase) ||
@@ -160,5 +158,6 @@ public sealed class SemanticAliasSynonymGroundingTests
                     TargetEntityId: entry.TargetEntityId,
                     Value: entry.Value))
                 .ToArray();
+        }
     }
 }

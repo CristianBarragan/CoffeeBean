@@ -7,7 +7,7 @@ public enum TaskExecutionMode
     Foreground,
 
     /// <summary>Handed off to a host-owned worker; the caller receives a handle, not a result.</summary>
-    Background,
+    Background
 }
 
 /// <summary>Where a routed task is permitted to run.</summary>
@@ -20,36 +20,36 @@ public enum TaskRuntimeLocation
     Remote,
 
     /// <summary>Runs in a sandboxed/isolated execution boundary (e.g. no ambient network or file access).</summary>
-    Isolated,
+    Isolated
 }
 
 /// <summary>Whether a background task starts fresh or resumes prior worker state.</summary>
 public enum TaskWorkerAssignment
 {
     New,
-    Resume,
+    Resume
 }
 
 /// <summary>
-/// Retry behavior for a routed task. Foundgine only records the policy;
-/// applying it is host-owned infrastructure, same as the runtime location.
+///     Retry behavior for a routed task. Foundgine only records the policy;
+///     applying it is host-owned infrastructure, same as the runtime location.
 /// </summary>
 public sealed record RetryPolicy(int MaxAttempts, TimeSpan InitialBackoff, double BackoffMultiplier = 2.0)
 {
-    public static RetryPolicy None { get; } = new(MaxAttempts: 1, InitialBackoff: TimeSpan.Zero, BackoffMultiplier: 1.0);
+    public static RetryPolicy None { get; } = new(1, TimeSpan.Zero, 1.0);
 }
 
 /// <summary>Lifecycle characteristics a routed task's host-owned worker must honor.</summary>
 public sealed record TaskLifecyclePolicy(bool Cancelable, bool Observable, RetryPolicy? Retry)
 {
-    public static TaskLifecyclePolicy Default { get; } = new(Cancelable: true, Observable: true, Retry: RetryPolicy.None);
+    public static TaskLifecyclePolicy Default { get; } = new(true, true, RetryPolicy.None);
 }
 
 /// <summary>
-/// The output of a routing decision: how a tool call should run, not where
-/// it executes. Foundgine records the contract; a host-owned runtime (worker
-/// pool, sandbox, scheduler) is responsible for honoring it — the same
-/// division used by <c>ControlPlane/Recovery</c> for authority infrastructure.
+///     The output of a routing decision: how a tool call should run, not where
+///     it executes. Foundgine records the contract; a host-owned runtime (worker
+///     pool, sandbox, scheduler) is responsible for honoring it — the same
+///     division used by <c>ControlPlane/Recovery</c> for authority infrastructure.
 /// </summary>
 public sealed record TaskContract(
     string TaskId,
@@ -61,11 +61,14 @@ public sealed record TaskContract(
     string? ResumeWorkerId = null)
 {
     /// <summary>The safe, no-special-handling default: run inline, locally, as a new unit of work.</summary>
-    public static TaskContract Default(string taskId) => new(
-        TaskId: taskId,
-        Mode: TaskExecutionMode.Foreground,
-        Runtime: TaskRuntimeLocation.Local,
-        Worker: TaskWorkerAssignment.New,
-        Lifecycle: TaskLifecyclePolicy.Default,
-        PolicyTags: Array.Empty<string>());
+    public static TaskContract Default(string taskId)
+    {
+        return new TaskContract(
+            taskId,
+            TaskExecutionMode.Foreground,
+            TaskRuntimeLocation.Local,
+            TaskWorkerAssignment.New,
+            TaskLifecyclePolicy.Default,
+            Array.Empty<string>());
+    }
 }

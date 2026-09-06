@@ -5,16 +5,18 @@ using Foundgine.Core.Semantic.Mutation;
 namespace Foundgine.Core.Semantic.Planning.Mutation;
 
 /// <summary>
-/// Lowers a semantic mutation plan into provider-neutral execution work.
-/// This is the first boundary where semantic FieldId values are resolved to
-/// physical ColumnId values. Provider-specific SQL remains outside this type.
+///     Lowers a semantic mutation plan into provider-neutral execution work.
+///     This is the first boundary where semantic FieldId values are resolved to
+///     physical ColumnId values. Provider-specific SQL remains outside this type.
 /// </summary>
 public sealed class SemanticMutationExecutionLowerer
 {
     private readonly IMutationSchema _schema;
 
-    public SemanticMutationExecutionLowerer(IMutationSchema schema) =>
+    public SemanticMutationExecutionLowerer(IMutationSchema schema)
+    {
         _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+    }
 
     public ExecutionMutationIR Lower(SemanticMutationPlan plan)
     {
@@ -36,7 +38,7 @@ public sealed class SemanticMutationExecutionLowerer
                     throw new InvalidOperationException(
                         $"Semantic mutation field '{field.Field.Value}' is not writable on '{entity.Name}'.");
 
-                MutationValueReference? source = field.Source is { } reference
+                var source = field.Source is { } reference
                     ? new MutationValueReference(
                         reference.SourceOperationIndex,
                         reference.SourceField)

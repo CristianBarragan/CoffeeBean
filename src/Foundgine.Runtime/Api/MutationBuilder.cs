@@ -7,9 +7,9 @@ namespace Foundgine.Runtime;
 public static class FoundgineMutationExtensions
 {
     /// <summary>
-    /// Creates an open mutation builder over the application's semantic model.
-    /// The resulting graph is executed by the supplied IFoundgineMutations instance,
-    /// so authorization, invariants, approval and provider execution remain centralized.
+    ///     Creates an open mutation builder over the application's semantic model.
+    ///     The resulting graph is executed by the supplied IFoundgineMutations instance,
+    ///     so authorization, invariants, approval and provider execution remain centralized.
     /// </summary>
     public static SemanticMutationIntentBuilder Mutate(
         this IFoundgineMutations mutations,

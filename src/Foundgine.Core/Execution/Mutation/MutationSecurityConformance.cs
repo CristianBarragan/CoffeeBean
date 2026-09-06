@@ -3,8 +3,8 @@ using Foundgine.Core.Semantic.Security;
 namespace Foundgine.Core.Execution.Mutation;
 
 /// <summary>
-/// Concrete provider evidence for mutation execution. Provider declarations are
-/// not sufficient to cross the mutation execution boundary.
+///     Concrete provider evidence for mutation execution. Provider declarations are
+///     not sufficient to cross the mutation execution boundary.
 /// </summary>
 public sealed record MutationSecurityConformanceResult(
     string Provider,
@@ -31,9 +31,9 @@ public sealed record MutationSecurityConformanceResult(
 }
 
 /// <summary>
-/// Provider-specific evaluation of the actual mutation execution representation.
-/// Implementations must report only guarantees they can establish for their
-/// concrete execution path.
+///     Provider-specific evaluation of the actual mutation execution representation.
+///     Implementations must report only guarantees they can establish for their
+///     concrete execution path.
 /// </summary>
 public interface IMutationSecurityConformanceEvaluator
 {
@@ -41,8 +41,8 @@ public interface IMutationSecurityConformanceEvaluator
 }
 
 /// <summary>
-/// In-process execution certificate bound to one exact mutation IR and one exact
-/// provider instance. It is deliberately non-serializable/non-transferable.
+///     In-process execution certificate bound to one exact mutation IR and one exact
+///     provider instance. It is deliberately non-serializable/non-transferable.
 /// </summary>
 public sealed class MutationExecutionSecurityCertificate
 {
@@ -88,16 +88,19 @@ public sealed class MutationExecutionSecurityCertificate
 
         var requiredSet = required.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
         var preservedSet = preserved.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
-        var missing = requiredSet.Except(preservedSet, StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        var missing = requiredSet.Except(preservedSet, StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal)
+            .ToArray();
 
         return new MutationExecutionSecurityCertificate(
             ir, provider, providerName, requiredSet, preservedSet, missing);
     }
 
-    internal bool IsBoundTo(ExecutionMutationIR ir, object provider) =>
-        ReferenceEquals(_boundIr, ir) &&
-        ReferenceEquals(_boundProvider, provider) &&
-        string.Equals(IrFingerprint, MutationExecutionIRFingerprint.Create(ir), StringComparison.Ordinal);
+    internal bool IsBoundTo(ExecutionMutationIR ir, object provider)
+    {
+        return ReferenceEquals(_boundIr, ir) &&
+               ReferenceEquals(_boundProvider, provider) &&
+               string.Equals(IrFingerprint, MutationExecutionIRFingerprint.Create(ir), StringComparison.Ordinal);
+    }
 
     public void EnsureSatisfied()
     {

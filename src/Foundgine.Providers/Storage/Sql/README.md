@@ -31,14 +31,14 @@
 
 `PostgresRetrievalCandidateSource` supplies candidate/evidence retrieval for lexical grounding:
 
-| Strategy | Mechanism |
-|---|---|
-| `Relational` | structured PostgreSQL lookup |
-| `Fuzzy` | `pg_trgm` |
-| `FullText` | native PostgreSQL `tsvector` |
-| `Search` | optional `pg_search` / BM25 |
-| `GraphSimilarity` | optional Apache AGE |
-| `Vector` | reserved for a separate pgvector provider |
+| Strategy          | Mechanism                                 |
+|-------------------|-------------------------------------------|
+| `Relational`      | structured PostgreSQL lookup              |
+| `Fuzzy`           | `pg_trgm`                                 |
+| `FullText`        | native PostgreSQL `tsvector`              |
+| `Search`          | optional `pg_search` / BM25               |
+| `GraphSimilarity` | optional Apache AGE                       |
+| `Vector`          | reserved for a separate pgvector provider |
 
 Retrieval does not authorize a candidate; semantic resolution and authorization remain the Foundgine boundary.
 
@@ -52,4 +52,5 @@ Retrieval does not authorize a candidate; semantic resolution and authorization 
 dotnet add package Foundgine.Providers.Storage.Sql
 ```
 
-Use this package when Foundgine should execute against SQL/PostgreSQL. It depends on the lower-level planning, metadata, and execution layers.
+Use this package when Foundgine should execute against SQL/PostgreSQL. It depends on the lower-level planning, metadata,
+and execution layers.

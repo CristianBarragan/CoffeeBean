@@ -3,14 +3,13 @@ using Foundgine.Core.Abstractions;
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Removes redundant duplicate projection fields while preserving every field
-/// required by the result contract and semantic query evaluation.
-///
-/// The current SemanticPlan represents requested output and execution fields
-/// in one collection. Consequently this rule intentionally does not remove a
-/// unique requested field merely because it is not referenced by a predicate.
-/// Full dead-field pruning requires a separate requested-vs-working projection
-/// representation and is therefore outside this milestone.
+///     Removes redundant duplicate projection fields while preserving every field
+///     required by the result contract and semantic query evaluation.
+///     The current SemanticPlan represents requested output and execution fields
+///     in one collection. Consequently this rule intentionally does not remove a
+///     unique requested field merely because it is not referenced by a predicate.
+///     Full dead-field pruning requires a separate requested-vs-working projection
+///     representation and is therefore outside this milestone.
 /// </summary>
 public sealed class ProjectionPruningRule : IPlanRewriteRule
 {
@@ -98,8 +97,10 @@ public sealed class ProjectionPruningRule : IPlanRewriteRule
         return changed ? result : fields;
     }
 
-    private static bool ContainsRedundantProjection(SemanticPlanNode node) =>
-        HasDuplicateFields(node.Fields) || node.Children.Any(ContainsRedundantProjection);
+    private static bool ContainsRedundantProjection(SemanticPlanNode node)
+    {
+        return HasDuplicateFields(node.Fields) || node.Children.Any(ContainsRedundantProjection);
+    }
 
     private static bool ChildrenChanged(IReadOnlyList<SemanticPlanNode> before, IReadOnlyList<SemanticPlanNode> after)
     {

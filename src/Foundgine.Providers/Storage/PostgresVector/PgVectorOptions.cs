@@ -14,9 +14,9 @@ public enum PgVectorDistance : byte
 }
 
 /// <summary>
-/// Configuration for the pgvector-backed semantic lexicon table. This table
-/// is a derived retrieval projection of the frozen semantic contract — it is
-/// never the source of truth for schema topology.
+///     Configuration for the pgvector-backed semantic lexicon table. This table
+///     is a derived retrieval projection of the frozen semantic contract — it is
+///     never the source of truth for schema topology.
 /// </summary>
 public sealed record PgVectorOptions(
     string TableName = "foundgine_semantic_lexicon",

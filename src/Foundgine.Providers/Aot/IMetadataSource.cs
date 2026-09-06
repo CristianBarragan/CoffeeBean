@@ -1,11 +1,10 @@
 using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Abstractions;
 
 namespace Foundgine.Providers.Aot;
 
 /// <summary>
-/// Contract for compile-time metadata output. The runtime engine consumes the
-/// resulting metadata; it does not depend on the generator implementation.
+///     Contract for compile-time metadata output. The runtime engine consumes the
+///     resulting metadata; it does not depend on the generator implementation.
 /// </summary>
 public interface IMetadataSource
 {

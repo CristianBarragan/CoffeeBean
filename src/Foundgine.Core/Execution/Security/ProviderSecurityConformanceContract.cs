@@ -1,8 +1,8 @@
 namespace Foundgine.Core.Execution.Security;
 
 /// <summary>
-/// Executable provider conformance evidence for the concrete compiled plan.
-/// Unlike a provider profile, this result is produced from the actual provider plan.
+///     Executable provider conformance evidence for the concrete compiled plan.
+///     Unlike a provider profile, this result is produced from the actual provider plan.
 /// </summary>
 public sealed record ProviderSecurityConformanceResult(
     string Provider,
@@ -31,8 +31,8 @@ public sealed record ProviderSecurityConformanceResult(
 }
 
 /// <summary>
-/// Provider-specific certification hook. Implementations inspect the actual
-/// compiled ProviderPlan and must return concrete conformance evidence.
+///     Provider-specific certification hook. Implementations inspect the actual
+///     compiled ProviderPlan and must return concrete conformance evidence.
 /// </summary>
 public interface IProviderSecurityConformanceEvaluator
 {

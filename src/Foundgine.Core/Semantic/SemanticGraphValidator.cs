@@ -3,20 +3,22 @@ using Foundgine.Core.Abstractions;
 namespace Foundgine.Core.Semantic;
 
 /// <summary>
-/// Proves that a request graph is consistent with the semantic model. Graph
-/// construction remains available for low-level integrations, but every graph
-/// produced by the resolver is validated before it leaves the resolution stage.
+///     Proves that a request graph is consistent with the semantic model. Graph
+///     construction remains available for low-level integrations, but every graph
+///     produced by the resolver is validated before it leaves the resolution stage.
 /// </summary>
 public static class SemanticGraphValidator
 {
-    public static void Validate(SemanticGraph graph, SemanticContractSnapshot contract, SemanticGraphValidationMode mode = SemanticGraphValidationMode.Strict)
+    public static void Validate(SemanticGraph graph, SemanticContractSnapshot contract,
+        SemanticGraphValidationMode mode = SemanticGraphValidationMode.Strict)
     {
         ArgumentNullException.ThrowIfNull(graph);
         ArgumentNullException.ThrowIfNull(contract);
         ValidateCore(graph, contract.TryGet, contract.Get, mode);
     }
 
-    public static void Validate(SemanticGraph graph, SemanticModel model, SemanticGraphValidationMode mode = SemanticGraphValidationMode.Strict)
+    public static void Validate(SemanticGraph graph, SemanticModel model,
+        SemanticGraphValidationMode mode = SemanticGraphValidationMode.Strict)
     {
         ArgumentNullException.ThrowIfNull(graph);
         ArgumentNullException.ThrowIfNull(model);
@@ -29,7 +31,6 @@ public static class SemanticGraphValidator
         Func<EntityId, SemanticEntity> getEntity,
         SemanticGraphValidationMode mode)
     {
-
         if (graph.Nodes.Count == 0)
             throw new InvalidOperationException("A semantic graph cannot be empty.");
 
@@ -50,16 +51,19 @@ public static class SemanticGraphValidator
             if (node.ParentId is { } parentId)
             {
                 if (!idSet.Contains(parentId))
-                    throw new InvalidOperationException($"Semantic node {node.Id} references missing parent node {parentId}.");
+                    throw new InvalidOperationException(
+                        $"Semantic node {node.Id} references missing parent node {parentId}.");
 
                 var parent = graph.Nodes.First(x => x.Id == parentId);
                 if (node.ViaRelationship is null && node.ViaConnection is null)
-                    throw new InvalidOperationException($"Non-root semantic node {node.Id} must specify a relationship or connection.");
+                    throw new InvalidOperationException(
+                        $"Non-root semantic node {node.Id} must specify a relationship or connection.");
 
                 if (node.ViaRelationship is { } relationshipId)
                 {
                     if (node.ViaConnection is not null)
-                        throw new InvalidOperationException($"Semantic node {node.Id} cannot specify both relationship and connection edges.");
+                        throw new InvalidOperationException(
+                            $"Semantic node {node.Id} cannot specify both relationship and connection edges.");
 
                     var parentEntity = getEntity(parent.EntityId);
                     var relationship = parentEntity.Relationships.FirstOrDefault(x => x.Id == relationshipId);
@@ -90,18 +94,18 @@ public static class SemanticGraphValidator
             {
                 if (mode is SemanticGraphValidationMode.Federated or SemanticGraphValidationMode.Exploratory)
                     continue;
-                throw new InvalidOperationException($"Semantic node {node.Id} references unknown entity '{node.EntityId}'.");
+                throw new InvalidOperationException(
+                    $"Semantic node {node.Id} references unknown entity '{node.EntityId}'.");
             }
 
             foreach (var fieldId in node.Fields.Distinct())
-            {
                 if (fieldId != entity.Identity.FieldId && entity.Fields.All(x => x.Id != fieldId))
                 {
                     if (mode is SemanticGraphValidationMode.Exploratory)
                         continue;
-                    throw new InvalidOperationException($"Semantic node {node.Id} selects unknown field '{fieldId}' on '{entity.Name}'.");
+                    throw new InvalidOperationException(
+                        $"Semantic node {node.Id} selects unknown field '{fieldId}' on '{entity.Name}'.");
                 }
-            }
         }
 
         // Every node must be reachable from a root. Strict mode has exactly one root;

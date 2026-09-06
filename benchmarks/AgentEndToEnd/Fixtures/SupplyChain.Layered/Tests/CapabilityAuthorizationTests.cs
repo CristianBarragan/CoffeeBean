@@ -1,15 +1,14 @@
 using Foundgine.SupplyChain.Application;
-using Xunit;
 
 namespace Foundgine.SupplyChain.Tests;
 
 /// <summary>
-/// GUIDE.md's testing-layer progression lists "capability authorization
-/// tests" first, ahead of AOT metadata/semantic plan/SQL compilation
-/// coverage. <see cref="AotAndPlanningTests"/> only exercises the metadata
-/// and planning layers; this fixture covers <see cref="SupplyChainAuthorizer"/>
-/// in isolation so the demand/authenticate boundary described in
-/// Application/Authorization.cs has its own regression tests.
+///     GUIDE.md's testing-layer progression lists "capability authorization
+///     tests" first, ahead of AOT metadata/semantic plan/SQL compilation
+///     coverage. <see cref="AotAndPlanningTests" /> only exercises the metadata
+///     and planning layers; this fixture covers <see cref="SupplyChainAuthorizer" />
+///     in isolation so the demand/authenticate boundary described in
+///     Application/Authorization.cs has its own regression tests.
 /// </summary>
 public sealed class CapabilityAuthorizationTests
 {

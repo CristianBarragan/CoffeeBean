@@ -1,12 +1,10 @@
-using Foundgine.SupplyChain.Domain;
-
 namespace Foundgine.SupplyChain.Application;
 
 public sealed class SupplyChainApplication
 {
     private readonly ICapabilityAuthorizer _auth;
-    private readonly ISupplyChainQueries _queries;
     private readonly ISupplyChainMutations _mutations;
+    private readonly ISupplyChainQueries _queries;
 
     public SupplyChainApplication(
         ICapabilityAuthorizer auth,

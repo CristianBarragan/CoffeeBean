@@ -1,7 +1,5 @@
-using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
-using Foundgine.Core.Semantic.IR;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.IR;
 using Foundgine.Core.Semantic.IR.Graph;
 using Foundgine.Core.Semantic.Planning.Algebra;
 using Foundgine.Core.Semantic.Security.Execution;
@@ -9,10 +7,11 @@ using Foundgine.Core.Semantic.Security.Execution;
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Turns authorized Semantic IR into the canonical semantic planning
-/// artifact. The resulting SemanticPlan is lowered to ExecutionIR separately. This planner does not discover relationships, resolve storage, or
-/// choose a physical provider strategy; those concerns belong to earlier and
-/// later layers respectively.
+///     Turns authorized Semantic IR into the canonical semantic planning
+///     artifact. The resulting SemanticPlan is lowered to ExecutionIR separately. This planner does not discover
+///     relationships, resolve storage, or
+///     choose a physical provider strategy; those concerns belong to earlier and
+///     later layers respectively.
 /// </summary>
 public sealed class Planner : IPlanner
 {
@@ -51,13 +50,13 @@ public sealed class Planner : IPlanner
         ArgumentNullException.ThrowIfNull(operation);
 
         var visited = new HashSet<int>();
-        var root = BuildNode(operation.Root, visited, isRoot: true);
+        var root = BuildNode(operation.Root, visited, true);
         return new SemanticPlan(root);
     }
 
     /// <summary>
-    /// Compatibility adapter. New orchestration code should compile the graph
-    /// to canonical Semantic IR before invoking the planner.
+    ///     Compatibility adapter. New orchestration code should compile the graph
+    ///     to canonical Semantic IR before invoking the planner.
     /// </summary>
     public SemanticPlan Plan(SemanticGraph graph)
     {

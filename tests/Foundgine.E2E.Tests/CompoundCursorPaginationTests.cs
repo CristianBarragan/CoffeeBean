@@ -1,17 +1,13 @@
-using Foundgine.Core.Execution;
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
-using Foundgine.E2E.Tests.Banking;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic.Resolution;
+using Foundgine.E2E.Tests.Banking;
 using Foundgine.Providers.Storage.Sql;
-using Microsoft.Data.Sqlite;
-using Xunit;
 using BankingModel = Foundgine.E2E.Tests.Banking.BankingSemanticModel;
-using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -23,7 +19,7 @@ public sealed class CompoundCursorPaginationTests
         var model = BankingModel.Build();
         var metadata = BankingRelationalMetadata.Build();
 
-        var first = BuildRequest(limit: 2);
+        var first = BuildRequest(2);
         var firstPlan = Compile(model, metadata, first);
 
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -41,11 +37,12 @@ public sealed class CompoundCursorPaginationTests
         Assert.False(firstResult.PageInfo.HasPreviousPage);
 
         var second = BuildRequest(
-            limit: 2,
-            after: firstResult.PageInfo.EndCursor);
+            2,
+            firstResult.PageInfo.EndCursor);
 
         var secondPlan = Compile(model, metadata, second);
-        var secondResult = await provider.ExecuteAsync(secondPlan, PaginationExecutionContext.Create(2, firstResult.PageInfo.EndCursor));
+        var secondResult = await provider.ExecuteAsync(secondPlan,
+            PaginationExecutionContext.Create(2, firstResult.PageInfo.EndCursor));
 
         var rows = secondResult.Rows;
         Assert.Equal(2, rows.Count);
@@ -61,7 +58,7 @@ public sealed class CompoundCursorPaginationTests
         var model = BankingModel.Build();
         var metadata = BankingRelationalMetadata.Build();
 
-        var first = BuildRequest(limit: 1);
+        var first = BuildRequest(1);
         var firstPlan = Compile(model, metadata, first);
 
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -75,7 +72,7 @@ public sealed class CompoundCursorPaginationTests
         Assert.Equal(4, Convert.ToInt32(firstRow.Values["__fg_0_Id"]));
         Assert.True(firstResult.PageInfo!.HasNextPage);
 
-        var second = BuildRequest(limit: 1, after: firstResult.PageInfo.EndCursor);
+        var second = BuildRequest(1, firstResult.PageInfo.EndCursor);
         var secondResult = await provider.ExecuteAsync(
             Compile(model, metadata, second),
             PaginationExecutionContext.Create(1, firstResult.PageInfo.EndCursor));
@@ -90,7 +87,7 @@ public sealed class CompoundCursorPaginationTests
         var model = BankingModel.Build();
         var metadata = BankingRelationalMetadata.Build();
 
-        var request = BuildRequest(limit: 2);
+        var request = BuildRequest(2);
         var plan = Compile(model, metadata, request);
 
         Assert.Contains(
@@ -118,27 +115,30 @@ public sealed class CompoundCursorPaginationTests
         });
     }
 
-    private static SemanticRequest BuildRequest(int limit, string? after = null) => new(
-        BankingModel.Customer,
-        [
-            new SemanticSelection(new FieldId(1), null, []),
-            new SemanticSelection(new FieldId(2), null, [])
-        ],
-        new SemanticQueryOptions(
-            Order: [new SemanticOrderTerm(new FieldId(2), SemanticSortDirection.Desc)],
-            Limit: limit,
-            After: after));
+    private static SemanticRequest BuildRequest(int limit, string? after = null)
+    {
+        return new(
+            BankingModel.Customer,
+            [
+                new SemanticSelection(new FieldId(1), null, []),
+                new SemanticSelection(new FieldId(2), null, [])
+            ],
+            new SemanticQueryOptions(
+                Order: [new SemanticOrderTerm(new FieldId(2), SemanticSortDirection.Desc)],
+                Limit: limit,
+                After: after));
+    }
 
     private static async Task SeedAsync(SqliteConnection connection)
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
-            INSERT INTO "Customer" VALUES (1, 'Alice');
-            INSERT INTO "Customer" VALUES (2, 'Bob');
-            INSERT INTO "Customer" VALUES (3, 'Bob');
-            INSERT INTO "Customer" VALUES (4, 'Carol');
-            """;
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
+                              INSERT INTO "Customer" VALUES (1, 'Alice');
+                              INSERT INTO "Customer" VALUES (2, 'Bob');
+                              INSERT INTO "Customer" VALUES (3, 'Bob');
+                              INSERT INTO "Customer" VALUES (4, 'Carol');
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 
@@ -146,13 +146,12 @@ public sealed class CompoundCursorPaginationTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
-            INSERT INTO "Customer" VALUES (1, 'Alice');
-            INSERT INTO "Customer" VALUES (2, 'Bob');
-            INSERT INTO "Customer" VALUES (3, 'Bob');
-            INSERT INTO "Customer" VALUES (4, 'Carol');
-            """;
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
+                              INSERT INTO "Customer" VALUES (1, 'Alice');
+                              INSERT INTO "Customer" VALUES (2, 'Bob');
+                              INSERT INTO "Customer" VALUES (3, 'Bob');
+                              INSERT INTO "Customer" VALUES (4, 'Carol');
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

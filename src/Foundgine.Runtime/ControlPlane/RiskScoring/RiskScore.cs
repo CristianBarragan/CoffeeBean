@@ -6,22 +6,22 @@ public enum RiskTier
     Low,
     Medium,
     High,
-    Critical,
+    Critical
 }
 
 /// <summary>
-/// One contributing factor to a risk score. Signals are the unit of
-/// explanation: a score is always traceable back to the signals that
-/// produced it, never an opaque number.
+///     One contributing factor to a risk score. Signals are the unit of
+///     explanation: a score is always traceable back to the signals that
+///     produced it, never an opaque number.
 /// </summary>
 public sealed record RiskSignal(string Name, double Weight, string Reason);
 
 /// <summary>
-/// The outcome of risk evaluation for a tool call: a tier, a numeric value
-/// for ordering/thresholding, and the signals that produced it. Never
-/// constructed with a bare number — <see cref="Aggregate"/> is the only
-/// path that assembles one from signals, so a score can't exist without its
-/// explanation.
+///     The outcome of risk evaluation for a tool call: a tier, a numeric value
+///     for ordering/thresholding, and the signals that produced it. Never
+///     constructed with a bare number — <see cref="Aggregate" /> is the only
+///     path that assembles one from signals, so a score can't exist without its
+///     explanation.
 /// </summary>
 public sealed record RiskScore(RiskTier Tier, double Value, IReadOnlyList<RiskSignal> Signals)
 {
@@ -39,7 +39,7 @@ public sealed record RiskScore(RiskTier Tier, double Value, IReadOnlyList<RiskSi
             >= 0.85 => RiskTier.Critical,
             >= 0.6 => RiskTier.High,
             >= 0.3 => RiskTier.Medium,
-            _ => RiskTier.Low,
+            _ => RiskTier.Low
         };
         return new RiskScore(tier, value, signals);
     }

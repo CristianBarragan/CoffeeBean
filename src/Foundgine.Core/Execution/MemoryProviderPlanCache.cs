@@ -1,17 +1,14 @@
-using System.Collections.Concurrent;
-using System.Threading;
-
 namespace Foundgine.Core.Execution;
 
 /// <summary>
-/// Small bounded in-memory provider-plan cache. The cache is intentionally
-/// process-local and per Foundgine engine registration. A cache hit never skips
-/// semantic resolution or authorization; it only skips provider compilation.
+///     Small bounded in-memory provider-plan cache. The cache is intentionally
+///     process-local and per Foundgine engine registration. A cache hit never skips
+///     semantic resolution or authorization; it only skips provider compilation.
 /// </summary>
 public sealed class MemoryProviderPlanCache : IProviderPlanCache
 {
-    private readonly ConcurrentDictionary<string, Lazy<ProviderPlan>> _plans = new(StringComparer.Ordinal);
     private readonly int _capacity;
+    private readonly ConcurrentDictionary<string, Lazy<ProviderPlan>> _plans = new(StringComparer.Ordinal);
 
     public MemoryProviderPlanCache(int capacity = 256)
     {
@@ -31,6 +28,18 @@ public sealed class MemoryProviderPlanCache : IProviderPlanCache
 
         plan = null!;
         return false;
+    }
+
+    public void Set(string key, ProviderPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(plan);
+
+        _plans[key] = new Lazy<ProviderPlan>(
+            () => plan,
+            LazyThreadSafetyMode.ExecutionAndPublication);
+
+        TrimIfNeeded();
     }
 
     public ProviderPlan GetOrAdd(string key, Func<ProviderPlan> factory)
@@ -53,18 +62,6 @@ public sealed class MemoryProviderPlanCache : IProviderPlanCache
             _plans.TryRemove(key, out _);
             throw;
         }
-    }
-
-    public void Set(string key, ProviderPlan plan)
-    {
-        ArgumentNullException.ThrowIfNull(key);
-        ArgumentNullException.ThrowIfNull(plan);
-
-        _plans[key] = new Lazy<ProviderPlan>(
-            () => plan,
-            LazyThreadSafetyMode.ExecutionAndPublication);
-
-        TrimIfNeeded();
     }
 
     private void TrimIfNeeded()

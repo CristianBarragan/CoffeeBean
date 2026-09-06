@@ -6,8 +6,8 @@ using Foundgine.Providers.Storage.Sql.Query;
 namespace Foundgine.Providers.Storage.Sql.Mutation;
 
 /// <summary>
-/// A provider-specific PostgreSQL mutation plan containing one physical SQL
-/// command for the entire logical mutation batch.
+///     A provider-specific PostgreSQL mutation plan containing one physical SQL
+///     command for the entire logical mutation batch.
 /// </summary>
 public sealed record SqlBatchedMutationPlan(
     string CommandText,
@@ -19,15 +19,17 @@ public sealed record SqlBatchedMutationPlan(
 {
     public int OperationCount => RowKeys.Count;
 
-    private static IReadOnlyList<ProviderMutationPlan> BuildOperations(int count) =>
-        Enumerable.Range(0, count)
+    private static IReadOnlyList<ProviderMutationPlan> BuildOperations(int count)
+    {
+        return Enumerable.Range(0, count)
             .Select(_ => (ProviderMutationPlan)new SqlMutationPlan("", [], []))
             .ToArray();
+    }
 }
 
 /// <summary>
-/// Correlates one physical result row to an original mutation operation.
-/// Ordinal is the 1-based position inside the group's unnest arrays.
+///     Correlates one physical result row to an original mutation operation.
+///     Ordinal is the 1-based position inside the group's unnest arrays.
 /// </summary>
 public sealed record BatchedOperationRowKey(
     int OperationIndex,
@@ -35,8 +37,8 @@ public sealed record BatchedOperationRowKey(
     int Ordinal);
 
 /// <summary>
-/// Metadata required by the batched executor to reconstruct the original
-/// per-operation MutationResult list.
+///     Metadata required by the batched executor to reconstruct the original
+///     per-operation MutationResult list.
 /// </summary>
 public sealed record BatchedGroupMeta(
     int GroupId,

@@ -1,18 +1,13 @@
-using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
-using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Semantic.Resolution;
 using Foundgine.SupplyChain.Advanced.Semantics;
-using Xunit;
 
 namespace Foundgine.SupplyChain.Advanced.Tests.Grounding;
 
 /// <summary>
-/// End-to-end contract coverage for weighted semantic aliases in the advanced
-/// Supply Chain sample. Weights are evidence metadata, not retrieval scores and
-/// never grant authority. The gate is deliberately tested separately from
-/// lexical resolution so a low-confidence signal cannot silently become an
-/// authorization decision.
+///     End-to-end contract coverage for weighted semantic aliases in the advanced
+///     Supply Chain sample. Weights are evidence metadata, not retrieval scores and
+///     never grant authority. The gate is deliberately tested separately from
+///     lexical resolution so a low-confidence signal cannot silently become an
+///     authorization decision.
 /// </summary>
 // Intentionally exercises the obsolete IsConclusive/ModelWeight compatibility
 // projections (alongside their replacements, Status and ModelEvidence) to
@@ -56,7 +51,8 @@ public sealed class SupplyChainAliasWeightTests
     {
         var model = SupplyChainSemanticModel.Build().Freeze();
 
-        var result = AliasWeightEvidenceGate.Evaluate(model, minimumWeight: 80, LexicalEntity("Vendor", SupplyChainSemanticModel.Supplier));
+        var result = AliasWeightEvidenceGate.Evaluate(model, minimumWeight: 80,
+            LexicalEntity("Vendor", SupplyChainSemanticModel.Supplier));
 
         Assert.Equal(AliasEvidenceStatus.Sufficient, result.Status);
         Assert.True(result.IsConclusive);
@@ -99,8 +95,10 @@ public sealed class SupplyChainAliasWeightTests
         var model = SupplyChainSemanticModel.Build().Freeze();
         var supplier = model.ResolveEntity("Seller");
 
-        var strict = AliasWeightEvidenceGate.Evaluate(model, minimumWeight: 100, LexicalEntity("Seller", SupplyChainSemanticModel.Supplier));
-        var relaxed = AliasWeightEvidenceGate.Evaluate(model, minimumWeight: 80, LexicalEntity("Seller", SupplyChainSemanticModel.Supplier));
+        var strict = AliasWeightEvidenceGate.Evaluate(model, minimumWeight: 100,
+            LexicalEntity("Seller", SupplyChainSemanticModel.Supplier));
+        var relaxed = AliasWeightEvidenceGate.Evaluate(model, minimumWeight: 80,
+            LexicalEntity("Seller", SupplyChainSemanticModel.Supplier));
 
         Assert.Equal(AliasEvidenceStatus.Insufficient, strict.Status);
         Assert.Equal(AliasEvidenceStatus.Sufficient, relaxed.Status);

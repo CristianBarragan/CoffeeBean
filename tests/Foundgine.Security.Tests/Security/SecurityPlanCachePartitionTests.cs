@@ -1,6 +1,5 @@
 using Foundgine.Core.Semantic.Security.Execution;
 using Foundgine.Core.Semantic.Security.Warrants;
-using Xunit;
 
 namespace Foundgine.Security.Tests.Security;
 
@@ -30,8 +29,9 @@ public sealed class SecurityPlanCachePartitionTests
         Assert.Equal(first.AuthorityCachePartition, second.AuthorityCachePartition);
     }
 
-    private static SecurityWarrant CreateWarrant(string id, string nonce) =>
-        new(
+    private static SecurityWarrant CreateWarrant(string id, string nonce)
+    {
+        return new(
             id,
             "issuer",
             "agent",
@@ -44,4 +44,5 @@ public sealed class SecurityPlanCachePartitionTests
             "key-1",
             null,
             []);
+    }
 }

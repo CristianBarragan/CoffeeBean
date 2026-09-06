@@ -63,12 +63,12 @@ docker --version
 
 Foundgine ships as **4 publishable NuGet packages**:
 
-| Package | Role |
-|---|---|
-| `Foundgine.Core` | Contracts, semantic model, metadata, planning, serialization |
-| `Foundgine.Runtime` | Orchestration, execution, control-plane, application-facing APIs |
-| `Foundgine.Providers` | Storage (PostgreSQL), MCP, AI/model, and AOT provider implementations |
-| `Foundgine.Extensions` | Optional caller-facing adapters (e.g. GraphQL/Hot Chocolate) |
+| Package                | Role                                                                  |
+|------------------------|-----------------------------------------------------------------------|
+| `Foundgine.Core`       | Contracts, semantic model, metadata, planning, serialization          |
+| `Foundgine.Runtime`    | Orchestration, execution, control-plane, application-facing APIs      |
+| `Foundgine.Providers`  | Storage (PostgreSQL), MCP, AI/model, and AOT provider implementations |
+| `Foundgine.Extensions` | Optional caller-facing adapters (e.g. GraphQL/Hot Chocolate)          |
 
 For a normal application the **minimum footprint** is `Foundgine.Runtime` +
 `Foundgine.Providers` — `Foundgine.Core` comes along transitively, and you
@@ -219,6 +219,7 @@ public sealed class Carrier { public int Id { get; init; } public string Name { 
 ```
 
 **What matters here:**
+
 - `[FoundgineModel("Name", Id = N)]` registers the type as a semantic entity
   under a stable name and numeric id.
 - `[FoundgineConnection]` marks a navigation you want to traverse
@@ -351,6 +352,7 @@ public sealed class CarrierERP
 ```
 
 **What matters here:**
+
 - `StorageName` on the entity is the **table name**; on each field it's the
   **column name**. This is the only place SQL naming exists.
 - `[FoundgineRelationship(typeof(Target), "LocalKey", "TargetKey", ...)]`
@@ -761,6 +763,7 @@ public sealed class SupplyChainQueryRepository : ISupplyChainQueries
 ```
 
 **What matters here:**
+
 - `GeneratedSemanticModel.SalesOrder.CustomerId.Eq(customerId)` is a
   strongly-typed filter generated straight from your `[FoundgineField]`
   attributes — you never write a raw column name or a WHERE clause.
@@ -992,6 +995,7 @@ dotnet run
 ```
 
 The app now exposes:
+
 - MCP: `http://localhost:5000/mcp` (or whatever port `dotnet run` prints)
 - Health: `/health` and `/health/ready`
 

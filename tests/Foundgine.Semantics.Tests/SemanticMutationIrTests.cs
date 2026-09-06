@@ -1,6 +1,5 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Mutation;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Tests;
 

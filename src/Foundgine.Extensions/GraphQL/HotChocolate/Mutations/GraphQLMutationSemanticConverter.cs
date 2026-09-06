@@ -1,16 +1,15 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Core.Semantic.Mutation;
-using Foundgine.Core.Semantic.Query;
+using Foundgine.Core.Semantic.Planning.Mutation;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate;
 
 /// <summary>
-/// Converts the GraphQL adapter's legacy nested intent representation into the
-/// canonical semantic mutation graph. Security-sensitive GraphQL execution must
-/// use this boundary so the mutation engine can apply warrant validation,
-/// policy authorization and the final execution security gate to the exact
-/// operation graph that came from GraphQL.
+///     Converts the GraphQL adapter's legacy nested intent representation into the
+///     canonical semantic mutation graph. Security-sensitive GraphQL execution must
+///     use this boundary so the mutation engine can apply warrant validation,
+///     policy authorization and the final execution security gate to the exact
+///     operation graph that came from GraphQL.
 /// </summary>
 public static class GraphQLMutationSemanticConverter
 {
@@ -46,16 +45,14 @@ public static class GraphQLMutationSemanticConverter
 
                 if (relationship.Source != operations[parent].Entity ||
                     relationship.Target != operation.Entity)
-                {
                     throw new InvalidOperationException(
                         $"GraphQL nested mutation relationship '{relationship.Name}' does not connect " +
                         $"'{operations[parent].Entity.Value}' to '{operation.Entity.Value}'.");
-                }
 
                 var parentSchema = schema.GetEntity(operations[parent].Entity);
                 var primaryKeyColumn = parentSchema.PrimaryKeyColumn
-                    ?? throw new InvalidOperationException(
-                        $"Parent entity '{parentSchema.Name}' requires a primary key for nested mutation propagation.");
+                                       ?? throw new InvalidOperationException(
+                                           $"Parent entity '{parentSchema.Name}' requires a primary key for nested mutation propagation.");
 
                 if (primaryKeyColumn != relationship.SourceColumn)
                     throw new InvalidOperationException(
@@ -73,10 +70,8 @@ public static class GraphQLMutationSemanticConverter
                         $"Nested relationship target column '{relationship.TargetColumn.Value}' has no semantic field mapping.");
 
                 if (!operations[parent].ReturnFields.Contains(parentPkField))
-                {
                     throw new InvalidOperationException(
                         $"Parent mutation '{parentSchema.Name}' must return its primary key field '{parentPkField.Value}' for nested propagation.");
-                }
 
                 var fields = operation.Fields.ToList();
                 if (fields.Any(x => x.Field == childField && x.Source is null))
@@ -84,17 +79,16 @@ public static class GraphQLMutationSemanticConverter
                         $"Nested mutation '{childSchema.Name}' explicitly supplies relationship field '{childField.Value}'.");
 
                 if (!fields.Any(x => x.Field == childField && x.Source is not null))
-                {
                     fields.Add(new SemanticMutationField(
                         childField,
                         null,
                         new SemanticMutationValueReference(parent, parentPkField)));
-                }
 
                 operation = operation with
                 {
                     Fields = fields,
-                    Dependencies = [
+                    Dependencies =
+                    [
                         .. operation.Dependencies,
                         new SemanticMutationDependency(
                             parent,
@@ -147,13 +141,15 @@ public static class GraphQLMutationSemanticConverter
                 entity.Id,
                 fields,
                 upsert.ConflictColumns?.Select(ToFieldId).ToArray()
-                    ?? Array.Empty<FieldId>(),
+                ?? Array.Empty<FieldId>(),
                 upsert.ReturnFields),
             _ => throw new NotSupportedException()
         };
 
-        FieldId ToFieldId(ColumnId column) =>
-            entity.Fields.FirstOrDefault(x => x.Value == column).Key;
+        FieldId ToFieldId(ColumnId column)
+        {
+            return entity.Fields.FirstOrDefault(x => x.Value == column).Key;
+        }
     }
 
     private static SemanticMutationField ToSemanticField(

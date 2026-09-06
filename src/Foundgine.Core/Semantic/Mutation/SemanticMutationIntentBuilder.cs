@@ -1,24 +1,20 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Query;
-using Foundgine.Core.Semantic;
 
 namespace Foundgine.Core.Semantic.Mutation;
 
 /// <summary>
-/// Developer-friendly open mutation authoring surface. It resolves entity and
-/// field names against the semantic model but emits the same canonical
-/// SemanticMutationOperationGraph used by GraphQL, MCP and direct callers.
-/// Operation aliases make generated-value dependencies readable without
-/// exposing provider or column concepts.
+///     Developer-friendly open mutation authoring surface. It resolves entity and
+///     field names against the semantic model but emits the same canonical
+///     SemanticMutationOperationGraph used by GraphQL, MCP and direct callers.
+///     Operation aliases make generated-value dependencies readable without
+///     exposing provider or column concepts.
 /// </summary>
 public sealed class SemanticMutationIntentBuilder
 {
+    private readonly Dictionary<string, int> _aliases = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemanticModel _model;
     private readonly List<SemanticMutationOperation> _operations = [];
-    private readonly Dictionary<string, int> _aliases = new(StringComparer.OrdinalIgnoreCase);
     private int _current = -1;
 
     public SemanticMutationIntentBuilder(SemanticModel model)
@@ -26,17 +22,25 @@ public sealed class SemanticMutationIntentBuilder
         _model = model ?? throw new ArgumentNullException(nameof(model));
     }
 
-    public SemanticMutationOperationBuilder Create(string entity, string? alias = null) =>
-        Begin(entity, SemanticMutationKind.Create, alias);
+    public SemanticMutationOperationBuilder Create(string entity, string? alias = null)
+    {
+        return Begin(entity, SemanticMutationKind.Create, alias);
+    }
 
-    public SemanticMutationOperationBuilder Update(string entity, string? alias = null) =>
-        Begin(entity, SemanticMutationKind.Update, alias);
+    public SemanticMutationOperationBuilder Update(string entity, string? alias = null)
+    {
+        return Begin(entity, SemanticMutationKind.Update, alias);
+    }
 
-    public SemanticMutationOperationBuilder Delete(string entity, string? alias = null) =>
-        Begin(entity, SemanticMutationKind.Delete, alias);
+    public SemanticMutationOperationBuilder Delete(string entity, string? alias = null)
+    {
+        return Begin(entity, SemanticMutationKind.Delete, alias);
+    }
 
-    public SemanticMutationOperationBuilder Upsert(string entity, string? alias = null) =>
-        Begin(entity, SemanticMutationKind.Upsert, alias);
+    public SemanticMutationOperationBuilder Upsert(string entity, string? alias = null)
+    {
+        return Begin(entity, SemanticMutationKind.Upsert, alias);
+    }
 
     public SemanticMutationOperationGraph Build()
     {
@@ -46,19 +50,15 @@ public sealed class SemanticMutationIntentBuilder
 
         foreach (var operation in _operations)
         {
-            if ((operation.Kind is SemanticMutationKind.Update or SemanticMutationKind.Delete) &&
+            if (operation.Kind is SemanticMutationKind.Update or SemanticMutationKind.Delete &&
                 operation.Filter is null)
-            {
                 throw new InvalidOperationException(
                     $"{operation.Kind} mutations require a target filter.");
-            }
 
             if (operation.Kind == SemanticMutationKind.Upsert &&
                 operation.ConflictFields.Count == 0)
-            {
                 throw new InvalidOperationException(
                     "Upsert mutations require conflict fields.");
-            }
         }
 
         return new SemanticMutationOperationGraph(_operations.ToArray());
@@ -73,10 +73,8 @@ public sealed class SemanticMutationIntentBuilder
 
         if (!string.IsNullOrWhiteSpace(alias) &&
             !_aliases.TryAdd(alias, _operations.Count))
-        {
             throw new InvalidOperationException(
                 $"Mutation operation alias '{alias}' is already registered.");
-        }
 
         var operation = kind switch
         {
@@ -144,16 +142,12 @@ public sealed class SemanticMutationIntentBuilder
         string sourceFieldName)
     {
         if (!_aliases.TryGetValue(sourceAlias, out var sourceIndex))
-        {
             throw new InvalidOperationException(
                 $"Unknown mutation operation alias '{sourceAlias}'.");
-        }
 
         if (sourceIndex >= index)
-        {
             throw new InvalidOperationException(
                 "Mutation value dependencies must reference an earlier operation.");
-        }
 
         var operation = Get(index);
         var targetField = FindField(operation.Entity, fieldName);
@@ -233,10 +227,8 @@ public sealed class SemanticMutationIntentBuilder
         var operation = Get(index);
 
         if (operation.Kind is SemanticMutationKind.Create or SemanticMutationKind.Upsert)
-        {
             throw new InvalidOperationException(
                 $"Mutation kind '{operation.Kind}' does not accept a target filter.");
-        }
 
         var field = FindField(operation.Entity, fieldName);
 
@@ -274,22 +266,28 @@ public sealed class SemanticMutationIntentBuilder
         return this;
     }
 
-    private SemanticMutationOperation Get(int index) =>
-        index >= 0 && index < _operations.Count
+    private SemanticMutationOperation Get(int index)
+    {
+        return index >= 0 && index < _operations.Count
             ? _operations[index]
             : throw new ArgumentOutOfRangeException(nameof(index));
+    }
 
     private void Replace(
         int index,
-        SemanticMutationOperation operation) =>
+        SemanticMutationOperation operation)
+    {
         _operations[index] = operation;
+    }
 
-    private SemanticEntity FindEntity(string name) =>
-        _model.Entities.FirstOrDefault(
-            x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
-                 x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)))
-        ?? throw new InvalidOperationException(
-            $"Unknown semantic mutation entity '{name}'.");
+    private SemanticEntity FindEntity(string name)
+    {
+        return _model.Entities.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
+                                                   x.EffectiveAliases.Any(a =>
+                                                       string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)))
+               ?? throw new InvalidOperationException(
+                   $"Unknown semantic mutation entity '{name}'.");
+    }
 
     private SemanticField FindField(
         EntityId entityId,
@@ -297,13 +295,13 @@ public sealed class SemanticMutationIntentBuilder
     {
         var entity = _model.Get(entityId);
 
-        return entity.Fields.FirstOrDefault(
-                   x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
-                        x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)))
+        return entity.Fields.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
+                                                 x.EffectiveAliases.Any(a =>
+                                                     string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)))
                ?? (string.Equals(
-                       entity.Identity.Name,
-                       name,
-                       StringComparison.OrdinalIgnoreCase)
+                   entity.Identity.Name,
+                   name,
+                   StringComparison.OrdinalIgnoreCase)
                    ? new SemanticField(
                        entity.Identity.FieldId,
                        entity.Identity.Name,
@@ -321,9 +319,9 @@ public sealed class SemanticMutationIntentBuilder
     {
         var entity = _model.Get(entityId);
 
-        return entity.Relationships.FirstOrDefault(
-                   x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
-                        x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)))
+        return entity.Relationships.FirstOrDefault(x =>
+                   string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
+                   x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)))
                ?? throw new InvalidOperationException(
                    $"Unknown semantic mutation relationship '{entity.Name}.{name}'.");
     }
@@ -337,11 +335,10 @@ public sealed class SemanticMutationIntentBuilder
             .ToList();
 
         effects.AddRange(
-            fields.Select(
-                x => new SemanticMutationEffect(
-                    SemanticMutationEffectKind.SetField,
-                    original.Entity,
-                    x.Field)));
+            fields.Select(x => new SemanticMutationEffect(
+                SemanticMutationEffectKind.SetField,
+                original.Entity,
+                x.Field)));
 
         return effects;
     }
@@ -349,22 +346,23 @@ public sealed class SemanticMutationIntentBuilder
 
 public sealed class SemanticMutationOperationBuilder
 {
-    private readonly SemanticMutationIntentBuilder _owner;
     private readonly int _index;
 
     internal SemanticMutationOperationBuilder(
         SemanticMutationIntentBuilder owner,
         int index)
     {
-        _owner = owner;
+        Next = owner;
         _index = index;
     }
+
+    public SemanticMutationIntentBuilder Next { get; }
 
     public SemanticMutationOperationBuilder Set(
         string field,
         object? value)
     {
-        _owner.Set(_index, field, value);
+        Next.Set(_index, field, value);
         return this;
     }
 
@@ -373,7 +371,7 @@ public sealed class SemanticMutationOperationBuilder
         string sourceAlias,
         string sourceField)
     {
-        _owner.SetFrom(
+        Next.SetFrom(
             _index,
             field,
             sourceAlias,
@@ -385,14 +383,14 @@ public sealed class SemanticMutationOperationBuilder
     public SemanticMutationOperationBuilder Return(
         params string[] fields)
     {
-        _owner.Return(_index, fields);
+        Next.Return(_index, fields);
         return this;
     }
 
     public SemanticMutationOperationBuilder Conflict(
         params string[] fields)
     {
-        _owner.Conflict(_index, fields);
+        Next.Conflict(_index, fields);
         return this;
     }
 
@@ -401,7 +399,7 @@ public sealed class SemanticMutationOperationBuilder
         SemanticFilterOperator op,
         object? value)
     {
-        _owner.Where(
+        Next.Where(
             _index,
             field,
             op,
@@ -413,7 +411,7 @@ public sealed class SemanticMutationOperationBuilder
     public SemanticMutationOperationBuilder Connect(
         string relationship)
     {
-        _owner.Connect(
+        Next.Connect(
             _index,
             relationship);
 
@@ -424,29 +422,36 @@ public sealed class SemanticMutationOperationBuilder
     // preserving the operation currently being configured.
     public SemanticMutationOperationBuilder Create(
         string entity,
-        string? alias = null) =>
-        _owner.Create(entity, alias);
+        string? alias = null)
+    {
+        return Next.Create(entity, alias);
+    }
 
     public SemanticMutationOperationBuilder Update(
         string entity,
-        string? alias = null) =>
-        _owner.Update(entity, alias);
+        string? alias = null)
+    {
+        return Next.Update(entity, alias);
+    }
 
     public SemanticMutationOperationBuilder Delete(
         string entity,
-        string? alias = null) =>
-        _owner.Delete(entity, alias);
+        string? alias = null)
+    {
+        return Next.Delete(entity, alias);
+    }
 
     public SemanticMutationOperationBuilder Upsert(
         string entity,
-        string? alias = null) =>
-        _owner.Upsert(entity, alias);
+        string? alias = null)
+    {
+        return Next.Upsert(entity, alias);
+    }
 
     // Allow a fluent mutation operation chain to terminate directly in
     // the canonical semantic mutation graph.
-    public SemanticMutationOperationGraph Build() =>
-        _owner.Build();
-
-    public SemanticMutationIntentBuilder Next =>
-        _owner;
+    public SemanticMutationOperationGraph Build()
+    {
+        return Next.Build();
+    }
 }

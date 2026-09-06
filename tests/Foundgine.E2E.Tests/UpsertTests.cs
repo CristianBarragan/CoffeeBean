@@ -1,10 +1,7 @@
-using Foundgine.Core.Execution;
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
+using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Providers.Storage.Sql.Mutation;
-using Microsoft.Data.Sqlite;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
@@ -23,11 +20,11 @@ public sealed class UpsertTests
         using (var setup = connection.CreateCommand())
         {
             setup.CommandText = """
-                CREATE TABLE "Customer" (
-                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "Name" TEXT NOT NULL
-                );
-                """;
+                                CREATE TABLE "Customer" (
+                                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    "Name" TEXT NOT NULL
+                                );
+                                """;
             setup.ExecuteNonQuery();
         }
 
@@ -56,12 +53,12 @@ public sealed class UpsertTests
         using (var setup = connection.CreateCommand())
         {
             setup.CommandText = """
-                CREATE TABLE "Customer" (
-                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "Name" TEXT NOT NULL
-                );
-                INSERT INTO "Customer" ("Name") VALUES ('Alice');
-                """;
+                                CREATE TABLE "Customer" (
+                                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    "Name" TEXT NOT NULL
+                                );
+                                INSERT INTO "Customer" ("Name") VALUES ('Alice');
+                                """;
             setup.ExecuteNonQuery();
         }
 
@@ -93,12 +90,12 @@ public sealed class UpsertTests
         using (var setup = connection.CreateCommand())
         {
             setup.CommandText = """
-                CREATE TABLE "Customer" (
-                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "Name" TEXT NOT NULL
-                );
-                INSERT INTO "Customer" ("Name") VALUES ('Alice');
-                """;
+                                CREATE TABLE "Customer" (
+                                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    "Name" TEXT NOT NULL
+                                );
+                                INSERT INTO "Customer" ("Name") VALUES ('Alice');
+                                """;
             setup.ExecuteNonQuery();
         }
 

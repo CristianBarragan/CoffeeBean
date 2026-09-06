@@ -1,15 +1,10 @@
-using Foundgine.HighAssurance.Banking;
 using Foundgine.HighAssurance.Postgres;
 using Foundgine.HighAssurance.Postgres.Execution;
-using Foundgine.Providers.Tools.MCP;
-using Foundgine.Core.Semantic.Authorization;
-using ModelContextProtocol.Server;
-using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 var cs = builder.Configuration["BankingConnectionString"]
-    ?? Environment.GetEnvironmentVariable("BankingConnectionString")
-    ?? throw new InvalidOperationException("BankingConnectionString is not configured.");
+         ?? Environment.GetEnvironmentVariable("BankingConnectionString")
+         ?? throw new InvalidOperationException("BankingConnectionString is not configured.");
 
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(cs);
 var dataSource = dataSourceBuilder.Build();
@@ -43,7 +38,11 @@ app.Run();
 public sealed class TransferMcpTools
 {
     private readonly IServiceScopeFactory _scopeFactory;
-    public TransferMcpTools(IServiceScopeFactory scopeFactory) => _scopeFactory = scopeFactory;
+
+    public TransferMcpTools(IServiceScopeFactory scopeFactory)
+    {
+        _scopeFactory = scopeFactory;
+    }
 
     [McpServerTool(Name = "transfer_funds_batch")]
     public async Task<object> TransferFundsBatch(
@@ -80,7 +79,11 @@ public sealed class TransferMcpTools
         await using var scope = _scopeFactory.CreateAsyncScope();
         var service = scope.ServiceProvider.GetRequiredService<PostgresTransferFundsService>();
         var receipt = await service.ExecuteAsync(actorId, tenantId, command, cancellationToken);
-        return new { receipt.TransferId, receipt.SourceAccountId, receipt.DestinationAccountId, receipt.Amount, receipt.Replay, receipt.SecurityProof };
+        return new
+        {
+            receipt.TransferId, receipt.SourceAccountId, receipt.DestinationAccountId, receipt.Amount, receipt.Replay,
+            receipt.SecurityProof
+        };
     }
 }
 

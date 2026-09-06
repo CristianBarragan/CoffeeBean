@@ -1,35 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+﻿namespace CoffeeBeanery.Database;
 
-namespace CoffeeBeanery.Database;
-
-public partial class Transaction : Process
+public class Transaction : Process
 {
     public Transaction()
     {
-        Schema = CoffeeBeanery.Database.Schema.Lending;
+        Schema = Database.Schema.Lending;
     }
 
     public int Id { get; set; }
-    
+
     public Guid TransactionKey { get; set; }
 
     public decimal? Amount { get; set; }
 
     public decimal? Balance { get; set; }
-    
+
     public Contract? Contract { get; set; }
-    
+
     public int? ContractId { get; set; }
-    
+
     public Guid? ContractKey { get; set; }
-    
+
     public Account? Account { get; set; }
 
     public int? AccountId { get; set; }
-    
+
     public Guid? AccountKey { get; set; }
 }
 

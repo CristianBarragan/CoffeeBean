@@ -1,11 +1,9 @@
-using Foundgine.E2E.Tests.Banking;
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Resolution;
-using Xunit;
+using Foundgine.E2E.Tests.Banking;
 
 namespace Foundgine.E2E.Tests;
 
@@ -58,4 +56,3 @@ public sealed class FoundginePipelineTests
             transaction.Fields);
     }
 }
-

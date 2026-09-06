@@ -1,33 +1,29 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Mutation;
-using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Capabilities;
+using Foundgine.Core.Semantic.Mutation;
+using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic.Security;
 using Foundgine.Core.Semantic.Security.Execution;
 using Foundgine.Core.Semantic.Security.Warrants;
-using Foundgine.Core.Semantic.Mutation;
-using Foundgine.Core.Semantic.Query;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.Runtime;
 
 public sealed class FoundgineMutationEngine : IFoundgineMutations
 {
-    private readonly IMutationSchema _schema;
+    private readonly string? _expectedWarrantIssuer;
     private readonly SemanticModel? _model;
     private readonly ISemanticAuthorizationPolicy _policy;
     private readonly IMutationBatchExecutionProvider _provider;
+    private readonly IMutationSchema _schema;
     private readonly SemanticCapabilityContract _securityContract;
-    private readonly ISecurityWarrantKeyResolver? _warrantKeyResolver;
-    private readonly string? _expectedWarrantIssuer;
-    private readonly ISecurityWarrantReplayStore? _warrantReplayStore;
     private readonly SecurityResourceLimits _securityResourceLimits;
+    private readonly ISecurityWarrantKeyResolver? _warrantKeyResolver;
+    private readonly ISecurityWarrantReplayStore? _warrantReplayStore;
 
     public FoundgineMutationEngine(
         IMutationSchema schema,
@@ -61,10 +57,10 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
     }
 
     /// <summary>
-    /// Executes a mutation directly after authorization, security-invariant
-    /// validation and final execution certification. This is the normal path
-    /// for trusted transports such as GraphQL; approval remains an explicit
-    /// optional workflow rather than an accidental requirement for every mutation.
+    ///     Executes a mutation directly after authorization, security-invariant
+    ///     validation and final execution certification. This is the normal path
+    ///     for trusted transports such as GraphQL; approval remains an explicit
+    ///     optional workflow rather than an accidental requirement for every mutation.
     /// </summary>
     public Task<MutationExecutionResult> ExecuteAsync(
         SemanticMutationRequest request,
@@ -75,7 +71,7 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
         cancellationToken.ThrowIfCancellationRequested();
 
         var plan = AuthorizeAndPlan(request);
-        return ExecutePlanAsync(plan, request.Security, approval: null, context, cancellationToken);
+        return ExecutePlanAsync(plan, request.Security, null, context, cancellationToken);
     }
 
     public MutationPlanApproval Approve(SemanticMutationRequest request, string approvedBy)
@@ -145,7 +141,6 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
             resultFingerprint,
             approval?.ApprovalId,
             approval?.ApprovedBy));
-
     }
 
     private void ValidateWarrant(SemanticMutationRequest request)
@@ -155,7 +150,8 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
             return;
 
         if (_warrantKeyResolver is null)
-            throw new InvalidOperationException("A security warrant was supplied, but no warrant key resolver is configured.");
+            throw new InvalidOperationException(
+                "A security warrant was supplied, but no warrant key resolver is configured.");
 
         SecurityWarrantVerifier.Verify(
             security.Warrant,
@@ -182,14 +178,11 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
                     capability.Operation,
                     security.Tenant,
                     security.ResourceScope))
-            {
                 throw new UnauthorizedAccessException(
                     $"Security warrant does not authorize capability '{capability.Id}' for subject '{security.Subject}'.");
-            }
 
             ValidateWarrantAllowedFields(operation, security);
         }
-
     }
 
 
@@ -238,14 +231,14 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
 
             case SemanticAndFilter and:
                 foreach (var expression in and.Expressions)
-                    foreach (var name in FilterFields(expression, entity))
-                        yield return name;
+                foreach (var name in FilterFields(expression, entity))
+                    yield return name;
                 yield break;
 
             case SemanticOrFilter or:
                 foreach (var expression in or.Expressions)
-                    foreach (var name in FilterFields(expression, entity))
-                        yield return name;
+                foreach (var name in FilterFields(expression, entity))
+                    yield return name;
                 yield break;
 
             default:
@@ -255,7 +248,6 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
 
     private void ConsumeWarrantReplay(SecurityExecutionContext security)
     {
-
         if (_warrantReplayStore is null)
             throw new InvalidOperationException("Executing a warrant-backed mutation requires a warrant replay store.");
 
@@ -308,17 +300,21 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
         return required.OrderBy(x => x, StringComparer.Ordinal).ToArray();
     }
 
-    private static bool IsEnginePreservedInvariant(string id) => id switch
+    private static bool IsEnginePreservedInvariant(string id)
     {
-        SecurityInvariantIds.AuthorizationRequired => true,
-        SecurityInvariantIds.RuntimeAuthorization => true,
-        SecurityInvariantIds.FieldVisibility => true,
-        SecurityInvariantIds.RelationshipVisibility => true,
-        _ => false
-    };
+        return id switch
+        {
+            SecurityInvariantIds.AuthorizationRequired => true,
+            SecurityInvariantIds.RuntimeAuthorization => true,
+            SecurityInvariantIds.FieldVisibility => true,
+            SecurityInvariantIds.RelationshipVisibility => true,
+            _ => false
+        };
+    }
 
-    private MutationDryRunResult Describe(SemanticMutationPlan plan) =>
-        new(
+    private MutationDryRunResult Describe(SemanticMutationPlan plan)
+    {
+        return new MutationDryRunResult(
             Fingerprint(plan),
             plan.Operations.Select((x, i) => new MutationPlanOperation(
                 i,
@@ -327,10 +323,13 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
                 x.Fields.Select(f => f.Field.Value.ToString()).ToArray(),
                 x.ReturnFields.Select(f => f.Value.ToString()).ToArray())).ToArray(),
             plan.Operations.SelectMany(x => x.Effects).Select(FormatEffect).ToArray());
+    }
 
-    private string FormatEffect(SemanticMutationEffect effect) =>
-        $"{effect.Kind}:{_schema.GetEntity(effect.Entity).Name}" +
-        (effect.Field is { } field ? $".{field.Value}" : string.Empty);
+    private string FormatEffect(SemanticMutationEffect effect)
+    {
+        return $"{effect.Kind}:{_schema.GetEntity(effect.Entity).Name}" +
+               (effect.Field is { } field ? $".{field.Value}" : string.Empty);
+    }
 
     private static string Fingerprint(SemanticMutationPlan plan)
     {

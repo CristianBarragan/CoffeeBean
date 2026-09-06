@@ -1,6 +1,3 @@
-using Foundgine.Providers.Storage.PostgresVector;
-using Xunit;
-
 namespace Foundgine.Providers.Storage.PostgresVector.Tests;
 
 public sealed class PgVectorOptionsTests
@@ -19,7 +16,7 @@ public sealed class PgVectorOptionsTests
     [Fact]
     public void QualifiedTableName_double_quotes_schema_and_table()
     {
-        var options = new PgVectorOptions(TableName: "lexicon", Schema: "fg_vector");
+        var options = new PgVectorOptions("lexicon", Schema: "fg_vector");
 
         Assert.Equal("\"fg_vector\".\"lexicon\"", options.QualifiedTableName);
     }
@@ -27,7 +24,7 @@ public sealed class PgVectorOptionsTests
     [Fact]
     public void QualifiedTableName_reflects_a_non_default_schema_and_table_together()
     {
-        var options = new PgVectorOptions(TableName: "custom_lexicon", Schema: "tenant_a");
+        var options = new PgVectorOptions("custom_lexicon", Schema: "tenant_a");
 
         Assert.Equal("\"tenant_a\".\"custom_lexicon\"", options.QualifiedTableName);
     }

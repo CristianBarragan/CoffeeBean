@@ -1,8 +1,7 @@
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Execution;
 using Foundgine.Core.Execution.Security;
 using Foundgine.Core.Semantic.Security;
-using Xunit;
+using Foundgine.Testing;
 
 namespace Foundgine.Security.Tests.Security;
 
@@ -19,8 +18,9 @@ public sealed class ProviderExecutableConformanceGateTests
             SecurityInvariantProofGate.AttachAndValidate(plan, ir, compiler));
     }
 
-    private static ExecutionIR TestIr(string invariant) =>
-        Foundgine.Testing.ExecutionIRTestFactory.Create(
+    private static ExecutionIR TestIr(string invariant)
+    {
+        return ExecutionIRTestFactory.Create(
             new ExecutionIRNode(
                 1,
                 default,
@@ -32,23 +32,7 @@ public sealed class ProviderExecutableConformanceGateTests
                 null,
                 null),
             [invariant]);
-
-    private sealed class HostileCertifiedCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
-    {
-        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
-            [SecurityInvariantIds.AuthorizationRequired];
-
-        public ProviderPlan Compile(ExecutionIR ir) => new TestPlan();
-
-        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-            new(
-                plan.Provider,
-                ir.RequiredSecurityInvariants,
-                [],
-                ["compiled provider plan lost authorization predicate"]);
     }
-
-    private sealed record TestPlan() : ProviderPlan("hostile-certified");
 
     [Fact]
     public void Provider_profile_alone_cannot_cross_security_critical_boundary()
@@ -60,7 +44,8 @@ public sealed class ProviderExecutableConformanceGateTests
         var exception = Assert.Throws<InvalidOperationException>(() =>
             SecurityInvariantProofGate.AttachAndValidate(plan, ir, compiler));
 
-        Assert.Contains("no concrete security conformance evaluator", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("no concrete security conformance evaluator", exception.Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -106,21 +91,54 @@ public sealed class ProviderExecutableConformanceGateTests
         Assert.Contains("does not match", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    private sealed class ProfileOnlyCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
+    private sealed class HostileCertifiedCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
-        public IReadOnlyCollection<string> PreservedSecurityInvariants => [SecurityInvariantIds.AuthorizationRequired];
-        public ProviderPlan Compile(ExecutionIR ir) => new TestPlan();
+        public ProviderPlan Compile(ExecutionIR ir)
+        {
+            return new TestPlan();
+        }
+
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
+        {
+            return new(
+                plan.Provider,
+                ir.RequiredSecurityInvariants,
+                [],
+                ["compiled provider plan lost authorization predicate"]);
+        }
+
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            [SecurityInvariantIds.AuthorizationRequired];
     }
 
-    private sealed class HonestCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed record TestPlan() : ProviderPlan("hostile-certified");
+
+    private sealed class ProfileOnlyCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
     {
+        public ProviderPlan Compile(ExecutionIR ir)
+        {
+            return new TestPlan();
+        }
+
         public IReadOnlyCollection<string> PreservedSecurityInvariants => [SecurityInvariantIds.AuthorizationRequired];
-        public ProviderPlan Compile(ExecutionIR ir) => new TestPlan();
-        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-            new(plan.Provider, ir.RequiredSecurityInvariants, ir.RequiredSecurityInvariants, []);
+    }
+
+    private sealed class HonestCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
+    {
+        public ProviderPlan Compile(ExecutionIR ir)
+        {
+            return new TestPlan();
+        }
+
+        public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan)
+        {
+            return new(plan.Provider, ir.RequiredSecurityInvariants, ir.RequiredSecurityInvariants, []);
+        }
+
+        public IReadOnlyCollection<string> PreservedSecurityInvariants => [SecurityInvariantIds.AuthorizationRequired];
     }
 
     private sealed record DifferentProviderPlan() : ProviderPlan("different-provider");
 }
-
-

@@ -1,11 +1,10 @@
 ﻿using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Resolution;
 using Foundgine.Providers.Storage.Sql;
-using Xunit;
 using BankingModel = Foundgine.E2E.Tests.Banking.BankingSemanticModel;
 
 namespace Foundgine.E2E.Tests;
@@ -56,6 +55,3 @@ public sealed class StorageNameQuotingTests
         Assert.DoesNotContain("FROM \"Banking.Customer\"", sql, StringComparison.Ordinal);
     }
 }
-
-
-

@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Text;
 using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Query;
 
@@ -31,7 +28,8 @@ internal static class SemanticQuerySqlWriter
         // "operator does not exist: bigint > text").
         var nextParameter = parameters.Count;
         var nextAlias = 0;
-        return WriteFilter(filter, entity, alias, parameters, metadata, aggregateStrategy, true, ref nextParameter, ref nextAlias);
+        return WriteFilter(filter, entity, alias, parameters, metadata, aggregateStrategy, true, ref nextParameter,
+            ref nextAlias);
     }
 
     public static string? WriteOrder(
@@ -44,10 +42,13 @@ internal static class SemanticQuerySqlWriter
         foreach (var term in terms)
         {
             var field = entity.EffectiveFields.FirstOrDefault(x => x.Id == term.Field)
-                ?? throw new InvalidOperationException($"Unknown order field '{term.Field}' on '{entity.Name}'.");
+                        ?? throw new InvalidOperationException(
+                            $"Unknown order field '{term.Field}' on '{entity.Name}'.");
             var column = ResolveColumn(entity, field);
-            parts.Add($"{SqlCompiler.QuoteIdentifier(alias)}.{SqlCompiler.QuoteIdentifier(column.EffectiveStorageName)} {(term.Direction == SemanticSortDirection.Desc ? "DESC" : "ASC")}");
+            parts.Add(
+                $"{SqlCompiler.QuoteIdentifier(alias)}.{SqlCompiler.QuoteIdentifier(column.EffectiveStorageName)} {(term.Direction == SemanticSortDirection.Desc ? "DESC" : "ASC")}");
         }
+
         return "ORDER BY " + string.Join(", ", parts);
     }
 
@@ -67,12 +68,15 @@ internal static class SemanticQuerySqlWriter
             case SemanticFieldFilter field:
             {
                 var fieldMetadata = entity.EffectiveFields.FirstOrDefault(x => x.Id == field.Field)
-                    ?? throw new InvalidOperationException($"Unknown filter field '{field.Field}' on '{entity.Name}'.");
+                                    ?? throw new InvalidOperationException(
+                                        $"Unknown filter field '{field.Field}' on '{entity.Name}'.");
                 var column = ResolveColumn(entity, fieldMetadata);
-                var reference = $"{SqlCompiler.QuoteIdentifier(alias)}.{SqlCompiler.QuoteIdentifier(column.EffectiveStorageName)}";
+                var reference =
+                    $"{SqlCompiler.QuoteIdentifier(alias)}.{SqlCompiler.QuoteIdentifier(column.EffectiveStorageName)}";
 
                 if (field.Operator == SemanticFilterOperator.Eq && field.Value is null) return reference + " IS NULL";
-                if (field.Operator == SemanticFilterOperator.Neq && field.Value is null) return reference + " IS NOT NULL";
+                if (field.Operator == SemanticFilterOperator.Neq && field.Value is null)
+                    return reference + " IS NOT NULL";
 
                 if (field.Operator == SemanticFilterOperator.In)
                 {
@@ -85,6 +89,7 @@ internal static class SemanticQuerySqlWriter
                         parameters.Add(new SqlParameterBinding(name, value, ClrType: fieldMetadata.ClrType));
                         refs.Add("@" + name);
                     }
+
                     return $"{reference} IN ({string.Join(", ", refs)})";
                 }
 
@@ -117,10 +122,12 @@ internal static class SemanticQuerySqlWriter
                     ref nextAlias);
 
             case SemanticAndFilter andFilter:
-                return Join(andFilter.Expressions, "AND", entity, alias, parameters, metadata, aggregateStrategy, allowAggregateStrategy, ref nextParameter, ref nextAlias);
+                return Join(andFilter.Expressions, "AND", entity, alias, parameters, metadata, aggregateStrategy,
+                    allowAggregateStrategy, ref nextParameter, ref nextAlias);
 
             case SemanticOrFilter orFilter:
-                return Join(orFilter.Expressions, "OR", entity, alias, parameters, metadata, aggregateStrategy, allowAggregateStrategy, ref nextParameter, ref nextAlias);
+                return Join(orFilter.Expressions, "OR", entity, alias, parameters, metadata, aggregateStrategy,
+                    allowAggregateStrategy, ref nextParameter, ref nextAlias);
 
             default:
                 throw new NotSupportedException(expression.GetType().Name);
@@ -143,7 +150,8 @@ internal static class SemanticQuerySqlWriter
                 $"Relationship '{relationship.Name}' is not a relationship from '{source.Name}'.");
         var target = metadata.GetEntity(relationship.Target);
         var targetAlias = "s" + nextAlias++;
-        var join = RenderJoinCondition(relationship.SourceKey, relationship.TargetKey, source, sourceAlias, target, targetAlias);
+        var join = RenderJoinCondition(relationship.SourceKey, relationship.TargetKey, source, sourceAlias, target,
+            targetAlias);
         var predicate = WriteFilter(
             filter.Predicate,
             target,
@@ -156,7 +164,8 @@ internal static class SemanticQuerySqlWriter
             ref nextAlias);
 
         var body = $"{join} AND {predicate}";
-        var exists = $"EXISTS (SELECT 1 FROM {SqlCompiler.QuoteStorageName(target.EffectiveStorageName)} {SqlCompiler.QuoteIdentifier(targetAlias)} WHERE {body})";
+        var exists =
+            $"EXISTS (SELECT 1 FROM {SqlCompiler.QuoteStorageName(target.EffectiveStorageName)} {SqlCompiler.QuoteIdentifier(targetAlias)} WHERE {body})";
 
         return filter.Quantifier switch
         {
@@ -185,7 +194,8 @@ internal static class SemanticQuerySqlWriter
                 $"Relationship '{relationship.Name}' is not a relationship from '{source.Name}'.");
         var target = metadata.GetEntity(relationship.Target);
         var targetAlias = "a" + nextAlias++;
-        var join = RenderJoinCondition(relationship.SourceKey, relationship.TargetKey, source, sourceAlias, target, targetAlias);
+        var join = RenderJoinCondition(relationship.SourceKey, relationship.TargetKey, source, sourceAlias, target,
+            targetAlias);
 
         // The planner-level AggregateCardinalityOptimizationRule hint proves this bare COUNT
         // comparison depends only on whether the related collection is empty, not on the
@@ -194,7 +204,8 @@ internal static class SemanticQuerySqlWriter
         // by this rewrite) are exactly the same as the COUNT-subquery form below.
         if (allowAggregateStrategy && AggregateExecutionStrategyResolver.IsEligibleFor(filter, aggregateStrategy))
         {
-            var existsExpression = $"EXISTS (SELECT 1 FROM {SqlCompiler.QuoteStorageName(target.EffectiveStorageName)} {SqlCompiler.QuoteIdentifier(targetAlias)} WHERE {join})";
+            var existsExpression =
+                $"EXISTS (SELECT 1 FROM {SqlCompiler.QuoteStorageName(target.EffectiveStorageName)} {SqlCompiler.QuoteIdentifier(targetAlias)} WHERE {join})";
             return aggregateStrategy == AggregateExecutionStrategy.CountExistsShortCircuit
                 ? existsExpression
                 : $"NOT {existsExpression}";
@@ -202,25 +213,30 @@ internal static class SemanticQuerySqlWriter
 
         var aggregatePredicate = filter.Predicate is null
             ? null
-            : WriteFilter(filter.Predicate, target, targetAlias, parameters, metadata, aggregateStrategy, false, ref nextParameter, ref nextAlias);
+            : WriteFilter(filter.Predicate, target, targetAlias, parameters, metadata, aggregateStrategy, false,
+                ref nextParameter, ref nextAlias);
         var where = aggregatePredicate is null ? join : $"{join} AND {aggregatePredicate}";
 
         string expression;
         switch (filter.Aggregate)
         {
             case SemanticFilterAggregate.Count:
-                expression = $"(SELECT COUNT(*) FROM {SqlCompiler.QuoteStorageName(target.EffectiveStorageName)} {SqlCompiler.QuoteIdentifier(targetAlias)} WHERE {where})";
+                expression =
+                    $"(SELECT COUNT(*) FROM {SqlCompiler.QuoteStorageName(target.EffectiveStorageName)} {SqlCompiler.QuoteIdentifier(targetAlias)} WHERE {where})";
                 break;
 
             case SemanticFilterAggregate.Min:
             case SemanticFilterAggregate.Max:
                 if (filter.Field is null)
-                    throw new InvalidOperationException($"{filter.Aggregate} aggregate filter requires a target field.");
+                    throw new InvalidOperationException(
+                        $"{filter.Aggregate} aggregate filter requires a target field.");
                 var field = target.EffectiveFields.FirstOrDefault(x => x.Id == filter.Field.Value)
-                    ?? throw new InvalidOperationException($"Unknown aggregate filter field '{filter.Field}' on '{target.Name}'.");
+                            ?? throw new InvalidOperationException(
+                                $"Unknown aggregate filter field '{filter.Field}' on '{target.Name}'.");
                 var column = ResolveColumn(target, field);
                 var aggregateName = filter.Aggregate == SemanticFilterAggregate.Min ? "MIN" : "MAX";
-                expression = $"(SELECT {aggregateName}({SqlCompiler.QuoteIdentifier(targetAlias)}.{SqlCompiler.QuoteIdentifier(column.EffectiveStorageName)}) FROM {SqlCompiler.QuoteStorageName(target.EffectiveStorageName)} {SqlCompiler.QuoteIdentifier(targetAlias)} WHERE {where})";
+                expression =
+                    $"(SELECT {aggregateName}({SqlCompiler.QuoteIdentifier(targetAlias)}.{SqlCompiler.QuoteIdentifier(column.EffectiveStorageName)}) FROM {SqlCompiler.QuoteStorageName(target.EffectiveStorageName)} {SqlCompiler.QuoteIdentifier(targetAlias)} WHERE {where})";
                 break;
 
             default:
@@ -257,16 +273,19 @@ internal static class SemanticQuerySqlWriter
         }
     }
 
-    private static string RenderAggregateOperator(SemanticAggregateFilterOperator op) => op switch
+    private static string RenderAggregateOperator(SemanticAggregateFilterOperator op)
     {
-        SemanticAggregateFilterOperator.Eq => " = ",
-        SemanticAggregateFilterOperator.Neq => " <> ",
-        SemanticAggregateFilterOperator.Gt => " > ",
-        SemanticAggregateFilterOperator.Gte => " >= ",
-        SemanticAggregateFilterOperator.Lt => " < ",
-        SemanticAggregateFilterOperator.Lte => " <= ",
-        _ => throw new NotSupportedException(op.ToString())
-    };
+        return op switch
+        {
+            SemanticAggregateFilterOperator.Eq => " = ",
+            SemanticAggregateFilterOperator.Neq => " <> ",
+            SemanticAggregateFilterOperator.Gt => " > ",
+            SemanticAggregateFilterOperator.Gte => " >= ",
+            SemanticAggregateFilterOperator.Lt => " < ",
+            SemanticAggregateFilterOperator.Lte => " <= ",
+            _ => throw new NotSupportedException(op.ToString())
+        };
+    }
 
     private static string RenderJoinCondition(
         ColumnReference sourceReference,
@@ -292,7 +311,8 @@ internal static class SemanticQuerySqlWriter
             throw new InvalidOperationException("Relationship join references an entity outside its endpoints.");
         var alias = reference.EntityId == source.EntityId ? sourceAlias : targetAlias;
         var column = entity.Columns.FirstOrDefault(x => x.Id == reference.ColumnId)
-            ?? throw new InvalidOperationException($"Entity '{entity.Name}' has no column '{reference.ColumnId}'.");
+                     ?? throw new InvalidOperationException(
+                         $"Entity '{entity.Name}' has no column '{reference.ColumnId}'.");
         return $"{SqlCompiler.QuoteIdentifier(alias)}.{SqlCompiler.QuoteIdentifier(column.EffectiveStorageName)}";
     }
 
@@ -311,23 +331,30 @@ internal static class SemanticQuerySqlWriter
         if (expressions.Count == 0) throw new InvalidOperationException("Filter group cannot be empty.");
         var parts = new List<string>(expressions.Count);
         foreach (var expression in expressions)
-            parts.Add(WriteFilter(expression, entity, alias, parameters, metadata, aggregateStrategy, allowAggregateStrategy, ref nextParameter, ref nextAlias));
+            parts.Add(WriteFilter(expression, entity, alias, parameters, metadata, aggregateStrategy,
+                allowAggregateStrategy, ref nextParameter, ref nextAlias));
         return "(" + string.Join(" " + op + " ", parts) + ")";
     }
 
-    private static IReadOnlyList<object?> NormalizeList(object? value) => value switch
+    private static IReadOnlyList<object?> NormalizeList(object? value)
     {
-        null => [],
-        object?[] array => array,
-        Array array => array.Cast<object?>().ToArray(),
-        IReadOnlyList<object?> list => list,
-        IEnumerable enumerable when value is not string => enumerable.Cast<object?>().ToArray(),
-        _ => [value]
-    };
+        return value switch
+        {
+            null => [],
+            object?[] array => array,
+            Array array => array.Cast<object?>().ToArray(),
+            IReadOnlyList<object?> list => list,
+            IEnumerable enumerable when value is not string => enumerable.Cast<object?>().ToArray(),
+            _ => [value]
+        };
+    }
 
-    private static ColumnMetadata ResolveColumn(EntityMetadata entity, FieldMetadata field) =>
-        field.Column is null
+    private static ColumnMetadata ResolveColumn(EntityMetadata entity, FieldMetadata field)
+    {
+        return field.Column is null
             ? throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' has no storage column mapping.")
             : entity.Columns.FirstOrDefault(x => x.Id == field.Column.ColumnId)
-              ?? throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' references a missing column.");
+              ?? throw new InvalidOperationException(
+                  $"Field '{entity.Name}.{field.Name}' references a missing column.");
+    }
 }

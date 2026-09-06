@@ -1,6 +1,7 @@
 # Foundgine.Core.Semantic
 
-`Foundgine.Core.Semantic` owns application meaning: the semantic model, structured intent, resolution, lexical grounding, validation, and semantic authorization.
+`Foundgine.Core.Semantic` owns application meaning: the semantic model, structured intent, resolution, lexical
+grounding, validation, and semantic authorization.
 
 ## What is in this package
 
@@ -21,13 +22,15 @@ The package contains:
 
 ## Boundary
 
-The semantic layer answers **what the caller means** and **what the application exposes**. It does not compile SQL or execute a provider.
+The semantic layer answers **what the caller means** and **what the application exposes**. It does not compile SQL or
+execute a provider.
 
 ```text
 Intent → semantic resolution → validation → authorization evidence
 ```
 
-Retrieval sources such as Elasticsearch, pgvector, `pg_trgm`, or Apache AGE can supply candidates and evidence, but the frozen semantic contract remains authoritative.
+Retrieval sources such as Elasticsearch, pgvector, `pg_trgm`, or Apache AGE can supply candidates and evidence, but the
+frozen semantic contract remains authoritative.
 
 ## Install
 
@@ -39,4 +42,6 @@ Use this package directly when you need semantic modelling/resolution without th
 
 ## Related packages
 
-`Foundgine.Core.Semantic.Metadata` can discover structural facts into a semantic model. `Foundgine.Core.Semantic.Planning` consumes authorized semantic operations. `Foundgine.Core.Abstractions` contains the shared low-level contracts and identifiers.
+`Foundgine.Core.Semantic.Metadata` can discover structural facts into a semantic model.
+`Foundgine.Core.Semantic.Planning` consumes authorized semantic operations. `Foundgine.Core.Abstractions` contains the
+shared low-level contracts and identifiers.

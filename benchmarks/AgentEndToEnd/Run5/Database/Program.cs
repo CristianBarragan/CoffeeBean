@@ -1,9 +1,5 @@
-using Npgsql;
-using System.Security.Cryptography;
-using System.Text;
-
 var cs = Environment.GetEnvironmentVariable("BankingConnectionString")
-    ?? throw new InvalidOperationException("BankingConnectionString is not configured.");
+         ?? throw new InvalidOperationException("BankingConnectionString is not configured.");
 
 var customers = int.TryParse(
     Environment.GetEnvironmentVariable("TRANSFER_FUNDS_CUSTOMERS"),
@@ -41,8 +37,8 @@ await using (var schemaCommand = new NpgsqlCommand(schema, connection))
 }
 
 await using (var clear = new NpgsqlCommand(
-    "TRUNCATE banking.transfer_audit, banking.transfer_idempotency, banking.bank_account;",
-    connection))
+                 "TRUNCATE banking.transfer_audit, banking.transfer_idempotency, banking.bank_account;",
+                 connection))
 {
     await clear.ExecuteNonQueryAsync();
 }

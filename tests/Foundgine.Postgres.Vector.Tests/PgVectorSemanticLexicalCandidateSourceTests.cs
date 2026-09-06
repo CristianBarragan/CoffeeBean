@@ -1,6 +1,5 @@
+using Foundgine.Core.Semantic.Resolution;
 using Foundgine.Providers.Storage.PostgresVector;
-using Npgsql;
-using Xunit;
 
 namespace Foundgine.Postgres.Vector.Tests;
 
@@ -19,8 +18,8 @@ public sealed class PgVectorSemanticLexicalCandidateSourceTests
     [Fact]
     public void DistanceOperator_rejects_an_undefined_distance_value()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => PgVectorSemanticLexicalCandidateSource.DistanceOperator((PgVectorDistance)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            PgVectorSemanticLexicalCandidateSource.DistanceOperator((PgVectorDistance)99));
     }
 
     [Theory]
@@ -61,15 +60,15 @@ public sealed class PgVectorSemanticLexicalCandidateSourceTests
     [Fact]
     public void ToScore_rejects_an_undefined_distance_value()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => PgVectorSemanticLexicalCandidateSource.ToScore(0.1, (PgVectorDistance)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            PgVectorSemanticLexicalCandidateSource.ToScore(0.1, (PgVectorDistance)99));
     }
 
     [Fact]
     public void Constructor_throws_when_data_source_is_null()
     {
-        Assert.Throws<ArgumentNullException>(
-            () => new PgVectorSemanticLexicalCandidateSource(null!, new StubEmbeddingGenerator()));
+        Assert.Throws<ArgumentNullException>(() =>
+            new PgVectorSemanticLexicalCandidateSource(null!, new StubEmbeddingGenerator()));
     }
 
     [Fact]
@@ -79,8 +78,7 @@ public sealed class PgVectorSemanticLexicalCandidateSourceTests
         // exercises the guard clause without requiring a live PostgreSQL server.
         using var dataSource = new NpgsqlDataSourceBuilder("Host=localhost;Database=unused").Build();
 
-        Assert.Throws<ArgumentNullException>(
-            () => new PgVectorSemanticLexicalCandidateSource(dataSource, null!));
+        Assert.Throws<ArgumentNullException>(() => new PgVectorSemanticLexicalCandidateSource(dataSource, null!));
     }
 
     [Fact]
@@ -89,7 +87,7 @@ public sealed class PgVectorSemanticLexicalCandidateSourceTests
         using var dataSource = new NpgsqlDataSourceBuilder("Host=localhost;Database=unused").Build();
 
         // Should not throw: null options fall back to PgVectorOptions defaults.
-        _ = new PgVectorSemanticLexicalCandidateSource(dataSource, new StubEmbeddingGenerator(), options: null);
+        _ = new PgVectorSemanticLexicalCandidateSource(dataSource, new StubEmbeddingGenerator(), null);
     }
 
     [Fact]
@@ -102,13 +100,17 @@ public sealed class PgVectorSemanticLexicalCandidateSourceTests
         await Assert.ThrowsAsync<ArgumentNullException>(() => source.RetrieveAsync(null!));
     }
 
-    private sealed class StubEmbeddingGenerator : Foundgine.Core.Semantic.Resolution.ISemanticEmbeddingGenerator
+    private sealed class StubEmbeddingGenerator : ISemanticEmbeddingGenerator
     {
-        public Task<float[]> EmbedAsync(string text, CancellationToken cancellationToken = default) =>
-            Task.FromResult(new float[] { 1f });
+        public Task<float[]> EmbedAsync(string text, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new[] { 1f });
+        }
 
         public Task<IReadOnlyList<float[]>> EmbedManyAsync(
-            IReadOnlyList<string> texts, CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyList<float[]>>(texts.Select(_ => new float[] { 1f }).ToArray());
+            IReadOnlyList<string> texts, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<float[]>>(texts.Select(_ => new[] { 1f }).ToArray());
+        }
     }
 }

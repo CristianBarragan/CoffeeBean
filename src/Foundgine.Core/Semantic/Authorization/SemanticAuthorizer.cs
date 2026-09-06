@@ -5,8 +5,8 @@ using Foundgine.Core.Semantic.IR.Graph;
 namespace Foundgine.Core.Semantic.Authorization;
 
 /// <summary>
-/// Applies authorization to an already-resolved semantic graph.
-/// The result remains provider- and protocol-independent.
+///     Applies authorization to an already-resolved semantic graph.
+///     The result remains provider- and protocol-independent.
 /// </summary>
 public sealed class SemanticAuthorizer
 {
@@ -33,10 +33,8 @@ public sealed class SemanticAuthorizer
             SemanticGraphNode? authorizedParent = null;
             if (sourceNode.ParentId is not null &&
                 !sourceToAuthorized.TryGetValue(sourceNode.ParentId.Value, out authorizedParent))
-            {
                 // An ancestor was denied, so this node is unreachable.
                 continue;
-            }
 
             var fieldDecisions = sourceNode.Fields
                 .Distinct()
@@ -73,49 +71,36 @@ public sealed class SemanticAuthorizer
             {
                 if (sourceNode.ParentId is not { } parentId ||
                     !graph.Nodes.Any(node => node.Id == parentId))
-                {
                     throw new InvalidOperationException(
                         $"Graph node {sourceNode.Id} has relationship '{relationshipId}' but no valid parent.");
-                }
 
                 var parentEntityId = graph.Nodes.Single(node => node.Id == parentId).EntityId;
                 var relationshipDecision = _policy.GetRelationshipAccess(
                     parentEntityId, relationshipId, AuthorizationOperation.Read);
                 if (!relationshipDecision.IsAllowed)
-                {
                     // A denied relationship removes this node and its descendants.
                     continue;
-                }
 
                 authorization = AuthorizationDecision.Combine(authorization, relationshipDecision);
             }
 
             var sourcePredicate = sourceNode.Authorization;
             if (sourcePredicate is not null && authorization.Predicate != sourcePredicate)
-            {
                 authorization = AuthorizationDecision.Combine(
                     authorization,
                     AuthorizationDecisionFromPredicate(sourcePredicate));
-            }
 
             var predicate = authorization.Predicate;
             SemanticGraphNode node;
             if (sourceNode.ParentId is null)
-            {
                 node = authorized.AddRoot(sourceNode.EntityId, fields, predicate);
-            }
             else if (sourceNode.ViaRelationship is { } childRelationshipId)
-            {
                 node = authorized.Add(sourceNode.EntityId, childRelationshipId, authorizedParent, fields, predicate);
-            }
             else if (sourceNode.ViaConnection is { } connectionId)
-            {
-                node = authorized.AddConnection(sourceNode.EntityId, connectionId, authorizedParent!, fields, predicate);
-            }
+                node = authorized.AddConnection(sourceNode.EntityId, connectionId, authorizedParent!, fields,
+                    predicate);
             else
-            {
                 throw new InvalidOperationException($"Graph node {sourceNode.Id} has a parent but no semantic edge.");
-            }
 
             sourceToAuthorized[sourceNode.Id] = node;
         }
@@ -125,21 +110,21 @@ public sealed class SemanticAuthorizer
 
 
     /// <summary>
-    /// Authorizes canonical Semantic IR directly. This is the authoritative
-    /// semantic-to-planning authorization boundary: physical providers are
-    /// deliberately not involved.
+    ///     Authorizes canonical Semantic IR directly. This is the authoritative
+    ///     semantic-to-planning authorization boundary: physical providers are
+    ///     deliberately not involved.
     /// </summary>
     /// <summary>
-    /// Authorizes canonical Semantic IR against the trusted immutable contract.
-    /// The snapshot is validated before policy evaluation so authorization can
-    /// never silently reason about identities that are outside the contract
-    /// used to resolve and plan the operation.
+    ///     Authorizes canonical Semantic IR against the trusted immutable contract.
+    ///     The snapshot is validated before policy evaluation so authorization can
+    ///     never silently reason about identities that are outside the contract
+    ///     used to resolve and plan the operation.
     /// </summary>
     /// <summary>
-    /// Authorizes the complete canonical operation graph as one security object.
-    /// Every reachable entity, field and relationship edge is evaluated before
-    /// the graph is returned to planning. The provider is deliberately absent
-    /// from this boundary.
+    ///     Authorizes the complete canonical operation graph as one security object.
+    ///     Every reachable entity, field and relationship edge is evaluated before
+    ///     the graph is returned to planning. The provider is deliberately absent
+    ///     from this boundary.
     /// </summary>
     public SemanticOperationGraph Authorize(
         SemanticContractSnapshot contract,
@@ -149,8 +134,8 @@ public sealed class SemanticAuthorizer
     }
 
     /// <summary>
-    /// Authorizes the complete operation graph and returns evidence bound to the
-    /// exact semantic contract and resulting authorized operation.
+    ///     Authorizes the complete operation graph and returns evidence bound to the
+    ///     exact semantic contract and resulting authorized operation.
     /// </summary>
     public SemanticOperationGraphAuthorizationResult AuthorizeGraphWithEvidence(
         SemanticContractSnapshot contract,
@@ -179,8 +164,8 @@ public sealed class SemanticAuthorizer
     }
 
     /// <summary>
-    /// Authorizes an operation and returns immutable evidence bound to the exact
-    /// semantic contract used for the decision.
+    ///     Authorizes an operation and returns immutable evidence bound to the exact
+    ///     semantic contract used for the decision.
     /// </summary>
     public SemanticAuthorizationResult AuthorizeWithEvidence(
         SemanticContractSnapshot contract,
@@ -199,7 +184,7 @@ public sealed class SemanticAuthorizer
     {
         ArgumentNullException.ThrowIfNull(operation);
 
-        var root = AuthorizeNode(operation.Root, isRoot: true);
+        var root = AuthorizeNode(operation.Root, true);
         if (root is null)
             throw new SemanticAuthorizationException(
                 $"Access denied for entity '{operation.Root.EntityId}'.");
@@ -271,7 +256,7 @@ public sealed class SemanticAuthorizer
                 if (!relationship.IsAllowed)
                     continue;
 
-                var childAuthorized = AuthorizeNode(child, isRoot: false);
+                var childAuthorized = AuthorizeNode(child, false);
                 if (childAuthorized is null)
                     continue;
 
@@ -288,7 +273,7 @@ public sealed class SemanticAuthorizer
                 continue;
             }
 
-            var authorizedChild = AuthorizeNode(child, isRoot: false);
+            var authorizedChild = AuthorizeNode(child, false);
             if (authorizedChild is not null)
                 children.Add(authorizedChild);
         }
@@ -301,10 +286,10 @@ public sealed class SemanticAuthorizer
         };
     }
 
-    private static AuthorizationDecision AuthorizationDecisionFromPredicate(AuthorizationPredicate? predicate) =>
-        predicate is null
+    private static AuthorizationDecision AuthorizationDecisionFromPredicate(AuthorizationPredicate? predicate)
+    {
+        return predicate is null
             ? AuthorizationDecision.Allowed
             : AuthorizationDecision.Conditional(predicate);
+    }
 }
-
-

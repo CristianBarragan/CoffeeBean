@@ -1,9 +1,6 @@
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Query;
-using Foundgine.Extensions.GraphQL.HotChocolate;
-using Xunit;
 
 namespace Foundgine.Extensions.GraphQL.HotChocolate.Tests;
 
@@ -18,12 +15,12 @@ public sealed class AggregateFilterTests
     {
         var model = BuildModel();
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query {
-              customer(where: { accounts: { count: { gte: 2 } } }) {
-                id
-              }
-            }
-            """);
+                                                                   query {
+                                                                     customer(where: { accounts: { count: { gte: 2 } } }) {
+                                                                       id
+                                                                     }
+                                                                   }
+                                                                   """);
 
         var filter = Assert.IsType<SemanticAggregateFilter>(request.Options!.Filter);
         Assert.Equal(CustomerAccounts, filter.Relationship);
@@ -38,12 +35,12 @@ public sealed class AggregateFilterTests
     {
         var model = BuildModel();
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query {
-              customer(where: { accounts: { balance: { max: { gt: 100 } } } }) {
-                id
-              }
-            }
-            """);
+                                                                   query {
+                                                                     customer(where: { accounts: { balance: { max: { gt: 100 } } } }) {
+                                                                       id
+                                                                     }
+                                                                   }
+                                                                   """);
 
         var filter = Assert.IsType<SemanticAggregateFilter>(request.Options!.Filter);
         Assert.Equal(CustomerAccounts, filter.Relationship);
@@ -53,8 +50,9 @@ public sealed class AggregateFilterTests
         Assert.Equal(100L, filter.Value);
     }
 
-    private static SemanticModel BuildModel() =>
-        new SemanticModelBuilder()
+    private static SemanticModel BuildModel()
+    {
+        return new SemanticModelBuilder()
             .Entity(Customer, "Customer", e => e
                 .Identity(new FieldId(1), "Id")
                 .Relationship(CustomerAccounts, "Accounts", Account, RelationshipCardinality.Many))
@@ -62,4 +60,5 @@ public sealed class AggregateFilterTests
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(3), "Balance", typeof(decimal)))
             .Build();
+    }
 }

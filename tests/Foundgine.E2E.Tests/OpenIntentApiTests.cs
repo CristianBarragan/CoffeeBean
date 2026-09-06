@@ -3,31 +3,16 @@ using Foundgine.Core.Execution;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
 using Foundgine.Core.Semantic.Capabilities;
-using Foundgine.Core.Semantic.Security.Execution;
-using Foundgine.Core.Semantic.Security.Warrants;
+using Foundgine.Core.Semantic.Intent;
 using Foundgine.Core.Semantic.Query;
+using Foundgine.Core.Semantic.Security.Execution;
 using Foundgine.Runtime;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
 public sealed class OpenIntentApiTests
 {
-    private sealed class Customer
-    {
-        public int Id { get; init; }
-        public string Name { get; init; } = "";
-        public string TenantId { get; init; } = "";
-        public IReadOnlyList<Order> Orders { get; init; } = [];
-    }
-
-    private sealed class Order
-    {
-        public int Id { get; init; }
-        public DateOnly OrderDate { get; init; }
-    }
-
     [Fact]
     public void Typed_query_is_open_and_produces_provider_neutral_intent()
     {
@@ -51,7 +36,7 @@ public sealed class OpenIntentApiTests
         Assert.Equal("Orders", intent.Selections[2].Relationship);
         Assert.Equal(2, intent.Selections[2].EffectiveChildren.Count);
         Assert.Equal(25, intent.Limit);
-        Assert.IsType<Foundgine.Core.Semantic.Intent.ReadFieldFilter>(intent.Filter);
+        Assert.IsType<ReadFieldFilter>(intent.Filter);
     }
 
     [Fact]
@@ -68,7 +53,7 @@ public sealed class OpenIntentApiTests
 
         Assert.Equal("Customer", intent.RootEntity);
         Assert.Equal("Orders", intent.Selections[2].Relationship);
-        Assert.Equal("TenantId", Assert.IsType<Foundgine.Core.Semantic.Intent.ReadFieldFilter>(intent.Filter).Field);
+        Assert.Equal("TenantId", Assert.IsType<ReadFieldFilter>(intent.Filter).Field);
     }
 
     [Fact]
@@ -86,21 +71,73 @@ public sealed class OpenIntentApiTests
             .ToIntent();
 
         var error = Assert.Throws<InvalidOperationException>(() =>
-            new Foundgine.Core.Semantic.Intent.ReadIntentCompiler(model).Compile(intent));
+            new ReadIntentCompiler(model).Compile(intent));
 
         Assert.Contains("Unknown field 'Customer.Nmae'", error.Message);
     }
 
+    private sealed class Customer
+    {
+        public int Id { get; init; }
+        public string Name { get; init; } = "";
+        public string TenantId { get; init; } = "";
+        public IReadOnlyList<Order> Orders { get; init; } = [];
+    }
+
+    private sealed class Order
+    {
+        public int Id { get; init; }
+        public DateOnly OrderDate { get; init; }
+    }
+
     private sealed class RecordingFoundgine : IFoundgine
     {
-        public SemanticAuthorizationCapabilities DescribeCapabilities() => throw new NotSupportedException();
-        public SemanticCapabilityContract DescribeCapabilityContract() => throw new NotSupportedException();
-        public SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security) => throw new NotSupportedException();
-        public SemanticVersionSet DescribeVersionSet() => throw new NotSupportedException();
-        public DryRunResult DryRun(SemanticRequest request) => throw new NotSupportedException();
-        public PlanApproval ApprovePlan(SemanticRequest request, string approvedBy) => throw new NotSupportedException();
-        public Task<ExecutionResult> ExecuteApprovedAsync(PlanApproval approval, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<ExecutionResult> ExecuteAsync(SemanticRequest request, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<ExecutionResult> ExecuteAsync(Foundgine.Core.Semantic.Intent.ReadIntent intent, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public SemanticAuthorizationCapabilities DescribeCapabilities()
+        {
+            throw new NotSupportedException();
+        }
+
+        public SemanticCapabilityContract DescribeCapabilityContract()
+        {
+            throw new NotSupportedException();
+        }
+
+        public SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security)
+        {
+            throw new NotSupportedException();
+        }
+
+        public SemanticVersionSet DescribeVersionSet()
+        {
+            throw new NotSupportedException();
+        }
+
+        public DryRunResult DryRun(SemanticRequest request)
+        {
+            throw new NotSupportedException();
+        }
+
+        public PlanApproval ApprovePlan(SemanticRequest request, string approvedBy)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<ExecutionResult> ExecuteApprovedAsync(PlanApproval approval, ExecutionContext? context = null,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<ExecutionResult> ExecuteAsync(SemanticRequest request, ExecutionContext? context = null,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<ExecutionResult> ExecuteAsync(ReadIntent intent, ExecutionContext? context = null,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
     }
 }

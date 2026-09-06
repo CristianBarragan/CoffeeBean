@@ -1,25 +1,15 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Foundgine.Core.Semantic.Intent;
 using Foundgine.Core.Semantic.Query;
 
 namespace Foundgine.Core.Serialization;
 
 /// <summary>
-/// Translates a deliberately small JSON representation into Foundgine's
-/// provider-neutral <see cref="ReadIntent"/>. It performs no semantic
-/// resolution, authorization, planning, or provider work.
+///     Translates a deliberately small JSON representation into Foundgine's
+///     provider-neutral <see cref="ReadIntent" />. It performs no semantic
+///     resolution, authorization, planning, or provider work.
 /// </summary>
 public sealed class JsonReadIntentAdapter
 {
-    private readonly JsonReadIntentAdapterOptions _limits;
-
-    public JsonReadIntentAdapter(JsonReadIntentAdapterOptions? limits = null)
-    {
-        _limits = limits ?? new JsonReadIntentAdapterOptions();
-        ValidateLimits(_limits);
-    }
-
     private static readonly JsonSerializerOptions Options = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -33,6 +23,14 @@ public sealed class JsonReadIntentAdapter
     {
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip
     };
+
+    private readonly JsonReadIntentAdapterOptions _limits;
+
+    public JsonReadIntentAdapter(JsonReadIntentAdapterOptions? limits = null)
+    {
+        _limits = limits ?? new JsonReadIntentAdapterOptions();
+        ValidateLimits(_limits);
+    }
 
     public ReadIntent Parse(string json)
     {
@@ -116,7 +114,9 @@ public sealed class JsonReadIntentAdapter
             "relationship" => new ReadRelationshipFilter(
                 Required(dto.Relationship, "filter.relationship"),
                 dto.Quantifier ?? throw Invalid("Relationship filters require 'quantifier'."),
-                dto.Predicate is null ? throw Invalid("Relationship filters require 'predicate'.") : ToFilter(dto.Predicate, depth + 1, ref nodes)),
+                dto.Predicate is null
+                    ? throw Invalid("Relationship filters require 'predicate'.")
+                    : ToFilter(dto.Predicate, depth + 1, ref nodes)),
 
             "and" => new ReadAndFilter(
                 dto.Expressions is { Count: > 0 }
@@ -143,7 +143,10 @@ public sealed class JsonReadIntentAdapter
         return result;
     }
 
-    private object? ToValue(JsonElement? value, int depth) => value is null ? null : Normalize(value.Value, depth);
+    private object? ToValue(JsonElement? value, int depth)
+    {
+        return value is null ? null : Normalize(value.Value, depth);
+    }
 
     private object? Normalize(JsonElement value, int depth)
     {
@@ -159,20 +162,25 @@ public sealed class JsonReadIntentAdapter
             JsonValueKind.Number when value.TryGetInt64(out var integer) => integer,
             JsonValueKind.Number when value.TryGetDecimal(out var decimalValue) => decimalValue,
             JsonValueKind.Array => value.EnumerateArray().Select(item => Normalize(item, depth + 1)).ToArray(),
-            JsonValueKind.Object => value.EnumerateObject().ToDictionary(x => x.Name, x => Normalize(x.Value, depth + 1)),
+            JsonValueKind.Object => value.EnumerateObject()
+                .ToDictionary(x => x.Name, x => Normalize(x.Value, depth + 1)),
             _ => throw Invalid($"Unsupported JSON value kind '{value.ValueKind}'.")
         };
     }
 
-    private static ReadOrder ToOrder(OrderDto dto) =>
-        new(
+    private static ReadOrder ToOrder(OrderDto dto)
+    {
+        return new ReadOrder(
             Required(dto.Field, "order.field"),
             dto.Direction ?? throw Invalid("Order entries require 'direction'."),
             dto.RelationshipPath,
             dto.Aggregate ?? SemanticOrderAggregate.None);
+    }
 
-    private int CountSelections(IEnumerable<SelectionDto> selections) =>
-        CountSelections(selections, 1);
+    private int CountSelections(IEnumerable<SelectionDto> selections)
+    {
+        return CountSelections(selections, 1);
+    }
 
     private int CountSelections(IEnumerable<SelectionDto> selections, int depth)
     {
@@ -204,11 +212,15 @@ public sealed class JsonReadIntentAdapter
             throw new ArgumentOutOfRangeException(nameof(limits), "All parser limits must be positive.");
     }
 
-    private static string Required(string? value, string name) =>
-        !string.IsNullOrWhiteSpace(value) ? value : throw Invalid($"'{name}' is required.");
+    private static string Required(string? value, string name)
+    {
+        return !string.IsNullOrWhiteSpace(value) ? value : throw Invalid($"'{name}' is required.");
+    }
 
-    private static InvalidOperationException Invalid(string message, Exception? inner = null) =>
-        new(message, inner);
+    private static InvalidOperationException Invalid(string message, Exception? inner = null)
+    {
+        return new(message, inner);
+    }
 
     private sealed class ReadIntentDto
     {

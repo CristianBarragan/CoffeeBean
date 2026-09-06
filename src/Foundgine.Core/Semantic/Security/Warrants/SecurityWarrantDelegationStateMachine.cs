@@ -23,20 +23,12 @@ public sealed record SecurityWarrantDelegationTransition(
     string Operation);
 
 /// <summary>
-/// Small, provider-neutral state machine used to define the legal lifecycle boundary.
-/// The lock is the model of the database serialization boundary; production stores must
-/// provide an equivalent atomic compare-and-transition operation.
+///     Small, provider-neutral state machine used to define the legal lifecycle boundary.
+///     The lock is the model of the database serialization boundary; production stores must
+///     provide an equivalent atomic compare-and-transition operation.
 /// </summary>
 public sealed class SecurityWarrantDelegationStateMachine
 {
-    private sealed class Cell
-    {
-        public readonly object Gate = new();
-        public SecurityWarrantDelegationState State = SecurityWarrantDelegationState.Active;
-        public long Sequence;
-        public string? ActiveKeyId;
-    }
-
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Cell> _cells =
         new(StringComparer.Ordinal);
 
@@ -55,12 +47,16 @@ public sealed class SecurityWarrantDelegationStateMachine
     }
 
     public SecurityWarrantDelegationTransition Revoke(SecurityWarrant warrant)
-        => Transition(warrant, "revoke", static s => s == SecurityWarrantDelegationState.Active,
+    {
+        return Transition(warrant, "revoke", static s => s == SecurityWarrantDelegationState.Active,
             static cell => cell.State = SecurityWarrantDelegationState.Revoked);
+    }
 
     public SecurityWarrantDelegationTransition Compromise(SecurityWarrant warrant)
-        => Transition(warrant, "compromise", static s => s != SecurityWarrantDelegationState.Compromised,
+    {
+        return Transition(warrant, "compromise", static s => s != SecurityWarrantDelegationState.Compromised,
             static cell => cell.State = SecurityWarrantDelegationState.Compromised);
+    }
 
     /// <summary>Rotates the issuer key without changing authority state.</summary>
     public SecurityWarrantDelegationTransition RotateKey(SecurityWarrant warrant, string newKeyId)
@@ -71,8 +67,8 @@ public sealed class SecurityWarrantDelegationStateMachine
     }
 
     /// <summary>
-    /// Re-delegation is allowed only from an active, non-compromised parent and therefore
-    /// must observe the same linearization point as revocation/compromise/key rotation.
+    ///     Re-delegation is allowed only from an active, non-compromised parent and therefore
+    ///     must observe the same linearization point as revocation/compromise/key rotation.
     /// </summary>
     public SecurityWarrantDelegationStateSnapshot AssertCanDelegate(SecurityWarrant parent)
     {
@@ -90,7 +86,10 @@ public sealed class SecurityWarrantDelegationStateMachine
     {
         ArgumentNullException.ThrowIfNull(warrant);
         var cell = Get(warrant);
-        lock (cell.Gate) return Snapshot(warrant, cell);
+        lock (cell.Gate)
+        {
+            return Snapshot(warrant, cell);
+        }
     }
 
     private SecurityWarrantDelegationTransition Transition(
@@ -105,11 +104,12 @@ public sealed class SecurityWarrantDelegationStateMachine
         {
             var before = Snapshot(warrant, cell);
             if (!allowed(cell.State))
-                throw new InvalidOperationException($"Illegal delegation state transition '{operation}' from {cell.State}.");
+                throw new InvalidOperationException(
+                    $"Illegal delegation state transition '{operation}' from {cell.State}.");
             apply(cell);
             cell.Sequence = checked(cell.Sequence + 1);
             var after = Snapshot(warrant, cell);
-            return new(before, after, operation);
+            return new SecurityWarrantDelegationTransition(before, after, operation);
         }
     }
 
@@ -121,8 +121,22 @@ public sealed class SecurityWarrantDelegationStateMachine
         return cell;
     }
 
-    private static SecurityWarrantDelegationStateSnapshot Snapshot(SecurityWarrant warrant, Cell cell) =>
-        new(warrant.Id, warrant.Digest, cell.State, cell.Sequence, cell.ActiveKeyId);
+    private static SecurityWarrantDelegationStateSnapshot Snapshot(SecurityWarrant warrant, Cell cell)
+    {
+        return new SecurityWarrantDelegationStateSnapshot(warrant.Id, warrant.Digest, cell.State, cell.Sequence,
+            cell.ActiveKeyId);
+    }
 
-    private static string Key(SecurityWarrant warrant) => warrant.Id + "\u001f" + warrant.Digest;
+    private static string Key(SecurityWarrant warrant)
+    {
+        return warrant.Id + "\u001f" + warrant.Digest;
+    }
+
+    private sealed class Cell
+    {
+        public readonly object Gate = new();
+        public readonly SecurityWarrantDelegationState State = SecurityWarrantDelegationState.Active;
+        public string? ActiveKeyId;
+        public long Sequence;
+    }
 }

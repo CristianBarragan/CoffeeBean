@@ -1,6 +1,6 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.IR;
-using Xunit;
+using Foundgine.Core.Semantic.Query;
 
 namespace Foundgine.Core.Semantic.Tests;
 
@@ -37,7 +37,7 @@ public sealed class SemanticOperationIrTests
     {
         var graph = new SemanticGraph();
         graph.GetType().GetProperty(nameof(SemanticGraph.Options))!
-            .SetValue(graph, new Foundgine.Core.Semantic.Query.SemanticQueryOptions(Limit: 25));
+            .SetValue(graph, new SemanticQueryOptions(Limit: 25));
         graph.AddRoot(new EntityId(1));
 
         var operation = SemanticOperationCompiler.Compile(graph);
@@ -69,8 +69,7 @@ public sealed class SemanticOperationIrTests
         graph.AddRoot(new EntityId(1));
         graph.AddRoot(new EntityId(2));
 
-        var error = Assert.Throws<InvalidOperationException>(
-            () => SemanticOperationCompiler.Compile(graph));
+        var error = Assert.Throws<InvalidOperationException>(() => SemanticOperationCompiler.Compile(graph));
 
         Assert.Contains("exactly one root", error.Message);
     }

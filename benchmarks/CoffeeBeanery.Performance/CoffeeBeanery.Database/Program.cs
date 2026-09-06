@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using CoffeeBeanery.Database;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var connectionString =
     Environment.GetEnvironmentVariable("BankingConnectionString")
@@ -54,7 +48,7 @@ if (existingCounts.Customers == customerCount &&
         transactionsPerContract);
 
     Console.WriteLine(
-        $"Database already contains the exact benchmark fixture: " +
+        "Database already contains the exact benchmark fixture: " +
         $"{customerCount:N0} customers, " +
         $"{expectedRelationships:N0} relationships, " +
         $"{expectedContracts:N0} contracts, " +
@@ -68,7 +62,6 @@ if (existingCounts.Customers != 0 ||
     existingCounts.Relationships != 0 ||
     existingCounts.Contracts != 0 ||
     existingCounts.Transactions != 0)
-{
     throw new InvalidOperationException(
         "Database contains a partial or incompatible benchmark fixture. " +
         $"Found customers={existingCounts.Customers:N0}, " +
@@ -79,7 +72,6 @@ if (existingCounts.Customers != 0 ||
         $"relationships={expectedRelationships:N0}, " +
         $"contracts={expectedContracts:N0}, " +
         $"transactions={expectedTransactions:N0}.");
-}
 
 Console.WriteLine(
     $"Seeding {customerCount:N0} customers, " +
@@ -92,7 +84,6 @@ await using var transaction = await db.Database.BeginTransactionAsync();
 var customers = new List<Customer>(customerCount);
 
 for (var i = 1; i <= customerCount; i++)
-{
     customers.Add(new Customer
     {
         Id = i,
@@ -102,7 +93,6 @@ for (var i = 1; i <= customerCount; i++)
         FullName = $"Customer {i} Benchmark",
         CustomerType = CustomerType.Person
     });
-}
 
 await db.Customer.AddRangeAsync(customers);
 await db.SaveChangesAsync();
@@ -212,7 +202,7 @@ Console.WriteLine(
     $"{transactions.Count:N0} transactions.");
 
 Console.WriteLine(
-    $"Benchmark graph for Customer 1: " +
+    "Benchmark graph for Customer 1: " +
     $"{relationshipsPerCustomer} relationships -> " +
     $"{relationshipsPerCustomer * contractsPerRelationship} contracts -> " +
     $"{relationshipsPerCustomer * contractsPerRelationship * transactionsPerContract} transactions.");
@@ -247,11 +237,9 @@ static async Task ValidateBenchmarkFixtureAsync(
             .CountAsync(x => x.CustomerId == customer.Id);
 
     if (relationshipCount != relationshipsPerCustomer)
-    {
         throw new InvalidOperationException(
             $"Customer 1 has {relationshipCount} relationships; " +
             $"expected {relationshipsPerCustomer}.");
-    }
 
     var relationshipIds =
         await db.CustomerBankingRelationship
@@ -269,11 +257,9 @@ static async Task ValidateBenchmarkFixtureAsync(
         relationshipsPerCustomer * contractsPerRelationship;
 
     if (contractCount != expectedContracts)
-    {
         throw new InvalidOperationException(
             $"Customer 1 graph has {contractCount} contracts; " +
             $"expected {expectedContracts}.");
-    }
 
     var contractIds =
         await db.Contract
@@ -292,11 +278,9 @@ static async Task ValidateBenchmarkFixtureAsync(
         expectedContracts * transactionsPerContract;
 
     if (transactionCount != expectedTransactions)
-    {
         throw new InvalidOperationException(
             $"Customer 1 graph has {transactionCount} transactions; " +
             $"expected {expectedTransactions}.");
-    }
 }
 
 static async Task SetSequenceAsync(
@@ -305,32 +289,36 @@ static async Task SetSequenceAsync(
     string table)
 {
     var sql = $"""
-        SELECT setval(
-            pg_get_serial_sequence('"{schema}"."{table}"', 'Id'),
-            COALESCE(
-                (SELECT MAX("Id") FROM "{schema}"."{table}"),
-                1
-            ),
-            true
-        );
-        """;
+               SELECT setval(
+                   pg_get_serial_sequence('"{schema}"."{table}"', 'Id'),
+                   COALESCE(
+                       (SELECT MAX("Id") FROM "{schema}"."{table}"),
+                       1
+                   ),
+                   true
+               );
+               """;
 
     await db.Database.ExecuteSqlRawAsync(sql);
 }
 
-static int GetInt(string name, int fallback) =>
-    int.TryParse(
+static int GetInt(string name, int fallback)
+{
+    return int.TryParse(
         Environment.GetEnvironmentVariable(name),
         out var value) && value > 0
         ? value
         : fallback;
+}
 
-static Guid DeterministicGuid(string prefix, int value) =>
-    GuidUtility.Create(
+static Guid DeterministicGuid(string prefix, int value)
+{
+    return GuidUtility.Create(
         GuidUtility.UrlNamespace,
         $"coffee-beanery/{prefix}/{value}");
+}
 
-static class GuidUtility
+internal static class GuidUtility
 {
     public static readonly Guid UrlNamespace =
         new("6ba7b811-9dad-11d1-80b4-00c04fd430c8");

@@ -1,7 +1,6 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Aggregates;
 using Foundgine.Core.Semantic.Query;
-using Xunit;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
@@ -98,7 +97,7 @@ public sealed class AggregateExistenceCollapseRuleTests
                 null,
                 null,
                 [],
-                new SemanticQueryOptions(Filter: new SemanticAggregateFilter(
+                new SemanticQueryOptions(new SemanticAggregateFilter(
                     new RelationshipId(10),
                     SemanticFilterAggregate.Count,
                     null,
@@ -110,11 +109,13 @@ public sealed class AggregateExistenceCollapseRuleTests
         var optimized = new AggregateExistenceCollapseRule(
             AggregateProviderCapabilityRegistry.GenericSql).Apply(plan);
 
-        Assert.Equal(plan.EffectiveSecurityInvariants.OrderBy(x => x), optimized.EffectiveSecurityInvariants.OrderBy(x => x));
+        Assert.Equal(plan.EffectiveSecurityInvariants.OrderBy(x => x),
+            optimized.EffectiveSecurityInvariants.OrderBy(x => x));
     }
 
-    private static SemanticPlan CreatePlan(SemanticFilterExpression filter) =>
-        new(new SemanticPlanNode(
+    private static SemanticPlan CreatePlan(SemanticFilterExpression filter)
+    {
+        return new SemanticPlan(new SemanticPlanNode(
             1,
             ExecutionOperation.Scan,
             new EntityId(1),
@@ -122,5 +123,6 @@ public sealed class AggregateExistenceCollapseRuleTests
             null,
             null,
             [],
-            new SemanticQueryOptions(Filter: filter)));
+            new SemanticQueryOptions(filter)));
+    }
 }

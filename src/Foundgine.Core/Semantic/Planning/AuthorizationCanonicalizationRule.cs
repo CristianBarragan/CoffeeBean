@@ -1,13 +1,12 @@
-using System.Text;
 using Foundgine.Core.Abstractions;
 
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Canonicalizes authorization boolean expressions without changing their
-/// provider-neutral meaning. This is the first concrete implementation of the
-/// rewrite-rule contract and is intentionally limited to policy-expression
-/// normalization.
+///     Canonicalizes authorization boolean expressions without changing their
+///     provider-neutral meaning. This is the first concrete implementation of the
+///     rewrite-rule contract and is intentionally limited to policy-expression
+///     normalization.
 /// </summary>
 public sealed class AuthorizationCanonicalizationRule : IPlanRewriteRule
 {
@@ -70,8 +69,10 @@ public sealed class AuthorizationCanonicalizationRule : IPlanRewriteRule
             : node;
     }
 
-    private static bool ContainsAuthorization(SemanticPlanNode node) =>
-        node.Authorization is not null || node.Children.Any(ContainsAuthorization);
+    private static bool ContainsAuthorization(SemanticPlanNode node)
+    {
+        return node.Authorization is not null || node.Children.Any(ContainsAuthorization);
+    }
 
     private static AuthorizationPredicate Normalize(AuthorizationPredicate predicate, ref bool changed)
     {
@@ -118,7 +119,8 @@ public sealed class AuthorizationCanonicalizationRule : IPlanRewriteRule
         return predicate;
     }
 
-    private static void Flatten(AuthorizationPredicateKind kind, AuthorizationPredicate node, ICollection<AuthorizationPredicate> destination)
+    private static void Flatten(AuthorizationPredicateKind kind, AuthorizationPredicate node,
+        ICollection<AuthorizationPredicate> destination)
     {
         if (node.Kind == kind)
         {
@@ -126,10 +128,12 @@ public sealed class AuthorizationCanonicalizationRule : IPlanRewriteRule
             if (node.Right is not null) Flatten(kind, node.Right, destination);
             return;
         }
+
         destination.Add(node);
     }
 
-    private static AuthorizationPredicate RebuildBalanced(AuthorizationPredicateKind kind, IReadOnlyList<AuthorizationPredicate> operands)
+    private static AuthorizationPredicate RebuildBalanced(AuthorizationPredicateKind kind,
+        IReadOnlyList<AuthorizationPredicate> operands)
     {
         AuthorizationPredicate result = operands[0];
         for (var i = 1; i < operands.Count; i++)
@@ -161,7 +165,12 @@ public sealed class AuthorizationCanonicalizationRule : IPlanRewriteRule
 
     private static void AppendValue(StringBuilder builder, string? value)
     {
-        if (value is null) { builder.Append("null"); return; }
+        if (value is null)
+        {
+            builder.Append("null");
+            return;
+        }
+
         builder.Append(value.Length).Append(':').Append(value);
     }
 }

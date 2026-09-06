@@ -1,7 +1,7 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Core.Semantic.Authorization;
-using Xunit;
+using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Semantic.Query;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
@@ -67,13 +67,15 @@ public sealed class MutationPlanningBoundaryTests
             new MutationIntent(customer.Id, MutationKind.Create,
                 [new MutationFieldValue(new ColumnId(2), "Ada")],
                 ReturnFields: [new FieldId(1)]),
-            [new NestedMutationChild(
-                relationship.Id,
-                new NestedMutationIntent(
-                    new MutationIntent(account.Id, MutationKind.Create,
-                        [new MutationFieldValue(new ColumnId(3), "Primary")],
-                        ReturnFields: [new FieldId(1)]),
-                    []))]);
+            [
+                new NestedMutationChild(
+                    relationship.Id,
+                    new NestedMutationIntent(
+                        new MutationIntent(account.Id, MutationKind.Create,
+                            [new MutationFieldValue(new ColumnId(3), "Primary")],
+                            ReturnFields: [new FieldId(1)]),
+                        []))
+            ]);
 
         var plan = new MutationPlanner(schema).Plan(nested);
 
@@ -93,9 +95,15 @@ public sealed class MutationPlanningBoundaryTests
             _relationships = items.OfType<MutationRelationshipSchema>().ToDictionary(x => x.Id);
         }
 
-        public MutationEntitySchema GetEntity(EntityId entityId) => _entities[entityId];
+        public MutationEntitySchema GetEntity(EntityId entityId)
+        {
+            return _entities[entityId];
+        }
 
-        public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId) => _relationships[relationshipId];
+        public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId)
+        {
+            return _relationships[relationshipId];
+        }
     }
 }
 
@@ -120,19 +128,19 @@ public sealed class MutationAuthorizationTests
             entity.Id,
             MutationKind.Update,
             [new MutationFieldValue(new ColumnId(2), "secret")],
-            Filter: new Foundgine.Core.Semantic.Query.SemanticFieldFilter(
+            Filter: new SemanticFieldFilter(
                 new FieldId(1),
-                Foundgine.Core.Semantic.Query.SemanticFilterOperator.Eq,
+                SemanticFilterOperator.Eq,
                 1),
             ReturnFields: [new FieldId(1)]);
         var plan = new MutationPlanner(schema).Plan(intent);
 
-        var ex = Assert.Throws<Foundgine.Core.Semantic.Authorization.SemanticAuthorizationException>(
-            () => new MutationAuthorizer(schema, new DenyFieldWritePolicy()).Authorize(plan));
+        var ex = Assert.Throws<SemanticAuthorizationException>(() =>
+            new MutationAuthorizer(schema, new DenyFieldWritePolicy()).Authorize(plan));
 
         Assert.Contains("write field", ex.Message);
     }
-    
+
     private sealed class TestMutationSchema : IMutationSchema
     {
         private readonly Dictionary<EntityId, MutationEntitySchema> _entities;
@@ -144,14 +152,22 @@ public sealed class MutationAuthorizationTests
             _relationships = items.OfType<MutationRelationshipSchema>().ToDictionary(x => x.Id);
         }
 
-        public MutationEntitySchema GetEntity(EntityId entityId) => _entities[entityId];
+        public MutationEntitySchema GetEntity(EntityId entityId)
+        {
+            return _entities[entityId];
+        }
 
-        public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId) => _relationships[relationshipId];
+        public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId)
+        {
+            return _relationships[relationshipId];
+        }
     }
 
     private sealed class DenyFieldWritePolicy : AllowAllSemanticAuthorizationPolicy
     {
-        public override bool CanWriteField(EntityId entityId, FieldId fieldId) =>
-            fieldId != new FieldId(2);
+        public override bool CanWriteField(EntityId entityId, FieldId fieldId)
+        {
+            return fieldId != new FieldId(2);
+        }
     }
 }

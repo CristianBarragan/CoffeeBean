@@ -1,17 +1,15 @@
-using Foundgine.Core.Abstractions;
-
 namespace Foundgine.Core.Semantic.Resolution;
 
 /// <summary>
-/// Grounds a natural-language reference against the semantic contract before
-/// data retrieval. Entity/field aliases narrow the search space; provider-backed
-/// retrieval then contributes ranked data evidence. No provider-specific search
-/// technology leaks into this layer.
+///     Grounds a natural-language reference against the semantic contract before
+///     data retrieval. Entity/field aliases narrow the search space; provider-backed
+///     retrieval then contributes ranked data evidence. No provider-specific search
+///     technology leaks into this layer.
 /// </summary>
 public sealed class SemanticReferenceGrounder
 {
-    private readonly SemanticModel _model;
     private readonly IApproximateCandidateSource _candidates;
+    private readonly SemanticModel _model;
 
     public SemanticReferenceGrounder(SemanticModel model, IApproximateCandidateSource candidates)
     {
@@ -43,7 +41,8 @@ public sealed class SemanticReferenceGrounder
                     .Max();
                 return (Entity: entity, Score: Math.Max(entityScore, Math.Max(aliasScore, fieldScore * 0.9d)));
             })
-.Where(x => x.Entity.Fields.Any(field => field.ClrType == typeof(string) && !field.Capabilities.HasFlag(SemanticFieldCapabilities.Sensitive)))
+            .Where(x => x.Entity.Fields.Any(field =>
+                field.ClrType == typeof(string) && !field.Capabilities.HasFlag(SemanticFieldCapabilities.Sensitive)))
             .OrderByDescending(x => x.Score)
             .ThenBy(x => x.Entity.Name, StringComparer.OrdinalIgnoreCase)
             .Take(entityLimit)
@@ -67,7 +66,7 @@ public sealed class SemanticReferenceGrounder
                 continue;
 
             var confidence = Math.Clamp(
-                (match.Score * 0.35d) + (retrieval[0].Score * 0.65d),
+                match.Score * 0.35d + retrieval[0].Score * 0.65d,
                 0d,
                 1d);
 
@@ -83,31 +82,35 @@ public sealed class SemanticReferenceGrounder
             .ToArray();
     }
 
-    private static SemanticField? SelectSearchField(SemanticEntity entity, string query) =>
-        entity.Fields
-            .Where(field => field.ClrType == typeof(string) && !field.Capabilities.HasFlag(SemanticFieldCapabilities.Sensitive))
+    private static SemanticField? SelectSearchField(SemanticEntity entity, string query)
+    {
+        return entity.Fields
+            .Where(field => field.ClrType == typeof(string) &&
+                            !field.Capabilities.HasFlag(SemanticFieldCapabilities.Sensitive))
             .Select(field =>
             {
-                var score = 0.5d + (0.5d * Math.Max(
+                var score = 0.5d + 0.5d * Math.Max(
                     Similarity(query, field.Name),
-                    field.EffectiveAliases.Select(alias => Similarity(query, alias.Name)).DefaultIfEmpty(0d).Max()));
+                    field.EffectiveAliases.Select(alias => Similarity(query, alias.Name)).DefaultIfEmpty(0d).Max());
                 return (Field: field, Score: score);
             })
             .OrderByDescending(x => x.Score)
             .ThenBy(x => x.Field.Name, StringComparer.OrdinalIgnoreCase)
             .Select(x => x.Field)
             .FirstOrDefault();
+    }
 
     private static double Similarity(string left, string right)
     {
         if (string.Equals(left, right, StringComparison.OrdinalIgnoreCase))
             return 1d;
-        if (left.Contains(right, StringComparison.OrdinalIgnoreCase) || right.Contains(left, StringComparison.OrdinalIgnoreCase))
+        if (left.Contains(right, StringComparison.OrdinalIgnoreCase) ||
+            right.Contains(left, StringComparison.OrdinalIgnoreCase))
             return 0.8d;
 
         var distance = Levenshtein(left, right);
         var max = Math.Max(left.Length, right.Length);
-        return max == 0 ? 1d : 1d - ((double)distance / max);
+        return max == 0 ? 1d : 1d - (double)distance / max;
     }
 
     private static int Levenshtein(string a, string b)
@@ -123,6 +126,7 @@ public sealed class SemanticReferenceGrounder
                     previous[j - 1] + (char.ToUpperInvariant(a[i - 1]) == char.ToUpperInvariant(b[j - 1]) ? 0 : 1));
             previous = current;
         }
+
         return previous[b.Length];
     }
 }

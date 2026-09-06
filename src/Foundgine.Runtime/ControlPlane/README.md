@@ -11,7 +11,8 @@ share the name:
 
 The rest of this README covers `Recovery/` only.
 
-`Foundgine.Runtime.ControlPlane` is optional provider-agnostic infrastructure for managing and recovering an authorization authority/control plane.
+`Foundgine.Runtime.ControlPlane` is optional provider-agnostic infrastructure for managing and recovering an
+authorization authority/control plane.
 
 ## What is in this package
 
@@ -40,7 +41,8 @@ validated security context
 Foundgine.Core.Semantic / Foundgine.Core.Execution
 ```
 
-Use it when an application needs high-assurance authority recovery or distributed authorization-control-plane infrastructure. Ordinary applications can supply their own host-owned security context without this package.
+Use it when an application needs high-assurance authority recovery or distributed authorization-control-plane
+infrastructure. Ordinary applications can supply their own host-owned security context without this package.
 
 ## Install
 

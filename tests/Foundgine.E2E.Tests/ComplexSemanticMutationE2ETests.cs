@@ -2,34 +2,30 @@ using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Mutation;
 using Foundgine.Core.Semantic.Query;
-using Xunit;
 
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-/// Flagship semantic mutation scenario for PostgreSQL E2E.
-///
-/// This deliberately stays above provider/SQL execution. The purpose is to
-/// prove that one realistic mutation graph can express the full semantic
-/// vocabulary before it is lowered into execution IR and PostgreSQL.
-///
-/// The graph contains:
-///   - Create / Update / Delete / Upsert
-///   - generated-value flow across four generations
-///   - direct SemanticMutationValueReference
-///   - legacy explicit dependency metadata merged into the canonical edge
-///   - return-field validation
-///   - conflict fields
-///   - Eq / Neq / In
-///   - And / Or
-///   - Some / None / All relationship quantifiers
-///   - Count aggregate comparison
-///   - nested relationship predicates
-///   - ConnectRelationship / DisconnectRelationship
-///   - SetField effects
-///
-/// Provider-specific plan shape, correlation carriers and SQL are intentionally
-/// not asserted here. Those belong to the next measurement gate.
+///     Flagship semantic mutation scenario for PostgreSQL E2E.
+///     This deliberately stays above provider/SQL execution. The purpose is to
+///     prove that one realistic mutation graph can express the full semantic
+///     vocabulary before it is lowered into execution IR and PostgreSQL.
+///     The graph contains:
+///     - Create / Update / Delete / Upsert
+///     - generated-value flow across four generations
+///     - direct SemanticMutationValueReference
+///     - legacy explicit dependency metadata merged into the canonical edge
+///     - return-field validation
+///     - conflict fields
+///     - Eq / Neq / In
+///     - And / Or
+///     - Some / None / All relationship quantifiers
+///     - Count aggregate comparison
+///     - nested relationship predicates
+///     - ConnectRelationship / DisconnectRelationship
+///     - SetField effects
+///     Provider-specific plan shape, correlation carriers and SQL are intentionally
+///     not asserted here. Those belong to the next measurement gate.
 /// </summary>
 public sealed class ComplexSemanticMutationE2ETests
 {
@@ -147,8 +143,7 @@ public sealed class ComplexSemanticMutationE2ETests
 
         var invalid = new SemanticMutationOperationGraph(operations);
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => new SemanticMutationPlanner().Plan(invalid));
+        var exception = Assert.Throws<InvalidOperationException>(() => new SemanticMutationPlanner().Plan(invalid));
 
         Assert.Contains("earlier operation", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -172,8 +167,7 @@ public sealed class ComplexSemanticMutationE2ETests
 
         var invalid = new SemanticMutationOperationGraph(operations);
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => new SemanticMutationPlanner().Plan(invalid));
+        var exception = Assert.Throws<InvalidOperationException>(() => new SemanticMutationPlanner().Plan(invalid));
 
         Assert.Contains("does not return that field", exception.Message, StringComparison.OrdinalIgnoreCase);
     }

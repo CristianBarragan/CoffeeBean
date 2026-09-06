@@ -2,7 +2,6 @@ using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution.Mutation;
 using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Core.Semantic.Security;
-using Xunit;
 
 namespace Foundgine.Security.Tests.Security;
 
@@ -28,7 +27,8 @@ public sealed class MutationExecutionSecurityGateTests
 
         var providerException = Assert.Throws<InvalidOperationException>(() =>
             MutationExecutionSecurityGate.EnsureExecutable(ir, new HonestMutationProvider(), certificate));
-        Assert.Contains("exact mutation IR and provider", providerException.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("exact mutation IR and provider", providerException.Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -44,7 +44,8 @@ public sealed class MutationExecutionSecurityGateTests
                 provider.GetType().FullName!,
                 []));
 
-        Assert.Contains("no concrete security conformance evaluator", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("no concrete security conformance evaluator", exception.Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -93,11 +94,13 @@ public sealed class MutationExecutionSecurityGateTests
 
     private sealed class HonestMutationProvider : IMutationSecurityConformanceEvaluator
     {
-        public MutationSecurityConformanceResult Evaluate(ExecutionMutationIR ir) =>
-            new(
+        public MutationSecurityConformanceResult Evaluate(ExecutionMutationIR ir)
+        {
+            return new(
                 GetType().FullName!,
                 [SecurityInvariantIds.ParameterizedValues],
                 []);
+        }
     }
 
     private sealed class UncertifiedMutationProvider

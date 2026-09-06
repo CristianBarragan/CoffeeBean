@@ -1,29 +1,24 @@
-using System.Text.Json;
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
-using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic.Resolution;
 using Foundgine.Providers.Storage.Sql;
-using Npgsql;
-using Xunit;
-using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
 /// <summary>
-/// Flagship read proof. A single intentionally complex semantic request is
-/// resolved, authorized, planned, lowered into provider-independent Execution IR,
-/// compiled to SQL, executed through Npgsql against PostgreSQL 17, and validated
-/// from actual database rows.
-///
-/// The query exercises nested selections, two-hop traversal, AND/OR composition,
-/// Some/None/All relationship quantifiers, Count aggregation, IN/NEQ/GTE filters,
-/// ordering and a parameterized limit. EXPLAIN ANALYZE is run inside the test transaction, which is rolled back at
-/// the end so the measurement gate cannot leave fixture data behind.
+///     Flagship read proof. A single intentionally complex semantic request is
+///     resolved, authorized, planned, lowered into provider-independent Execution IR,
+///     compiled to SQL, executed through Npgsql against PostgreSQL 17, and validated
+///     from actual database rows.
+///     The query exercises nested selections, two-hop traversal, AND/OR composition,
+///     Some/None/All relationship quantifiers, Count aggregation, IN/NEQ/GTE filters,
+///     ordering and a parameterized limit. EXPLAIN ANALYZE is run inside the test transaction, which is rolled back at
+///     the end so the measurement gate cannot leave fixture data behind.
 /// </summary>
 public sealed class ComplexQueryPostgresE2ETests
 {
@@ -49,7 +44,7 @@ public sealed class ComplexQueryPostgresE2ETests
         await using var transaction = await connection.BeginTransactionAsync();
         var baseline = await SeedAsync(connection, transaction);
 
-        var request = BuildComplexRequest(limit: 50);
+        var request = BuildComplexRequest(50);
         var plan = Compile(model, metadata, request);
 
         Assert.Contains("EXISTS", plan.CommandText, StringComparison.OrdinalIgnoreCase);
@@ -60,7 +55,7 @@ public sealed class ComplexQueryPostgresE2ETests
         Assert.Contains("INNER JOIN", plan.CommandText, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("ORDER BY", plan.CommandText, StringComparison.OrdinalIgnoreCase);
 
-        var stats = await ExplainAnalyzeAsync(connection, transaction, plan, limit: 50);
+        var stats = await ExplainAnalyzeAsync(connection, transaction, plan, 50);
         PrintStats("complex", 50, 3, stats);
         Assert.True(stats.PlanningTimeMs >= 0);
         Assert.True(stats.ExecutionTimeMs >= 0);
@@ -82,7 +77,8 @@ public sealed class ComplexQueryPostgresE2ETests
 
         var customerIds = result.Rows.Select(r => Convert.ToInt64(r.Values["__fg_0_Id"])).Distinct().ToArray();
         Assert.Contains(baseline.Customer1Id, customerIds);
-        Assert.DoesNotContain(baseline.Customer2Id, customerIds); // blocked/closed account path fails semantic predicates.
+        Assert.DoesNotContain(baseline.Customer2Id,
+            customerIds); // blocked/closed account path fails semantic predicates.
         Assert.Contains(baseline.Customer3Id, customerIds);
 
         await transaction.RollbackAsync();
@@ -98,7 +94,7 @@ public sealed class ComplexQueryPostgresE2ETests
         int depth)
     {
         var cs = Environment.GetEnvironmentVariable(ConnectionEnvironmentVariable);
-        
+
         await using var connection = new NpgsqlConnection(cs);
         await connection.OpenAsync();
         await using var transaction = await connection.BeginTransactionAsync(CancellationToken.None);
@@ -109,7 +105,7 @@ public sealed class ComplexQueryPostgresE2ETests
 
             var model = BuildModel();
             var metadata = BuildMetadata();
-            var request = BuildComplexRequest(limit: Math.Max(datasetSize, 50), depth);
+            var request = BuildComplexRequest(Math.Max(datasetSize, 50), depth);
             var plan = Compile(model, metadata, request);
             var stats = await ExplainAnalyzeAsync(connection, transaction, plan, Math.Max(datasetSize, 50));
 
@@ -160,13 +156,13 @@ public sealed class ComplexQueryPostgresE2ETests
             CustomerAccounts,
             SemanticRelationshipQuantifier.Some,
             new SemanticOrFilter(
-                [
-                    new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.In, new[] { 100m, 250m }),
-                    new SemanticRelationshipFilter(
-                        AccountTransactions,
-                        SemanticRelationshipQuantifier.Some,
-                        new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.In, new[] { 250m }))
-                ]));
+            [
+                new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.In, new[] { 100m, 250m }),
+                new SemanticRelationshipFilter(
+                    AccountTransactions,
+                    SemanticRelationshipQuantifier.Some,
+                    new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.In, new[] { 250m }))
+            ]));
 
         var accountNone = new SemanticRelationshipFilter(
             CustomerAccounts,
@@ -179,8 +175,9 @@ public sealed class ComplexQueryPostgresE2ETests
             new SemanticFieldFilter(new FieldId(4), SemanticFilterOperator.Neq, "Blocked"));
 
         var filter = new SemanticAndFilter(
-            [
-            new SemanticFieldFilter(new FieldId(2), SemanticFilterOperator.In, new[] { "Alice", "Bob", "Carol", "Customer-10" }),
+        [
+            new SemanticFieldFilter(new FieldId(2), SemanticFilterOperator.In,
+                new[] { "Alice", "Bob", "Carol", "Customer-10" }),
             accountSome,
             accountNone,
             accountAll,
@@ -190,7 +187,7 @@ public sealed class ComplexQueryPostgresE2ETests
                 null,
                 SemanticAggregateFilterOperator.Gte,
                 1)
-            ]);
+        ]);
 
         return new SemanticRequest(
             Customer,
@@ -209,8 +206,9 @@ public sealed class ComplexQueryPostgresE2ETests
         return new SqlCompiler(metadata).Compile(execution);
     }
 
-    internal static SemanticModel BuildModel() =>
-        new SemanticModelBuilder()
+    internal static SemanticModel BuildModel()
+    {
+        return new SemanticModelBuilder()
             .Entity(Customer, "Customer", e => e
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(2), "Name", typeof(string))
@@ -225,31 +223,50 @@ public sealed class ComplexQueryPostgresE2ETests
                 .Field(new FieldId(3), "Amount", typeof(decimal))
                 .Field(new FieldId(4), "TransactionDate", typeof(DateTime)))
             .Build();
+    }
 
     internal static MetadataRegistry BuildMetadata()
     {
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(Customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(Customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(Customer, new ColumnId(2)))],
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(Customer, new ColumnId(2)))
+            ],
             PrimaryKey: new ColumnReference(Customer, new ColumnId(1))));
 
         registry.Register(new EntityMetadata(Account, "Account",
-            [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"), new ColumnMetadata(new ColumnId(3), "Balance"), new ColumnMetadata(new ColumnId(4), "Status")],
-            Fields: [
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"),
+                new ColumnMetadata(new ColumnId(3), "Balance"), new ColumnMetadata(new ColumnId(4), "Status")
+            ],
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(Account, new ColumnId(1))),
-                new FieldMetadata(new FieldId(3), "Balance", typeof(decimal), new ColumnReference(Account, new ColumnId(3))),
-                new FieldMetadata(new FieldId(4), "Status", typeof(string), new ColumnReference(Account, new ColumnId(4)))],
+                new FieldMetadata(new FieldId(3), "Balance", typeof(decimal),
+                    new ColumnReference(Account, new ColumnId(3))),
+                new FieldMetadata(new FieldId(4), "Status", typeof(string),
+                    new ColumnReference(Account, new ColumnId(4)))
+            ],
             PrimaryKey: new ColumnReference(Account, new ColumnId(1))));
 
         registry.Register(new EntityMetadata(Transaction, "Transaction",
-            [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "AccountId"), new ColumnMetadata(new ColumnId(3), "Amount"), new ColumnMetadata(new ColumnId(4), "TransactionDate")],
-            Fields: [
-                new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(Transaction, new ColumnId(1))),
-                new FieldMetadata(new FieldId(3), "Amount", typeof(decimal), new ColumnReference(Transaction, new ColumnId(3))),
-                new FieldMetadata(new FieldId(4), "TransactionDate", typeof(DateTime), new ColumnReference(Transaction, new ColumnId(4)))],
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "AccountId"),
+                new ColumnMetadata(new ColumnId(3), "Amount"), new ColumnMetadata(new ColumnId(4), "TransactionDate")
+            ],
+            Fields:
+            [
+                new FieldMetadata(new FieldId(1), "Id", typeof(long),
+                    new ColumnReference(Transaction, new ColumnId(1))),
+                new FieldMetadata(new FieldId(3), "Amount", typeof(decimal),
+                    new ColumnReference(Transaction, new ColumnId(3))),
+                new FieldMetadata(new FieldId(4), "TransactionDate", typeof(DateTime),
+                    new ColumnReference(Transaction, new ColumnId(4)))
+            ],
             PrimaryKey: new ColumnReference(Transaction, new ColumnId(1))));
 
         registry.Register(new RelationshipMetadata(CustomerAccounts, Customer, Account, "Accounts",
@@ -261,8 +278,10 @@ public sealed class ComplexQueryPostgresE2ETests
 
     private static async Task<QueryBaseline> SeedAsync(
         NpgsqlConnection connection,
-        NpgsqlTransaction transaction) =>
-        await SeedScaledAsync(connection, transaction, 10);
+        NpgsqlTransaction transaction)
+    {
+        return await SeedScaledAsync(connection, transaction, 10);
+    }
 
     private static async Task<QueryBaseline> SeedScaledAsync(
         NpgsqlConnection connection,
@@ -312,10 +331,10 @@ public sealed class ComplexQueryPostgresE2ETests
         string name)
     {
         const string sql = """
-            INSERT INTO "Customer" ("Name")
-            VALUES (@name)
-            RETURNING "Id";
-            """;
+                           INSERT INTO "Customer" ("Name")
+                           VALUES (@name)
+                           RETURNING "Id";
+                           """;
 
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("name", name);
@@ -330,10 +349,10 @@ public sealed class ComplexQueryPostgresE2ETests
         string status)
     {
         const string sql = """
-            INSERT INTO "Account" ("CustomerId", "Balance", "Status")
-            VALUES (@customerId, @balance, @status)
-            RETURNING "Id";
-            """;
+                           INSERT INTO "Account" ("CustomerId", "Balance", "Status")
+                           VALUES (@customerId, @balance, @status)
+                           RETURNING "Id";
+                           """;
 
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("customerId", customerId);
@@ -350,10 +369,10 @@ public sealed class ComplexQueryPostgresE2ETests
         DateTime transactionDate)
     {
         const string sql = """
-            INSERT INTO "Transaction" ("AccountId", "Amount", "TransactionDate")
-            VALUES (@accountId, @amount, @transactionDate)
-            RETURNING "Id";
-            """;
+                           INSERT INTO "Transaction" ("AccountId", "Amount", "TransactionDate")
+                           VALUES (@accountId, @amount, @transactionDate)
+                           RETURNING "Id";
+                           """;
 
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("accountId", accountId);
@@ -361,11 +380,6 @@ public sealed class ComplexQueryPostgresE2ETests
         command.Parameters.AddWithValue("transactionDate", transactionDate);
         return Convert.ToInt64(await command.ExecuteScalarAsync());
     }
-
-    private sealed record QueryBaseline(
-        long Customer1Id,
-        long Customer2Id,
-        long Customer3Id);
 
     private static async Task SetSearchPathAsync(NpgsqlConnection connection, string schema)
     {
@@ -375,7 +389,8 @@ public sealed class ComplexQueryPostgresE2ETests
         await command.ExecuteNonQueryAsync();
     }
 
-    private static async Task<PlanStats> ExplainAnalyzeAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, SqlPlan plan, int limit)
+    private static async Task<PlanStats> ExplainAnalyzeAsync(NpgsqlConnection connection, NpgsqlTransaction transaction,
+        SqlPlan plan, int limit)
     {
         try
         {
@@ -409,6 +424,7 @@ public sealed class ComplexQueryPostgresE2ETests
         {
             // ignored
         }
+
         return new PlanStats();
     }
 
@@ -435,36 +451,55 @@ public sealed class ComplexQueryPostgresE2ETests
             stats.JoinStrategies.Add(type);
         if (type == "Sort") stats.SortCount++;
         if (type.Contains("Materialize", StringComparison.OrdinalIgnoreCase)) stats.MaterializeCount++;
-        if (node.TryGetProperty("Plans", out var children)) foreach (var child in children.EnumerateArray()) Walk(child, stats);
+        if (node.TryGetProperty("Plans", out var children))
+            foreach (var child in children.EnumerateArray())
+                Walk(child, stats);
     }
 
-    private sealed record PlanNodeStats(string NodeType, double EstimatedRows, double ActualRows, double ActualLoops, double ActualTotalTimeMs, string? SortMethod, long? SortSpaceUsed, string? SortSpaceType);
-
-    private static void PrintStats(string kind, int datasetSize, int depth, PlanStats s) =>
-        Console.WriteLine($"POSTGRES_E2E READ kind={kind} dataset={datasetSize} depth={depth} planning_ms={s.PlanningTimeMs:F3} execution_ms={s.ExecutionTimeMs:F3} shared_hit={s.SharedHit} shared_read={s.SharedRead} shared_written={s.SharedWritten} temp_read={s.TempRead} temp_written={s.TempWritten} wal_bytes={s.WalBytes} joins={string.Join(',', s.JoinStrategies)} sorts={s.SortCount} materialize={s.MaterializeCount} actual_rows={s.RootActualRows} estimated_rows={s.RootPlanRows}");
+    private static void PrintStats(string kind, int datasetSize, int depth, PlanStats s)
+    {
+        Console.WriteLine(
+            $"POSTGRES_E2E READ kind={kind} dataset={datasetSize} depth={depth} planning_ms={s.PlanningTimeMs:F3} execution_ms={s.ExecutionTimeMs:F3} shared_hit={s.SharedHit} shared_read={s.SharedRead} shared_written={s.SharedWritten} temp_read={s.TempRead} temp_written={s.TempWritten} wal_bytes={s.WalBytes} joins={string.Join(',', s.JoinStrategies)} sorts={s.SortCount} materialize={s.MaterializeCount} actual_rows={s.RootActualRows} estimated_rows={s.RootPlanRows}");
+    }
 
     private static void PrintNodeEvidence(PlanStats s)
     {
-        foreach (var node in s.Nodes.Where(n => n.EstimatedRows > 0).OrderByDescending(n => Math.Max(n.ActualRows, 1) / Math.Max(n.EstimatedRows, 1)).Take(5))
-            Console.WriteLine($"POSTGRES_E2E READ_NODE type={node.NodeType} estimated_rows={node.EstimatedRows:F0} actual_rows={node.ActualRows:F0} loops={node.ActualLoops:F0} time_ms={node.ActualTotalTimeMs:F3} sort_method={node.SortMethod ?? "-"} sort_space={node.SortSpaceUsed?.ToString() ?? "-"} sort_space_type={node.SortSpaceType ?? "-"}");
+        foreach (var node in s.Nodes.Where(n => n.EstimatedRows > 0)
+                     .OrderByDescending(n => Math.Max(n.ActualRows, 1) / Math.Max(n.EstimatedRows, 1)).Take(5))
+            Console.WriteLine(
+                $"POSTGRES_E2E READ_NODE type={node.NodeType} estimated_rows={node.EstimatedRows:F0} actual_rows={node.ActualRows:F0} loops={node.ActualLoops:F0} time_ms={node.ActualTotalTimeMs:F3} sort_method={node.SortMethod ?? "-"} sort_space={node.SortSpaceUsed?.ToString() ?? "-"} sort_space_type={node.SortSpaceType ?? "-"}");
     }
+
+    private sealed record QueryBaseline(
+        long Customer1Id,
+        long Customer2Id,
+        long Customer3Id);
+
+    private sealed record PlanNodeStats(
+        string NodeType,
+        double EstimatedRows,
+        double ActualRows,
+        double ActualLoops,
+        double ActualTotalTimeMs,
+        string? SortMethod,
+        long? SortSpaceUsed,
+        string? SortSpaceType);
 
     private sealed class PlanStats
     {
-        public double PlanningTimeMs;
         public double ExecutionTimeMs;
+        public int MaterializeCount;
+        public double PlanningTimeMs;
+        public long RootActualRows;
+        public long RootPlanRows;
         public long SharedHit;
         public long SharedRead;
         public long SharedWritten;
+        public int SortCount;
         public long TempRead;
         public long TempWritten;
         public long WalBytes;
-        public long RootActualRows;
-        public long RootPlanRows;
-        public int SortCount;
-        public int MaterializeCount;
         public HashSet<string> JoinStrategies { get; } = new(StringComparer.Ordinal);
         public List<PlanNodeStats> Nodes { get; } = new();
     }
 }
-

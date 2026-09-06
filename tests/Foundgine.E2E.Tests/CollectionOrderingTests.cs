@@ -1,15 +1,11 @@
-using Foundgine.Core.Execution;
-using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
 using Foundgine.Core.Semantic.Authorization;
+using Foundgine.Core.Semantic.Metadata;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Query;
 using Foundgine.Core.Semantic.Resolution;
 using Foundgine.Providers.Storage.Sql;
-using Microsoft.Data.Sqlite;
-using Xunit;
-using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
 
@@ -32,11 +28,14 @@ public sealed class CollectionOrderingTests
             Customer,
             [new SemanticSelection(new FieldId(1), null, [])],
             new SemanticQueryOptions(
-                Order: [new SemanticOrderTerm(
-                    new FieldId(1),
-                    SemanticSortDirection.Desc,
-                    [CustomerAccounts],
-                    SemanticOrderAggregate.Count)],
+                Order:
+                [
+                    new SemanticOrderTerm(
+                        new FieldId(1),
+                        SemanticSortDirection.Desc,
+                        [CustomerAccounts],
+                        SemanticOrderAggregate.Count)
+                ],
                 Limit: 2));
 
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
@@ -51,7 +50,8 @@ public sealed class CollectionOrderingTests
         Assert.Contains("LIMIT @__fg_limit", plan.CommandText, StringComparison.Ordinal);
         Assert.DoesNotContain("INNER JOIN", plan.CommandText, StringComparison.Ordinal);
 
-        var result = await new SqlExecutionProvider(connection).ExecuteAsync(plan, PaginationExecutionContext.Create(2));
+        var result =
+            await new SqlExecutionProvider(connection).ExecuteAsync(plan, PaginationExecutionContext.Create(2));
 
         Assert.Equal(2, result.Rows.Count);
         Assert.Equal(1, Convert.ToInt32(result.Rows[0].Values["__fg_0_Id"]));
@@ -62,11 +62,14 @@ public sealed class CollectionOrderingTests
             Customer,
             [new SemanticSelection(new FieldId(1), null, [])],
             new SemanticQueryOptions(
-                Order: [new SemanticOrderTerm(
-                    new FieldId(1),
-                    SemanticSortDirection.Desc,
-                    [CustomerAccounts],
-                    SemanticOrderAggregate.Count)],
+                Order:
+                [
+                    new SemanticOrderTerm(
+                        new FieldId(1),
+                        SemanticSortDirection.Desc,
+                        [CustomerAccounts],
+                        SemanticOrderAggregate.Count)
+                ],
                 Limit: 2,
                 After: result.PageInfo.EndCursor));
 
@@ -76,7 +79,8 @@ public sealed class CollectionOrderingTests
         {
             AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
         });
-        var nextResult = await new SqlExecutionProvider(connection).ExecuteAsync(nextPlan, PaginationExecutionContext.Create(2, result.PageInfo.EndCursor));
+        var nextResult = await new SqlExecutionProvider(connection).ExecuteAsync(nextPlan,
+            PaginationExecutionContext.Create(2, result.PageInfo.EndCursor));
 
         Assert.Single(nextResult.Rows);
         Assert.Equal(3, Convert.ToInt32(nextResult.Rows[0].Values["__fg_0_Id"]));
@@ -91,18 +95,22 @@ public sealed class CollectionOrderingTests
             Customer,
             [new SemanticSelection(new FieldId(1), null, [])],
             new SemanticQueryOptions(
-                Order: [new SemanticOrderTerm(
-                    new FieldId(3),
-                    SemanticSortDirection.Asc,
-                    [CustomerAccounts],
-                    SemanticOrderAggregate.Min)]));
+                Order:
+                [
+                    new SemanticOrderTerm(
+                        new FieldId(3),
+                        SemanticSortDirection.Asc,
+                        [CustomerAccounts],
+                        SemanticOrderAggregate.Min)
+                ]));
 
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
         Assert.NotNull(resolved);
     }
 
-    private static SemanticModel BuildModel() =>
-        new SemanticModelBuilder()
+    private static SemanticModel BuildModel()
+    {
+        return new SemanticModelBuilder()
             .Entity(Customer, "Customer", e => e
                 .Identity(new FieldId(1), "Id")
                 .Field(new FieldId(2), "Name", typeof(string))
@@ -112,24 +120,35 @@ public sealed class CollectionOrderingTests
                 .Field(new FieldId(2), "CustomerId", typeof(int))
                 .Field(new FieldId(3), "Balance", typeof(decimal)))
             .Build();
+    }
 
     private static MetadataRegistry BuildMetadata()
     {
         var customer = new EntityMetadata(
             Customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(Customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(Customer, new ColumnId(2)))],
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(Customer, new ColumnId(2)))
+            ],
             PrimaryKey: new ColumnReference(Customer, new ColumnId(1)));
 
         var account = new EntityMetadata(
             Account, "Account",
-            [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"), new ColumnMetadata(new ColumnId(3), "Balance")],
-            Fields: [
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"),
+                new ColumnMetadata(new ColumnId(3), "Balance")
+            ],
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(Account, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "CustomerId", typeof(int), new ColumnReference(Account, new ColumnId(2))),
-                new FieldMetadata(new FieldId(3), "Balance", typeof(decimal), new ColumnReference(Account, new ColumnId(3)))],
+                new FieldMetadata(new FieldId(2), "CustomerId", typeof(int),
+                    new ColumnReference(Account, new ColumnId(2))),
+                new FieldMetadata(new FieldId(3), "Balance", typeof(decimal),
+                    new ColumnReference(Account, new ColumnId(3)))
+            ],
             PrimaryKey: new ColumnReference(Account, new ColumnId(1)));
 
         var relationship = new RelationshipMetadata(
@@ -148,16 +167,15 @@ public sealed class CollectionOrderingTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
-            CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Balance" REAL NOT NULL);
-            INSERT INTO "Customer" VALUES (1, 'A');
-            INSERT INTO "Customer" VALUES (2, 'B');
-            INSERT INTO "Customer" VALUES (3, 'C');
-            INSERT INTO "Account" VALUES (11, 1, 10.0);
-            INSERT INTO "Account" VALUES (12, 1, 20.0);
-            INSERT INTO "Account" VALUES (21, 2, 30.0);
-            """;
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
+                              CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Balance" REAL NOT NULL);
+                              INSERT INTO "Customer" VALUES (1, 'A');
+                              INSERT INTO "Customer" VALUES (2, 'B');
+                              INSERT INTO "Customer" VALUES (3, 'C');
+                              INSERT INTO "Account" VALUES (11, 1, 10.0);
+                              INSERT INTO "Account" VALUES (12, 1, 20.0);
+                              INSERT INTO "Account" VALUES (21, 2, 30.0);
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

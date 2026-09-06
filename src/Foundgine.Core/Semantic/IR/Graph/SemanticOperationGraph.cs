@@ -4,9 +4,9 @@ using Foundgine.Core.Semantic.Query;
 namespace Foundgine.Core.Semantic.IR.Graph;
 
 /// <summary>
-/// Immutable, provider-neutral operation graph produced from canonical Semantic IR.
-/// The graph makes operation topology explicit so validation, authorization and
-/// planning can inspect the requested computation without touching providers.
+///     Immutable, provider-neutral operation graph produced from canonical Semantic IR.
+///     The graph makes operation topology explicit so validation, authorization and
+///     planning can inspect the requested computation without touching providers.
 /// </summary>
 public sealed class SemanticOperationGraph
 {
@@ -26,16 +26,20 @@ public sealed class SemanticOperationGraph
 
     public SemanticOperationGraphNode Root => _nodes[RootId];
 
-    public SemanticOperationGraphNode GetNode(int id) =>
-        _nodes.TryGetValue(id, out var node)
+    public SemanticOperationGraphNode GetNode(int id)
+    {
+        return _nodes.TryGetValue(id, out var node)
             ? node
             : throw new KeyNotFoundException($"Semantic operation graph does not contain node '{id}'.");
+    }
 
     /// <summary>
-    /// Returns the canonical deterministic fingerprint of this semantic operation graph.
+    ///     Returns the canonical deterministic fingerprint of this semantic operation graph.
     /// </summary>
-    public string Fingerprint() =>
-        SemanticOperationGraphFingerprint.Create(this);
+    public string Fingerprint()
+    {
+        return SemanticOperationGraphFingerprint.Create(this);
+    }
 
     public static SemanticOperationGraph Create(SemanticOperation operation)
     {
@@ -47,8 +51,8 @@ public sealed class SemanticOperationGraph
     }
 
     /// <summary>
-    /// Rebuilds canonical Semantic IR from this graph. This is deliberately a
-    /// pure conversion: neither the graph nor its nodes are mutated.
+    ///     Rebuilds canonical Semantic IR from this graph. This is deliberately a
+    ///     pure conversion: neither the graph nor its nodes are mutated.
     /// </summary>
     public SemanticOperation ToOperation()
     {
@@ -94,10 +98,8 @@ public sealed class SemanticOperationGraph
                     parentId,
                     isRoot ? node.QueryOptions : null,
                     node.Authorization)))
-        {
             throw new InvalidOperationException(
                 $"Semantic operation graph contains a duplicate node id '{node.Id}'.");
-        }
 
         if (!isRoot && node.ViaRelationship is null && node.ViaConnection is null)
             throw new InvalidOperationException(
@@ -117,8 +119,8 @@ public sealed class SemanticOperationGraph
 }
 
 /// <summary>
-/// An immutable node in the semantic operation graph. Child identifiers are
-/// explicit edges; provider/storage concepts are intentionally absent.
+///     An immutable node in the semantic operation graph. Child identifiers are
+///     explicit edges; provider/storage concepts are intentionally absent.
 /// </summary>
 public sealed class SemanticOperationGraphNode
 {
@@ -137,7 +139,8 @@ public sealed class SemanticOperationGraphNode
         Id = id;
         EntityId = entityId;
         Fields = Array.AsReadOnly(fields?.ToArray() ?? throw new ArgumentNullException(nameof(fields)));
-        RequiredFields = Array.AsReadOnly(requiredFields?.ToArray() ?? throw new ArgumentNullException(nameof(requiredFields)));
+        RequiredFields =
+            Array.AsReadOnly(requiredFields?.ToArray() ?? throw new ArgumentNullException(nameof(requiredFields)));
         ViaRelationship = viaRelationship;
         ViaConnection = viaConnection;
         Children = Array.AsReadOnly(children?.ToArray() ?? throw new ArgumentNullException(nameof(children)));

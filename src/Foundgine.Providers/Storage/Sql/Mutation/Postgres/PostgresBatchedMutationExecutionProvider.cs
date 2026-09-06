@@ -1,47 +1,26 @@
-using System.Data;
-using System.Data.Common;
-using System.Text.Json;
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution.Mutation;
 using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic.Planning.Mutation;
+using Foundgine.Core.Semantic.Security;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.Providers.Storage.Sql.Mutation.Postgres;
 
 /// <summary>
-/// Executes a mutation batch as one PostgreSQL statement when the batch can
-/// safely be represented by PostgresBatchedMutationCompiler. Otherwise it
-/// delegates to the existing sequential SQL mutation provider.
-///
-/// PostgreSQL selection is explicit: callers construct this provider for a
-/// PostgreSQL connection. The provider never inspects the runtime connection
-/// type to decide whether PostgreSQL is available.
+///     Executes a mutation batch as one PostgreSQL statement when the batch can
+///     safely be represented by PostgresBatchedMutationCompiler. Otherwise it
+///     delegates to the existing sequential SQL mutation provider.
+///     PostgreSQL selection is explicit: callers construct this provider for a
+///     PostgreSQL connection. The provider never inspects the runtime connection
+///     type to decide whether PostgreSQL is available.
 /// </summary>
-public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExecutionProvider, IMutationSecurityConformanceEvaluator
+public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExecutionProvider,
+    IMutationSecurityConformanceEvaluator
 {
-    public MutationSecurityConformanceResult Evaluate(ExecutionMutationIR ir)
-    {
-        ArgumentNullException.ThrowIfNull(ir);
-
-        // Both the single-statement PostgreSQL path and the sequential fallback
-        // use parameter bindings and execute the complete batch inside one
-        // transaction/statement boundary. This is concrete provider evidence.
-        var batched = _compiler.TryCompile(ir);
-        if (batched is null)
-            _fallbackCompiler.Compile(ir);
-
-        return new MutationSecurityConformanceResult(
-            GetType().FullName ?? GetType().Name,
-            [
-                Foundgine.Core.Semantic.Security.SecurityInvariantIds.ParameterizedValues,
-                Foundgine.Core.Semantic.Security.SecurityInvariantIds.AtomicMutation
-            ],
-            []);
-    }
+    private readonly PostgresBatchedMutationCompiler _compiler;
 
     private readonly DbConnection _connection;
-    private readonly PostgresBatchedMutationCompiler _compiler;
     private readonly SqlMutationCompiler _fallbackCompiler;
     private readonly SqlMutationExecutionProvider _fallbackProvider;
     private readonly DbTransaction? _transaction;
@@ -61,11 +40,11 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
     }
 
     /// <summary>
-    /// Preferred entry point when the caller still has the provider-neutral
-    /// mutation batch. Compilation and fallback happen here.
+    ///     Preferred entry point when the caller still has the provider-neutral
+    ///     mutation batch. Compilation and fallback happen here.
     /// </summary>
     /// <summary>
-    /// Canonical execution entry point for mutation IR.
+    ///     Canonical execution entry point for mutation IR.
     /// </summary>
     public MutationBatchResult ExecuteBatch(
         ExecutionMutationIR ir,
@@ -95,6 +74,26 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
             : _fallbackProvider.ExecuteBatch(_fallbackCompiler.Compile(ir), context, cancellationToken);
     }
 
+    public MutationSecurityConformanceResult Evaluate(ExecutionMutationIR ir)
+    {
+        ArgumentNullException.ThrowIfNull(ir);
+
+        // Both the single-statement PostgreSQL path and the sequential fallback
+        // use parameter bindings and execute the complete batch inside one
+        // transaction/statement boundary. This is concrete provider evidence.
+        var batched = _compiler.TryCompile(ir);
+        if (batched is null)
+            _fallbackCompiler.Compile(ir);
+
+        return new MutationSecurityConformanceResult(
+            GetType().FullName ?? GetType().Name,
+            [
+                SecurityInvariantIds.ParameterizedValues,
+                SecurityInvariantIds.AtomicMutation
+            ],
+            []);
+    }
+
     public MutationBatchResult ExecuteBatch(
         MutationBatchPlan plan,
         ExecutionContext context)
@@ -109,7 +108,7 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
     }
 
     /// <summary>
-    /// Interface entry point for callers that already have a provider plan.
+    ///     Interface entry point for callers that already have a provider plan.
     /// </summary>
     public MutationBatchResult ExecuteBatch(
         ProviderMutationBatchPlan plan,
@@ -148,7 +147,8 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
         };
     }
 
-    private MutationBatchResult ExecuteBatchedPlan(SqlBatchedMutationPlan plan, CancellationToken cancellationToken = default)
+    private MutationBatchResult ExecuteBatchedPlan(SqlBatchedMutationPlan plan,
+        CancellationToken cancellationToken = default)
     {
         if (_connection.State != ConnectionState.Open)
             _connection.Open();
@@ -173,7 +173,8 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
         var returned = new Dictionary<FieldId, object?>?[plan.OperationCount];
         var affected = new int[plan.OperationCount];
 
-        using var cancellationRegistration = cancellationToken.Register(static state => ((DbCommand)state!).Cancel(), command);
+        using var cancellationRegistration =
+            cancellationToken.Register(static state => ((DbCommand)state!).Cancel(), command);
         using var reader = command.ExecuteReader();
 
         while (reader.Read())
@@ -251,15 +252,11 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
         // otherwise ambiguous correlation and must never silently feed the wrong
         // generated value into a downstream operation.
         foreach (var group in plan.Groups.Where(x => x.IsOrdinalAddressable))
-        {
-            foreach (var operationIndex in group.OperationIndexesByOrdinal)
-            {
-                if (!seen[operationIndex])
-                    throw new InvalidOperationException(
-                        $"PostgreSQL batched mutation produced no result for operation {operationIndex}. " +
-                        "This usually means two operations collapsed onto the same conflict/correlation key.");
-            }
-        }
+        foreach (var operationIndex in group.OperationIndexesByOrdinal)
+            if (!seen[operationIndex])
+                throw new InvalidOperationException(
+                    $"PostgreSQL batched mutation produced no result for operation {operationIndex}. " +
+                    "This usually means two operations collapsed onto the same conflict/correlation key.");
 
         return new MutationBatchResult(results);
     }

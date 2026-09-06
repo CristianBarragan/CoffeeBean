@@ -1,22 +1,21 @@
 ﻿using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic;
 
 namespace Foundgine.Core.Semantic.Metadata;
 
 /// <summary>
-/// Bridges structural metadata to the semantic model. This lives in
-/// Foundgine.Core.Semantic.Metadata (not Foundgine.Core.Semantic) so that the semantic model
-/// itself carries no dependency on the concrete metadata assembly; only
-/// applications that actually discover semantics from metadata need to
-/// reference this type.
+///     Bridges structural metadata to the semantic model. This lives in
+///     Foundgine.Core.Semantic.Metadata (not Foundgine.Core.Semantic) so that the semantic model
+///     itself carries no dependency on the concrete metadata assembly; only
+///     applications that actually discover semantics from metadata need to
+///     reference this type.
 /// </summary>
 public static class SemanticModelDiscovery
 {
     /// <summary>
-    /// Discovers the structural semantic model from Foundgine.Core.Semantic.Metadata.
-    /// Metadata describes what exists; this method does not grant capability
-    /// exposure or authorization. Applications can enrich the result with
-    /// logical traversals and policy configuration afterwards.
+    ///     Discovers the structural semantic model from Foundgine.Core.Semantic.Metadata.
+    ///     Metadata describes what exists; this method does not grant capability
+    ///     exposure or authorization. Applications can enrich the result with
+    ///     logical traversals and policy configuration afterwards.
     /// </summary>
     public static SemanticModel Discover(this IMetadataCatalog metadata)
     {
@@ -47,7 +46,7 @@ public static class SemanticModelDiscovery
             entities[item.EntityId] = new SemanticEntity(
                 item.EntityId,
                 item.Name,
-                new Foundgine.Core.Semantic.SemanticFieldIdentity(primary.Id, primary.Name),
+                new SemanticFieldIdentity(primary.Id, primary.Name),
                 fields,
                 [],
                 item.Aliases?.Select(a => new SemanticAlias(a.Name, a.Weight)).ToArray())
@@ -84,14 +83,12 @@ public static class SemanticModelDiscovery
     }
 
     /// <summary>
-    /// Starts a semantic configuration from structural metadata. Ordinary
-    /// entities, fields, identities and direct relationships are discovered;
-    /// subsequent builder calls are reserved for application meaning.
+    ///     Starts a semantic configuration from structural metadata. Ordinary
+    ///     entities, fields, identities and direct relationships are discovered;
+    ///     subsequent builder calls are reserved for application meaning.
     /// </summary>
-    public static SemanticModelBuilder FromMetadata(this IMetadataCatalog metadata) =>
-        new SemanticModelBuilder().Import(metadata.Discover());
+    public static SemanticModelBuilder FromMetadata(this IMetadataCatalog metadata)
+    {
+        return new SemanticModelBuilder().Import(metadata.Discover());
+    }
 }
-
-
-
-

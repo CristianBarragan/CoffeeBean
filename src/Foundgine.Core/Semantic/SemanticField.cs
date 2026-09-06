@@ -3,8 +3,8 @@ using Foundgine.Core.Abstractions;
 namespace Foundgine.Core.Semantic;
 
 /// <summary>
-/// Domain-facing field. ClrType is retained for compatibility with existing
-/// providers; SemanticType is the provider-neutral contract for semantic code.
+///     Domain-facing field. ClrType is retained for compatibility with existing
+///     providers; SemanticType is the provider-neutral contract for semantic code.
 /// </summary>
 public sealed record SemanticField(
     FieldId Id,
@@ -18,15 +18,16 @@ public sealed record SemanticField(
 {
     public IReadOnlyList<SemanticAlias> EffectiveAliases => Aliases ?? [];
     public IReadOnlyList<SemanticConstraint> EffectiveConstraints => Constraints ?? [];
-    public SemanticType EffectiveSemanticType => SemanticType ?? Foundgine.Core.Semantic.SemanticType.FromClrType(ClrType);
+    public SemanticType EffectiveSemanticType => SemanticType ?? SemanticType.FromClrType(ClrType);
 
     /// <summary>
-    /// Whether the semantic field permits null. For reference types this may
-    /// be explicitly supplied by the typed/AOT semantic pipeline so nullable-
-    /// reference metadata is preserved even though string and string? share
-    /// the same runtime <see cref="Type"/>.
+    ///     Whether the semantic field permits null. For reference types this may
+    ///     be explicitly supplied by the typed/AOT semantic pipeline so nullable-
+    ///     reference metadata is preserved even though string and string? share
+    ///     the same runtime <see cref="Type" />.
     /// </summary>
-    public bool IsNullable => NullableOverride ?? (!ClrType.IsValueType || Nullable.GetUnderlyingType(ClrType) is not null);
+    public bool IsNullable =>
+        NullableOverride ?? (!ClrType.IsValueType || Nullable.GetUnderlyingType(ClrType) is not null);
 }
 
 [Flags]

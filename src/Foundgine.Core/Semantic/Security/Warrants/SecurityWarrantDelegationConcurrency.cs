@@ -16,9 +16,9 @@ public sealed record SecurityWarrantDelegationReservation(
     long Sequence);
 
 /// <summary>
-/// Serializes delegation issuance per exact parent warrant. Different children may
-/// legitimately fork from the same parent, but two writers cannot commit the same
-/// child identity/nonce or both commit from the same stale parent sequence.
+///     Serializes delegation issuance per exact parent warrant. Different children may
+///     legitimately fork from the same parent, but two writers cannot commit the same
+///     child identity/nonce or both commit from the same stale parent sequence.
 /// </summary>
 public interface ISecurityWarrantDelegationConcurrencyStore
 {
@@ -36,22 +36,23 @@ public interface ISecurityWarrantDelegationConcurrencyStore
 public sealed class MemorySecurityWarrantDelegationConcurrencyStore
     : ISecurityWarrantDelegationConcurrencyStore
 {
-    private sealed class ParentState
-    {
-        public readonly object Gate = new();
-        public long Sequence;
-    }
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SecurityWarrantDelegationReservation>
+        _children = new(StringComparer.Ordinal);
 
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ParentState> _parents = new(StringComparer.Ordinal);
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SecurityWarrantDelegationReservation> _children = new(StringComparer.Ordinal);
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SecurityWarrantDelegationReservation> _nonces = new(StringComparer.Ordinal);
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SecurityWarrantDelegationReservation>
+        _nonces = new(StringComparer.Ordinal);
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ParentState> _parents =
+        new(StringComparer.Ordinal);
 
     public SecurityWarrantDelegationConcurrencySnapshot Capture(SecurityWarrant parent)
     {
         ArgumentNullException.ThrowIfNull(parent);
         var state = _parents.GetOrAdd(Key(parent), static _ => new ParentState());
         lock (state.Gate)
+        {
             return Snapshot(parent, state.Sequence);
+        }
     }
 
     public SecurityWarrantDelegationReservation CommitChild(
@@ -80,7 +81,8 @@ public sealed class MemorySecurityWarrantDelegationConcurrencyStore
         lock (state.Gate)
         {
             if (state.Sequence != expected.Sequence)
-                throw new InvalidOperationException("Delegation parent changed concurrently; the child must be retried from a fresh parent sequence.");
+                throw new InvalidOperationException(
+                    "Delegation parent changed concurrently; the child must be retried from a fresh parent sequence.");
 
             var childKey = Key(child);
             if (_children.ContainsKey(childKey))
@@ -94,7 +96,8 @@ public sealed class MemorySecurityWarrantDelegationConcurrencyStore
             var reservation = new SecurityWarrantDelegationReservation(
                 parent.Id, parent.Digest, child.Id, child.Digest, child.Nonce, sequence);
             if (!_children.TryAdd(childKey, reservation) || !_nonces.TryAdd(nonceKey, reservation))
-                throw new InvalidOperationException("Concurrent delegation fork detected; child reservation was not committed.");
+                throw new InvalidOperationException(
+                    "Concurrent delegation fork detected; child reservation was not committed.");
             return reservation;
         }
     }
@@ -105,10 +108,21 @@ public sealed class MemorySecurityWarrantDelegationConcurrencyStore
         return _children.ContainsKey(Key(child));
     }
 
-    private static SecurityWarrantDelegationConcurrencySnapshot Snapshot(SecurityWarrant parent, long sequence) =>
-        new(parent.Id, parent.Digest, sequence);
+    private static SecurityWarrantDelegationConcurrencySnapshot Snapshot(SecurityWarrant parent, long sequence)
+    {
+        return new SecurityWarrantDelegationConcurrencySnapshot(parent.Id, parent.Digest, sequence);
+    }
 
-    private static string Key(SecurityWarrant warrant) => warrant.Id + "\u001f" + warrant.Digest;
+    private static string Key(SecurityWarrant warrant)
+    {
+        return warrant.Id + "\u001f" + warrant.Digest;
+    }
+
+    private sealed class ParentState
+    {
+        public readonly object Gate = new();
+        public long Sequence;
+    }
 }
 
 /// <summary>Final execution guard for a parent whose delegation state was snapshotted.</summary>

@@ -1,9 +1,8 @@
 using Foundgine.Core.Abstractions;
 using Foundgine.Core.Execution;
-using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic;
+using Foundgine.Core.Semantic.Planning;
 using Foundgine.Core.Semantic.Results;
-using Xunit;
 
 namespace Foundgine.E2E.Tests;
 
@@ -60,13 +59,16 @@ public sealed class ResultModelSemanticsTests
                 null,
                 []));
 
-        ExecutionRow Row(long identity, string value) => new(
-            new Dictionary<string, object?>(),
-            new Dictionary<ExecutionCellKey, object?>
-            {
-                [new ExecutionCellKey(1, customer, id)] = identity,
-                [new ExecutionCellKey(1, customer, name)] = value
-            });
+        ExecutionRow Row(long identity, string value)
+        {
+            return new ExecutionRow(
+                new Dictionary<string, object?>(),
+                new Dictionary<ExecutionCellKey, object?>
+                {
+                    [new ExecutionCellKey(1, customer, id)] = identity,
+                    [new ExecutionCellKey(1, customer, name)] = value
+                });
+        }
 
         var result = new ResultMaterializer(model).Materialize(
             plan,

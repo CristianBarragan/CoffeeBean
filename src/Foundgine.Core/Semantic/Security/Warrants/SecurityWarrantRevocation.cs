@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-
 namespace Foundgine.Core.Semantic.Security.Warrants;
 
 /// <summary>Records a revoked warrant digest. Revocation is monotonic and cannot be undone.</summary>
@@ -39,18 +37,24 @@ public sealed class MemorySecurityWarrantRevocationStore : ISecurityWarrantRevoc
         return _revoked[key];
     }
 
-    public bool IsRevoked(string warrantId, string warrantDigest) =>
-        _revoked.ContainsKey(warrantId + "\u001f" + warrantDigest);
+    public bool IsRevoked(string warrantId, string warrantDigest)
+    {
+        return _revoked.ContainsKey(warrantId + "\u001f" + warrantDigest);
+    }
 
-    public bool IsDigestRevoked(string warrantDigest) =>
-        _revoked.Values.Any(x => StringComparer.Ordinal.Equals(x.WarrantDigest, warrantDigest));
+    public bool IsDigestRevoked(string warrantDigest)
+    {
+        return _revoked.Values.Any(x => StringComparer.Ordinal.Equals(x.WarrantDigest, warrantDigest));
+    }
 }
 
 /// <summary>Immutable execution-time view of revocation state.</summary>
 public readonly record struct SecurityWarrantRevocationSnapshot(long Sequence)
 {
-    public static SecurityWarrantRevocationSnapshot Capture(ISecurityWarrantRevocationStore store) =>
-        new(store.CurrentSequence);
+    public static SecurityWarrantRevocationSnapshot Capture(ISecurityWarrantRevocationStore store)
+    {
+        return new SecurityWarrantRevocationSnapshot(store.CurrentSequence);
+    }
 
     public void AssertUnchanged(ISecurityWarrantRevocationStore store)
     {
@@ -61,8 +65,8 @@ public readonly record struct SecurityWarrantRevocationSnapshot(long Sequence)
 }
 
 /// <summary>
-/// Rejects a warrant when the warrant itself or any delegated ancestor has been revoked.
-/// A child cannot outlive the authority from which it was delegated.
+///     Rejects a warrant when the warrant itself or any delegated ancestor has been revoked.
+///     A child cannot outlive the authority from which it was delegated.
 /// </summary>
 public static class SecurityWarrantRevocationGuard
 {
@@ -80,10 +84,8 @@ public static class SecurityWarrantRevocationGuard
             throw new InvalidOperationException("Security warrant has been revoked.");
 
         foreach (var ancestorDigest in warrant.DelegationPath)
-        {
             if (store.IsDigestRevoked(ancestorDigest))
                 throw new InvalidOperationException("A parent security warrant has been revoked.");
-        }
 
         return SecurityWarrantRevocationSnapshot.Capture(store);
     }

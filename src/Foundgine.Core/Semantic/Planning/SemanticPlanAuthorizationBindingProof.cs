@@ -1,8 +1,8 @@
 namespace Foundgine.Core.Semantic.Planning;
 
 /// <summary>
-/// Proves that a plan rewrite did not detach the executable plan from the
-/// authorization decision and semantic contract that produced it.
+///     Proves that a plan rewrite did not detach the executable plan from the
+///     authorization decision and semantic contract that produced it.
 /// </summary>
 public sealed record SemanticPlanAuthorizationBindingProof(
     SemanticPlanAuthorizationBinding? Before,
@@ -22,10 +22,8 @@ public sealed record SemanticPlanAuthorizationBindingProof(
             after.AuthorizationBinding);
 
         if (!proof.IsSatisfied)
-        {
             throw new InvalidOperationException(
                 "Plan rewrite rejected: authorization binding was added, removed, or changed by the rewrite.");
-        }
 
         return proof;
     }

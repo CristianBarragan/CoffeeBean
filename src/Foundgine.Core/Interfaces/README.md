@@ -4,7 +4,8 @@
 
 ## What is in this package
 
-The package contains stable identifiers and contracts that allow the other layers to communicate without depending on SQL, GraphQL, MCP, or a particular database.
+The package contains stable identifiers and contracts that allow the other layers to communicate without depending on
+SQL, GraphQL, MCP, or a particular database.
 
 ### Stable identifiers
 
@@ -17,7 +18,8 @@ The package contains stable identifiers and contracts that allow the other layer
 - `AuthorizationId`
 - `SemanticIdentity`
 
-These identifiers are deliberately distinct so a relationship, field, model, or physical column cannot be confused at an API boundary.
+These identifiers are deliberately distinct so a relationship, field, model, or physical column cannot be confused at an
+API boundary.
 
 ### Authorization vocabulary
 
@@ -36,7 +38,8 @@ Authorization predicates are provider-independent; physical providers decide how
 
 ## What this package does not contain
 
-It does not implement semantic resolution, planning, SQL execution, GraphQL, MCP, AI integration, or a database provider.
+It does not implement semantic resolution, planning, SQL execution, GraphQL, MCP, AI integration, or a database
+provider.
 
 ## Install
 
@@ -44,4 +47,5 @@ It does not implement semantic resolution, planning, SQL execution, GraphQL, MCP
 dotnet add package Foundgine.Core.Abstractions
 ```
 
-Most applications receive this transitively through `Foundgine`, but it can be referenced directly when building against the lower-level contracts.
+Most applications receive this transitively through `Foundgine`, but it can be referenced directly when building against
+the lower-level contracts.

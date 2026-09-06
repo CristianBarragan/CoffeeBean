@@ -1,7 +1,6 @@
 using Foundgine.Core.Abstractions;
-using Foundgine.Core.Semantic.Planning.Mutation;
 using Foundgine.Core.Semantic.Mutation;
-using Xunit;
+using Foundgine.Core.Semantic.Planning.Mutation;
 
 namespace Foundgine.Core.Semantic.Planning.Tests;
 
@@ -64,9 +63,14 @@ public sealed class SemanticMutationPlannerTests
         var planner = new MutationPlanner(schema);
         var graph = new SemanticMutationOperationGraph([
             SemanticMutationBuilder.Create(customer, [new SemanticMutationField(customerId, "c")], [customerId]),
-            SemanticMutationBuilder.Create(account, [new SemanticMutationField(
-                accountCustomerId, null, new SemanticMutationValueReference(0, customerId))])
-                with { ReturnFields = [accountCustomerId] }
+            SemanticMutationBuilder.Create(account, [
+                    new SemanticMutationField(
+                        accountCustomerId, null, new SemanticMutationValueReference(0, customerId))
+                ])
+                with
+                {
+                    ReturnFields = [accountCustomerId]
+                }
         ]);
 
         var plan = planner.Plan(graph);
@@ -99,7 +103,8 @@ public sealed class SemanticMutationPlannerTests
                 new SemanticMutationField(
                     accountCustomerId,
                     null,
-                    new SemanticMutationValueReference(0, customerId))])
+                    new SemanticMutationValueReference(0, customerId))
+            ])
         ]);
 
         var plan = new SemanticMutationPlanner().Plan(graph);
@@ -128,29 +133,44 @@ public sealed class SemanticMutationPlannerTests
         // The existing suite constructs concrete semantic graphs; this assertion
         // protects the architectural contract at the type level.
         Assert.True(typeof(SemanticMutationPlan).GetProperty(nameof(SemanticMutationPlan.Operations)) is not null);
-        Assert.True(typeof(SemanticMutationOperationPlan).GetProperty(nameof(SemanticMutationOperationPlan.Filter)) is not null);
-        Assert.True(typeof(SemanticMutationOperationPlan).GetProperty(nameof(SemanticMutationOperationPlan.ConflictFields)) is not null);
-        Assert.True(typeof(SemanticMutationOperationPlan).GetProperty(nameof(SemanticMutationOperationPlan.ReturnFields)) is not null);
+        Assert.True(
+            typeof(SemanticMutationOperationPlan).GetProperty(nameof(SemanticMutationOperationPlan
+                .Filter)) is not null);
+        Assert.True(
+            typeof(SemanticMutationOperationPlan).GetProperty(nameof(SemanticMutationOperationPlan.ConflictFields)) is
+                not null);
+        Assert.True(
+            typeof(SemanticMutationOperationPlan).GetProperty(nameof(SemanticMutationOperationPlan.ReturnFields)) is not
+                null);
     }
 
-    private static TestMutationSchema Schema(EntityId entity, params (FieldId Field, ColumnId Column)[] fields) =>
-        new(new MutationEntitySchema(
+    private static TestMutationSchema Schema(EntityId entity, params (FieldId Field, ColumnId Column)[] fields)
+    {
+        return new TestMutationSchema(new MutationEntitySchema(
             entity,
             "Entity",
             fields.Select(x => x.Column).ToHashSet(),
             fields.ToDictionary(x => x.Field, x => (ColumnId?)x.Column),
             fields.Length == 0 ? null : fields[0].Column));
+    }
 
     private sealed class TestMutationSchema : IMutationSchema
     {
         private readonly Dictionary<EntityId, MutationEntitySchema> _entities;
 
-        public TestMutationSchema(params MutationEntitySchema[] entities) =>
+        public TestMutationSchema(params MutationEntitySchema[] entities)
+        {
             _entities = entities.ToDictionary(x => x.Id);
+        }
 
-        public MutationEntitySchema GetEntity(EntityId entityId) => _entities[entityId];
+        public MutationEntitySchema GetEntity(EntityId entityId)
+        {
+            return _entities[entityId];
+        }
 
-        public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId) =>
+        public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId)
+        {
             throw new KeyNotFoundException();
+        }
     }
 }

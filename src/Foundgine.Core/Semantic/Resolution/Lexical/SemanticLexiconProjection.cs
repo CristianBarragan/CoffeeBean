@@ -1,5 +1,3 @@
-using Foundgine.Core.Abstractions;
-
 namespace Foundgine.Core.Semantic.Resolution;
 
 /// <summary>Projects a frozen semantic contract into searchable lexical documents.</summary>
@@ -30,7 +28,6 @@ public static class SemanticLexiconProjection
                 Description: $"Semantic graph node for {entity.Name}."));
 
             foreach (var field in entity.Fields)
-            {
                 entries.Add(new SemanticLexiconEntry(
                     field.Name,
                     SemanticLexicalCandidateKind.Field,
@@ -39,10 +36,8 @@ public static class SemanticLexiconProjection
                     FieldId: field.Id,
                     Aliases: field.EffectiveAliases.Select(x => x.Name).ToArray(),
                     Description: $"Field {entity.Name}.{field.Name}."));
-            }
 
             foreach (var relationship in entity.Relationships)
-            {
                 entries.Add(new SemanticLexiconEntry(
                     relationship.Name,
                     SemanticLexicalCandidateKind.Relationship,
@@ -52,19 +47,17 @@ public static class SemanticLexiconProjection
                     TargetEntityId: relationship.Target,
                     Aliases: relationship.EffectiveAliases.Select(x => x.Name).ToArray(),
                     Description: $"Relationship from {entity.Name} to {contract.Get(relationship.Target).Name}."));
-            }
         }
 
         foreach (var traversal in contract.Traversals)
-        {
             entries.Add(new SemanticLexiconEntry(
                 traversal.Name,
                 SemanticLexicalCandidateKind.Traversal,
                 $"{contract.Get(traversal.Source).Name} {traversal.Name} {contract.Get(traversal.Target).Name}",
                 SourceEntityId: traversal.Source,
                 TargetEntityId: traversal.Target,
-                Description: $"Logical traversal from {contract.Get(traversal.Source).Name} to {contract.Get(traversal.Target).Name}."));
-        }
+                Description:
+                $"Logical traversal from {contract.Get(traversal.Source).Name} to {contract.Get(traversal.Target).Name}."));
 
         return entries;
     }

@@ -3,9 +3,9 @@ using Foundgine.Core.Abstractions;
 namespace Foundgine.Core.Semantic.Resolution;
 
 /// <summary>
-/// A lexical hypothesis returned by an approximate retrieval provider.
-/// Score is provider relevance, not a probability and not an authorization
-/// decision. Foundgine combines it with semantic graph compatibility.
+///     A lexical hypothesis returned by an approximate retrieval provider.
+///     Score is provider relevance, not a probability and not an authorization
+///     decision. Foundgine combines it with semantic graph compatibility.
 /// </summary>
 public sealed record SemanticLexicalCandidate(
     string Token,

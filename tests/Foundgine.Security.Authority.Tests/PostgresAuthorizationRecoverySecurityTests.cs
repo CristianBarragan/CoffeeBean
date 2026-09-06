@@ -1,7 +1,4 @@
-using Foundgine.Runtime.ControlPlane;
 using Foundgine.HighAssurance.Postgres.Execution;
-using Npgsql;
-using Xunit;
 
 namespace Foundgine.Runtime.ControlPlane.Tests;
 
@@ -13,7 +10,10 @@ public sealed class PostgresAuthorizationRecoverySecurityTests
         await using var dataSource = NpgsqlDataSource.Create(PostgresTestEnvironment.ConnectionString);
         await PrepareAsync(dataSource);
         await using var connection = await dataSource.OpenConnectionAsync();
-        await using var clear = new NpgsqlCommand("TRUNCATE banking.authorization_security_recovery_checkpoint, banking.authorization_context_tombstone, banking.authorization_context_writer, banking.authorization_context;", connection);
+        await using var clear =
+            new NpgsqlCommand(
+                "TRUNCATE banking.authorization_security_recovery_checkpoint, banking.authorization_context_tombstone, banking.authorization_context_writer, banking.authorization_context;",
+                connection);
         await clear.ExecuteNonQueryAsync();
 
         var result = await new PostgresAuthorizationRecoveryCoordinator(dataSource).VerifyAsync();
@@ -28,11 +28,16 @@ public sealed class PostgresAuthorizationRecoverySecurityTests
         await using var dataSource = NpgsqlDataSource.Create(PostgresTestEnvironment.ConnectionString);
         await PrepareAsync(dataSource);
         await using var connection = await dataSource.OpenConnectionAsync();
-        await using var clear = new NpgsqlCommand("TRUNCATE banking.authorization_security_recovery_checkpoint, banking.authorization_context_tombstone, banking.authorization_context_writer, banking.authorization_context;", connection);
+        await using var clear =
+            new NpgsqlCommand(
+                "TRUNCATE banking.authorization_security_recovery_checkpoint, banking.authorization_context_tombstone, banking.authorization_context_writer, banking.authorization_context;",
+                connection);
         await clear.ExecuteNonQueryAsync();
 
         var actor = Guid.NewGuid();
-        await using (var insert = new NpgsqlCommand("INSERT INTO banking.authorization_context(actor_id,tenant_id,allowed,version,fingerprint,integrity_algorithm,integrity_key_id,integrity_tag) VALUES (@a,1,true,1,'fp','HMAC-SHA256/v1','key-v1',repeat('0',64));", connection))
+        await using (var insert = new NpgsqlCommand(
+                         "INSERT INTO banking.authorization_context(actor_id,tenant_id,allowed,version,fingerprint,integrity_algorithm,integrity_key_id,integrity_tag) VALUES (@a,1,true,1,'fp','HMAC-SHA256/v1','key-v1',repeat('0',64));",
+                         connection))
         {
             insert.Parameters.AddWithValue("a", actor);
             await insert.ExecuteNonQueryAsync();
@@ -47,7 +52,10 @@ public sealed class PostgresAuthorizationRecoverySecurityTests
             await coordinator.AdvanceAnchorAfterCommitAsync(1);
         }
 
-        await using (var tamper = new NpgsqlCommand("UPDATE banking.authorization_context SET allowed=false WHERE actor_id=@a AND tenant_id=1;", connection))
+        await using (var tamper =
+                     new NpgsqlCommand(
+                         "UPDATE banking.authorization_context SET allowed=false WHERE actor_id=@a AND tenant_id=1;",
+                         connection))
         {
             tamper.Parameters.AddWithValue("a", actor);
             await tamper.ExecuteNonQueryAsync();
@@ -63,14 +71,19 @@ public sealed class PostgresAuthorizationRecoverySecurityTests
         await using var dataSource = NpgsqlDataSource.Create(PostgresTestEnvironment.ConnectionString);
         await PrepareAsync(dataSource);
         await using var connection = await dataSource.OpenConnectionAsync();
-        await using var clear = new NpgsqlCommand("TRUNCATE banking.authorization_security_recovery_checkpoint, banking.authorization_context_tombstone, banking.authorization_context_writer, banking.authorization_context;", connection);
+        await using var clear =
+            new NpgsqlCommand(
+                "TRUNCATE banking.authorization_security_recovery_checkpoint, banking.authorization_context_tombstone, banking.authorization_context_writer, banking.authorization_context;",
+                connection);
         await clear.ExecuteNonQueryAsync();
 
         var anchor = new InMemoryAuthorizationRecoverySequenceAnchor();
         var coordinator = new PostgresAuthorizationRecoveryCoordinator(dataSource, anchor);
         await using (var tx = await connection.BeginTransactionAsync())
         {
-            await using var insert = new NpgsqlCommand("INSERT INTO banking.authorization_context(actor_id,tenant_id,allowed,version,fingerprint,integrity_algorithm,integrity_key_id,integrity_tag) VALUES (@a,1,true,1,'fp','HMAC-SHA256/v1','key-v1',repeat('0',64));", connection, tx);
+            await using var insert = new NpgsqlCommand(
+                "INSERT INTO banking.authorization_context(actor_id,tenant_id,allowed,version,fingerprint,integrity_algorithm,integrity_key_id,integrity_tag) VALUES (@a,1,true,1,'fp','HMAC-SHA256/v1','key-v1',repeat('0',64));",
+                connection, tx);
             insert.Parameters.AddWithValue("a", Guid.NewGuid());
             await insert.ExecuteNonQueryAsync();
             await coordinator.SealAsync(connection, tx, 1);
@@ -89,14 +102,19 @@ public sealed class PostgresAuthorizationRecoverySecurityTests
         await using var dataSource = NpgsqlDataSource.Create(PostgresTestEnvironment.ConnectionString);
         await PrepareAsync(dataSource);
         await using var connection = await dataSource.OpenConnectionAsync();
-        await using var clear = new NpgsqlCommand("TRUNCATE banking.authorization_security_recovery_checkpoint, banking.authorization_context_tombstone, banking.authorization_context_writer, banking.authorization_context;", connection);
+        await using var clear =
+            new NpgsqlCommand(
+                "TRUNCATE banking.authorization_security_recovery_checkpoint, banking.authorization_context_tombstone, banking.authorization_context_writer, banking.authorization_context;",
+                connection);
         await clear.ExecuteNonQueryAsync();
 
         var anchor = new InMemoryAuthorizationRecoverySequenceAnchor();
         var coordinator = new PostgresAuthorizationRecoveryCoordinator(dataSource, anchor);
         await using (var tx = await connection.BeginTransactionAsync())
         {
-            await using var insert = new NpgsqlCommand("INSERT INTO banking.authorization_context(actor_id,tenant_id,allowed,version,fingerprint,integrity_algorithm,integrity_key_id,integrity_tag) VALUES (@a,1,true,1,'fp','HMAC-SHA256/v1','key-v1',repeat('0',64));", connection, tx);
+            await using var insert = new NpgsqlCommand(
+                "INSERT INTO banking.authorization_context(actor_id,tenant_id,allowed,version,fingerprint,integrity_algorithm,integrity_key_id,integrity_tag) VALUES (@a,1,true,1,'fp','HMAC-SHA256/v1','key-v1',repeat('0',64));",
+                connection, tx);
             insert.Parameters.AddWithValue("a", Guid.NewGuid());
             await insert.ExecuteNonQueryAsync();
             await coordinator.SealAsync(connection, tx, 2);
@@ -104,7 +122,8 @@ public sealed class PostgresAuthorizationRecoverySecurityTests
             await coordinator.AdvanceAnchorAfterCommitAsync(2);
         }
 
-        await using var rollback = new NpgsqlCommand("UPDATE banking.authorization_security_recovery_checkpoint SET sequence=1;", connection);
+        await using var rollback =
+            new NpgsqlCommand("UPDATE banking.authorization_security_recovery_checkpoint SET sequence=1;", connection);
         await rollback.ExecuteNonQueryAsync();
         var result = await coordinator.VerifyAsync();
         Assert.False(result.IsConsistent);
@@ -117,7 +136,10 @@ public sealed class PostgresAuthorizationRecoverySecurityTests
         await using var dataSource = NpgsqlDataSource.Create(PostgresTestEnvironment.ConnectionString);
         await PrepareAsync(dataSource);
         await using var connection = await dataSource.OpenConnectionAsync();
-        await using var clear = new NpgsqlCommand("TRUNCATE banking.authorization_security_recovery_checkpoint, banking.authorization_context_tombstone, banking.authorization_context_writer, banking.authorization_context;", connection);
+        await using var clear =
+            new NpgsqlCommand(
+                "TRUNCATE banking.authorization_security_recovery_checkpoint, banking.authorization_context_tombstone, banking.authorization_context_writer, banking.authorization_context;",
+                connection);
         await clear.ExecuteNonQueryAsync();
 
         var anchor = new InMemoryAuthorizationRecoverySequenceAnchor();

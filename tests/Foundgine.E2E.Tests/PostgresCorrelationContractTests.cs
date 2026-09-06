@@ -1,15 +1,9 @@
-using System.Text.Json;
-using System.Collections;
-using System.Data;
-using System.Data.Common;
 using Foundgine.Core.Abstractions;
+using Foundgine.Core.Execution.Mutation;
 using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic.Planning.Mutation;
-using Foundgine.Core.Execution;
 using Foundgine.Providers.Storage.Sql.Mutation;
 using Foundgine.Providers.Storage.Sql.Mutation.Postgres;
-using Npgsql;
-using Xunit;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 namespace Foundgine.E2E.Tests;
@@ -23,7 +17,7 @@ public sealed class PostgresCorrelationContractTests
     {
         var method = typeof(PostgresBatchedMutationCompiler).GetMethod(
             nameof(PostgresBatchedMutationCompiler.Compile),
-            new[] { typeof(Foundgine.Core.Execution.Mutation.ExecutionMutationIR) });
+            new[] { typeof(ExecutionMutationIR) });
 
         Assert.NotNull(method);
     }
@@ -33,10 +27,11 @@ public sealed class PostgresCorrelationContractTests
     {
         var method = typeof(PostgresBatchedMutationCompiler).GetMethod(
             nameof(PostgresBatchedMutationCompiler.TryCompile),
-            new[] { typeof(Foundgine.Core.Execution.Mutation.ExecutionMutationIR) });
+            new[] { typeof(ExecutionMutationIR) });
 
         Assert.NotNull(method);
     }
+
     [Fact]
     public void BatchedCreateUsesExplicitCorrelationKeyAcrossInputAndReturningCtes()
     {
@@ -90,9 +85,11 @@ public sealed class PostgresCorrelationContractTests
         Assert.Contains("g0_input AS (SELECT * FROM g0_resolved)", sql, StringComparison.Ordinal);
         Assert.Contains("__fg_corr", sql, StringComparison.Ordinal);
         Assert.Contains("g0_created AS (\n  MERGE INTO", sql, StringComparison.Ordinal);
-        Assert.Contains("WHEN NOT MATCHED THEN INSERT (\"Id\", \"Name\") VALUES (r.\"Id\", r.\"Name\")", sql, StringComparison.Ordinal);
+        Assert.Contains("WHEN NOT MATCHED THEN INSERT (\"Id\", \"Name\") VALUES (r.\"Id\", r.\"Name\")", sql,
+            StringComparison.Ordinal);
         Assert.Contains("USING g0_input r ON FALSE", sql, StringComparison.Ordinal);
-        Assert.Contains("RETURNING r.__fg_corr, t.\"Id\" AS \"r_1\", t.\"Name\" AS \"r_2\"", sql, StringComparison.Ordinal);
+        Assert.Contains("RETURNING r.__fg_corr, t.\"Id\" AS \"r_1\", t.\"Name\" AS \"r_2\"", sql,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("JOIN g0_created f ON", sql, StringComparison.Ordinal);
         Assert.Contains("jsonb_build_object('__fg_corr', f.__fg_corr)", sql, StringComparison.Ordinal);
         Assert.Contains("ORDER BY __grp, CASE WHEN __row ? '__fg_corr'", sql, StringComparison.Ordinal);
@@ -124,7 +121,7 @@ public sealed class PostgresCorrelationContractTests
             "Customer",
             new HashSet<ColumnId> { idColumn, nameColumn },
             new Dictionary<FieldId, ColumnId?>
-            { [idField] = idColumn, [nameField] = nameColumn },
+                { [idField] = idColumn, [nameField] = nameColumn },
             idColumn);
 
         // Id is intentionally omitted: PostgreSQL owns generation. The two
@@ -233,7 +230,8 @@ public sealed class PostgresCorrelationContractTests
             Fields:
             [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 
@@ -248,7 +246,8 @@ public sealed class PostgresCorrelationContractTests
             Fields:
             [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(account, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "CustomerId", typeof(long), new ColumnReference(account, new ColumnId(2))),
+                new FieldMetadata(new FieldId(2), "CustomerId", typeof(long),
+                    new ColumnReference(account, new ColumnId(2))),
                 new FieldMetadata(new FieldId(3), "Name", typeof(string), new ColumnReference(account, new ColumnId(3)))
             ],
             PrimaryKey: new ColumnReference(account, new ColumnId(1))));
@@ -295,7 +294,7 @@ public sealed class PostgresCorrelationContractTests
         await connection.OpenAsync();
         await using var transaction = await connection.BeginTransactionAsync();
         await using (var searchPath = new Npgsql.NpgsqlCommand(
-            "SET LOCAL search_path TO fg_correlation;", connection, transaction))
+                         "SET LOCAL search_path TO fg_correlation;", connection, transaction))
         {
             await searchPath.ExecuteNonQueryAsync();
         }
@@ -344,7 +343,8 @@ public sealed class PostgresCorrelationContractTests
         Assert.Equal(customers[2].Id, accounts[2].CustomerId);
 
         await using var verify = new Npgsql.NpgsqlCommand("", connection, transaction);
-        verify.CommandText = "SELECT c.\"Name\", a.\"Name\", a.\"CustomerId\" FROM \"Customer\" c JOIN \"Account\" a ON a.\"CustomerId\" = c.\"Id\" ORDER BY c.\"Name\";";
+        verify.CommandText =
+            "SELECT c.\"Name\", a.\"Name\", a.\"CustomerId\" FROM \"Customer\" c JOIN \"Account\" a ON a.\"CustomerId\" = c.\"Id\" ORDER BY c.\"Name\";";
         await using var verifyReader = await verify.ExecuteReaderAsync();
         Assert.True(await verifyReader.ReadAsync());
         Assert.Equal("Alice", verifyReader.GetString(0));
@@ -409,7 +409,7 @@ public sealed class PostgresCorrelationContractTests
         await connection.OpenAsync();
         await using var transaction = await connection.BeginTransactionAsync();
         await using (var searchPath = new Npgsql.NpgsqlCommand(
-            "SET LOCAL search_path TO fg_correlation;", connection, transaction))
+                         "SET LOCAL search_path TO fg_correlation;", connection, transaction))
         {
             await searchPath.ExecuteNonQueryAsync();
         }
@@ -417,8 +417,10 @@ public sealed class PostgresCorrelationContractTests
         // Execute the real compiler-generated top-level statement. Only the
         // terminal presentation order is changed. The data-modifying WITH
         // remains the top-level statement executed by PostgreSQL.
-        const string ascendingOrder = "ORDER BY __grp, CASE WHEN __row ? '__fg_corr' THEN ((__row ->> '__fg_corr')::bigint) END";
-        const string descendingOrder = "ORDER BY __grp, CASE WHEN __row ? '__fg_corr' THEN ((__row ->> '__fg_corr')::bigint) END DESC";
+        const string ascendingOrder =
+            "ORDER BY __grp, CASE WHEN __row ? '__fg_corr' THEN ((__row ->> '__fg_corr')::bigint) END";
+        const string descendingOrder =
+            "ORDER BY __grp, CASE WHEN __row ? '__fg_corr' THEN ((__row ->> '__fg_corr')::bigint) END DESC";
         Assert.Contains(ascendingOrder, compiled.CommandText, StringComparison.Ordinal);
 
         await using var command = new Npgsql.NpgsqlCommand("", connection, transaction);
@@ -480,11 +482,29 @@ public sealed class PostgresCorrelationContractTests
         public override string ServerVersion => "17";
         public override ConnectionState State => _state;
 
-        public override void Open() => _state = ConnectionState.Open;
-        public override void Close() => _state = ConnectionState.Closed;
-        public override void ChangeDatabase(string databaseName) { }
-        protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw new NotSupportedException();
-        protected override DbCommand CreateDbCommand() => new ReorderedPostgresCommand(this, rows);
+        public override void Open()
+        {
+            _state = ConnectionState.Open;
+        }
+
+        public override void Close()
+        {
+            _state = ConnectionState.Closed;
+        }
+
+        public override void ChangeDatabase(string databaseName)
+        {
+        }
+
+        protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
+        {
+            throw new NotSupportedException();
+        }
+
+        protected override DbCommand CreateDbCommand()
+        {
+            return new ReorderedPostgresCommand(this, rows);
+        }
 
         private sealed class ReorderedPostgresCommand(
             ReorderedPostgresConnection owner,
@@ -501,9 +521,19 @@ public sealed class PostgresCorrelationContractTests
             public override bool DesignTimeVisible { get; set; }
             protected override DbParameterCollection DbParameterCollection => _parameters;
 
-            public override void Prepare() { }
-            public override void Cancel() { }
-            protected override DbParameter CreateDbParameter() => new FakeParameter();
+            public override void Prepare()
+            {
+            }
+
+            public override void Cancel()
+            {
+            }
+
+            protected override DbParameter CreateDbParameter()
+            {
+                return new FakeParameter();
+            }
+
             protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
             {
                 owner.LastCommandText = CommandText;
@@ -514,8 +544,16 @@ public sealed class PostgresCorrelationContractTests
                     table.Rows.Add(row.Group, row.Json);
                 return table.CreateDataReader();
             }
-            public override int ExecuteNonQuery() => throw new NotSupportedException();
-            public override object? ExecuteScalar() => throw new NotSupportedException();
+
+            public override int ExecuteNonQuery()
+            {
+                throw new NotSupportedException();
+            }
+
+            public override object? ExecuteScalar()
+            {
+                throw new NotSupportedException();
+            }
         }
 
         private sealed class FakeParameterCollection : DbParameterCollection
@@ -523,23 +561,92 @@ public sealed class PostgresCorrelationContractTests
             private readonly List<DbParameter> _items = [];
             public override int Count => _items.Count;
             public override object SyncRoot => ((ICollection)_items).SyncRoot!;
-            public override int Add(object value) { _items.Add((DbParameter)value); return _items.Count - 1; }
-            public override void AddRange(Array values) { foreach (var value in values) Add(value!); }
-            public override void Clear() => _items.Clear();
-            public override bool Contains(object value) => _items.Contains((DbParameter)value);
-            public override bool Contains(string value) => _items.Any(x => x.ParameterName == value);
-            public override void CopyTo(Array array, int index) => ((ICollection)_items).CopyTo(array, index);
-            public override IEnumerator GetEnumerator() => _items.GetEnumerator();
-            public override int IndexOf(object value) => _items.IndexOf((DbParameter)value);
-            public override int IndexOf(string parameterName) => _items.FindIndex(x => x.ParameterName == parameterName);
-            public override void Insert(int index, object value) => _items.Insert(index, (DbParameter)value);
-            public override void Remove(object value) => _items.Remove((DbParameter)value);
-            public override void RemoveAt(int index) => _items.RemoveAt(index);
-            public override void RemoveAt(string parameterName) => RemoveAt(IndexOf(parameterName));
-            protected override DbParameter GetParameter(int index) => _items[index];
-            protected override DbParameter GetParameter(string parameterName) => _items[IndexOf(parameterName)];
-            protected override void SetParameter(int index, DbParameter value) => _items[index] = value;
-            protected override void SetParameter(string parameterName, DbParameter value) => _items[IndexOf(parameterName)] = value;
+
+            public override int Add(object value)
+            {
+                _items.Add((DbParameter)value);
+                return _items.Count - 1;
+            }
+
+            public override void AddRange(Array values)
+            {
+                foreach (var value in values) Add(value!);
+            }
+
+            public override void Clear()
+            {
+                _items.Clear();
+            }
+
+            public override bool Contains(object value)
+            {
+                return _items.Contains((DbParameter)value);
+            }
+
+            public override bool Contains(string value)
+            {
+                return _items.Any(x => x.ParameterName == value);
+            }
+
+            public override void CopyTo(Array array, int index)
+            {
+                ((ICollection)_items).CopyTo(array, index);
+            }
+
+            public override IEnumerator GetEnumerator()
+            {
+                return _items.GetEnumerator();
+            }
+
+            public override int IndexOf(object value)
+            {
+                return _items.IndexOf((DbParameter)value);
+            }
+
+            public override int IndexOf(string parameterName)
+            {
+                return _items.FindIndex(x => x.ParameterName == parameterName);
+            }
+
+            public override void Insert(int index, object value)
+            {
+                _items.Insert(index, (DbParameter)value);
+            }
+
+            public override void Remove(object value)
+            {
+                _items.Remove((DbParameter)value);
+            }
+
+            public override void RemoveAt(int index)
+            {
+                _items.RemoveAt(index);
+            }
+
+            public override void RemoveAt(string parameterName)
+            {
+                RemoveAt(IndexOf(parameterName));
+            }
+
+            protected override DbParameter GetParameter(int index)
+            {
+                return _items[index];
+            }
+
+            protected override DbParameter GetParameter(string parameterName)
+            {
+                return _items[IndexOf(parameterName)];
+            }
+
+            protected override void SetParameter(int index, DbParameter value)
+            {
+                _items[index] = value;
+            }
+
+            protected override void SetParameter(string parameterName, DbParameter value)
+            {
+                _items[IndexOf(parameterName)] = value;
+            }
         }
 
         private sealed class FakeParameter : DbParameter
@@ -554,10 +661,12 @@ public sealed class PostgresCorrelationContractTests
             public override int Size { get; set; }
             public override byte Precision { get; set; }
             public override byte Scale { get; set; }
-            public override void ResetDbType() { }
+
+            public override void ResetDbType()
+            {
+            }
         }
     }
-
 }
 
 #pragma warning restore CS8765
