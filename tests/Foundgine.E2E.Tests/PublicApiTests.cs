@@ -18,6 +18,14 @@ namespace Foundgine.E2E.Tests;
 public sealed class PublicApiTests
 {
     [Fact]
+    public void Plain_foundgine_has_no_optional_capabilities_enabled_by_default()
+    {
+        var options = new FoundgineOptions();
+
+        Assert.Empty(options.EnabledCapabilities);
+    }
+
+    [Fact]
     public async Task Public_facade_executes_the_core_pipeline_through_di()
     {
         var model = Banking.BankingSemanticModel.Build();

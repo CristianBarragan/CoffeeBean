@@ -55,6 +55,7 @@ public static class FoundgineServiceCollectionExtensions
 
         var options = new FoundgineOptions();
         configure(options);
+        options.ApplyCapabilities(services);
 
         if (options.Model is null && options.Metadata is not null)
         {

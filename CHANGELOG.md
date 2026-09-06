@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.0.3 — September 7, 2026
+
+### Semantic grounding
+
+- Added `CandidateTruncation` diagnostics to `SemanticLexicalResolver`: when a token's retrieved candidate set exceeds `candidateLimit`, the resolver now records how many candidates were kept vs. discarded, the retrieval score at each side of the cut, and the resulting `MarginGap`. Candidates cut at retrieval time never reach graph search, so previously they were simply gone with no record of whether one might have represented a distinct, legal meaning.
+- `GroundingDecision` gains `TruncationRisks` (empty, never null, via `EffectiveTruncationRisks`). When the leading interpretation depends on a token whose highest-scoring truncated candidate falls within the resolver's ambiguity margin of the lowest candidate it kept, the outcome is now `RequiresClarification` instead of `Committed` — the same "don't silently pick a winner inside the margin" policy that already governs surviving interpretations, applied one stage earlier to a candidate that never got the chance to survive or fail on its merits.
+- This is diagnostic and fail-closed only: it can turn a `Committed` outcome into `RequiresClarification`, but never the reverse, and it does not change grounding for expressions with no truncation.
+
+### Tests
+
+- Added `SemanticLexicalResolverTests` coverage for the new truncation-risk path: within-margin truncation forcing clarification, clear-margin truncation still committing, and the diagnostic being empty when no truncation occurs.
+
+### Release
+
+- Version: `2.0.3`
+- Target framework: `.NET 9`
+- License: MIT
+
 ## 2.0.2 — September 6, 2026
 
 ### Semantic grounding

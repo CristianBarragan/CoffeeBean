@@ -11,9 +11,11 @@
 [![Performance (Foundgine)](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=benchmark-build-foundgine&label=Performance%20%28Foundgine%29)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
 [![Security Audit](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=security-penetration&label=Security%20Audit)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
 
-# Foundgine - **Programmable semantic execution for .NET.**
+# Foundgine
 
-Foundgine lets AI agents and other callers express what they want without giving them authority over how your application's data and business operations are executed. It gives application code, APIs, GraphQL, MCP and AI agents one application-controlled boundary between **caller intent**, **application meaning**, **authorization** and **physical execution**.
+**Programmable semantic execution for .NET.**
+
+Foundgine gives application code, APIs, GraphQL, MCP and AI agents one application-controlled boundary between **caller intent**, **application meaning**, **authorization** and **physical execution**.
 
 [**Go to website →**](https://cristianbarragan.github.io/Foundgine/docs-site/)
 
@@ -166,11 +168,11 @@ dotnet test
 
 PostgreSQL integration testing: [`docs/POSTGRES-E2E.md`](docs/POSTGRES-E2E.md).
 
-## Release 2.0.2
+## Release 2.0.3
 
-**Current release: 2.0.2 · .NET 9**
+**Current release: 2.0.3 · .NET 9**
 
-The 2.0.2 release fixes the compact-name lexical fallback (e.g. `purchase order` → `purchaseorder`) so it is reliably reached instead of being starved of retrieval-timeout budget by exhaustive per-token lookups, and closes a related crash when the fallback itself finds no candidates. It builds on the 2.0.1 release, which introduced deterministic semantic alias grounding for generated contracts and the corresponding Supply Chain example coverage — canonical and declared-alias vocabulary converge on the same semantic identity without weakening the authorization boundary.
+The 2.0.3 release adds candidate truncation diagnostics to semantic lexical grounding: when a token's candidate set is cut down to `candidateLimit` before graph search ever runs, the resolver now records the cut and, if the highest-scoring discarded candidate was within the ambiguity margin of what was kept, requires clarification instead of silently committing to an interpretation that was never actually checked against a competing meaning. It builds on the 2.0.2 release, which fixed the compact-name lexical fallback (e.g. `purchase order` → `purchaseorder`) so it is reliably reached instead of being starved of retrieval-timeout budget by exhaustive per-token lookups.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for the release notes.
 

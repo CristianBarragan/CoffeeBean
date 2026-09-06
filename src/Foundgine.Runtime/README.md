@@ -6,10 +6,18 @@
 
 ## Small application-facing surface
 
-A normal application should need very little of the runtime API:
+A normal application should need very little of the runtime API. Optional capabilities are opt-in;
+plain Foundgine does not enable grounding, graph retrieval, high assurance, audit evidence, or any
+other optional capability unless the application explicitly configures it:
 
 ```csharp
 services.AddFoundgine(model, authorizationPolicy);
+
+// Or discover the semantic model from structural metadata:
+services.AddFoundgine(options =>
+{
+    options.UseMetadata(metadata);
+});
 
 // Resolve through DI
 IFoundgineExecutor foundgine = ...;
@@ -46,7 +54,7 @@ The application must compose a semantic model, authorization/security policy and
 ## Install
 
 ```bash
-dotnet add package Foundgine.Runtime --version 2.0.2
+dotnet add package Foundgine.Runtime --version 2.0.3
 ```
 
 ## Typical relationship
