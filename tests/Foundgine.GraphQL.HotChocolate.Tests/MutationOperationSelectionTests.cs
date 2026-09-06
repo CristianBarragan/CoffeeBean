@@ -16,18 +16,18 @@ public sealed class MutationOperationSelectionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var intent = adapter.Adapt("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) { id name }
-            }
+                                   mutation CreateCustomer($input: CustomerInput!) {
+                                     createCustomer(input: $input) { id name }
+                                   }
 
-            mutation UpdateCustomer($input: CustomerInput!, $where: CustomerWhereInput!) {
-              updateCustomer(input: $input, where: $where) { id name }
-            }
-            """, "UpdateCustomer", new Dictionary<string, object?>
-            {
-                ["input"] = new Dictionary<string, object?> { ["name"] = "Ada" },
-                ["where"] = new Dictionary<string, object?> { ["id"] = 7 }
-            });
+                                   mutation UpdateCustomer($input: CustomerInput!, $where: CustomerWhereInput!) {
+                                     updateCustomer(input: $input, where: $where) { id name }
+                                   }
+                                   """, "UpdateCustomer", new Dictionary<string, object?>
+        {
+            ["input"] = new Dictionary<string, object?> { ["name"] = "Ada" },
+            ["where"] = new Dictionary<string, object?> { ["id"] = 7 }
+        });
 
         Assert.Equal(MutationKind.Update, intent.Mutation.Kind);
     }
@@ -39,9 +39,9 @@ public sealed class MutationOperationSelectionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var ex = Assert.Throws<InvalidOperationException>(() => adapter.Adapt("""
-            mutation CreateCustomer { createCustomer(input: { name: "Ada" }) { id } }
-            mutation DeleteCustomer { deleteCustomer(where: { id: { eq: 7 } }) { id } }
-            """));
+                                                                              mutation CreateCustomer { createCustomer(input: { name: "Ada" }) { id } }
+                                                                              mutation DeleteCustomer { deleteCustomer(where: { id: { eq: 7 } }) { id } }
+                                                                              """));
 
         Assert.Contains("operation name", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -53,9 +53,9 @@ public sealed class MutationOperationSelectionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var ex = Assert.Throws<InvalidOperationException>(() => adapter.Adapt("""
-            mutation CreateCustomer { createCustomer(input: { name: "Ada" }) { id } }
-            mutation UpdateCustomer { updateCustomer(input: { name: "Grace" }, where: { id: { eq: 7 } }) { id } }
-            """, "DeleteCustomer"));
+                                                                              mutation CreateCustomer { createCustomer(input: { name: "Ada" }) { id } }
+                                                                              mutation UpdateCustomer { updateCustomer(input: { name: "Grace" }, where: { id: { eq: 7 } }) { id } }
+                                                                              """, "DeleteCustomer"));
 
         Assert.Contains("DeleteCustomer", ex.Message);
         Assert.Contains("not found", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -68,9 +68,9 @@ public sealed class MutationOperationSelectionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var ex = Assert.Throws<InvalidOperationException>(() => adapter.Adapt("""
-            query CustomerQuery { customer { id name } }
-            mutation CreateCustomer { createCustomer(input: { name: "Ada" }) { id } }
-            """, "CustomerQuery"));
+                                                                              query CustomerQuery { customer { id name } }
+                                                                              mutation CreateCustomer { createCustomer(input: { name: "Ada" }) { id } }
+                                                                              """, "CustomerQuery"));
 
         Assert.Contains("mutation operation", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -82,8 +82,8 @@ public sealed class MutationOperationSelectionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var intent = adapter.Adapt("""
-            mutation { createCustomer(input: { name: "Ada" }) { id name } }
-            """);
+                                   mutation { createCustomer(input: { name: "Ada" }) { id name } }
+                                   """);
 
         Assert.Equal(MutationKind.Create, intent.Mutation.Kind);
     }
@@ -95,9 +95,9 @@ public sealed class MutationOperationSelectionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var intent = adapter.Adapt("""
-            mutation CreateCustomer { createCustomer(input: { name: "Ada" }) { id } }
-            mutation UpdateCustomer { updateCustomer(input: { name: "Grace" }, where: { id: { eq: 7 } }) { id } }
-            """, "CreateCustomer");
+                                   mutation CreateCustomer { createCustomer(input: { name: "Ada" }) { id } }
+                                   mutation UpdateCustomer { updateCustomer(input: { name: "Grace" }, where: { id: { eq: 7 } }) { id } }
+                                   """, "CreateCustomer");
 
         Assert.Equal(MutationKind.Create, intent.Mutation.Kind);
         Assert.Equal("Ada", Assert.Single(Assert.IsType<MutationIntent>(intent.Mutation).Fields).Value);
@@ -109,9 +109,11 @@ public sealed class MutationOperationSelectionTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 

@@ -85,9 +85,11 @@ public sealed class SemanticModelBuilder
     {
         var source = _entities.TryGetValue(fromEntity, out var entity) ? entity : null;
         if (source is null)
-            throw new InvalidOperationException($"Source semantic entity '{fromEntity}' must be registered before declaring relationship '{name}'.");
+            throw new InvalidOperationException(
+                $"Source semantic entity '{fromEntity}' must be registered before declaring relationship '{name}'.");
 
-        return Relationship(fromEntity, RelationshipId.Create(source.Name, name), name, fromProperty, toEntity, toProperty, cardinality);
+        return Relationship(fromEntity, RelationshipId.Create(source.Name, name), name, fromProperty, toEntity,
+            toProperty, cardinality);
     }
 
     public SemanticModelBuilder Relationship<TFromModel, TToModel>(
@@ -102,10 +104,12 @@ public sealed class SemanticModelBuilder
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
         if (!_entities.TryGetValue(fromEntity, out var source))
-            throw new InvalidOperationException($"Source semantic entity '{fromEntity}' must be registered before declaring relationship '{name}'.");
+            throw new InvalidOperationException(
+                $"Source semantic entity '{fromEntity}' must be registered before declaring relationship '{name}'.");
 
         if (!_entities.ContainsKey(toEntity))
-            throw new InvalidOperationException($"Target semantic entity '{toEntity}' must be registered before declaring relationship '{name}'.");
+            throw new InvalidOperationException(
+                $"Target semantic entity '{toEntity}' must be registered before declaring relationship '{name}'.");
 
         var from = GetProperty(fromProperty, typeof(TFromModel));
         var to = GetProperty(toProperty, typeof(TToModel));
@@ -262,6 +266,7 @@ public sealed class SemanticModelBuilder
                     string.Equals(existing.Name, alias.Name, StringComparison.OrdinalIgnoreCase)))
                 result.Add(new SemanticAlias(alias.Name, alias.Weight));
         }
+
         return result.ToArray();
     }
 
@@ -279,6 +284,7 @@ public sealed class SemanticModelBuilder
                     existing.Maximum == constraint.Maximum))
                 result.Add(constraint);
         }
+
         return result.ToArray();
     }
 
@@ -364,7 +370,8 @@ public sealed class SemanticModelBuilder
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(relationshipPath);
         if (relationshipPath.Length == 0)
-            throw new ArgumentException("A semantic traversal must contain at least one relationship.", nameof(relationshipPath));
+            throw new ArgumentException("A semantic traversal must contain at least one relationship.",
+                nameof(relationshipPath));
 
         var source = _entities.Values.FirstOrDefault(x =>
             string.Equals(x.Name, sourceEntityName, StringComparison.OrdinalIgnoreCase));
@@ -399,18 +406,20 @@ public sealed class SemanticModelBuilder
         if (path.Length == 0)
             throw new ArgumentException("A semantic traversal must contain at least one relationship.", nameof(path));
         if (!_entities.ContainsKey(source))
-            throw new InvalidOperationException($"Source semantic entity '{source}' must be registered before declaring traversal '{name}'.");
+            throw new InvalidOperationException(
+                $"Source semantic entity '{source}' must be registered before declaring traversal '{name}'.");
         if (_entities[source].Relationships.Any(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)) ||
             _traversals.Any(x => x.Source == source && string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidOperationException($"Semantic traversal '{name}' conflicts with an existing relationship or traversal on entity '{source}'.");
+            throw new InvalidOperationException(
+                $"Semantic traversal '{name}' conflicts with an existing relationship or traversal on entity '{source}'.");
 
         var current = source;
         foreach (var relationshipId in path)
         {
             var entity = _entities[current];
             var relationship = entity.Relationships.FirstOrDefault(x => x.Id == relationshipId)
-                ?? throw new InvalidOperationException(
-                    $"Traversal '{name}' references relationship '{relationshipId}', which is not declared on '{entity.Name}'.");
+                               ?? throw new InvalidOperationException(
+                                   $"Traversal '{name}' references relationship '{relationshipId}', which is not declared on '{entity.Name}'.");
             current = relationship.Target;
         }
 
@@ -495,7 +504,8 @@ public sealed class SemanticModelBuilder
         foreach (var traversal in _traversals)
         {
             if (traversal.Path.Count == 0)
-                throw new InvalidOperationException($"Semantic traversal '{traversal.Name}' must contain at least one relationship.");
+                throw new InvalidOperationException(
+                    $"Semantic traversal '{traversal.Name}' must contain at least one relationship.");
         }
 
         return new SemanticModel(_entities, _traversals);
@@ -510,17 +520,25 @@ public sealed class SemanticModelBuilder
                 switch (constraint.Kind)
                 {
                     case SemanticConstraintKind.Range when constraint.Minimum is null && constraint.Maximum is null:
-                        throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' declares a Range constraint without a minimum or maximum.");
-                    case SemanticConstraintKind.Range when constraint.Minimum is not null && constraint.Maximum is not null && constraint.Minimum > constraint.Maximum:
-                        throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' declares an invalid Range constraint: minimum exceeds maximum.");
+                        throw new InvalidOperationException(
+                            $"Field '{entity.Name}.{field.Name}' declares a Range constraint without a minimum or maximum.");
+                    case SemanticConstraintKind.Range when constraint.Minimum is not null &&
+                                                           constraint.Maximum is not null &&
+                                                           constraint.Minimum > constraint.Maximum:
+                        throw new InvalidOperationException(
+                            $"Field '{entity.Name}.{field.Name}' declares an invalid Range constraint: minimum exceeds maximum.");
                     case SemanticConstraintKind.Pattern when string.IsNullOrWhiteSpace(constraint.Value):
-                        throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' declares a Pattern constraint without a pattern.");
+                        throw new InvalidOperationException(
+                            $"Field '{entity.Name}.{field.Name}' declares a Pattern constraint without a pattern.");
                     case SemanticConstraintKind.Currency when string.IsNullOrWhiteSpace(constraint.Value):
-                        throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' declares a Currency constraint without a currency code.");
+                        throw new InvalidOperationException(
+                            $"Field '{entity.Name}.{field.Name}' declares a Currency constraint without a currency code.");
                     case SemanticConstraintKind.CountryCode when string.IsNullOrWhiteSpace(constraint.Value):
-                        throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' declares a CountryCode constraint without a country code.");
+                        throw new InvalidOperationException(
+                            $"Field '{entity.Name}.{field.Name}' declares a CountryCode constraint without a country code.");
                     case SemanticConstraintKind.Temporal when string.IsNullOrWhiteSpace(constraint.Value):
-                        throw new InvalidOperationException($"Field '{entity.Name}.{field.Name}' declares a Temporal constraint without semantics.");
+                        throw new InvalidOperationException(
+                            $"Field '{entity.Name}.{field.Name}' declares a Temporal constraint without semantics.");
                 }
             }
         }
@@ -529,19 +547,24 @@ public sealed class SemanticModelBuilder
     private static void ValidateUniqueFields(SemanticEntity entity)
     {
         if (entity.Fields.GroupBy(field => field.Id).Any(group => group.Count() > 1))
-            throw new InvalidOperationException($"Semantic entity '{entity.Name}' contains duplicate field identities.");
+            throw new InvalidOperationException(
+                $"Semantic entity '{entity.Name}' contains duplicate field identities.");
 
-        if (entity.Fields.GroupBy(field => field.Name, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > 1))
+        if (entity.Fields.GroupBy(field => field.Name, StringComparer.OrdinalIgnoreCase)
+            .Any(group => group.Count() > 1))
             throw new InvalidOperationException($"Semantic entity '{entity.Name}' contains duplicate field names.");
     }
 
     private static void ValidateUniqueRelationships(SemanticEntity entity)
     {
         if (entity.Relationships.GroupBy(relationship => relationship.Id).Any(group => group.Count() > 1))
-            throw new InvalidOperationException($"Semantic entity '{entity.Name}' contains duplicate relationship identities.");
+            throw new InvalidOperationException(
+                $"Semantic entity '{entity.Name}' contains duplicate relationship identities.");
 
-        if (entity.Relationships.GroupBy(relationship => relationship.Name, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > 1))
-            throw new InvalidOperationException($"Semantic entity '{entity.Name}' contains duplicate relationship names.");
+        if (entity.Relationships.GroupBy(relationship => relationship.Name, StringComparer.OrdinalIgnoreCase)
+            .Any(group => group.Count() > 1))
+            throw new InvalidOperationException(
+                $"Semantic entity '{entity.Name}' contains duplicate relationship names.");
     }
 
     /// <summary>
@@ -553,7 +576,9 @@ public sealed class SemanticModelBuilder
     /// </summary>
     private void ValidateGlobalRelationshipIdentities()
     {
-        var seen = new Dictionary<RelationshipId, (EntityId Source, string EntityName, string RelationshipName, EntityId Target, RelationshipCardinality Cardinality)>();
+        var seen =
+            new Dictionary<RelationshipId, (EntityId Source, string EntityName, string RelationshipName, EntityId Target
+                , RelationshipCardinality Cardinality)>();
 
         foreach (var entity in _entities.Values)
         {
@@ -580,25 +605,25 @@ public sealed class SemanticModelBuilder
                     continue;
                 }
 
-                seen.Add(relationship.Id, (entity.Id, entity.Name, relationship.Name, relationship.Target, relationship.Cardinality));
+                seen.Add(relationship.Id,
+                    (entity.Id, entity.Name, relationship.Name, relationship.Target, relationship.Cardinality));
             }
         }
     }
+
     private void ValidateEntityAliases(SemanticEntity entity)
     {
         var localNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { entity.Name };
         foreach (var alias in entity.EffectiveAliases)
         {
             if (!localNames.Add(alias.Name))
-                throw new InvalidOperationException($"Semantic entity alias '{alias.Name}' duplicates the canonical entity name or another alias on '{entity.Name}'.");
+                throw new InvalidOperationException(
+                    $"Semantic entity alias '{alias.Name}' duplicates the canonical entity name or another alias on '{entity.Name}'.");
             if (_entities.Values.Any(x =>
-                string.Equals(x.Name, alias.Name, StringComparison.OrdinalIgnoreCase) ||
-                x.EffectiveAliases.Any(a => string.Equals(a.Name, alias.Name, StringComparison.OrdinalIgnoreCase))))
-                throw new InvalidOperationException($"Semantic entity alias '{alias.Name}' conflicts with an existing semantic entity name or alias.");
+                    string.Equals(x.Name, alias.Name, StringComparison.OrdinalIgnoreCase) ||
+                    x.EffectiveAliases.Any(a => string.Equals(a.Name, alias.Name, StringComparison.OrdinalIgnoreCase))))
+                throw new InvalidOperationException(
+                    $"Semantic entity alias '{alias.Name}' conflicts with an existing semantic entity name or alias.");
         }
     }
-
-
 }
-
-

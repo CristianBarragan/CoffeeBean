@@ -61,10 +61,10 @@ public sealed class GraphQLMutationSecurityTests
         var metadata = BuildMetadata();
         var adapter = new HotChocolateMutationAdapter(model, metadata);
         var intent = adapter.Adapt("""
-            mutation {
-              createCustomer(input: { name: "parent", orders: [{ total: 10 }] }) { id }
-            }
-            """);
+                                   mutation {
+                                     createCustomer(input: { name: "parent", orders: [{ total: 10 }] }) { id }
+                                   }
+                                   """);
 
         var graph = GraphQLMutationSemanticConverter.ToSemanticGraph([intent], BuildSchema());
 
@@ -120,8 +120,12 @@ public sealed class GraphQLMutationSecurityTests
             throw new NotImplementedException();
         }
 
-        public MutationPlanApproval Approve(SemanticMutationRequest request, string approvedBy) => throw new NotImplementedException();
-        public Task<MutationExecutionResult> ExecuteApprovedAsync(MutationPlanApproval approval, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public MutationPlanApproval Approve(SemanticMutationRequest request, string approvedBy) =>
+            throw new NotImplementedException();
+
+        public Task<MutationExecutionResult> ExecuteApprovedAsync(MutationPlanApproval approval,
+            ExecutionContext? context = null, CancellationToken cancellationToken = default) =>
+            throw new NotImplementedException();
     }
 
     private static MetadataRegistry BuildMetadata()
@@ -130,22 +134,34 @@ public sealed class GraphQLMutationSecurityTests
         registry.Register(new EntityMetadata(
             new EntityId(1), "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
-                new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(new EntityId(1), new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(new EntityId(1), new ColumnId(2)))
+            Fields:
+            [
+                new FieldMetadata(new FieldId(1), "Id", typeof(long),
+                    new ColumnReference(new EntityId(1), new ColumnId(1))),
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(new EntityId(1), new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(new EntityId(1), new ColumnId(1))));
         registry.Register(new EntityMetadata(
             new EntityId(2), "Order",
-            [new ColumnMetadata(new ColumnId(3), "Id"), new ColumnMetadata(new ColumnId(4), "Total"), new ColumnMetadata(new ColumnId(5), "CustomerId")],
-            Fields: [
-                new FieldMetadata(new FieldId(3), "Id", typeof(long), new ColumnReference(new EntityId(2), new ColumnId(3))),
-                new FieldMetadata(new FieldId(4), "Total", typeof(decimal), new ColumnReference(new EntityId(2), new ColumnId(4))),
-                new FieldMetadata(new FieldId(5), "CustomerId", typeof(long), new ColumnReference(new EntityId(2), new ColumnId(5)))
+            [
+                new ColumnMetadata(new ColumnId(3), "Id"), new ColumnMetadata(new ColumnId(4), "Total"),
+                new ColumnMetadata(new ColumnId(5), "CustomerId")
+            ],
+            Fields:
+            [
+                new FieldMetadata(new FieldId(3), "Id", typeof(long),
+                    new ColumnReference(new EntityId(2), new ColumnId(3))),
+                new FieldMetadata(new FieldId(4), "Total", typeof(decimal),
+                    new ColumnReference(new EntityId(2), new ColumnId(4))),
+                new FieldMetadata(new FieldId(5), "CustomerId", typeof(long),
+                    new ColumnReference(new EntityId(2), new ColumnId(5)))
             ],
             PrimaryKey: new ColumnReference(new EntityId(2), new ColumnId(3))));
         registry.Register(new RelationshipMetadata(
-            new RelationshipId(1), new EntityId(1), new EntityId(2), "Orders", new ColumnReference(new EntityId(1), new ColumnId(1)), new ColumnReference(new EntityId(2), new ColumnId(5))));
+            new RelationshipId(1), new EntityId(1), new EntityId(2), "Orders",
+            new ColumnReference(new EntityId(1), new ColumnId(1)),
+            new ColumnReference(new EntityId(2), new ColumnId(5))));
         return registry;
     }
 
@@ -156,12 +172,17 @@ public sealed class GraphQLMutationSecurityTests
             1 => new MutationEntitySchema(
                 new EntityId(1), "Customer",
                 new HashSet<ColumnId> { new ColumnId(1), new ColumnId(2) },
-                new Dictionary<FieldId, ColumnId?> { [new FieldId(1)] = new ColumnId(1), [new FieldId(2)] = new ColumnId(2) },
+                new Dictionary<FieldId, ColumnId?>
+                    { [new FieldId(1)] = new ColumnId(1), [new FieldId(2)] = new ColumnId(2) },
                 new ColumnId(1)),
             2 => new MutationEntitySchema(
                 new EntityId(2), "Order",
                 new HashSet<ColumnId> { new ColumnId(3), new ColumnId(4), new ColumnId(5) },
-                new Dictionary<FieldId, ColumnId?> { [new FieldId(3)] = new ColumnId(3), [new FieldId(4)] = new ColumnId(4), [new FieldId(5)] = new ColumnId(5) },
+                new Dictionary<FieldId, ColumnId?>
+                {
+                    [new FieldId(3)] = new ColumnId(3), [new FieldId(4)] = new ColumnId(4),
+                    [new FieldId(5)] = new ColumnId(5)
+                },
                 new ColumnId(3)),
             _ => throw new KeyNotFoundException()
         };

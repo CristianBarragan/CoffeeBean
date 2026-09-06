@@ -38,45 +38,69 @@ public sealed class SupplyChainQueryRepository : ISupplyChainQueries
             GeneratedSemanticModel.SalesOrder.Relationships.Lines, null, []);
         var filter = new SemanticAndFilter([
             GeneratedSemanticModel.SalesOrder.Id.Eq(orderId),
-            GeneratedSemanticModel.SalesOrder.CustomerId.Eq(customerId)]);
+            GeneratedSemanticModel.SalesOrder.CustomerId.Eq(customerId)
+        ]);
         var operation = new SemanticOperation(new SemanticReadNode(1, GeneratedSemanticModel.SalesOrder.Entity,
             GeneratedSemanticModel.SalesOrder.All, null, null, [line],
             new SemanticQueryOptions(filter)));
         var result = await _sql.ExecuteAsync(operation, ct);
         var row = result.Rows.FirstOrDefault() ?? throw new KeyNotFoundException("Sales order not found.");
-        return new { order = row.Values, lines = result.Rows.Select(x => x.Values).ToArray(), plan = result.Fingerprint };
+        return new
+        {
+            order = row.Values, lines = result.Rows.Select(x => x.Values).ToArray(), plan = result.Fingerprint
+        };
     }
 
     public async Task<object> GetShipment(int customerId, int shipmentId, CancellationToken ct)
     {
         var filter = new SemanticAndFilter([
             GeneratedSemanticModel.Shipment.Id.Eq(shipmentId),
-            new SemanticRelationshipFilter(GeneratedSemanticModel.Shipment.Relationships.Order, SemanticRelationshipQuantifier.Some,
-                GeneratedSemanticModel.SalesOrder.CustomerId.Eq(customerId))]);
-        var result = await _sql.ExecuteAsync(Read(GeneratedSemanticModel.Shipment.Entity, GeneratedSemanticModel.Shipment.All, filter), ct);
+            new SemanticRelationshipFilter(GeneratedSemanticModel.Shipment.Relationships.Order,
+                SemanticRelationshipQuantifier.Some,
+                GeneratedSemanticModel.SalesOrder.CustomerId.Eq(customerId))
+        ]);
+        var result =
+            await _sql.ExecuteAsync(
+                Read(GeneratedSemanticModel.Shipment.Entity, GeneratedSemanticModel.Shipment.All, filter), ct);
         var row = result.Rows.FirstOrDefault() ?? throw new KeyNotFoundException("Shipment not found.");
         return new { shipment = row.Values, plan = result.Fingerprint };
     }
 
-    public Task<object> ListProducts(CancellationToken ct) => Query(GeneratedSemanticModel.CatalogProduct.Entity, GeneratedSemanticModel.CatalogProduct.All, "products", ct);
-    public Task<object> ListCustomers(CancellationToken ct) => Query(GeneratedSemanticModel.Customer.Entity, GeneratedSemanticModel.Customer.All, "customers", ct);
-    public Task<object> ListSuppliers(CancellationToken ct) => Query(GeneratedSemanticModel.Supplier.Entity, GeneratedSemanticModel.Supplier.All, "suppliers", ct);
-    public Task<object> GetProduct(int productId, CancellationToken ct) => ExecuteNamed(Read(GeneratedSemanticModel.CatalogProduct.Entity, GeneratedSemanticModel.CatalogProduct.All, GeneratedSemanticModel.CatalogProduct.Id.Eq(productId)), "product", ct);
-    public Task<object> GetInventory(int productId, CancellationToken ct) => ExecuteNamed(Read(GeneratedSemanticModel.InventoryPosition.Entity, GeneratedSemanticModel.InventoryPosition.All, GeneratedSemanticModel.InventoryPosition.ProductId.Eq(productId), [GeneratedSemanticModel.InventoryPosition.WarehouseId.Asc()]), "inventory", ct, productId);
+    public Task<object> ListProducts(CancellationToken ct) => Query(GeneratedSemanticModel.CatalogProduct.Entity,
+        GeneratedSemanticModel.CatalogProduct.All, "products", ct);
 
-    private static SemanticOperation Read(EntityId entity, IReadOnlyList<FieldId> fields, SemanticFilterExpression? filter = null, IReadOnlyList<SemanticOrderTerm>? order = null) =>
+    public Task<object> ListCustomers(CancellationToken ct) => Query(GeneratedSemanticModel.Customer.Entity,
+        GeneratedSemanticModel.Customer.All, "customers", ct);
+
+    public Task<object> ListSuppliers(CancellationToken ct) => Query(GeneratedSemanticModel.Supplier.Entity,
+        GeneratedSemanticModel.Supplier.All, "suppliers", ct);
+
+    public Task<object> GetProduct(int productId, CancellationToken ct) => ExecuteNamed(
+        Read(GeneratedSemanticModel.CatalogProduct.Entity, GeneratedSemanticModel.CatalogProduct.All,
+            GeneratedSemanticModel.CatalogProduct.Id.Eq(productId)), "product", ct);
+
+    public Task<object> GetInventory(int productId, CancellationToken ct) => ExecuteNamed(
+        Read(GeneratedSemanticModel.InventoryPosition.Entity, GeneratedSemanticModel.InventoryPosition.All,
+            GeneratedSemanticModel.InventoryPosition.ProductId.Eq(productId),
+            [GeneratedSemanticModel.InventoryPosition.WarehouseId.Asc()]), "inventory", ct, productId);
+
+    private static SemanticOperation Read(EntityId entity, IReadOnlyList<FieldId> fields,
+        SemanticFilterExpression? filter = null, IReadOnlyList<SemanticOrderTerm>? order = null) =>
         new(new SemanticReadNode(1, entity, fields, null, null, [], new SemanticQueryOptions(filter, order ?? [])));
 
     private async Task<object> Query(EntityId entity, IReadOnlyList<FieldId> fields, string name, CancellationToken ct)
     {
         var result = await _sql.ExecuteAsync(Read(entity, fields), ct);
-        return new Dictionary<string, object?> { [name] = result.Rows.Select(x => x.Values).ToArray(), ["plan"] = result.Fingerprint };
+        return new Dictionary<string, object?>
+            { [name] = result.Rows.Select(x => x.Values).ToArray(), ["plan"] = result.Fingerprint };
     }
 
-    private async Task<object> ExecuteNamed(SemanticOperation operation, string name, CancellationToken ct, object? extra = null)
+    private async Task<object> ExecuteNamed(SemanticOperation operation, string name, CancellationToken ct,
+        object? extra = null)
     {
         var result = await _sql.ExecuteAsync(operation, ct);
-        var dict = new Dictionary<string, object?> { [name] = result.Rows.FirstOrDefault()?.Values, ["plan"] = result.Fingerprint };
+        var dict = new Dictionary<string, object?>
+            { [name] = result.Rows.FirstOrDefault()?.Values, ["plan"] = result.Fingerprint };
         if (extra is not null) dict["productId"] = extra;
         return dict;
     }

@@ -59,8 +59,8 @@ public sealed class MutationResultMaterializer
         foreach (var child in intent.Children)
         {
             var relationship = entity.Relationships.FirstOrDefault(x => x.Id == child.Relationship)
-                ?? throw new InvalidOperationException(
-                    $"Entity '{entity.Name}' has no relationship '{child.Relationship.Value}'.");
+                               ?? throw new InvalidOperationException(
+                                   $"Entity '{entity.Name}' has no relationship '{child.Relationship.Value}'.");
 
             if (relationship.Target != child.Mutation.Mutation.Entity)
             {

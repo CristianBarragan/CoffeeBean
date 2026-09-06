@@ -34,7 +34,7 @@ public sealed class ArchitectureBoundaryTests
 
         var offenders = Directory.EnumerateFiles(source, "*.*", SearchOption.AllDirectories)
             .Where(path => path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
-                        || path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
+                           || path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
             .Where(path => File.ReadAllText(path).Contains("Graphgine", StringComparison.OrdinalIgnoreCase))
             .Select(path => Path.GetRelativePath(root, path))
             .ToArray();
@@ -44,7 +44,8 @@ public sealed class ArchitectureBoundaryTests
             string.Join(", ", offenders));
     }
 
-    private static void AssertProjectReferencesDoNotContain(string root, string relativeProject, params string[] forbidden)
+    private static void AssertProjectReferencesDoNotContain(string root, string relativeProject,
+        params string[] forbidden)
     {
         var path = Path.Combine(root, relativeProject.Replace('/', Path.DirectorySeparatorChar));
         var document = XDocument.Load(path);

@@ -11,21 +11,21 @@ public partial class Contract : Process
     {
         Schema = CoffeeBeanery.Database.Schema.Lending;
     }
-    
+
     public int Id { get; set; }
-    
+
     public Guid ContractKey { get; set; }
 
     public ContractType? ContractType { get; set; }
 
     public decimal? Amount { get; set; }
-    
+
     public int? AccountId { get; set; }
 
     public Account? Account { get; set; }
 
     public CustomerBankingRelationship? CustomerBankingRelationship { get; set; }
-    
+
     public int? CustomerBankingRelationshipId { get; set; }
 
     public List<Transaction>? Transaction { get; set; } = [];
@@ -55,7 +55,7 @@ public class ContractEntityConfiguration : IEntityTypeConfiguration<Contract>
 
         builder.HasIndex(c => c.ContractKey).IsUnique();
         builder.HasIndex(c => new { c.CustomerBankingRelationshipId, c.Id });
-        
+
         builder.HasMany(c => c.Transaction).WithOne(c => c.Contract).HasForeignKey(c => c.ContractId);
 
         builder.Property(c => c.ProcessedDateTime).HasDefaultValueSql("(now() at time zone 'utc')");

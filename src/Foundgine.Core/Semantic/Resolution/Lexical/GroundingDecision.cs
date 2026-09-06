@@ -106,7 +106,8 @@ public sealed record GroundingInterpretation(
     /// <summary>Application-declared alias evidence used by the optional commitment policy.
     /// Null is reserved for callers constructing the compatibility record directly.</summary>
     public AliasInterpretationEvidence EffectiveAliasEvidence =>
-        AliasEvidence ?? new(AliasEvidenceStatus.NotApplicable, new Dictionary<EntityId, int>(), new Dictionary<FieldId, int>(), new Dictionary<RelationshipId, int>());
+        AliasEvidence ?? new(AliasEvidenceStatus.NotApplicable, new Dictionary<EntityId, int>(),
+            new Dictionary<FieldId, int>(), new Dictionary<RelationshipId, int>());
 }
 
 /// <summary>

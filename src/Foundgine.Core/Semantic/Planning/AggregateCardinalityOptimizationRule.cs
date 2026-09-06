@@ -59,7 +59,7 @@ public sealed class AggregateCardinalityOptimizationRule : IPlanRewriteRule
         // Never retain a stale physical strategy merely because no new candidate
         // can be derived.
         var candidate = GetStrategy(node.QueryOptions?.Filter)
-            ?? AggregateExecutionStrategy.Default;
+                        ?? AggregateExecutionStrategy.Default;
         var strategy = candidate;
         if (strategy != node.AggregateExecutionStrategy)
         {
@@ -86,7 +86,7 @@ public sealed class AggregateCardinalityOptimizationRule : IPlanRewriteRule
     private static bool RequiresRewrite(SemanticPlanNode node)
     {
         var desired = GetStrategy(node.QueryOptions?.Filter)
-            ?? AggregateExecutionStrategy.Default;
+                      ?? AggregateExecutionStrategy.Default;
 
         return desired != node.AggregateExecutionStrategy || node.Children.Any(RequiresRewrite);
     }
@@ -95,7 +95,8 @@ public sealed class AggregateCardinalityOptimizationRule : IPlanRewriteRule
     {
         var aggregates = new List<SemanticAggregateFilter>();
         CollectAggregates(filter, aggregates);
-        if (aggregates.Count == 0 || aggregates.Any(a => a.Aggregate != SemanticFilterAggregate.Count || a.Field is not null || a.Predicate is not null))
+        if (aggregates.Count == 0 || aggregates.Any(a =>
+                a.Aggregate != SemanticFilterAggregate.Count || a.Field is not null || a.Predicate is not null))
             return null;
 
         AggregateExecutionStrategy? result = null;

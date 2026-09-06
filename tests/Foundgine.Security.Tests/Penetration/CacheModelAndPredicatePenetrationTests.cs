@@ -67,5 +67,3 @@ public sealed class CacheModelAndPredicatePenetrationTests
 
     private sealed record TestPlan(string Name) : ProviderPlan("test");
 }
-
-

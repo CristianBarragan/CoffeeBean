@@ -14,12 +14,15 @@ public sealed class OpenIntentSupplyChainTests
         var model = SupplyChainSemanticModel.Build();
         var request = new ReadIntent(
             "Product",
-            [new ReadSelection(
-                Relationship: "shipments",
-                Children: [new ReadSelection(Field: "Status")])]);
+            [
+                new ReadSelection(
+                    Relationship: "shipments",
+                    Children: [new ReadSelection(Field: "Status")])
+            ]);
 
         var semanticRequest = new ReadIntentCompiler(model).Compile(request);
-        var graph = new Foundgine.Core.Semantic.Resolution.SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(semanticRequest);
+        var graph = new Foundgine.Core.Semantic.Resolution.SemanticRequestResolver(model.Freeze().CreateSnapshot())
+            .Resolve(semanticRequest);
 
         Assert.Equal(4, graph.Nodes.Count);
         Assert.Equal("Product", model.Get(graph.Nodes[0].EntityId).Name);
@@ -36,36 +39,37 @@ public sealed class OpenIntentSupplyChainTests
         var model = SupplyChainSemanticModel.Build();
         var graph = new SemanticMutationIntentBuilder(model)
             .Create("PurchaseOrder", "order")
-                .Set("SupplierId", 1)
-                .Set("WarehouseId", 1)
-                .Set("Status", "Open")
-                .Return("Id")
+            .Set("SupplierId", 1)
+            .Set("WarehouseId", 1)
+            .Set("Status", "Open")
+            .Return("Id")
             .Create("PurchaseOrderLine", "line")
-                .SetFrom("PurchaseOrderId", "order", "Id")
-                .Set("ProductId", 1)
-                .Set("Quantity", 25m)
-                .Return("Id", "PurchaseOrderId")
+            .SetFrom("PurchaseOrderId", "order", "Id")
+            .Set("ProductId", 1)
+            .Set("Quantity", 25m)
+            .Return("Id", "PurchaseOrderId")
             .Create("Shipment", "shipment")
-                .SetFrom("PurchaseOrderId", "order", "Id")
-                .Set("ExpectedArrival", new DateTime(2026, 9, 5))
-                .Set("Status", "Planned")
-                .Set("Quantity", 25m)
-                .Return("Id", "PurchaseOrderId")
+            .SetFrom("PurchaseOrderId", "order", "Id")
+            .Set("ExpectedArrival", new DateTime(2026, 9, 5))
+            .Set("Status", "Planned")
+            .Set("Quantity", 25m)
+            .Return("Id", "PurchaseOrderId")
             .Update("PurchaseOrder")
-                .Set("Status", "Open")
-                .Where("Id", SemanticFilterOperator.Eq, 1)
-                .Return("Id")
+            .Set("Status", "Open")
+            .Where("Id", SemanticFilterOperator.Eq, 1)
+            .Return("Id")
             .Build();
 
         var plan = new SemanticMutationPlanner().Plan(graph);
 
         Assert.Equal(4, plan.Operations.Count);
         Assert.Equal(2, plan.Dependencies.Count);
-        var linePurchaseOrderId = model.ResolveEntity("PurchaseOrderLine").Fields.Single(x => x.Name == "PurchaseOrderId").Id;
-        var shipmentPurchaseOrderId = model.ResolveEntity("Shipment").Fields.Single(x => x.Name == "PurchaseOrderId").Id;
+        var linePurchaseOrderId =
+            model.ResolveEntity("PurchaseOrderLine").Fields.Single(x => x.Name == "PurchaseOrderId").Id;
+        var shipmentPurchaseOrderId =
+            model.ResolveEntity("Shipment").Fields.Single(x => x.Name == "PurchaseOrderId").Id;
         Assert.Contains(plan.Dependencies, x => x.ToOperationId == "1" && x.TargetField == linePurchaseOrderId);
         Assert.Contains(plan.Dependencies, x => x.ToOperationId == "2" && x.TargetField == shipmentPurchaseOrderId);
         Assert.IsType<SemanticFieldFilter>(plan.Operations[3].Filter);
     }
 }
-

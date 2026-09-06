@@ -14,7 +14,8 @@ namespace Foundgine.Providers.Storage.Sql.Mutation;
 /// Executes one compiled mutation through ADO.NET and materializes RETURNING
 /// values into the provider-neutral MutationResult.
 /// </summary>
-public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, IMutationBatchExecutionProvider, IMutationSecurityConformanceEvaluator
+public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, IMutationBatchExecutionProvider,
+    IMutationSecurityConformanceEvaluator
 {
     private readonly DbConnection _connection;
     private readonly DbTransaction? _transaction;
@@ -218,7 +219,8 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
                     command.Parameters.Add(parameter);
                 }
 
-                using var cancellationRegistration = cancellationToken.Register(static state => ((DbCommand)state!).Cancel(), command);
+                using var cancellationRegistration =
+                    cancellationToken.Register(static state => ((DbCommand)state!).Cancel(), command);
                 var result = ExecuteCommand(command, sqlPlan);
                 cancellationToken.ThrowIfCancellationRequested();
                 results.Add(result);
@@ -233,8 +235,15 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
         {
             if (ownsTransaction)
             {
-                try { transaction.Rollback(); } catch { }
+                try
+                {
+                    transaction.Rollback();
+                }
+                catch
+                {
+                }
             }
+
             throw;
         }
         finally
@@ -407,5 +416,4 @@ public sealed class SqlMutationExecutionProvider : IMutationExecutionProvider, I
 
         return value;
     }
-
 }

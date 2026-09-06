@@ -46,7 +46,7 @@ public sealed class FoundgineHotChocolateQueryExecutor
         _foundgine = foundgine ?? throw new ArgumentNullException(nameof(foundgine));
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
         _securityContextProvider = securityContextProvider
-            ?? throw new ArgumentNullException(nameof(securityContextProvider));
+                                   ?? throw new ArgumentNullException(nameof(securityContextProvider));
         _contextFactory = contextFactory ?? (() => new ExecutionContext());
     }
 

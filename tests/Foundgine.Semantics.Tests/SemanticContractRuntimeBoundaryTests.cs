@@ -52,5 +52,3 @@ public sealed class SemanticContractRuntimeBoundaryTests
         Assert.Single(graph.Nodes);
     }
 }
-
-

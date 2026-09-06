@@ -42,7 +42,8 @@ public sealed class SemanticMutationPlanner
                     continue;
 
                 ValidateSourceIndex(source.SourceOperationIndex, targetIndex, graph.Operations.Count);
-                ValidateSourceFieldIsReturned(graph.Operations[source.SourceOperationIndex], source.SourceField, source.SourceOperationIndex, targetIndex);
+                ValidateSourceFieldIsReturned(graph.Operations[source.SourceOperationIndex], source.SourceField,
+                    source.SourceOperationIndex, targetIndex);
 
                 var dependency = new SemanticMutationDependencyPlan(
                     Id(source.SourceOperationIndex),
@@ -60,7 +61,8 @@ public sealed class SemanticMutationPlanner
             foreach (var dependency in operation.Dependencies)
             {
                 ValidateSourceIndex(dependency.SourceOperationIndex, targetIndex, graph.Operations.Count);
-                ValidateSourceFieldIsReturned(graph.Operations[dependency.SourceOperationIndex], dependency.SourceField, dependency.SourceOperationIndex, targetIndex);
+                ValidateSourceFieldIsReturned(graph.Operations[dependency.SourceOperationIndex], dependency.SourceField,
+                    dependency.SourceOperationIndex, targetIndex);
 
                 var planned = new SemanticMutationDependencyPlan(
                     Id(dependency.SourceOperationIndex),

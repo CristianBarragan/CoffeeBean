@@ -44,7 +44,9 @@ public sealed class MutationSecurityResourceLimitTests
         var operation = CreateOperation() with
         {
             Dependencies = Enumerable.Range(0, 3)
-                .Select(i => new SemanticMutationDependency(0, 0, new FieldId((ushort)(100 + i)), new FieldId((ushort)(200 + i))))
+                .Select(i =>
+                    new SemanticMutationDependency(0, 0, new FieldId((ushort)(100 + i)),
+                        new FieldId((ushort)(200 + i))))
                 .ToArray()
         };
         var request = new SemanticMutationRequest(new SemanticMutationOperationGraph([operation]));

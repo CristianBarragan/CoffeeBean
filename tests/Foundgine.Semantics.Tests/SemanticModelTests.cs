@@ -213,10 +213,13 @@ public sealed class SemanticModelTests
         RegisterEntity(registry, contract, "Contract", 212);
         RegisterEntity(registry, transaction, "Transaction", 213);
 
-        registry.Register(new RelationshipMetadata(new RelationshipId(210), customer, relationshipEntity, "Relationships",
-            new ColumnReference(customer, new ColumnId(210)), new ColumnReference(relationshipEntity, new ColumnId(211))));
+        registry.Register(new RelationshipMetadata(new RelationshipId(210), customer, relationshipEntity,
+            "Relationships",
+            new ColumnReference(customer, new ColumnId(210)),
+            new ColumnReference(relationshipEntity, new ColumnId(211))));
         registry.Register(new RelationshipMetadata(new RelationshipId(211), relationshipEntity, contract, "Contract",
-            new ColumnReference(relationshipEntity, new ColumnId(211)), new ColumnReference(contract, new ColumnId(212))));
+            new ColumnReference(relationshipEntity, new ColumnId(211)),
+            new ColumnReference(contract, new ColumnId(212))));
         registry.Register(new RelationshipMetadata(new RelationshipId(212), contract, transaction, "Transactions",
             new ColumnReference(contract, new ColumnId(212)), new ColumnReference(transaction, new ColumnId(213))));
 
@@ -233,6 +236,7 @@ public sealed class SemanticModelTests
     }
 
     private sealed record TestCustomer(int Id, string Name);
+
     private sealed record TestOrder(int Id);
 
     private static void RegisterEntity(MetadataRegistry registry, EntityId id, string name, ushort columnId)
@@ -256,6 +260,7 @@ public sealed class SemanticModelTests
     private sealed record TestProductEntity(int Id, string Sku, string Name, string Price);
 
     private sealed record TestProductComponent(int ParentProductId, int ComponentProductId);
+
     private sealed record TestMismatchedComponent(Guid ParentProductId);
 
     [Fact]
@@ -324,6 +329,7 @@ public sealed class SemanticModelTests
         Assert.Equal(customer.Id, account.ParentId);
         Assert.Equal(account.Id, transaction.ParentId);
     }
+
     [Fact]
     public void Entity_ids_are_deterministic_and_order_independent()
     {
@@ -334,7 +340,6 @@ public sealed class SemanticModelTests
         Assert.Equal(account, EntityId.Create("Account"));
         Assert.NotEqual(customer, account);
     }
-
 
 
     [Fact]
@@ -396,10 +401,9 @@ public sealed class SemanticModelTests
         var field = Assert.Single(entity.Fields);
 
         Assert.Throws<NotSupportedException>(() => ((IList<SemanticField>)entity.Fields).Clear());
-        Assert.Throws<NotSupportedException>(() => ((IList<SemanticAlias>)field.Aliases!)[0] = new SemanticAlias("changed"));
-        Assert.Throws<NotSupportedException>(() => ((IList<SemanticConstraint>)field.Constraints!)[0] = SemanticConstraint.Pattern("changed"));
+        Assert.Throws<NotSupportedException>(() =>
+            ((IList<SemanticAlias>)field.Aliases!)[0] = new SemanticAlias("changed"));
+        Assert.Throws<NotSupportedException>(() =>
+            ((IList<SemanticConstraint>)field.Constraints!)[0] = SemanticConstraint.Pattern("changed"));
     }
-
 }
-
-

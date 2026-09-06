@@ -75,13 +75,13 @@ public static class ManualSupplyChainSemanticModel
 
     public static FieldId Field(string entityName, string fieldName) =>
         Model.Entities.Single(entity =>
-            string.Equals(entity.Name, entityName, StringComparison.OrdinalIgnoreCase))
+                string.Equals(entity.Name, entityName, StringComparison.OrdinalIgnoreCase))
             .Fields.Single(field =>
                 string.Equals(field.Name, fieldName, StringComparison.OrdinalIgnoreCase)).Id;
 
     public static RelationshipId Relationship(string entityName, string relationshipName) =>
         Model.Entities.Single(entity =>
-            string.Equals(entity.Name, entityName, StringComparison.OrdinalIgnoreCase))
+                string.Equals(entity.Name, entityName, StringComparison.OrdinalIgnoreCase))
             .Relationships.Single(relationship =>
                 string.Equals(relationship.Name, relationshipName, StringComparison.OrdinalIgnoreCase)).Id;
 }

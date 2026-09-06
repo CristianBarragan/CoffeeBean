@@ -23,11 +23,11 @@ public sealed class UpsertTests
         using (var setup = connection.CreateCommand())
         {
             setup.CommandText = """
-                CREATE TABLE "Customer" (
-                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "Name" TEXT NOT NULL
-                );
-                """;
+                                CREATE TABLE "Customer" (
+                                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    "Name" TEXT NOT NULL
+                                );
+                                """;
             setup.ExecuteNonQuery();
         }
 
@@ -56,12 +56,12 @@ public sealed class UpsertTests
         using (var setup = connection.CreateCommand())
         {
             setup.CommandText = """
-                CREATE TABLE "Customer" (
-                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "Name" TEXT NOT NULL
-                );
-                INSERT INTO "Customer" ("Name") VALUES ('Alice');
-                """;
+                                CREATE TABLE "Customer" (
+                                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    "Name" TEXT NOT NULL
+                                );
+                                INSERT INTO "Customer" ("Name") VALUES ('Alice');
+                                """;
             setup.ExecuteNonQuery();
         }
 
@@ -93,12 +93,12 @@ public sealed class UpsertTests
         using (var setup = connection.CreateCommand())
         {
             setup.CommandText = """
-                CREATE TABLE "Customer" (
-                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "Name" TEXT NOT NULL
-                );
-                INSERT INTO "Customer" ("Name") VALUES ('Alice');
-                """;
+                                CREATE TABLE "Customer" (
+                                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    "Name" TEXT NOT NULL
+                                );
+                                INSERT INTO "Customer" ("Name") VALUES ('Alice');
+                                """;
             setup.ExecuteNonQuery();
         }
 

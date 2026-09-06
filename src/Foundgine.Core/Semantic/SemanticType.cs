@@ -8,8 +8,11 @@ namespace Foundgine.Core.Semantic;
 public abstract record SemanticType
 {
     public sealed record Scalar(SemanticScalarKind Kind) : SemanticType;
+
     public sealed record Enum(string Name) : SemanticType;
+
     public sealed record Object(string Name) : SemanticType;
+
     public sealed record Collection(SemanticType ElementType) : SemanticType;
 
     public static SemanticType FromClrType(Type type)
@@ -29,9 +32,12 @@ public abstract record SemanticType
 
         if (type == typeof(string) || type == typeof(char)) return new Scalar(SemanticScalarKind.String);
         if (type == typeof(bool)) return new Scalar(SemanticScalarKind.Boolean);
-        if (type == typeof(byte) || type == typeof(sbyte) || type == typeof(short) || type == typeof(ushort) || type == typeof(int)) return new Scalar(SemanticScalarKind.Int32);
-        if (type == typeof(uint) || type == typeof(long) || type == typeof(ulong)) return new Scalar(SemanticScalarKind.Int64);
-        if (type == typeof(float) || type == typeof(double) || type == typeof(decimal)) return new Scalar(SemanticScalarKind.Decimal);
+        if (type == typeof(byte) || type == typeof(sbyte) || type == typeof(short) || type == typeof(ushort) ||
+            type == typeof(int)) return new Scalar(SemanticScalarKind.Int32);
+        if (type == typeof(uint) || type == typeof(long) || type == typeof(ulong))
+            return new Scalar(SemanticScalarKind.Int64);
+        if (type == typeof(float) || type == typeof(double) || type == typeof(decimal))
+            return new Scalar(SemanticScalarKind.Decimal);
         if (type == typeof(DateTime) || type == typeof(DateTimeOffset)) return new Scalar(SemanticScalarKind.DateTime);
         if (type == typeof(Guid)) return new Scalar(SemanticScalarKind.Guid);
 

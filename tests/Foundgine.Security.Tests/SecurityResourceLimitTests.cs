@@ -17,15 +17,17 @@ public sealed class SecurityResourceLimitTests
     {
         var request = new SemanticRequest(
             Customer,
-            [new SemanticSelection(
-                Id,
-                null,
-                [new SemanticSelection(Id, null, [])])]);
+            [
+                new SemanticSelection(
+                    Id,
+                    null,
+                    [new SemanticSelection(Id, null, [])])
+            ]);
 
         var limits = new SecurityResourceLimits { MaxSelectionDepth = 1 };
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => SecurityResourceLimitValidator.Validate(request, limits));
+        var exception =
+            Assert.Throws<InvalidOperationException>(() => SecurityResourceLimitValidator.Validate(request, limits));
 
         Assert.Contains("selection depth", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -40,8 +42,8 @@ public sealed class SecurityResourceLimitTests
 
         var limits = new SecurityResourceLimits { MaxPageSize = 5 };
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => SecurityResourceLimitValidator.Validate(request, limits));
+        var exception =
+            Assert.Throws<InvalidOperationException>(() => SecurityResourceLimitValidator.Validate(request, limits));
 
         Assert.Contains("page size", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -52,14 +54,15 @@ public sealed class SecurityResourceLimitTests
         var request = new SemanticRequest(
             Customer,
             [new SemanticSelection(Id, null, [])],
-            new SemanticQueryOptions(Order: [
+            new SemanticQueryOptions(Order:
+            [
                 new SemanticOrderTerm(Id, SemanticSortDirection.Asc, [Orders, Orders])
             ]));
 
         var limits = new SecurityResourceLimits { MaxOrderPathDepth = 1 };
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => SecurityResourceLimitValidator.Validate(request, limits));
+        var exception =
+            Assert.Throws<InvalidOperationException>(() => SecurityResourceLimitValidator.Validate(request, limits));
 
         Assert.Contains("order relationship path", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -80,8 +83,8 @@ public sealed class SecurityResourceLimitTests
 
         var limits = new SecurityResourceLimits { MaxFilterNodes = 2 };
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => SecurityResourceLimitValidator.Validate(request, limits));
+        var exception =
+            Assert.Throws<InvalidOperationException>(() => SecurityResourceLimitValidator.Validate(request, limits));
 
         Assert.Contains("filter complexity", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -96,8 +99,8 @@ public sealed class SecurityResourceLimitTests
 
         var limits = new SecurityResourceLimits { MaxCursorLength = 5 };
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => SecurityResourceLimitValidator.Validate(request, limits));
+        var exception =
+            Assert.Throws<InvalidOperationException>(() => SecurityResourceLimitValidator.Validate(request, limits));
 
         Assert.Contains("cursor length", exception.Message, StringComparison.OrdinalIgnoreCase);
     }

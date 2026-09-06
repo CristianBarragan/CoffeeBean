@@ -20,15 +20,15 @@ public sealed class AdversarialAgentBoundaryTests
         var adapter = new JsonReadIntentAdapter();
 
         var json = """
-        {
-          "rootEntity": "Customer",
-          "selections": [{ "field": "Id" }],
-          "tenantId": "victim-tenant",
-          "provider": "postgres",
-          "authorization": "allow-all",
-          "connectionString": "Host=evil"
-        }
-        """;
+                   {
+                     "rootEntity": "Customer",
+                     "selections": [{ "field": "Id" }],
+                     "tenantId": "victim-tenant",
+                     "provider": "postgres",
+                     "authorization": "allow-all",
+                     "connectionString": "Host=evil"
+                   }
+                   """;
 
         var exception = Assert.Throws<InvalidOperationException>(() => adapter.Parse(json));
 
@@ -46,19 +46,19 @@ public sealed class AdversarialAgentBoundaryTests
         });
 
         var json = """
-        {
-          "rootEntity": "Customer",
-          "selections": [
-            { "relationship": "Accounts", "children": [
-              { "relationship": "Transactions", "children": [
-                { "relationship": "Customer", "children": [
-                  { "field": "Id" }
-                ]}
-              ]}
-            ]}
-          ]
-        }
-        """;
+                   {
+                     "rootEntity": "Customer",
+                     "selections": [
+                       { "relationship": "Accounts", "children": [
+                         { "relationship": "Transactions", "children": [
+                           { "relationship": "Customer", "children": [
+                             { "field": "Id" }
+                           ]}
+                         ]}
+                       ]}
+                     ]
+                   }
+                   """;
 
         var exception = Assert.Throws<InvalidOperationException>(() => adapter.Parse(json));
         Assert.Contains("depth", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -90,32 +90,32 @@ public sealed class AdversarialAgentBoundaryTests
         });
 
         var json = """
-        {
-          "rootEntity": "Customer",
-          "selections": [{ "field": "Id" }],
-          "filter": {
-            "kind": "relationship",
-            "relationship": "Accounts",
-            "quantifier": "some",
-            "predicate": {
-              "kind": "relationship",
-              "relationship": "Transactions",
-              "quantifier": "some",
-              "predicate": {
-                "kind": "relationship",
-                "relationship": "Customer",
-                "quantifier": "some",
-                "predicate": {
-                  "kind": "field",
-                  "field": "Id",
-                  "operator": "Eq",
-                  "value": 1
-                }
-              }
-            }
-          }
-        }
-        """;
+                   {
+                     "rootEntity": "Customer",
+                     "selections": [{ "field": "Id" }],
+                     "filter": {
+                       "kind": "relationship",
+                       "relationship": "Accounts",
+                       "quantifier": "some",
+                       "predicate": {
+                         "kind": "relationship",
+                         "relationship": "Transactions",
+                         "quantifier": "some",
+                         "predicate": {
+                           "kind": "relationship",
+                           "relationship": "Customer",
+                           "quantifier": "some",
+                           "predicate": {
+                             "kind": "field",
+                             "field": "Id",
+                             "operator": "Eq",
+                             "value": 1
+                           }
+                         }
+                       }
+                     }
+                   }
+                   """;
 
         var exception = Assert.Throws<InvalidOperationException>(() => adapter.Parse(json));
         Assert.Contains("filter", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -155,16 +155,16 @@ public sealed class AdversarialAgentBoundaryTests
         });
 
         var intent = adapter.Parse("""
-        {
-          "rootEntity": "Customer",
-          "selections": [{ "field": "Id" }],
-          "tenantId": "attacker",
-          "userId": "administrator",
-          "provider": "SqlServer",
-          "authorization": "allow",
-          "sql": "DROP TABLE Customer"
-        }
-        """);
+                                   {
+                                     "rootEntity": "Customer",
+                                     "selections": [{ "field": "Id" }],
+                                     "tenantId": "attacker",
+                                     "userId": "administrator",
+                                     "provider": "SqlServer",
+                                     "authorization": "allow",
+                                     "sql": "DROP TABLE Customer"
+                                   }
+                                   """);
 
         Assert.Equal("Customer", intent.RootEntity);
         Assert.Single(intent.Selections);

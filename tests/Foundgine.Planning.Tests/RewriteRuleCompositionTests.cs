@@ -90,7 +90,8 @@ public sealed class RewriteRuleCompositionTests
         private readonly IReadOnlyList<string> _conflicts;
         private readonly double _cost;
 
-        public NamedRule(string name, IReadOnlyList<string>? after = null, IReadOnlyList<string>? conflicts = null, double cost = 5d, int priority = 0)
+        public NamedRule(string name, IReadOnlyList<string>? after = null, IReadOnlyList<string>? conflicts = null,
+            double cost = 5d, int priority = 0)
         {
             _name = name;
             _after = after ?? [];
@@ -107,7 +108,14 @@ public sealed class RewriteRuleCompositionTests
         public IReadOnlyList<string> ConflictsWith => _conflicts;
         public int Priority { get; }
         public bool CanApply(SemanticPlan plan) => true;
-        public SemanticPlan Apply(SemanticPlan plan) => plan with { Root = plan.Root with { Authorization = AuthorizationPredicate.Not(AuthorizationPredicate.Not(plan.Root.Authorization!)) } };
+
+        public SemanticPlan Apply(SemanticPlan plan) => plan with
+        {
+            Root = plan.Root with
+            {
+                Authorization = AuthorizationPredicate.Not(AuthorizationPredicate.Not(plan.Root.Authorization!))
+            }
+        };
     }
 
     private sealed class OscillatingRule : IPlanRewriteRule
@@ -119,6 +127,7 @@ public sealed class RewriteRuleCompositionTests
         public double CostImpact => 1d;
         public bool IsIdempotent => false;
         public bool CanApply(SemanticPlan plan) => true;
+
         public SemanticPlan Apply(SemanticPlan plan)
         {
             _toggle = !_toggle;

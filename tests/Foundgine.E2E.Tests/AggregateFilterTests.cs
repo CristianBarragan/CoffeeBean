@@ -105,18 +105,28 @@ public sealed class AggregateFilterTests
         var customer = new EntityMetadata(
             Customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(Customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(Customer, new ColumnId(2)))],
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(Customer, new ColumnId(2)))
+            ],
             PrimaryKey: new ColumnReference(Customer, new ColumnId(1)));
 
         var account = new EntityMetadata(
             Account, "Account",
-            [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"), new ColumnMetadata(new ColumnId(3), "Balance")],
-            Fields: [
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"),
+                new ColumnMetadata(new ColumnId(3), "Balance")
+            ],
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(Account, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "CustomerId", typeof(int), new ColumnReference(Account, new ColumnId(2))),
-                new FieldMetadata(new FieldId(3), "Balance", typeof(decimal), new ColumnReference(Account, new ColumnId(3)))],
+                new FieldMetadata(new FieldId(2), "CustomerId", typeof(int),
+                    new ColumnReference(Account, new ColumnId(2))),
+                new FieldMetadata(new FieldId(3), "Balance", typeof(decimal),
+                    new ColumnReference(Account, new ColumnId(3)))
+            ],
             PrimaryKey: new ColumnReference(Account, new ColumnId(1)));
 
         var relationship = new RelationshipMetadata(
@@ -135,18 +145,17 @@ public sealed class AggregateFilterTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
-            CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Balance" REAL NOT NULL);
-            INSERT INTO "Customer" VALUES (1, 'A');
-            INSERT INTO "Customer" VALUES (2, 'B');
-            INSERT INTO "Customer" VALUES (3, 'C');
-            INSERT INTO "Account" VALUES (11, 1, 10.0);
-            INSERT INTO "Account" VALUES (12, 1, 20.0);
-            INSERT INTO "Account" VALUES (21, 2, 150.0);
-            INSERT INTO "Account" VALUES (22, 2, 90.0);
-            INSERT INTO "Account" VALUES (31, 3, 50.0);
-            """;
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
+                              CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Balance" REAL NOT NULL);
+                              INSERT INTO "Customer" VALUES (1, 'A');
+                              INSERT INTO "Customer" VALUES (2, 'B');
+                              INSERT INTO "Customer" VALUES (3, 'C');
+                              INSERT INTO "Account" VALUES (11, 1, 10.0);
+                              INSERT INTO "Account" VALUES (12, 1, 20.0);
+                              INSERT INTO "Account" VALUES (21, 2, 150.0);
+                              INSERT INTO "Account" VALUES (22, 2, 90.0);
+                              INSERT INTO "Account" VALUES (31, 3, 50.0);
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

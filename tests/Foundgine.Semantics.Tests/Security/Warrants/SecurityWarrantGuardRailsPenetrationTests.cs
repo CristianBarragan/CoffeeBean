@@ -101,7 +101,8 @@ public sealed class SecurityWarrantGuardRailsPenetrationTests
 
         var second = first with
         {
-            Grants = [
+            Grants =
+            [
                 new CapabilityGrant("Customer.read", "read", ["customer/1", "customer/3"]),
                 new CapabilityGrant("Customer.write", "write", ["customer/1", "customer/2"])
             ],
@@ -238,7 +239,8 @@ public sealed class SecurityWarrantGuardRailsPenetrationTests
     public void Child_cannot_recover_a_removed_tenant()
     {
         var now = DateTimeOffset.UtcNow;
-        var parent = CreateWarrant(now, constraints: new SecurityWarrantConstraints(allowedTenants: ["tenant-a", "tenant-b"]));
+        var parent = CreateWarrant(now,
+            constraints: new SecurityWarrantConstraints(allowedTenants: ["tenant-a", "tenant-b"]));
         var attenuated = parent with
         {
             Id = "child",
@@ -263,7 +265,8 @@ public sealed class SecurityWarrantGuardRailsPenetrationTests
             Constraints = new SecurityWarrantConstraints(allowedTenants: ["tenant-a", "tenant-b"])
         };
 
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantAttenuator.Attenuate(attenuated, grandchild, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantAttenuator.Attenuate(attenuated, grandchild, now));
     }
 
     private static SecurityWarrant CreateWarrant(
@@ -295,6 +298,8 @@ public sealed class SecurityWarrantGuardRailsPenetrationTests
     private sealed class Resolver(string keyId, RSA key) : ISecurityWarrantKeyResolver
     {
         public RSA Resolve(string requestedKeyId) =>
-            string.Equals(requestedKeyId, keyId, StringComparison.Ordinal) ? key : throw new InvalidOperationException("Unknown key.");
+            string.Equals(requestedKeyId, keyId, StringComparison.Ordinal)
+                ? key
+                : throw new InvalidOperationException("Unknown key.");
     }
 }

@@ -154,9 +154,11 @@ public sealed class MutationAuthorizer
                 {
                     var aggregateRelationshipSchema = _schema.GetRelationship(aggregate.Relationship);
                     RequireAllowed(
-                        _policy.GetFieldAccess(aggregateRelationshipSchema.Target, aggregateField, AuthorizationOperation.Read),
+                        _policy.GetFieldAccess(aggregateRelationshipSchema.Target, aggregateField,
+                            AuthorizationOperation.Read),
                         $"aggregate filter field '{aggregateField.Value}'");
                 }
+
                 break;
 
             case SemanticAndFilter and:

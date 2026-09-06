@@ -11,7 +11,8 @@ using System.Data.Common;
 using ExecutionContext = Foundgine.Core.Execution.ExecutionContext;
 
 var builder = WebApplication.CreateBuilder(args);
-var cs = builder.Configuration.GetConnectionString("BankingConnectionString") ?? throw new InvalidOperationException("Missing connection string.");
+var cs = builder.Configuration.GetConnectionString("BankingConnectionString") ??
+         throw new InvalidOperationException("Missing connection string.");
 var model = CoffeeBeanerySemanticModel.Build();
 var metadata = CoffeeBeaneryMetadata.Build();
 var policy = new AllowAllSemanticAuthorizationPolicy();
@@ -39,7 +40,9 @@ sealed class PooledSqlExecutionProvider : IExecutionProvider
 {
     private readonly string _connectionString;
     public PooledSqlExecutionProvider(string connectionString) => _connectionString = connectionString;
-    public async Task<ExecutionResult> ExecuteAsync(ProviderPlan plan, ExecutionContext context, CancellationToken cancellationToken = default)
+
+    public async Task<ExecutionResult> ExecuteAsync(ProviderPlan plan, ExecutionContext context,
+        CancellationToken cancellationToken = default)
     {
         await using var connection = new NpgsqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);

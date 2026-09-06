@@ -55,7 +55,8 @@ public static class GraphQLVariableCoercer
         if (type is NonNullTypeNode nonNull)
         {
             if (value is null)
-                throw new InvalidOperationException($"GraphQL variable value at {path} cannot be null because its type is non-null.");
+                throw new InvalidOperationException(
+                    $"GraphQL variable value at {path} cannot be null because its type is non-null.");
             return Coerce(value, nonNull.Type, path);
         }
 
@@ -100,7 +101,8 @@ public static class GraphQLVariableCoercer
                 return value switch
                 {
                     string s => s,
-                    sbyte or byte or short or ushort or int or uint or long or ulong => Convert.ToString(value, CultureInfo.InvariantCulture)!,
+                    sbyte or byte or short or ushort or int or uint or long or ulong => Convert.ToString(value,
+                        CultureInfo.InvariantCulture)!,
                     _ => throw TypeError(path, "ID", value)
                 };
             default:
@@ -109,7 +111,8 @@ public static class GraphQLVariableCoercer
                 // however, enforce the GraphQL input-object shape when the runtime
                 // value is object-like and preserve custom scalar values unchanged.
                 if (value is IDictionary<string, object?> dictionary)
-                    return dictionary.ToDictionary(x => x.Key, x => Normalize(x.Value), StringComparer.OrdinalIgnoreCase);
+                    return dictionary.ToDictionary(x => x.Key, x => Normalize(x.Value),
+                        StringComparer.OrdinalIgnoreCase);
                 if (value is IReadOnlyDictionary<string, object?> readOnly)
                     return readOnly.ToDictionary(x => x.Key, x => Normalize(x.Value), StringComparer.OrdinalIgnoreCase);
                 return value;
@@ -154,8 +157,10 @@ public static class GraphQLVariableCoercer
     {
         VariableNode variable => Resolve(variable.Name.Value, variables, definitions),
         StringValueNode s => s.Value,
-        IntValueNode i when long.TryParse(i.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) => value,
-        FloatValueNode f when double.TryParse(f.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) => value,
+        IntValueNode i when long.TryParse(i.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) =>
+            value,
+        FloatValueNode f when double.TryParse(f.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
+            => value,
         BooleanValueNode b => b.Value,
         NullValueNode => null,
         EnumValueNode e => e.Value,
@@ -179,7 +184,8 @@ public static class GraphQLVariableCoercer
         if (value is JsonElement json)
             return json.ValueKind switch
             {
-                JsonValueKind.Object => json.EnumerateObject().ToDictionary(x => x.Name, x => Normalize(x.Value), StringComparer.OrdinalIgnoreCase),
+                JsonValueKind.Object => json.EnumerateObject().ToDictionary(x => x.Name, x => Normalize(x.Value),
+                    StringComparer.OrdinalIgnoreCase),
                 JsonValueKind.Array => json.EnumerateArray().Select(x => Normalize(x)).ToArray(),
                 JsonValueKind.String => json.GetString(),
                 JsonValueKind.Number => json.TryGetInt64(out var integer) ? integer : json.GetDouble(),

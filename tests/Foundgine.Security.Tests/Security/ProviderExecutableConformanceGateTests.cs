@@ -33,7 +33,8 @@ public sealed class ProviderExecutableConformanceGateTests
                 null),
             [invariant]);
 
-    private sealed class HostileCertifiedCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class HostileCertifiedCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             [SecurityInvariantIds.AuthorizationRequired];
@@ -60,7 +61,8 @@ public sealed class ProviderExecutableConformanceGateTests
         var exception = Assert.Throws<InvalidOperationException>(() =>
             SecurityInvariantProofGate.AttachAndValidate(plan, ir, compiler));
 
-        Assert.Contains("no concrete security conformance evaluator", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("no concrete security conformance evaluator", exception.Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -112,15 +114,15 @@ public sealed class ProviderExecutableConformanceGateTests
         public ProviderPlan Compile(ExecutionIR ir) => new TestPlan();
     }
 
-    private sealed class HonestCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class HonestCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants => [SecurityInvariantIds.AuthorizationRequired];
         public ProviderPlan Compile(ExecutionIR ir) => new TestPlan();
+
         public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
             new(plan.Provider, ir.RequiredSecurityInvariants, ir.RequiredSecurityInvariants, []);
     }
 
     private sealed record DifferentProviderPlan() : ProviderPlan("different-provider");
 }
-
-

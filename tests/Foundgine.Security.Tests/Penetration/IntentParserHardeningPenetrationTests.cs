@@ -15,11 +15,11 @@ public sealed class IntentParserHardeningPenetrationTests
         var adapter = new JsonReadIntentAdapter();
 
         Assert.Throws<InvalidOperationException>(() => adapter.Parse("""
-        {
-          "rootEntity":"Customer",
-          "selections":[{"field":"Id","relationship":"Orders"}]
-        }
-        """));
+                                                                     {
+                                                                       "rootEntity":"Customer",
+                                                                       "selections":[{"field":"Id","relationship":"Orders"}]
+                                                                     }
+                                                                     """));
     }
 
     [Fact]
@@ -28,11 +28,11 @@ public sealed class IntentParserHardeningPenetrationTests
         var adapter = new JsonReadIntentAdapter();
 
         Assert.Throws<InvalidOperationException>(() => adapter.Parse("""
-        {
-          "rootEntity":"Customer",
-          "selections":[{}]
-        }
-        """));
+                                                                     {
+                                                                       "rootEntity":"Customer",
+                                                                       "selections":[{}]
+                                                                     }
+                                                                     """));
     }
 
     [Fact]
@@ -41,20 +41,20 @@ public sealed class IntentParserHardeningPenetrationTests
         var adapter = new JsonReadIntentAdapter();
 
         Assert.Throws<InvalidOperationException>(() => adapter.Parse("""
-        {
-          "rootEntity":"Customer",
-          "selections":[{"field":"Id"}],
-          "limit":-1
-        }
-        """));
+                                                                     {
+                                                                       "rootEntity":"Customer",
+                                                                       "selections":[{"field":"Id"}],
+                                                                       "limit":-1
+                                                                     }
+                                                                     """));
 
         Assert.Throws<InvalidOperationException>(() => adapter.Parse("""
-        {
-          "rootEntity":"Customer",
-          "selections":[{"field":"Id"}],
-          "offset":-1
-        }
-        """));
+                                                                     {
+                                                                       "rootEntity":"Customer",
+                                                                       "selections":[{"field":"Id"}],
+                                                                       "offset":-1
+                                                                     }
+                                                                     """));
     }
 
     [Fact]
@@ -63,12 +63,12 @@ public sealed class IntentParserHardeningPenetrationTests
         var adapter = new JsonReadIntentAdapter();
 
         Assert.Throws<InvalidOperationException>(() => adapter.Parse("""
-        {
-          "rootEntity":"Customer",
-          "selections":[{"field":"Id"}],
-          "filter":{"kind":"rawSql","value":"1=1"}
-        }
-        """));
+                                                                     {
+                                                                       "rootEntity":"Customer",
+                                                                       "selections":[{"field":"Id"}],
+                                                                       "filter":{"kind":"rawSql","value":"1=1"}
+                                                                     }
+                                                                     """));
     }
 
     [Fact]
@@ -77,16 +77,16 @@ public sealed class IntentParserHardeningPenetrationTests
         var adapter = new JsonReadIntentAdapter();
 
         Assert.Throws<InvalidOperationException>(() => adapter.Parse("""
-        {
-          "rootEntity":"Customer",
-          "selections":[{"field":"Id"}],
-          "filter":{
-            "kind":"relationship",
-            "relationship":"Orders",
-            "quantifier":"Any"
-          }
-        }
-        """));
+                                                                     {
+                                                                       "rootEntity":"Customer",
+                                                                       "selections":[{"field":"Id"}],
+                                                                       "filter":{
+                                                                         "kind":"relationship",
+                                                                         "relationship":"Orders",
+                                                                         "quantifier":"Any"
+                                                                       }
+                                                                     }
+                                                                     """));
     }
 
     [Fact]
@@ -102,17 +102,17 @@ public sealed class IntentParserHardeningPenetrationTests
             new JsonReadIntentAdapterOptions { MaxJsonValueDepth = 16 });
 
         var json = $$"""
-        {
-          "rootEntity":"Customer",
-          "selections":[{"field":"Id"}],
-          "filter":{
-            "kind":"field",
-            "field":"Metadata",
-            "operator":"Eq",
-            "value":{{value}}
-          }
-        }
-        """;
+                     {
+                       "rootEntity":"Customer",
+                       "selections":[{"field":"Id"}],
+                       "filter":{
+                         "kind":"field",
+                         "field":"Metadata",
+                         "operator":"Eq",
+                         "value":{{value}}
+                       }
+                     }
+                     """;
 
         Assert.Throws<InvalidOperationException>(() => adapter.Parse(json));
     }
@@ -123,11 +123,11 @@ public sealed class IntentParserHardeningPenetrationTests
         var adapter = new JsonReadIntentAdapter();
 
         Assert.Throws<InvalidOperationException>(() => adapter.Parse("""
-        {
-          "rootEntity":"Customer",
-          "selections":[{"field":"Id"}],
-          "filter":{"kind":"or","expressions":[]}
-        }
-        """));
+                                                                     {
+                                                                       "rootEntity":"Customer",
+                                                                       "selections":[{"field":"Id"}],
+                                                                       "filter":{"kind":"or","expressions":[]}
+                                                                     }
+                                                                     """));
     }
 }

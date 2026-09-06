@@ -111,7 +111,8 @@ public sealed class BuildSecuredPlanAuthorizationBindingFacadeTests
         Banking.BankingSemanticModel.Customer,
         [new SemanticSelection(new FieldId(2), null, [])]);
 
-    private sealed class CapturingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class CapturingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();

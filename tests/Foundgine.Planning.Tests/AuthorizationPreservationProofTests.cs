@@ -42,7 +42,8 @@ public sealed class AuthorizationPreservationProofTests
         var proof = AuthorizationPreservationProof.Create(before, after);
 
         Assert.False(proof.IsSatisfied);
-        Assert.Contains(proof.Violations, v => v.Contains(SecurityInvariantIds.TenantIsolation, StringComparison.Ordinal));
+        Assert.Contains(proof.Violations,
+            v => v.Contains(SecurityInvariantIds.TenantIsolation, StringComparison.Ordinal));
     }
 
     [Fact]

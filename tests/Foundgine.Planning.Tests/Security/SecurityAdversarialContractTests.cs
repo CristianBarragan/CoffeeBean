@@ -56,10 +56,10 @@ public sealed class SecurityAdversarialContractTests
     {
         var before = SecuredPlan(SecurityInvariantIds.FieldVisibility);
         var after = new SemanticPlan(
-            before.Root with
-            {
-                Fields = [new FieldId(999)]
-            })
+                before.Root with
+                {
+                    Fields = [new FieldId(999)]
+                })
             with
             {
                 RequiredSecurityInvariants = before.EffectiveSecurityInvariants
@@ -201,5 +201,3 @@ public sealed class SecurityAdversarialContractTests
 
     private sealed record UnprovedPlan() : ProviderPlan("adversarial-provider");
 }
-
-

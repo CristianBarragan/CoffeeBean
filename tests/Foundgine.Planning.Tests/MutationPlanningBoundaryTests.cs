@@ -67,13 +67,15 @@ public sealed class MutationPlanningBoundaryTests
             new MutationIntent(customer.Id, MutationKind.Create,
                 [new MutationFieldValue(new ColumnId(2), "Ada")],
                 ReturnFields: [new FieldId(1)]),
-            [new NestedMutationChild(
-                relationship.Id,
-                new NestedMutationIntent(
-                    new MutationIntent(account.Id, MutationKind.Create,
-                        [new MutationFieldValue(new ColumnId(3), "Primary")],
-                        ReturnFields: [new FieldId(1)]),
-                    []))]);
+            [
+                new NestedMutationChild(
+                    relationship.Id,
+                    new NestedMutationIntent(
+                        new MutationIntent(account.Id, MutationKind.Create,
+                            [new MutationFieldValue(new ColumnId(3), "Primary")],
+                            ReturnFields: [new FieldId(1)]),
+                        []))
+            ]);
 
         var plan = new MutationPlanner(schema).Plan(nested);
 
@@ -95,7 +97,8 @@ public sealed class MutationPlanningBoundaryTests
 
         public MutationEntitySchema GetEntity(EntityId entityId) => _entities[entityId];
 
-        public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId) => _relationships[relationshipId];
+        public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId) =>
+            _relationships[relationshipId];
     }
 }
 
@@ -127,12 +130,12 @@ public sealed class MutationAuthorizationTests
             ReturnFields: [new FieldId(1)]);
         var plan = new MutationPlanner(schema).Plan(intent);
 
-        var ex = Assert.Throws<Foundgine.Core.Semantic.Authorization.SemanticAuthorizationException>(
-            () => new MutationAuthorizer(schema, new DenyFieldWritePolicy()).Authorize(plan));
+        var ex = Assert.Throws<Foundgine.Core.Semantic.Authorization.SemanticAuthorizationException>(() =>
+            new MutationAuthorizer(schema, new DenyFieldWritePolicy()).Authorize(plan));
 
         Assert.Contains("write field", ex.Message);
     }
-    
+
     private sealed class TestMutationSchema : IMutationSchema
     {
         private readonly Dictionary<EntityId, MutationEntitySchema> _entities;
@@ -146,7 +149,8 @@ public sealed class MutationAuthorizationTests
 
         public MutationEntitySchema GetEntity(EntityId entityId) => _entities[entityId];
 
-        public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId) => _relationships[relationshipId];
+        public MutationRelationshipSchema GetRelationship(RelationshipId relationshipId) =>
+            _relationships[relationshipId];
     }
 
     private sealed class DenyFieldWritePolicy : AllowAllSemanticAuthorizationPolicy

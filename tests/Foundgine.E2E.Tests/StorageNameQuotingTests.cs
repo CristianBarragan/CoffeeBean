@@ -56,6 +56,3 @@ public sealed class StorageNameQuotingTests
         Assert.DoesNotContain("FROM \"Banking.Customer\"", sql, StringComparison.Ordinal);
     }
 }
-
-
-

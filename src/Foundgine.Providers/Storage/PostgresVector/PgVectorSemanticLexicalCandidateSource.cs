@@ -66,16 +66,16 @@ public sealed class PgVectorSemanticLexicalCandidateSource : ISemanticLexicalCan
         // authorization check. The core resolver performs authoritative
         // graph compatibility validation once a candidate is proposed.
         var sql = $"""
-            SELECT
-                canonical_name, kind, entity_id, relationship_id, field_id,
-                source_entity_id, target_entity_id, value,
-                embedding {distanceOperator} $1 AS distance
-            FROM {_options.QualifiedTableName}
-            WHERE kind = ANY($2)
-            {contextFilter}
-            ORDER BY embedding {distanceOperator} $1
-            LIMIT {(request.ContextEntity is null ? "$3" : "$4")}
-            """;
+                   SELECT
+                       canonical_name, kind, entity_id, relationship_id, field_id,
+                       source_entity_id, target_entity_id, value,
+                       embedding {distanceOperator} $1 AS distance
+                   FROM {_options.QualifiedTableName}
+                   WHERE kind = ANY($2)
+                   {contextFilter}
+                   ORDER BY embedding {distanceOperator} $1
+                   LIMIT {(request.ContextEntity is null ? "$3" : "$4")}
+                   """;
 
         await using var command = _dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue(vectorParameter);
@@ -123,11 +123,13 @@ public sealed class PgVectorSemanticLexicalCandidateSource : ISemanticLexicalCan
             ReadEntityId(reader, 5),
             ReadEntityId(reader, 6),
             reader.IsDBNull(7) ? null : reader.GetString(7),
-            [new ResolutionEvidence(
-                $"pgvector nearest-neighbor match for '{token}' " +
-                $"({distanceMetric} distance {distance:0.####}).",
-                CandidateEvidenceKind.VectorSimilarity,
-                score)]);
+            [
+                new ResolutionEvidence(
+                    $"pgvector nearest-neighbor match for '{token}' " +
+                    $"({distanceMetric} distance {distance:0.####}).",
+                    CandidateEvidenceKind.VectorSimilarity,
+                    score)
+            ]);
     }
 
     /// <summary>

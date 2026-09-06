@@ -26,16 +26,20 @@ public static class SecurityInvariantContractValidator
         }
 
         if (capability.HasSideEffects && !invariants.Contains(SecurityInvariantIds.RuntimeAuthorization))
-            errors.Add($"Mutating capability '{capability.Id}' must require security invariant '{SecurityInvariantIds.RuntimeAuthorization}'.");
+            errors.Add(
+                $"Mutating capability '{capability.Id}' must require security invariant '{SecurityInvariantIds.RuntimeAuthorization}'.");
 
         if (capability.HasSideEffects && !invariants.Contains(SecurityInvariantIds.AuthorizationRequired))
-            errors.Add($"Mutating capability '{capability.Id}' must require security invariant '{SecurityInvariantIds.AuthorizationRequired}'.");
+            errors.Add(
+                $"Mutating capability '{capability.Id}' must require security invariant '{SecurityInvariantIds.AuthorizationRequired}'.");
 
         if (capability.Fields.Count > 0 && !invariants.Contains(SecurityInvariantIds.FieldVisibility))
-            errors.Add($"Capability '{capability.Id}' exposes fields without security invariant '{SecurityInvariantIds.FieldVisibility}'.");
+            errors.Add(
+                $"Capability '{capability.Id}' exposes fields without security invariant '{SecurityInvariantIds.FieldVisibility}'.");
 
         if (capability.Relationships.Count > 0 && !invariants.Contains(SecurityInvariantIds.RelationshipVisibility))
-            errors.Add($"Capability '{capability.Id}' exposes relationships without a relationship-visibility invariant.");
+            errors.Add(
+                $"Capability '{capability.Id}' exposes relationships without a relationship-visibility invariant.");
 
         return errors;
     }

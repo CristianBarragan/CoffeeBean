@@ -75,7 +75,8 @@ public sealed class SemanticLexiconProjectionTests
             .Entity(order, "Order", e => e.Identity(new FieldId(2), "Id"))
             .Entity<Dummy>(customer, "Customer", e => e
                 .Identity(x => x.Id, "Id")
-                .Relationship<Dummy>(relationshipId, "Orders", x => x.Id, x => x.Id, order, RelationshipCardinality.Many)
+                .Relationship<Dummy>(relationshipId, "Orders", x => x.Id, x => x.Id, order,
+                    RelationshipCardinality.Many)
                 .RelationshipAlias(relationshipId, "Purchases"))
             .Build()
             .Freeze()
@@ -102,8 +103,10 @@ public sealed class SemanticLexiconProjectionTests
             .Entity(customer, "Customer", e => e.Identity(new FieldId(1), "Id"))
             .Entity(order, "Order", e => e.Identity(new FieldId(2), "Id"))
             .Entity(line, "OrderLine", e => e.Identity(new FieldId(3), "Id"))
-            .Relationship<Dummy, Dummy>(customer, new RelationshipId(1), "Orders", x => x.Id, order, x => x.Id, RelationshipCardinality.Many)
-            .Relationship<Dummy, Dummy>(order, new RelationshipId(2), "Lines", x => x.Id, line, x => x.Id, RelationshipCardinality.Many)
+            .Relationship<Dummy, Dummy>(customer, new RelationshipId(1), "Orders", x => x.Id, order, x => x.Id,
+                RelationshipCardinality.Many)
+            .Relationship<Dummy, Dummy>(order, new RelationshipId(2), "Lines", x => x.Id, line, x => x.Id,
+                RelationshipCardinality.Many)
             .Traversal("Customer", "PurchasedLines", "Orders", "Lines")
             .Build()
             .Freeze()

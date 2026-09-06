@@ -110,7 +110,8 @@ public sealed class AggregateExistenceCollapseRuleTests
         var optimized = new AggregateExistenceCollapseRule(
             AggregateProviderCapabilityRegistry.GenericSql).Apply(plan);
 
-        Assert.Equal(plan.EffectiveSecurityInvariants.OrderBy(x => x), optimized.EffectiveSecurityInvariants.OrderBy(x => x));
+        Assert.Equal(plan.EffectiveSecurityInvariants.OrderBy(x => x),
+            optimized.EffectiveSecurityInvariants.OrderBy(x => x));
     }
 
     private static SemanticPlan CreatePlan(SemanticFilterExpression filter) =>

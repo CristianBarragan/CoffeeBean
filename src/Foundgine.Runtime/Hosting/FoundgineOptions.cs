@@ -91,9 +91,11 @@ public sealed class FoundgineOptions
     public IExecutionAuthorizationRevalidator? ExecutionAuthorizationRevalidator { get; set; }
 
     /// <summary>Optional current authorization authority state resolver used for execution-time revalidation.</summary>
-    public Func<SemanticAuthorizationEvidence, CancellationToken, ValueTask<ExecutionAuthorizationAuthorityState?>>? ExecutionAuthorizationAuthorityResolver { get; set; }
+    public Func<SemanticAuthorizationEvidence, CancellationToken, ValueTask<ExecutionAuthorizationAuthorityState?>>?
+        ExecutionAuthorizationAuthorityResolver { get; set; }
 
     /// <summary>Optional mutation schema and provider for the semantic mutation pipeline.</summary>
     public IMutationSchema? MutationSchema { get; set; }
+
     public Foundgine.Core.Execution.Mutation.IMutationBatchExecutionProvider? MutationProvider { get; set; }
 }

@@ -5,8 +5,7 @@ namespace CoffeeBeanery.Database;
 
 public class Process
 {
-    [NotMapped]
-    public Schema? Schema { get; set; }
+    [NotMapped] public Schema? Schema { get; set; }
 
     public DateTime ProcessedDateTime { get; set; }
 }

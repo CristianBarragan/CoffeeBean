@@ -12,8 +12,8 @@ public static class SecurityInvariantExecutionGate
         ArgumentNullException.ThrowIfNull(ir);
 
         var proof = plan.SecurityProof
-            ?? throw new InvalidOperationException(
-                $"Provider plan '{plan.GetType().Name}' has no security proof (certificate) and cannot execute.");
+                    ?? throw new InvalidOperationException(
+                        $"Provider plan '{plan.GetType().Name}' has no security proof (certificate) and cannot execute.");
 
         if (!string.Equals(proof.Provider, plan.Provider, StringComparison.Ordinal))
             throw new InvalidOperationException(
@@ -25,7 +25,8 @@ public static class SecurityInvariantExecutionGate
                 ? $" Required security invariants not satisfied: {string.Join(", ", proof.Missing)}."
                 : string.Empty;
             throw new InvalidOperationException(
-                "Security certificate is not bound to the exact provider plan and Execution IR being executed." + detail);
+                "Security certificate is not bound to the exact provider plan and Execution IR being executed." +
+                detail);
         }
 
         proof.EnsureSatisfied();

@@ -59,9 +59,14 @@ public static class SupplyChainAuthorization
 
     public static class RelationshipIds
     {
-        public static RelationshipId SupplierCertifications => SupplyChainSemanticModel.Relationship("Supplier", "certifications");
-        public static RelationshipId SupplierIncidents => SupplyChainSemanticModel.Relationship("Supplier", "incidents");
-        public static RelationshipId WarehouseInventory => SupplyChainSemanticModel.Relationship("Warehouse", "inventory");
+        public static RelationshipId SupplierCertifications =>
+            SupplyChainSemanticModel.Relationship("Supplier", "certifications");
+
+        public static RelationshipId SupplierIncidents =>
+            SupplyChainSemanticModel.Relationship("Supplier", "incidents");
+
+        public static RelationshipId WarehouseInventory =>
+            SupplyChainSemanticModel.Relationship("Warehouse", "inventory");
     }
 
     private static bool CanReadEntity(EntityId id, SupplyChainRole role) => id switch
@@ -69,7 +74,8 @@ public static class SupplyChainAuthorization
         var x when x == SupplyChainSemanticModel.Product => true,
         var x when x == SupplyChainSemanticModel.Supplier => role != SupplyChainRole.Customer,
         var x when x == SupplyChainSemanticModel.Certification => role != SupplyChainRole.Customer,
-        var x when x == SupplyChainSemanticModel.ComplianceIncident => role is SupplyChainRole.Analyst or SupplyChainRole.SupplyChainManager,
+        var x when x == SupplyChainSemanticModel.ComplianceIncident => role is SupplyChainRole.Analyst
+            or SupplyChainRole.SupplyChainManager,
         var x when x == SupplyChainSemanticModel.Warehouse => role != SupplyChainRole.Customer,
         var x when x == SupplyChainSemanticModel.InventoryLot => role != SupplyChainRole.Customer,
         _ => role != SupplyChainRole.Customer
@@ -84,18 +90,21 @@ public static class SupplyChainAuthorization
         return true;
     }
 
-    private static bool CanReadRelationship(EntityId entity, RelationshipId relationship, SupplyChainRole role) => relationship switch
-    {
-        var x when x == RelationshipIds.SupplierCertifications => role != SupplyChainRole.Customer,
-        var x when x == RelationshipIds.SupplierIncidents => role is SupplyChainRole.Analyst or SupplyChainRole.SupplyChainManager,
-        var x when x == RelationshipIds.WarehouseInventory => role != SupplyChainRole.Customer,
-        _ => true
-    };
+    private static bool CanReadRelationship(EntityId entity, RelationshipId relationship, SupplyChainRole role) =>
+        relationship switch
+        {
+            var x when x == RelationshipIds.SupplierCertifications => role != SupplyChainRole.Customer,
+            var x when x == RelationshipIds.SupplierIncidents => role is SupplyChainRole.Analyst
+                or SupplyChainRole.SupplyChainManager,
+            var x when x == RelationshipIds.WarehouseInventory => role != SupplyChainRole.Customer,
+            _ => true
+        };
 
     private static bool CanWriteEntity(EntityId _, SupplyChainRole role, IReadOnlyDictionary<string, string> claims) =>
         !IsReadOnly(claims) && role is SupplyChainRole.WarehouseOperator or SupplyChainRole.SupplyChainManager;
 
-    private static bool CanWriteField(EntityId entity, FieldId field, SupplyChainRole role, IReadOnlyDictionary<string, string> claims)
+    private static bool CanWriteField(EntityId entity, FieldId field, SupplyChainRole role,
+        IReadOnlyDictionary<string, string> claims)
     {
         if (IsReadOnly(claims)) return false;
         if (entity == SupplyChainSemanticModel.InventoryLot)
@@ -103,7 +112,8 @@ public static class SupplyChainAuthorization
         return role == SupplyChainRole.SupplyChainManager;
     }
 
-    private static AuthorizationPredicate? GetPredicate(SemanticAuthorizationContext context, EntityId entity, AuthorizationOperation operation)
+    private static AuthorizationPredicate? GetPredicate(SemanticAuthorizationContext context, EntityId entity,
+        AuthorizationOperation operation)
     {
         AuthorizationPredicate? predicate = null;
         if (operation == AuthorizationOperation.Read &&
@@ -120,6 +130,7 @@ public static class SupplyChainAuthorization
             if (scope is not null)
                 predicate = predicate is null ? scope : AuthorizationPredicate.And(predicate, scope);
         }
+
         return predicate;
     }
 

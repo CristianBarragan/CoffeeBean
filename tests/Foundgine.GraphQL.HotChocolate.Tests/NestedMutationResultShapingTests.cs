@@ -17,20 +17,20 @@ public sealed class NestedMutationResultShapingTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var adapted = adapter.AdaptWithResultShape("""
-            mutation {
-              createCustomer(input: {
-                name: "Ada"
-                accounts: [{ name: "Checking" }]
-              }) {
-                customerId: id
-                displayName: name
-                accounts {
-                  accountId: id
-                  accountName: name
-                }
-              }
-            }
-            """);
+                                                   mutation {
+                                                     createCustomer(input: {
+                                                       name: "Ada"
+                                                       accounts: [{ name: "Checking" }]
+                                                     }) {
+                                                       customerId: id
+                                                       displayName: name
+                                                       accounts {
+                                                         accountId: id
+                                                         accountName: name
+                                                       }
+                                                     }
+                                                   }
+                                                   """);
 
         var root = Assert.IsType<MutationIntent>(adapted.Intent.Mutation);
         Assert.Equal([new FieldId(1), new FieldId(2)], root.ReturnFields);
@@ -61,7 +61,9 @@ public sealed class NestedMutationResultShapingTests
         Assert.Equal(42L, shaped["customerId"]);
         Assert.Equal("Ada", shaped["displayName"]);
         var accounts = Assert.IsAssignableFrom<System.Collections.IEnumerable>(shaped["accounts"]);
-        var account = Assert.IsType<Dictionary<string, object?>>(((System.Collections.IEnumerable)accounts).Cast<object>().Single());
+        var account =
+            Assert.IsType<Dictionary<string, object?>>(((System.Collections.IEnumerable)accounts).Cast<object>()
+                .Single());
         Assert.Equal(7L, account["accountId"]);
         Assert.Equal("Checking", account["accountName"]);
     }
@@ -90,13 +92,13 @@ public sealed class NestedMutationResultShapingTests
         var (model, registry) = BuildCustomerAccount();
         var adapter = new HotChocolateMutationAdapter(model, registry);
         var adapted = adapter.AdaptWithResultShape("""
-            mutation {
-              updateCustomer(input: { name: "Ada" }, where: { id: { eq: 99 } }) {
-                id
-                name
-              }
-            }
-            """);
+                                                   mutation {
+                                                     updateCustomer(input: { name: "Ada" }, where: { id: { eq: 99 } }) {
+                                                       id
+                                                       name
+                                                     }
+                                                   }
+                                                   """);
 
         var materialized = new MutationResultMaterializer(model).Materialize(
             adapted.Intent,
@@ -111,18 +113,20 @@ public sealed class NestedMutationResultShapingTests
         var (model, registry) = BuildCustomerAccountWithPrimaryAccount();
         var adapter = new HotChocolateMutationAdapter(model, registry);
         var adapted = adapter.AdaptWithResultShape("""
-            mutation {
-              createCustomer(input: { name: "Ada" }) {
-                id
-                primary { id name }
-              }
-            }
-            """);
+                                                   mutation {
+                                                     createCustomer(input: { name: "Ada" }) {
+                                                       id
+                                                       primary { id name }
+                                                     }
+                                                   }
+                                                   """);
 
         var materialized = new MutationResultMaterializer(model).Materialize(
             adapted.Intent,
-            new MutationBatchResult([new MutationResult(1, new Dictionary<FieldId, object?>
-            { [new FieldId(1)] = 42L })]));
+            new MutationBatchResult([
+                new MutationResult(1, new Dictionary<FieldId, object?>
+                    { [new FieldId(1)] = 42L })
+            ]));
 
         var shaped = GraphQLMutationResultShaper.ShapeRoot(materialized, adapted.ResultShape);
         var result = Assert.IsType<Dictionary<string, object?>>(shaped);
@@ -135,13 +139,13 @@ public sealed class NestedMutationResultShapingTests
         var (model, registry) = BuildCustomerAccountWithPrimaryAccount();
         var adapter = new HotChocolateMutationAdapter(model, registry);
         var adapted = adapter.AdaptWithResultShape("""
-            mutation {
-              createCustomer(input: { name: "Ada", primary: { name: "Checking" } }) {
-                id
-                primary { id name }
-              }
-            }
-            """);
+                                                   mutation {
+                                                     createCustomer(input: { name: "Ada", primary: { name: "Checking" } }) {
+                                                       id
+                                                       primary { id name }
+                                                     }
+                                                   }
+                                                   """);
 
         var materialized = new MutationResultMaterializer(model).Materialize(
             adapted.Intent,
@@ -188,16 +192,23 @@ public sealed class NestedMutationResultShapingTests
 
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ], PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 
         registry.Register(new EntityMetadata(account, "Account",
-            [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"), new ColumnMetadata(new ColumnId(3), "Name")],
-            Fields: [
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"),
+                new ColumnMetadata(new ColumnId(3), "Name")
+            ],
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(account, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "CustomerId", typeof(long), new ColumnReference(account, new ColumnId(2))),
+                new FieldMetadata(new FieldId(2), "CustomerId", typeof(long),
+                    new ColumnReference(account, new ColumnId(2))),
                 new FieldMetadata(new FieldId(3), "Name", typeof(string), new ColumnReference(account, new ColumnId(3)))
             ], PrimaryKey: new ColumnReference(account, new ColumnId(1))));
 

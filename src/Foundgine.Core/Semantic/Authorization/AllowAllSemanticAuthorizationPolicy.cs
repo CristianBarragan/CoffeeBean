@@ -50,6 +50,10 @@ public class AllowAllSemanticAuthorizationPolicy : ISemanticAuthorizationPolicy
         RelationshipId relationshipId,
         AuthorizationOperation operation) =>
         operation == AuthorizationOperation.Read
-            ? (CanAccessRelationship(sourceEntityId, relationshipId) ? AuthorizationDecision.Allowed : AuthorizationDecision.Denied)
-            : (CanWriteRelationship(sourceEntityId, relationshipId) ? AuthorizationDecision.Allowed : AuthorizationDecision.Denied);
+            ? (CanAccessRelationship(sourceEntityId, relationshipId)
+                ? AuthorizationDecision.Allowed
+                : AuthorizationDecision.Denied)
+            : (CanWriteRelationship(sourceEntityId, relationshipId)
+                ? AuthorizationDecision.Allowed
+                : AuthorizationDecision.Denied);
 }

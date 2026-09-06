@@ -226,7 +226,7 @@ internal static class Program
 
                 var customer =
                     actor.Name is "alice"
-                        || actor.Name.StartsWith("customer")
+                    || actor.Name.StartsWith("customer")
                         ? rng.Next(100) < 75
                             ? actor.CustomerId
                             : rng.Next(1, customers + 1)
@@ -262,7 +262,7 @@ internal static class Program
 
                 var customer =
                     actor.Name is "alice"
-                        || actor.Name.StartsWith("customer")
+                    || actor.Name.StartsWith("customer")
                         ? actor.CustomerId
                         : Math.Min(2, customers);
 
@@ -513,8 +513,7 @@ internal static class Program
                 records.Count(x => x.ExpectedAllowed),
 
             unexpectedUnauthorizedSuccesses =
-                records.Count(
-                    x => !x.ExpectedAllowed && x.Success),
+                records.Count(x => !x.ExpectedAllowed && x.Success),
 
             avgLatencyMs =
                 records
@@ -674,7 +673,7 @@ internal static class Program
                     "isError",
                     out var isError)
                 && isError.ValueKind ==
-                   JsonValueKind.True)
+                JsonValueKind.True)
             {
                 return true;
             }
@@ -754,29 +753,29 @@ internal static class Program
     private static string Markdown(dynamic report)
     {
         return $"""
-        # Supply Chain E2E
+                # Supply Chain E2E
 
-        - Seed: {report.seed}
-        - Steps: {report.steps}
-        - Customers: {report.customers}
-        - Success: {report.summary.success}
-        - Failures: {report.summary.failures}
-        - Unexpected unauthorized successes: {report.summary.unexpectedUnauthorizedSuccesses}
-        - Average latency: {report.summary.avgLatencyMs:F1} ms
+                - Seed: {report.seed}
+                - Steps: {report.steps}
+                - Customers: {report.customers}
+                - Success: {report.summary.success}
+                - Failures: {report.summary.failures}
+                - Unexpected unauthorized successes: {report.summary.unexpectedUnauthorizedSuccesses}
+                - Average latency: {report.summary.avgLatencyMs:F1} ms
 
-        ## Efficiency estimate (MODELED, not measured)
+                ## Efficiency estimate (MODELED, not measured)
 
-        - Measured Foundgine tool calls: {report.efficiencyEstimate.measuredFoundgine.toolCalls}
-        - Measured Foundgine estimated context load: {report.efficiencyEstimate.measuredFoundgine.totalEstimatedContextLoadTokens} tokens ({report.efficiencyEstimate.measuredFoundgine.avgEstimatedContextLoadTokensPerCall} avg/call)
-        - Modeled conventional tool calls ({report.efficiencyEstimate.modeledConventional.stepsPerCapabilityMultiplier}x/capability): {report.efficiencyEstimate.modeledConventional.estimatedToolCalls}
-        - Modeled conventional estimated context load: {report.efficiencyEstimate.modeledConventional.estimatedContextLoadTokens} tokens
-        - **Modeled tool-call reduction: {report.efficiencyEstimate.modeledToolCallReductionPercent}%**
-        - **Modeled context-load reduction: {report.efficiencyEstimate.modeledContextLoadReductionPercent}%**
+                - Measured Foundgine tool calls: {report.efficiencyEstimate.measuredFoundgine.toolCalls}
+                - Measured Foundgine estimated context load: {report.efficiencyEstimate.measuredFoundgine.totalEstimatedContextLoadTokens} tokens ({report.efficiencyEstimate.measuredFoundgine.avgEstimatedContextLoadTokensPerCall} avg/call)
+                - Modeled conventional tool calls ({report.efficiencyEstimate.modeledConventional.stepsPerCapabilityMultiplier}x/capability): {report.efficiencyEstimate.modeledConventional.estimatedToolCalls}
+                - Modeled conventional estimated context load: {report.efficiencyEstimate.modeledConventional.estimatedContextLoadTokens} tokens
+                - **Modeled tool-call reduction: {report.efficiencyEstimate.modeledToolCallReductionPercent}%**
+                - **Modeled context-load reduction: {report.efficiencyEstimate.modeledContextLoadReductionPercent}%**
 
-        > This run has no live conventional flow to compare against, so the conventional side above is modeled from the discover/authorize/execute/verify choreography used by Run1 — not re-executed here.
+                > This run has no live conventional flow to compare against, so the conventional side above is modeled from the discover/authorize/execute/verify choreography used by Run1 — not re-executed here.
 
-        > For a measured comparison, see the AgentEndToEnd Run1-5 reports.
-        """;
+                > For a measured comparison, see the AgentEndToEnd Run1-5 reports.
+                """;
     }
 
     private static class TokenEstimator
@@ -794,9 +793,9 @@ internal static class Program
 
             var words =
                 text.Split(
-                    (char[]?)null,
-                    StringSplitOptions.RemoveEmptyEntries)
-                .Length;
+                        (char[]?)null,
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .Length;
 
             return (int)Math.Round(
                 Math.Max(

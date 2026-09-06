@@ -58,4 +58,3 @@ public sealed class FoundginePipelineTests
             transaction.Fields);
     }
 }
-

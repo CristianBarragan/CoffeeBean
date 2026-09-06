@@ -29,7 +29,8 @@ public sealed class AggregateRelationshipFilterPushdownTests
         var filter = new SemanticAndFilter([
             new SemanticAggregateFilter(relationship, SemanticFilterAggregate.Count, null,
                 SemanticAggregateFilterOperator.Gt, 0),
-            new SemanticRelationshipFilter(relationship, SemanticRelationshipQuantifier.Some, open)]);
+            new SemanticRelationshipFilter(relationship, SemanticRelationshipQuantifier.Some, open)
+        ]);
 
         var request = new SemanticRequest(
             new EntityId(301),
@@ -73,18 +74,30 @@ public sealed class AggregateRelationshipFilterPushdownTests
         var customer = new EntityMetadata(
             new EntityId(301), "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
-                new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(new EntityId(301), new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(new EntityId(301), new ColumnId(2)))],
+            Fields:
+            [
+                new FieldMetadata(new FieldId(1), "Id", typeof(int),
+                    new ColumnReference(new EntityId(301), new ColumnId(1))),
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(new EntityId(301), new ColumnId(2)))
+            ],
             PrimaryKey: new ColumnReference(new EntityId(301), new ColumnId(1)));
 
         var account = new EntityMetadata(
             new EntityId(302), "Account",
-            [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"), new ColumnMetadata(new ColumnId(3), "Status")],
-            Fields: [
-                new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(new EntityId(302), new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "CustomerId", typeof(int), new ColumnReference(new EntityId(302), new ColumnId(2))),
-                new FieldMetadata(new FieldId(3), "Status", typeof(string), new ColumnReference(new EntityId(302), new ColumnId(3)))],
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"),
+                new ColumnMetadata(new ColumnId(3), "Status")
+            ],
+            Fields:
+            [
+                new FieldMetadata(new FieldId(1), "Id", typeof(int),
+                    new ColumnReference(new EntityId(302), new ColumnId(1))),
+                new FieldMetadata(new FieldId(2), "CustomerId", typeof(int),
+                    new ColumnReference(new EntityId(302), new ColumnId(2))),
+                new FieldMetadata(new FieldId(3), "Status", typeof(string),
+                    new ColumnReference(new EntityId(302), new ColumnId(3)))
+            ],
             PrimaryKey: new ColumnReference(new EntityId(302), new ColumnId(1)));
 
         var relationship = new RelationshipMetadata(
@@ -103,17 +116,16 @@ public sealed class AggregateRelationshipFilterPushdownTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
-            CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Status" TEXT NOT NULL);
-            INSERT INTO "Customer" VALUES (1, 'A');
-            INSERT INTO "Customer" VALUES (2, 'B');
-            INSERT INTO "Customer" VALUES (3, 'C');
-            INSERT INTO "Account" VALUES (11, 1, 'open');
-            INSERT INTO "Account" VALUES (12, 1, 'closed');
-            INSERT INTO "Account" VALUES (21, 2, 'open');
-            INSERT INTO "Account" VALUES (31, 3, 'closed');
-            """;
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
+                              CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Status" TEXT NOT NULL);
+                              INSERT INTO "Customer" VALUES (1, 'A');
+                              INSERT INTO "Customer" VALUES (2, 'B');
+                              INSERT INTO "Customer" VALUES (3, 'C');
+                              INSERT INTO "Account" VALUES (11, 1, 'open');
+                              INSERT INTO "Account" VALUES (12, 1, 'closed');
+                              INSERT INTO "Account" VALUES (21, 2, 'open');
+                              INSERT INTO "Account" VALUES (31, 3, 'closed');
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

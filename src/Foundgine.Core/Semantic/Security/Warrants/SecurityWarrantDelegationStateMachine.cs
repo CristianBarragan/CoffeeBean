@@ -105,7 +105,8 @@ public sealed class SecurityWarrantDelegationStateMachine
         {
             var before = Snapshot(warrant, cell);
             if (!allowed(cell.State))
-                throw new InvalidOperationException($"Illegal delegation state transition '{operation}' from {cell.State}.");
+                throw new InvalidOperationException(
+                    $"Illegal delegation state transition '{operation}' from {cell.State}.");
             apply(cell);
             cell.Sequence = checked(cell.Sequence + 1);
             var after = Snapshot(warrant, cell);

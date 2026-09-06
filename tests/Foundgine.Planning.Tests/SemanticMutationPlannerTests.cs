@@ -64,9 +64,14 @@ public sealed class SemanticMutationPlannerTests
         var planner = new MutationPlanner(schema);
         var graph = new SemanticMutationOperationGraph([
             SemanticMutationBuilder.Create(customer, [new SemanticMutationField(customerId, "c")], [customerId]),
-            SemanticMutationBuilder.Create(account, [new SemanticMutationField(
-                accountCustomerId, null, new SemanticMutationValueReference(0, customerId))])
-                with { ReturnFields = [accountCustomerId] }
+            SemanticMutationBuilder.Create(account, [
+                    new SemanticMutationField(
+                        accountCustomerId, null, new SemanticMutationValueReference(0, customerId))
+                ])
+                with
+                {
+                    ReturnFields = [accountCustomerId]
+                }
         ]);
 
         var plan = planner.Plan(graph);
@@ -99,7 +104,8 @@ public sealed class SemanticMutationPlannerTests
                 new SemanticMutationField(
                     accountCustomerId,
                     null,
-                    new SemanticMutationValueReference(0, customerId))])
+                    new SemanticMutationValueReference(0, customerId))
+            ])
         ]);
 
         var plan = new SemanticMutationPlanner().Plan(graph);
@@ -128,9 +134,15 @@ public sealed class SemanticMutationPlannerTests
         // The existing suite constructs concrete semantic graphs; this assertion
         // protects the architectural contract at the type level.
         Assert.True(typeof(SemanticMutationPlan).GetProperty(nameof(SemanticMutationPlan.Operations)) is not null);
-        Assert.True(typeof(SemanticMutationOperationPlan).GetProperty(nameof(SemanticMutationOperationPlan.Filter)) is not null);
-        Assert.True(typeof(SemanticMutationOperationPlan).GetProperty(nameof(SemanticMutationOperationPlan.ConflictFields)) is not null);
-        Assert.True(typeof(SemanticMutationOperationPlan).GetProperty(nameof(SemanticMutationOperationPlan.ReturnFields)) is not null);
+        Assert.True(
+            typeof(SemanticMutationOperationPlan).GetProperty(nameof(SemanticMutationOperationPlan
+                .Filter)) is not null);
+        Assert.True(
+            typeof(SemanticMutationOperationPlan).GetProperty(nameof(SemanticMutationOperationPlan.ConflictFields)) is
+                not null);
+        Assert.True(
+            typeof(SemanticMutationOperationPlan).GetProperty(nameof(SemanticMutationOperationPlan.ReturnFields)) is not
+                null);
     }
 
     private static TestMutationSchema Schema(EntityId entity, params (FieldId Field, ColumnId Column)[] fields) =>

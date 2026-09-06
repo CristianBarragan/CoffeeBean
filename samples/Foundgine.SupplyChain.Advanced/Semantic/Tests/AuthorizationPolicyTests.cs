@@ -16,12 +16,17 @@ public sealed class AuthorizationPolicyTests
 
         Assert.True(analyst.CanAccessEntity(SupplyChainSemanticModel.Product));
         Assert.True(analyst.CanAccessEntity(SupplyChainSemanticModel.ComplianceIncident));
-        Assert.False(analyst.CanAccessField(SupplyChainSemanticModel.InventoryLot, SupplyChainAuthorization.FieldIds.InventoryQuarantined));
-        Assert.False(operatorPolicy.CanAccessRelationship(SupplyChainSemanticModel.Supplier, SupplyChainAuthorization.RelationshipIds.SupplierIncidents));
+        Assert.False(analyst.CanAccessField(SupplyChainSemanticModel.InventoryLot,
+            SupplyChainAuthorization.FieldIds.InventoryQuarantined));
+        Assert.False(operatorPolicy.CanAccessRelationship(SupplyChainSemanticModel.Supplier,
+            SupplyChainAuthorization.RelationshipIds.SupplierIncidents));
         Assert.NotNull(analyst.GetPredicate(SupplyChainSemanticModel.Warehouse, AuthorizationOperation.Read));
-        Assert.False(analyst.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write).IsAllowed);
-        Assert.False(operatorPolicy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write, new AuthorizationOperationName("inventory.reconcile")).IsAllowed);
-        Assert.True(operatorPolicy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write, new AuthorizationOperationName("update")).IsAllowed);
+        Assert.False(analyst.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write)
+            .IsAllowed);
+        Assert.False(operatorPolicy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write,
+            new AuthorizationOperationName("inventory.reconcile")).IsAllowed);
+        Assert.True(operatorPolicy.GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write,
+            new AuthorizationOperationName("update")).IsAllowed);
     }
 }
 
@@ -166,7 +171,8 @@ public sealed class ClientClaimsValidatorTests
     {
         var noEvidence = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.SupplyChainManager);
         Assert.False(noEvidence
-            .GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write, new AuthorizationOperationName("inventory.reconcile"))
+            .GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write,
+                new AuthorizationOperationName("inventory.reconcile"))
             .IsAllowed);
 
         var evidenceRaw = new Dictionary<string, string>
@@ -175,16 +181,20 @@ public sealed class ClientClaimsValidatorTests
             ["change_ticket"] = "CHG-4821"
         };
         var validatedEvidence = ClientClaimsValidator.Validate(evidenceRaw, Now);
-        var withEvidence = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.SupplyChainManager, validatedEvidence.Accepted);
+        var withEvidence = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.SupplyChainManager,
+            validatedEvidence.Accepted);
         Assert.True(withEvidence
-            .GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write, new AuthorizationOperationName("inventory.reconcile"))
+            .GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write,
+                new AuthorizationOperationName("inventory.reconcile"))
             .IsAllowed);
 
         // Valid evidence still cannot substitute for role: an operator with
         // the exact same claims remains denied.
-        var operatorWithEvidence = SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.WarehouseOperator, validatedEvidence.Accepted);
+        var operatorWithEvidence =
+            SupplyChainAuthorization.Create("tenant-a", SupplyChainRole.WarehouseOperator, validatedEvidence.Accepted);
         Assert.False(operatorWithEvidence
-            .GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write, new AuthorizationOperationName("inventory.reconcile"))
+            .GetEntityAccess(SupplyChainSemanticModel.InventoryLot, AuthorizationOperation.Write,
+                new AuthorizationOperationName("inventory.reconcile"))
             .IsAllowed);
     }
 }

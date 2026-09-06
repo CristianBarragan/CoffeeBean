@@ -121,12 +121,14 @@ public sealed class CapabilityBoundaryTests
             ],
             Fields:
             [
-                new FieldMetadata(PurchaseOrderStatus, "Status", typeof(string), new ColumnReference(PurchaseOrder, new ColumnId(3))),
+                new FieldMetadata(PurchaseOrderStatus, "Status", typeof(string),
+                    new ColumnReference(PurchaseOrder, new ColumnId(3))),
                 // Internal foreign-key mapping only, same shape as
                 // BankingRelationalMetadata.Account.CustomerId: no semantic
                 // field ever exposes it, it exists solely to resolve the
                 // SupplierPurchaseOrders relationship.
-                new FieldMetadata(PurchaseOrderSupplierFk, "SupplierId", typeof(int), new ColumnReference(PurchaseOrder, new ColumnId(2)))
+                new FieldMetadata(PurchaseOrderSupplierFk, "SupplierId", typeof(int),
+                    new ColumnReference(PurchaseOrder, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(PurchaseOrder, new ColumnId(1))));
 
@@ -139,7 +141,8 @@ public sealed class CapabilityBoundaryTests
             new ColumnReference(PurchaseOrder, new ColumnId(2))));
 
         var data = new InMemoryDataSet()
-            .Add(new InMemoryRow(Supplier, new Dictionary<FieldId, object?> { [SupplierId] = 1, [SupplierName] = "Kiwi Components" }))
+            .Add(new InMemoryRow(Supplier,
+                new Dictionary<FieldId, object?> { [SupplierId] = 1, [SupplierName] = "Kiwi Components" }))
             .Add(new InMemoryRow(PurchaseOrder, new Dictionary<FieldId, object?>
             {
                 [PurchaseOrderId] = 500,
@@ -151,7 +154,8 @@ public sealed class CapabilityBoundaryTests
             new ExecutionIRNode(
                 0, ExecutionOperation.Scan, Supplier, [SupplierName], null, null,
                 [
-                    new ExecutionIRNode(1, ExecutionOperation.Traverse, PurchaseOrder, [PurchaseOrderStatus], SupplierPurchaseOrders, null, [])
+                    new ExecutionIRNode(1, ExecutionOperation.Traverse, PurchaseOrder, [PurchaseOrderStatus],
+                        SupplierPurchaseOrders, null, [])
                 ]),
             []);
 
@@ -177,5 +181,6 @@ public sealed class CapabilityBoundaryTests
     }
 
     private static ExecutionIR CreateIR(ExecutionIRNode root, IReadOnlyList<string> requiredSecurityInvariants) =>
-        new(root, requiredSecurityInvariants, new SemanticPlanAuthorizationBinding("test-contract", "test-authorization"));
+        new(root, requiredSecurityInvariants,
+            new SemanticPlanAuthorizationBinding("test-contract", "test-authorization"));
 }

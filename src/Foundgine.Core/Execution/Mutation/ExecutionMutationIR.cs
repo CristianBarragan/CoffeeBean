@@ -18,7 +18,8 @@ public sealed record ExecutionMutationIR(
     /// <summary>Security invariants required to execute this exact mutation IR.</summary>
     public IReadOnlyList<string> RequiredSecurityInvariants { get; init; } = [];
 
-    public static ExecutionMutationIR From(MutationBatchPlan plan, IReadOnlyList<string>? requiredSecurityInvariants = null)
+    public static ExecutionMutationIR From(MutationBatchPlan plan,
+        IReadOnlyList<string>? requiredSecurityInvariants = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
 
@@ -34,7 +35,8 @@ public sealed record ExecutionMutationIR(
         {
             RequiredSecurityInvariants = requiredSecurityInvariants is null
                 ? []
-                : requiredSecurityInvariants.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray()
+                : requiredSecurityInvariants.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal)
+                    .ToArray()
         };
     }
 

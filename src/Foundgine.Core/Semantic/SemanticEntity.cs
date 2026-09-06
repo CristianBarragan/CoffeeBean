@@ -14,6 +14,7 @@ public sealed record SemanticEntity(
     IReadOnlyList<SemanticAlias>? Aliases = null)
 {
     public IReadOnlyList<SemanticAlias> EffectiveAliases => Aliases ?? [];
+
     /// <summary>CLR model type represented by this semantic entity when known.</summary>
     public Type? ModelType { get; init; }
 }

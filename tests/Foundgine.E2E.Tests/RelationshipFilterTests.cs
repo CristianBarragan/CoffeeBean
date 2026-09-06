@@ -94,16 +94,15 @@ public sealed class RelationshipFilterTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
-            CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Balance" DECIMAL NOT NULL);
-            CREATE TABLE "Transaction" ("Id" INTEGER PRIMARY KEY, "AccountId" INTEGER NOT NULL, "Amount" DECIMAL NOT NULL, "TransactionDate" TEXT NOT NULL);
-            INSERT INTO "Customer" VALUES (1, 'Alice');
-            INSERT INTO "Customer" VALUES (2, 'Bob');
-            INSERT INTO "Account" VALUES (10, 1, 100.50);
-            INSERT INTO "Account" VALUES (20, 2, 50.00);
-            INSERT INTO "Transaction" VALUES (100, 10, 25.00, '2026-01-01');
-            """;
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
+                              CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Balance" DECIMAL NOT NULL);
+                              CREATE TABLE "Transaction" ("Id" INTEGER PRIMARY KEY, "AccountId" INTEGER NOT NULL, "Amount" DECIMAL NOT NULL, "TransactionDate" TEXT NOT NULL);
+                              INSERT INTO "Customer" VALUES (1, 'Alice');
+                              INSERT INTO "Customer" VALUES (2, 'Bob');
+                              INSERT INTO "Account" VALUES (10, 1, 100.50);
+                              INSERT INTO "Account" VALUES (20, 2, 50.00);
+                              INSERT INTO "Transaction" VALUES (100, 10, 25.00, '2026-01-01');
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

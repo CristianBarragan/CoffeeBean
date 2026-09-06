@@ -43,7 +43,8 @@ public sealed record SqlCostModelOptions(
         if (string.IsNullOrWhiteSpace(StatisticsSource))
             throw new ArgumentException("Statistics source is required.", nameof(StatisticsSource));
         if (StatisticsObservedAtUtc is not null && StatisticsVersion is null)
-            throw new ArgumentException("Statistics version is required when an observation timestamp is supplied.", nameof(StatisticsVersion));
+            throw new ArgumentException("Statistics version is required when an observation timestamp is supplied.",
+                nameof(StatisticsVersion));
         if (StatisticsStaleAfter is not null && StatisticsStaleAfter.Value < TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(StatisticsStaleAfter));
         return this;
@@ -114,6 +115,7 @@ public sealed class SqlCostEstimator : IProviderCostEstimator
                 var orderFactor = 1d - (_options.TraversalOrderDiscount / (node.TraversalOrder + 2d));
                 traversalCost *= Math.Max(0d, orderFactor);
             }
+
             cost += traversalCost;
         }
 

@@ -26,11 +26,11 @@ public sealed class CursorPaginationTests
         var first = BuildRequest();
         var firstPlan = new SqlCompiler(metadata).Compile(
             new Planner().Plan(
-                new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(
-                    new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(first))) with
-            {
-                AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
-            });
+                    new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(
+                        new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(first))) with
+                {
+                    AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+                });
 
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -48,13 +48,14 @@ public sealed class CursorPaginationTests
         var second = BuildRequest(firstResult.PageInfo.EndCursor);
         var secondPlan = new SqlCompiler(metadata).Compile(
             new Planner().Plan(
-                new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(
-                    new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(second))) with
-            {
-                AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
-            });
+                    new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(
+                        new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(second))) with
+                {
+                    AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+                });
 
-        var secondResult = await provider.ExecuteAsync(secondPlan, PaginationExecutionContext.Create(2, firstResult.PageInfo.EndCursor));
+        var secondResult = await provider.ExecuteAsync(secondPlan,
+            PaginationExecutionContext.Create(2, firstResult.PageInfo.EndCursor));
         var row = Assert.Single(secondResult.Rows);
         Assert.Equal(3, Convert.ToInt32(row.Values["__fg_0_Id"]));
         Assert.False(secondResult.PageInfo!.HasNextPage);
@@ -91,12 +92,11 @@ public sealed class CursorPaginationTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
-            INSERT INTO "Customer" VALUES (1, 'Alice');
-            INSERT INTO "Customer" VALUES (2, 'Bob');
-            INSERT INTO "Customer" VALUES (3, 'Carol');
-            """;
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
+                              INSERT INTO "Customer" VALUES (1, 'Alice');
+                              INSERT INTO "Customer" VALUES (2, 'Bob');
+                              INSERT INTO "Customer" VALUES (3, 'Carol');
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

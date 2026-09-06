@@ -61,7 +61,8 @@ public static class SecurityWarrantDelegationChainValidator
             {
                 var expected = chain[pathIndex].Digest;
                 if (!StringComparer.Ordinal.Equals(child.DelegationPath[pathIndex], expected))
-                    throw new InvalidOperationException("Delegation path contains a splice, reorder, or substituted ancestor.");
+                    throw new InvalidOperationException(
+                        "Delegation path contains a splice, reorder, or substituted ancestor.");
             }
 
             if (child.DelegationPath.Distinct(StringComparer.Ordinal).Count() != child.DelegationPath.Count)
@@ -93,6 +94,7 @@ public static class SecurityWarrantDelegationChainValidator
             var digestBytes = Convert.FromHexString(warrant.Digest);
             WriteLengthPrefixed(stream, digestBytes);
         }
+
         return Convert.ToHexString(sha.ComputeHash(stream.ToArray()));
     }
 

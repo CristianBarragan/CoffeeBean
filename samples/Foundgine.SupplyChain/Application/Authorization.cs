@@ -55,11 +55,22 @@ public sealed class SupplyChainAuthorizer : ICapabilityAuthorizer
 
         var allowed = actor switch
         {
-            "alice" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order" },
-            "bob" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order", "list_customers" },
-            "carol" => new[] { "get_product", "get_inventory", "update_inventory", "create_shipment", "update_shipment" },
+            "alice" => new[]
+                { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order" },
+            "bob" => new[]
+            {
+                "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order",
+                "list_customers"
+            },
+            "carol" => new[]
+                { "get_product", "get_inventory", "update_inventory", "create_shipment", "update_shipment" },
             "dave" => new[] { "get_product", "get_inventory", "list_products", "list_suppliers", "update_inventory" },
-            "admin" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order", "list_customers", "get_inventory", "update_inventory", "create_shipment", "update_shipment", "list_products", "list_suppliers" },
+            "admin" => new[]
+            {
+                "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order",
+                "list_customers", "get_inventory", "update_inventory", "create_shipment", "update_shipment",
+                "list_products", "list_suppliers"
+            },
             _ => Array.Empty<string>()
         };
 

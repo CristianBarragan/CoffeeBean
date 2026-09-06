@@ -15,7 +15,12 @@ public sealed class SemanticPlanOptimizer : IPlanOptimizer
         RewriteRuleCompositionOptions? options = null)
     {
         _composer = new RewriteRuleComposer(
-            rules ?? [new AuthorizationCanonicalizationRule(), new PredicatePushdownRule(), new ProjectionPruningRule(), new RelationshipTraversalOptimizationRule(), new RelationshipJoinOrderingRule(), new AggregateRelationshipFilterPushdownRule(), new AggregateCardinalityOptimizationRule()],
+            rules ??
+            [
+                new AuthorizationCanonicalizationRule(), new PredicatePushdownRule(), new ProjectionPruningRule(),
+                new RelationshipTraversalOptimizationRule(), new RelationshipJoinOrderingRule(),
+                new AggregateRelationshipFilterPushdownRule(), new AggregateCardinalityOptimizationRule()
+            ],
             options);
     }
 

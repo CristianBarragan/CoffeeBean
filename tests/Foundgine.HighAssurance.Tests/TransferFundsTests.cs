@@ -18,7 +18,8 @@ public sealed class TransferFundsTests
         var audit = new InMemoryBankAuditSink();
         var service = new TransferFundsService(store, new OwnershipAuthorization(), audit);
 
-        var receipt = service.Execute(_actor, _tenant, new TransferFundsCommand(source.Id, destination.Id, 400m, "k-1"));
+        var receipt = service.Execute(_actor, _tenant,
+            new TransferFundsCommand(source.Id, destination.Id, 400m, "k-1"));
 
         Assert.False(receipt.Replay);
         Assert.Equal(600m, store.Get(source.Id).Balance);
@@ -33,9 +34,13 @@ public sealed class TransferFundsTests
     [Fact]
     public void Available_funds_uses_pending_transactions_and_regulatory_hold_not_raw_balance()
     {
-        var source = NewAccount(100, 1000m, dailyLimit: 5000m) with { PendingTransactions = 300m, RegulatoryHold = 250m };
+        var source = NewAccount(100, 1000m, dailyLimit: 5000m) with
+        {
+            PendingTransactions = 300m, RegulatoryHold = 250m
+        };
         var destination = NewAccount(101, 0m, dailyLimit: 5000m);
-        var service = new TransferFundsService(NewStore(source, destination), new OwnershipAuthorization(), new InMemoryBankAuditSink());
+        var service = new TransferFundsService(NewStore(source, destination), new OwnershipAuthorization(),
+            new InMemoryBankAuditSink());
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
             service.Execute(_actor, _tenant, new TransferFundsCommand(source.Id, destination.Id, 451m, "k-2")));
@@ -51,7 +56,8 @@ public sealed class TransferFundsTests
         var store = NewStore(source, destination);
         var service = new TransferFundsService(store, new OwnershipAuthorization(), new InMemoryBankAuditSink());
 
-        Assert.Throws<InvalidOperationException>(() => service.Execute(_actor, _tenant, new TransferFundsCommand(source.Id, destination.Id, 100m, "k-3")));
+        Assert.Throws<InvalidOperationException>(() =>
+            service.Execute(_actor, _tenant, new TransferFundsCommand(source.Id, destination.Id, 100m, "k-3")));
         Assert.Equal(1000m, store.Get(source.Id).Balance);
         Assert.Equal(250m, store.Get(destination.Id).Balance);
     }
@@ -61,9 +67,11 @@ public sealed class TransferFundsTests
     {
         var source = NewAccount(100, 1000m, dailyLimit: 500m) with { DailyTransferred = 450m };
         var destination = NewAccount(101, 0m, dailyLimit: 500m);
-        var service = new TransferFundsService(NewStore(source, destination), new OwnershipAuthorization(), new InMemoryBankAuditSink());
+        var service = new TransferFundsService(NewStore(source, destination), new OwnershipAuthorization(),
+            new InMemoryBankAuditSink());
 
-        var exception = Assert.Throws<InvalidOperationException>(() => service.Execute(_actor, _tenant, new TransferFundsCommand(source.Id, destination.Id, 51m, "k-4")));
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            service.Execute(_actor, _tenant, new TransferFundsCommand(source.Id, destination.Id, 51m, "k-4")));
         Assert.Contains("daily limit", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -75,7 +83,8 @@ public sealed class TransferFundsTests
         var store = NewStore(source, destination);
         var service = new TransferFundsService(store, new OwnershipAuthorization(), new InMemoryBankAuditSink());
 
-        Assert.Throws<InvalidOperationException>(() => service.Execute(_actor, _tenant, new TransferFundsCommand(source.Id, destination.Id, 100m, "k-5")));
+        Assert.Throws<InvalidOperationException>(() =>
+            service.Execute(_actor, _tenant, new TransferFundsCommand(source.Id, destination.Id, 100m, "k-5")));
         Assert.Equal(1000m, store.Get(source.Id).Balance);
     }
 
@@ -88,7 +97,8 @@ public sealed class TransferFundsTests
         var authorization = new MutableAuthorization { Allowed = false };
         var service = new TransferFundsService(store, authorization, new InMemoryBankAuditSink());
 
-        Assert.Throws<SemanticAuthorizationException>(() => service.Execute(_actor, _tenant, new TransferFundsCommand(source.Id, destination.Id, 100m, "k-6")));
+        Assert.Throws<SemanticAuthorizationException>(() =>
+            service.Execute(_actor, _tenant, new TransferFundsCommand(source.Id, destination.Id, 100m, "k-6")));
         Assert.Equal(1000m, store.Get(source.Id).Balance);
     }
 
@@ -118,7 +128,8 @@ public sealed class TransferFundsTests
     {
         var source = NewAccount(100, 1000m, dailyLimit: 5000m);
         var destination = NewAccount(101, 0m, dailyLimit: 5000m);
-        var service = new TransferFundsService(NewStore(source, destination), new OwnershipAuthorization(), new InMemoryBankAuditSink());
+        var service = new TransferFundsService(NewStore(source, destination), new OwnershipAuthorization(),
+            new InMemoryBankAuditSink());
         service.Execute(_actor, _tenant, new TransferFundsCommand(source.Id, destination.Id, 100m, "bound-key"));
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -133,7 +144,8 @@ public sealed class TransferFundsTests
         var source = NewAccount(100, 1000m, dailyLimit: 5000m);
         var destination = NewAccount(101, 0m, dailyLimit: 5000m);
         var authorization = new MutableAuthorization { Allowed = true };
-        var service = new TransferFundsService(NewStore(source, destination), authorization, new InMemoryBankAuditSink());
+        var service =
+            new TransferFundsService(NewStore(source, destination), authorization, new InMemoryBankAuditSink());
         var command = new TransferFundsCommand(source.Id, destination.Id, 100m, "auth-replay-key");
         service.Execute(_actor, _tenant, command);
         authorization.Allowed = false;

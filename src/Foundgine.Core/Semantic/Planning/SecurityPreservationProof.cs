@@ -15,8 +15,8 @@ public sealed record SecurityPreservationProof(
     string AfterFingerprint)
 {
     public bool IsSatisfied => Missing.Count == 0 &&
-        Before.OrderBy(x => x, StringComparer.Ordinal).SequenceEqual(
-            After.OrderBy(x => x, StringComparer.Ordinal), StringComparer.Ordinal);
+                               Before.OrderBy(x => x, StringComparer.Ordinal).SequenceEqual(
+                                   After.OrderBy(x => x, StringComparer.Ordinal), StringComparer.Ordinal);
 
     public static SecurityPreservationProof Create(SemanticPlan before, SemanticPlan after)
     {

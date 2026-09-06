@@ -15,6 +15,7 @@ namespace Foundgine.Core.Semantic.Tests;
 public sealed class SemanticEntityBuilderAliasTests
 {
     private sealed record TestSalesOrder(int Id, string Status);
+
     private sealed record TestSalesOrderLine(int OrderId, int LineNumber);
 
     [Fact]
@@ -132,6 +133,7 @@ public sealed class SemanticEntityBuilderAliasTests
 
         var entity = model.Get(order);
         Assert.Equal(["aa", "bb"], entity.EffectiveAliases.Select(a => a.Name));
-        Assert.Equal(["State", "Stage"], entity.Fields.Single(f => f.Name == "Status").EffectiveAliases.Select(a => a.Name));
+        Assert.Equal(["State", "Stage"],
+            entity.Fields.Single(f => f.Name == "Status").EffectiveAliases.Select(a => a.Name));
     }
 }

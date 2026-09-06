@@ -23,24 +23,24 @@ public sealed class MutationTypeSemanticsTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var intent = adapter.Adapt("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) {
-                id
-                name
-                accounts { id name }
-              }
-            }
-            """, new Dictionary<string, object?>
+                                   mutation CreateCustomer($input: CustomerInput!) {
+                                     createCustomer(input: $input) {
+                                       id
+                                       name
+                                       accounts { id name }
+                                     }
+                                   }
+                                   """, new Dictionary<string, object?>
+        {
+            ["input"] = new Dictionary<string, object?>
             {
-                ["input"] = new Dictionary<string, object?>
+                ["name"] = "Ada",
+                ["accounts"] = new[]
                 {
-                    ["name"] = "Ada",
-                    ["accounts"] = new[]
-                    {
-                        new Dictionary<string, object?> { ["name"] = "Checking" }
-                    }
+                    new Dictionary<string, object?> { ["name"] = "Checking" }
                 }
-            });
+            }
+        });
 
         var root = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Equal("Ada", Assert.Single(root.Fields).Value);
@@ -59,17 +59,17 @@ public sealed class MutationTypeSemanticsTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var intent = adapter.Adapt("""
-            mutation UpdateCustomer($input: CustomerInput!, $where: CustomerWhereInput!) {
-              updateCustomer(input: $input, where: $where) { id name }
-            }
-            """, new Dictionary<string, object?>
+                                   mutation UpdateCustomer($input: CustomerInput!, $where: CustomerWhereInput!) {
+                                     updateCustomer(input: $input, where: $where) { id name }
+                                   }
+                                   """, new Dictionary<string, object?>
+        {
+            ["input"] = new Dictionary<string, object?> { ["name"] = "Grace" },
+            ["where"] = new Dictionary<string, object?>
             {
-                ["input"] = new Dictionary<string, object?> { ["name"] = "Grace" },
-                ["where"] = new Dictionary<string, object?>
-                {
-                    ["id"] = new Dictionary<string, object?> { ["eq"] = 7L }
-                }
-            });
+                ["id"] = new Dictionary<string, object?> { ["eq"] = 7L }
+            }
+        });
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Equal("Grace", Assert.Single(mutation.Fields).Value);
@@ -85,16 +85,16 @@ public sealed class MutationTypeSemanticsTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var adapted = adapter.AdaptWithResultShape("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) {
-                id
-                name
-              }
-            }
-            """, new Dictionary<string, object?>
-            {
-                ["input"] = new Dictionary<string, object?> { ["name"] = "Ada" }
-            });
+                                                   mutation CreateCustomer($input: CustomerInput!) {
+                                                     createCustomer(input: $input) {
+                                                       id
+                                                       name
+                                                     }
+                                                   }
+                                                   """, new Dictionary<string, object?>
+        {
+            ["input"] = new Dictionary<string, object?> { ["name"] = "Ada" }
+        });
 
         var mutation = Assert.IsType<MutationIntent>(adapted.Intent.Mutation);
         Assert.DoesNotContain(mutation.Fields, x => x.ColumnId == new ColumnId(1));
@@ -114,26 +114,26 @@ public sealed class MutationTypeSemanticsTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var adapted = adapter.AdaptWithResultShape("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) {
-                customerId: id
-                accounts {
-                  accountId: id
-                  accountName: name
-                }
-              }
-            }
-            """, new Dictionary<string, object?>
+                                                   mutation CreateCustomer($input: CustomerInput!) {
+                                                     createCustomer(input: $input) {
+                                                       customerId: id
+                                                       accounts {
+                                                         accountId: id
+                                                         accountName: name
+                                                       }
+                                                     }
+                                                   }
+                                                   """, new Dictionary<string, object?>
+        {
+            ["input"] = new Dictionary<string, object?>
             {
-                ["input"] = new Dictionary<string, object?>
+                ["name"] = "Ada",
+                ["accounts"] = new[]
                 {
-                    ["name"] = "Ada",
-                    ["accounts"] = new[]
-                    {
-                        new Dictionary<string, object?> { ["name"] = "Checking" }
-                    }
+                    new Dictionary<string, object?> { ["name"] = "Checking" }
                 }
-            });
+            }
+        });
 
         Assert.Equal([new FieldId(1)],
             Assert.IsType<MutationIntent>(adapted.Intent.Mutation).ReturnFields);
@@ -156,9 +156,11 @@ public sealed class MutationTypeSemanticsTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ], PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 
         var model = new SemanticModelBuilder()
@@ -179,16 +181,23 @@ public sealed class MutationTypeSemanticsTests
 
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ], PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 
         registry.Register(new EntityMetadata(account, "Account",
-            [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"), new ColumnMetadata(new ColumnId(3), "Name")],
-            Fields: [
+            [
+                new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerId"),
+                new ColumnMetadata(new ColumnId(3), "Name")
+            ],
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(account, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "CustomerId", typeof(long), new ColumnReference(account, new ColumnId(2))),
+                new FieldMetadata(new FieldId(2), "CustomerId", typeof(long),
+                    new ColumnReference(account, new ColumnId(2))),
                 new FieldMetadata(new FieldId(3), "Name", typeof(string), new ColumnReference(account, new ColumnId(3)))
             ], PrimaryKey: new ColumnReference(account, new ColumnId(1))));
 

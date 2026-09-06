@@ -41,40 +41,40 @@ public sealed class PgVectorSemanticLexiconIndexClient
         await extension.ExecuteNonQueryAsync(cancellationToken);
 
         var createTable = $"""
-            CREATE TABLE IF NOT EXISTS {table} (
-                id                bigserial PRIMARY KEY,
-                canonical_name    text NOT NULL,
-                kind              text NOT NULL,
-                search_text       text NOT NULL,
-                aliases           text[] NOT NULL DEFAULT ARRAY[]::text[],
-                description       text NULL,
-                entity_id         bigint NULL,
-                relationship_id   bigint NULL,
-                field_id          bigint NULL,
-                source_entity_id  bigint NULL,
-                target_entity_id  bigint NULL,
-                value             text NULL,
-                embedding         vector({_options.Dimensions}) NOT NULL
-            )
-            """;
+                           CREATE TABLE IF NOT EXISTS {table} (
+                               id                bigserial PRIMARY KEY,
+                               canonical_name    text NOT NULL,
+                               kind              text NOT NULL,
+                               search_text       text NOT NULL,
+                               aliases           text[] NOT NULL DEFAULT ARRAY[]::text[],
+                               description       text NULL,
+                               entity_id         bigint NULL,
+                               relationship_id   bigint NULL,
+                               field_id          bigint NULL,
+                               source_entity_id  bigint NULL,
+                               target_entity_id  bigint NULL,
+                               value             text NULL,
+                               embedding         vector({_options.Dimensions}) NOT NULL
+                           )
+                           """;
 
         await using var createTableCmd = _dataSource.CreateCommand(createTable);
         await createTableCmd.ExecuteNonQueryAsync(cancellationToken);
 
         var createKindIndex = $"""
-            CREATE INDEX IF NOT EXISTS
-                {Identifier(_options.TableName + "_kind_idx")}
-                ON {table} (kind)
-            """;
+                               CREATE INDEX IF NOT EXISTS
+                                   {Identifier(_options.TableName + "_kind_idx")}
+                                   ON {table} (kind)
+                               """;
         await using var kindIndexCmd = _dataSource.CreateCommand(createKindIndex);
         await kindIndexCmd.ExecuteNonQueryAsync(cancellationToken);
 
         var createVectorIndex = $"""
-            CREATE INDEX IF NOT EXISTS
-                {Identifier(_options.TableName + "_embedding_hnsw_idx")}
-                ON {table}
-                USING hnsw (embedding {vectorOps})
-            """;
+                                 CREATE INDEX IF NOT EXISTS
+                                     {Identifier(_options.TableName + "_embedding_hnsw_idx")}
+                                     ON {table}
+                                     USING hnsw (embedding {vectorOps})
+                                 """;
         await using var vectorIndexCmd = _dataSource.CreateCommand(createVectorIndex);
         await vectorIndexCmd.ExecuteNonQueryAsync(cancellationToken);
     }
@@ -109,7 +109,7 @@ public sealed class PgVectorSemanticLexiconIndexClient
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
         await using (var truncate = new NpgsqlCommand(
-            $"TRUNCATE TABLE {_options.QualifiedTableName}", connection, transaction))
+                         $"TRUNCATE TABLE {_options.QualifiedTableName}", connection, transaction))
         {
             await truncate.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -143,13 +143,13 @@ public sealed class PgVectorSemanticLexiconIndexClient
         CancellationToken cancellationToken)
     {
         var sql = $"""
-            INSERT INTO {_options.QualifiedTableName}
-                (canonical_name, kind, search_text, aliases, description,
-                 entity_id, relationship_id, field_id, source_entity_id,
-                 target_entity_id, value, embedding)
-            VALUES
-                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-            """;
+                   INSERT INTO {_options.QualifiedTableName}
+                       (canonical_name, kind, search_text, aliases, description,
+                        entity_id, relationship_id, field_id, source_entity_id,
+                        target_entity_id, value, embedding)
+                   VALUES
+                       ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                   """;
 
         await using var command = transaction is null
             ? new NpgsqlCommand(sql, connection)

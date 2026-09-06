@@ -40,7 +40,7 @@ public sealed class RewriteRuleComposer
         var appliedIdempotent = new HashSet<string>(StringComparer.Ordinal);
         var appliedRules = new HashSet<string>(StringComparer.Ordinal);
 
-        for (var pass = 0; ; pass++)
+        for (var pass = 0;; pass++)
         {
             var eligible = _orderedRules
                 .Where(rule => !(rule.IsIdempotent && appliedIdempotent.Contains(rule.Name)))
@@ -96,7 +96,8 @@ public sealed class RewriteRuleComposer
             var rule = _orderedRules.First(r => StringComparer.Ordinal.Equals(r.Name, selectedRuleName));
 
             if (applications.Count >= _options.MaxRuleApplications)
-                throw new InvalidOperationException("Rewrite rule composition exceeded the maximum rule-application budget.");
+                throw new InvalidOperationException(
+                    "Rewrite rule composition exceeded the maximum rule-application budget.");
 
             var candidate = rule.Apply(current);
             if (ReferenceEquals(candidate, current))
@@ -109,7 +110,8 @@ public sealed class RewriteRuleComposer
 
             var result = SemanticPlanOptimizer.ApplyRule(rule, current, candidate);
             if (!result.IsSatisfied)
-                throw new InvalidOperationException($"Rewrite rule '{rule.Name}' did not satisfy its proof obligations.");
+                throw new InvalidOperationException(
+                    $"Rewrite rule '{rule.Name}' did not satisfy its proof obligations.");
 
             var currentFingerprint = SemanticPlanFingerprint.Create(current);
             var fingerprint = SemanticPlanFingerprint.Create(candidate);
@@ -127,7 +129,8 @@ public sealed class RewriteRuleComposer
             }
 
             if (!seenPlans.Add(fingerprint))
-                throw new InvalidOperationException($"Rewrite rule composition detected a cycle at rule '{rule.Name}'.");
+                throw new InvalidOperationException(
+                    $"Rewrite rule composition detected a cycle at rule '{rule.Name}'.");
             if (seenPlans.Count > _options.MaxPlanVisits)
                 throw new InvalidOperationException("Rewrite rule composition exceeded the maximum plan-visit budget.");
 
@@ -138,7 +141,8 @@ public sealed class RewriteRuleComposer
                 appliedIdempotent.Add(rule.Name);
 
             if (pass >= _options.MaxRuleApplications)
-                throw new InvalidOperationException("Rewrite rule composition exceeded the maximum composition passes.");
+                throw new InvalidOperationException(
+                    "Rewrite rule composition exceeded the maximum composition passes.");
         }
     }
 
@@ -150,17 +154,21 @@ public sealed class RewriteRuleComposer
             foreach (var dependency in rule.MustRunAfter.Concat(rule.MustRunBefore))
             {
                 if (!byName.ContainsKey(dependency))
-                    throw new InvalidOperationException($"Rewrite rule '{rule.Name}' references unknown rule '{dependency}'.");
+                    throw new InvalidOperationException(
+                        $"Rewrite rule '{rule.Name}' references unknown rule '{dependency}'.");
             }
 
             foreach (var conflict in rule.ConflictsWith)
             {
-                if (byName.ContainsKey(conflict) && byName[conflict].ConflictsWith.Contains(rule.Name, StringComparer.Ordinal))
-                    throw new InvalidOperationException($"Rewrite rules '{rule.Name}' and '{conflict}' conflict and cannot be composed.");
+                if (byName.ContainsKey(conflict) &&
+                    byName[conflict].ConflictsWith.Contains(rule.Name, StringComparer.Ordinal))
+                    throw new InvalidOperationException(
+                        $"Rewrite rules '{rule.Name}' and '{conflict}' conflict and cannot be composed.");
             }
         }
 
-        var edges = rules.ToDictionary(r => r.Name, _ => new HashSet<string>(StringComparer.Ordinal), StringComparer.Ordinal);
+        var edges = rules.ToDictionary(r => r.Name, _ => new HashSet<string>(StringComparer.Ordinal),
+            StringComparer.Ordinal);
         var indegree = rules.ToDictionary(r => r.Name, _ => 0, StringComparer.Ordinal);
         foreach (var rule in rules)
         {

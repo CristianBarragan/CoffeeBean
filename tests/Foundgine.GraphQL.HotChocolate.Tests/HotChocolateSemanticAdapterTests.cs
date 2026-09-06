@@ -30,20 +30,20 @@ public sealed class HotChocolateSemanticAdapterTests
             .Build();
 
         const string query = """
-            query {
-              customer {
-                id
-                name
-                accounts {
-                  id
-                  transactions {
-                    id
-                    amount
-                  }
-                }
-              }
-            }
-            """;
+                             query {
+                               customer {
+                                 id
+                                 name
+                                 accounts {
+                                   id
+                                   transactions {
+                                     id
+                                     amount
+                                   }
+                                 }
+                               }
+                             }
+                             """;
 
         var request = new HotChocolateSemanticAdapter(model).Adapt(query);
 
@@ -74,15 +74,15 @@ public sealed class HotChocolateSemanticAdapterTests
             .Build();
 
         const string query = """
-            query {
-              customer {
-                id
-                ... on Customer {
-                  name
-                }
-              }
-            }
-            """;
+                             query {
+                               customer {
+                                 id
+                                 ... on Customer {
+                                   name
+                                 }
+                               }
+                             }
+                             """;
 
         var request = new HotChocolateSemanticAdapter(model).Adapt(query);
 
@@ -99,15 +99,14 @@ public sealed class HotChocolateSemanticAdapterTests
             .Build();
 
         const string query = """
-            query {
-              customer {
-                doesNotExist
-              }
-            }
-            """;
+                             query {
+                               customer {
+                                 doesNotExist
+                               }
+                             }
+                             """;
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => new HotChocolateSemanticAdapter(model).Adapt(query));
+        var ex = Assert.Throws<InvalidOperationException>(() => new HotChocolateSemanticAdapter(model).Adapt(query));
 
         Assert.Contains("doesNotExist", ex.Message);
     }
@@ -140,15 +139,15 @@ public sealed class HotChocolateSemanticAdapterTests
 
         // Root arguments are also rejected by the adapter boundary.
         const string queryWithArgument = """
-            query {
-              customer(id: 1) {
-                id
-              }
-            }
-            """;
+                                         query {
+                                           customer(id: 1) {
+                                             id
+                                           }
+                                         }
+                                         """;
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => new HotChocolateSemanticAdapter(model).Adapt(queryWithArgument));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            new HotChocolateSemanticAdapter(model).Adapt(queryWithArgument));
 
         Assert.Contains("argument", ex.Message);
     }
@@ -162,13 +161,12 @@ public sealed class HotChocolateSemanticAdapterTests
             .Build();
 
         const string mutation = """
-            mutation {
-              customer { id }
-            }
-            """;
+                                mutation {
+                                  customer { id }
+                                }
+                                """;
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => new HotChocolateSemanticAdapter(model).Adapt(mutation));
+        var ex = Assert.Throws<InvalidOperationException>(() => new HotChocolateSemanticAdapter(model).Adapt(mutation));
 
         Assert.Contains("query operations only", ex.Message);
     }

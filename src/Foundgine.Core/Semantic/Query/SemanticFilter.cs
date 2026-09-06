@@ -1,5 +1,4 @@
 using Foundgine.Core.Abstractions;
-
 using Foundgine.Core.Semantic.Expressions;
 
 namespace Foundgine.Core.Semantic.Query;

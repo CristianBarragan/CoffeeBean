@@ -27,21 +27,21 @@ public sealed class MutationDependencyTests
         using (var setup = connection.CreateCommand())
         {
             setup.CommandText = """
-                CREATE TABLE "Customer" (
-                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "Name" TEXT NOT NULL
-                );
-                CREATE TABLE "Account" (
-                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "CustomerId" INTEGER NOT NULL,
-                    "Name" TEXT NOT NULL
-                );
-                CREATE TABLE "Transaction" (
-                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "AccountId" INTEGER NOT NULL,
-                    "Amount" INTEGER NOT NULL
-                );
-                """;
+                                CREATE TABLE "Customer" (
+                                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    "Name" TEXT NOT NULL
+                                );
+                                CREATE TABLE "Account" (
+                                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    "CustomerId" INTEGER NOT NULL,
+                                    "Name" TEXT NOT NULL
+                                );
+                                CREATE TABLE "Transaction" (
+                                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    "AccountId" INTEGER NOT NULL,
+                                    "Amount" INTEGER NOT NULL
+                                );
+                                """;
             setup.ExecuteNonQuery();
         }
 
@@ -88,10 +88,10 @@ public sealed class MutationDependencyTests
 
         using var verify = connection.CreateCommand();
         verify.CommandText = """
-            SELECT a.CustomerId, t.AccountId, t.Amount
-            FROM "Account" a
-            JOIN "Transaction" t ON t.AccountId = a.Id;
-            """;
+                             SELECT a.CustomerId, t.AccountId, t.Amount
+                             FROM "Account" a
+                             JOIN "Transaction" t ON t.AccountId = a.Id;
+                             """;
 
         using var reader = verify.ExecuteReader();
         Assert.True(reader.Read());
@@ -134,16 +134,16 @@ public sealed class MutationDependencyTests
         using (var setup = connection.CreateCommand())
         {
             setup.CommandText = """
-                CREATE TABLE "Customer" (
-                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "Name" TEXT NOT NULL
-                );
-                CREATE TABLE "Account" (
-                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "CustomerId" INTEGER NOT NULL,
-                    "Name" TEXT NOT NULL
-                );
-                """;
+                                CREATE TABLE "Customer" (
+                                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    "Name" TEXT NOT NULL
+                                );
+                                CREATE TABLE "Account" (
+                                    "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    "CustomerId" INTEGER NOT NULL,
+                                    "Name" TEXT NOT NULL
+                                );
+                                """;
             setup.ExecuteNonQuery();
         }
 

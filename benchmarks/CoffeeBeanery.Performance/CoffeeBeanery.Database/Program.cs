@@ -305,15 +305,15 @@ static async Task SetSequenceAsync(
     string table)
 {
     var sql = $"""
-        SELECT setval(
-            pg_get_serial_sequence('"{schema}"."{table}"', 'Id'),
-            COALESCE(
-                (SELECT MAX("Id") FROM "{schema}"."{table}"),
-                1
-            ),
-            true
-        );
-        """;
+               SELECT setval(
+                   pg_get_serial_sequence('"{schema}"."{table}"', 'Id'),
+                   COALESCE(
+                       (SELECT MAX("Id") FROM "{schema}"."{table}"),
+                       1
+                   ),
+                   true
+               );
+               """;
 
     await db.Database.ExecuteSqlRawAsync(sql);
 }

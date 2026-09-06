@@ -15,7 +15,8 @@ public sealed record RewriteRuleCompositionOptions(
         (SelectionPolicy ?? new RuleSelectionPolicy()).Validate();
         (ProviderCostSelectionPolicy ?? new ProviderCostSelectionPolicy()).Validate();
         if (ProviderCostEstimator is not null && string.IsNullOrWhiteSpace(ProviderCostEstimator.Provider))
-            throw new ArgumentException("Provider cost estimator must identify its provider.", nameof(ProviderCostEstimator));
+            throw new ArgumentException("Provider cost estimator must identify its provider.",
+                nameof(ProviderCostEstimator));
         return this;
     }
 }

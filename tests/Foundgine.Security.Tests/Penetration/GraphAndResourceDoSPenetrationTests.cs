@@ -19,7 +19,8 @@ public sealed class GraphAndResourceDoSPenetrationTests
     [Fact]
     public void Deep_filter_expression_is_rejected_before_planning()
     {
-        var json = "{\"rootEntity\":\"Customer\",\"selections\":[{\"field\":\"Id\"}],\"filter\":" + BuildNestedFilter(80) + "}";
+        var json = "{\"rootEntity\":\"Customer\",\"selections\":[{\"field\":\"Id\"}],\"filter\":" +
+                   BuildNestedFilter(80) + "}";
         var adapter = new JsonReadIntentAdapter(new JsonReadIntentAdapterOptions { MaxFilterDepth = 32 });
 
         Assert.Throws<InvalidOperationException>(() => adapter.Parse(json));

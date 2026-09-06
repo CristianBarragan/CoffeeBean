@@ -73,20 +73,23 @@ public sealed class ToolCallGovernor
         {
             case PolicyOutcome.Deny:
                 Audit(AuditCategory.Denied, toolName, security, security.AuthorityCachePartition, decision.Reason);
-                return new ToolCallGovernanceResult(PolicyOutcome.Deny, decision.Reason, Contract: null, PendingApproval: null);
+                return new ToolCallGovernanceResult(PolicyOutcome.Deny, decision.Reason, Contract: null,
+                    PendingApproval: null);
 
             case PolicyOutcome.RequireApproval:
                 var approval = _approvals.Create(security.AuthorityCachePartition);
                 Audit(AuditCategory.ApprovalRequested, toolName, security, security.AuthorityCachePartition,
                     $"Approval '{approval.ApprovalId}' opened ({approval.RequiredApprovals} required).");
-                return new ToolCallGovernanceResult(PolicyOutcome.RequireApproval, decision.Reason, Contract: null, PendingApproval: approval);
+                return new ToolCallGovernanceResult(PolicyOutcome.RequireApproval, decision.Reason, Contract: null,
+                    PendingApproval: approval);
 
             case PolicyOutcome.Allow:
                 var routingContext = new RoutingContext(toolName, security, riskScore);
                 var contract = _routing.Route(routingContext);
                 Audit(AuditCategory.Routed, toolName, security, security.AuthorityCachePartition,
                     $"Routed as {contract.Mode}/{contract.Runtime}/{contract.Worker} (task '{contract.TaskId}').");
-                return new ToolCallGovernanceResult(PolicyOutcome.Allow, decision.Reason, contract, PendingApproval: null);
+                return new ToolCallGovernanceResult(PolicyOutcome.Allow, decision.Reason, contract,
+                    PendingApproval: null);
 
             default:
                 throw new InvalidOperationException($"Unknown policy outcome '{decision.Outcome}'.");
@@ -98,7 +101,8 @@ public sealed class ToolCallGovernor
     /// once its <see cref="ApprovalRequest"/> reaches <see cref="ApprovalStatus.Granted"/>. Routing
     /// only happens here, after a human has signed off — never during the initial request-approval step.
     /// </summary>
-    public ToolCallGovernanceResult ResumeAfterApproval(string toolName, SecurityExecutionContext security, string approvalId)
+    public ToolCallGovernanceResult ResumeAfterApproval(string toolName, SecurityExecutionContext security,
+        string approvalId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(toolName);
         ArgumentNullException.ThrowIfNull(security);
@@ -125,6 +129,8 @@ public sealed class ToolCallGovernor
         return new ToolCallGovernanceResult(PolicyOutcome.Allow, "Approved by human reviewer.", contract, approval);
     }
 
-    private void Audit(AuditCategory category, string toolName, SecurityExecutionContext security, string fingerprint, string summary) =>
-        _auditLog.Record(AuditEvent.Create(category, toolName, security.Subject, security.Tenant, fingerprint, summary));
+    private void Audit(AuditCategory category, string toolName, SecurityExecutionContext security, string fingerprint,
+        string summary) =>
+        _auditLog.Record(AuditEvent.Create(category, toolName, security.Subject, security.Tenant, fingerprint,
+            summary));
 }

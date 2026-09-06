@@ -31,7 +31,8 @@ public static class CrossFieldClaimValidator
         if (!accepted.TryGetValue(expiryKey, out var expiryRaw))
             return;
 
-        if (!DateTimeOffset.TryParse(expiryRaw, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var expiry))
+        if (!DateTimeOffset.TryParse(expiryRaw, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal,
+                out var expiry))
             return;
 
         if (expiry < now)

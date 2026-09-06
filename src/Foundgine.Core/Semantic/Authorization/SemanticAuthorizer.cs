@@ -110,7 +110,8 @@ public sealed class SemanticAuthorizer
             }
             else if (sourceNode.ViaConnection is { } connectionId)
             {
-                node = authorized.AddConnection(sourceNode.EntityId, connectionId, authorizedParent!, fields, predicate);
+                node = authorized.AddConnection(sourceNode.EntityId, connectionId, authorizedParent!, fields,
+                    predicate);
             }
             else
             {
@@ -306,5 +307,3 @@ public sealed class SemanticAuthorizer
             ? AuthorizationDecision.Allowed
             : AuthorizationDecision.Conditional(predicate);
 }
-
-

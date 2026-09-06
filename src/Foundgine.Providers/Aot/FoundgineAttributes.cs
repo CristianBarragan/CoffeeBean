@@ -86,8 +86,10 @@ public sealed class FoundgineFieldAttribute : Attribute
     public string? Name { get; init; }
     public string? StorageName { get; init; }
     public ulong Id { get; init; }
+
     /// <summary>Optional explicit physical column identity. When omitted, the column identity is derived from storage name and physical column name.</summary>
     public ulong ColumnId { get; init; }
+
     public bool IsPrimaryKey { get; init; }
 
     /// <summary>Hints that this field is (or should be) backed by a storage index.
@@ -198,7 +200,6 @@ public sealed class FoundgineModelEntityMapAttribute : Attribute
     public Type Model { get; }
     public Type Entity { get; }
 }
-
 
 /// <summary>Declares an AOT authorization predicate for a semantic connection.
 /// The property should expose a plain LINQ expression such as

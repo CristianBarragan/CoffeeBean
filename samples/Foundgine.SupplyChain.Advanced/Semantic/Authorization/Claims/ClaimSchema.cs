@@ -27,7 +27,8 @@ public sealed class ClaimSchema
     {
         VerticalName = verticalName ?? throw new ArgumentNullException(nameof(verticalName));
         ReservedIdentityKeys = reservedIdentityKeys ?? throw new ArgumentNullException(nameof(reservedIdentityKeys));
-        HostileReservedIdentityKeys = hostileReservedIdentityKeys ?? throw new ArgumentNullException(nameof(hostileReservedIdentityKeys));
+        HostileReservedIdentityKeys = hostileReservedIdentityKeys ??
+                                      throw new ArgumentNullException(nameof(hostileReservedIdentityKeys));
         _validators = validators ?? throw new ArgumentNullException(nameof(validators));
         ExpiryKey = expiryKey;
         MaxExpiryHorizon = maxExpiryHorizon;

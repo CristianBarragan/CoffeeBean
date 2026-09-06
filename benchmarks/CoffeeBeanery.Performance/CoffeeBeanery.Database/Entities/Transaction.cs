@@ -13,23 +13,23 @@ public partial class Transaction : Process
     }
 
     public int Id { get; set; }
-    
+
     public Guid TransactionKey { get; set; }
 
     public decimal? Amount { get; set; }
 
     public decimal? Balance { get; set; }
-    
+
     public Contract? Contract { get; set; }
-    
+
     public int? ContractId { get; set; }
-    
+
     public Guid? ContractKey { get; set; }
-    
+
     public Account? Account { get; set; }
 
     public int? AccountId { get; set; }
-    
+
     public Guid? AccountKey { get; set; }
 }
 

@@ -16,21 +16,24 @@ public sealed class MutationAdapterTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 
         var model = new SemanticModelBuilder()
-            .Entity(customer, "Customer", e => e.Identity(new FieldId(1), "Id").Field(new FieldId(2), "Name", typeof(string)))
+            .Entity(customer, "Customer",
+                e => e.Identity(new FieldId(1), "Id").Field(new FieldId(2), "Name", typeof(string)))
             .Build();
 
         var intent = new HotChocolateMutationAdapter(model, registry).Adapt("""
-            mutation {
-              createCustomer(input: { name: "Ada" }) { id name }
-            }
-            """);
+                                                                            mutation {
+                                                                              createCustomer(input: { name: "Ada" }) { id name }
+                                                                            }
+                                                                            """);
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Equal(MutationKind.Create, mutation.Kind);
@@ -45,21 +48,24 @@ public sealed class MutationAdapterTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 
         var model = new SemanticModelBuilder()
-            .Entity(customer, "Customer", e => e.Identity(new FieldId(1), "Id").Field(new FieldId(2), "Name", typeof(string)))
+            .Entity(customer, "Customer",
+                e => e.Identity(new FieldId(1), "Id").Field(new FieldId(2), "Name", typeof(string)))
             .Build();
 
         var intent = new HotChocolateMutationAdapter(model, registry).Adapt("""
-            mutation {
-              updateCustomer(input: { name: "Grace" }, where: { id: { eq: 1 } }) { id name }
-            }
-            """);
+                                                                            mutation {
+                                                                              updateCustomer(input: { name: "Grace" }, where: { id: { eq: 1 } }) { id name }
+                                                                            }
+                                                                            """);
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Equal(MutationKind.Update, mutation.Kind);
@@ -81,33 +87,42 @@ public sealed class MutationAdapterTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(customerId, "Id"), new ColumnMetadata(customerName, "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, customerId)),
                 new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, customerName))
             ], PrimaryKey: new ColumnReference(customer, customerId)));
         registry.Register(new EntityMetadata(account, "Account",
-            [new ColumnMetadata(accountId, "Id"), new ColumnMetadata(accountCustomerId, "CustomerId"), new ColumnMetadata(accountName, "Name")],
-            Fields: [
+            [
+                new ColumnMetadata(accountId, "Id"), new ColumnMetadata(accountCustomerId, "CustomerId"),
+                new ColumnMetadata(accountName, "Name")
+            ],
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(account, accountId)),
-                new FieldMetadata(new FieldId(2), "CustomerId", typeof(long), new ColumnReference(account, accountCustomerId)),
+                new FieldMetadata(new FieldId(2), "CustomerId", typeof(long),
+                    new ColumnReference(account, accountCustomerId)),
                 new FieldMetadata(new FieldId(3), "Name", typeof(string), new ColumnReference(account, accountName))
             ], PrimaryKey: new ColumnReference(account, accountId)));
         registry.Register(new RelationshipMetadata(
             relationshipId, customer, account, "Accounts",
             new ColumnReference(customer, customerId),
-                new ColumnReference(account, accountCustomerId)));
+            new ColumnReference(account, accountCustomerId)));
 
         var model = new SemanticModelBuilder()
-            .Entity(customer, "Customer", e => e.Identity(new FieldId(1), "Id").Field(new FieldId(2), "Name", typeof(string))
+            .Entity(customer, "Customer", e => e.Identity(new FieldId(1), "Id")
+                .Field(new FieldId(2), "Name", typeof(string))
                 .Relationship(relationshipId, "Accounts", account, RelationshipCardinality.Many))
-            .Entity(account, "Account", e => e.Identity(new FieldId(1), "Id").Field(new FieldId(2), "CustomerId", typeof(long)).Field(new FieldId(3), "Name", typeof(string)))
+            .Entity(account, "Account",
+                e => e.Identity(new FieldId(1), "Id").Field(new FieldId(2), "CustomerId", typeof(long))
+                    .Field(new FieldId(3), "Name", typeof(string)))
             .Build();
 
         var intent = new HotChocolateMutationAdapter(model, registry).Adapt("""
-            mutation {
-              createCustomer(input: { name: "Ada", accounts: [{ name: "Checking" }] }) { id name }
-            }
-            """);
+                                                                            mutation {
+                                                                              createCustomer(input: { name: "Ada", accounts: [{ name: "Checking" }] }) { id name }
+                                                                            }
+                                                                            """);
 
         Assert.Single(intent.Children);
         Assert.Equal(account, intent.Children[0].Mutation.Mutation.Entity);

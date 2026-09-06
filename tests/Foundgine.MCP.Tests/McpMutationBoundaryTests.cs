@@ -12,7 +12,9 @@ public sealed class McpMutationBoundaryTests
 
         var surfaceTypes = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
             .SelectMany(c => c.GetParameters().Select(p => p.ParameterType))
-            .Concat(type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Concat(type
+                .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance |
+                            BindingFlags.DeclaredOnly)
                 .SelectMany(m => m.GetParameters().Select(p => p.ParameterType).Append(m.ReturnType)))
             .Concat(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 .Select(f => f.FieldType))

@@ -16,7 +16,6 @@ public sealed record MutationReturnBinding(
     FieldId FieldId,
     string ResultName);
 
-
 public sealed record SqlMutationBatchPlan(
     IReadOnlyList<SqlMutationPlan> Operations,
     IReadOnlyList<Foundgine.Core.Semantic.Planning.Mutation.MutationDependency> Dependencies)

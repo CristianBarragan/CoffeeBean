@@ -27,42 +27,42 @@ public sealed class MultiProducerEquivalenceTests
             .Build();
 
         const string json = """
-        {
-          "rootEntity": "Customer",
-          "selections": [
-            { "field": "Id" },
-            { "field": "Name" },
-            { "relationship": "Accounts", "children": [
-              { "field": "Id" },
-              { "field": "Balance" }
-            ] }
-          ],
-          "filter": {
-            "kind": "field",
-            "field": "Name",
-            "operator": "Eq",
-            "value": "Alice"
-          },
-          "order": [
-            { "field": "Name", "direction": "Desc" }
-          ],
-          "limit": 10,
-          "offset": 2
-        }
-        """;
+                            {
+                              "rootEntity": "Customer",
+                              "selections": [
+                                { "field": "Id" },
+                                { "field": "Name" },
+                                { "relationship": "Accounts", "children": [
+                                  { "field": "Id" },
+                                  { "field": "Balance" }
+                                ] }
+                              ],
+                              "filter": {
+                                "kind": "field",
+                                "field": "Name",
+                                "operator": "Eq",
+                                "value": "Alice"
+                              },
+                              "order": [
+                                { "field": "Name", "direction": "Desc" }
+                              ],
+                              "limit": 10,
+                              "offset": 2
+                            }
+                            """;
 
         const string graphql = """
-        query {
-          customer(where: { name: { eq: "Alice" } }, order: { name: DESC }, first: 10, skip: 2) {
-            id
-            name
-            accounts {
-              id
-              balance
-            }
-          }
-        }
-        """;
+                               query {
+                                 customer(where: { name: { eq: "Alice" } }, order: { name: DESC }, first: 10, skip: 2) {
+                                   id
+                                   name
+                                   accounts {
+                                     id
+                                     balance
+                                   }
+                                 }
+                               }
+                               """;
 
         var jsonIntent = new JsonReadIntentAdapter().Parse(json);
         var jsonRequest = new ReadIntentCompiler(model).Compile(jsonIntent);
@@ -82,18 +82,18 @@ public sealed class MultiProducerEquivalenceTests
             .Build();
 
         var json = new JsonReadIntentAdapter().Parse("""
-        {
-          "rootEntity": "Customer",
-          "selections": [ { "field": "Name" } ],
-          "filter": { "kind": "field", "field": "Name", "operator": "Eq", "value": "Alice" }
-        }
-        """);
+                                                     {
+                                                       "rootEntity": "Customer",
+                                                       "selections": [ { "field": "Name" } ],
+                                                       "filter": { "kind": "field", "field": "Name", "operator": "Eq", "value": "Alice" }
+                                                     }
+                                                     """);
 
         var graphql = new HotChocolateSemanticAdapter(model).Adapt("""
-        query {
-          customer(where: { name: { eq: "Alice" } }) { name }
-        }
-        """);
+                                                                   query {
+                                                                     customer(where: { name: { eq: "Alice" } }) { name }
+                                                                   }
+                                                                   """);
 
         var jsonRequest = new ReadIntentCompiler(model).Compile(json);
 

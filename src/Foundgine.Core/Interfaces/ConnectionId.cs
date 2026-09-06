@@ -11,7 +11,6 @@ public readonly record struct ConnectionId(ulong Value)
         new(SemanticIdentity.Hash(SemanticIdentity.ConnectionKey(semanticModelName, semanticConnectionName)));
 }
 
-
 public sealed class ConnectionIdJsonConverter : JsonConverter<ConnectionId>
 {
     public override ConnectionId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -32,9 +31,11 @@ public sealed class ConnectionIdJsonConverter : JsonConverter<ConnectionId>
     public override void Write(Utf8JsonWriter writer, ConnectionId value, JsonSerializerOptions options) =>
         writer.WriteNumberValue(value.Value);
 
-    public override ConnectionId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+    public override ConnectionId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert,
+        JsonSerializerOptions options) =>
         new(ulong.Parse(reader.GetString()!));
 
-    public override void WriteAsPropertyName(Utf8JsonWriter writer, ConnectionId value, JsonSerializerOptions options) =>
+    public override void
+        WriteAsPropertyName(Utf8JsonWriter writer, ConnectionId value, JsonSerializerOptions options) =>
         writer.WritePropertyName(value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
 }

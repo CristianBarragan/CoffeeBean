@@ -29,7 +29,8 @@ public sealed class AotAndPlanningTests
     public void Generated_semantic_surface_exposes_named_fields_without_numeric_ids()
     {
         Assert.Equal("QuantityOnHand", GeneratedSemanticModel.InventoryPosition.QuantityOnHand.Name);
-        Assert.Equal(SupplyChainSemanticConfiguration.InventoryPosition, GeneratedSemanticModel.InventoryPosition.Entity);
+        Assert.Equal(SupplyChainSemanticConfiguration.InventoryPosition,
+            GeneratedSemanticModel.InventoryPosition.Entity);
     }
 
     [Fact]

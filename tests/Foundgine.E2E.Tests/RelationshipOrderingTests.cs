@@ -30,7 +30,8 @@ public sealed class RelationshipOrderingTests
 
         var first = BuildRequest(1);
         var firstPlan = Compile(model, metadata, first);
-        Assert.Contains("ORDER BY \"t1\".\"DisplayName\" DESC, \"t0\".\"Id\" ASC", firstPlan.CommandText, StringComparison.Ordinal);
+        Assert.Contains("ORDER BY \"t1\".\"DisplayName\" DESC, \"t0\".\"Id\" ASC", firstPlan.CommandText,
+            StringComparison.Ordinal);
         Assert.Contains("LIMIT @__fg_limit", firstPlan.CommandText, StringComparison.Ordinal);
 
         var provider = new SqlExecutionProvider(providerConnection);
@@ -48,7 +49,8 @@ public sealed class RelationshipOrderingTests
         Assert.Contains("\"t0\".\"Id\" >", secondPlan.CommandText, StringComparison.Ordinal);
         Assert.Contains(" AND ", secondPlan.CommandText, StringComparison.Ordinal);
 
-        var secondResult = await provider.ExecuteAsync(secondPlan, PaginationExecutionContext.Create(1, firstResult.PageInfo.EndCursor));
+        var secondResult = await provider.ExecuteAsync(secondPlan,
+            PaginationExecutionContext.Create(1, firstResult.PageInfo.EndCursor));
         Assert.Single(secondResult.Rows);
         Assert.Equal("Alice", secondResult.Rows[0].Values["__fg_1_DisplayName"]);
         Assert.False(secondResult.PageInfo!.HasNextPage);
@@ -78,7 +80,8 @@ public sealed class RelationshipOrderingTests
             Fields:
             [
                 new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(Customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(Customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(Customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(Customer, new ColumnId(1)));
 
@@ -92,7 +95,8 @@ public sealed class RelationshipOrderingTests
             Fields:
             [
                 new FieldMetadata(new FieldId(1), "Id", typeof(int), new ColumnReference(Profile, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "DisplayName", typeof(string), new ColumnReference(Profile, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "DisplayName", typeof(string),
+                    new ColumnReference(Profile, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(Profile, new ColumnId(1)));
 
@@ -142,14 +146,13 @@ public sealed class RelationshipOrderingTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Profile" ("Id" INTEGER PRIMARY KEY, "DisplayName" TEXT NOT NULL);
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL, "ProfileId" INTEGER NOT NULL);
-            INSERT INTO "Profile" VALUES (1, 'Alice');
-            INSERT INTO "Profile" VALUES (2, 'Zoe');
-            INSERT INTO "Customer" VALUES (1, 'Customer A', 1);
-            INSERT INTO "Customer" VALUES (2, 'Customer B', 2);
-            """;
+                              CREATE TABLE "Profile" ("Id" INTEGER PRIMARY KEY, "DisplayName" TEXT NOT NULL);
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL, "ProfileId" INTEGER NOT NULL);
+                              INSERT INTO "Profile" VALUES (1, 'Alice');
+                              INSERT INTO "Profile" VALUES (2, 'Zoe');
+                              INSERT INTO "Customer" VALUES (1, 'Customer A', 1);
+                              INSERT INTO "Customer" VALUES (2, 'Customer B', 2);
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

@@ -10,7 +10,8 @@ public sealed class TransportAndSecretLeakagePenetrationTests
     public void Duplicate_security_properties_do_not_create_a_second_authority_channel()
     {
         var adapter = new JsonReadIntentAdapter();
-        var json = "{\"rootEntity\":\"Customer\",\"selections\":[{\"field\":\"Id\"}],\"tenantId\":\"tenant-alpha\",\"tenantId\":\"tenant-beta-secret\"}";
+        var json =
+            "{\"rootEntity\":\"Customer\",\"selections\":[{\"field\":\"Id\"}],\"tenantId\":\"tenant-alpha\",\"tenantId\":\"tenant-beta-secret\"}";
 
         var exception = Assert.Throws<InvalidOperationException>(() => adapter.Parse(json));
         Assert.DoesNotContain("tenant-beta-secret", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -21,11 +22,11 @@ public sealed class TransportAndSecretLeakagePenetrationTests
     {
         var adapter = new JsonReadIntentAdapter();
         var exception = Assert.Throws<InvalidOperationException>(() => adapter.Parse("""
-        {"rootEntity":"Customer","selections":[{"field":"Id"}],
-         "identity":{"subject":"admin","tenant":"victim"},
-         "provider":{"connectionString":"Host=evil"},
-         "sql":"SELECT * FROM secrets"}
-        """));
+            {"rootEntity":"Customer","selections":[{"field":"Id"}],
+             "identity":{"subject":"admin","tenant":"victim"},
+             "provider":{"connectionString":"Host=evil"},
+             "sql":"SELECT * FROM secrets"}
+            """));
 
         Assert.DoesNotContain("Host=evil", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("SELECT *", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -36,10 +37,10 @@ public sealed class TransportAndSecretLeakagePenetrationTests
     {
         var adapter = new JsonReadIntentAdapter(new JsonReadIntentAdapterOptions { RejectUnknownProperties = false });
         var intent = adapter.Parse("""
-        {"rootEntity":"Customer","selections":[{"field":"Id"}],
-         "identity":{"subject":"admin","tenant":"victim"},
-         "provider":"evil","sql":"DROP TABLE secrets"}
-        """);
+                                   {"rootEntity":"Customer","selections":[{"field":"Id"}],
+                                    "identity":{"subject":"admin","tenant":"victim"},
+                                    "provider":"evil","sql":"DROP TABLE secrets"}
+                                   """);
 
         Assert.Equal("Customer", intent.RootEntity);
         Assert.Single(intent.Selections);

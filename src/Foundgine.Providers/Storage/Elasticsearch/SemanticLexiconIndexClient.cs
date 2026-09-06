@@ -16,7 +16,8 @@ public sealed class SemanticLexiconIndexClient
     public SemanticLexiconIndexClient(HttpClient httpClient, string index = "foundgine-semantic-lexicon")
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        if (string.IsNullOrWhiteSpace(index)) throw new ArgumentException("Elasticsearch index cannot be empty.", nameof(index));
+        if (string.IsNullOrWhiteSpace(index))
+            throw new ArgumentException("Elasticsearch index cannot be empty.", nameof(index));
         _index = index;
     }
 

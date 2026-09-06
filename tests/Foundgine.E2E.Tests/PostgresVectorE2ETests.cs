@@ -156,7 +156,7 @@ public sealed class PostgresVectorE2ETests
         {
             var vector = new float[dimensions];
             foreach (var word in text.ToLowerInvariant().Split(
-                (char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+                         (char[]?)null, StringSplitOptions.RemoveEmptyEntries))
             {
                 var bucket = (int)(StableHash(word) % (uint)dimensions);
                 vector[bucket] += 1f;

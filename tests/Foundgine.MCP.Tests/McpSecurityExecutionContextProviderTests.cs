@@ -26,16 +26,35 @@ public sealed class McpSecurityExecutionContextProviderTests
 
     private sealed class StubFoundgine : Foundgine.Runtime.IFoundgine
     {
-        public Foundgine.Core.Semantic.Authorization.SemanticAuthorizationCapabilities DescribeCapabilities() => throw new NotImplementedException();
-        public Foundgine.Core.Semantic.Capabilities.SemanticCapabilityContract DescribeCapabilityContract() => throw new NotImplementedException();
-        public Foundgine.Core.Semantic.Capabilities.SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security) =>
+        public Foundgine.Core.Semantic.Authorization.SemanticAuthorizationCapabilities DescribeCapabilities() =>
+            throw new NotImplementedException();
+
+        public Foundgine.Core.Semantic.Capabilities.SemanticCapabilityContract DescribeCapabilityContract() =>
+            throw new NotImplementedException();
+
+        public Foundgine.Core.Semantic.Capabilities.SemanticCapabilityContract DescribeCapabilityContract(
+            SecurityExecutionContext security) =>
             new(1, []);
+
         public Foundgine.Core.Semantic.SemanticVersionSet DescribeVersionSet() => throw new NotImplementedException();
-        public Foundgine.Runtime.DryRunResult DryRun(Foundgine.Core.Semantic.SemanticRequest request) => throw new NotImplementedException();
-        public Foundgine.Runtime.PlanApproval ApprovePlan(Foundgine.Core.Semantic.SemanticRequest request, string approvedBy) => throw new NotImplementedException();
-        public Task<Foundgine.Core.Execution.ExecutionResult> ExecuteApprovedAsync(Foundgine.Runtime.PlanApproval approval, Foundgine.Core.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<Foundgine.Core.Execution.ExecutionResult> ExecuteAsync(Foundgine.Core.Semantic.SemanticRequest request, Foundgine.Core.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<Foundgine.Core.Execution.ExecutionResult> ExecuteAsync(Foundgine.Core.Semantic.Intent.ReadIntent intent, Foundgine.Core.Execution.ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+
+        public Foundgine.Runtime.DryRunResult DryRun(Foundgine.Core.Semantic.SemanticRequest request) =>
+            throw new NotImplementedException();
+
+        public Foundgine.Runtime.PlanApproval ApprovePlan(Foundgine.Core.Semantic.SemanticRequest request,
+            string approvedBy) => throw new NotImplementedException();
+
+        public Task<Foundgine.Core.Execution.ExecutionResult> ExecuteApprovedAsync(
+            Foundgine.Runtime.PlanApproval approval, Foundgine.Core.Execution.ExecutionContext? context = null,
+            CancellationToken cancellationToken = default) => throw new NotImplementedException();
+
+        public Task<Foundgine.Core.Execution.ExecutionResult> ExecuteAsync(
+            Foundgine.Core.Semantic.SemanticRequest request, Foundgine.Core.Execution.ExecutionContext? context = null,
+            CancellationToken cancellationToken = default) => throw new NotImplementedException();
+
+        public Task<Foundgine.Core.Execution.ExecutionResult> ExecuteAsync(
+            Foundgine.Core.Semantic.Intent.ReadIntent intent, Foundgine.Core.Execution.ExecutionContext? context = null,
+            CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     [Fact]
@@ -86,8 +105,7 @@ public sealed class McpSecurityExecutionContextProviderTests
             securityContextProvider: new FixedProvider(context));
 
         // No mutations engine configured, so this should fail on that, not on security.
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => tools.DryRun("""{"operations":[]}"""));
+        var ex = Assert.Throws<InvalidOperationException>(() => tools.DryRun("""{"operations":[]}"""));
         Assert.Contains("not configured", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -111,8 +129,7 @@ public sealed class McpSecurityExecutionContextProviderTests
         // The new securityContextProvider parameter must not shift this slot.
         var tools = new FoundgineMcpMutationTools(null, () => context);
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => tools.DryRun("""{"operations":[]}"""));
+        var ex = Assert.Throws<InvalidOperationException>(() => tools.DryRun("""{"operations":[]}"""));
         Assert.Contains("not configured", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -146,7 +146,8 @@ public static class AliasWeightEvidenceGate
 
         var violatingEntities = entityWeights.Where(x => x.Value < minimumWeight).Select(x => x.Key).ToArray();
         var violatingFields = fieldWeights.Where(x => x.Value < minimumWeight).Select(x => x.Key).ToArray();
-        var violatingRelationships = relationshipWeights.Where(x => x.Value < minimumWeight).Select(x => x.Key).ToArray();
+        var violatingRelationships =
+            relationshipWeights.Where(x => x.Value < minimumWeight).Select(x => x.Key).ToArray();
 
         var applicable = entityWeights.Count > 0 || fieldWeights.Count > 0 || relationshipWeights.Count > 0;
         var status = !applicable
@@ -193,5 +194,6 @@ public sealed record AliasInterpretationEvidence(
     string? ContractFingerprint = null)
 {
     public static AliasInterpretationEvidence From(AliasWeightEvidenceResult result) =>
-        new(result.Status, result.EntityWeights, result.FieldWeights, result.RelationshipWeights, result.ContractFingerprint);
+        new(result.Status, result.EntityWeights, result.FieldWeights, result.RelationshipWeights,
+            result.ContractFingerprint);
 }

@@ -106,7 +106,8 @@ record BenchmarkResult(
     double MemoryEndMb,
     bool Successful)
 {
-    public static BenchmarkResult Failed(BenchmarkOperation operation, Target target, int concurrency, int batchSize, int errors) =>
+    public static BenchmarkResult Failed(BenchmarkOperation operation, Target target, int concurrency, int batchSize,
+        int errors) =>
         new(operation, target.Name, concurrency, batchSize, 0, 0, 0, 0, 0, errors, 0, 0, 0, 0, 0, false);
 }
 

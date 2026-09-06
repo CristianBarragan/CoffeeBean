@@ -64,29 +64,42 @@ public static class SemanticOperationGraphFingerprint
     {
         switch (filter)
         {
-            case null: Append(builder, "filter", "-"); return;
+            case null:
+                Append(builder, "filter", "-");
+                return;
             case SemanticFieldFilter field:
-                Append(builder, "field-filter", field.Field.Value, (byte)field.Operator, ValueText(field.Value)); return;
+                Append(builder, "field-filter", field.Field.Value, (byte)field.Operator, ValueText(field.Value));
+                return;
             case SemanticRelationshipFilter relationship:
                 Append(builder, "relationship-filter", relationship.Relationship.Value, (byte)relationship.Quantifier);
-                AppendFilter(builder, relationship.Predicate); return;
+                AppendFilter(builder, relationship.Predicate);
+                return;
             case SemanticAggregateFilter aggregate:
                 Append(builder, "aggregate-filter", aggregate.Relationship.Value, (byte)aggregate.Aggregate,
                     aggregate.Field?.Value.ToString() ?? "-", (byte)aggregate.Operator, ValueText(aggregate.Value));
-                AppendFilter(builder, aggregate.Predicate); return;
+                AppendFilter(builder, aggregate.Predicate);
+                return;
             case SemanticAndFilter and:
                 Append(builder, "and", and.Expressions.Count);
-                foreach (var expression in and.Expressions) AppendFilter(builder, expression); return;
+                foreach (var expression in and.Expressions) AppendFilter(builder, expression);
+                return;
             case SemanticOrFilter or:
                 Append(builder, "or", or.Expressions.Count);
-                foreach (var expression in or.Expressions) AppendFilter(builder, expression); return;
+                foreach (var expression in or.Expressions) AppendFilter(builder, expression);
+                return;
             default: throw new NotSupportedException($"Unsupported semantic filter '{filter.GetType().Name}'.");
         }
     }
 
-    private static void AppendAuthorization(StringBuilder builder, Foundgine.Core.Abstractions.AuthorizationPredicate? predicate)
+    private static void AppendAuthorization(StringBuilder builder,
+        Foundgine.Core.Abstractions.AuthorizationPredicate? predicate)
     {
-        if (predicate is null) { Append(builder, "auth", "-"); return; }
+        if (predicate is null)
+        {
+            Append(builder, "auth", "-");
+            return;
+        }
+
         Append(builder, "auth", (byte)predicate.Kind, predicate.Name ?? "-", predicate.Value ?? "-");
         AppendAuthorization(builder, predicate.Left);
         AppendAuthorization(builder, predicate.Right);
@@ -103,6 +116,7 @@ public static class SemanticOperationGraphFingerprint
             var text = value?.ToString() ?? "";
             builder.Append('|').Append(text.Length).Append(':').Append(text);
         }
+
         builder.Append('\n');
     }
 }

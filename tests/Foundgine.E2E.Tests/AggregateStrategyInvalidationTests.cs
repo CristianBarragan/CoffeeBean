@@ -39,7 +39,8 @@ public sealed class AggregateStrategyInvalidationTests
             SemanticFilterOperator.Eq,
             true);
         var filter = new SemanticAndFilter([
-            new SemanticAggregateFilter(relationship, SemanticFilterAggregate.Count, null, SemanticAggregateFilterOperator.Gt, 0, null),
+            new SemanticAggregateFilter(relationship, SemanticFilterAggregate.Count, null,
+                SemanticAggregateFilterOperator.Gt, 0, null),
             new SemanticRelationshipFilter(relationship, SemanticRelationshipQuantifier.Some, predicate)
         ]);
 

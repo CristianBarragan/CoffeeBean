@@ -196,7 +196,8 @@ public sealed class SupplyChainGroundingBudgetTests
             return [];
         }
 
-        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request, CancellationToken cancellationToken)
+        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request,
+            CancellationToken cancellationToken)
         {
             Thread.Sleep(delay);
             return [];

@@ -20,21 +20,21 @@ public sealed class IntegrationHardeningTests
         var adapter = new HotChocolateSemanticAdapter(model);
 
         var result = adapter.AdaptResultShape("""
-            query Ignored {
-              customer { id }
-            }
+                                              query Ignored {
+                                                customer { id }
+                                              }
 
-            query CustomerView($showName: Boolean!) {
-              customer {
-                ...CustomerFields
-              }
-            }
+                                              query CustomerView($showName: Boolean!) {
+                                                customer {
+                                                  ...CustomerFields
+                                                }
+                                              }
 
-            fragment CustomerFields on Customer {
-              customerId: id
-              displayName: name @include(if: $showName)
-            }
-            """,
+                                              fragment CustomerFields on Customer {
+                                                customerId: id
+                                                displayName: name @include(if: $showName)
+                                              }
+                                              """,
             new Dictionary<string, object?> { ["showName"] = true },
             "CustomerView");
 
@@ -51,21 +51,21 @@ public sealed class IntegrationHardeningTests
         var adapter = new HotChocolateMutationAdapter(model, metadata);
 
         var result = adapter.AdaptResultShape("""
-            mutation Ignored($input: CustomerInput!) {
-              createCustomer(input: $input) { id }
-            }
+                                              mutation Ignored($input: CustomerInput!) {
+                                                createCustomer(input: $input) { id }
+                                              }
 
-            mutation CreateCustomer($input: CustomerInput!, $showName: Boolean!) {
-              createCustomer(input: $input) {
-                ...CustomerFields
-              }
-            }
+                                              mutation CreateCustomer($input: CustomerInput!, $showName: Boolean!) {
+                                                createCustomer(input: $input) {
+                                                  ...CustomerFields
+                                                }
+                                              }
 
-            fragment CustomerFields on Customer {
-              customerId: id
-              displayName: name @include(if: $showName)
-            }
-            """,
+                                              fragment CustomerFields on Customer {
+                                                customerId: id
+                                                displayName: name @include(if: $showName)
+                                              }
+                                              """,
             new Dictionary<string, object?>
             {
                 ["input"] = new Dictionary<string, object?> { ["name"] = "Ada" },
@@ -84,10 +84,10 @@ public sealed class IntegrationHardeningTests
     {
         var (model, metadata) = BuildCustomer();
         var result = new HotChocolateMutationAdapter(model, metadata).TryAdapt("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) { id }
-            }
-            """);
+                                                                               mutation CreateCustomer($input: CustomerInput!) {
+                                                                                 createCustomer(input: $input) { id }
+                                                                               }
+                                                                               """);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -99,13 +99,13 @@ public sealed class IntegrationHardeningTests
     {
         var (model, metadata) = BuildCustomer();
         var intent = new HotChocolateMutationAdapter(model, metadata).AdaptResultShape("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) {
-                customerId: id
-                displayName: name
-              }
-            }
-            """,
+                mutation CreateCustomer($input: CustomerInput!) {
+                  createCustomer(input: $input) {
+                    customerId: id
+                    displayName: name
+                  }
+                }
+                """,
             new Dictionary<string, object?>
             {
                 ["input"] = new Dictionary<string, object?> { ["name"] = "Ada" }
@@ -136,7 +136,8 @@ public sealed class IntegrationHardeningTests
 
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long),
                     new ColumnReference(customer, new ColumnId(1))),
                 new FieldMetadata(new FieldId(2), "Name", typeof(string),

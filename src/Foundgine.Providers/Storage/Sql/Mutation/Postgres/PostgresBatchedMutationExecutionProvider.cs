@@ -18,7 +18,8 @@ namespace Foundgine.Providers.Storage.Sql.Mutation.Postgres;
 /// PostgreSQL connection. The provider never inspects the runtime connection
 /// type to decide whether PostgreSQL is available.
 /// </summary>
-public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExecutionProvider, IMutationSecurityConformanceEvaluator
+public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExecutionProvider,
+    IMutationSecurityConformanceEvaluator
 {
     public MutationSecurityConformanceResult Evaluate(ExecutionMutationIR ir)
     {
@@ -148,7 +149,8 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
         };
     }
 
-    private MutationBatchResult ExecuteBatchedPlan(SqlBatchedMutationPlan plan, CancellationToken cancellationToken = default)
+    private MutationBatchResult ExecuteBatchedPlan(SqlBatchedMutationPlan plan,
+        CancellationToken cancellationToken = default)
     {
         if (_connection.State != ConnectionState.Open)
             _connection.Open();
@@ -173,7 +175,8 @@ public sealed class PostgresBatchedMutationExecutionProvider : IMutationBatchExe
         var returned = new Dictionary<FieldId, object?>?[plan.OperationCount];
         var affected = new int[plan.OperationCount];
 
-        using var cancellationRegistration = cancellationToken.Register(static state => ((DbCommand)state!).Cancel(), command);
+        using var cancellationRegistration =
+            cancellationToken.Register(static state => ((DbCommand)state!).Cancel(), command);
         using var reader = command.ExecuteReader();
 
         while (reader.Read())

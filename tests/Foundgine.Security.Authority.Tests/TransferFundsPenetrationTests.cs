@@ -209,10 +209,10 @@ public sealed class TransferFundsPenetrationTests
         decimal dailyLimit)
     {
         const string sql = """
-            INSERT INTO banking.bank_account
-            (id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold, daily_transferred, daily_limit, is_frozen)
-            VALUES (@id, @tenant, @owner, @balance, 0, 0, 0, @limit, false);
-            """;
+                           INSERT INTO banking.bank_account
+                           (id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold, daily_transferred, daily_limit, is_frozen)
+                           VALUES (@id, @tenant, @owner, @balance, 0, 0, 0, @limit, false);
+                           """;
         await using var command = dataSource.CreateCommand(sql);
         command.Parameters.AddWithValue("id", id);
         command.Parameters.AddWithValue("tenant", tenant);
@@ -235,12 +235,12 @@ public sealed class TransferFundsPenetrationTests
     {
         await using var connection = await dataSource.OpenConnectionAsync();
         const string sql = """
-            SELECT
-                (SELECT balance FROM banking.bank_account WHERE id = @source),
-                (SELECT balance FROM banking.bank_account WHERE id = @destination),
-                (SELECT count(*) FROM banking.transfer_idempotency),
-                (SELECT count(*) FROM banking.transfer_audit);
-            """;
+                           SELECT
+                               (SELECT balance FROM banking.bank_account WHERE id = @source),
+                               (SELECT balance FROM banking.bank_account WHERE id = @destination),
+                               (SELECT count(*) FROM banking.transfer_idempotency),
+                               (SELECT count(*) FROM banking.transfer_audit);
+                           """;
         await using var command = new NpgsqlCommand(sql, connection);
         command.Parameters.AddWithValue("source", source);
         command.Parameters.AddWithValue("destination", destination);

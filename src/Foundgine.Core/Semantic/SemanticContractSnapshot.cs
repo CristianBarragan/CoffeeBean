@@ -12,7 +12,10 @@ public sealed class SemanticContractSnapshot
 {
     private readonly IReadOnlyDictionary<EntityId, SemanticEntity> _entities;
     private readonly IReadOnlyDictionary<EntityId, IReadOnlyDictionary<string, int>> _entityAliasWeights;
-    private readonly IReadOnlyDictionary<EntityId, IReadOnlyDictionary<FieldId, IReadOnlyDictionary<string, int>>> _fieldAliasWeights;
+
+    private readonly IReadOnlyDictionary<EntityId, IReadOnlyDictionary<FieldId, IReadOnlyDictionary<string, int>>>
+        _fieldAliasWeights;
+
     private readonly IReadOnlyDictionary<RelationshipId, IReadOnlyDictionary<string, int>> _relationshipAliasWeights;
     private readonly IReadOnlyList<SemanticTraversal> _traversals;
 
@@ -71,8 +74,8 @@ public sealed class SemanticContractSnapshot
     public SemanticTraversal GetTraversal(EntityId source, string name) =>
         TryGetTraversal(source, name, out var traversal)
             ? traversal
-            : throw new KeyNotFoundException($"Semantic traversal '{name}' is not defined on entity '{Get(source).Name}'.");
-
+            : throw new KeyNotFoundException(
+                $"Semantic traversal '{name}' is not defined on entity '{Get(source).Name}'.");
 
 
     public bool TryGetAlias(EntityId entityId, string alias, out int weight) =>
@@ -111,8 +114,9 @@ public sealed class SemanticContractSnapshot
             x => BuildAliasMap(x.EffectiveAliases),
             EqualityComparer<EntityId>.Default);
 
-    private static IReadOnlyDictionary<EntityId, IReadOnlyDictionary<FieldId, IReadOnlyDictionary<string, int>>> BuildFieldAliasIndex(
-        IEnumerable<SemanticEntity> entities) =>
+    private static IReadOnlyDictionary<EntityId, IReadOnlyDictionary<FieldId, IReadOnlyDictionary<string, int>>>
+        BuildFieldAliasIndex(
+            IEnumerable<SemanticEntity> entities) =>
         entities.ToDictionary(
             e => e.Id,
             e => (IReadOnlyDictionary<FieldId, IReadOnlyDictionary<string, int>>)e.Fields
@@ -188,4 +192,3 @@ public sealed class SemanticContractSnapshot
         return new ReadOnlyCollection<SemanticTraversal>(copy);
     }
 }
-

@@ -31,7 +31,8 @@ public static class SecurityCapabilityComposition
             .ToArray();
 
         if (components.Length == 0)
-            return SecurityCapabilityCompositionResult.Rejected("A security composition must contain at least one capability.");
+            return SecurityCapabilityCompositionResult.Rejected(
+                "A security composition must contain at least one capability.");
 
         foreach (var capability in components)
         {
@@ -78,11 +79,13 @@ public static class SecurityCapabilityComposition
         // fail closed rather than producing a broader synthetic authority.
         if (tenant is not null && warrant.Constraints.AllowedTenants.Count > 0 &&
             !warrant.Constraints.AllowedTenants.Contains(tenant, StringComparer.Ordinal))
-            return SecurityCapabilityCompositionResult.Rejected("Capability composition crosses the warrant tenant boundary.");
+            return SecurityCapabilityCompositionResult.Rejected(
+                "Capability composition crosses the warrant tenant boundary.");
 
         if (resourceScope is not null && warrant.Constraints.ResourceScopes.Count > 0 &&
             !warrant.Constraints.ResourceScopes.Contains(resourceScope, StringComparer.Ordinal))
-            return SecurityCapabilityCompositionResult.Rejected("Capability composition crosses the warrant resource boundary.");
+            return SecurityCapabilityCompositionResult.Rejected(
+                "Capability composition crosses the warrant resource boundary.");
 
         var invariants = components
             .SelectMany(x => x.EffectiveSecurityInvariants)

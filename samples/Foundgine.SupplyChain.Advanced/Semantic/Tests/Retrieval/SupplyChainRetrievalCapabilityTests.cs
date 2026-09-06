@@ -42,8 +42,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             "gasket",
             RetrievalStrategy.Vector);
 
-        var ex = await Assert.ThrowsAsync<NotSupportedException>(
-            () => source.RetrieveAsync(request));
+        var ex = await Assert.ThrowsAsync<NotSupportedException>(() => source.RetrieveAsync(request));
 
         Assert.Contains("pgvector", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -82,8 +81,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             "Acme Suplies",
             RetrievalStrategy.Fuzzy);
 
-        await Assert.ThrowsAsync<NotSupportedException>(
-            () => source.RetrieveAsync(request));
+        await Assert.ThrowsAsync<NotSupportedException>(() => source.RetrieveAsync(request));
     }
 
     [Fact]
@@ -101,8 +99,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             "hydraulic fitting",
             RetrievalStrategy.FullText);
 
-        await Assert.ThrowsAsync<NotSupportedException>(
-            () => source.RetrieveAsync(request));
+        await Assert.ThrowsAsync<NotSupportedException>(() => source.RetrieveAsync(request));
     }
 
     [Fact]
@@ -120,8 +117,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             "acme",
             RetrievalStrategy.Search);
 
-        var ex = await Assert.ThrowsAsync<NotSupportedException>(
-            () => source.RetrieveAsync(request));
+        var ex = await Assert.ThrowsAsync<NotSupportedException>(() => source.RetrieveAsync(request));
 
         Assert.Contains("Search", ex.Message, StringComparison.Ordinal);
     }
@@ -143,8 +139,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             relationship: SupplyChainSemanticModel.Relationship("Supplier", "purchaseOrders"),
             referenceIdentity: "1");
 
-        var ex = await Assert.ThrowsAsync<NotSupportedException>(
-            () => source.RetrieveAsync(request));
+        var ex = await Assert.ThrowsAsync<NotSupportedException>(() => source.RetrieveAsync(request));
 
         Assert.Contains("GraphSimilarity", ex.Message, StringComparison.Ordinal);
     }
@@ -165,8 +160,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             RetrievalStrategy.GraphSimilarity,
             referenceIdentity: "1");
 
-        var ex = await Assert.ThrowsAsync<ArgumentException>(
-            () => source.RetrieveAsync(request));
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => source.RetrieveAsync(request));
 
         Assert.Contains("Relationship", ex.Message, StringComparison.Ordinal);
     }
@@ -187,8 +181,7 @@ public sealed class SupplyChainRetrievalCapabilityTests
             RetrievalStrategy.GraphSimilarity,
             relationship: SupplyChainSemanticModel.Relationship("Supplier", "purchaseOrders"));
 
-        var ex = await Assert.ThrowsAsync<ArgumentException>(
-            () => source.RetrieveAsync(request));
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => source.RetrieveAsync(request));
 
         Assert.Contains("ReferenceIdentity", ex.Message, StringComparison.Ordinal);
     }
@@ -196,10 +189,9 @@ public sealed class SupplyChainRetrievalCapabilityTests
     [Fact]
     public void Constructor_rejects_a_null_data_source()
     {
-        Assert.Throws<ArgumentNullException>(
-            () => new PostgresRetrievalCandidateSource(
-                null!,
-                SupplyChainSemanticModel.Metadata));
+        Assert.Throws<ArgumentNullException>(() => new PostgresRetrievalCandidateSource(
+            null!,
+            SupplyChainSemanticModel.Metadata));
     }
 
     [Fact]
@@ -207,10 +199,9 @@ public sealed class SupplyChainRetrievalCapabilityTests
     {
         using var dataSource = CreateUnreachableDataSource();
 
-        Assert.Throws<ArgumentNullException>(
-            () => new PostgresRetrievalCandidateSource(
-                dataSource,
-                null!));
+        Assert.Throws<ArgumentNullException>(() => new PostgresRetrievalCandidateSource(
+            dataSource,
+            null!));
     }
 
     [Fact]

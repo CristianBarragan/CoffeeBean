@@ -147,8 +147,7 @@ public sealed class ComplexSemanticMutationE2ETests
 
         var invalid = new SemanticMutationOperationGraph(operations);
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => new SemanticMutationPlanner().Plan(invalid));
+        var exception = Assert.Throws<InvalidOperationException>(() => new SemanticMutationPlanner().Plan(invalid));
 
         Assert.Contains("earlier operation", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -172,8 +171,7 @@ public sealed class ComplexSemanticMutationE2ETests
 
         var invalid = new SemanticMutationOperationGraph(operations);
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => new SemanticMutationPlanner().Plan(invalid));
+        var exception = Assert.Throws<InvalidOperationException>(() => new SemanticMutationPlanner().Plan(invalid));
 
         Assert.Contains("does not return that field", exception.Message, StringComparison.OrdinalIgnoreCase);
     }

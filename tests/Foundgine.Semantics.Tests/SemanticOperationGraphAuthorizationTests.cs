@@ -85,6 +85,3 @@ public sealed class SemanticOperationGraphAuthorizationTests
             relationshipId != RelationshipId.Create("Customer", "Transactions");
     }
 }
-
-
-

@@ -20,8 +20,8 @@ public static class SemanticPlanFingerprint
 
         var builder = new StringBuilder(512);
         builder.Append("plan-v2|");
-        AppendSecurityInvariants(builder, plan.RequiredSecurityInvariants != null ? 
-            plan.RequiredSecurityInvariants : new string[0]);
+        AppendSecurityInvariants(builder,
+            plan.RequiredSecurityInvariants != null ? plan.RequiredSecurityInvariants : new string[0]);
         AppendNode(builder, plan.Root, includePaginationValues: true);
         return builder.ToString();
     }
@@ -89,7 +89,8 @@ public static class SemanticPlanFingerprint
         builder.Append(']');
     }
 
-    private static void AppendQueryOptions(StringBuilder builder, SemanticQueryOptions? options, bool includePaginationValues)
+    private static void AppendQueryOptions(StringBuilder builder, SemanticQueryOptions? options,
+        bool includePaginationValues)
     {
         if (options is null)
         {
@@ -108,6 +109,7 @@ public static class SemanticPlanFingerprint
         {
             builder.Append("pagination-parameterized|");
         }
+
         builder.Append('|');
 
         builder.Append("order[");
@@ -120,6 +122,7 @@ public static class SemanticPlanFingerprint
                 builder.Append(relationship.Value).Append('.');
             builder.Append(',');
         }
+
         builder.Append("]|");
         AppendFilter(builder, options.Filter);
         builder.Append(']');
@@ -220,6 +223,7 @@ public static class SemanticPlanFingerprint
                     AppendValue(builder, item);
                     builder.Append(',');
                 }
+
                 builder.Append(']');
                 break;
             case IFormattable formattable:

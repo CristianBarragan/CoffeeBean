@@ -89,12 +89,12 @@ public sealed class SemanticSqlQueryExecutor
         string sql,
         IEnumerable<SqlParameterBinding> parameters) =>
         Convert.ToHexString(
-            SHA256.HashData(
-                Encoding.UTF8.GetBytes(
-                    sql + "|" +
-                    string.Join(
-                        ';',
-                        parameters.Select(x =>
-                            $"{x.Name}:{x.Value}")))))
-        .ToLowerInvariant()[..24];
+                SHA256.HashData(
+                    Encoding.UTF8.GetBytes(
+                        sql + "|" +
+                        string.Join(
+                            ';',
+                            parameters.Select(x =>
+                                $"{x.Name}:{x.Value}")))))
+            .ToLowerInvariant()[..24];
 }

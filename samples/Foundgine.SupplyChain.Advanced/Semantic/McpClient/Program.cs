@@ -13,15 +13,22 @@ Console.WriteLine();
 var cases = new (string, string, object)[]
 {
     ("capabilities", "describe_capabilities", new { actor = "analyst-a", token = "analyst-a-demo-token" }),
-    ("cross-tenant read", "policy_probe", new { actor = "analyst-a", token = "analyst-a-demo-token", attack = "cross-tenant" }),
-    ("sensitive field", "policy_probe", new { actor = "analyst-a", token = "analyst-a-demo-token", attack = "sensitive-field" }),
-    ("relationship escalation", "policy_probe", new { actor = "operator-a", token = "operator-a-demo-token", attack = "relationship-escalation" }),
-    ("write escalation", "policy_probe", new { actor = "analyst-a", token = "analyst-a-demo-token", attack = "write-escalation" }),
-    ("named operation escalation", "policy_probe", new { actor = "operator-a", token = "operator-a-demo-token", attack = "named-operation" }),
-    ("unauthorized customer write", "write_entity", new { actor = "alice", token = "alice-demo-token", entity = "InventoryLot", operation = "update" }),
+    ("cross-tenant read", "policy_probe",
+        new { actor = "analyst-a", token = "analyst-a-demo-token", attack = "cross-tenant" }),
+    ("sensitive field", "policy_probe",
+        new { actor = "analyst-a", token = "analyst-a-demo-token", attack = "sensitive-field" }),
+    ("relationship escalation", "policy_probe",
+        new { actor = "operator-a", token = "operator-a-demo-token", attack = "relationship-escalation" }),
+    ("write escalation", "policy_probe",
+        new { actor = "analyst-a", token = "analyst-a-demo-token", attack = "write-escalation" }),
+    ("named operation escalation", "policy_probe",
+        new { actor = "operator-a", token = "operator-a-demo-token", attack = "named-operation" }),
+    ("unauthorized customer write", "write_entity",
+        new { actor = "alice", token = "alice-demo-token", entity = "InventoryLot", operation = "update" }),
     ("wrong token", "describe_capabilities", new { actor = "alice", token = "manager-a-demo-token" }),
     ("unknown actor", "describe_capabilities", new { actor = "unknown-agent", token = "whatever" }),
-    ("authorized operator write", "write_entity", new { actor = "operator-a", token = "operator-a-demo-token", entity = "InventoryLot", operation = "update" }),
+    ("authorized operator write", "write_entity",
+        new { actor = "operator-a", token = "operator-a-demo-token", entity = "InventoryLot", operation = "update" }),
 
     // --- Client-supplied claims: attacks -------------------------------
     // These calls authenticate as an ordinary actor/token pair (unchanged),
@@ -112,10 +119,12 @@ string Classify(string name, string response)
     // flat allow/deny. "claims: warehouse scoping narrows predicate" and
     // "claims: unknown claim key ignored" both expect the request to
     // proceed normally (no spoofing rejection) and still be conditional.
-    if (name is "cross-tenant read" or "claims: warehouse scoping narrows predicate" or "claims: unknown claim key ignored")
+    if (name is "cross-tenant read" or "claims: warehouse scoping narrows predicate"
+        or "claims: unknown claim key ignored")
         return lower.Contains("conditional") && !lower.Contains("\"iserror\":true") ? "PASS" : "FAIL";
 
-    return lower.Contains("denied") || lower.Contains("unauthorized") || lower.Contains("invalid actor") || lower.Contains("iserror") || lower.Contains("\"allowed\":false")
+    return lower.Contains("denied") || lower.Contains("unauthorized") || lower.Contains("invalid actor") ||
+           lower.Contains("iserror") || lower.Contains("\"allowed\":false")
         ? "PASS"
         : "FAIL";
 }

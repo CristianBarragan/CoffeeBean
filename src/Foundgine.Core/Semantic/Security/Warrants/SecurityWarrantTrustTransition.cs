@@ -52,7 +52,10 @@ public sealed class MemorySecurityWarrantDelegationTrustStateStore : ISecurityWa
 
     public long CurrentSequence
     {
-        get { lock (_gate) return _sequence; }
+        get
+        {
+            lock (_gate) return _sequence;
+        }
     }
 
     public DelegationIssuerTrust? Resolve(string issuer)
@@ -69,7 +72,10 @@ public sealed class MemorySecurityWarrantDelegationTrustStateStore : ISecurityWa
         lock (_gate)
         {
             _trust[trust.Issuer] = trust;
-            checked { _sequence++; }
+            checked
+            {
+                _sequence++;
+            }
         }
     }
 
@@ -78,7 +84,10 @@ public sealed class MemorySecurityWarrantDelegationTrustStateStore : ISecurityWa
         lock (_gate)
         {
             _trust.Remove(issuer);
-            checked { _sequence++; }
+            checked
+            {
+                _sequence++;
+            }
         }
     }
 

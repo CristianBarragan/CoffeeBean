@@ -31,7 +31,7 @@ public sealed class FoundgineHotChocolateMutationExecutor
         _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
         _schema = schema ?? throw new ArgumentNullException(nameof(schema));
         _securityContextProvider = securityContextProvider
-            ?? throw new ArgumentNullException(nameof(securityContextProvider));
+                                   ?? throw new ArgumentNullException(nameof(securityContextProvider));
         _contextFactory = contextFactory ?? (() => new ExecutionContext());
     }
 

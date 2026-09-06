@@ -28,7 +28,8 @@ public sealed class McpBoundaryTests
             .Where(x => x is not null)
             .ToArray();
 
-        Assert.DoesNotContain(references, x => x!.Contains("Foundgine.Providers.Storage.Sql", StringComparison.Ordinal));
+        Assert.DoesNotContain(references,
+            x => x!.Contains("Foundgine.Providers.Storage.Sql", StringComparison.Ordinal));
         Assert.DoesNotContain(references, x => x!.Contains("HotChocolate", StringComparison.Ordinal));
         Assert.DoesNotContain(references, x => x!.Contains("EntityFramework", StringComparison.Ordinal));
     }

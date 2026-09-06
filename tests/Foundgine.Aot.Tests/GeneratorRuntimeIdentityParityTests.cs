@@ -38,18 +38,18 @@ namespace Foundgine.Providers.Aot.Tests;
 public sealed class GeneratorRuntimeIdentityParityTests
 {
     private const string Source = """
-        using Foundgine.Providers.Aot;
+                                  using Foundgine.Providers.Aot;
 
-        [FoundgineEntity(StorageName = "customers")]
-        public sealed class Customer
-        {
-            [FoundgineField(StorageName = "id")]
-            public int Id { get; init; }
+                                  [FoundgineEntity(StorageName = "customers")]
+                                  public sealed class Customer
+                                  {
+                                      [FoundgineField(StorageName = "id")]
+                                      public int Id { get; init; }
 
-            [FoundgineField(StorageName = "name")]
-            public string Name { get; init; } = "";
-        }
-        """;
+                                      [FoundgineField(StorageName = "name")]
+                                      public string Name { get; init; } = "";
+                                  }
+                                  """;
 
     [Fact]
     public void Generator_entity_id_matches_the_runtime_hasher_for_the_same_canonical_key()
@@ -189,11 +189,11 @@ public sealed class GeneratorRuntimeIdentityParityTests
                 new ISourceGenerator[]
                 {
                     new Foundgine.Providers.Aot.Generator
-                        .FoundgineMetadataGenerator()
+                            .FoundgineMetadataGenerator()
                         .AsSourceGenerator()
                 },
                 parseOptions:
-                    new CSharpParseOptions(LanguageVersion.Preview));
+                new CSharpParseOptions(LanguageVersion.Preview));
 
         driver = driver.RunGeneratorsAndUpdateCompilation(
             compilation,
@@ -207,10 +207,9 @@ public sealed class GeneratorRuntimeIdentityParityTests
 
         var generatedText = outputCompilation.SyntaxTrees
             .Select(tree => tree.GetText().ToString())
-            .FirstOrDefault(
-                text => text.Contains(
-                    "public static class GeneratedMetadata",
-                    System.StringComparison.Ordinal));
+            .FirstOrDefault(text => text.Contains(
+                "public static class GeneratedMetadata",
+                System.StringComparison.Ordinal));
 
         Assert.False(
             string.IsNullOrWhiteSpace(generatedText),
@@ -231,8 +230,7 @@ public sealed class GeneratorRuntimeIdentityParityTests
 
         return trusted!
             .Split(System.IO.Path.PathSeparator)
-            .Select(
-                path => (MetadataReference)
-                    MetadataReference.CreateFromFile(path));
+            .Select(path => (MetadataReference)
+                MetadataReference.CreateFromFile(path));
     }
 }

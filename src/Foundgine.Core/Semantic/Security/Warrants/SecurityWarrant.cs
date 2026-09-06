@@ -12,7 +12,9 @@ public sealed record CapabilityGrant(
         : this(
             Require(capability, nameof(capability)),
             Require(operation, nameof(operation)),
-            Normalize(resourceScopes)) { }
+            Normalize(resourceScopes))
+    {
+    }
 
     private static string Require(string value, string name) =>
         string.IsNullOrWhiteSpace(value) ? throw new ArgumentException("Value is required.", name) : value;
@@ -50,7 +52,9 @@ public sealed record SecurityWarrantConstraints(
             Normalize(resourceScopes),
             Normalize(allowedOperations),
             Validate(maxResults, nameof(maxResults)),
-            Validate(maxAmount, nameof(maxAmount))) { }
+            Validate(maxAmount, nameof(maxAmount)))
+    {
+    }
 
     private static IReadOnlyList<string> Normalize(IEnumerable<string>? values) =>
         new ReadOnlyCollection<string>((values ?? []).Where(x => !string.IsNullOrWhiteSpace(x))
@@ -64,11 +68,11 @@ public sealed record SecurityWarrantConstraints(
     {
         ArgumentNullException.ThrowIfNull(parent);
         return Subset(AllowedTenants, parent.AllowedTenants)
-            && Subset(AllowedFields, parent.AllowedFields)
-            && Subset(ResourceScopes, parent.ResourceScopes)
-            && Subset(AllowedOperations, parent.AllowedOperations)
-            && AtMost(MaxResults, parent.MaxResults)
-            && AtMost(MaxAmount, parent.MaxAmount);
+               && Subset(AllowedFields, parent.AllowedFields)
+               && Subset(ResourceScopes, parent.ResourceScopes)
+               && Subset(AllowedOperations, parent.AllowedOperations)
+               && AtMost(MaxResults, parent.MaxResults)
+               && AtMost(MaxAmount, parent.MaxAmount);
 
         static bool Subset(IReadOnlyList<string> child, IReadOnlyList<string> parent) =>
             parent.Count == 0

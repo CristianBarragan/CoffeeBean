@@ -28,7 +28,8 @@ public sealed class MutationExecutionSecurityGateTests
 
         var providerException = Assert.Throws<InvalidOperationException>(() =>
             MutationExecutionSecurityGate.EnsureExecutable(ir, new HonestMutationProvider(), certificate));
-        Assert.Contains("exact mutation IR and provider", providerException.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("exact mutation IR and provider", providerException.Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -44,7 +45,8 @@ public sealed class MutationExecutionSecurityGateTests
                 provider.GetType().FullName!,
                 []));
 
-        Assert.Contains("no concrete security conformance evaluator", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("no concrete security conformance evaluator", exception.Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

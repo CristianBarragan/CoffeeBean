@@ -324,26 +324,33 @@ public sealed class PostgresE2ETests
         foreach (var node in explain.Nodes.Where(n => n.EstimatedRows > 0 && n.ActualRows >= 0)
                      .OrderByDescending(n => Math.Max(n.ActualRows, 1) / Math.Max(n.EstimatedRows, 1))
                      .Take(5))
-            Console.WriteLine($"POSTGRES_E2E NODE type={node.NodeType} estimated_rows={node.EstimatedRows:F0} actual_rows={node.ActualRows:F0} loops={node.ActualLoops:F0} time_ms={node.ActualTotalTimeMs:F3} sort_method={node.SortMethod ?? "-"} sort_space={node.SortSpaceUsed?.ToString() ?? "-"} sort_space_type={node.SortSpaceType ?? "-"}");
+            Console.WriteLine(
+                $"POSTGRES_E2E NODE type={node.NodeType} estimated_rows={node.EstimatedRows:F0} actual_rows={node.ActualRows:F0} loops={node.ActualLoops:F0} time_ms={node.ActualTotalTimeMs:F3} sort_method={node.SortMethod ?? "-"} sort_space={node.SortSpaceUsed?.ToString() ?? "-"} sort_space_type={node.SortSpaceType ?? "-"}");
 
         Assert.True(explain.ExecutionTimeMs >= 0);
         Assert.True(explain.PlanningTimeMs >= 0);
     }
 
     private sealed record DbSnapshot(
-        long CustomerCount, long ProfileCount, long AccountCount, long OrderCount, long PaymentCount, long AuditCount);
+        long CustomerCount,
+        long ProfileCount,
+        long AccountCount,
+        long OrderCount,
+        long PaymentCount,
+        long AuditCount);
 
-    private static async Task<DbSnapshot> SnapshotAsync(NpgsqlConnection connection, NpgsqlTransaction? transaction = null)
+    private static async Task<DbSnapshot> SnapshotAsync(NpgsqlConnection connection,
+        NpgsqlTransaction? transaction = null)
     {
         const string sql = """
-            SELECT
-                (SELECT COUNT(*) FROM "Customer"),
-                (SELECT COUNT(*) FROM "Profile"),
-                (SELECT COUNT(*) FROM "Account"),
-                (SELECT COUNT(*) FROM "Order"),
-                (SELECT COUNT(*) FROM "Payment"),
-                (SELECT COUNT(*) FROM "Audit");
-            """;
+                           SELECT
+                               (SELECT COUNT(*) FROM "Customer"),
+                               (SELECT COUNT(*) FROM "Profile"),
+                               (SELECT COUNT(*) FROM "Account"),
+                               (SELECT COUNT(*) FROM "Order"),
+                               (SELECT COUNT(*) FROM "Payment"),
+                               (SELECT COUNT(*) FROM "Audit");
+                           """;
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         await using var reader = await command.ExecuteReaderAsync();
         if (!await reader.ReadAsync())
@@ -364,15 +371,21 @@ public sealed class PostgresE2ETests
         // increasing independent create operations to exercise batch cardinality.
         var selected = new List<SemanticMutationOperation> { baseOperations[0] };
         if (depth >= 2)
-            selected.Add(baseOperations[2] with {
+            selected.Add(baseOperations[2] with
+            {
                 Fields = baseOperations[2].Fields.Select(f => f with
                 {
                     Source = f.Source is null ? null : new SemanticMutationValueReference(0, f.Source.SourceField)
                 }).ToArray(),
-                Dependencies = [new SemanticMutationDependency(0, 1, ComplexSemanticMutationE2ETests.Id, ComplexSemanticMutationE2ETests.CustomerId, ComplexSemanticMutationE2ETests.CustomerAccounts)]
+                Dependencies =
+                [
+                    new SemanticMutationDependency(0, 1, ComplexSemanticMutationE2ETests.Id,
+                        ComplexSemanticMutationE2ETests.CustomerId, ComplexSemanticMutationE2ETests.CustomerAccounts)
+                ]
             });
         if (depth >= 3)
-            selected.Add(baseOperations[4] with {
+            selected.Add(baseOperations[4] with
+            {
                 Fields = baseOperations[4].Fields.Select(f => f with
                 {
                     Source = f.Source is null ? null : new SemanticMutationValueReference(1, f.Source.SourceField)
@@ -395,6 +408,7 @@ public sealed class PostgresE2ETests
             };
             operations.Add(op);
         }
+
         return new SemanticMutationOperationGraph(operations);
     }
 
@@ -470,12 +484,19 @@ public sealed class PostgresE2ETests
         if (type == "Sort") stats.SortCount++;
         if (type.Contains("Materialize", StringComparison.OrdinalIgnoreCase)) stats.MaterializeCount++;
         if (node.TryGetProperty("Plans", out var children))
-            foreach (var child in children.EnumerateArray()) WalkPlan(child, stats);
+            foreach (var child in children.EnumerateArray())
+                WalkPlan(child, stats);
     }
 
     private sealed record PlanNodeStats(
-        string NodeType, double EstimatedRows, double ActualRows, double ActualLoops, double ActualTotalTimeMs,
-        string? SortMethod, long? SortSpaceUsed, string? SortSpaceType);
+        string NodeType,
+        double EstimatedRows,
+        double ActualRows,
+        double ActualLoops,
+        double ActualTotalTimeMs,
+        string? SortMethod,
+        long? SortSpaceUsed,
+        string? SortSpaceType);
 
     private sealed class PlanStats
     {

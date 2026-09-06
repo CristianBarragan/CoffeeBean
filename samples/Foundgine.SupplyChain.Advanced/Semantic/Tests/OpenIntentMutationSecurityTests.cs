@@ -19,21 +19,21 @@ public sealed class OpenIntentMutationSecurityTests
         var model = SupplyChainSemanticModel.Build();
         var graph = new SemanticMutationIntentBuilder(model)
             .Create("PurchaseOrder", "order")
-                .Set("SupplierId", 1)
-                .Set("WarehouseId", 1)
-                .Set("Status", "Open")
-                .Return("Id")
+            .Set("SupplierId", 1)
+            .Set("WarehouseId", 1)
+            .Set("Status", "Open")
+            .Return("Id")
             .Create("PurchaseOrderLine", "line")
-                .SetFrom("PurchaseOrderId", "order", "Id")
-                .Set("ProductId", 1)
-                .Set("Quantity", 100m)
-                .Return("Id", "PurchaseOrderId")
+            .SetFrom("PurchaseOrderId", "order", "Id")
+            .Set("ProductId", 1)
+            .Set("Quantity", 100m)
+            .Return("Id", "PurchaseOrderId")
             .Create("Shipment", "shipment")
-                .SetFrom("PurchaseOrderId", "order", "Id")
-                .Set("ExpectedArrival", new DateTime(2026, 9, 5))
-                .Set("Status", "Planned")
-                .Set("Quantity", 100m)
-                .Return("Id", "PurchaseOrderId")
+            .SetFrom("PurchaseOrderId", "order", "Id")
+            .Set("ExpectedArrival", new DateTime(2026, 9, 5))
+            .Set("Status", "Planned")
+            .Set("Quantity", 100m)
+            .Return("Id", "PurchaseOrderId")
             .Build();
 
         var plan = new SemanticMutationPlanner().Plan(graph);
@@ -41,8 +41,10 @@ public sealed class OpenIntentMutationSecurityTests
         Assert.Equal(3, plan.Operations.Count);
         Assert.Equal(2, plan.Dependencies.Count);
         Assert.All(plan.Dependencies, dependency => Assert.Equal(0, int.Parse(dependency.FromOperationId)));
-        var purchaseOrderLineId = model.ResolveEntity("PurchaseOrderLine").Fields.Single(x => x.Name == "PurchaseOrderId").Id;
-        var shipmentPurchaseOrderId = model.ResolveEntity("Shipment").Fields.Single(x => x.Name == "PurchaseOrderId").Id;
+        var purchaseOrderLineId =
+            model.ResolveEntity("PurchaseOrderLine").Fields.Single(x => x.Name == "PurchaseOrderId").Id;
+        var shipmentPurchaseOrderId =
+            model.ResolveEntity("Shipment").Fields.Single(x => x.Name == "PurchaseOrderId").Id;
         Assert.All(plan.Dependencies, dependency => Assert.Contains(
             dependency.TargetField, new[] { purchaseOrderLineId, shipmentPurchaseOrderId }));
     }
@@ -116,9 +118,9 @@ public sealed class OpenIntentMutationSecurityTests
         var model = SupplyChainSemanticModel.Build();
         var graph = new SemanticMutationIntentBuilder(model)
             .Update("PurchaseOrder")
-                .Set("Status", "Closed")
-                .Where("Id", SemanticFilterOperator.Eq, 42)
-                .Return("Id")
+            .Set("Status", "Closed")
+            .Where("Id", SemanticFilterOperator.Eq, 42)
+            .Return("Id")
             .Build();
 
         var operation = Assert.Single(graph.Operations);
@@ -127,5 +129,3 @@ public sealed class OpenIntentMutationSecurityTests
         Assert.Equal(42, filter.Value);
     }
 }
-
-

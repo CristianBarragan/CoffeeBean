@@ -107,7 +107,10 @@ public sealed class SecurityWarrantDelegationChainSecurityTests
     {
         var now = DateTimeOffset.UtcNow;
         var root = Create(now);
-        var duplicate = root with { ParentId = root.Id, ParentDigest = root.Digest, Issuer = root.Subject, DelegationPath = [root.Digest] };
+        var duplicate = root with
+        {
+            ParentId = root.Id, ParentDigest = root.Digest, Issuer = root.Subject, DelegationPath = [root.Digest]
+        };
 
         Assert.Throws<InvalidOperationException>(() =>
             SecurityWarrantDelegationChainValidator.Validate([root, duplicate], now));

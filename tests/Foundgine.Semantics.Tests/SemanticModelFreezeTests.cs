@@ -88,7 +88,8 @@ public sealed class SemanticModelFreezeTests
     public void Traversal_path_is_defensively_immutable()
     {
         var model = new SemanticModelBuilder()
-            .Entity<TestCustomer>(EntityId.Create("Customer"), "Customer", e => e.Identity(x => x.Id).Field(x => x.Name))
+            .Entity<TestCustomer>(EntityId.Create("Customer"), "Customer",
+                e => e.Identity(x => x.Id).Field(x => x.Name))
             .Entity<TestOrder>(EntityId.Create("Order"), "Order", e => e.Identity(x => x.Id).Field(x => x.CustomerId))
             .Relationship<TestCustomer, TestOrder>(
                 EntityId.Create("Customer"), "Orders", x => x.Id,

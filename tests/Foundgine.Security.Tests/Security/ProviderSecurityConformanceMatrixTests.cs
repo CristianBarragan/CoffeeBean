@@ -103,7 +103,8 @@ public sealed class ProviderSecurityAttackTests
 
         var proof = matrix.Evaluate("hostile-provider", [
             SecurityInvariantIds.AuthorizationRequired,
-            SecurityInvariantIds.TenantIsolation]);
+            SecurityInvariantIds.TenantIsolation
+        ]);
 
         Assert.False(proof.IsSatisfied);
         Assert.Contains(SecurityInvariantIds.TenantIsolation, proof.Missing);

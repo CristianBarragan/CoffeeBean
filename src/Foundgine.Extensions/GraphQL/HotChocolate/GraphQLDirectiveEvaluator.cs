@@ -23,7 +23,8 @@ public static class GraphQLDirectiveEvaluator
                     $"GraphQL directive '@{name}' is not supported by the GraphQL adapter. Supported directives are @include and @skip.");
             }
 
-            var ifArgument = directive.Arguments.FirstOrDefault(x => string.Equals(x.Name.Value, "if", StringComparison.Ordinal));
+            var ifArgument =
+                directive.Arguments.FirstOrDefault(x => string.Equals(x.Name.Value, "if", StringComparison.Ordinal));
             if (ifArgument is null)
                 throw new InvalidOperationException($"GraphQL directive '@{name}' requires an 'if' argument.");
 
@@ -47,7 +48,8 @@ public static class GraphQLDirectiveEvaluator
             BooleanValueNode boolean => boolean.Value,
             VariableNode variable => ResolveVariable(variable.Name.Value, variables, variableDefinitions),
             NullValueNode => null,
-            _ => throw new InvalidOperationException("GraphQL @include/@skip 'if' must be a Boolean or Boolean variable.")
+            _ => throw new InvalidOperationException(
+                "GraphQL @include/@skip 'if' must be a Boolean or Boolean variable.")
         };
 
         if (value is bool booleanValue)
@@ -61,6 +63,4 @@ public static class GraphQLDirectiveEvaluator
         IReadOnlyDictionary<string, object?>? variables,
         IReadOnlyDictionary<string, VariableDefinitionNode> variableDefinitions) =>
         GraphQLVariableCoercer.Resolve(name, variables, variableDefinitions);
-
-
 }

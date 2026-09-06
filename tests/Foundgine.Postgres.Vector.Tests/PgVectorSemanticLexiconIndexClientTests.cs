@@ -20,15 +20,15 @@ public sealed class PgVectorSemanticLexiconIndexClientTests
     [Fact]
     public void VectorOpsClass_rejects_an_undefined_distance_value()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => PgVectorSemanticLexiconIndexClient.VectorOpsClass((PgVectorDistance)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            PgVectorSemanticLexiconIndexClient.VectorOpsClass((PgVectorDistance)99));
     }
 
     [Fact]
     public void Constructor_throws_when_data_source_is_null()
     {
-        Assert.Throws<ArgumentNullException>(
-            () => new PgVectorSemanticLexiconIndexClient(null!, new StubEmbeddingGenerator()));
+        Assert.Throws<ArgumentNullException>(() =>
+            new PgVectorSemanticLexiconIndexClient(null!, new StubEmbeddingGenerator()));
     }
 
     [Fact]
@@ -36,8 +36,7 @@ public sealed class PgVectorSemanticLexiconIndexClientTests
     {
         using var dataSource = new NpgsqlDataSourceBuilder("Host=localhost;Database=unused").Build();
 
-        Assert.Throws<ArgumentNullException>(
-            () => new PgVectorSemanticLexiconIndexClient(dataSource, null!));
+        Assert.Throws<ArgumentNullException>(() => new PgVectorSemanticLexiconIndexClient(dataSource, null!));
     }
 
     [Fact]

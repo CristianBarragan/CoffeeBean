@@ -17,7 +17,8 @@ public sealed class SemanticGraph
     {
     }
 
-    internal SemanticGraph(IEnumerable<SemanticGraphNode> nodes, Foundgine.Core.Semantic.Query.SemanticQueryOptions? options)
+    internal SemanticGraph(IEnumerable<SemanticGraphNode> nodes,
+        Foundgine.Core.Semantic.Query.SemanticQueryOptions? options)
     {
         _nodes.AddRange(nodes);
         Options = options;
@@ -96,7 +97,8 @@ public sealed class SemanticGraph
         AuthorizationPredicate? authorization = null)
     {
         if (relationshipId is not null && connectionId is not null)
-            throw new ArgumentException("A semantic node cannot be reached through both a relationship and a connection.");
+            throw new ArgumentException(
+                "A semantic node cannot be reached through both a relationship and a connection.");
 
         if (parent is null && connectionId is not null)
             throw new ArgumentException("A root semantic node cannot be reached through a connection.");
@@ -143,6 +145,7 @@ public sealed record SemanticGraphNode(
 
     /// <summary>Provider-neutral semantic constraints relevant to this node.</summary>
     public IReadOnlyList<SemanticConstraint> SemanticConstraints { get; init; } = [];
+
     /// <summary>
     /// Fields selected for this entity in the request. These are semantic
     /// field identities only; no provider/storage information is carried.

@@ -70,7 +70,8 @@ public static class SemanticModelFingerprint
     {
         foreach (var alias in aliases.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
                      .ThenBy(x => x.Name, StringComparer.Ordinal))
-            Append(builder, "alias", alias.Name, alias.Weight?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "");
+            Append(builder, "alias", alias.Name,
+                alias.Weight?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "");
     }
 
     private static void Append(StringBuilder builder, string kind, params object[] values)
@@ -81,6 +82,7 @@ public static class SemanticModelFingerprint
             var text = value.ToString() ?? "";
             builder.Append('|').Append(text.Length).Append(':').Append(text);
         }
+
         builder.Append('\n');
     }
 

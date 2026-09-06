@@ -135,9 +135,13 @@ public sealed class PlannerTests
                     .SelectMany(ctor => ctor.GetParameters().Select(parameter => parameter.ParameterType)))
                 .Select(type => type.FullName ?? type.Name);
 
-            Assert.DoesNotContain(exposedTypes, name => name.StartsWith("Foundgine.Core.Semantic.Metadata.EntityMetadata", StringComparison.Ordinal));
-            Assert.DoesNotContain(exposedTypes, name => name.StartsWith("Foundgine.Core.Semantic.Metadata.RelationshipMetadata", StringComparison.Ordinal));
-            Assert.DoesNotContain(exposedTypes, name => name.StartsWith("Foundgine.Core.Semantic.Metadata.ColumnReference", StringComparison.Ordinal));
+            Assert.DoesNotContain(exposedTypes,
+                name => name.StartsWith("Foundgine.Core.Semantic.Metadata.EntityMetadata", StringComparison.Ordinal));
+            Assert.DoesNotContain(exposedTypes,
+                name => name.StartsWith("Foundgine.Core.Semantic.Metadata.RelationshipMetadata",
+                    StringComparison.Ordinal));
+            Assert.DoesNotContain(exposedTypes,
+                name => name.StartsWith("Foundgine.Core.Semantic.Metadata.ColumnReference", StringComparison.Ordinal));
         }
     }
 
@@ -191,6 +195,4 @@ public sealed class PlannerTests
 
         Assert.Equal(new EntityId(1), plan.Root.EntityId);
     }
-
 }
-

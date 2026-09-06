@@ -18,7 +18,9 @@ public sealed record SemanticField(
 {
     public IReadOnlyList<SemanticAlias> EffectiveAliases => Aliases ?? [];
     public IReadOnlyList<SemanticConstraint> EffectiveConstraints => Constraints ?? [];
-    public SemanticType EffectiveSemanticType => SemanticType ?? Foundgine.Core.Semantic.SemanticType.FromClrType(ClrType);
+
+    public SemanticType EffectiveSemanticType =>
+        SemanticType ?? Foundgine.Core.Semantic.SemanticType.FromClrType(ClrType);
 
     /// <summary>
     /// Whether the semantic field permits null. For reference types this may
@@ -26,7 +28,8 @@ public sealed record SemanticField(
     /// reference metadata is preserved even though string and string? share
     /// the same runtime <see cref="Type"/>.
     /// </summary>
-    public bool IsNullable => NullableOverride ?? (!ClrType.IsValueType || Nullable.GetUnderlyingType(ClrType) is not null);
+    public bool IsNullable =>
+        NullableOverride ?? (!ClrType.IsValueType || Nullable.GetUnderlyingType(ClrType) is not null);
 }
 
 [Flags]

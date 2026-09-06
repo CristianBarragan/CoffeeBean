@@ -78,6 +78,7 @@ public sealed class GraphQLSchemaAdapter
                     : $"{target.Name}{suffix}";
                 lines.Add($"  {ToGraphQLName(relationship.Name)}: {type}");
             }
+
             lines.Add("}");
         }
 
@@ -142,19 +143,22 @@ public sealed class GraphQLSchemaAdapter
         var input = new[] { new GraphQLArgumentDescriptor("input", $"{entity.Name}Input", IsNonNull: true) };
         var where = new[] { new GraphQLArgumentDescriptor("where", $"{entity.Name}WhereInput", IsNonNull: true) };
         yield return new GraphQLFieldDescriptor($"create{entity.Name}", entity.Name, IsNonNull: true, Arguments: input);
-        yield return new GraphQLFieldDescriptor($"update{entity.Name}", entity.Name, IsNonNull: true, Arguments: [input[0], where[0]]);
+        yield return new GraphQLFieldDescriptor($"update{entity.Name}", entity.Name, IsNonNull: true,
+            Arguments: [input[0], where[0]]);
         yield return new GraphQLFieldDescriptor($"delete{entity.Name}", entity.Name, IsNonNull: true, Arguments: where);
         yield return new GraphQLFieldDescriptor(
             $"upsert{entity.Name}",
             entity.Name,
             IsNonNull: true,
-            Arguments: [
+            Arguments:
+            [
                 input[0],
                 new GraphQLArgumentDescriptor("onConflict", "String", IsList: true)
             ]);
     }
 
-    private static IEnumerable<GraphQLFieldDescriptor> BuildQueryFields(IEnumerable<GraphQLObjectTypeDescriptor> objects)
+    private static IEnumerable<GraphQLFieldDescriptor> BuildQueryFields(
+        IEnumerable<GraphQLObjectTypeDescriptor> objects)
     {
         foreach (var type in objects)
             yield return new GraphQLFieldDescriptor(ToGraphQLName(type.Name), type.Name, IsNonNull: true);
@@ -168,9 +172,14 @@ public sealed class GraphQLSchemaAdapter
         return $"  {field.Name}{args}: {FormatType(field)}";
     }
 
-    private static string FormatType(GraphQLFieldDescriptor field) => FormatType(field.Type, field.IsList, field.IsNonNull);
-    private static string FormatType(GraphQLInputFieldDescriptor field) => FormatType(field.Type, field.IsList, field.IsNonNull);
-    private static string FormatType(GraphQLArgumentDescriptor field) => FormatType(field.Type, field.IsList, field.IsNonNull);
+    private static string FormatType(GraphQLFieldDescriptor field) =>
+        FormatType(field.Type, field.IsList, field.IsNonNull);
+
+    private static string FormatType(GraphQLInputFieldDescriptor field) =>
+        FormatType(field.Type, field.IsList, field.IsNonNull);
+
+    private static string FormatType(GraphQLArgumentDescriptor field) =>
+        FormatType(field.Type, field.IsList, field.IsNonNull);
 
     private static string FormatType(string type, bool isList, bool isNonNull)
     {
@@ -193,7 +202,8 @@ internal static class GraphQLTypeMapper
         var effective = nullable ?? type;
         if (effective == typeof(string) || effective == typeof(char) || effective == typeof(Guid)) return "String";
         if (effective == typeof(bool)) return "Boolean";
-        if (effective == typeof(byte) || effective == typeof(short) || effective == typeof(int) || effective == typeof(long)) return "Int";
+        if (effective == typeof(byte) || effective == typeof(short) || effective == typeof(int) ||
+            effective == typeof(long)) return "Int";
         if (effective == typeof(float) || effective == typeof(double) || effective == typeof(decimal)) return "Float";
         if (effective == typeof(DateTime) || effective == typeof(DateTimeOffset)) return "DateTime";
         if (effective.IsEnum) return effective.Name;

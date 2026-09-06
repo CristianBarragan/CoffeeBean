@@ -174,7 +174,8 @@ public sealed class SupplyChainGroundingAliasTests
                 .Where(entry => request.EffectiveKinds.Contains(entry.Kind))
                 .Where(entry =>
                     string.Equals(entry.CanonicalName, request.Token, StringComparison.OrdinalIgnoreCase) ||
-                    entry.EffectiveAliases.Any(a => string.Equals(a, request.Token, StringComparison.OrdinalIgnoreCase)))
+                    entry.EffectiveAliases.Any(a =>
+                        string.Equals(a, request.Token, StringComparison.OrdinalIgnoreCase)))
                 .Select(entry => new SemanticLexicalCandidate(
                     request.Token,
                     entry.Kind,

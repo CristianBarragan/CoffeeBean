@@ -36,13 +36,15 @@ public enum TaskWorkerAssignment
 /// </summary>
 public sealed record RetryPolicy(int MaxAttempts, TimeSpan InitialBackoff, double BackoffMultiplier = 2.0)
 {
-    public static RetryPolicy None { get; } = new(MaxAttempts: 1, InitialBackoff: TimeSpan.Zero, BackoffMultiplier: 1.0);
+    public static RetryPolicy None { get; } =
+        new(MaxAttempts: 1, InitialBackoff: TimeSpan.Zero, BackoffMultiplier: 1.0);
 }
 
 /// <summary>Lifecycle characteristics a routed task's host-owned worker must honor.</summary>
 public sealed record TaskLifecyclePolicy(bool Cancelable, bool Observable, RetryPolicy? Retry)
 {
-    public static TaskLifecyclePolicy Default { get; } = new(Cancelable: true, Observable: true, Retry: RetryPolicy.None);
+    public static TaskLifecyclePolicy Default { get; } =
+        new(Cancelable: true, Observable: true, Retry: RetryPolicy.None);
 }
 
 /// <summary>

@@ -20,7 +20,11 @@ public static class SecurityWarrantCanonicalizer
             .OrderBy(x => x.Capability, StringComparer.Ordinal)
             .ThenBy(x => x.Operation, StringComparer.Ordinal)
             .ThenBy(x => string.Join("\u001f", x.ResourceScopes), StringComparer.Ordinal)
-            .Select(x => new { capability = x.Capability, operation = x.Operation, resourceScopes = x.ResourceScopes.OrderBy(v => v, StringComparer.Ordinal).ToArray() })
+            .Select(x => new
+            {
+                capability = x.Capability, operation = x.Operation,
+                resourceScopes = x.ResourceScopes.OrderBy(v => v, StringComparer.Ordinal).ToArray()
+            })
             .ToArray();
 
         var payload = new

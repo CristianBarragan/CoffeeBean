@@ -18,35 +18,35 @@ public sealed class JsonIntentPipelineTests
     public async Task Json_intent_drives_the_same_semantic_pipeline_as_other_producers()
     {
         const string json = """
-        {
-          "rootEntity": "Transaction",
-          "selections": [
-            { "field": "Id" },
-            { "field": "Amount" },
-            { "field": "TransactionDate" }
-          ],
-          "filter": {
-            "kind": "relationship",
-            "relationship": "Account",
-            "quantifier": "Some",
-            "predicate": {
-              "kind": "relationship",
-              "relationship": "Customer",
-              "quantifier": "Some",
-              "predicate": {
-                "kind": "field",
-                "field": "Name",
-                "operator": "Eq",
-                "value": "Alice"
-              }
-            }
-          },
-          "order": [
-            { "field": "TransactionDate", "direction": "Desc" }
-          ],
-          "limit": 5
-        }
-        """;
+                            {
+                              "rootEntity": "Transaction",
+                              "selections": [
+                                { "field": "Id" },
+                                { "field": "Amount" },
+                                { "field": "TransactionDate" }
+                              ],
+                              "filter": {
+                                "kind": "relationship",
+                                "relationship": "Account",
+                                "quantifier": "Some",
+                                "predicate": {
+                                  "kind": "relationship",
+                                  "relationship": "Customer",
+                                  "quantifier": "Some",
+                                  "predicate": {
+                                    "kind": "field",
+                                    "field": "Name",
+                                    "operator": "Eq",
+                                    "value": "Alice"
+                                  }
+                                }
+                              },
+                              "order": [
+                                { "field": "TransactionDate", "direction": "Desc" }
+                              ],
+                              "limit": 5
+                            }
+                            """;
 
         var model = BankingSemanticModel.Build();
         var metadata = BankingRelationalMetadata.Build();
@@ -82,35 +82,34 @@ public sealed class JsonIntentPipelineTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" (
-                "Id" INTEGER PRIMARY KEY,
-                "Name" TEXT NOT NULL
-            );
-            CREATE TABLE "Account" (
-                "Id" INTEGER PRIMARY KEY,
-                "CustomerId" INTEGER NOT NULL,
-                "Balance" DECIMAL NOT NULL
-            );
-            CREATE TABLE "Transaction" (
-                "Id" INTEGER PRIMARY KEY,
-                "AccountId" INTEGER NOT NULL,
-                "Amount" DECIMAL NOT NULL,
-                "TransactionDate" TEXT NOT NULL
-            );
-            INSERT INTO "Customer" VALUES (1, 'Alice');
-            INSERT INTO "Customer" VALUES (2, 'Bob');
-            INSERT INTO "Account" VALUES (10, 1, 100.50);
-            INSERT INTO "Account" VALUES (20, 2, 200.00);
-            INSERT INTO "Transaction" VALUES (101, 10, 10.00, '2026-01-01');
-            INSERT INTO "Transaction" VALUES (102, 10, 20.00, '2026-01-02');
-            INSERT INTO "Transaction" VALUES (103, 10, 30.00, '2026-01-03');
-            INSERT INTO "Transaction" VALUES (104, 10, 40.00, '2026-01-04');
-            INSERT INTO "Transaction" VALUES (105, 10, 50.00, '2026-01-05');
-            INSERT INTO "Transaction" VALUES (106, 10, 60.00, '2026-01-06');
-            INSERT INTO "Transaction" VALUES (107, 20, 70.00, '2026-01-07');
-            INSERT INTO "Transaction" VALUES (108, 20, 80.00, '2026-01-08');
-            """;
+                              CREATE TABLE "Customer" (
+                                  "Id" INTEGER PRIMARY KEY,
+                                  "Name" TEXT NOT NULL
+                              );
+                              CREATE TABLE "Account" (
+                                  "Id" INTEGER PRIMARY KEY,
+                                  "CustomerId" INTEGER NOT NULL,
+                                  "Balance" DECIMAL NOT NULL
+                              );
+                              CREATE TABLE "Transaction" (
+                                  "Id" INTEGER PRIMARY KEY,
+                                  "AccountId" INTEGER NOT NULL,
+                                  "Amount" DECIMAL NOT NULL,
+                                  "TransactionDate" TEXT NOT NULL
+                              );
+                              INSERT INTO "Customer" VALUES (1, 'Alice');
+                              INSERT INTO "Customer" VALUES (2, 'Bob');
+                              INSERT INTO "Account" VALUES (10, 1, 100.50);
+                              INSERT INTO "Account" VALUES (20, 2, 200.00);
+                              INSERT INTO "Transaction" VALUES (101, 10, 10.00, '2026-01-01');
+                              INSERT INTO "Transaction" VALUES (102, 10, 20.00, '2026-01-02');
+                              INSERT INTO "Transaction" VALUES (103, 10, 30.00, '2026-01-03');
+                              INSERT INTO "Transaction" VALUES (104, 10, 40.00, '2026-01-04');
+                              INSERT INTO "Transaction" VALUES (105, 10, 50.00, '2026-01-05');
+                              INSERT INTO "Transaction" VALUES (106, 10, 60.00, '2026-01-06');
+                              INSERT INTO "Transaction" VALUES (107, 20, 70.00, '2026-01-07');
+                              INSERT INTO "Transaction" VALUES (108, 20, 80.00, '2026-01-08');
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

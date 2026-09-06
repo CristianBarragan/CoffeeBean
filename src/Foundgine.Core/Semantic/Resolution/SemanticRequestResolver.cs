@@ -76,7 +76,8 @@ public sealed class SemanticRequestResolver
         foreach (var relationshipId in term.EffectivePath)
         {
             var relationship = entity.Relationships.FirstOrDefault(x => x.Id == relationshipId)
-                ?? throw InvalidSelection($"Order relationship '{relationshipId}' is not defined on '{entity.Name}'.");
+                               ?? throw InvalidSelection(
+                                   $"Order relationship '{relationshipId}' is not defined on '{entity.Name}'.");
             entity = _contract.Get(relationship.Target);
         }
 
@@ -126,7 +127,8 @@ public sealed class SemanticRequestResolver
             var relationshipId = selection.Relationship!.Value;
 
             if (!relationshipIds.Add(relationshipId))
-                throw InvalidSelection($"Relationship '{relationshipId}' is selected more than once on '{entity.Name}'. Merge repeated selections in the adapter before resolution.");
+                throw InvalidSelection(
+                    $"Relationship '{relationshipId}' is selected more than once on '{entity.Name}'. Merge repeated selections in the adapter before resolution.");
 
             var relationship = entity.Relationships.FirstOrDefault(r => r.Id == relationshipId);
 
@@ -172,8 +174,8 @@ public sealed class SemanticRequestResolver
             foreach (var relationshipId in term.EffectivePath)
             {
                 var relationship = entity.Relationships.FirstOrDefault(r => r.Id == relationshipId)
-                    ?? throw InvalidSelection(
-                        $"Order relationship '{relationshipId}' is not defined on '{entity.Name}'.");
+                                   ?? throw InvalidSelection(
+                                       $"Order relationship '{relationshipId}' is not defined on '{entity.Name}'.");
 
                 if (relationship.Cardinality == RelationshipCardinality.Many)
                 {
@@ -189,7 +191,8 @@ public sealed class SemanticRequestResolver
                     {
                         var target = _contract.Get(relationship.Target);
                         if (!IsDeclaredField(target, term.Field))
-                            throw InvalidSelection($"Aggregate order field '{term.Field}' is not defined on '{target.Name}'.");
+                            throw InvalidSelection(
+                                $"Aggregate order field '{term.Field}' is not defined on '{target.Name}'.");
                     }
                 }
 
@@ -239,11 +242,13 @@ public sealed class SemanticRequestResolver
 
     private static bool IsFieldSelectable(SemanticEntity entity, FieldId fieldId) =>
         entity.Identity.FieldId == fieldId ||
-        entity.Fields.FirstOrDefault(x => x.Id == fieldId)?.Capabilities.HasFlag(SemanticFieldCapabilities.Selectable) == true;
+        entity.Fields.FirstOrDefault(x => x.Id == fieldId)?.Capabilities
+            .HasFlag(SemanticFieldCapabilities.Selectable) == true;
 
     private static bool IsFieldSortable(SemanticEntity entity, FieldId fieldId) =>
         entity.Identity.FieldId == fieldId ||
-        entity.Fields.FirstOrDefault(x => x.Id == fieldId)?.Capabilities.HasFlag(SemanticFieldCapabilities.Sortable) == true;
+        entity.Fields.FirstOrDefault(x => x.Id == fieldId)?.Capabilities.HasFlag(SemanticFieldCapabilities.Sortable) ==
+        true;
 
     private static bool IsDeclaredField(SemanticEntity entity, FieldId fieldId) =>
         entity.Identity.FieldId == fieldId || entity.Fields.Any(f => f.Id == fieldId);

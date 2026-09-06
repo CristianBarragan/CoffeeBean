@@ -88,7 +88,8 @@ public sealed class MutationExecutionSecurityCertificate
 
         var requiredSet = required.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
         var preservedSet = preserved.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
-        var missing = requiredSet.Except(preservedSet, StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        var missing = requiredSet.Except(preservedSet, StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal)
+            .ToArray();
 
         return new MutationExecutionSecurityCertificate(
             ir, provider, providerName, requiredSet, preservedSet, missing);

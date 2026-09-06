@@ -68,7 +68,8 @@ public sealed class FoundgineMcpAgentClient
     {
         ArgumentNullException.ThrowIfNull(intentFactory);
         var contract = await DiscoverCapabilitiesAsync(cancellationToken);
-        var intent = intentFactory(contract) ?? throw new InvalidOperationException("The intent factory returned null.");
+        var intent = intentFactory(contract) ??
+                     throw new InvalidOperationException("The intent factory returned null.");
         return await ExecuteQueryAsync(intent, cancellationToken);
     }
 
@@ -133,7 +134,7 @@ public sealed class FoundgineMcpAgentClient
                 if (typeof(T) == typeof(JsonElement))
                     return (T)(object)nested.RootElement.Clone();
                 return nested.RootElement.Deserialize<T>(JsonOptions)
-                    ?? throw new InvalidOperationException("MCP tool result deserialized to null.");
+                       ?? throw new InvalidOperationException("MCP tool result deserialized to null.");
             }
             catch (JsonException)
             {

@@ -14,7 +14,8 @@ public sealed class CryptographicAndIdentityPenetrationTests
         using var key = RSA.Create(2048);
         var warrant = Sign(Create(now, subject: "alice"), key);
 
-        Assert.False(SecurityWarrantAuthorization.Allows(warrant, "bob", "api", "Account.read", "read", "tenant-a", "account-1"));
+        Assert.False(SecurityWarrantAuthorization.Allows(warrant, "bob", "api", "Account.read", "read", "tenant-a",
+            "account-1"));
     }
 
     [Fact]
@@ -24,7 +25,8 @@ public sealed class CryptographicAndIdentityPenetrationTests
         using var key = RSA.Create(2048);
         var warrant = Sign(Create(now, audience: "api-a"), key);
 
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantVerifier.Verify(warrant, new Resolver(warrant.KeyId, key), now, "issuer", "api-b"));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantVerifier.Verify(warrant, new Resolver(warrant.KeyId, key), now, "issuer", "api-b"));
     }
 
     [Fact]
@@ -35,8 +37,10 @@ public sealed class CryptographicAndIdentityPenetrationTests
         var warrant = Sign(Create(now, constraints: new SecurityWarrantConstraints(
             allowedTenants: ["tenant-a"], resourceScopes: ["account-1"])), key);
 
-        Assert.False(SecurityWarrantAuthorization.Allows(warrant, "alice", "api", "Account.read", "read", null, "account-1"));
-        Assert.False(SecurityWarrantAuthorization.Allows(warrant, "alice", "api", "Account.read", "read", "tenant-a", null));
+        Assert.False(SecurityWarrantAuthorization.Allows(warrant, "alice", "api", "Account.read", "read", null,
+            "account-1"));
+        Assert.False(SecurityWarrantAuthorization.Allows(warrant, "alice", "api", "Account.read", "read", "tenant-a",
+            null));
     }
 
     [Fact]
@@ -80,9 +84,11 @@ public sealed class CryptographicAndIdentityPenetrationTests
     {
         // The warrant format has one fixed verification algorithm. There is no
         // algorithm field that an attacker can downgrade or substitute.
-        var canonical = typeof(SecurityWarrantCanonicalizer).GetMethod(nameof(SecurityWarrantCanonicalizer.UnsignedJson));
+        var canonical =
+            typeof(SecurityWarrantCanonicalizer).GetMethod(nameof(SecurityWarrantCanonicalizer.UnsignedJson));
         Assert.NotNull(canonical);
-        Assert.DoesNotContain("algorithm", SecurityWarrantCanonicalizer.UnsignedJson(Create(DateTimeOffset.UtcNow)), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("algorithm", SecurityWarrantCanonicalizer.UnsignedJson(Create(DateTimeOffset.UtcNow)),
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -111,6 +117,8 @@ public sealed class CryptographicAndIdentityPenetrationTests
 
     private sealed class Resolver(string id, RSA key) : ISecurityWarrantKeyResolver
     {
-        public RSA Resolve(string keyId) => StringComparer.Ordinal.Equals(id, keyId) ? key : throw new InvalidOperationException("unknown key");
+        public RSA Resolve(string keyId) => StringComparer.Ordinal.Equals(id, keyId)
+            ? key
+            : throw new InvalidOperationException("unknown key");
     }
 }

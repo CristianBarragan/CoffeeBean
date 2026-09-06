@@ -41,8 +41,10 @@ public sealed class ExecutionBoundaryTests
             new Dictionary<string, object?>(),
             new Dictionary<ExecutionCellKey, object?>
             {
-                [new ExecutionCellKey(1, new Foundgine.Core.Abstractions.EntityId(1), new Foundgine.Core.Abstractions.FieldId(1))] = 42L,
-                [new ExecutionCellKey(1, new Foundgine.Core.Abstractions.EntityId(1), new Foundgine.Core.Abstractions.FieldId(2))] = "Ada"
+                [new ExecutionCellKey(1, new Foundgine.Core.Abstractions.EntityId(1), new Foundgine.Core.Abstractions.FieldId(1))] =
+                    42L,
+                [new ExecutionCellKey(1, new Foundgine.Core.Abstractions.EntityId(1), new Foundgine.Core.Abstractions.FieldId(2))] =
+                    "Ada"
             });
 
         var materialized = new ResultMaterializer(model).Materialize(

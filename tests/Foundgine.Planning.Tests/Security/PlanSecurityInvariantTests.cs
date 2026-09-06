@@ -36,7 +36,7 @@ public sealed class PlanSecurityInvariantTests
             1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(2)], null, null, [], null, predicate);
 
         var plan = SecurityInvariantPlanRequirements.Attach(new SemanticPlan(node));
-        
+
         Assert.NotNull(plan.RequiredSecurityInvariants);
         Assert.Contains(SecurityInvariantIds.RuntimeAuthorization, plan.RequiredSecurityInvariants);
     }
@@ -87,7 +87,8 @@ public sealed class PlanSecurityInvariantTests
             1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(2)], null, null, []);
 
         var baseline = new SemanticPlan(node, [SecurityInvariantIds.ParameterizedValues]);
-        var stronger = new SemanticPlan(node, [SecurityInvariantIds.ParameterizedValues, SecurityInvariantIds.TenantIsolation]);
+        var stronger = new SemanticPlan(node,
+            [SecurityInvariantIds.ParameterizedValues, SecurityInvariantIds.TenantIsolation]);
 
         Assert.NotEqual(
             SemanticPlanFingerprint.CreateShapeKey(baseline),
@@ -97,6 +98,7 @@ public sealed class PlanSecurityInvariantTests
     private sealed class MissingInvariantCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants => [SecurityInvariantIds.AuthorizationRequired];
+
         public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
             new(
                 plan.Provider,
@@ -107,7 +109,8 @@ public sealed class PlanSecurityInvariantTests
         public ProviderPlan Compile(ExecutionIR ir) => new TestPlan();
     }
 
-    private sealed class FullInvariantCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class FullInvariantCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
         [
@@ -116,6 +119,7 @@ public sealed class PlanSecurityInvariantTests
             SecurityInvariantIds.ParameterizedValues,
             SecurityInvariantIds.PlanCacheContextIsolation
         ];
+
         public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
             new(
                 plan.Provider,

@@ -15,7 +15,8 @@ public static class SemanticRetrievalPlanner
         if (requested == RetrievalStrategy.Relational)
             return RetrievalStrategy.Relational;
 
-        if (requested is RetrievalStrategy.Fuzzy or RetrievalStrategy.FullText or RetrievalStrategy.Search or RetrievalStrategy.Vector)
+        if (requested is RetrievalStrategy.Fuzzy or RetrievalStrategy.FullText or RetrievalStrategy.Search
+            or RetrievalStrategy.Vector)
             return requested;
 
         return RetrievalStrategy.GraphSimilarity;

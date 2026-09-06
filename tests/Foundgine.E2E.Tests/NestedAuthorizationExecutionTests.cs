@@ -79,10 +79,10 @@ public sealed class NestedAuthorizationExecutionTests
             childAuthorization);
 
         var plan = new Planner().Plan(
-            new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(graph)) with
-        {
-            AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
-        };
+                new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(graph)) with
+            {
+                AuthorizationBinding = new SemanticPlanAuthorizationBinding("test-contract", "test-authorization")
+            };
         var sql = new SqlCompiler(BankingRelationalMetadata.Build()).Compile(plan);
 
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -99,13 +99,13 @@ public sealed class NestedAuthorizationExecutionTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
-            CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Balance" DECIMAL NOT NULL);
-            INSERT INTO "Customer" VALUES (1, 'Alice');
-            INSERT INTO "Customer" VALUES (2, 'Bob');
-            INSERT INTO "Account" VALUES (10, 1, 100.50);
-            INSERT INTO "Account" VALUES (20, 2, 50.00);
-            """;
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
+                              CREATE TABLE "Account" ("Id" INTEGER PRIMARY KEY, "CustomerId" INTEGER NOT NULL, "Balance" DECIMAL NOT NULL);
+                              INSERT INTO "Customer" VALUES (1, 'Alice');
+                              INSERT INTO "Customer" VALUES (2, 'Bob');
+                              INSERT INTO "Account" VALUES (10, 1, 100.50);
+                              INSERT INTO "Account" VALUES (20, 2, 50.00);
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }

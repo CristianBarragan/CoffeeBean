@@ -113,7 +113,8 @@ public static class SqlSecurityConformance
             if (authorizationParameters.Length == 0 ||
                 authorizationParameters.Any(x => string.IsNullOrWhiteSpace(x.ContextPath) && x.Value is null))
             {
-                violations.Add("authorization.runtime requires authorization context values to remain bound parameters.");
+                violations.Add(
+                    "authorization.runtime requires authorization context values to remain bound parameters.");
                 return;
             }
         }

@@ -19,7 +19,8 @@ public sealed class SemanticPlanAuthorizationBindingStep26Tests
 
         Assert.NotNull(plan.AuthorizationBinding);
         Assert.Equal(contract.ContractFingerprint, plan.AuthorizationBinding!.ContractFingerprint);
-        Assert.Equal(authorization.Evidence.AuthorizationFingerprint, plan.AuthorizationBinding.AuthorizationFingerprint);
+        Assert.Equal(authorization.Evidence.AuthorizationFingerprint,
+            plan.AuthorizationBinding.AuthorizationFingerprint);
     }
 
     [Fact]

@@ -136,11 +136,14 @@ public sealed class ContextSafePlanCacheTests
                 : AuthorizationDecision.Allowed;
     }
 
-    private sealed class CountingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class CountingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
+
         public int Count { get; private set; }
+
         public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
             new(
                 plan.Provider,
@@ -157,7 +160,8 @@ public sealed class ContextSafePlanCacheTests
 
     private sealed class TestExecutionProvider : IExecutionProvider
     {
-        public Task<ExecutionResult> ExecuteAsync(ProviderPlan plan, ExecutionContext context, CancellationToken cancellationToken = default) =>
+        public Task<ExecutionResult> ExecuteAsync(ProviderPlan plan, ExecutionContext context,
+            CancellationToken cancellationToken = default) =>
             Task.FromResult(new ExecutionResult(Array.Empty<ExecutionRow>()));
     }
 

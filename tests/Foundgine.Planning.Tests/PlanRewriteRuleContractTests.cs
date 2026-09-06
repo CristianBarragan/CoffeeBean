@@ -93,6 +93,7 @@ public sealed partial class PlanRewriteRuleContractTests
         public IReadOnlyList<string> SecurityObligations => ["authorization.required"];
         public double CostImpact => 100d;
         public bool CanApply(SemanticPlan plan) => true;
+
         public SemanticPlan Apply(SemanticPlan plan) => plan with
         {
             Root = plan.Root with { Fields = [new FieldId(99)] }

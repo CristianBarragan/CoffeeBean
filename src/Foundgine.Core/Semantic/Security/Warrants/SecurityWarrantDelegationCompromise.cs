@@ -36,7 +36,9 @@ public interface ISecurityWarrantDelegationCompromiseStore
 public sealed class MemorySecurityWarrantDelegationCompromiseStore
     : ISecurityWarrantDelegationCompromiseStore
 {
-    private readonly ConcurrentDictionary<string, SecurityWarrantDelegationCompromise> _compromises = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, SecurityWarrantDelegationCompromise> _compromises =
+        new(StringComparer.Ordinal);
+
     private long _sequence;
 
     public long CurrentSequence => Interlocked.Read(ref _sequence);
@@ -49,7 +51,8 @@ public sealed class MemorySecurityWarrantDelegationCompromiseStore
     {
         ArgumentNullException.ThrowIfNull(root);
         if (string.IsNullOrWhiteSpace(root.Id) || string.IsNullOrWhiteSpace(root.Digest))
-            throw new InvalidOperationException("A warrant must have an identity and digest before compromise registration.");
+            throw new InvalidOperationException(
+                "A warrant must have an identity and digest before compromise registration.");
         if (compromisedIssuer is null && compromisedKeyId is null)
             throw new ArgumentException("A compromised issuer or key must be supplied.");
 
@@ -80,6 +83,7 @@ public sealed class MemorySecurityWarrantDelegationCompromiseStore
             if (_compromises.Values.Any(x => StringComparer.Ordinal.Equals(x.RootWarrantDigest, ancestorDigest)))
                 return true;
         }
+
         return false;
     }
 
@@ -99,6 +103,7 @@ public sealed class MemorySecurityWarrantDelegationCompromiseStore
                 StringComparer.Ordinal.Equals(compromise.CompromisedKeyId, warrant.KeyId))
                 return true;
         }
+
         return false;
     }
 

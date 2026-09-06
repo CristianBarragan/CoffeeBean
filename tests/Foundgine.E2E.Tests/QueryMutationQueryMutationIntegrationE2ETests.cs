@@ -210,7 +210,7 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
         try
         {
             await SeedQueryBaselineAsync(connection, transaction);
-            
+
             var mutationProvider = new PostgresBatchedMutationExecutionProvider(
                 connection, metadata, transaction);
 
@@ -232,8 +232,8 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
             Assert.Equal(1, blockResult.Results[0].AffectedRows);
 
             const string statusCheckSql = """
-                SELECT "Status" FROM "Account" WHERE "CustomerId" = @customerId;
-                """;
+                                          SELECT "Status" FROM "Account" WHERE "CustomerId" = @customerId;
+                                          """;
 
             await using var firstCheck = new NpgsqlCommand(statusCheckSql, connection, transaction);
             firstCheck.Parameters.AddWithValue("customerId", firstCustomerId);
@@ -295,7 +295,8 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
                 Effects:
                 [
                     new(SemanticMutationEffectKind.UpdateEntity, ComplexSemanticMutationE2ETests.Account),
-                    new(SemanticMutationEffectKind.SetField, ComplexSemanticMutationE2ETests.Account, ComplexSemanticMutationE2ETests.Status)
+                    new(SemanticMutationEffectKind.SetField, ComplexSemanticMutationE2ETests.Account,
+                        ComplexSemanticMutationE2ETests.Status)
                 ],
                 Dependencies: [])
         ]);
@@ -351,10 +352,10 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
         string status)
     {
         const string sql = """
-            INSERT INTO "Customer" ("Name", "Status")
-            VALUES (@name, @status)
-            RETURNING "Id";
-            """;
+                           INSERT INTO "Customer" ("Name", "Status")
+                           VALUES (@name, @status)
+                           RETURNING "Id";
+                           """;
 
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("name", name);
@@ -371,10 +372,10 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
         string status)
     {
         const string sql = """
-            INSERT INTO "Account" ("CustomerId", "Name", "Balance", "Status")
-            VALUES (@customerId, @name, @balance, @status)
-            RETURNING "Id";
-            """;
+                           INSERT INTO "Account" ("CustomerId", "Name", "Balance", "Status")
+                           VALUES (@customerId, @name, @balance, @status)
+                           RETURNING "Id";
+                           """;
 
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("customerId", customerId);
@@ -392,10 +393,10 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
         DateTime transactionDate)
     {
         const string sql = """
-            INSERT INTO "Transaction" ("AccountId", "Amount", "TransactionDate")
-            VALUES (@accountId, @amount, @transactionDate)
-            RETURNING "Id";
-            """;
+                           INSERT INTO "Transaction" ("AccountId", "Amount", "TransactionDate")
+                           VALUES (@accountId, @amount, @transactionDate)
+                           RETURNING "Id";
+                           """;
 
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("accountId", accountId);
@@ -416,5 +417,4 @@ public sealed class QueryMutationQueryMutationIntegrationE2ETests
         long Customer1Id,
         long Customer2Id,
         long Customer3Id);
-
 }

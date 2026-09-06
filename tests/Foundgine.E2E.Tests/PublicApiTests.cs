@@ -44,22 +44,19 @@ public sealed class PublicApiTests
         Assert.Equal("Alice", result.Rows[0].Values["Name"]);
     }
 
-    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class TestProviderPlanCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
+
         public int CompiledCount { get; private set; }
 
         public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-
             new(
-
                 plan.Provider,
-
                 ir.RequiredSecurityInvariants,
-
                 ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
-
                 Array.Empty<string>());
 
 
@@ -81,10 +78,12 @@ public sealed class PublicApiTests
         {
             ExecutionCount++;
             return Task.FromResult(new ExecutionResult(
-                [new ExecutionRow(new Dictionary<string, object?>
+            [
+                new ExecutionRow(new Dictionary<string, object?>
                 {
                     ["Name"] = "Alice"
-                })]));
+                })
+            ]));
         }
     }
 

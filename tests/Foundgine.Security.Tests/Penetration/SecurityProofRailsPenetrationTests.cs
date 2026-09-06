@@ -90,16 +90,21 @@ public sealed class SecurityProofRailsPenetrationTests
 
     private sealed class DeclarationOnlyCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler
     {
-        public IReadOnlyCollection<string> PreservedSecurityInvariants => SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
+
         public ProviderPlan Compile(ExecutionIR ir) => new TestPlan("weak");
     }
 
-    private sealed class GoodCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class GoodCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
-        public IReadOnlyCollection<string> PreservedSecurityInvariants => SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
+        public IReadOnlyCollection<string> PreservedSecurityInvariants =>
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
+
         public ProviderPlan Compile(ExecutionIR ir) => new TestPlan("p1");
+
         public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
             new(plan.Provider, ir.RequiredSecurityInvariants, ir.RequiredSecurityInvariants, []);
     }
 }
-

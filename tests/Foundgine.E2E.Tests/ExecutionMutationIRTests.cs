@@ -80,9 +80,9 @@ public sealed class ExecutionMutationIRTests
             new[] { operation },
             new[] { dependency });
 
-        Assert.Throws<InvalidOperationException>(
-            () => ExecutionMutationIRCompiler.Compile(plan));
+        Assert.Throws<InvalidOperationException>(() => ExecutionMutationIRCompiler.Compile(plan));
     }
+
     [Fact]
     public void ExecutionMutationIRIsTheProviderBatchContract()
     {
@@ -94,5 +94,4 @@ public sealed class ExecutionMutationIRTests
         Assert.NotNull(method);
         Assert.Equal(typeof(MutationBatchResult), method!.ReturnType);
     }
-
 }

@@ -67,9 +67,11 @@ public static class ExecutionReceiptFactory
             capabilityVersion,
             intentVersion,
             planVersion,
-            evidence.IntentFingerprint ?? throw new InvalidOperationException("Execution evidence is missing an intent fingerprint."),
+            evidence.IntentFingerprint ??
+            throw new InvalidOperationException("Execution evidence is missing an intent fingerprint."),
             evidence.PlanFingerprint,
-            evidence.AuthorizationFingerprint ?? throw new InvalidOperationException("Execution evidence is missing an authorization fingerprint."),
+            evidence.AuthorizationFingerprint ??
+            throw new InvalidOperationException("Execution evidence is missing an authorization fingerprint."),
             evidence.Provider,
             startedAt,
             completedAt,
@@ -97,6 +99,7 @@ public static class ExecutionReceiptFactory
                 AppendValue(canonical, pair.Value);
                 canonical.Append('|');
             }
+
             canonical.Append("row;");
         }
 

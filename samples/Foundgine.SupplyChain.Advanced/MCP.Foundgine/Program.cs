@@ -13,8 +13,8 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 var cs = builder.Configuration["SupplyChainConnectionString"]
-    ?? Environment.GetEnvironmentVariable("SupplyChainConnectionString")
-    ?? throw new InvalidOperationException("SupplyChainConnectionString is required.");
+         ?? Environment.GetEnvironmentVariable("SupplyChainConnectionString")
+         ?? throw new InvalidOperationException("SupplyChainConnectionString is required.");
 
 builder.Services.AddSingleton(NpgsqlDataSource.Create(cs));
 // The unfrozen model is kept registered for anything that still wants it,
@@ -159,22 +159,33 @@ public sealed record OrderLine(int ProductId, int Quantity);
 
 public sealed class SupplyChainAuthorizer
 {
-    public bool CanExecute(string actor, string capability, int? requestedCustomerId = null, int? actorCustomerId = null)
+    public bool CanExecute(string actor, string capability, int? requestedCustomerId = null,
+        int? actorCustomerId = null)
     {
         if (actor == "admin") return true;
-        if (actor == "bob") return capability is "get_my_orders" or "get_order" or "get_product" or "get_shipment" or "place_order" or "cancel_order" or "list_customers" or "find_top_supplier_overdue_orders";
-        if (actor == "carol") return capability is "get_product" or "get_inventory" or "update_inventory" or "create_shipment" or "update_shipment";
-        if (actor == "dave") return capability is "get_product" or "get_inventory" or "list_products" or "list_suppliers" or "update_inventory";
+        if (actor == "bob")
+            return capability is "get_my_orders" or "get_order" or "get_product" or "get_shipment" or "place_order"
+                or "cancel_order" or "list_customers" or "find_top_supplier_overdue_orders";
+        if (actor == "carol")
+            return capability is "get_product" or "get_inventory" or "update_inventory" or "create_shipment"
+                or "update_shipment";
+        if (actor == "dave")
+            return capability is "get_product" or "get_inventory" or "list_products" or "list_suppliers"
+                or "update_inventory";
         if (actor == "alice")
         {
-            if (capability is not ("get_my_orders" or "get_order" or "get_product" or "get_shipment" or "place_order" or "cancel_order")) return false;
+            if (capability is not ("get_my_orders" or "get_order" or "get_product" or "get_shipment" or "place_order"
+                or "cancel_order")) return false;
             return requestedCustomerId is null || requestedCustomerId == 1;
         }
+
         if (actor.StartsWith("customer", StringComparison.OrdinalIgnoreCase))
         {
-            if (capability is not ("get_my_orders" or "get_order" or "get_product" or "get_shipment" or "place_order" or "cancel_order")) return false;
+            if (capability is not ("get_my_orders" or "get_order" or "get_product" or "get_shipment" or "place_order"
+                or "cancel_order")) return false;
             return requestedCustomerId is null || actorCustomerId == requestedCustomerId;
         }
+
         return false;
     }
 }
@@ -192,11 +203,22 @@ public sealed class SupplyChainMcpTools
         actor,
         capabilities = actor switch
         {
-            "alice" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order" },
-            "bob" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order", "list_customers", "find_top_supplier_overdue_orders" },
-            "carol" => new[] { "get_product", "get_inventory", "update_inventory", "create_shipment", "update_shipment" },
+            "alice" => new[]
+                { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order" },
+            "bob" => new[]
+            {
+                "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order",
+                "list_customers", "find_top_supplier_overdue_orders"
+            },
+            "carol" => new[]
+                { "get_product", "get_inventory", "update_inventory", "create_shipment", "update_shipment" },
             "dave" => new[] { "get_product", "get_inventory", "list_products", "list_suppliers", "update_inventory" },
-            "admin" => new[] { "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order", "list_customers", "get_inventory", "update_inventory", "create_shipment", "update_shipment", "list_products", "list_suppliers", "find_top_supplier_overdue_orders" },
+            "admin" => new[]
+            {
+                "get_my_orders", "get_order", "get_product", "get_shipment", "place_order", "cancel_order",
+                "list_customers", "get_inventory", "update_inventory", "create_shipment", "update_shipment",
+                "list_products", "list_suppliers", "find_top_supplier_overdue_orders"
+            },
             _ => Array.Empty<string>()
         }
     };
@@ -243,24 +265,31 @@ public sealed class SupplyChainMcpTools
     // SupplyChainExecutionService.FindTopSupplierOverdueOrders for all
     // outcomes this can produce.
     [McpServerTool(Name = "find_top_supplier_overdue_orders")]
-    public Task<object> FindTopSupplierOverdueOrders(string actor, string state, string? supplierName = null, CancellationToken ct = default) =>
-        Execute("find_top_supplier_overdue_orders", actor, null, ct, (s, _) => s.FindTopSupplierOverdueOrders(actor, state, supplierName, ct));
+    public Task<object> FindTopSupplierOverdueOrders(string actor, string state, string? supplierName = null,
+        CancellationToken ct = default) =>
+        Execute("find_top_supplier_overdue_orders", actor, null, ct,
+            (s, _) => s.FindTopSupplierOverdueOrders(actor, state, supplierName, ct));
 
     [McpServerTool(Name = "update_inventory")]
-    public Task<object> UpdateInventory(string actor, int warehouseId, int productId, int quantity, CancellationToken ct = default) =>
+    public Task<object> UpdateInventory(string actor, int warehouseId, int productId, int quantity,
+        CancellationToken ct = default) =>
         Execute("update_inventory", actor, null, ct, (s, _) => s.UpdateInventory(warehouseId, productId, quantity, ct));
 
     [McpServerTool(Name = "create_shipment")]
-    public Task<object> CreateShipment(string actor, int orderId, int carrierId, int warehouseId, string trackingNumber, CancellationToken ct = default) =>
-        Execute("create_shipment", actor, null, ct, (s, _) => s.CreateShipment(orderId, carrierId, warehouseId, trackingNumber, ct));
+    public Task<object> CreateShipment(string actor, int orderId, int carrierId, int warehouseId, string trackingNumber,
+        CancellationToken ct = default) =>
+        Execute("create_shipment", actor, null, ct,
+            (s, _) => s.CreateShipment(orderId, carrierId, warehouseId, trackingNumber, ct));
 
     [McpServerTool(Name = "update_shipment")]
     public Task<object> UpdateShipment(string actor, int shipmentId, string status, CancellationToken ct = default) =>
         Execute("update_shipment", actor, null, ct, (s, _) => s.UpdateShipment(shipmentId, status, ct));
 
     [McpServerTool(Name = "place_order")]
-    public Task<object> PlaceOrder(string actor, int customerId, OrderLine[] lines, string idempotencyKey, CancellationToken ct = default) =>
-        Execute("place_order", actor, customerId, ct, (s, _) => s.PlaceOrder(actor, customerId, lines, idempotencyKey, ct));
+    public Task<object> PlaceOrder(string actor, int customerId, OrderLine[] lines, string idempotencyKey,
+        CancellationToken ct = default) =>
+        Execute("place_order", actor, customerId, ct,
+            (s, _) => s.PlaceOrder(actor, customerId, lines, idempotencyKey, ct));
 
     [McpServerTool(Name = "cancel_order")]
     public Task<object> CancelOrder(string actor, int customerId, int orderId, CancellationToken ct = default) =>
@@ -315,7 +344,10 @@ public sealed class SupplyChainExecutionService
     public async Task<object> GetOrders(int customerId, CancellationToken ct)
     {
         await using var c = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand("SELECT order_id, customer_id, status, total_amount, order_date FROM orders WHERE customer_id=@c ORDER BY order_id", c);
+        await using var cmd =
+            new NpgsqlCommand(
+                "SELECT order_id, customer_id, status, total_amount, order_date FROM orders WHERE customer_id=@c ORDER BY order_id",
+                c);
         cmd.Parameters.AddWithValue("c", customerId);
         var orders = await ReadRows(cmd, ct);
         return new { customerId, orders, plan = PlanFingerprint(PlanCustomerOrders()) };
@@ -324,13 +356,19 @@ public sealed class SupplyChainExecutionService
     public async Task<object> GetOrder(int customerId, int orderId, CancellationToken ct)
     {
         await using var c = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand("SELECT order_id, customer_id, status, total_amount, order_date FROM orders WHERE order_id=@o AND customer_id=@c", c);
+        await using var cmd =
+            new NpgsqlCommand(
+                "SELECT order_id, customer_id, status, total_amount, order_date FROM orders WHERE order_id=@o AND customer_id=@c",
+                c);
         cmd.Parameters.AddWithValue("o", orderId);
         cmd.Parameters.AddWithValue("c", customerId);
         var order = await ReadSingle(cmd, ct);
         if (order is null) throw new KeyNotFoundException("Order not found.");
 
-        await using var items = new NpgsqlCommand("SELECT oi.order_item_id, oi.product_id, p.product_name, p.sku, oi.quantity, oi.unit_price FROM order_items oi JOIN products p ON p.product_id=oi.product_id WHERE oi.order_id=@o ORDER BY oi.order_item_id", c);
+        await using var items =
+            new NpgsqlCommand(
+                "SELECT oi.order_item_id, oi.product_id, p.product_name, p.sku, oi.quantity, oi.unit_price FROM order_items oi JOIN products p ON p.product_id=oi.product_id WHERE oi.order_id=@o ORDER BY oi.order_item_id",
+                c);
         items.Parameters.AddWithValue("o", orderId);
         var itemRows = await ReadRows(items, ct);
         return new { order, items = itemRows, plan = PlanFingerprint(PlanCustomerOrders()) };
@@ -340,15 +378,15 @@ public sealed class SupplyChainExecutionService
     {
         await using var c = await ds.OpenConnectionAsync(ct);
         const string sql = """
-            SELECT s.shipment_id, s.order_id, s.carrier_id, ca.carrier_name,
-                   s.warehouse_id, w.warehouse_name, s.tracking_number,
-                   s.shipping_status
-            FROM shipments s
-            JOIN orders o ON o.order_id=s.order_id
-            LEFT JOIN carriers ca ON ca.carrier_id=s.carrier_id
-            LEFT JOIN warehouses w ON w.warehouse_id=s.warehouse_id
-            WHERE s.shipment_id=@s AND o.customer_id=@c
-            """;
+                           SELECT s.shipment_id, s.order_id, s.carrier_id, ca.carrier_name,
+                                  s.warehouse_id, w.warehouse_name, s.tracking_number,
+                                  s.shipping_status
+                           FROM shipments s
+                           JOIN orders o ON o.order_id=s.order_id
+                           LEFT JOIN carriers ca ON ca.carrier_id=s.carrier_id
+                           LEFT JOIN warehouses w ON w.warehouse_id=s.warehouse_id
+                           WHERE s.shipment_id=@s AND o.customer_id=@c
+                           """;
         await using var cmd = new NpgsqlCommand(sql, c);
         cmd.Parameters.AddWithValue("s", shipmentId);
         cmd.Parameters.AddWithValue("c", customerId);
@@ -360,14 +398,17 @@ public sealed class SupplyChainExecutionService
     public async Task<object> ListProducts(CancellationToken ct)
     {
         await using var c = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand("SELECT product_id, product_name, sku, unit_price FROM products ORDER BY product_id", c);
+        await using var cmd =
+            new NpgsqlCommand("SELECT product_id, product_name, sku, unit_price FROM products ORDER BY product_id", c);
         return new { products = await ReadRows(cmd, ct), plan = PlanFingerprint(PlanProduct()) };
     }
 
     public async Task<object> ListCustomers(CancellationToken ct)
     {
         await using var c = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand("SELECT customer_id, first_name, last_name, email FROM customers ORDER BY customer_id", c);
+        await using var cmd =
+            new NpgsqlCommand("SELECT customer_id, first_name, last_name, email FROM customers ORDER BY customer_id",
+                c);
         return new { customers = await ReadRows(cmd, ct) };
     }
 
@@ -375,14 +416,14 @@ public sealed class SupplyChainExecutionService
     {
         await using var c = await ds.OpenConnectionAsync(ct);
         const string sql = """
-            SELECT p.product_id, p.product_name, p.sku, p.unit_price,
-                   s.supplier_id, s.supplier_name, s.email AS supplier_email,
-                   ca.category_id, ca.category_name
-            FROM products p
-            LEFT JOIN suppliers s ON s.supplier_id=p.supplier_id
-            LEFT JOIN categories ca ON ca.category_id=p.category_id
-            WHERE p.product_id=@p
-            """;
+                           SELECT p.product_id, p.product_name, p.sku, p.unit_price,
+                                  s.supplier_id, s.supplier_name, s.email AS supplier_email,
+                                  ca.category_id, ca.category_name
+                           FROM products p
+                           LEFT JOIN suppliers s ON s.supplier_id=p.supplier_id
+                           LEFT JOIN categories ca ON ca.category_id=p.category_id
+                           WHERE p.product_id=@p
+                           """;
         await using var cmd = new NpgsqlCommand(sql, c);
         cmd.Parameters.AddWithValue("p", productId);
         var product = await ReadSingle(cmd, ct);
@@ -394,12 +435,12 @@ public sealed class SupplyChainExecutionService
     {
         await using var c = await ds.OpenConnectionAsync(ct);
         const string sql = """
-            SELECT i.inventory_id, i.warehouse_id, w.warehouse_name,
-                   i.product_id, i.quantity_on_hand, i.reorder_level
-            FROM inventory i
-            JOIN warehouses w ON w.warehouse_id=i.warehouse_id
-            WHERE i.product_id=@p ORDER BY i.warehouse_id
-            """;
+                           SELECT i.inventory_id, i.warehouse_id, w.warehouse_name,
+                                  i.product_id, i.quantity_on_hand, i.reorder_level
+                           FROM inventory i
+                           JOIN warehouses w ON w.warehouse_id=i.warehouse_id
+                           WHERE i.product_id=@p ORDER BY i.warehouse_id
+                           """;
         await using var cmd = new NpgsqlCommand(sql, c);
         cmd.Parameters.AddWithValue("p", productId);
         return new { productId, inventory = await ReadRows(cmd, ct) };
@@ -408,7 +449,8 @@ public sealed class SupplyChainExecutionService
     public async Task<object> ListSuppliers(CancellationToken ct)
     {
         await using var c = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand("SELECT supplier_id, supplier_name, email FROM suppliers ORDER BY supplier_id", c);
+        await using var cmd =
+            new NpgsqlCommand("SELECT supplier_id, supplier_name, email FROM suppliers ORDER BY supplier_id", c);
         return new { suppliers = await ReadRows(cmd, ct) };
     }
 
@@ -442,7 +484,8 @@ public sealed class SupplyChainExecutionService
     //     field - like Supplier.NegotiatedCost in the walkthrough, it is
     //     stripped from the response for every actor except admin, and
     //     listed under deniedFields.
-    public async Task<object> FindTopSupplierOverdueOrders(string actor, string state, string? supplierName, CancellationToken ct)
+    public async Task<object> FindTopSupplierOverdueOrders(string actor, string state, string? supplierName,
+        CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(state)) throw new ArgumentException("State is required.");
 
@@ -451,11 +494,11 @@ public sealed class SupplyChainExecutionService
         // Retrieval: ranked candidates + provenance. This step alone cannot
         // grant access to anything.
         const string candidateSql = """
-            SELECT supplier_id, supplier_name, state, total_order_value, negotiated_cost
-            FROM suppliers
-            WHERE state = @state
-            ORDER BY total_order_value DESC, supplier_id
-            """;
+                                    SELECT supplier_id, supplier_name, state, total_order_value, negotiated_cost
+                                    FROM suppliers
+                                    WHERE state = @state
+                                    ORDER BY total_order_value DESC, supplier_id
+                                    """;
         await using var candidateCmd = new NpgsqlCommand(candidateSql, c);
         candidateCmd.Parameters.AddWithValue("state", state.ToUpperInvariant());
         var candidates = await ReadRows(candidateCmd, ct);
@@ -522,7 +565,11 @@ public sealed class SupplyChainExecutionService
                     strategiesTried = PgSearchEnabled
                         ? new[] { "exact", "fuzzy", "fulltext", "search" }
                         : new[] { "exact", "fuzzy", "fulltext" },
-                    candidates = candidates.Select(x => new { id = x["supplier_id"], name = x["supplier_name"], state = x["state"], totalOrderValue = x["total_order_value"] })
+                    candidates = candidates.Select(x => new
+                    {
+                        id = x["supplier_id"], name = x["supplier_name"], state = x["state"],
+                        totalOrderValue = x["total_order_value"]
+                    })
                 };
             }
 
@@ -539,8 +586,13 @@ public sealed class SupplyChainExecutionService
                 {
                     status = "clarification_needed",
                     state,
-                    reason = $"{tiedAtTop.Count} suppliers are tied for 'top' by total order value in state '{state}'; the request cannot be resolved to one supplier without more specific intent.",
-                    candidates = tiedAtTop.Select(x => new { id = x["supplier_id"], name = x["supplier_name"], state = x["state"], totalOrderValue = x["total_order_value"] }),
+                    reason =
+                        $"{tiedAtTop.Count} suppliers are tied for 'top' by total order value in state '{state}'; the request cannot be resolved to one supplier without more specific intent.",
+                    candidates = tiedAtTop.Select(x => new
+                    {
+                        id = x["supplier_id"], name = x["supplier_name"], state = x["state"],
+                        totalOrderValue = x["total_order_value"]
+                    }),
                     evidence = new { strategy = "relational", orderBy = "total_order_value desc", tie = true },
                     suggestedRefinements = new[]
                     {
@@ -566,13 +618,13 @@ public sealed class SupplyChainExecutionService
         var plan = PlanSupplier();
 
         const string poSql = """
-            SELECT purchase_order_id, expected_date
-            FROM purchase_orders
-            WHERE supplier_id = @supplierId
-              AND received_date IS NULL
-              AND expected_date < CURRENT_DATE
-            ORDER BY expected_date
-            """;
+                             SELECT purchase_order_id, expected_date
+                             FROM purchase_orders
+                             WHERE supplier_id = @supplierId
+                               AND received_date IS NULL
+                               AND expected_date < CURRENT_DATE
+                             ORDER BY expected_date
+                             """;
         await using var poCmd = new NpgsqlCommand(poSql, c);
         poCmd.Parameters.AddWithValue("supplierId", supplierId);
         var overdueRows = await ReadRows(poCmd, ct);
@@ -626,7 +678,10 @@ public sealed class SupplyChainExecutionService
     {
         if (quantity < 0) throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity cannot be negative.");
         await using var c = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand("UPDATE inventory SET quantity_on_hand=@q,last_updated=CURRENT_TIMESTAMP WHERE warehouse_id=@w AND product_id=@p RETURNING inventory_id,quantity_on_hand", c);
+        await using var cmd =
+            new NpgsqlCommand(
+                "UPDATE inventory SET quantity_on_hand=@q,last_updated=CURRENT_TIMESTAMP WHERE warehouse_id=@w AND product_id=@p RETURNING inventory_id,quantity_on_hand",
+                c);
         cmd.Parameters.AddWithValue("q", quantity);
         cmd.Parameters.AddWithValue("w", warehouseId);
         cmd.Parameters.AddWithValue("p", productId);
@@ -635,11 +690,14 @@ public sealed class SupplyChainExecutionService
         return new { warehouseId, productId, quantity, result = row };
     }
 
-    public async Task<object> CreateShipment(int orderId, int carrierId, int warehouseId, string trackingNumber, CancellationToken ct)
+    public async Task<object> CreateShipment(int orderId, int carrierId, int warehouseId, string trackingNumber,
+        CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(trackingNumber)) throw new ArgumentException("Tracking number is required.");
         await using var c = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand("INSERT INTO shipments(order_id,carrier_id,warehouse_id,tracking_number,shipping_status) VALUES(@o,@c,@w,@t,'In Transit') RETURNING shipment_id,order_id,carrier_id,warehouse_id,tracking_number,shipping_status", c);
+        await using var cmd = new NpgsqlCommand(
+            "INSERT INTO shipments(order_id,carrier_id,warehouse_id,tracking_number,shipping_status) VALUES(@o,@c,@w,@t,'In Transit') RETURNING shipment_id,order_id,carrier_id,warehouse_id,tracking_number,shipping_status",
+            c);
         cmd.Parameters.AddWithValue("o", orderId);
         cmd.Parameters.AddWithValue("c", carrierId);
         cmd.Parameters.AddWithValue("w", warehouseId);
@@ -651,9 +709,13 @@ public sealed class SupplyChainExecutionService
     public async Task<object> UpdateShipment(int shipmentId, string status, CancellationToken ct)
     {
         var allowed = new[] { "In Transit", "Out for Delivery", "Delivered", "Delayed" };
-        if (!allowed.Contains(status, StringComparer.Ordinal)) throw new InvalidOperationException("Invalid shipment status.");
+        if (!allowed.Contains(status, StringComparer.Ordinal))
+            throw new InvalidOperationException("Invalid shipment status.");
         await using var c = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand("UPDATE shipments SET shipping_status=@s WHERE shipment_id=@i RETURNING shipment_id,shipping_status", c);
+        await using var cmd =
+            new NpgsqlCommand(
+                "UPDATE shipments SET shipping_status=@s WHERE shipment_id=@i RETURNING shipment_id,shipping_status",
+                c);
         cmd.Parameters.AddWithValue("s", status);
         cmd.Parameters.AddWithValue("i", shipmentId);
         var shipment = await ReadSingle(cmd, ct);
@@ -661,14 +723,16 @@ public sealed class SupplyChainExecutionService
         return new { shipment };
     }
 
-    public async Task<object> PlaceOrder(string actor, int customerId, OrderLine[] lines, string key, CancellationToken ct)
+    public async Task<object> PlaceOrder(string actor, int customerId, OrderLine[] lines, string key,
+        CancellationToken ct)
     {
         if (lines is null || lines.Length == 0) throw new ArgumentException("At least one line is required.");
         if (lines.Any(x => x.Quantity <= 0)) throw new InvalidOperationException("Quantity must be positive.");
         if (string.IsNullOrWhiteSpace(key)) throw new InvalidOperationException("Idempotency key is required.");
 
         var plan = PlanPlaceOrder();
-        var requested = lines.GroupBy(x => x.ProductId).Select(g => new OrderLine(g.Key, g.Sum(x => x.Quantity))).ToArray();
+        var requested = lines.GroupBy(x => x.ProductId).Select(g => new OrderLine(g.Key, g.Sum(x => x.Quantity)))
+            .ToArray();
 
         await using var c = await ds.OpenConnectionAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
@@ -678,7 +742,9 @@ public sealed class SupplyChainExecutionService
             await lockCmd.ExecuteScalarAsync(ct);
         }
 
-        await using (var existing = new NpgsqlCommand("SELECT order_id FROM supply_chain_idempotency WHERE idempotency_key=@k FOR SHARE", c, tx))
+        await using (var existing =
+                     new NpgsqlCommand(
+                         "SELECT order_id FROM supply_chain_idempotency WHERE idempotency_key=@k FOR SHARE", c, tx))
         {
             existing.Parameters.AddWithValue("k", key);
             var v = await existing.ExecuteScalarAsync(ct);
@@ -705,7 +771,10 @@ public sealed class SupplyChainExecutionService
             if (v is null) throw new InvalidOperationException($"Product {line.ProductId} not found.");
             var price = (decimal)v;
 
-            await using var stock = new NpgsqlCommand("SELECT warehouse_id FROM inventory WHERE product_id=@p AND quantity_on_hand>=@q ORDER BY quantity_on_hand DESC, warehouse_id FOR UPDATE SKIP LOCKED LIMIT 1", c, tx);
+            await using var stock =
+                new NpgsqlCommand(
+                    "SELECT warehouse_id FROM inventory WHERE product_id=@p AND quantity_on_hand>=@q ORDER BY quantity_on_hand DESC, warehouse_id FOR UPDATE SKIP LOCKED LIMIT 1",
+                    c, tx);
             stock.Parameters.AddWithValue("p", line.ProductId);
             stock.Parameters.AddWithValue("q", line.Quantity);
             var w = await stock.ExecuteScalarAsync(ct);
@@ -716,7 +785,9 @@ public sealed class SupplyChainExecutionService
         }
 
         int orderId;
-        await using (var ins = new NpgsqlCommand("INSERT INTO orders(customer_id,status,total_amount) VALUES(@c,'Pending',@t) RETURNING order_id", c, tx))
+        await using (var ins = new NpgsqlCommand(
+                         "INSERT INTO orders(customer_id,status,total_amount) VALUES(@c,'Pending',@t) RETURNING order_id",
+                         c, tx))
         {
             ins.Parameters.AddWithValue("c", customerId);
             ins.Parameters.AddWithValue("t", total);
@@ -726,7 +797,9 @@ public sealed class SupplyChainExecutionService
         foreach (var x in resolved)
         {
             int itemId;
-            await using (var oi = new NpgsqlCommand("INSERT INTO order_items(order_id,product_id,quantity,unit_price) VALUES(@o,@p,@q,@u) RETURNING order_item_id", c, tx))
+            await using (var oi = new NpgsqlCommand(
+                             "INSERT INTO order_items(order_id,product_id,quantity,unit_price) VALUES(@o,@p,@q,@u) RETURNING order_item_id",
+                             c, tx))
             {
                 oi.Parameters.AddWithValue("o", orderId);
                 oi.Parameters.AddWithValue("p", x.product);
@@ -735,16 +808,21 @@ public sealed class SupplyChainExecutionService
                 itemId = Convert.ToInt32(await oi.ExecuteScalarAsync(ct));
             }
 
-            await using var alloc = new NpgsqlCommand("INSERT INTO order_allocations(order_item_id,warehouse_id,quantity) VALUES(@i,@w,@q); UPDATE inventory SET quantity_on_hand=quantity_on_hand-@q,last_updated=CURRENT_TIMESTAMP WHERE warehouse_id=@w AND product_id=@p AND quantity_on_hand>=@q", c, tx);
+            await using var alloc = new NpgsqlCommand(
+                "INSERT INTO order_allocations(order_item_id,warehouse_id,quantity) VALUES(@i,@w,@q); UPDATE inventory SET quantity_on_hand=quantity_on_hand-@q,last_updated=CURRENT_TIMESTAMP WHERE warehouse_id=@w AND product_id=@p AND quantity_on_hand>=@q",
+                c, tx);
             alloc.Parameters.AddWithValue("i", itemId);
             alloc.Parameters.AddWithValue("w", x.warehouse);
             alloc.Parameters.AddWithValue("q", x.qty);
             alloc.Parameters.AddWithValue("p", x.product);
             var affected = await alloc.ExecuteNonQueryAsync(ct);
-            if (affected < 2) throw new InvalidOperationException("Inventory changed before reservation could be committed.");
+            if (affected < 2)
+                throw new InvalidOperationException("Inventory changed before reservation could be committed.");
         }
 
-        await using (var idem = new NpgsqlCommand("INSERT INTO supply_chain_idempotency(idempotency_key,actor_id,operation,order_id) VALUES(@k,@a,'place_order',@o)", c, tx))
+        await using (var idem = new NpgsqlCommand(
+                         "INSERT INTO supply_chain_idempotency(idempotency_key,actor_id,operation,order_id) VALUES(@k,@a,'place_order',@o)",
+                         c, tx))
         {
             idem.Parameters.AddWithValue("k", key);
             idem.Parameters.AddWithValue("a", ActorNumber(actor));
@@ -753,7 +831,11 @@ public sealed class SupplyChainExecutionService
         }
 
         await tx.CommitAsync(ct);
-        return new { orderId, replay = false, total, plan = PlanFingerprint(plan), evidence = Hash($"place_order|{actor}|{customerId}|{orderId}|{key}") };
+        return new
+        {
+            orderId, replay = false, total, plan = PlanFingerprint(plan),
+            evidence = Hash($"place_order|{actor}|{customerId}|{orderId}|{key}")
+        };
     }
 
     public async Task<object> CancelOrder(string actor, int customerId, int orderId, CancellationToken ct)
@@ -761,14 +843,19 @@ public sealed class SupplyChainExecutionService
         await using var c = await ds.OpenConnectionAsync(ct);
         await using var tx = await c.BeginTransactionAsync(ct);
 
-        await using (var q = new NpgsqlCommand("UPDATE orders SET status='Cancelled' WHERE order_id=@o AND customer_id=@c AND status='Pending' RETURNING order_id", c, tx))
+        await using (var q = new NpgsqlCommand(
+                         "UPDATE orders SET status='Cancelled' WHERE order_id=@o AND customer_id=@c AND status='Pending' RETURNING order_id",
+                         c, tx))
         {
             q.Parameters.AddWithValue("o", orderId);
             q.Parameters.AddWithValue("c", customerId);
-            if (await q.ExecuteScalarAsync(ct) is null) throw new UnauthorizedAccessException("Order is not owned by the customer or is not cancellable.");
+            if (await q.ExecuteScalarAsync(ct) is null)
+                throw new UnauthorizedAccessException("Order is not owned by the customer or is not cancellable.");
         }
 
-        await using (var items = new NpgsqlCommand("UPDATE inventory i SET quantity_on_hand=i.quantity_on_hand+a.quantity,last_updated=CURRENT_TIMESTAMP FROM order_allocations a JOIN order_items oi ON oi.order_item_id=a.order_item_id WHERE oi.order_id=@o AND i.warehouse_id=a.warehouse_id AND i.product_id=oi.product_id", c, tx))
+        await using (var items = new NpgsqlCommand(
+                         "UPDATE inventory i SET quantity_on_hand=i.quantity_on_hand+a.quantity,last_updated=CURRENT_TIMESTAMP FROM order_allocations a JOIN order_items oi ON oi.order_item_id=a.order_item_id WHERE oi.order_id=@o AND i.warehouse_id=a.warehouse_id AND i.product_id=oi.product_id",
+                         c, tx))
         {
             items.Parameters.AddWithValue("o", orderId);
             await items.ExecuteNonQueryAsync(ct);
@@ -781,9 +868,12 @@ public sealed class SupplyChainExecutionService
     private SemanticPlan PlanCustomerOrders() => Plan(new SemanticOperation(
         new SemanticReadNode(1, SupplyChainSemanticModel.Customer,
             new[] { new FieldId(1), new FieldId(2), new FieldId(3) }, null, null,
-            new[] { new SemanticReadNode(2, SupplyChainSemanticModel.Order,
-                new[] { new FieldId(1), new FieldId(3), new FieldId(4) },
-                SupplyChainSemanticModel.CustomerOrders, null, Array.Empty<SemanticReadNode>()) })));
+            new[]
+            {
+                new SemanticReadNode(2, SupplyChainSemanticModel.Order,
+                    new[] { new FieldId(1), new FieldId(3), new FieldId(4) },
+                    SupplyChainSemanticModel.CustomerOrders, null, Array.Empty<SemanticReadNode>())
+            })));
 
     private SemanticPlan PlanProduct() => Plan(new SemanticOperation(
         new SemanticReadNode(1, SupplyChainSemanticModel.Product,
@@ -834,8 +924,9 @@ public sealed class SupplyChainExecutionService
     // name - and Relational is the exact match this method is a fallback
     // from. Returns the first strategy that finds anything, or null if none
     // of them do.
-    private static async Task<(string Strategy, List<Dictionary<string, object?>> Matches)?> TryApproximateSupplierMatchAsync(
-        NpgsqlConnection c, string state, string supplierName, CancellationToken ct)
+    private static async Task<(string Strategy, List<Dictionary<string, object?>> Matches)?>
+        TryApproximateSupplierMatchAsync(
+            NpgsqlConnection c, string state, string supplierName, CancellationToken ct)
     {
         var fuzzy = await TryFuzzyAsync(c, state, supplierName, ct);
         if (fuzzy.Count > 0) return ("fuzzy", fuzzy);
@@ -860,13 +951,13 @@ public sealed class SupplyChainExecutionService
         NpgsqlConnection c, string state, string supplierName, CancellationToken ct)
     {
         const string sql = """
-            SELECT supplier_id, supplier_name, state, total_order_value, negotiated_cost,
-                   similarity(supplier_name, @name) AS score
-            FROM suppliers
-            WHERE state = @state AND supplier_name % @name
-            ORDER BY score DESC
-            LIMIT 5
-            """;
+                           SELECT supplier_id, supplier_name, state, total_order_value, negotiated_cost,
+                                  similarity(supplier_name, @name) AS score
+                           FROM suppliers
+                           WHERE state = @state AND supplier_name % @name
+                           ORDER BY score DESC
+                           LIMIT 5
+                           """;
         await using var cmd = new NpgsqlCommand(sql, c);
         cmd.Parameters.AddWithValue("state", state.ToUpperInvariant());
         cmd.Parameters.AddWithValue("name", supplierName);
@@ -889,14 +980,14 @@ public sealed class SupplyChainExecutionService
         NpgsqlConnection c, string state, string supplierName, CancellationToken ct)
     {
         const string sql = """
-            SELECT supplier_id, supplier_name, state, total_order_value, negotiated_cost,
-                   ts_rank_cd(to_tsvector('english', supplier_name), websearch_to_tsquery('english', @name)) AS score
-            FROM suppliers
-            WHERE state = @state
-              AND to_tsvector('english', supplier_name) @@ websearch_to_tsquery('english', @name)
-            ORDER BY score DESC
-            LIMIT 5
-            """;
+                           SELECT supplier_id, supplier_name, state, total_order_value, negotiated_cost,
+                                  ts_rank_cd(to_tsvector('english', supplier_name), websearch_to_tsquery('english', @name)) AS score
+                           FROM suppliers
+                           WHERE state = @state
+                             AND to_tsvector('english', supplier_name) @@ websearch_to_tsquery('english', @name)
+                           ORDER BY score DESC
+                           LIMIT 5
+                           """;
         await using var cmd = new NpgsqlCommand(sql, c);
         cmd.Parameters.AddWithValue("state", state.ToUpperInvariant());
         cmd.Parameters.AddWithValue("name", supplierName);
@@ -920,13 +1011,13 @@ public sealed class SupplyChainExecutionService
         NpgsqlConnection c, string state, string supplierName, CancellationToken ct)
     {
         const string sql = """
-            SELECT supplier_id, supplier_name, state, total_order_value, negotiated_cost,
-                   pdb.score(supplier_id) AS score
-            FROM suppliers
-            WHERE supplier_name ||| @name AND state = @state
-            ORDER BY score DESC
-            LIMIT 5
-            """;
+                           SELECT supplier_id, supplier_name, state, total_order_value, negotiated_cost,
+                                  pdb.score(supplier_id) AS score
+                           FROM suppliers
+                           WHERE supplier_name ||| @name AND state = @state
+                           ORDER BY score DESC
+                           LIMIT 5
+                           """;
         await using var cmd = new NpgsqlCommand(sql, c);
         cmd.Parameters.AddWithValue("state", state.ToUpperInvariant());
         cmd.Parameters.AddWithValue("name", supplierName);
@@ -947,9 +1038,11 @@ public sealed class SupplyChainExecutionService
         while (await reader.ReadAsync(ct))
         {
             var row = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-            for (var i = 0; i < reader.FieldCount; i++) row[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+            for (var i = 0; i < reader.FieldCount; i++)
+                row[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
             rows.Add(row);
         }
+
         return rows;
     }
 
@@ -958,11 +1051,13 @@ public sealed class SupplyChainExecutionService
         await using var reader = await cmd.ExecuteReaderAsync(ct);
         if (!await reader.ReadAsync(ct)) return null;
         var row = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-        for (var i = 0; i < reader.FieldCount; i++) row[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+        for (var i = 0; i < reader.FieldCount; i++)
+            row[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
         return row;
     }
 
-    private static string Hash(string s) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(s))).ToLowerInvariant()[..24];
+    private static string Hash(string s) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(s))).ToLowerInvariant()[..24];
 
     private static int ActorNumber(string actor) => actor switch
     {
@@ -971,7 +1066,8 @@ public sealed class SupplyChainExecutionService
         "carol" => 3,
         "dave" => 4,
         "admin" => 5,
-        _ when actor.StartsWith("customer", StringComparison.OrdinalIgnoreCase) && int.TryParse(actor[8..], out var id) => id,
+        _ when actor.StartsWith("customer", StringComparison.OrdinalIgnoreCase) &&
+               int.TryParse(actor[8..], out var id) => id,
         _ => 0
     };
 }

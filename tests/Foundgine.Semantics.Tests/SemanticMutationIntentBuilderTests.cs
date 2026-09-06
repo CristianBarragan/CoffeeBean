@@ -21,12 +21,12 @@ public sealed class SemanticMutationIntentBuilderTests
 
         var graph = new SemanticMutationIntentBuilder(model)
             .Create("Customer", "customer")
-                .Set("Name", "Alice")
-                .Return("Id")
+            .Set("Name", "Alice")
+            .Return("Id")
             .Create("Account", "account")
-                .SetFrom("CustomerId", "customer", "Id")
-                .Set("Status", "Open")
-                .Return("Id", "CustomerId")
+            .SetFrom("CustomerId", "customer", "Id")
+            .Set("Status", "Open")
+            .Return("Id", "CustomerId")
             .Build();
 
         var plan = new SemanticMutationPlanner().Plan(graph);
@@ -44,14 +44,14 @@ public sealed class SemanticMutationIntentBuilderTests
 
         var graph = new SemanticMutationIntentBuilder(model)
             .Upsert("Account")
-                .Set("CustomerId", 42)
-                .Set("Status", "Open")
-                .Conflict("CustomerId")
-                .Return("Id", "Status")
+            .Set("CustomerId", 42)
+            .Set("Status", "Open")
+            .Conflict("CustomerId")
+            .Return("Id", "Status")
             .Update("Customer")
-                .Set("Name", "Verified")
-                .Where("Id", SemanticFilterOperator.Eq, 42)
-                .Return("Id")
+            .Set("Name", "Verified")
+            .Where("Id", SemanticFilterOperator.Eq, 42)
+            .Return("Id")
             .Build();
 
         var plan = new SemanticMutationPlanner().Plan(graph);

@@ -69,8 +69,7 @@ public sealed class SemanticOperationIrTests
         graph.AddRoot(new EntityId(1));
         graph.AddRoot(new EntityId(2));
 
-        var error = Assert.Throws<InvalidOperationException>(
-            () => SemanticOperationCompiler.Compile(graph));
+        var error = Assert.Throws<InvalidOperationException>(() => SemanticOperationCompiler.Compile(graph));
 
         Assert.Contains("exactly one root", error.Message);
     }

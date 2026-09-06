@@ -122,26 +122,26 @@ app.MapPost("/graphql/{mode}", async (
             planQuery));
     }
     catch (Exception ex)
-	{
-		app.Logger.LogError(
-			ex,
-			"GraphQL request failed. Mode={Mode}, OperationName={OperationName}",
-			mode,
-			request.OperationName);
+    {
+        app.Logger.LogError(
+            ex,
+            "GraphQL request failed. Mode={Mode}, OperationName={OperationName}",
+            mode,
+            request.OperationName);
 
-		return Results.Json(
-			new
-			{
-				errors = new[]
-				{
-					new
-					{
-						message = ex.Message
-					}
-				}
-			},
-			statusCode: 400);
-	}
+        return Results.Json(
+            new
+            {
+                errors = new[]
+                {
+                    new
+                    {
+                        message = ex.Message
+                    }
+                }
+            },
+            statusCode: 400);
+    }
 });
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
@@ -203,5 +203,7 @@ internal sealed class NoOpProviderPlanCache : IProviderPlanCache
         return false;
     }
 
-    public void Set(string key, ProviderPlan plan) { }
+    public void Set(string key, ProviderPlan plan)
+    {
+    }
 }

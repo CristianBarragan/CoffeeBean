@@ -21,7 +21,8 @@ public sealed class ElasticsearchSemanticLexicalCandidateSource : ISemanticLexic
         string index = "foundgine-semantic-lexicon")
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        if (string.IsNullOrWhiteSpace(index)) throw new ArgumentException("Elasticsearch index cannot be empty.", nameof(index));
+        if (string.IsNullOrWhiteSpace(index))
+            throw new ArgumentException("Elasticsearch index cannot be empty.", nameof(index));
         _index = index;
     }
 
@@ -119,7 +120,8 @@ public sealed class ElasticsearchSemanticLexicalCandidateSource : ISemanticLexic
             };
         }
 
-        using var response = await _httpClient.PostAsJsonAsync($"/{Uri.EscapeDataString(_index)}/_search", body, _jsonOptions, cancellationToken);
+        using var response = await _httpClient.PostAsJsonAsync($"/{Uri.EscapeDataString(_index)}/_search", body,
+            _jsonOptions, cancellationToken);
         response.EnsureSuccessStatusCode();
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
@@ -153,7 +155,8 @@ public sealed class ElasticsearchSemanticLexicalCandidateSource : ISemanticLexic
             !source.TryGetProperty("canonicalName", out var canonicalProperty))
             return null;
 
-        var score = hit.TryGetProperty("_score", out var scoreProperty) && scoreProperty.ValueKind == JsonValueKind.Number
+        var score = hit.TryGetProperty("_score", out var scoreProperty) &&
+                    scoreProperty.ValueKind == JsonValueKind.Number
             ? scoreProperty.GetDouble()
             : 0d;
 
@@ -168,10 +171,12 @@ public sealed class ElasticsearchSemanticLexicalCandidateSource : ISemanticLexic
             ReadEntityId(source, "sourceEntityId"),
             ReadEntityId(source, "targetEntityId"),
             source.TryGetProperty("value", out var value) ? value.GetString() : null,
-            [new ResolutionEvidence(
-                $"Elasticsearch lexical match for '{token}'.",
-                CandidateEvidenceKind.Bm25,
-                score)]);
+            [
+                new ResolutionEvidence(
+                    $"Elasticsearch lexical match for '{token}'.",
+                    CandidateEvidenceKind.Bm25,
+                    score)
+            ]);
     }
 
     private static EntityId? ReadEntityId(JsonElement source, string name) =>

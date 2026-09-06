@@ -1,4 +1,5 @@
 using Foundgine.Core.Abstractions;
+
 namespace Foundgine.Core.Semantic.Metadata;
 
 public sealed record ColumnMetadata(

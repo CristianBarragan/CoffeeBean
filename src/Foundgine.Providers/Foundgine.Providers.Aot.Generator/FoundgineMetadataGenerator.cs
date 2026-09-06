@@ -271,8 +271,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
             var scalar = properties
                 .Where(p =>
-                    p.GetAttributes().All(
-                        a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
+                    p.GetAttributes().All(a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
                 .ToArray();
 
             var fieldIds = AllocateFieldIds(entity);
@@ -306,10 +305,9 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             sb.AppendLine($"            StorageName: \"{Escape(storageName)}\",");
             sb.AppendLine($"            Aliases: {FormatAliases(entity)},");
 
-            var primaryKey = scalar.FirstOrDefault(
-                p => GetNamedBool(
-                    GetAttribute(p, FieldAttribute),
-                    "IsPrimaryKey"));
+            var primaryKey = scalar.FirstOrDefault(p => GetNamedBool(
+                GetAttribute(p, FieldAttribute),
+                "IsPrimaryKey"));
 
             if (primaryKey is not null)
             {
@@ -376,8 +374,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 var occurredAtProperty =
                     occurredAtField is null
                         ? null
-                        : scalar.FirstOrDefault(
-                            p => p.Name == occurredAtField);
+                        : scalar.FirstOrDefault(p => p.Name == occurredAtField);
 
                 if (occurredAtProperty is not null)
                 {
@@ -542,7 +539,9 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
             var id =
                 explicitId
-                ?? GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.AuthorizationKey(authorization.ContainingType.ToDisplayString(), authorization.Name));
+                ?? GeneratorSemanticIdentity.Hash(
+                    GeneratorSemanticIdentity.AuthorizationKey(authorization.ContainingType.ToDisplayString(),
+                        authorization.Name));
 
             var name =
                 GetNamedString(attribute, "Name")
@@ -608,9 +607,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                         : "new ConnectionFieldMetadata[] { " +
                           string.Join(
                               ", ",
-                              fields.Select(
-                                  f =>
-                                      $"new ConnectionFieldMetadata(\"{Escape(f.SourceMember)}\", \"{Escape(f.TargetMember)}\", typeof({f.SourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), typeof({f.TargetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), {ToNullableString(f.Converter)} )")) +
+                              fields.Select(f =>
+                                  $"new ConnectionFieldMetadata(\"{Escape(f.SourceMember)}\", \"{Escape(f.TargetMember)}\", typeof({f.SourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), typeof({f.TargetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}), {ToNullableString(f.Converter)} )")) +
                           " }";
 
                 sb.AppendLine(
@@ -686,8 +684,10 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     {
         sb.AppendLine("public static class GeneratedSemanticModel");
         sb.AppendLine("{");
-        sb.AppendLine("    /// <summary>Canonical fingerprint of the semantic contract discovered from generated metadata.</summary>");
-        sb.AppendLine("    public static string ContractFingerprint => GeneratedMetadata.Registry.Discover().ContractFingerprint;");
+        sb.AppendLine(
+            "    /// <summary>Canonical fingerprint of the semantic contract discovered from generated metadata.</summary>");
+        sb.AppendLine(
+            "    public static string ContractFingerprint => GeneratedMetadata.Registry.Discover().ContractFingerprint;");
         sb.AppendLine();
 
         foreach (var model in models.OrderBy(
@@ -902,9 +902,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                      x => x.ToDisplayString(),
                      StringComparer.Ordinal))
         {
-            foreach (var attribute in declaration.GetAttributes().Where(
-                         a => a.AttributeClass?.ToDisplayString() ==
-                              ModelEntityMapAttribute))
+            foreach (var attribute in declaration.GetAttributes().Where(a => a.AttributeClass?.ToDisplayString() ==
+                                                                             ModelEntityMapAttribute))
             {
                 var model = GetTypeArgument(attribute, 0);
                 var entity = GetTypeArgument(attribute, 1);
@@ -928,9 +927,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                      x => x.ToDisplayString(),
                      StringComparer.Ordinal))
         {
-            foreach (var attribute in declaration.GetAttributes().Where(
-                         a => a.AttributeClass?.ToDisplayString() ==
-                              ConnectionMapAttribute))
+            foreach (var attribute in declaration.GetAttributes().Where(a => a.AttributeClass?.ToDisplayString() ==
+                                                                             ConnectionMapAttribute))
             {
                 var model = GetTypeArgument(attribute, 0);
                 var member = GetCtorString(attribute, 1);
@@ -1232,8 +1230,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         foreach (var destination in targetProperties)
         {
             var source =
-                sourceProperties.FirstOrDefault(
-                    p => p.Name == destination.Name);
+                sourceProperties.FirstOrDefault(p => p.Name == destination.Name);
 
             if (source is not null &&
                 SymbolEqualityComparer.Default.Equals(
@@ -1481,8 +1478,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
 
         return syntax?.ExpressionBody?.Expression
             is LambdaExpressionSyntax lambda
-                ? lambda.ToString()
-                : null;
+            ? lambda.ToString()
+            : null;
     }
 
     private static ulong? GetConstructorULong(
@@ -1543,6 +1540,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 throw new InvalidOperationException($"Model identity collision for '{semanticName}' (ID {candidate}).");
             result[clrKey] = candidate;
         }
+
         return result;
     }
 
@@ -1553,17 +1551,17 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         var used = new HashSet<ulong>();
 
         var declarations = models.SelectMany(model => model.GetMembers()
-            .OfType<IPropertySymbol>()
-            .Where(p => GetAttribute(p, ConnectionAttribute) is not null)
-            .Select(p =>
-            {
-                var attribute = GetAttribute(p, ConnectionAttribute);
-                var name = GetNamedString(attribute, "Name") ?? p.Name;
-                return (Key: model.ToDisplayString() + "." + p.Name,
+                .OfType<IPropertySymbol>()
+                .Where(p => GetAttribute(p, ConnectionAttribute) is not null)
+                .Select(p =>
+                {
+                    var attribute = GetAttribute(p, ConnectionAttribute);
+                    var name = GetNamedString(attribute, "Name") ?? p.Name;
+                    return (Key: model.ToDisplayString() + "." + p.Name,
                         ModelName: GetNamedString(GetAttribute(model, ModelAttribute), "Name") ?? model.Name,
                         ConnectionName: name,
                         Attribute: attribute);
-            }))
+                }))
             .OrderBy(x => x.Key, StringComparer.Ordinal)
             .ToArray();
 
@@ -1582,11 +1580,14 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         foreach (var (key, modelName, connectionName, _) in declarations)
         {
             if (result.ContainsKey(key)) continue;
-            var candidate = GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.ConnectionKey(modelName, connectionName));
+            var candidate =
+                GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.ConnectionKey(modelName, connectionName));
             if (!used.Add(candidate))
-                throw new InvalidOperationException($"Connection identity collision for '{modelName}.{connectionName}' (ID {candidate}).");
+                throw new InvalidOperationException(
+                    $"Connection identity collision for '{modelName}.{connectionName}' (ID {candidate}).");
             result[key] = candidate;
         }
+
         return result;
     }
 
@@ -1752,8 +1753,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                 p.DeclaredAccessibility == Accessibility.Public &&
                 !p.IsStatic)
             .Where(p =>
-                p.GetAttributes().All(
-                    a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
+                p.GetAttributes().All(a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
             .ToArray();
 
         var result = new Dictionary<string, ulong>(StringComparer.Ordinal);
@@ -1784,7 +1784,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             var attribute = GetAttribute(property, FieldAttribute);
             var fieldName = GetNamedString(attribute, "Name") ?? property.Name;
             var semanticKey = GetEntityName(entity) + "." + fieldName;
-            var candidate = GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.FieldNamespace + ":" + semanticKey);
+            var candidate =
+                GeneratorSemanticIdentity.Hash(GeneratorSemanticIdentity.FieldNamespace + ":" + semanticKey);
 
             if (candidate == 0 || !used.Add(candidate))
                 throw new InvalidOperationException(
@@ -1806,8 +1807,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             .Where(p =>
                 p.DeclaredAccessibility == Accessibility.Public &&
                 !p.IsStatic)
-            .Where(p => p.GetAttributes().All(
-                a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
+            .Where(p => p.GetAttributes().All(a => a.AttributeClass?.ToDisplayString() != RelationshipAttribute))
             .ToArray();
 
         var used = new HashSet<ulong>();
@@ -1853,9 +1853,8 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         ISymbol symbol,
         string fullName) =>
         symbol.GetAttributes()
-            .FirstOrDefault(
-                a => a.AttributeClass?.ToDisplayString() ==
-                     fullName);
+            .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() ==
+                                 fullName);
 
     private static string FormatAliases(ISymbol symbol)
     {
@@ -1881,9 +1880,9 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
             return "null";
 
         return "new AliasDeclaration[] { "
-            + string.Join(", ", entries.Select(a =>
-                $"new AliasDeclaration(\"{Escape(a.Name)}\", {(a.Weight is int w ? w.ToString() : "null")})"))
-            + " }";
+               + string.Join(", ", entries.Select(a =>
+                   $"new AliasDeclaration(\"{Escape(a.Name)}\", {(a.Weight is int w ? w.ToString() : "null")})"))
+               + " }";
     }
 
     /// <summary>
@@ -2055,8 +2054,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
     {
         var entitySet =
             new HashSet<string>(
-                entities.Select(
-                    x => x.ToDisplayString()),
+                entities.Select(x => x.ToDisplayString()),
                 StringComparer.Ordinal);
 
         var valid = true;
@@ -2093,7 +2091,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                             entity.Name,
                             navigation.Name,
                             target?.ToDisplayString()
-                                ?? "<missing>"));
+                            ?? "<missing>"));
 
                     valid = false;
                     continue;
@@ -2116,7 +2114,7 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
                             navigation.Name,
                             target.ToDisplayString(),
                             navigationTarget?.ToDisplayString()
-                                ?? navigation.Type.ToDisplayString()));
+                            ?? navigation.Type.ToDisplayString()));
 
                     valid = false;
                 }
@@ -2281,11 +2279,10 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         if (type is INamedTypeSymbol named)
         {
             var enumerable =
-                named.AllInterfaces.FirstOrDefault(
-                    i =>
-                        i.OriginalDefinition.SpecialType ==
-                        SpecialType.System_Collections_Generic_IEnumerable_T &&
-                        i.TypeArguments.Length == 1);
+                named.AllInterfaces.FirstOrDefault(i =>
+                    i.OriginalDefinition.SpecialType ==
+                    SpecialType.System_Collections_Generic_IEnumerable_T &&
+                    i.TypeArguments.Length == 1);
 
             if (enumerable is not null)
                 return enumerable.TypeArguments[0];
@@ -2300,10 +2297,9 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         if (type is IArrayTypeSymbol)
             return "true";
 
-        if (type.AllInterfaces.Any(
-                i =>
-                    i.OriginalDefinition.SpecialType ==
-                    SpecialType.System_Collections_Generic_IEnumerable_T))
+        if (type.AllInterfaces.Any(i =>
+                i.OriginalDefinition.SpecialType ==
+                SpecialType.System_Collections_Generic_IEnumerable_T))
         {
             return "true";
         }
@@ -2311,4 +2307,3 @@ public sealed class FoundgineMetadataGenerator : IIncrementalGenerator
         return "false";
     }
 }
-

@@ -33,8 +33,8 @@ public static class SecurityExecutionContextProviderExtensions
             throw new ArgumentException("Value cannot be null or whitespace.", nameof(operationDescription));
 
         return provider.GetSecurityExecutionContext()
-            ?? throw new UnauthorizedAccessException(
-                $"{transportName} {operationDescription} requires a host-supplied SecurityExecutionContext. " +
-                $"The {transportName} caller cannot supply identity, tenant, audience, or warrant context.");
+               ?? throw new UnauthorizedAccessException(
+                   $"{transportName} {operationDescription} requires a host-supplied SecurityExecutionContext. " +
+                   $"The {transportName} caller cannot supply identity, tenant, audience, or warrant context.");
     }
 }

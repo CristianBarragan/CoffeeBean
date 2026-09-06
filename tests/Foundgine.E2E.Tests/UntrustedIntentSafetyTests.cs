@@ -18,11 +18,11 @@ public sealed class UntrustedIntentSafetyTests
     public void Unknown_field_is_rejected_before_planning()
     {
         const string json = """
-        {
-          "rootEntity": "Customer",
-          "selections": [{ "field": "DropDatabase" }]
-        }
-        """;
+                            {
+                              "rootEntity": "Customer",
+                              "selections": [{ "field": "DropDatabase" }]
+                            }
+                            """;
 
         var model = BankingModel.Build();
         var intent = new JsonReadIntentAdapter().Parse(json);
@@ -39,14 +39,14 @@ public sealed class UntrustedIntentSafetyTests
     public void Authorization_cannot_be_bypassed_by_json_intent()
     {
         const string json = """
-        {
-          "rootEntity": "Account",
-          "selections": [
-            { "field": "Id" },
-            { "field": "Balance" }
-          ]
-        }
-        """;
+                            {
+                              "rootEntity": "Account",
+                              "selections": [
+                                { "field": "Id" },
+                                { "field": "Balance" }
+                              ]
+                            }
+                            """;
 
         var model = BankingModel.Build();
         var intent = new JsonReadIntentAdapter().Parse(json);
@@ -71,19 +71,19 @@ public sealed class UntrustedIntentSafetyTests
     public void Denied_root_entity_stops_untrusted_intent_before_planning()
     {
         const string json = """
-        {
-          "rootEntity": "Account",
-          "selections": [{ "field": "Id" }]
-        }
-        """;
+                            {
+                              "rootEntity": "Account",
+                              "selections": [{ "field": "Id" }]
+                            }
+                            """;
 
         var model = BankingModel.Build();
         var intent = new JsonReadIntentAdapter().Parse(json);
         var request = new ReadIntentCompiler(model).Compile(intent);
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
 
-        var exception = Assert.Throws<SemanticAuthorizationException>(
-            () => new SemanticAuthorizer(new DenyAccountPolicy()).Authorize(resolved));
+        var exception = Assert.Throws<SemanticAuthorizationException>(() =>
+            new SemanticAuthorizer(new DenyAccountPolicy()).Authorize(resolved));
 
         Assert.Contains("Access denied", exception.Message, StringComparison.Ordinal);
     }
@@ -99,4 +99,3 @@ public sealed class UntrustedIntentSafetyTests
         public override bool CanAccessEntity(EntityId entityId) => entityId != BankingModel.Account;
     }
 }
-

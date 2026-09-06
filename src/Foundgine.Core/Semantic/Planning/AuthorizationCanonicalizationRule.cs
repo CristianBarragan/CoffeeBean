@@ -118,7 +118,8 @@ public sealed class AuthorizationCanonicalizationRule : IPlanRewriteRule
         return predicate;
     }
 
-    private static void Flatten(AuthorizationPredicateKind kind, AuthorizationPredicate node, ICollection<AuthorizationPredicate> destination)
+    private static void Flatten(AuthorizationPredicateKind kind, AuthorizationPredicate node,
+        ICollection<AuthorizationPredicate> destination)
     {
         if (node.Kind == kind)
         {
@@ -126,10 +127,12 @@ public sealed class AuthorizationCanonicalizationRule : IPlanRewriteRule
             if (node.Right is not null) Flatten(kind, node.Right, destination);
             return;
         }
+
         destination.Add(node);
     }
 
-    private static AuthorizationPredicate RebuildBalanced(AuthorizationPredicateKind kind, IReadOnlyList<AuthorizationPredicate> operands)
+    private static AuthorizationPredicate RebuildBalanced(AuthorizationPredicateKind kind,
+        IReadOnlyList<AuthorizationPredicate> operands)
     {
         AuthorizationPredicate result = operands[0];
         for (var i = 1; i < operands.Count; i++)
@@ -161,7 +164,12 @@ public sealed class AuthorizationCanonicalizationRule : IPlanRewriteRule
 
     private static void AppendValue(StringBuilder builder, string? value)
     {
-        if (value is null) { builder.Append("null"); return; }
+        if (value is null)
+        {
+            builder.Append("null");
+            return;
+        }
+
         builder.Append(value.Length).Append(':').Append(value);
     }
 }

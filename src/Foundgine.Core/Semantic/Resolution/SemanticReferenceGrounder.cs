@@ -43,7 +43,8 @@ public sealed class SemanticReferenceGrounder
                     .Max();
                 return (Entity: entity, Score: Math.Max(entityScore, Math.Max(aliasScore, fieldScore * 0.9d)));
             })
-.Where(x => x.Entity.Fields.Any(field => field.ClrType == typeof(string) && !field.Capabilities.HasFlag(SemanticFieldCapabilities.Sensitive)))
+            .Where(x => x.Entity.Fields.Any(field =>
+                field.ClrType == typeof(string) && !field.Capabilities.HasFlag(SemanticFieldCapabilities.Sensitive)))
             .OrderByDescending(x => x.Score)
             .ThenBy(x => x.Entity.Name, StringComparer.OrdinalIgnoreCase)
             .Take(entityLimit)
@@ -85,7 +86,8 @@ public sealed class SemanticReferenceGrounder
 
     private static SemanticField? SelectSearchField(SemanticEntity entity, string query) =>
         entity.Fields
-            .Where(field => field.ClrType == typeof(string) && !field.Capabilities.HasFlag(SemanticFieldCapabilities.Sensitive))
+            .Where(field => field.ClrType == typeof(string) &&
+                            !field.Capabilities.HasFlag(SemanticFieldCapabilities.Sensitive))
             .Select(field =>
             {
                 var score = 0.5d + (0.5d * Math.Max(
@@ -102,7 +104,8 @@ public sealed class SemanticReferenceGrounder
     {
         if (string.Equals(left, right, StringComparison.OrdinalIgnoreCase))
             return 1d;
-        if (left.Contains(right, StringComparison.OrdinalIgnoreCase) || right.Contains(left, StringComparison.OrdinalIgnoreCase))
+        if (left.Contains(right, StringComparison.OrdinalIgnoreCase) ||
+            right.Contains(left, StringComparison.OrdinalIgnoreCase))
             return 0.8d;
 
         var distance = Levenshtein(left, right);
@@ -123,6 +126,7 @@ public sealed class SemanticReferenceGrounder
                     previous[j - 1] + (char.ToUpperInvariant(a[i - 1]) == char.ToUpperInvariant(b[j - 1]) ? 0 : 1));
             previous = current;
         }
+
         return previous[b.Length];
     }
 }

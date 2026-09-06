@@ -10,11 +10,13 @@ public sealed class SemanticAlgebraTests
     public void LogicalNormalization_FlattensSortsAndDeduplicates()
     {
         var a = new SemanticBinaryExpression("eq",
-            new SemanticFieldReferenceExpression(new Foundgine.Core.Abstractions.FieldId(1), new SemanticType.Scalar(SemanticScalarKind.Int32)),
+            new SemanticFieldReferenceExpression(new Foundgine.Core.Abstractions.FieldId(1),
+                new SemanticType.Scalar(SemanticScalarKind.Int32)),
             new SemanticLiteralExpression(SemanticValue.From(1), new SemanticType.Scalar(SemanticScalarKind.Int32)),
             SemanticExpressionTypes.Boolean);
         var b = new SemanticBinaryExpression("eq",
-            new SemanticFieldReferenceExpression(new Foundgine.Core.Abstractions.FieldId(2), new SemanticType.Scalar(SemanticScalarKind.Int32)),
+            new SemanticFieldReferenceExpression(new Foundgine.Core.Abstractions.FieldId(2),
+                new SemanticType.Scalar(SemanticScalarKind.Int32)),
             new SemanticLiteralExpression(SemanticValue.From(2), new SemanticType.Scalar(SemanticScalarKind.Int32)),
             SemanticExpressionTypes.Boolean);
         var expression = new SemanticLogicalExpression(
@@ -27,7 +29,8 @@ public sealed class SemanticAlgebraTests
         Assert.Equal(2, logical.Operands.Count);
         Assert.Equal(
             SemanticExpressionNormalizer.Canonicalize(logical.Operands[0]),
-            SemanticExpressionNormalizer.Canonicalize(logical.Operands.OrderBy(SemanticExpressionNormalizer.Canonicalize).First()));
+            SemanticExpressionNormalizer.Canonicalize(logical.Operands
+                .OrderBy(SemanticExpressionNormalizer.Canonicalize).First()));
     }
 
     [Fact]

@@ -60,7 +60,8 @@ public sealed class SecurityInvariantProof
         ArgumentNullException.ThrowIfNull(preserved);
         var requiredSet = required.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
         var preservedSet = preserved.Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
-        var missing = requiredSet.Except(preservedSet, StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        var missing = requiredSet.Except(preservedSet, StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal)
+            .ToArray();
         return new SecurityInvariantProof(null, string.Empty, provider, requiredSet, preservedSet, missing);
     }
 
