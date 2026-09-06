@@ -547,6 +547,77 @@ public sealed class SemanticLexicalResolverTests
         Assert.DoesNotContain(vendor, strongDecision.AliasEvidence.EntityWeights.Keys);
     }
 
+    [Fact]
+    public void Ground_requires_clarification_when_a_close_candidate_is_cut_by_the_candidate_limit()
+    {
+        // Same shape as the classic "active customers" tied-confidence case,
+        // except here the second field never survives to graph search at
+        // all: candidateLimit trims it away at retrieval time. Foundgine
+        // must not treat "graph search saw no competing meaning" as proof
+        // that none existed — the cut candidate was never checked.
+        var customer = new EntityId(1);
+
+        var model = new SemanticModelBuilder()
+            .Entity(customer, "Customer", e => e
+                .Identity(new FieldId(101), "Id")
+                .Field(new FieldId(601), "AccountEnabled", typeof(bool))
+                .Field(new FieldId(602), "HasRecentOrder", typeof(bool)))
+            .Build()
+            .Freeze()
+            .CreateSnapshot();
+
+        var source = new FakeLexicalSource(
+            new SemanticLexicalCandidate("active", SemanticLexicalCandidateKind.Field, "AccountEnabled", .90,
+                EntityId: customer, FieldId: new FieldId(601), Value: "true"),
+            new SemanticLexicalCandidate("active", SemanticLexicalCandidateKind.Field, "HasRecentOrder", .89,
+                EntityId: customer, FieldId: new FieldId(602), Value: "true"));
+
+        var decision = new SemanticLexicalResolver(model, source, candidateLimit: 1).Ground("active");
+
+        Assert.Equal(GroundingOutcome.RequiresClarification, decision.Outcome);
+        Assert.Null(decision.Committed);
+        Assert.Single(decision.EffectiveTruncationRisks);
+
+        var risk = decision.EffectiveTruncationRisks[0];
+        Assert.Equal("active", risk.Token);
+        Assert.Equal(1, risk.RetainedCount);
+        Assert.Equal(1, risk.TruncatedCount);
+        Assert.Equal(.90, risk.LowestRetainedScore);
+        Assert.Equal(.89, risk.HighestTruncatedScore);
+        Assert.True(risk.WithinAmbiguityMargin(0.03));
+    }
+
+    [Fact]
+    public void Ground_commits_when_a_truncated_candidate_is_well_outside_the_ambiguity_margin()
+    {
+        // Truncation alone is not the problem — it is unavoidable and
+        // configured deliberately. Only a cut candidate close enough to have
+        // plausibly been a competing meaning should block commitment.
+        var customer = new EntityId(1);
+
+        var model = new SemanticModelBuilder()
+            .Entity(customer, "Customer", e => e
+                .Identity(new FieldId(101), "Id")
+                .Field(new FieldId(601), "AccountEnabled", typeof(bool))
+                .Field(new FieldId(602), "HasRecentOrder", typeof(bool)))
+            .Build()
+            .Freeze()
+            .CreateSnapshot();
+
+        var source = new FakeLexicalSource(
+            new SemanticLexicalCandidate("active", SemanticLexicalCandidateKind.Field, "AccountEnabled", .95,
+                EntityId: customer, FieldId: new FieldId(601), Value: "true"),
+            new SemanticLexicalCandidate("active", SemanticLexicalCandidateKind.Field, "HasRecentOrder", .10,
+                EntityId: customer, FieldId: new FieldId(602), Value: "true"));
+
+        var decision = new SemanticLexicalResolver(model, source, candidateLimit: 1).Ground("active");
+
+        Assert.Equal(GroundingOutcome.Committed, decision.Outcome);
+        Assert.NotNull(decision.Committed);
+        Assert.Equal("AccountEnabled", decision.Committed!.Steps[0].Candidate.CanonicalName);
+        Assert.Empty(decision.EffectiveTruncationRisks);
+    }
+
     private sealed class Dummy
     {
         public int Id { get; init; }

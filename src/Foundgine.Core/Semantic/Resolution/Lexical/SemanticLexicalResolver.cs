@@ -180,13 +180,15 @@ public sealed class SemanticLexicalResolver
                 GroundingBudgetLimit.MaxTokens);
 
         IReadOnlyDictionary<string, IReadOnlyList<SemanticLexicalCandidate>> candidateSets;
+        var truncations = new Dictionary<string, CandidateTruncation>(StringComparer.OrdinalIgnoreCase);
         using var retrievalCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         retrievalCts.CancelAfter(_retrievalTimeout);
         var retrievalStopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         try
         {
-            candidateSets = GetCandidates(tokens, retrievalCts.Token, retrievalStopwatch, stopOnFirstEmpty: true);
+            candidateSets = GetCandidates(tokens, retrievalCts.Token, retrievalStopwatch, stopOnFirstEmpty: true,
+                truncations: truncations);
         }
         catch (GroundingRetrievalTimeoutException ex)
         {
@@ -236,11 +238,14 @@ public sealed class SemanticLexicalResolver
                 var compactToken = string.Concat(tokens);
                 try
                 {
-                    var compactCandidates = GetCandidates([compactToken], retrievalCts.Token, retrievalStopwatch);
+                    var compactTruncations = new Dictionary<string, CandidateTruncation>(StringComparer.OrdinalIgnoreCase);
+                    var compactCandidates = GetCandidates([compactToken], retrievalCts.Token, retrievalStopwatch,
+                        truncations: compactTruncations);
                     if (compactCandidates[compactToken].Count > 0)
                     {
                         tokens = [compactToken];
                         candidateSets = compactCandidates;
+                        truncations = compactTruncations;
                     }
                 }
                 catch (GroundingRetrievalTimeoutException ex)
@@ -391,6 +396,41 @@ public sealed class SemanticLexicalResolver
 
         if (withinAmbiguityMargin.Length <= 1)
         {
+            // Graph search found no competing meaning — but graph search only
+            // ever saw the candidates that survived retrieval-time truncation.
+            // If a token this interpretation depends on had a candidate cut
+            // within the ambiguity margin of what was kept, apply the same
+            // "do not silently pick a winner inside the margin" policy here,
+            // one stage earlier than usual: the cut candidate was never
+            // proven illegal, it just never got to try.
+            var truncationRisk = best.Steps
+                .Select(s => s.Token)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(t => truncations.TryGetValue(t, out var truncation) ? truncation : null)
+                .Where(t => t is not null && t.WithinAmbiguityMargin(_ambiguityThreshold))
+                .Select(t => t!)
+                .ToArray();
+
+            if (truncationRisk.Length > 0)
+            {
+                var riskyTokens = string.Join(", ", truncationRisk.Select(t => $"'{t.Token}'"));
+                return new(
+                    expression,
+                    GroundingOutcome.RequiresClarification,
+                    null,
+                    interpretations.Skip(1).ToArray(),
+                    $"The leading interpretation depends on token(s) {riskyTokens} whose candidate set was cut " +
+                    $"down to the configured candidate limit, and the highest-scoring candidate that was cut " +
+                    $"fell within {_ambiguityThreshold:P0} of the lowest one kept. That candidate was never " +
+                    "checked against the semantic graph, so it cannot be ruled out as a distinct legal meaning. " +
+                    "Foundgine will not commit automatically; raise the candidate limit or inspect TruncationRisks.",
+                    roots,
+                    GroundingBudgetLimit.None,
+                    null,
+                    best.EffectiveAliasEvidence,
+                    truncationRisk);
+            }
+
             return new(
                 expression,
                 GroundingOutcome.Committed,
@@ -506,11 +546,16 @@ public sealed class SemanticLexicalResolver
     /// only spend shared retrieval budget on results that are about to be
     /// discarded — budget the compact-token fallback needs instead.
     /// </param>
+    /// <param name="truncations">When non-null, populated with one <see cref="CandidateTruncation"/>
+    /// entry per token whose retrieved candidate set exceeded <c>candidateLimit</c> and was cut down to
+    /// it. Diagnostic only — recorded here because this is the one place a truncated candidate is still
+    /// visible before it is discarded; callers that don't need the diagnostic can leave this null.</param>
     private IReadOnlyDictionary<string, IReadOnlyList<SemanticLexicalCandidate>> GetCandidates(
         IReadOnlyList<string> tokens,
         CancellationToken cancellationToken,
         System.Diagnostics.Stopwatch stopwatch,
-        bool stopOnFirstEmpty = false)
+        bool stopOnFirstEmpty = false,
+        Dictionary<string, CandidateTruncation>? truncations = null)
     {
         var result = new Dictionary<string, IReadOnlyList<SemanticLexicalCandidate>>(StringComparer.OrdinalIgnoreCase);
 
@@ -549,8 +594,29 @@ public sealed class SemanticLexicalResolver
                 .OrderByDescending(x => x.Score)
                 .ThenBy(x => CandidateKindPreference(x.Kind))
                 .ThenBy(x => x.CanonicalName, StringComparer.OrdinalIgnoreCase)
-                .Take(_candidateLimit)
                 .ToArray();
+
+            // Record truncation BEFORE it happens: candidates beyond
+            // _candidateLimit are dropped here and never reach graph search,
+            // so they are never checked for legality — they are just gone.
+            // If the highest-scoring one we're about to discard is within
+            // the resolver's own ambiguity margin of the lowest one we're
+            // keeping, that is retrieval-boundary risk of exactly the kind
+            // the post-search ambiguity check exists to catch, just one
+            // stage earlier where it would otherwise go unrecorded.
+            if (truncations is not null && candidates.Count > _candidateLimit)
+            {
+                var lowestRetainedScore = candidates[_candidateLimit - 1].Score;
+                var highestTruncatedScore = candidates[_candidateLimit].Score;
+                truncations[token] = new CandidateTruncation(
+                    token,
+                    RetainedCount: _candidateLimit,
+                    TruncatedCount: candidates.Count - _candidateLimit,
+                    LowestRetainedScore: lowestRetainedScore,
+                    HighestTruncatedScore: highestTruncatedScore);
+            }
+
+            candidates = candidates.Take(_candidateLimit).ToArray();
 
             // A bare exact canonical entity name is an entity-root expression.
             // Relationship members can legitimately share that spelling (for
