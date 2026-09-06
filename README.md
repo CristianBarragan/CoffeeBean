@@ -11,11 +11,9 @@
 [![Performance (Foundgine)](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=benchmark-build-foundgine&label=Performance%20%28Foundgine%29)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
 [![Security Audit](https://img.shields.io/github/actions/workflow/status/CristianBarragan/Foundgine/build.yml?branch=main&job=security-penetration&label=Security%20Audit)](https://github.com/CristianBarragan/Foundgine/actions/workflows/build.yml)
 
-# Foundgine
+# Foundgine - **Programmable semantic execution for .NET.**
 
-**Programmable semantic execution for .NET.**
-
-Foundgine gives application code, APIs, GraphQL, MCP and AI agents one application-controlled boundary between **caller intent**, **application meaning**, **authorization** and **physical execution**.
+Foundgine lets AI agents and other callers express what they want without giving them authority over how your application's data and business operations are executed. It gives application code, APIs, GraphQL, MCP and AI agents one application-controlled boundary between **caller intent**, **application meaning**, **authorization** and **physical execution**.
 
 [**Go to website →**](https://cristianbarragan.github.io/Foundgine/docs-site/)
 
