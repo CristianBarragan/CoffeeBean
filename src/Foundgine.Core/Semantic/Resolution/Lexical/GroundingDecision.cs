@@ -146,6 +146,16 @@ public sealed record GroundingInterpretation(
 /// interpretation, when <paramref name="Outcome"/> is <see cref="GroundingOutcome.Committed"/>
 /// or <see cref="GroundingOutcome.RequiresClarification"/> due to insufficient weight. Null
 /// when the optional alias-weight commitment policy was not configured or did not apply.</param>
+/// <param name="TruncationRisks">Populated when a token used by the leading interpretation had its
+/// candidate set cut down to <c>candidateLimit</c> at retrieval time, and the highest-scoring candidate
+/// that was cut fell within the resolver's ambiguity margin of the lowest candidate that was kept
+/// (see <see cref="CandidateTruncation.WithinAmbiguityMargin"/>). Retrieval truncation happens before
+/// graph search runs, so a cut candidate is never checked for legality — it is simply absent, with no
+/// record of whether it would have produced a competing meaning. When this is non-empty,
+/// <paramref name="Outcome"/> is <see cref="GroundingOutcome.RequiresClarification"/> even though graph
+/// search itself found no competing interpretation: the same "do not silently pick a winner inside the
+/// margin" policy that governs surviving interpretations is applied here to a candidate that never got
+/// the chance to survive or fail on its merits. Empty (never null) when no such risk was found.</param>
 public sealed record GroundingDecision(
     string Expression,
     GroundingOutcome Outcome,
@@ -155,7 +165,8 @@ public sealed record GroundingDecision(
     IReadOnlyList<SemanticLexicalCandidate> RootCandidates,
     GroundingBudgetLimit BudgetLimit = GroundingBudgetLimit.None,
     IReadOnlyList<GroundingInterpretation>? PartialInterpretationsAtCutoff = null,
-    AliasInterpretationEvidence? AliasEvidence = null)
+    AliasInterpretationEvidence? AliasEvidence = null,
+    IReadOnlyList<CandidateTruncation>? TruncationRisks = null)
 {
     /// <summary>True when more than one semantically distinct interpretation was
     /// structurally legal, regardless of whether Foundgine still committed to one
@@ -166,4 +177,7 @@ public sealed record GroundingDecision(
     /// <summary>Null-safe accessor for <see cref="PartialInterpretationsAtCutoff"/>.</summary>
     public IReadOnlyList<GroundingInterpretation> EffectivePartialInterpretationsAtCutoff =>
         PartialInterpretationsAtCutoff ?? [];
+
+    /// <summary>Null-safe accessor for <see cref="TruncationRisks"/>.</summary>
+    public IReadOnlyList<CandidateTruncation> EffectiveTruncationRisks => TruncationRisks ?? [];
 }
