@@ -22,7 +22,8 @@ public sealed class PostgresAuthorizationSecurityUnitOfWork
         ArgumentNullException.ThrowIfNull(operation);
 
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
-        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        await using var transaction =
+            await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         try
         {
             await operation(connection, transaction, cancellationToken);
@@ -46,7 +47,8 @@ public sealed class PostgresAuthorizationSecurityUnitOfWork
         ArgumentNullException.ThrowIfNull(operation);
 
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
-        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        await using var transaction =
+            await connection.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         try
         {
             var result = await operation(connection, transaction, cancellationToken);

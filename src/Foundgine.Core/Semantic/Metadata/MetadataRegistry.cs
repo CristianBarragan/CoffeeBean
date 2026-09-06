@@ -88,10 +88,9 @@ public sealed class MetadataRegistry : IMetadataCatalog, IMutationSchema
     {
         ArgumentNullException.ThrowIfNull(conversion);
 
-        if (_conversions.Any(
-                x =>
-                    x.SourceType == conversion.SourceType &&
-                    x.TargetType == conversion.TargetType))
+        if (_conversions.Any(x =>
+                x.SourceType == conversion.SourceType &&
+                x.TargetType == conversion.TargetType))
         {
             throw new InvalidOperationException(
                 $"Duplicate Foundgine conversion " +
@@ -172,10 +171,9 @@ public sealed class MetadataRegistry : IMetadataCatalog, IMutationSchema
         Type sourceType,
         Type targetType)
     {
-        return _conversions.FirstOrDefault(
-            x =>
-                x.SourceType == sourceType &&
-                x.TargetType == targetType);
+        return _conversions.FirstOrDefault(x =>
+            x.SourceType == sourceType &&
+            x.TargetType == targetType);
     }
 
     public ConnectionMetadata Get(

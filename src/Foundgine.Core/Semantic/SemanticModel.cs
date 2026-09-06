@@ -143,7 +143,8 @@ public sealed class SemanticModel
     public SemanticTraversal GetTraversal(EntityId source, string name) =>
         TryGetTraversal(source, name, out var traversal)
             ? traversal
-            : throw new KeyNotFoundException($"Semantic traversal '{name}' is not defined on entity '{Get(source).Name}'.");
+            : throw new KeyNotFoundException(
+                $"Semantic traversal '{name}' is not defined on entity '{Get(source).Name}'.");
 
     public bool TryGet(EntityId id, out SemanticEntity entity) =>
         _entities.TryGetValue(id, out entity!);

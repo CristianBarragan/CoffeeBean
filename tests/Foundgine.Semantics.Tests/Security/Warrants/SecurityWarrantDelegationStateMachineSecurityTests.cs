@@ -73,8 +73,30 @@ public sealed class SecurityWarrantDelegationStateMachineSecurityTests
         using var gate = new Barrier(3);
         var errors = new System.Collections.Concurrent.ConcurrentBag<Exception>();
 
-        var revoke = Task.Run(() => { gate.SignalAndWait(); try { machine.Revoke(warrant); } catch (Exception e) { errors.Add(e); } });
-        var rotate = Task.Run(() => { gate.SignalAndWait(); try { machine.RotateKey(warrant, "key-v2"); } catch (Exception e) { errors.Add(e); } });
+        var revoke = Task.Run(() =>
+        {
+            gate.SignalAndWait();
+            try
+            {
+                machine.Revoke(warrant);
+            }
+            catch (Exception e)
+            {
+                errors.Add(e);
+            }
+        });
+        var rotate = Task.Run(() =>
+        {
+            gate.SignalAndWait();
+            try
+            {
+                machine.RotateKey(warrant, "key-v2");
+            }
+            catch (Exception e)
+            {
+                errors.Add(e);
+            }
+        });
         gate.SignalAndWait();
         await Task.WhenAll(revoke, rotate);
 

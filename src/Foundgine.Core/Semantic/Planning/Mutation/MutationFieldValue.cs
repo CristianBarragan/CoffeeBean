@@ -13,6 +13,7 @@ public sealed record MutationFieldValue(
 {
     // Compatibility name for consumers that address the physical mutation field as a column.
     public ColumnId ColumnId => Column;
+
     public static MutationFieldValue FromPrevious(
         ColumnId column,
         int sourceOperationIndex,

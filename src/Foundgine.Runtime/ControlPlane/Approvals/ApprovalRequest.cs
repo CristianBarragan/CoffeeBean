@@ -36,14 +36,16 @@ public sealed record ApprovalRequest(
         if (requiredApprovals < 1)
             throw new ArgumentOutOfRangeException(nameof(requiredApprovals), "At least one approval must be required.");
 
-        return new ApprovalRequest(approvalId, requestFingerprint, requiredApprovals, ApprovalStatus.Pending, Array.Empty<ApprovalGrant>());
+        return new ApprovalRequest(approvalId, requestFingerprint, requiredApprovals, ApprovalStatus.Pending,
+            Array.Empty<ApprovalGrant>());
     }
 
     public ApprovalRequest WithGrant(ApprovalGrant grant)
     {
         ArgumentNullException.ThrowIfNull(grant);
         if (Status is not ApprovalStatus.Pending)
-            throw new InvalidOperationException($"Approval request '{ApprovalId}' is already '{Status}' and cannot accept further decisions.");
+            throw new InvalidOperationException(
+                $"Approval request '{ApprovalId}' is already '{Status}' and cannot accept further decisions.");
 
         List<ApprovalGrant> grants = [.. Grants, grant];
 

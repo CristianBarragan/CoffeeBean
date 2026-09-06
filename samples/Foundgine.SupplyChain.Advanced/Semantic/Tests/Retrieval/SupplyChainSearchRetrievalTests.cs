@@ -62,8 +62,7 @@ public sealed class SupplyChainSearchRetrievalTests
             "metal fabrication",
             RetrievalStrategy.Search);
 
-        await Assert.ThrowsAsync<NotSupportedException>(
-            () => source.RetrieveAsync(request));
+        await Assert.ThrowsAsync<NotSupportedException>(() => source.RetrieveAsync(request));
     }
 
     private static async Task SeedAsync(NpgsqlDataSource dataSource)

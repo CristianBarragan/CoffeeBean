@@ -27,6 +27,7 @@ public sealed record PolicyDecision(
     public static PolicyDecision Deny(string policyId, string reason) =>
         new(PolicyOutcome.Deny, policyId, reason, Array.Empty<string>());
 
-    public static PolicyDecision RequireApproval(string policyId, string reason, IReadOnlyList<string>? obligationTags = null) =>
+    public static PolicyDecision RequireApproval(string policyId, string reason,
+        IReadOnlyList<string>? obligationTags = null) =>
         new(PolicyOutcome.RequireApproval, policyId, reason, obligationTags ?? Array.Empty<string>());
 }

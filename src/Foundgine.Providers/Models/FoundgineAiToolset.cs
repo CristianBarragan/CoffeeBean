@@ -58,8 +58,8 @@ public sealed class FoundgineAiToolset
     public string DescribeCapabilities()
     {
         var security = _securityContextFactory()
-            ?? throw new UnauthorizedAccessException(
-                "AI capability discovery requires a host-supplied SecurityExecutionContext. The model cannot supply identity, tenant, audience, or warrant context.");
+                       ?? throw new UnauthorizedAccessException(
+                           "AI capability discovery requires a host-supplied SecurityExecutionContext. The model cannot supply identity, tenant, audience, or warrant context.");
 
         return JsonSerializer.Serialize(
             _foundgine.DescribeCapabilityContract(security),
@@ -68,7 +68,9 @@ public sealed class FoundgineAiToolset
 
     [Description("Executes a Foundgine read intent represented as JSON and returns rows plus execution evidence.")]
     public async Task<string> ExecuteQueryAsync(
-        [Description("JSON read intent with rootEntity, selections, optional filter/order/limit/offset/after. Do not include authentication, tenant or authorization context.")] string intentJson,
+        [Description(
+            "JSON read intent with rootEntity, selections, optional filter/order/limit/offset/after. Do not include authentication, tenant or authorization context.")]
+        string intentJson,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(intentJson))
@@ -76,8 +78,8 @@ public sealed class FoundgineAiToolset
 
         var intent = _adapter.Parse(intentJson);
         var security = _securityContextFactory()
-            ?? throw new UnauthorizedAccessException(
-                "AI query execution requires a host-supplied SecurityExecutionContext. The model cannot supply identity, tenant, audience, or warrant context.");
+                       ?? throw new UnauthorizedAccessException(
+                           "AI query execution requires a host-supplied SecurityExecutionContext. The model cannot supply identity, tenant, audience, or warrant context.");
         intent = intent with { Security = security };
         var result = await _foundgine.ExecuteAsync(
             intent,

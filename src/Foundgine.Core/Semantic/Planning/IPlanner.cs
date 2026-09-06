@@ -19,6 +19,7 @@ public interface IPlanner
         ArgumentNullException.ThrowIfNull(graph);
         return Plan(graph.ToOperation());
     }
+
     SemanticPlan Plan(SemanticGraph graph);
 
     /// <summary>

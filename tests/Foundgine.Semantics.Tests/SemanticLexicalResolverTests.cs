@@ -27,10 +27,14 @@ public sealed class SemanticLexicalResolverTests
             .Entity(category, "Category", e => e
                 .Identity(new FieldId(501), "Id")
                 .Field(new FieldId(502), "Name", typeof(string)))
-            .Relationship<Dummy, Dummy>(customer, new RelationshipId(1), "Orders", x => x.Id, order, x => x.Id, RelationshipCardinality.Many)
-            .Relationship<Dummy, Dummy>(order, new RelationshipId(2), "Lines", x => x.Id, line, x => x.Id, RelationshipCardinality.Many)
-            .Relationship<Dummy, Dummy>(line, new RelationshipId(3), "Product", x => x.Id, product, x => x.Id, RelationshipCardinality.One)
-            .Relationship<Dummy, Dummy>(product, new RelationshipId(4), "Category", x => x.Id, category, x => x.Id, RelationshipCardinality.One)
+            .Relationship<Dummy, Dummy>(customer, new RelationshipId(1), "Orders", x => x.Id, order, x => x.Id,
+                RelationshipCardinality.Many)
+            .Relationship<Dummy, Dummy>(order, new RelationshipId(2), "Lines", x => x.Id, line, x => x.Id,
+                RelationshipCardinality.Many)
+            .Relationship<Dummy, Dummy>(line, new RelationshipId(3), "Product", x => x.Id, product, x => x.Id,
+                RelationshipCardinality.One)
+            .Relationship<Dummy, Dummy>(product, new RelationshipId(4), "Category", x => x.Id, category, x => x.Id,
+                RelationshipCardinality.One)
             .Build()
             .Freeze()
             .CreateSnapshot();
@@ -54,7 +58,9 @@ public sealed class SemanticLexicalResolverTests
         Assert.Equal("Shoes", result.Steps[2].Candidate.CanonicalName);
         Assert.Equal(2, result.Steps[1].BridgingPath.Count);
         Assert.Single(result.Steps[2].BridgingPath);
-        Assert.Contains(source.Requests, x => x.Token == "bought" && x.EffectiveKinds.Count == Enum.GetValues<SemanticLexicalCandidateKind>().Length);
+        Assert.Contains(source.Requests,
+            x => x.Token == "bought" &&
+                 x.EffectiveKinds.Count == Enum.GetValues<SemanticLexicalCandidateKind>().Length);
     }
 
     [Fact]
@@ -66,7 +72,8 @@ public sealed class SemanticLexicalResolverTests
         var model = new SemanticModelBuilder()
             .Entity(customer, "Customer", e => e.Identity(new FieldId(101), "Id"))
             .Entity(product, "Product", e => e.Identity(new FieldId(201), "Id"))
-            .Relationship<Dummy, Dummy>(customer, new RelationshipId(1), "Orders", x => x.Id, product, x => x.Id, RelationshipCardinality.Many)
+            .Relationship<Dummy, Dummy>(customer, new RelationshipId(1), "Orders", x => x.Id, product, x => x.Id,
+                RelationshipCardinality.Many)
             .Build()
             .Freeze()
             .CreateSnapshot();
@@ -136,7 +143,8 @@ public sealed class SemanticLexicalResolverTests
         var model = new SemanticModelBuilder()
             .Entity(customer, "Customer", e => e.Identity(new FieldId(101), "Id"))
             .Entity(product, "Product", e => e.Identity(new FieldId(201), "Id"))
-            .Relationship<Dummy, Dummy>(customer, new RelationshipId(1), "Orders", x => x.Id, product, x => x.Id, RelationshipCardinality.Many)
+            .Relationship<Dummy, Dummy>(customer, new RelationshipId(1), "Orders", x => x.Id, product, x => x.Id,
+                RelationshipCardinality.Many)
             .Build()
             .Freeze()
             .CreateSnapshot();
@@ -274,8 +282,10 @@ public sealed class SemanticLexicalResolverTests
             .Entity(category, "Category", e => e
                 .Identity(new FieldId(501), "Id")
                 .Field(new FieldId(502), "Name", typeof(string)))
-            .Relationship<Dummy, Dummy>(customer, new RelationshipId(1), "Orders", x => x.Id, product, x => x.Id, RelationshipCardinality.Many)
-            .Relationship<Dummy, Dummy>(product, new RelationshipId(2), "Category", x => x.Id, category, x => x.Id, RelationshipCardinality.One)
+            .Relationship<Dummy, Dummy>(customer, new RelationshipId(1), "Orders", x => x.Id, product, x => x.Id,
+                RelationshipCardinality.Many)
+            .Relationship<Dummy, Dummy>(product, new RelationshipId(2), "Category", x => x.Id, category, x => x.Id,
+                RelationshipCardinality.One)
             .Build()
             .Freeze()
             .CreateSnapshot();
@@ -506,9 +516,9 @@ public sealed class SemanticLexicalResolverTests
         };
 
         var weakDecision = new SemanticLexicalResolver(
-            BuildContract(customerAliasWeight: 20),
-            new FakeLexicalSource(sourceCandidates),
-            minimumAliasWeight: 50)
+                BuildContract(customerAliasWeight: 20),
+                new FakeLexicalSource(sourceCandidates),
+                minimumAliasWeight: 50)
             .Ground("Party");
 
         // Retrieval score alone decided the winner: Customer, not Vendor.
@@ -522,9 +532,9 @@ public sealed class SemanticLexicalResolverTests
         Assert.DoesNotContain(vendor, weakDecision.AliasEvidence.EntityWeights.Keys);
 
         var strongDecision = new SemanticLexicalResolver(
-            BuildContract(customerAliasWeight: 95),
-            new FakeLexicalSource(sourceCandidates),
-            minimumAliasWeight: 50)
+                BuildContract(customerAliasWeight: 95),
+                new FakeLexicalSource(sourceCandidates),
+                minimumAliasWeight: 50)
             .Ground("Party");
 
         // Increasing the winner's alias weight changes only commitment. It
@@ -542,7 +552,8 @@ public sealed class SemanticLexicalResolverTests
         public int Id { get; init; }
     }
 
-    private sealed class FakeLexicalSource(params SemanticLexicalCandidate[] candidates) : ISemanticLexicalCandidateSource
+    private sealed class FakeLexicalSource(params SemanticLexicalCandidate[] candidates)
+        : ISemanticLexicalCandidateSource
     {
         public List<SemanticLexicalRequest> Requests { get; } = [];
 
@@ -615,7 +626,8 @@ public sealed class SemanticLexicalResolverTests
             return [];
         }
 
-        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request, CancellationToken cancellationToken)
+        public IReadOnlyList<SemanticLexicalCandidate> Retrieve(SemanticLexicalRequest request,
+            CancellationToken cancellationToken)
         {
             Thread.Sleep(delay);
             return [];

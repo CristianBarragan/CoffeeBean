@@ -56,7 +56,8 @@ public static class AggregateExecutionStrategyResolver
         if (nodeStrategy == AggregateExecutionStrategy.Default)
             return false;
 
-        if (filter.Aggregate != SemanticFilterAggregate.Count || filter.Field is not null || filter.Predicate is not null)
+        if (filter.Aggregate != SemanticFilterAggregate.Count || filter.Field is not null ||
+            filter.Predicate is not null)
             return false;
 
         return Resolve(filter.Operator, filter.Value) == nodeStrategy;
@@ -66,16 +67,36 @@ public static class AggregateExecutionStrategyResolver
     {
         switch (value)
         {
-            case byte v: result = v; return true;
-            case sbyte v: result = v; return true;
-            case short v: result = v; return true;
-            case ushort v: result = v; return true;
-            case int v: result = v; return true;
-            case uint v: result = v; return true;
-            case long v: result = v; return true;
-            case ulong v when v <= long.MaxValue: result = (long)v; return true;
-            case string v when long.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed): result = parsed; return true;
-            default: result = 0; return false;
+            case byte v:
+                result = v;
+                return true;
+            case sbyte v:
+                result = v;
+                return true;
+            case short v:
+                result = v;
+                return true;
+            case ushort v:
+                result = v;
+                return true;
+            case int v:
+                result = v;
+                return true;
+            case uint v:
+                result = v;
+                return true;
+            case long v:
+                result = v;
+                return true;
+            case ulong v when v <= long.MaxValue:
+                result = (long)v;
+                return true;
+            case string v when long.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed):
+                result = parsed;
+                return true;
+            default:
+                result = 0;
+                return false;
         }
     }
 }

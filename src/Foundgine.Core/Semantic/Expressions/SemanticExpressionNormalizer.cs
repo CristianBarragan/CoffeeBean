@@ -17,14 +17,20 @@ public static class SemanticExpressionNormalizer
         {
             SemanticLogicalExpression logical => NormalizeLogical(logical),
             SemanticUnaryExpression unary => unary with { Operand = Normalize(unary.Operand) },
-            SemanticBinaryExpression binary => binary with { Left = Normalize(binary.Left), Right = Normalize(binary.Right) },
+            SemanticBinaryExpression binary => binary with
+            {
+                Left = Normalize(binary.Left), Right = Normalize(binary.Right)
+            },
             SemanticPathExpression path => path with { Source = Normalize(path.Source) },
             SemanticAggregateExpression aggregate => aggregate with
             {
                 Source = Normalize(aggregate.Source),
                 Argument = aggregate.Argument is null ? null : Normalize(aggregate.Argument)
             },
-            SemanticFunctionExpression function => function with { Arguments = function.Arguments.Select(Normalize).ToArray() },
+            SemanticFunctionExpression function => function with
+            {
+                Arguments = function.Arguments.Select(Normalize).ToArray()
+            },
             _ => expression
         };
     }
@@ -71,7 +77,8 @@ public static class SemanticExpressionNormalizer
         SemanticUnaryExpression x => $"unary:{x.Operator}({Write(x.Operand)})",
         SemanticBinaryExpression x => $"binary:{x.Operator}({Write(x.Left)},{Write(x.Right)})",
         SemanticLogicalExpression x => $"logical:{x.Operator}({string.Join(',', x.Operands.Select(Write))})",
-        SemanticAggregateExpression x => $"aggregate:{x.Aggregate}({Write(x.Source)},{(x.Argument is null ? "" : Write(x.Argument))})",
+        SemanticAggregateExpression x =>
+            $"aggregate:{x.Aggregate}({Write(x.Source)},{(x.Argument is null ? "" : Write(x.Argument))})",
         SemanticFunctionExpression x => $"function:{x.Name}({string.Join(',', x.Arguments.Select(Write))}):{x.Type}",
         _ => throw new InvalidOperationException($"Unsupported semantic expression '{expression.GetType().Name}'.")
     };

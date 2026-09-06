@@ -40,7 +40,8 @@ public sealed class PlanningDependencyBoundaryTests
                 .SelectMany(FlattenTypes)
                 .ToArray();
 
-            Assert.DoesNotContain(members, x => x.Namespace?.StartsWith("Foundgine.Core.Semantic.Metadata", StringComparison.Ordinal) == true);
+            Assert.DoesNotContain(members,
+                x => x.Namespace?.StartsWith("Foundgine.Core.Semantic.Metadata", StringComparison.Ordinal) == true);
         }
     }
 

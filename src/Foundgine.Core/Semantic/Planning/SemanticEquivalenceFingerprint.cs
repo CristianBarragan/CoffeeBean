@@ -46,6 +46,7 @@ public static class SemanticEquivalenceFingerprint
             if (seenFields.Add(field.Value))
                 builder.Append(field.Value).Append(',');
         }
+
         builder.Append("]|");
 
         AppendQueryOptions(builder, node.QueryOptions);
@@ -81,6 +82,7 @@ public static class SemanticEquivalenceFingerprint
                 builder.Append(relationship.Value).Append('.');
             builder.Append(',');
         }
+
         builder.Append("]|");
         AppendFilter(builder, options.Filter);
         builder.Append("]|");
@@ -125,7 +127,8 @@ public static class SemanticEquivalenceFingerprint
                 AppendCanonicalBooleanFilter(builder, or);
                 return;
             default:
-                throw new NotSupportedException($"Cannot establish semantic equivalence for filter '{filter.GetType().Name}'.");
+                throw new NotSupportedException(
+                    $"Cannot establish semantic equivalence for filter '{filter.GetType().Name}'.");
         }
     }
 
@@ -167,6 +170,7 @@ public static class SemanticEquivalenceFingerprint
                 builder.Append(atom).Append(',');
             builder.Append(')');
         }
+
         builder.Append(']');
     }
 
@@ -254,7 +258,9 @@ public static class SemanticEquivalenceFingerprint
                 }
 
                 return aggregate with
-                { Predicate = CanonicalizeAggregateRelationshipPushdown(aggregate.Predicate) };
+                {
+                    Predicate = CanonicalizeAggregateRelationshipPushdown(aggregate.Predicate)
+                };
             }
 
             case SemanticOrFilter or:
@@ -296,17 +302,33 @@ public static class SemanticEquivalenceFingerprint
     {
         switch (value)
         {
-            case byte v: result = v; return true;
-            case sbyte v: result = v; return true;
-            case short v: result = v; return true;
-            case ushort v: result = v; return true;
-            case int v: result = v; return true;
-            case uint v: result = v; return true;
+            case byte v:
+                result = v;
+                return true;
+            case sbyte v:
+                result = v;
+                return true;
+            case short v:
+                result = v;
+                return true;
+            case ushort v:
+                result = v;
+                return true;
+            case int v:
+                result = v;
+                return true;
+            case uint v:
+                result = v;
+                return true;
             case ulong v when v <= long.MaxValue:
                 result = (long)v;
                 return true;
-            case long v: result = v; return true;
-            default: result = 0; return false;
+            case long v:
+                result = v;
+                return true;
+            default:
+                result = 0;
+                return false;
         }
     }
 
@@ -332,8 +354,10 @@ public static class SemanticEquivalenceFingerprint
                         next.Add(combined);
                         if (next.Count > maxTerms) return null;
                     }
+
                     result = next;
                 }
+
                 return result;
             }
             case SemanticOrFilter or:
@@ -346,6 +370,7 @@ public static class SemanticEquivalenceFingerprint
                     result.AddRange(childTerms);
                     if (result.Count > maxTerms) return null;
                 }
+
                 return result;
             }
             default:
@@ -432,6 +457,7 @@ public static class SemanticEquivalenceFingerprint
                 FlattenAuthorization(kind, node.Right, destination);
             return;
         }
+
         destination.Add(node);
     }
 
@@ -482,6 +508,7 @@ public static class SemanticEquivalenceFingerprint
                     AppendValue(builder, item);
                     builder.Append(',');
                 }
+
                 builder.Append(']');
                 break;
             case IFormattable formattable:

@@ -62,7 +62,8 @@ public sealed class HotChocolateMutationAdapter
         GraphQLVariableCoercer.ValidateSuppliedVariables(variables, variableDefinitions);
 
         if (operation.Directives.Count != 0)
-            throw new InvalidOperationException("GraphQL mutation operation directives are not supported by the adapter.");
+            throw new InvalidOperationException(
+                "GraphQL mutation operation directives are not supported by the adapter.");
 
         var fields = operation.SelectionSet.Selections
             .OfType<FieldNode>()
@@ -70,11 +71,13 @@ public sealed class HotChocolateMutationAdapter
             .ToArray();
 
         if (fields.Length != 1)
-            throw new InvalidOperationException("Foundgine GraphQL mutation adapter supports exactly one root mutation field.");
+            throw new InvalidOperationException(
+                "Foundgine GraphQL mutation adapter supports exactly one root mutation field.");
 
         var root = fields[0];
         if (root.Alias is not null)
-            throw new InvalidOperationException("GraphQL mutation root aliases are not supported by the mutation contract.");
+            throw new InvalidOperationException(
+                "GraphQL mutation root aliases are not supported by the mutation contract.");
 
         return AdaptRootField(root, document, variableDefinitions, variables);
     }
@@ -107,7 +110,8 @@ public sealed class HotChocolateMutationAdapter
         GraphQLVariableCoercer.ValidateSuppliedVariables(variables, variableDefinitions);
 
         if (operation.Directives.Count != 0)
-            throw new InvalidOperationException("GraphQL mutation operation directives are not supported by the adapter.");
+            throw new InvalidOperationException(
+                "GraphQL mutation operation directives are not supported by the adapter.");
 
         var fields = operation.SelectionSet.Selections
             .OfType<FieldNode>()
@@ -121,7 +125,11 @@ public sealed class HotChocolateMutationAdapter
         {
             // Not actually a batch - route through the single-field contract so callers
             // that always call the batch method still get the plain, unkeyed behavior.
-            return [new GraphQLMutationBatchItem(fields[0].Name.Value, AdaptRootField(fields[0], document, variableDefinitions, variables))];
+            return
+            [
+                new GraphQLMutationBatchItem(fields[0].Name.Value,
+                    AdaptRootField(fields[0], document, variableDefinitions, variables))
+            ];
         }
 
         var seenKeys = new HashSet<string>(StringComparer.Ordinal);
@@ -137,7 +145,8 @@ public sealed class HotChocolateMutationAdapter
             if (!seenKeys.Add(key))
                 throw new InvalidOperationException($"Duplicate root mutation alias '{key}' in batch document.");
 
-            items.Add(new GraphQLMutationBatchItem(key, AdaptRootField(field, document, variableDefinitions, variables)));
+            items.Add(
+                new GraphQLMutationBatchItem(key, AdaptRootField(field, document, variableDefinitions, variables)));
         }
 
         return items;
@@ -167,7 +176,8 @@ public sealed class HotChocolateMutationAdapter
         IReadOnlyDictionary<string, object?>? variables)
     {
         if (root.Directives.Count != 0)
-            throw new InvalidOperationException("GraphQL mutation directives on the root mutation field are not supported by the adapter.");
+            throw new InvalidOperationException(
+                "GraphQL mutation directives on the root mutation field are not supported by the adapter.");
 
         var (kind, entityName) = ParseOperation(root.Name.Value);
         var entity = FindEntity(entityName);
@@ -236,9 +246,9 @@ public sealed class HotChocolateMutationAdapter
         if (operationName is not null)
         {
             operation = operations.FirstOrDefault(x =>
-                string.Equals(x.Name?.Value, operationName, StringComparison.Ordinal))
-                ?? throw new InvalidOperationException(
-                    $"GraphQL operation '{operationName}' was not found.");
+                            string.Equals(x.Name?.Value, operationName, StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            $"GraphQL operation '{operationName}' was not found.");
         }
         else
         {
@@ -323,9 +333,11 @@ public sealed class HotChocolateMutationAdapter
         return kind switch
         {
             MutationKind.Create => new MutationIntent(entity.Id, kind, input.Fields, null, DefaultReturnFields(entity)),
-            MutationKind.Update => new MutationIntent(entity.Id, kind, input.Fields, input.Filter, DefaultReturnFields(entity)),
+            MutationKind.Update => new MutationIntent(entity.Id, kind, input.Fields, input.Filter,
+                DefaultReturnFields(entity)),
             MutationKind.Delete => new MutationIntent(entity.Id, kind, [], input.Filter, DefaultReturnFields(entity)),
-            MutationKind.Upsert => new UpsertIntent(entity.Id, input.Fields, input.ConflictColumns, DefaultReturnFields(entity)),
+            MutationKind.Upsert => new UpsertIntent(entity.Id, input.Fields, input.ConflictColumns,
+                DefaultReturnFields(entity)),
             _ => throw new InvalidOperationException($"Mutation '{kind}' is not supported.")
         };
     }
@@ -343,13 +355,13 @@ public sealed class HotChocolateMutationAdapter
             {
                 var metadataEntity = _metadata.GetEntity(entity.Id);
                 var metadataField = metadataEntity.EffectiveFields.FirstOrDefault(x => x.Id == semanticField.Id)
-                    ?? throw new InvalidOperationException(
-                        $"Field '{pair.Key}' is not mapped in metadata for '{entity.Name}'.");
+                                    ?? throw new InvalidOperationException(
+                                        $"Field '{pair.Key}' is not mapped in metadata for '{entity.Name}'.");
 
                 var value = pair.Value;
                 var column = metadataField.Column
-                    ?? throw new InvalidOperationException(
-                        $"Field '{pair.Key}' on '{entity.Name}' has no storage column mapping.");
+                             ?? throw new InvalidOperationException(
+                                 $"Field '{pair.Key}' on '{entity.Name}' has no storage column mapping.");
 
                 fields.Add(new MutationFieldValue(
                     column.ColumnId,
@@ -357,8 +369,7 @@ public sealed class HotChocolateMutationAdapter
                 continue;
             }
 
-            var relationship = entity.Relationships.FirstOrDefault(
-                x => NamesEqual(x.Name, pair.Key));
+            var relationship = entity.Relationships.FirstOrDefault(x => NamesEqual(x.Name, pair.Key));
 
             if (relationship is null)
                 throw new InvalidOperationException(
@@ -445,8 +456,8 @@ public sealed class HotChocolateMutationAdapter
 
                     if (field.SelectionSet is not null)
                     {
-                        var relationship = entity.Relationships.FirstOrDefault(
-                            x => NamesEqual(x.Name, field.Name.Value))
+                        var relationship =
+                            entity.Relationships.FirstOrDefault(x => NamesEqual(x.Name, field.Name.Value))
                             ?? throw new InvalidOperationException(
                                 $"Mutation result field '{field.Name.Value}' is not a relationship on '{entity.Name}'.");
 
@@ -468,8 +479,8 @@ public sealed class HotChocolateMutationAdapter
                     }
 
                     var scalar = FindField(entity, field.Name.Value)
-                        ?? throw new InvalidOperationException(
-                            $"Mutation result field '{field.Name.Value}' is not defined on '{entity.Name}'.");
+                                 ?? throw new InvalidOperationException(
+                                     $"Mutation result field '{field.Name.Value}' is not defined on '{entity.Name}'.");
 
                     var scalarResponseName = field.Alias?.Value ?? ToGraphQLName(field.Name.Value);
                     AddMutationField(
@@ -491,6 +502,7 @@ public sealed class HotChocolateMutationAdapter
                             variableDefinitions, fragmentStack);
                         MergeShape(fields, relationships, responseNames, nestedShape);
                     }
+
                     break;
 
                 case FragmentSpreadNode spread:
@@ -559,8 +571,7 @@ public sealed class HotChocolateMutationAdapter
     {
         if (!responseNames.Add(relationship.ResponseName))
         {
-            var existing = relationships.FirstOrDefault(
-                x => x.ResponseName == relationship.ResponseName);
+            var existing = relationships.FirstOrDefault(x => x.ResponseName == relationship.ResponseName);
             if (existing is not null && existing.Relationship == relationship.Relationship)
                 return;
 
@@ -648,13 +659,13 @@ public sealed class HotChocolateMutationAdapter
         foreach (var pair in dictionary)
         {
             var semanticField = FindField(entity, pair.Key)
-                ?? throw new InvalidOperationException(
-                    $"Mutation filter field '{pair.Key}' is not defined on '{entity.Name}'.");
+                                ?? throw new InvalidOperationException(
+                                    $"Mutation filter field '{pair.Key}' is not defined on '{entity.Name}'.");
 
             var metadataEntity = _metadata.GetEntity(entity.Id);
             var metadataField = metadataEntity.EffectiveFields.FirstOrDefault(x => x.Id == semanticField.Id)
-                ?? throw new InvalidOperationException(
-                    $"Filter field '{pair.Key}' is not mapped in metadata for '{entity.Name}'.");
+                                ?? throw new InvalidOperationException(
+                                    $"Filter field '{pair.Key}' is not mapped in metadata for '{entity.Name}'.");
 
             if (pair.Value is IReadOnlyDictionary<string, object?> operators)
             {
@@ -727,16 +738,16 @@ public sealed class HotChocolateMutationAdapter
         return names.Select(name =>
         {
             var field = FindField(entity, name)
-                ?? throw new InvalidOperationException(
-                    $"Conflict field '{name}' is not defined on '{entity.Name}'.");
+                        ?? throw new InvalidOperationException(
+                            $"Conflict field '{name}' is not defined on '{entity.Name}'.");
 
             var metadataField = metadataEntity.EffectiveFields.FirstOrDefault(x => x.Id == field.Id)
-                ?? throw new InvalidOperationException(
-                    $"Conflict field '{name}' has no metadata mapping.");
+                                ?? throw new InvalidOperationException(
+                                    $"Conflict field '{name}' has no metadata mapping.");
 
             return metadataField.Column?.ColumnId
-                ?? throw new InvalidOperationException(
-                    $"Conflict field '{name}' has no storage column.");
+                   ?? throw new InvalidOperationException(
+                       $"Conflict field '{name}' has no storage column.");
         }).ToArray();
     }
 
@@ -799,7 +810,8 @@ public sealed class HotChocolateMutationAdapter
                 return DateTime.Parse(dateTimeText, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
 
             if (type == typeof(DateTimeOffset) && value is string dateTimeOffsetText)
-                return DateTimeOffset.Parse(dateTimeOffsetText, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+                return DateTimeOffset.Parse(dateTimeOffsetText, CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind);
 
             if (type == typeof(DateOnly) && value is string dateOnlyText)
                 return DateOnly.Parse(dateOnlyText, CultureInfo.InvariantCulture);

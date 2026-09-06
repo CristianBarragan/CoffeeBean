@@ -16,13 +16,13 @@ public sealed class MutationAliasTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var adapted = adapter.AdaptWithResultShape("""
-            mutation CreateCustomer {
-              createCustomer(input: { name: "Ada" }) {
-                customerId: id
-                displayName: name
-              }
-            }
-            """);
+                                                   mutation CreateCustomer {
+                                                     createCustomer(input: { name: "Ada" }) {
+                                                       customerId: id
+                                                       displayName: name
+                                                     }
+                                                   }
+                                                   """);
 
         var mutation = Assert.IsType<Foundgine.Core.Semantic.Planning.Mutation.MutationIntent>(adapted.Intent.Mutation);
         Assert.Equal([new FieldId(1), new FieldId(2)], mutation.ReturnFields);
@@ -40,13 +40,13 @@ public sealed class MutationAliasTests
         var (model, registry) = BuildCustomer();
         var adapter = new HotChocolateMutationAdapter(model, registry);
         var adapted = adapter.AdaptWithResultShape("""
-            mutation CreateCustomer {
-              createCustomer(input: { name: "Ada" }) {
-                customerId: id
-                displayName: name
-              }
-            }
-            """);
+                                                   mutation CreateCustomer {
+                                                     createCustomer(input: { name: "Ada" }) {
+                                                       customerId: id
+                                                       displayName: name
+                                                     }
+                                                   }
+                                                   """);
 
         var materialized = new MutationMaterializedNode(
             0,
@@ -87,9 +87,11 @@ public sealed class MutationAliasTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 

@@ -32,7 +32,8 @@ public sealed class ResourceExhaustionPenetrationTests
             new SemanticFieldFilter(new FieldId(1), SemanticFilterOperator.Eq, 3),
             new SemanticFieldFilter(new FieldId(1), SemanticFilterOperator.Eq, 4)
         ]);
-        var request = new SemanticRequest(new EntityId(1), [new SemanticSelection(new FieldId(1), null, [])], new SemanticQueryOptions(Filter: filter));
+        var request = new SemanticRequest(new EntityId(1), [new SemanticSelection(new FieldId(1), null, [])],
+            new SemanticQueryOptions(Filter: filter));
 
         Assert.Throws<InvalidOperationException>(() =>
             SecurityResourceLimitValidator.Validate(request, new SecurityResourceLimits { MaxFilterNodes = 3 }));
@@ -41,7 +42,8 @@ public sealed class ResourceExhaustionPenetrationTests
     [Fact]
     public void Huge_page_size_is_rejected()
     {
-        var request = new SemanticRequest(new EntityId(1), [new SemanticSelection(new FieldId(1), null, [])], new SemanticQueryOptions(Limit: 1_000_000));
+        var request = new SemanticRequest(new EntityId(1), [new SemanticSelection(new FieldId(1), null, [])],
+            new SemanticQueryOptions(Limit: 1_000_000));
 
         Assert.Throws<InvalidOperationException>(() =>
             SecurityResourceLimitValidator.Validate(request, new SecurityResourceLimits { MaxPageSize = 100 }));
@@ -50,7 +52,8 @@ public sealed class ResourceExhaustionPenetrationTests
     [Fact]
     public void Huge_cursor_is_rejected()
     {
-        var request = new SemanticRequest(new EntityId(1), [new SemanticSelection(new FieldId(1), null, [])], new SemanticQueryOptions(After: new string('x', 10_001)));
+        var request = new SemanticRequest(new EntityId(1), [new SemanticSelection(new FieldId(1), null, [])],
+            new SemanticQueryOptions(After: new string('x', 10_001)));
 
         Assert.Throws<InvalidOperationException>(() =>
             SecurityResourceLimitValidator.Validate(request, new SecurityResourceLimits { MaxCursorLength = 100 }));

@@ -179,13 +179,14 @@ public sealed class PostgresBatchedMutationCompiler
             }
 
             sql.Append(" AS __row FROM ")
-               .Append(meta.IsOrdinalAddressable && meta.OrdMapCteName is not null
-                   ? meta.OrdMapCteName
-                   : meta.ResultCteName)
-               .Append(" f");
-
+                .Append(meta.IsOrdinalAddressable && meta.OrdMapCteName is not null
+                    ? meta.OrdMapCteName
+                    : meta.ResultCteName)
+                .Append(" f");
         }
-        sql.Append("\n) __all ORDER BY __grp, CASE WHEN __row ? '__fg_corr' THEN ((__row ->> '__fg_corr')::bigint) END");
+
+        sql.Append(
+            "\n) __all ORDER BY __grp, CASE WHEN __row ? '__fg_corr' THEN ((__row ->> '__fg_corr')::bigint) END");
 
         var rowKeys = new List<BatchedOperationRowKey>(ops.Count);
         for (var opIndex = 0; opIndex < ops.Count; opIndex++)
@@ -460,11 +461,11 @@ public sealed class PostgresBatchedMutationCompiler
         }
 
         sql.Append(src)
-           .Append(" AS (\n  SELECT * FROM unnest(")
-           .Append(string.Join(", ", sourceExpressions))
-           .Append(") WITH ORDINALITY AS s(")
-           .Append(string.Join(", ", sourceAliases.Select(Q)))
-           .Append(", __fg_corr)\n)");
+            .Append(" AS (\n  SELECT * FROM unnest(")
+            .Append(string.Join(", ", sourceExpressions))
+            .Append(") WITH ORDINALITY AS s(")
+            .Append(string.Join(", ", sourceAliases.Select(Q)))
+            .Append(", __fg_corr)\n)");
 
         sql.Append(",\n");
 
@@ -485,10 +486,9 @@ public sealed class PostgresBatchedMutationCompiler
             }
             else
             {
-                var source = priorGroups.FirstOrDefault(
-                    g => g.OpIndexes.Contains(field.Source.SourceOperationIndex))
-                    ?? throw new NotSupportedException(
-                        $"Source operation {field.Source.SourceOperationIndex} is not available to resolve references.");
+                var source = priorGroups.FirstOrDefault(g => g.OpIndexes.Contains(field.Source.SourceOperationIndex))
+                             ?? throw new NotSupportedException(
+                                 $"Source operation {field.Source.SourceOperationIndex} is not available to resolve references.");
 
                 var sourceField = source.ReturnedFieldNames.TryGetValue(
                     field.Source.SourceField,
@@ -499,8 +499,8 @@ public sealed class PostgresBatchedMutationCompiler
                         $"{field.Source.SourceField.Value}.");
 
                 sql.Append("p").Append(column.Value)
-                   .Append(".").Append(Q(sourceField))
-                   .Append(" AS ").Append(Q(name));
+                    .Append(".").Append(Q(sourceField))
+                    .Append(" AS ").Append(Q(name));
             }
         }
 
@@ -519,21 +519,22 @@ public sealed class PostgresBatchedMutationCompiler
             joinAliases[column] = alias;
 
             sql.Append("\n  JOIN ").Append(source.OrdMapCteName)
-               .Append(' ').Append(alias)
-               .Append(" ON ").Append(alias).Append(".__fg_corr = s.")
-               .Append(Q(ResolveColumn(entity, column) + "__fg_corr"));
+                .Append(' ').Append(alias)
+                .Append(" ON ").Append(alias).Append(".__fg_corr = s.")
+                .Append(Q(ResolveColumn(entity, column) + "__fg_corr"));
         }
+
         sql.Append("\n)");
 
         var input = $"g{group.GroupId}_input";
         if (isUpsert)
         {
             sql.Append(",\n").Append(input).Append(" AS (\n  SELECT DISTINCT ON (")
-               .Append(string.Join(", ", conflictNames.Select(Q)))
-               .Append(") * FROM ").Append(resolved)
-               .Append("\n  ORDER BY ")
-               .Append(string.Join(", ", conflictNames.Select(Q)))
-               .Append(", __fg_corr DESC\n)");
+                .Append(string.Join(", ", conflictNames.Select(Q)))
+                .Append(") * FROM ").Append(resolved)
+                .Append("\n  ORDER BY ")
+                .Append(string.Join(", ", conflictNames.Select(Q)))
+                .Append(", __fg_corr DESC\n)");
         }
         else
         {
@@ -543,9 +544,10 @@ public sealed class PostgresBatchedMutationCompiler
         if (isUpsert)
         {
             sql.Append(",\n").Append(keys).Append(" AS (\n  SELECT __fg_corr, ")
-               .Append(string.Join(", ", conflictNames.Select(c => Q(c))))
-               .Append("\n  FROM ").Append(input).Append("\n)");
+                .Append(string.Join(", ", conflictNames.Select(c => Q(c))))
+                .Append("\n  FROM ").Append(input).Append("\n)");
         }
+
         var requestedFields = (group.Template.ReturnFields is { Count: > 0 }
                 ? group.Template.ReturnFields
                 : entity.EffectiveFields.Where(f => f.Column is not null).Select(f => f.Id).ToArray())
@@ -569,32 +571,32 @@ public sealed class PostgresBatchedMutationCompiler
             // persisting a correlation column and without joining RETURNING
             // rows back to the target using a user-visible key.
             sql.Append("  MERGE INTO ")
-               .Append(Table(entity.EffectiveStorageName)).Append(" t\n")
-               .Append("  USING ").Append(input).Append(" r ON FALSE\n")
-               .Append("  WHEN NOT MATCHED THEN INSERT (")
-               .Append(string.Join(", ", columnNames.Select(Q))).Append(") VALUES (")
-               .Append(string.Join(", ", columnNames.Select(c => "r." + Q(c))))
-               .Append(")\n")
-               .Append("  RETURNING r.__fg_corr, ")
-               .Append(string.Join(", ", returnColumns.Select(x =>
-                   "t." + Q(x.ColumnName) + " AS " + Q(x.Alias))));
+                .Append(Table(entity.EffectiveStorageName)).Append(" t\n")
+                .Append("  USING ").Append(input).Append(" r ON FALSE\n")
+                .Append("  WHEN NOT MATCHED THEN INSERT (")
+                .Append(string.Join(", ", columnNames.Select(Q))).Append(") VALUES (")
+                .Append(string.Join(", ", columnNames.Select(c => "r." + Q(c))))
+                .Append(")\n")
+                .Append("  RETURNING r.__fg_corr, ")
+                .Append(string.Join(", ", returnColumns.Select(x =>
+                    "t." + Q(x.ColumnName) + " AS " + Q(x.Alias))));
         }
         else
         {
             sql.Append("  INSERT INTO ")
-               .Append(Table(entity.EffectiveStorageName))
-               .Append(" (").Append(string.Join(", ", columnNames.Select(Q))).Append(")\n")
-               .Append("  SELECT ")
-               .Append(string.Join(", ", columnNames.Select(c => "r." + Q(c))))
-               .Append("\n  FROM ").Append(input).Append(" r");
+                .Append(Table(entity.EffectiveStorageName))
+                .Append(" (").Append(string.Join(", ", columnNames.Select(Q))).Append(")\n")
+                .Append("  SELECT ")
+                .Append(string.Join(", ", columnNames.Select(c => "r." + Q(c))))
+                .Append("\n  FROM ").Append(input).Append(" r");
 
             var updateColumns = columnNames
                 .Where((_, i) => !conflicts.Contains(columns[i]))
                 .ToArray();
 
             sql.Append("\n  ON CONFLICT (")
-               .Append(string.Join(", ", conflictNames.Select(Q)))
-               .Append(") ");
+                .Append(string.Join(", ", conflictNames.Select(Q)))
+                .Append(") ");
 
             if (updateColumns.Length == 0)
             {
@@ -603,11 +605,11 @@ public sealed class PostgresBatchedMutationCompiler
             else
             {
                 sql.Append("DO UPDATE SET ")
-                   .Append(string.Join(", ", updateColumns.Select(c =>
-                       $"{Q(c)} = EXCLUDED.{Q(c)}")))
-                   .Append("\n  WHERE ")
-                   .Append(string.Join(" OR ", updateColumns.Select(c =>
-                       $"{Table(entity.EffectiveStorageName)}.{Q(c)} IS DISTINCT FROM EXCLUDED.{Q(c)}")));
+                    .Append(string.Join(", ", updateColumns.Select(c =>
+                        $"{Q(c)} = EXCLUDED.{Q(c)}")))
+                    .Append("\n  WHERE ")
+                    .Append(string.Join(" OR ", updateColumns.Select(c =>
+                        $"{Table(entity.EffectiveStorageName)}.{Q(c)} IS DISTINCT FROM EXCLUDED.{Q(c)}")));
             }
         }
 
@@ -617,9 +619,9 @@ public sealed class PostgresBatchedMutationCompiler
             // upserts. Unlike MERGE, INSERT RETURNING cannot see r.__fg_corr,
             // so the existing key-based ord-map is retained for this path.
             sql.Append("\n  RETURNING ")
-               .Append(string.Join(", ", returnColumns.Select(x =>
-                   Q(x.ColumnName) + " AS " + Q(x.Alias))))
-               .Append("\n)");
+                .Append(string.Join(", ", returnColumns.Select(x =>
+                    Q(x.ColumnName) + " AS " + Q(x.Alias))))
+                .Append("\n)");
         }
         else
         {
@@ -631,23 +633,23 @@ public sealed class PostgresBatchedMutationCompiler
             sql.Append(",\n").Append(final).Append(" AS (\n  SELECT * FROM ").Append(ins);
 
             sql.Append("\n  UNION ALL\n  SELECT ")
-               .Append(string.Join(", ", returnColumns.Select(x =>
-                   "t." + Q(x.ColumnName) + " AS " + Q(x.Alias))))
-               .Append("\n  FROM ").Append(Table(entity.EffectiveStorageName)).Append(" t\n")
-               .Append("  JOIN ").Append(keys).Append(" k ON ")
-               .Append(string.Join(" AND ", conflictNames.Select(c =>
-                   $"t.{Q(c)} IS NOT DISTINCT FROM k.{Q(c)}")))
-               .Append("\n  WHERE NOT EXISTS (SELECT 1 FROM ").Append(ins).Append(" i WHERE ")
-               .Append(string.Join(" AND ", conflictNames.Select(c =>
-                   $"i.{Q(ReturnAliasForColumn(returnColumns, c))} IS NOT DISTINCT FROM k.{Q(c)}")))
-               .Append(")\n)");
+                .Append(string.Join(", ", returnColumns.Select(x =>
+                    "t." + Q(x.ColumnName) + " AS " + Q(x.Alias))))
+                .Append("\n  FROM ").Append(Table(entity.EffectiveStorageName)).Append(" t\n")
+                .Append("  JOIN ").Append(keys).Append(" k ON ")
+                .Append(string.Join(" AND ", conflictNames.Select(c =>
+                    $"t.{Q(c)} IS NOT DISTINCT FROM k.{Q(c)}")))
+                .Append("\n  WHERE NOT EXISTS (SELECT 1 FROM ").Append(ins).Append(" i WHERE ")
+                .Append(string.Join(" AND ", conflictNames.Select(c =>
+                    $"i.{Q(ReturnAliasForColumn(returnColumns, c))} IS NOT DISTINCT FROM k.{Q(c)}")))
+                .Append(")\n)");
 
             sql.Append(",\n").Append(ordmap).Append(" AS (\n  SELECT k.__fg_corr, f.*\n")
-               .Append("  FROM ").Append(keys).Append(" k\n")
-               .Append("  JOIN ").Append(final).Append(" f ON ")
-               .Append(string.Join(" AND ", conflictNames.Select(c =>
-                   $"k.{Q(c)} IS NOT DISTINCT FROM f.{Q(ReturnAliasForColumn(returnColumns, c))}")))
-               .Append("\n)");
+                .Append("  FROM ").Append(keys).Append(" k\n")
+                .Append("  JOIN ").Append(final).Append(" f ON ")
+                .Append(string.Join(" AND ", conflictNames.Select(c =>
+                    $"k.{Q(c)} IS NOT DISTINCT FROM f.{Q(ReturnAliasForColumn(returnColumns, c))}")))
+                .Append("\n)");
         }
         else
         {
@@ -655,7 +657,7 @@ public sealed class PostgresBatchedMutationCompiler
             // post-DML join is required, and no user-visible column is used as
             // a correlation surrogate.
             sql.Append(",\n").Append(final).Append(" AS (SELECT * FROM ").Append(ins).Append(")")
-               .Append(",\n").Append(ordmap).Append(" AS (SELECT * FROM ").Append(final).Append(")");
+                .Append(",\n").Append(ordmap).Append(" AS (SELECT * FROM ").Append(final).Append(")");
         }
 
         return new GroupOutputMeta(
@@ -709,8 +711,8 @@ public sealed class PostgresBatchedMutationCompiler
             rewritten += " RETURNING 1 AS \"__affected\"";
 
         sql.Append($"g{group.GroupId}_op AS (\n  ")
-           .Append(rewritten)
-           .Append("\n)");
+            .Append(rewritten)
+            .Append("\n)");
 
         parameters.AddRange(single.Parameters.Select(p =>
             p with { Name = "p" + (offset + int.Parse(p.Name[1..])) }));
@@ -730,9 +732,9 @@ public sealed class PostgresBatchedMutationCompiler
         {
             var ordmap = $"g{group.GroupId}_ordmap";
             sql.Append(",\n").Append(ordmap)
-               .Append(" AS (SELECT 1 AS __fg_corr, f.* FROM ")
-               .Append(resultCte)
-               .Append(" f LIMIT 1)");
+                .Append(" AS (SELECT 1 AS __fg_corr, f.* FROM ")
+                .Append(resultCte)
+                .Append(" f LIMIT 1)");
 
             return new GroupOutputMeta(
                 group.GroupId,
@@ -765,7 +767,7 @@ public sealed class PostgresBatchedMutationCompiler
         foreach (var fieldId in requestedFields)
         {
             var field = entity.EffectiveFields.FirstOrDefault(f => f.Id == fieldId)
-                ?? throw new InvalidOperationException($"Unknown return field '{fieldId.Value}'.");
+                        ?? throw new InvalidOperationException($"Unknown return field '{fieldId.Value}'.");
             if (field.Column is null)
                 throw new InvalidOperationException($"Return field '{field.Name}' has no storage column.");
 
@@ -802,6 +804,7 @@ public sealed class PostgresBatchedMutationCompiler
             if (field is not null)
                 result[fieldId] = field.ClrType;
         }
+
         return result;
     }
 
@@ -830,6 +833,7 @@ public sealed class PostgresBatchedMutationCompiler
             if (!seen.Add(key))
                 return true;
         }
+
         return false;
     }
 
@@ -922,10 +926,12 @@ public sealed class PostgresBatchedMutationCompiler
                 {
                     if (dependency.SourceOperationIndex < 0 ||
                         dependency.SourceOperationIndex >= count)
-                        throw new InvalidOperationException("Mutation dependency references an invalid source operation.");
+                        throw new InvalidOperationException(
+                            "Mutation dependency references an invalid source operation.");
 
                     max = Math.Max(max, Visit(dependency.SourceOperationIndex) + 1);
                 }
+
                 level[index] = max;
             }
 
@@ -952,7 +958,7 @@ public sealed class PostgresBatchedMutationCompiler
         string.Join(".",
             storageName.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Select(Q));
-    
+
     private static int GroupOrdinal(IReadOnlyList<int> operationIndexes, int operationIndex)
     {
         for (var i = 0; i < operationIndexes.Count; i++)

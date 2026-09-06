@@ -15,7 +15,8 @@ namespace Foundgine.Providers.Storage.Sql;
 /// Compiles the provider-independent Execution IR into SQL, including
 /// filtering, ordering, aggregation, and cursor pagination.
 /// </summary>
-public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+    IProviderSecurityConformanceEvaluator
 {
     private readonly IMetadataProvider _metadata;
 
@@ -129,16 +130,16 @@ public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProvi
                 orderNode = ResolveOrderParentNode(root.Node, term.EffectivePath);
                 orderEntity = _metadata.GetEntity(_metadata.GetRelationship(term.EffectivePath[0]).Target);
                 field = orderEntity.EffectiveFields.FirstOrDefault(x => x.Id == term.Field)
-                    ?? throw new InvalidOperationException(
-                        $"Unknown aggregate order field '{term.Field}' on '{orderEntity.Name}'.");
+                        ?? throw new InvalidOperationException(
+                            $"Unknown aggregate order field '{term.Field}' on '{orderEntity.Name}'.");
             }
             else
             {
                 orderNode = ResolveOrderNode(root.Node, term.EffectivePath);
                 orderEntity = _metadata.GetEntity(orderNode.EntityId);
                 field = orderEntity.EffectiveFields.FirstOrDefault(x => x.Id == term.Field)
-                    ?? throw new InvalidOperationException(
-                        $"Unknown order field '{term.Field}' on '{orderEntity.Name}'.");
+                        ?? throw new InvalidOperationException(
+                            $"Unknown order field '{term.Field}' on '{orderEntity.Name}'.");
             }
 
             if (!term.IsAggregate && field.Column is null)
@@ -317,16 +318,16 @@ public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProvi
         ICollection<SqlColumnBinding> bindings)
     {
         var field = entity.EffectiveFields.FirstOrDefault(x => x.Id == fieldId)
-            ?? throw new InvalidOperationException(
-                $"Unknown field '{fieldId}' on entity '{entity.Name}'.");
+                    ?? throw new InvalidOperationException(
+                        $"Unknown field '{fieldId}' on entity '{entity.Name}'.");
 
         if (field.Column is null)
             throw new InvalidOperationException(
                 $"Field '{entity.Name}.{field.Name}' has no storage column mapping.");
 
         var column = entity.Columns.FirstOrDefault(x => x.Id == field.Column.ColumnId)
-            ?? throw new InvalidOperationException(
-                $"Field '{entity.Name}.{field.Name}' references a missing column '{field.Column.ColumnId}'.");
+                     ?? throw new InvalidOperationException(
+                         $"Field '{entity.Name}.{field.Name}' references a missing column '{field.Column.ColumnId}'.");
 
         var resultName = $"__fg_{node.Id}_{field.Name}";
         select.Add(
@@ -388,8 +389,8 @@ public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProvi
                 $"Order field '{entity.Name}.{field.Name}' has no storage column mapping.");
 
         var column = entity.Columns.FirstOrDefault(x => x.Id == field.Column.ColumnId)
-            ?? throw new InvalidOperationException(
-                $"Order field '{entity.Name}.{field.Name}' references a missing column.");
+                     ?? throw new InvalidOperationException(
+                         $"Order field '{entity.Name}.{field.Name}' references a missing column.");
 
         var resultName = $"__fg_cursor_{node.Id}_{field.Name}";
         var alreadySelected = bindings.Any(x =>
@@ -439,13 +440,14 @@ public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProvi
                 $"Entity '{entity.Name}' has no primary-key metadata required for cursor pagination.");
 
         var primaryKeyField = entity.EffectiveFields.FirstOrDefault(f => f.Column == entity.PrimaryKey)
-            ?? throw new InvalidOperationException(
-                $"Entity '{entity.Name}' primary key is not mapped to a semantic field.");
+                              ?? throw new InvalidOperationException(
+                                  $"Entity '{entity.Name}' primary key is not mapped to a semantic field.");
 
         // FieldId is not globally sufficient to identify an ordering term. A field
         // with the same semantic identity can occur on a related path. Cursor
         // pagination for this entity requires the primary key at the root path.
-        if (!result.Any(x => x.IsRootField && x.Aggregate == SemanticOrderAggregate.None && x.Field == primaryKeyField.Id))
+        if (!result.Any(x =>
+                x.IsRootField && x.Aggregate == SemanticOrderAggregate.None && x.Field == primaryKeyField.Id))
             result.Add(new SemanticOrderTerm(primaryKeyField.Id, SemanticSortDirection.Asc));
 
         return result;
@@ -501,8 +503,8 @@ public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProvi
                 $"Order field '{term.Entity.Name}.{field.Name}' has no storage column mapping.");
 
         var column = term.Entity.Columns.FirstOrDefault(x => x.Id == field.Column.ColumnId)
-            ?? throw new InvalidOperationException(
-                $"Order field '{term.Entity.Name}.{field.Name}' references a missing column.");
+                     ?? throw new InvalidOperationException(
+                         $"Order field '{term.Entity.Name}.{field.Name}' references a missing column.");
 
         return $"{QuoteIdentifier(term.Alias)}.{QuoteIdentifier(column.EffectiveStorageName)}";
     }
@@ -528,12 +530,14 @@ public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProvi
         var sourceReference = relationship.SourceKey;
 
         var targetColumn = targetEntity.Columns.FirstOrDefault(c => c.Id == targetReference.ColumnId)
-            ?? throw new InvalidOperationException($"Target entity '{targetEntity.Name}' has no join column '{targetReference.ColumnId}'.");
+                           ?? throw new InvalidOperationException(
+                               $"Target entity '{targetEntity.Name}' has no join column '{targetReference.ColumnId}'.");
         var sourceColumn = sourceEntity.Columns.FirstOrDefault(c => c.Id == sourceReference.ColumnId)
-            ?? throw new InvalidOperationException($"Source entity '{sourceEntity.Name}' has no join column '{sourceReference.ColumnId}'.");
+                           ?? throw new InvalidOperationException(
+                               $"Source entity '{sourceEntity.Name}' has no join column '{sourceReference.ColumnId}'.");
 
         var correlation = $"{QuoteIdentifier(targetAlias)}.{QuoteIdentifier(targetColumn.EffectiveStorageName)} = " +
-                         $"{QuoteIdentifier(aliases[sourceNode.Id])}.{QuoteIdentifier(sourceColumn.EffectiveStorageName)}";
+                          $"{QuoteIdentifier(aliases[sourceNode.Id])}.{QuoteIdentifier(sourceColumn.EffectiveStorageName)}";
 
         string aggregate;
         if (term.Aggregate == SemanticOrderAggregate.Count)
@@ -543,15 +547,19 @@ public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProvi
         else
         {
             if (field.Column is null)
-                throw new InvalidOperationException($"Aggregate field '{targetEntity.Name}.{field.Name}' has no storage column mapping.");
+                throw new InvalidOperationException(
+                    $"Aggregate field '{targetEntity.Name}.{field.Name}' has no storage column mapping.");
 
             var valueColumn = targetEntity.Columns.FirstOrDefault(c => c.Id == field.Column.ColumnId)
-                ?? throw new InvalidOperationException($"Aggregate field '{targetEntity.Name}.{field.Name}' references a missing column.");
+                              ?? throw new InvalidOperationException(
+                                  $"Aggregate field '{targetEntity.Name}.{field.Name}' references a missing column.");
 
-            aggregate = $"{(term.Aggregate == SemanticOrderAggregate.Min ? "MIN" : "MAX")}({QuoteIdentifier(targetAlias)}.{QuoteIdentifier(valueColumn.EffectiveStorageName)})";
+            aggregate =
+                $"{(term.Aggregate == SemanticOrderAggregate.Min ? "MIN" : "MAX")}({QuoteIdentifier(targetAlias)}.{QuoteIdentifier(valueColumn.EffectiveStorageName)})";
         }
 
-        return $"(SELECT {aggregate} FROM {QuoteStorageName(targetEntity.EffectiveStorageName)} {QuoteIdentifier(targetAlias)} WHERE {correlation})";
+        return
+            $"(SELECT {aggregate} FROM {QuoteStorageName(targetEntity.EffectiveStorageName)} {QuoteIdentifier(targetAlias)} WHERE {correlation})";
     }
 
     private static string AddCursorParameter(
@@ -605,8 +613,8 @@ public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProvi
         {
             var relationshipId = path[i];
             current = current.Children.FirstOrDefault(x => x.ViaRelationship == relationshipId)
-                ?? throw new InvalidOperationException(
-                    $"Order path relationship '{relationshipId}' is not part of the execution IR.");
+                      ?? throw new InvalidOperationException(
+                          $"Order path relationship '{relationshipId}' is not part of the execution IR.");
         }
 
         return current;
@@ -618,9 +626,9 @@ public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProvi
         foreach (var relationshipId in path)
         {
             current = current.Children.FirstOrDefault(x => x.ViaRelationship == relationshipId)
-                ?? throw new InvalidOperationException(
-                    $"Order path relationship '{relationshipId}' is not part of the execution IR. " +
-                    "The relationship must be selected before it can be used for ordering.");
+                      ?? throw new InvalidOperationException(
+                          $"Order path relationship '{relationshipId}' is not part of the execution IR. " +
+                          "The relationship must be selected before it can be used for ordering.");
         }
 
         return current;
@@ -655,8 +663,8 @@ public sealed class SqlCompiler : IProviderPlanCompiler, ISecurityInvariantProvi
 
         var entity = _metadata.GetEntity(reference.EntityId);
         var column = entity.Columns.FirstOrDefault(x => x.Id == reference.ColumnId)
-            ?? throw new InvalidOperationException(
-                $"Entity '{entity.Name}' has no column '{reference.ColumnId}'.");
+                     ?? throw new InvalidOperationException(
+                         $"Entity '{entity.Name}' has no column '{reference.ColumnId}'.");
 
         return $"{QuoteIdentifier(aliases[node.Id])}.{QuoteIdentifier(column.EffectiveStorageName)}";
     }

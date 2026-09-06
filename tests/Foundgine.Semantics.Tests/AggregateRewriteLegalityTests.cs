@@ -55,7 +55,8 @@ public sealed class AggregateRewriteLegalityTests
             SemanticFilterAggregate.Count,
             SemanticFilterAggregate.Min);
 
-        Assert.Contains(result.Violations, v => v.Contains("duplicate sensitivity", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(result.Violations,
+            v => v.Contains("duplicate sensitivity", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

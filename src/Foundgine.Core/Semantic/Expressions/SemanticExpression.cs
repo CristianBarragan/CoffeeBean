@@ -21,7 +21,8 @@ public sealed record SemanticFieldReferenceExpression(FieldId Field, SemanticTyp
     public override SemanticType ResultType => Type;
 }
 
-public sealed record SemanticRelationshipReferenceExpression(RelationshipId Relationship, SemanticType Type) : SemanticExpression
+public sealed record SemanticRelationshipReferenceExpression(RelationshipId Relationship, SemanticType Type)
+    : SemanticExpression
 {
     public override SemanticType ResultType => Type;
 }
@@ -35,17 +36,24 @@ public sealed record SemanticPathExpression(
     public override SemanticType ResultType => Type;
 }
 
-public sealed record SemanticUnaryExpression(string Operator, SemanticExpression Operand, SemanticType Type) : SemanticExpression
+public sealed record SemanticUnaryExpression(string Operator, SemanticExpression Operand, SemanticType Type)
+    : SemanticExpression
 {
     public override SemanticType ResultType => Type;
 }
 
-public sealed record SemanticBinaryExpression(string Operator, SemanticExpression Left, SemanticExpression Right, SemanticType Type) : SemanticExpression
+public sealed record SemanticBinaryExpression(
+    string Operator,
+    SemanticExpression Left,
+    SemanticExpression Right,
+    SemanticType Type) : SemanticExpression
 {
     public override SemanticType ResultType => Type;
 }
 
-public sealed record SemanticLogicalExpression(SemanticLogicalOperator Operator, IReadOnlyList<SemanticExpression> Operands) : SemanticExpression
+public sealed record SemanticLogicalExpression(
+    SemanticLogicalOperator Operator,
+    IReadOnlyList<SemanticExpression> Operands) : SemanticExpression
 {
     public override SemanticType ResultType => new SemanticType.Scalar(SemanticScalarKind.Boolean);
 }
@@ -58,7 +66,8 @@ public sealed record SemanticAggregateExpression(
     public override SemanticType ResultType => Aggregate switch
     {
         SemanticAggregateExpressionKind.Count => new SemanticType.Scalar(SemanticScalarKind.Int64),
-        SemanticAggregateExpressionKind.Min or SemanticAggregateExpressionKind.Max or SemanticAggregateExpressionKind.Sum or SemanticAggregateExpressionKind.Average
+        SemanticAggregateExpressionKind.Min or SemanticAggregateExpressionKind.Max
+            or SemanticAggregateExpressionKind.Sum or SemanticAggregateExpressionKind.Average
             => Argument?.ResultType ?? Source.ResultType,
         _ => throw new ArgumentOutOfRangeException()
     };
@@ -72,8 +81,20 @@ public sealed record SemanticFunctionExpression(
     public override SemanticType ResultType => Type;
 }
 
-public enum SemanticLogicalOperator : byte { And, Or }
-public enum SemanticAggregateExpressionKind : byte { Count, Min, Max, Sum, Average }
+public enum SemanticLogicalOperator : byte
+{
+    And,
+    Or
+}
+
+public enum SemanticAggregateExpressionKind : byte
+{
+    Count,
+    Min,
+    Max,
+    Sum,
+    Average
+}
 
 public static class SemanticExpressionTypes
 {

@@ -23,14 +23,17 @@ public sealed record SemanticOrderTerm(
                 : new SemanticPathExpression(source, EffectivePath, fieldType),
             SemanticOrderAggregate.Count => new SemanticAggregateExpression(
                 SemanticAggregateExpressionKind.Count,
-                new SemanticPathExpression(source, EffectivePath, new SemanticType.Collection(new SemanticType.Object("Target")))),
+                new SemanticPathExpression(source, EffectivePath,
+                    new SemanticType.Collection(new SemanticType.Object("Target")))),
             SemanticOrderAggregate.Min => new SemanticAggregateExpression(
                 SemanticAggregateExpressionKind.Min,
-                new SemanticPathExpression(source, EffectivePath, new SemanticType.Collection(new SemanticType.Object("Target"))),
+                new SemanticPathExpression(source, EffectivePath,
+                    new SemanticType.Collection(new SemanticType.Object("Target"))),
                 new SemanticFieldReferenceExpression(Field, fieldType)),
             SemanticOrderAggregate.Max => new SemanticAggregateExpression(
                 SemanticAggregateExpressionKind.Max,
-                new SemanticPathExpression(source, EffectivePath, new SemanticType.Collection(new SemanticType.Object("Target"))),
+                new SemanticPathExpression(source, EffectivePath,
+                    new SemanticType.Collection(new SemanticType.Object("Target"))),
                 new SemanticFieldReferenceExpression(Field, fieldType)),
             _ => throw new ArgumentOutOfRangeException()
         };
@@ -45,15 +48,25 @@ public sealed record SemanticFieldOrderExpression(
     FieldId Field,
     SemanticType Type,
     SemanticSortDirection Direction) : SemanticOrderExpression(
-        new SemanticFieldReferenceExpression(Field, Type), Direction);
+    new SemanticFieldReferenceExpression(Field, Type), Direction);
 
 public sealed record SemanticAggregateOrderExpression(
     SemanticExpression Source,
     SemanticAggregateExpressionKind Aggregate,
     SemanticExpression? Argument,
     SemanticSortDirection Direction) : SemanticOrderExpression(
-        new SemanticAggregateExpression(Aggregate, Source, Argument), Direction);
+    new SemanticAggregateExpression(Aggregate, Source, Argument), Direction);
 
-public enum SemanticSortDirection : byte { Asc, Desc }
+public enum SemanticSortDirection : byte
+{
+    Asc,
+    Desc
+}
 
-public enum SemanticOrderAggregate : byte { None, Count, Min, Max }
+public enum SemanticOrderAggregate : byte
+{
+    None,
+    Count,
+    Min,
+    Max
+}

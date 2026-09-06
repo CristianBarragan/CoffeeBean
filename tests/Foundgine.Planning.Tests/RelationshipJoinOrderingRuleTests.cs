@@ -12,8 +12,10 @@ public sealed class RelationshipJoinOrderingRuleTests
     public void OrdersRelationshipTraversalsWithoutReorderingLogicalChildren()
     {
         var first = Node(2, 20, RelationshipCardinality.Many, filter: null);
-        var second = Node(3, 10, RelationshipCardinality.One, filter: new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.Eq, 1));
-        var root = new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [first, second]);
+        var second = Node(3, 10, RelationshipCardinality.One,
+            filter: new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.Eq, 1));
+        var root = new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null,
+            [first, second]);
         var before = new SemanticPlan(root);
 
         var after = new RelationshipJoinOrderingRule().Apply(before);
@@ -28,7 +30,8 @@ public sealed class RelationshipJoinOrderingRuleTests
     public void DoesNotApplyWhenFewerThanTwoEligibleRelationshipsExist()
     {
         var child = Node(2, 20, RelationshipCardinality.Many, null);
-        var plan = new SemanticPlan(new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [child]));
+        var plan = new SemanticPlan(new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)],
+            null, null, [child]));
 
         var after = new RelationshipJoinOrderingRule().Apply(plan);
 
@@ -40,7 +43,8 @@ public sealed class RelationshipJoinOrderingRuleTests
     {
         var first = Node(2, 20, RelationshipCardinality.Many, null);
         var second = Node(3, 10, RelationshipCardinality.One, null);
-        var before = new SemanticPlan(new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [first, second]));
+        var before = new SemanticPlan(new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1),
+            [new FieldId(1)], null, null, [first, second]));
         var after = new RelationshipJoinOrderingRule().Apply(before);
 
         var proof = SemanticEquivalenceProof.Create(before, after);
@@ -53,7 +57,8 @@ public sealed class RelationshipJoinOrderingRuleTests
     {
         var first = Node(2, 20, RelationshipCardinality.Many, null);
         var second = Node(3, 10, RelationshipCardinality.One, null);
-        var before = new SemanticPlan(new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [first, second]));
+        var before = new SemanticPlan(new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1),
+            [new FieldId(1)], null, null, [first, second]));
         var rule = new RelationshipJoinOrderingRule();
 
         var once = rule.Apply(before);
@@ -62,7 +67,8 @@ public sealed class RelationshipJoinOrderingRuleTests
         Assert.Same(once, twice);
     }
 
-    private static SemanticPlanNode Node(int id, ulong relationshipId, RelationshipCardinality cardinality, SemanticFilterExpression? filter)
+    private static SemanticPlanNode Node(int id, ulong relationshipId, RelationshipCardinality cardinality,
+        SemanticFilterExpression? filter)
     {
         var options = filter is null ? null : new SemanticQueryOptions(Filter: filter);
         return new SemanticPlanNode(
@@ -77,5 +83,3 @@ public sealed class RelationshipJoinOrderingRuleTests
             RelationshipCardinality: cardinality);
     }
 }
-
-

@@ -6,7 +6,8 @@ internal static class SemanticValueValidator
     {
         if (value is null) return;
 
-        if (value is System.Collections.IEnumerable values && value is not string && operation.Equals("IN", StringComparison.OrdinalIgnoreCase))
+        if (value is System.Collections.IEnumerable values && value is not string &&
+            operation.Equals("IN", StringComparison.OrdinalIgnoreCase))
         {
             foreach (var item in values)
                 ValidateSingle(item, field, operation);
@@ -40,6 +41,7 @@ internal static class SemanticValueValidator
                 a is SemanticScalarKind.Int32 or SemanticScalarKind.Int64 or SemanticScalarKind.Decimal)
                 return true;
         }
+
         return false;
     }
 }

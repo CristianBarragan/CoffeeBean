@@ -22,7 +22,8 @@ public sealed class SecurityExecutionContextProviderTests
     private sealed class FixedProvider(Foundgine.Core.Semantic.Security.Execution.SecurityExecutionContext? context)
         : ISecurityExecutionContextProvider
     {
-        public Foundgine.Core.Semantic.Security.Execution.SecurityExecutionContext? GetSecurityExecutionContext() => context;
+        public Foundgine.Core.Semantic.Security.Execution.SecurityExecutionContext? GetSecurityExecutionContext() =>
+            context;
     }
 
     [Fact]
@@ -41,8 +42,8 @@ public sealed class SecurityExecutionContextProviderTests
     {
         var provider = new FixedProvider(null);
 
-        var ex = Assert.Throws<UnauthorizedAccessException>(
-            () => provider.RequireSecurityExecutionContext("GraphQL", "execution"));
+        var ex = Assert.Throws<UnauthorizedAccessException>(() =>
+            provider.RequireSecurityExecutionContext("GraphQL", "execution"));
 
         Assert.Contains("GraphQL", ex.Message, StringComparison.Ordinal);
         Assert.Contains("execution", ex.Message, StringComparison.Ordinal);
@@ -54,10 +55,10 @@ public sealed class SecurityExecutionContextProviderTests
     {
         var provider = new FixedProvider(null);
 
-        var mcpEx = Assert.Throws<UnauthorizedAccessException>(
-            () => provider.RequireSecurityExecutionContext("MCP", "capability discovery"));
-        var graphQlEx = Assert.Throws<UnauthorizedAccessException>(
-            () => provider.RequireSecurityExecutionContext("GraphQL", "mutation execution"));
+        var mcpEx = Assert.Throws<UnauthorizedAccessException>(() =>
+            provider.RequireSecurityExecutionContext("MCP", "capability discovery"));
+        var graphQlEx = Assert.Throws<UnauthorizedAccessException>(() =>
+            provider.RequireSecurityExecutionContext("GraphQL", "mutation execution"));
 
         Assert.NotEqual(mcpEx.Message, graphQlEx.Message);
         Assert.Contains("capability discovery", mcpEx.Message, StringComparison.Ordinal);
@@ -69,8 +70,7 @@ public sealed class SecurityExecutionContextProviderTests
     {
         ISecurityExecutionContextProvider? provider = null;
 
-        Assert.Throws<ArgumentNullException>(
-            () => provider!.RequireSecurityExecutionContext("GraphQL", "execution"));
+        Assert.Throws<ArgumentNullException>(() => provider!.RequireSecurityExecutionContext("GraphQL", "execution"));
     }
 
     [Theory]
@@ -81,20 +81,20 @@ public sealed class SecurityExecutionContextProviderTests
     {
         var provider = new FixedProvider(CreateContext());
 
-        Assert.Throws<ArgumentException>(
-            () => provider.RequireSecurityExecutionContext(transportName!, "execution"));
+        Assert.Throws<ArgumentException>(() => provider.RequireSecurityExecutionContext(transportName!, "execution"));
     }
 
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("  ")]
-    public void RequireSecurityExecutionContext_throws_ArgumentException_for_blank_operationDescription(string? operationDescription)
+    public void RequireSecurityExecutionContext_throws_ArgumentException_for_blank_operationDescription(
+        string? operationDescription)
     {
         var provider = new FixedProvider(CreateContext());
 
-        Assert.Throws<ArgumentException>(
-            () => provider.RequireSecurityExecutionContext("GraphQL", operationDescription!));
+        Assert.Throws<ArgumentException>(() =>
+            provider.RequireSecurityExecutionContext("GraphQL", operationDescription!));
     }
 }
 
@@ -142,18 +142,16 @@ public sealed class DelegateSecurityExecutionContextProviderTests
     [Fact]
     public void Constructor_throws_ArgumentNullException_for_null_factory()
     {
-        Assert.Throws<ArgumentNullException>(
-            () => new DelegateSecurityExecutionContextProvider(null!));
+        Assert.Throws<ArgumentNullException>(() => new DelegateSecurityExecutionContextProvider(null!));
     }
 
     [Fact]
     public void Exceptions_from_the_factory_are_not_swallowed()
     {
-        var provider = new DelegateSecurityExecutionContextProvider(
-            () => throw new InvalidOperationException("authentication middleware failed"));
+        var provider = new DelegateSecurityExecutionContextProvider(() =>
+            throw new InvalidOperationException("authentication middleware failed"));
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => provider.GetSecurityExecutionContext());
+        var ex = Assert.Throws<InvalidOperationException>(() => provider.GetSecurityExecutionContext());
         Assert.Equal("authentication middleware failed", ex.Message);
     }
 }

@@ -23,7 +23,8 @@ public sealed class SemanticModelFingerprintTests
             .Entity<TestProduct>(EntityId.Create("Product"), "Product", e => e
                 .Identity(x => x.Id)
                 .Field(x => x.Name)
-                .Field(x => x.Price, capabilities: SemanticFieldCapabilities.Default | SemanticFieldCapabilities.Writable))
+                .Field(x => x.Price,
+                    capabilities: SemanticFieldCapabilities.Default | SemanticFieldCapabilities.Writable))
             .Build();
 
         Assert.NotEqual(first.ContractFingerprint, changed.ContractFingerprint);
@@ -71,7 +72,8 @@ public sealed class SemanticModelFingerprintTests
             .Build();
 
         Assert.NotEqual(first.ContractFingerprint, changed.ContractFingerprint);
-        Assert.NotEqual(SemanticVersionSet.For(first).SemanticModelVersion, SemanticVersionSet.For(changed).SemanticModelVersion);
+        Assert.NotEqual(SemanticVersionSet.For(first).SemanticModelVersion,
+            SemanticVersionSet.For(changed).SemanticModelVersion);
     }
 
     [Fact]
@@ -166,5 +168,3 @@ public sealed class SemanticModelFingerprintTests
         public string Name { get; init; } = "";
     }
 }
-
-

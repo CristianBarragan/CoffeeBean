@@ -31,7 +31,9 @@ public sealed class ReadIntentCompiler
     {
         ArgumentNullException.ThrowIfNull(intent);
         var request = Compile(intent);
-        var contract = _contract ?? (_model ?? throw new InvalidOperationException("No semantic contract is configured.")).Freeze().CreateSnapshot();
+        var contract = _contract ??
+                       (_model ?? throw new InvalidOperationException("No semantic contract is configured.")).Freeze()
+                       .CreateSnapshot();
         var graph = new SemanticRequestResolver(contract).Resolve(request);
         var operationGraph = SemanticOperationGraph.Create(SemanticOperationCompiler.Compile(graph));
         SemanticOperationGraphSafetyValidator.Validate(operationGraph, limits ?? new SecurityResourceLimits());
@@ -63,13 +65,17 @@ public sealed class ReadIntentCompiler
     public SemanticOperationGraph ResolveDocumentGraph(SemanticIntentDocument document)
     {
         var resolution = ResolveDocument(document);
-        var contract = _contract ?? (_model ?? throw new InvalidOperationException("No semantic contract is configured.")).Freeze().CreateSnapshot();
+        var contract = _contract ??
+                       (_model ?? throw new InvalidOperationException("No semantic contract is configured.")).Freeze()
+                       .CreateSnapshot();
         var graph = new SemanticRequestResolver(contract).Resolve(resolution.Request);
         return SemanticOperationGraph.Create(SemanticOperationCompiler.Compile(graph));
     }
 
     public string ContractFingerprint =>
-        _contract?.ContractFingerprint ?? (_model ?? throw new InvalidOperationException("No semantic contract is configured.")).Freeze().ContractFingerprint;
+        _contract?.ContractFingerprint ??
+        (_model ?? throw new InvalidOperationException("No semantic contract is configured.")).Freeze()
+        .ContractFingerprint;
 
     public SemanticRequest Compile(ReadIntent intent)
     {
@@ -178,9 +184,9 @@ public sealed class ReadIntentCompiler
                 : throw Invalid($"Unknown entity '{name}'.");
 
         return _model!.Entities.FirstOrDefault(x =>
-            string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
-            x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)))
-            ?? throw Invalid($"Unknown entity '{name}'.");
+                   string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
+                   x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)))
+               ?? throw Invalid($"Unknown entity '{name}'.");
     }
 
     private SemanticEntity GetEntity(EntityId id) =>
@@ -202,7 +208,9 @@ public sealed class ReadIntentCompiler
 
     private IReadOnlyList<SemanticRelationship> ResolveRelationshipPath(SemanticEntity entity, string name)
     {
-        var direct = entity.Relationships.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) || x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)));
+        var direct = entity.Relationships.FirstOrDefault(x =>
+            string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) ||
+            x.EffectiveAliases.Any(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase)));
         if (direct is not null)
             return [direct];
 
@@ -224,10 +232,12 @@ public sealed class ReadIntentCompiler
             foreach (var relationshipId in traversal.Path)
             {
                 var relationship = current.Relationships.FirstOrDefault(x => x.Id == relationshipId)
-                    ?? throw Invalid($"Traversal '{name}' contains relationship '{relationshipId}' that is not defined on '{current.Name}'.");
+                                   ?? throw Invalid(
+                                       $"Traversal '{name}' contains relationship '{relationshipId}' that is not defined on '{current.Name}'.");
                 result.Add(relationship);
                 current = GetEntity(relationship.Target);
             }
+
             return result;
         }
 
@@ -262,4 +272,3 @@ public sealed class ReadIntentCompiler
     private static InvalidOperationException Invalid(string message) =>
         new($"Invalid read intent: {message}");
 }
-

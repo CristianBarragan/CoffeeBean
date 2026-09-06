@@ -20,4 +20,6 @@ namespace Foundgine.SupplyChain.Domain;
 [FoundgineModelEntityMap(typeof(Shipment), typeof(ShipmentERP))]
 [FoundgineModelEntityMap(typeof(Carrier), typeof(CarrierERP))]
 [FoundgineConnectionMap(typeof(Customer), nameof(Customer.Orders), typeof(SalesOrderERP))]
-internal static class SupplyChainSchemaMappings { }
+internal static class SupplyChainSchemaMappings
+{
+}

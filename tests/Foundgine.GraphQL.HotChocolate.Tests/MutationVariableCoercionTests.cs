@@ -16,13 +16,13 @@ public sealed class MutationVariableCoercionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var ex = Assert.Throws<InvalidOperationException>(() => adapter.Adapt("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) { id name }
-            }
-            """, new Dictionary<string, object?>
-            {
-                ["input"] = "Ada"
-            }));
+                                                                              mutation CreateCustomer($input: CustomerInput!) {
+                                                                                createCustomer(input: $input) { id name }
+                                                                              }
+                                                                              """, new Dictionary<string, object?>
+        {
+            ["input"] = "Ada"
+        }));
 
         Assert.Contains("input", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -34,13 +34,13 @@ public sealed class MutationVariableCoercionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var ex = Assert.Throws<InvalidOperationException>(() => adapter.Adapt("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) { id }
-            }
-            """, new Dictionary<string, object?>
-            {
-                ["input"] = null
-            }));
+                                                                              mutation CreateCustomer($input: CustomerInput!) {
+                                                                                createCustomer(input: $input) { id }
+                                                                              }
+                                                                              """, new Dictionary<string, object?>
+        {
+            ["input"] = null
+        }));
 
         Assert.Contains("cannot be null", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -52,13 +52,13 @@ public sealed class MutationVariableCoercionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var ex = Assert.Throws<InvalidOperationException>(() => adapter.Adapt("""
-            mutation CreateCustomers($inputs: [CustomerInput!]!) {
-              createCustomer(input: $inputs) { id }
-            }
-            """, new Dictionary<string, object?>
-            {
-                ["inputs"] = new Dictionary<string, object?> { ["name"] = "Ada" }
-            }));
+                                                                              mutation CreateCustomers($inputs: [CustomerInput!]!) {
+                                                                                createCustomer(input: $inputs) { id }
+                                                                              }
+                                                                              """, new Dictionary<string, object?>
+        {
+            ["inputs"] = new Dictionary<string, object?> { ["name"] = "Ada" }
+        }));
 
         Assert.Contains("list", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -70,10 +70,10 @@ public sealed class MutationVariableCoercionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var intent = adapter.Adapt("""
-            mutation CreateCustomer($input: CustomerInput! = { name: "Ada" }) {
-              createCustomer(input: $input) { id name }
-            }
-            """);
+                                   mutation CreateCustomer($input: CustomerInput! = { name: "Ada" }) {
+                                     createCustomer(input: $input) { id name }
+                                   }
+                                   """);
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Equal("Ada", Assert.Single(mutation.Fields).Value);
@@ -86,14 +86,14 @@ public sealed class MutationVariableCoercionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var intent = adapter.Adapt("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) { id name }
-            }
-            """, new Dictionary<string, object?>
-            {
-                ["input"] = new Dictionary<string, object?> { ["name"] = "Ada" },
-                ["unused"] = 123
-            });
+                                   mutation CreateCustomer($input: CustomerInput!) {
+                                     createCustomer(input: $input) { id name }
+                                   }
+                                   """, new Dictionary<string, object?>
+        {
+            ["input"] = new Dictionary<string, object?> { ["name"] = "Ada" },
+            ["unused"] = 123
+        });
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Equal("Ada", Assert.Single(mutation.Fields).Value);
@@ -106,13 +106,13 @@ public sealed class MutationVariableCoercionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var ex = Assert.Throws<InvalidOperationException>(() => adapter.Adapt("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) { id name }
-            }
-            """, new Dictionary<string, object?>
-            {
-                ["input"] = new Dictionary<string, object?> { ["name"] = 123 }
-            }));
+                                                                              mutation CreateCustomer($input: CustomerInput!) {
+                                                                                createCustomer(input: $input) { id name }
+                                                                              }
+                                                                              """, new Dictionary<string, object?>
+        {
+            ["input"] = new Dictionary<string, object?> { ["name"] = 123 }
+        }));
 
         Assert.Contains("expects 'String'", ex.Message);
     }
@@ -125,16 +125,16 @@ public sealed class MutationVariableCoercionTests
         var expected = Guid.Parse("550e8400-e29b-41d4-a716-446655440000");
 
         var intent = adapter.Adapt("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) { id customerKey }
-            }
-            """, new Dictionary<string, object?>
+                                   mutation CreateCustomer($input: CustomerInput!) {
+                                     createCustomer(input: $input) { id customerKey }
+                                   }
+                                   """, new Dictionary<string, object?>
+        {
+            ["input"] = new Dictionary<string, object?>
             {
-                ["input"] = new Dictionary<string, object?>
-                {
-                    ["customerKey"] = expected.ToString()
-                }
-            });
+                ["customerKey"] = expected.ToString()
+            }
+        });
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         var field = Assert.Single(mutation.Fields);
@@ -150,16 +150,16 @@ public sealed class MutationVariableCoercionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var intent = adapter.Adapt("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) { id customerKey }
-            }
-            """, new Dictionary<string, object?>
+                                   mutation CreateCustomer($input: CustomerInput!) {
+                                     createCustomer(input: $input) { id customerKey }
+                                   }
+                                   """, new Dictionary<string, object?>
+        {
+            ["input"] = new Dictionary<string, object?>
             {
-                ["input"] = new Dictionary<string, object?>
-                {
-                    ["customerKey"] = null
-                }
-            });
+                ["customerKey"] = null
+            }
+        });
 
         var mutation = Assert.IsType<MutationIntent>(intent.Mutation);
         Assert.Null(Assert.Single(mutation.Fields).Value);
@@ -172,13 +172,13 @@ public sealed class MutationVariableCoercionTests
         var adapter = new HotChocolateMutationAdapter(model, registry);
 
         var ex = Assert.Throws<InvalidOperationException>(() => adapter.Adapt("""
-            mutation CreateCustomer($input: CustomerInput!) {
-              createCustomer(input: $input) { id name }
-            }
-            """, new Dictionary<string, object?>
-            {
-                ["input"] = new Dictionary<string, object?> { ["id"] = null }
-            }));
+                                                                              mutation CreateCustomer($input: CustomerInput!) {
+                                                                                createCustomer(input: $input) { id name }
+                                                                              }
+                                                                              """, new Dictionary<string, object?>
+        {
+            ["input"] = new Dictionary<string, object?> { ["id"] = null }
+        }));
 
         Assert.Contains("cannot be null", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -189,9 +189,11 @@ public sealed class MutationVariableCoercionTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerKey")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "CustomerKey", typeof(Guid), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "CustomerKey", typeof(Guid),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 
@@ -210,9 +212,11 @@ public sealed class MutationVariableCoercionTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "CustomerKey")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "CustomerKey", typeof(Guid?), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "CustomerKey", typeof(Guid?),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 
@@ -231,9 +235,11 @@ public sealed class MutationVariableCoercionTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 

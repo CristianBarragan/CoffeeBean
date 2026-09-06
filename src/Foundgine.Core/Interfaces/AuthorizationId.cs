@@ -11,7 +11,6 @@ public readonly record struct AuthorizationId(ulong Value)
         new(SemanticIdentity.Hash(SemanticIdentity.AuthorizationKey(declaringType, authorizationName)));
 }
 
-
 public sealed class AuthorizationIdJsonConverter : JsonConverter<AuthorizationId>
 {
     public override AuthorizationId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -32,9 +31,11 @@ public sealed class AuthorizationIdJsonConverter : JsonConverter<AuthorizationId
     public override void Write(Utf8JsonWriter writer, AuthorizationId value, JsonSerializerOptions options) =>
         writer.WriteNumberValue(value.Value);
 
-    public override AuthorizationId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+    public override AuthorizationId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert,
+        JsonSerializerOptions options) =>
         new(ulong.Parse(reader.GetString()!));
 
-    public override void WriteAsPropertyName(Utf8JsonWriter writer, AuthorizationId value, JsonSerializerOptions options) =>
+    public override void WriteAsPropertyName(Utf8JsonWriter writer, AuthorizationId value,
+        JsonSerializerOptions options) =>
         writer.WritePropertyName(value.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
 }

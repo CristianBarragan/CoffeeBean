@@ -137,7 +137,8 @@ public sealed class SemanticOperationGraphNode
         Id = id;
         EntityId = entityId;
         Fields = Array.AsReadOnly(fields?.ToArray() ?? throw new ArgumentNullException(nameof(fields)));
-        RequiredFields = Array.AsReadOnly(requiredFields?.ToArray() ?? throw new ArgumentNullException(nameof(requiredFields)));
+        RequiredFields =
+            Array.AsReadOnly(requiredFields?.ToArray() ?? throw new ArgumentNullException(nameof(requiredFields)));
         ViaRelationship = viaRelationship;
         ViaConnection = viaConnection;
         Children = Array.AsReadOnly(children?.ToArray() ?? throw new ArgumentNullException(nameof(children)));

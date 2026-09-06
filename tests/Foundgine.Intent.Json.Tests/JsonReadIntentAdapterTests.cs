@@ -11,35 +11,35 @@ public sealed class JsonReadIntentAdapterTests
     public void Parses_nested_relationship_filter_and_order()
     {
         const string json = """
-        {
-          "rootEntity": "Transaction",
-          "selections": [
-            { "field": "Id" },
-            { "field": "Amount" },
-            { "field": "TransactionDate" }
-          ],
-          "filter": {
-            "kind": "relationship",
-            "relationship": "Account",
-            "quantifier": "Some",
-            "predicate": {
-              "kind": "relationship",
-              "relationship": "Customer",
-              "quantifier": "Some",
-              "predicate": {
-                "kind": "field",
-                "field": "Name",
-                "operator": "Eq",
-                "value": "Alice"
-              }
-            }
-          },
-          "order": [
-            { "field": "TransactionDate", "direction": "Desc" }
-          ],
-          "limit": 5
-        }
-        """;
+                            {
+                              "rootEntity": "Transaction",
+                              "selections": [
+                                { "field": "Id" },
+                                { "field": "Amount" },
+                                { "field": "TransactionDate" }
+                              ],
+                              "filter": {
+                                "kind": "relationship",
+                                "relationship": "Account",
+                                "quantifier": "Some",
+                                "predicate": {
+                                  "kind": "relationship",
+                                  "relationship": "Customer",
+                                  "quantifier": "Some",
+                                  "predicate": {
+                                    "kind": "field",
+                                    "field": "Name",
+                                    "operator": "Eq",
+                                    "value": "Alice"
+                                  }
+                                }
+                              },
+                              "order": [
+                                { "field": "TransactionDate", "direction": "Desc" }
+                              ],
+                              "limit": 5
+                            }
+                            """;
 
         var intent = new JsonReadIntentAdapter().Parse(json);
 
@@ -57,17 +57,17 @@ public sealed class JsonReadIntentAdapterTests
     public void Parses_json_arrays_and_objects_as_provider_neutral_values()
     {
         const string json = """
-        {
-          "rootEntity": "Customer",
-          "selections": [{ "field": "Name" }],
-          "filter": {
-            "kind": "field",
-            "field": "Name",
-            "operator": "In",
-            "value": ["Alice", "Bob"]
-          }
-        }
-        """;
+                            {
+                              "rootEntity": "Customer",
+                              "selections": [{ "field": "Name" }],
+                              "filter": {
+                                "kind": "field",
+                                "field": "Name",
+                                "operator": "In",
+                                "value": ["Alice", "Bob"]
+                              }
+                            }
+                            """;
 
         var filter = Assert.IsType<ReadFieldFilter>(new JsonReadIntentAdapter().Parse(json).Filter);
         var values = Assert.IsType<object[]>(filter.Value);
@@ -78,12 +78,12 @@ public sealed class JsonReadIntentAdapterTests
     public void Rejects_unsupported_filter_kind()
     {
         const string json = """
-        {
-          "rootEntity": "Customer",
-          "selections": [{ "field": "Name" }],
-          "filter": { "kind": "sql", "field": "Name", "value": "Alice" }
-        }
-        """;
+                            {
+                              "rootEntity": "Customer",
+                              "selections": [{ "field": "Name" }],
+                              "filter": { "kind": "sql", "field": "Name", "value": "Alice" }
+                            }
+                            """;
 
         var exception = Assert.Throws<InvalidOperationException>(() => new JsonReadIntentAdapter().Parse(json));
         Assert.Contains("Unsupported filter kind", exception.Message);

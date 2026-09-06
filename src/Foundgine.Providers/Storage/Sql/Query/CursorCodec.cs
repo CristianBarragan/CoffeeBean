@@ -88,8 +88,8 @@ internal static class CursorCodec
             return value.GetDecimal();
 
         return value.Deserialize(type)
-            ?? throw new InvalidOperationException(
-                $"Cursor value could not be converted to '{targetType.FullName}'.");
+               ?? throw new InvalidOperationException(
+                   $"Cursor value could not be converted to '{targetType.FullName}'.");
     }
 
     private sealed record CursorPayload(int Version, IReadOnlyList<object?> Values);

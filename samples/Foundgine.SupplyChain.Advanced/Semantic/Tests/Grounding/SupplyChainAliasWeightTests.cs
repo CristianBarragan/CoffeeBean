@@ -56,7 +56,8 @@ public sealed class SupplyChainAliasWeightTests
     {
         var model = SupplyChainSemanticModel.Build().Freeze();
 
-        var result = AliasWeightEvidenceGate.Evaluate(model, minimumWeight: 80, LexicalEntity("Vendor", SupplyChainSemanticModel.Supplier));
+        var result = AliasWeightEvidenceGate.Evaluate(model, minimumWeight: 80,
+            LexicalEntity("Vendor", SupplyChainSemanticModel.Supplier));
 
         Assert.Equal(AliasEvidenceStatus.Sufficient, result.Status);
         Assert.True(result.IsConclusive);
@@ -99,8 +100,10 @@ public sealed class SupplyChainAliasWeightTests
         var model = SupplyChainSemanticModel.Build().Freeze();
         var supplier = model.ResolveEntity("Seller");
 
-        var strict = AliasWeightEvidenceGate.Evaluate(model, minimumWeight: 100, LexicalEntity("Seller", SupplyChainSemanticModel.Supplier));
-        var relaxed = AliasWeightEvidenceGate.Evaluate(model, minimumWeight: 80, LexicalEntity("Seller", SupplyChainSemanticModel.Supplier));
+        var strict = AliasWeightEvidenceGate.Evaluate(model, minimumWeight: 100,
+            LexicalEntity("Seller", SupplyChainSemanticModel.Supplier));
+        var relaxed = AliasWeightEvidenceGate.Evaluate(model, minimumWeight: 80,
+            LexicalEntity("Seller", SupplyChainSemanticModel.Supplier));
 
         Assert.Equal(AliasEvidenceStatus.Insufficient, strict.Status);
         Assert.Equal(AliasEvidenceStatus.Sufficient, relaxed.Status);

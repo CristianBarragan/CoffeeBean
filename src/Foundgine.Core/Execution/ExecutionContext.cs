@@ -39,6 +39,7 @@ public sealed record ExecutionContext(
                 cts.CancelAfter(remaining);
             }
         }
+
         return cts;
     }
 }

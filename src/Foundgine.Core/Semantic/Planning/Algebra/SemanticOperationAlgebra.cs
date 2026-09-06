@@ -130,4 +130,3 @@ public static class SemanticPredicateAlgebra
         return new SemanticOrFilter(terms);
     }
 }
-

@@ -11,17 +11,17 @@ public partial class Account : Process
     {
         Schema = CoffeeBeanery.Database.Schema.Accounting;
     }
-    
+
     public int Id { get; set; }
-    
+
     public Guid AccountKey { get; set; }
 
     public string? AccountNumber { get; set; }
 
     public string? AccountName { get; set; }
-    
+
     public Contract? Contract { get; set; }
-    
+
     public List<Transaction>? Transaction { get; set; }
 }
 
@@ -41,11 +41,11 @@ public class AccountEntityConfiguration : IEntityTypeConfiguration<Account>
         builder.HasKey(c => c.Id);
 
         builder.HasIndex(c => c.AccountKey).IsUnique();
-        
+
         builder.HasOne(c => c.Contract).WithOne(c => c.Account).HasForeignKey<Contract>(c => c.AccountId);
-        
+
         builder.HasMany(c => c.Transaction).WithOne(c => c.Account).HasForeignKey(c => c.AccountId);
-        
+
         builder.Property(c => c.ProcessedDateTime).HasDefaultValueSql("(now() at time zone 'utc')");
     }
 }

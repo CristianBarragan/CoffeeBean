@@ -40,19 +40,19 @@ public sealed class AuthorizationMcpPenetrationTests
         // feature demonstrably reject". See GUIDE.md "Claims validation".
         var claimAttacks = new[]
         {
-            "role-injection",           // client asserts role directly
-            "tenant-injection",         // client asserts tenant directly
-            "missing-evidence",         // sensitive named op without required claims
-            "malformed-evidence",       // required claim present but wrong format
-            "expired-evidence"          // required claim present but past its own not_after
+            "role-injection", // client asserts role directly
+            "tenant-injection", // client asserts tenant directly
+            "missing-evidence", // sensitive named op without required claims
+            "malformed-evidence", // required claim present but wrong format
+            "expired-evidence" // required claim present but past its own not_after
         };
 
         var claimNarrowingUses = new[]
         {
-            "self-imposed-read-only",   // scope=read-only restricts a manager's own writes
-            "warehouse-scoping",        // warehouse=<id> ANDs onto the tenant predicate
-            "unknown-key-ignored",      // noise claim is dropped, request still proceeds
-            "valid-reconcile-evidence"  // well-formed reason + change_ticket allows reconcile
+            "self-imposed-read-only", // scope=read-only restricts a manager's own writes
+            "warehouse-scoping", // warehouse=<id> ANDs onto the tenant predicate
+            "unknown-key-ignored", // noise claim is dropped, request still proceeds
+            "valid-reconcile-evidence" // well-formed reason + change_ticket allows reconcile
         };
 
         Assert.Equal(5, claimAttacks.Length);
@@ -69,7 +69,11 @@ public sealed class AuthorizationMcpPenetrationTests
             jsonrpc = "2.0",
             id = "probe",
             method = "tools/call",
-            @params = new { name = "policy_probe", arguments = new { tenantId = "tenant-a", role = "Customer", attack = "write-escalation" } }
+            @params = new
+            {
+                name = "policy_probe",
+                arguments = new { tenantId = "tenant-a", role = "Customer", attack = "write-escalation" }
+            }
         });
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:4782/mcp")
@@ -82,7 +86,8 @@ public sealed class AuthorizationMcpPenetrationTests
         // This test is opt-in against the running sample server. It verifies
         // the wire contract when explicitly enabled instead of making CI
         // depend on a local MCP process.
-        if (!string.Equals(Environment.GetEnvironmentVariable("RUN_SUPPLYCHAIN_MCP_TESTS"), "1", StringComparison.Ordinal))
+        if (!string.Equals(Environment.GetEnvironmentVariable("RUN_SUPPLYCHAIN_MCP_TESTS"), "1",
+                StringComparison.Ordinal))
             return;
 
         using var response = await client.SendAsync(request);

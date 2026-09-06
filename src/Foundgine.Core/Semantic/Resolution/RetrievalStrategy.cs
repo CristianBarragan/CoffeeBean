@@ -5,6 +5,7 @@ public enum RetrievalStrategy : byte
 {
     Relational,
     FullText,
+
     /// <summary>Relevance-oriented lexical retrieval such as BM25/pg_search.</summary>
     Search,
     Fuzzy,

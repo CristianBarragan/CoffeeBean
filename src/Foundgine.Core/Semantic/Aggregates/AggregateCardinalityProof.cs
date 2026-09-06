@@ -33,6 +33,7 @@ public sealed record AggregateCardinalityProof(SemanticCardinalityKnowledge Know
         {
             RelationshipCardinality.One => SemanticCardinalityKnowledge.AtMostOne,
             RelationshipCardinality.Many => SemanticCardinalityKnowledge.Unbounded,
-            _ => throw new ArgumentOutOfRangeException(nameof(cardinality), cardinality, "Unknown relationship cardinality.")
+            _ => throw new ArgumentOutOfRangeException(nameof(cardinality), cardinality,
+                "Unknown relationship cardinality.")
         });
 }

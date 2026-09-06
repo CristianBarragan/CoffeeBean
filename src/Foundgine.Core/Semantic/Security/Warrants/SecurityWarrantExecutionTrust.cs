@@ -28,7 +28,8 @@ public static class SecurityWarrantExecutionTrust
         if (leaf.ParentId is null && leaf.ParentDigest is null && leaf.DelegationPath.Count == 0)
         {
             if (chain is not null && (chain.Count != 1 || !StringComparer.Ordinal.Equals(chain[0].Digest, leaf.Digest)))
-                throw new InvalidOperationException("A root warrant may only be accompanied by itself as the delegation chain.");
+                throw new InvalidOperationException(
+                    "A root warrant may only be accompanied by itself as the delegation chain.");
 
             SecurityWarrantVerifier.Verify(leaf, keys, now, expectedIssuer, expectedAudience);
             return;
@@ -38,7 +39,8 @@ public static class SecurityWarrantExecutionTrust
             throw new InvalidOperationException(
                 "Delegated warrant execution requires the complete root-to-leaf delegation chain.");
         if (!StringComparer.Ordinal.Equals(chain[^1].Digest, leaf.Digest))
-            throw new InvalidOperationException("The supplied delegation chain does not terminate at the executing warrant.");
+            throw new InvalidOperationException(
+                "The supplied delegation chain does not terminate at the executing warrant.");
         if (delegationTrust is null)
             throw new InvalidOperationException(
                 "Delegated warrant execution requires an explicit delegation trust resolver.");
@@ -57,7 +59,9 @@ public static class SecurityWarrantExecutionTrust
             if (!child.Grants.All(grant => parent.Grants.Any(parentGrant =>
                     StringComparer.Ordinal.Equals(grant.Capability, parentGrant.Capability) &&
                     StringComparer.Ordinal.Equals(grant.Operation, parentGrant.Operation) &&
-                    grant.ResourceScopes.All(scope => parentGrant.ResourceScopes.Count == 0 || parentGrant.ResourceScopes.Contains(scope, StringComparer.Ordinal)))))
+                    grant.ResourceScopes.All(scope =>
+                        parentGrant.ResourceScopes.Count == 0 ||
+                        parentGrant.ResourceScopes.Contains(scope, StringComparer.Ordinal)))))
                 throw new InvalidOperationException("Delegation cannot grant capabilities outside the parent warrant.");
         }
     }

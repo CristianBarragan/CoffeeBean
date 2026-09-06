@@ -75,7 +75,7 @@ public sealed class DiscoveryDrivenCapabilityBoundaryTests
             {
                 [new FieldId(1)] = 100,
                 [new FieldId(3)] = 250.75m, // Balance
-                [new FieldId(4)] = 1        // CustomerId FK - backing-only, join key
+                [new FieldId(4)] = 1 // CustomerId FK - backing-only, join key
             }));
 
         var result = await new InMemoryExecutionProvider(metadata, data)

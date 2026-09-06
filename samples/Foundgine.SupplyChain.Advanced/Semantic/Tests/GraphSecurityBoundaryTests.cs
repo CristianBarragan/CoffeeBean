@@ -86,7 +86,8 @@ public sealed class GraphSecurityBoundaryTests
 
         Assert.Single(operatorResult.Graph.Nodes);
         Assert.Equal(SupplyChainSemanticModel.Supplier, operatorResult.Graph.Root.EntityId);
-        Assert.DoesNotContain(operatorResult.Graph.Nodes, n => n.EntityId == SupplyChainSemanticModel.ComplianceIncident);
+        Assert.DoesNotContain(operatorResult.Graph.Nodes,
+            n => n.EntityId == SupplyChainSemanticModel.ComplianceIncident);
         operatorResult.EnsureMatches(contract);
 
         // The same graph, authorized for a role the policy does grant the

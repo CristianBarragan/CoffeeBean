@@ -140,7 +140,8 @@ public sealed class AggregateCardinalityOptimizationRuleTests
             new SemanticAggregateFilter(new RelationshipId(10), SemanticFilterAggregate.Count, null,
                 SemanticAggregateFilterOperator.Gt, 0),
             new SemanticAggregateFilter(new RelationshipId(11), SemanticFilterAggregate.Count, null,
-                SemanticAggregateFilterOperator.Eq, 0)]);
+                SemanticAggregateFilterOperator.Eq, 0)
+        ]);
 
         var optimized = new AggregateCardinalityOptimizationRule().Apply(CreatePlan(filter));
 

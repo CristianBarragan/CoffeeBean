@@ -106,7 +106,8 @@ public sealed class SemanticEntityBuilder
     public SemanticEntityBuilder RelationshipAlias(RelationshipId relationshipId, string alias, int? weight = null)
     {
         var index = _relationships.FindIndex(x => x.Id == relationshipId);
-        if (index < 0) throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
+        if (index < 0)
+            throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
         var relationship = _relationships[index];
         var aliases = relationship.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray();
         _relationships[index] = relationship with { Aliases = aliases };
@@ -185,7 +186,8 @@ public sealed class SemanticEntityBuilder<TModel>
     /// semantic entity and field name; callers do not need to construct a
     /// <see cref="FieldId"/>.
     /// </summary>
-    public SemanticEntityBuilder<TModel> Identity<TProperty>(Expression<Func<TModel, TProperty>> property, string? semanticName = null)
+    public SemanticEntityBuilder<TModel> Identity<TProperty>(Expression<Func<TModel, TProperty>> property,
+        string? semanticName = null)
     {
         var metadata = GetProperty(property);
         var fieldName = semanticName ?? metadata.Name;
@@ -216,7 +218,8 @@ public sealed class SemanticEntityBuilder<TModel>
         return this;
     }
 
-    public SemanticEntityBuilder<TModel> Constraint<TProperty>(Expression<Func<TModel, TProperty>> property, SemanticConstraint constraint)
+    public SemanticEntityBuilder<TModel> Constraint<TProperty>(Expression<Func<TModel, TProperty>> property,
+        SemanticConstraint constraint)
     {
         ArgumentNullException.ThrowIfNull(constraint);
         var fieldId = FieldId.Create(_name, GetProperty(property).Name);
@@ -227,18 +230,23 @@ public sealed class SemanticEntityBuilder<TModel>
         return this;
     }
 
-    public SemanticEntityBuilder<TModel> FieldAlias<TProperty>(Expression<Func<TModel, TProperty>> property, string alias, int? weight = null)
+    public SemanticEntityBuilder<TModel> FieldAlias<TProperty>(Expression<Func<TModel, TProperty>> property,
+        string alias, int? weight = null)
     {
         var fieldId = FieldId.Create(_name, GetProperty(property).Name);
         var index = _fields.FindIndex(x => x.Id == fieldId);
         if (index < 0) throw new InvalidOperationException($"Field '{fieldId}' is not declared on '{_name}'.");
         var field = _fields[index];
-        _fields[index] = field with { Aliases = field.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray() };
+        _fields[index] = field with
+        {
+            Aliases = field.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray()
+        };
         return this;
     }
 
     /// <summary>Declares multiple field aliases in one call.</summary>
-    public SemanticEntityBuilder<TModel> FieldAliases<TProperty>(Expression<Func<TModel, TProperty>> property, params string[] aliases)
+    public SemanticEntityBuilder<TModel> FieldAliases<TProperty>(Expression<Func<TModel, TProperty>> property,
+        params string[] aliases)
     {
         ArgumentNullException.ThrowIfNull(aliases);
         var fieldId = FieldId.Create(_name, GetProperty(property).Name);
@@ -297,12 +305,17 @@ public sealed class SemanticEntityBuilder<TModel>
         return this;
     }
 
-    public SemanticEntityBuilder<TModel> RelationshipAlias(RelationshipId relationshipId, string alias, int? weight = null)
+    public SemanticEntityBuilder<TModel> RelationshipAlias(RelationshipId relationshipId, string alias,
+        int? weight = null)
     {
         var index = _relationships.FindIndex(x => x.Id == relationshipId);
-        if (index < 0) throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
+        if (index < 0)
+            throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
         var relationship = _relationships[index];
-        _relationships[index] = relationship with { Aliases = relationship.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray() };
+        _relationships[index] = relationship with
+        {
+            Aliases = relationship.EffectiveAliases.Concat([new SemanticAlias(alias, weight)]).ToArray()
+        };
         return this;
     }
 
@@ -311,7 +324,8 @@ public sealed class SemanticEntityBuilder<TModel>
     {
         ArgumentNullException.ThrowIfNull(aliases);
         var index = _relationships.FindIndex(x => x.Id == relationshipId);
-        if (index < 0) throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
+        if (index < 0)
+            throw new InvalidOperationException($"Relationship '{relationshipId}' is not declared on '{_name}'.");
         var relationship = _relationships[index];
         var merged = relationship.EffectiveAliases.Concat(aliases.Select(a => new SemanticAlias(a, null))).ToArray();
         _relationships[index] = relationship with { Aliases = merged };
@@ -330,14 +344,14 @@ public sealed class SemanticEntityBuilder<TModel>
 
     internal SemanticEntity Build() =>
         new(
-            _id,
-            _name,
-            _identity ?? throw new InvalidOperationException(
-                $"Semantic entity '{_name}' must declare an identity."),
-            _fields.ToArray(),
-            _relationships.ToArray(),
-            _aliases.ToArray())
-        { ModelType = typeof(TModel) };
+                _id,
+                _name,
+                _identity ?? throw new InvalidOperationException(
+                    $"Semantic entity '{_name}' must declare an identity."),
+                _fields.ToArray(),
+                _relationships.ToArray(),
+                _aliases.ToArray())
+            { ModelType = typeof(TModel) };
 
     private static PropertyInfo GetProperty<TTargetModel>(Expression<Func<TTargetModel, object?>> expression)
     {
@@ -385,7 +399,8 @@ public sealed class SemanticEntityBuilder<TModel>
     private static PropertyInfo GetProperty<TProperty>(Expression<Func<TModel, TProperty>> expression) =>
         GetProperty(expression, nameof(expression));
 
-    private static PropertyInfo GetProperty<TProperty>(Expression<Func<TModel, TProperty>> expression, string parameterName)
+    private static PropertyInfo GetProperty<TProperty>(Expression<Func<TModel, TProperty>> expression,
+        string parameterName)
     {
         ArgumentNullException.ThrowIfNull(expression);
 
@@ -410,4 +425,3 @@ public sealed class SemanticEntityBuilder<TModel>
         return property;
     }
 }
-

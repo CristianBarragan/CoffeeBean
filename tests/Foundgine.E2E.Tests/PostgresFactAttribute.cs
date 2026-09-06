@@ -12,7 +12,6 @@ public sealed class PostgreSqlFactAttribute : FactAttribute
     }
 }
 
-
 /// <summary>Runs a PostgreSQL theory only when the benchmark connection is configured.</summary>
 public sealed class PostgreSqlTheoryAttribute : TheoryAttribute
 {

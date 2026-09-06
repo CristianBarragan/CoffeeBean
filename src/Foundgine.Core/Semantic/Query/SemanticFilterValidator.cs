@@ -37,13 +37,15 @@ internal static class SemanticFilterValidator
                 if (field.Operator == SemanticFilterOperator.In && field.Value is null)
                     throw Invalid($"IN filter on '{entity.Name}.{field.Field}' requires a value list.");
                 if (field.Value is not null && field.Field != entity.Identity.FieldId)
-                    SemanticValueValidator.Validate(field.Value, GetField(entity, field.Field), field.Operator.ToString());
+                    SemanticValueValidator.Validate(field.Value, GetField(entity, field.Field),
+                        field.Operator.ToString());
                 break;
 
             case SemanticRelationshipFilter relationshipFilter:
                 var relationship = entity.Relationships.FirstOrDefault(x => x.Id == relationshipFilter.Relationship);
                 if (relationship is null)
-                    throw Invalid($"Entity '{entity.Name}' does not declare filter relationship '{relationshipFilter.Relationship}'.");
+                    throw Invalid(
+                        $"Entity '{entity.Name}' does not declare filter relationship '{relationshipFilter.Relationship}'.");
 
                 var target = getEntity(relationship.Target);
                 Visit(relationshipFilter.Predicate, target, getEntity);
@@ -52,7 +54,8 @@ internal static class SemanticFilterValidator
             case SemanticAggregateFilter aggregate:
                 var aggregateRelationship = entity.Relationships.FirstOrDefault(x => x.Id == aggregate.Relationship);
                 if (aggregateRelationship is null)
-                    throw Invalid($"Entity '{entity.Name}' does not declare aggregate filter relationship '{aggregate.Relationship}'.");
+                    throw Invalid(
+                        $"Entity '{entity.Name}' does not declare aggregate filter relationship '{aggregate.Relationship}'.");
                 if (aggregateRelationship.Cardinality != RelationshipCardinality.Many)
                     throw Invalid("Aggregate filters are only valid on collection relationships.");
 
@@ -69,12 +72,15 @@ internal static class SemanticFilterValidator
                     if (aggregate.Field is null)
                         throw Invalid($"{aggregate.Aggregate} aggregate filters require a target field.");
                     if (!IsDeclaredField(aggregateTarget, aggregate.Field.Value))
-                        throw Invalid($"Aggregate filter field '{aggregate.Field}' is not defined on '{aggregateTarget.Name}'.");
+                        throw Invalid(
+                            $"Aggregate filter field '{aggregate.Field}' is not defined on '{aggregateTarget.Name}'.");
                     if (!IsFieldAggregatable(aggregateTarget, aggregate.Field.Value))
                         throw Invalid($"Field '{aggregateTarget.Name}.{aggregate.Field}' is not aggregatable.");
                     if (aggregate.Value is not null && aggregate.Field.Value != aggregateTarget.Identity.FieldId)
-                        SemanticValueValidator.Validate(aggregate.Value, GetField(aggregateTarget, aggregate.Field.Value), aggregate.Operator.ToString());
+                        SemanticValueValidator.Validate(aggregate.Value,
+                            GetField(aggregateTarget, aggregate.Field.Value), aggregate.Operator.ToString());
                 }
+
                 break;
 
             case SemanticAndFilter andFilter:
@@ -98,11 +104,13 @@ internal static class SemanticFilterValidator
 
     private static bool IsFieldFilterable(SemanticEntity entity, FieldId fieldId) =>
         entity.Identity.FieldId == fieldId ||
-        entity.Fields.FirstOrDefault(x => x.Id == fieldId)?.Capabilities.HasFlag(SemanticFieldCapabilities.Filterable) == true;
+        entity.Fields.FirstOrDefault(x => x.Id == fieldId)?.Capabilities
+            .HasFlag(SemanticFieldCapabilities.Filterable) == true;
 
     private static bool IsFieldAggregatable(SemanticEntity entity, FieldId fieldId) =>
         entity.Identity.FieldId == fieldId ||
-        entity.Fields.FirstOrDefault(x => x.Id == fieldId)?.Capabilities.HasFlag(SemanticFieldCapabilities.Aggregatable) == true;
+        entity.Fields.FirstOrDefault(x => x.Id == fieldId)?.Capabilities
+            .HasFlag(SemanticFieldCapabilities.Aggregatable) == true;
 
     private static SemanticField GetField(SemanticEntity entity, FieldId fieldId) =>
         entity.Fields.FirstOrDefault(x => x.Id == fieldId) ??

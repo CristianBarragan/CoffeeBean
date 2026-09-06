@@ -69,8 +69,10 @@ public static class SemanticAuthorizationCapabilityDiscovery
             .Select(field => new SemanticFieldAuthorizationCapability(
                 field.Id,
                 field.Name,
-                DescribeDecision(Effective(read, policy.GetFieldAccess(entity.Id, field.Id, AuthorizationOperation.Read))),
-                DescribeDecision(Effective(write, policy.GetFieldAccess(entity.Id, field.Id, AuthorizationOperation.Write)))))
+                DescribeDecision(Effective(read,
+                    policy.GetFieldAccess(entity.Id, field.Id, AuthorizationOperation.Read))),
+                DescribeDecision(Effective(write,
+                    policy.GetFieldAccess(entity.Id, field.Id, AuthorizationOperation.Write)))))
             .ToArray();
 
         var relationships = entity.Relationships

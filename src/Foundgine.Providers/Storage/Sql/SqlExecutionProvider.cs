@@ -49,7 +49,8 @@ public sealed class SqlExecutionProvider : IExecutionProvider
             if (binding.ContextPath is { } contextPath)
             {
                 if (!context.TryGetValue(contextPath, out value))
-                    throw new InvalidOperationException($"Execution context does not contain authorization value '{contextPath}'.");
+                    throw new InvalidOperationException(
+                        $"Execution context does not contain authorization value '{contextPath}'.");
 
                 // Forward pagination fetches one extra row so the provider can
                 // determine HasNextPage without changing the requested page size.
@@ -88,7 +89,6 @@ public sealed class SqlExecutionProvider : IExecutionProvider
                         binding.NodeId,
                         binding.EntityId,
                         binding.FieldId)] = value;
-
                 }
             }
 
@@ -117,18 +117,19 @@ public sealed class SqlExecutionProvider : IExecutionProvider
             if (rows.Count > 0)
             {
                 var firstValues = paging.CursorValues
-                .Select(binding => rows[0].Values[binding.ResultName])
-                .ToArray();
-            var lastValues = paging.CursorValues
-                .Select(binding => rows[^1].Values[binding.ResultName])
-                .ToArray();
+                    .Select(binding => rows[0].Values[binding.ResultName])
+                    .ToArray();
+                var lastValues = paging.CursorValues
+                    .Select(binding => rows[^1].Values[binding.ResultName])
+                    .ToArray();
 
-            if (firstValues.Any(value => value is null) || lastValues.Any(value => value is null))
-                throw new InvalidOperationException("Cursor ordering fields cannot contain null values.");
+                if (firstValues.Any(value => value is null) || lastValues.Any(value => value is null))
+                    throw new InvalidOperationException("Cursor ordering fields cannot contain null values.");
 
-            start = Query.CursorCodec.Encode(firstValues);
-            end = Query.CursorCodec.Encode(lastValues);
+                start = Query.CursorCodec.Encode(firstValues);
+                end = Query.CursorCodec.Encode(lastValues);
             }
+
             pageInfo = new ExecutionPageInfo(start, end, hasNext, hasCursor);
         }
 

@@ -103,21 +103,20 @@ public sealed class AotSqlPipelineTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "AotCustomers" (
-                "Id" INTEGER PRIMARY KEY,
-                "Name" TEXT NOT NULL
-            );
-            CREATE TABLE "AotAccounts" (
-                "Id" INTEGER PRIMARY KEY,
-                "CustomerId" INTEGER NOT NULL,
-                "Balance" DECIMAL NOT NULL
-            );
-            INSERT INTO "AotCustomers" VALUES (1, 'Ada');
-            INSERT INTO "AotCustomers" VALUES (2, 'Grace');
-            INSERT INTO "AotAccounts" VALUES (10, 1, 100.0);
-            INSERT INTO "AotAccounts" VALUES (20, 2, 250.0);
-            """;
+                              CREATE TABLE "AotCustomers" (
+                                  "Id" INTEGER PRIMARY KEY,
+                                  "Name" TEXT NOT NULL
+                              );
+                              CREATE TABLE "AotAccounts" (
+                                  "Id" INTEGER PRIMARY KEY,
+                                  "CustomerId" INTEGER NOT NULL,
+                                  "Balance" DECIMAL NOT NULL
+                              );
+                              INSERT INTO "AotCustomers" VALUES (1, 'Ada');
+                              INSERT INTO "AotCustomers" VALUES (2, 'Grace');
+                              INSERT INTO "AotAccounts" VALUES (10, 1, 100.0);
+                              INSERT INTO "AotAccounts" VALUES (20, 2, 250.0);
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

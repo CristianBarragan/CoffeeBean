@@ -163,9 +163,9 @@ public sealed class HotChocolateSemanticAdapter
         if (operationName is not null)
         {
             operation = operations.FirstOrDefault(x =>
-                string.Equals(x.Name?.Value, operationName, StringComparison.Ordinal))
-                ?? throw new InvalidOperationException(
-                    $"GraphQL operation '{operationName}' was not found.");
+                            string.Equals(x.Name?.Value, operationName, StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            $"GraphQL operation '{operationName}' was not found.");
         }
         else
         {
@@ -316,8 +316,7 @@ public sealed class HotChocolateSemanticAdapter
                     field.Alias?.Value ?? field.Name.Value));
         }
 
-        var relationship = entity.Relationships.FirstOrDefault(
-            r => NamesEqual(r.Name, field.Name.Value));
+        var relationship = entity.Relationships.FirstOrDefault(r => NamesEqual(r.Name, field.Name.Value));
 
         if (relationship is null)
             throw new InvalidOperationException(
@@ -445,8 +444,7 @@ public sealed class HotChocolateSemanticAdapter
                 continue;
             }
 
-            var relationship = entity.Relationships.FirstOrDefault(
-                x => NamesEqual(x.Name, pair.Key));
+            var relationship = entity.Relationships.FirstOrDefault(x => NamesEqual(x.Name, pair.Key));
             if (relationship is not null)
             {
                 expressions.AddRange(
@@ -455,8 +453,8 @@ public sealed class HotChocolateSemanticAdapter
             }
 
             var semanticField = FindField(entity, pair.Key)
-                ?? throw new InvalidOperationException(
-                    $"Filter field '{pair.Key}' is not defined on '{entity.Name}'.");
+                                ?? throw new InvalidOperationException(
+                                    $"Filter field '{pair.Key}' is not defined on '{entity.Name}'.");
 
             if (pair.Value is IReadOnlyDictionary<string, object?> operators)
             {
@@ -522,8 +520,8 @@ public sealed class HotChocolateSemanticAdapter
                     $"Collection filter field '{aggregateField.Key}' must specify min or max.");
 
             var targetField = FindField(target, aggregateField.Key)
-                ?? throw new InvalidOperationException(
-                    $"Aggregate filter field '{aggregateField.Key}' is not defined on '{target.Name}'.");
+                              ?? throw new InvalidOperationException(
+                                  $"Aggregate filter field '{aggregateField.Key}' is not defined on '{target.Name}'.");
 
             foreach (var aggregate in fieldAggregate)
             {
@@ -628,8 +626,7 @@ public sealed class HotChocolateSemanticAdapter
                     $"Order field '{pair.Key}' must use ASC/DESC or an aggregate object.");
             }
 
-            var relationship = entity.Relationships.FirstOrDefault(
-                r => NamesEqual(r.Name, pair.Key));
+            var relationship = entity.Relationships.FirstOrDefault(r => NamesEqual(r.Name, pair.Key));
 
             if (relationship is null)
                 throw new InvalidOperationException(
@@ -661,8 +658,8 @@ public sealed class HotChocolateSemanticAdapter
                     }
 
                     var targetField = FindField(target, aggregateField.Key)
-                        ?? throw new InvalidOperationException(
-                            $"Aggregate order field '{aggregateField.Key}' is not defined on '{target.Name}'.");
+                                      ?? throw new InvalidOperationException(
+                                          $"Aggregate order field '{aggregateField.Key}' is not defined on '{target.Name}'.");
 
                     if (aggregateField.Value is not IReadOnlyDictionary<string, object?> aggregateObject)
                         throw new NotSupportedException(
@@ -701,8 +698,7 @@ public sealed class HotChocolateSemanticAdapter
 
     private static SemanticField? FindField(SemanticEntity entity, string name)
     {
-        var field = entity.Fields.FirstOrDefault(
-            x => NamesEqual(x.Name, name));
+        var field = entity.Fields.FirstOrDefault(x => NamesEqual(x.Name, name));
         if (field is not null)
             return field;
 

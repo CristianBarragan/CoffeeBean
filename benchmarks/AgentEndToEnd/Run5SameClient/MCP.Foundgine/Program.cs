@@ -8,8 +8,8 @@ using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 var cs = builder.Configuration["BankingConnectionString"]
-    ?? Environment.GetEnvironmentVariable("BankingConnectionString")
-    ?? throw new InvalidOperationException("BankingConnectionString is not configured.");
+         ?? Environment.GetEnvironmentVariable("BankingConnectionString")
+         ?? throw new InvalidOperationException("BankingConnectionString is not configured.");
 
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(cs);
 var dataSource = dataSourceBuilder.Build();
@@ -80,7 +80,11 @@ public sealed class TransferMcpTools
         await using var scope = _scopeFactory.CreateAsyncScope();
         var service = scope.ServiceProvider.GetRequiredService<PostgresTransferFundsService>();
         var receipt = await service.ExecuteAsync(actorId, tenantId, command, cancellationToken);
-        return new { receipt.TransferId, receipt.SourceAccountId, receipt.DestinationAccountId, receipt.Amount, receipt.Replay, receipt.SecurityProof };
+        return new
+        {
+            receipt.TransferId, receipt.SourceAccountId, receipt.DestinationAccountId, receipt.Amount, receipt.Replay,
+            receipt.SecurityProof
+        };
     }
 }
 

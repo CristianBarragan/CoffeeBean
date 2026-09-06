@@ -34,9 +34,11 @@ public static class MutationSecurityResourceLimitValidator
         {
             var operation = operations[i];
             if (operation.Fields.Count > limits.MaxMutationFieldsPerOperation)
-                Reject($"Mutation field count for operation {i} exceeds the configured maximum of {limits.MaxMutationFieldsPerOperation}.");
+                Reject(
+                    $"Mutation field count for operation {i} exceeds the configured maximum of {limits.MaxMutationFieldsPerOperation}.");
             if (operation.ReturnFields.Count > limits.MaxMutationReturnFieldsPerOperation)
-                Reject($"Mutation return-field count for operation {i} exceeds the configured maximum of {limits.MaxMutationReturnFieldsPerOperation}.");
+                Reject(
+                    $"Mutation return-field count for operation {i} exceeds the configured maximum of {limits.MaxMutationReturnFieldsPerOperation}.");
 
             if (operation.Filter is not null)
                 SecurityResourceLimitValidator.ValidateFilter(operation.Filter, limits);

@@ -26,24 +26,24 @@ public sealed class FlagshipProofTests
     public async Task One_semantic_intent_crosses_authorization_planning_and_two_providers()
     {
         const string json = """
-        {
-          "rootEntity": "Customer",
-          "selections": [
-            { "field": "Id" },
-            { "field": "Name" }
-          ],
-          "filter": {
-            "kind": "field",
-            "field": "Name",
-            "operator": "Eq",
-            "value": "Alice"
-          },
-          "order": [
-            { "field": "Name", "direction": "Asc" }
-          ],
-          "limit": 1
-        }
-        """;
+                            {
+                              "rootEntity": "Customer",
+                              "selections": [
+                                { "field": "Id" },
+                                { "field": "Name" }
+                              ],
+                              "filter": {
+                                "kind": "field",
+                                "field": "Name",
+                                "operator": "Eq",
+                                "value": "Alice"
+                              },
+                              "order": [
+                                { "field": "Name", "direction": "Asc" }
+                              ],
+                              "limit": 1
+                            }
+                            """;
 
         var model = BankingSemanticModel.Build();
         var metadata = BankingRelationalMetadata.Build();
@@ -114,14 +114,14 @@ public sealed class FlagshipProofTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" (
-                "Id" INTEGER PRIMARY KEY,
-                "Name" TEXT NOT NULL,
-                "TenantId" INTEGER NOT NULL
-            );
-            INSERT INTO "Customer" VALUES (1, 'Alice', 7);
-            INSERT INTO "Customer" VALUES (2, 'Bob', 9);
-            """;
+                              CREATE TABLE "Customer" (
+                                  "Id" INTEGER PRIMARY KEY,
+                                  "Name" TEXT NOT NULL,
+                                  "TenantId" INTEGER NOT NULL
+                              );
+                              INSERT INTO "Customer" VALUES (1, 'Alice', 7);
+                              INSERT INTO "Customer" VALUES (2, 'Bob', 9);
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 
@@ -134,4 +134,3 @@ public sealed class FlagshipProofTests
             fieldId == new FieldId(1) || fieldId == new FieldId(2);
     }
 }
-

@@ -19,7 +19,8 @@ public sealed class SemanticEquivalenceProofTests
                 AuthorizationPredicate.Constant("north")));
 
         var plan = new SemanticPlan(
-            new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [], Authorization: predicate),
+            new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [],
+                Authorization: predicate),
             [SecurityInvariantIds.AuthorizationRequired]);
 
         var result = new SemanticPlanOptimizer().Optimize(plan);
@@ -88,6 +89,7 @@ public sealed class SemanticEquivalenceProofTests
         SemanticQueryOptions? options = null)
     {
         return new SemanticPlan(
-            new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [field ?? new FieldId(1)], null, null, [], options, authorization));
+            new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [field ?? new FieldId(1)], null, null, [],
+                options, authorization));
     }
 }

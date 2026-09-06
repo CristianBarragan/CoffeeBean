@@ -18,12 +18,12 @@ public sealed class AggregateFilterTests
     {
         var model = BuildModel();
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query {
-              customer(where: { accounts: { count: { gte: 2 } } }) {
-                id
-              }
-            }
-            """);
+                                                                   query {
+                                                                     customer(where: { accounts: { count: { gte: 2 } } }) {
+                                                                       id
+                                                                     }
+                                                                   }
+                                                                   """);
 
         var filter = Assert.IsType<SemanticAggregateFilter>(request.Options!.Filter);
         Assert.Equal(CustomerAccounts, filter.Relationship);
@@ -38,12 +38,12 @@ public sealed class AggregateFilterTests
     {
         var model = BuildModel();
         var request = new HotChocolateSemanticAdapter(model).Adapt("""
-            query {
-              customer(where: { accounts: { balance: { max: { gt: 100 } } } }) {
-                id
-              }
-            }
-            """);
+                                                                   query {
+                                                                     customer(where: { accounts: { balance: { max: { gt: 100 } } } }) {
+                                                                       id
+                                                                     }
+                                                                   }
+                                                                   """);
 
         var filter = Assert.IsType<SemanticAggregateFilter>(request.Options!.Filter);
         Assert.Equal(CustomerAccounts, filter.Relationship);

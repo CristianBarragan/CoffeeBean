@@ -42,9 +42,14 @@ public sealed class MemorySecurityWarrantDelegationConcurrencyStore
         public long Sequence;
     }
 
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ParentState> _parents = new(StringComparer.Ordinal);
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SecurityWarrantDelegationReservation> _children = new(StringComparer.Ordinal);
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SecurityWarrantDelegationReservation> _nonces = new(StringComparer.Ordinal);
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ParentState> _parents =
+        new(StringComparer.Ordinal);
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SecurityWarrantDelegationReservation>
+        _children = new(StringComparer.Ordinal);
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SecurityWarrantDelegationReservation>
+        _nonces = new(StringComparer.Ordinal);
 
     public SecurityWarrantDelegationConcurrencySnapshot Capture(SecurityWarrant parent)
     {
@@ -80,7 +85,8 @@ public sealed class MemorySecurityWarrantDelegationConcurrencyStore
         lock (state.Gate)
         {
             if (state.Sequence != expected.Sequence)
-                throw new InvalidOperationException("Delegation parent changed concurrently; the child must be retried from a fresh parent sequence.");
+                throw new InvalidOperationException(
+                    "Delegation parent changed concurrently; the child must be retried from a fresh parent sequence.");
 
             var childKey = Key(child);
             if (_children.ContainsKey(childKey))
@@ -94,7 +100,8 @@ public sealed class MemorySecurityWarrantDelegationConcurrencyStore
             var reservation = new SecurityWarrantDelegationReservation(
                 parent.Id, parent.Digest, child.Id, child.Digest, child.Nonce, sequence);
             if (!_children.TryAdd(childKey, reservation) || !_nonces.TryAdd(nonceKey, reservation))
-                throw new InvalidOperationException("Concurrent delegation fork detected; child reservation was not committed.");
+                throw new InvalidOperationException(
+                    "Concurrent delegation fork detected; child reservation was not committed.");
             return reservation;
         }
     }

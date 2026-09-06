@@ -116,7 +116,9 @@ public sealed class JsonReadIntentAdapter
             "relationship" => new ReadRelationshipFilter(
                 Required(dto.Relationship, "filter.relationship"),
                 dto.Quantifier ?? throw Invalid("Relationship filters require 'quantifier'."),
-                dto.Predicate is null ? throw Invalid("Relationship filters require 'predicate'.") : ToFilter(dto.Predicate, depth + 1, ref nodes)),
+                dto.Predicate is null
+                    ? throw Invalid("Relationship filters require 'predicate'.")
+                    : ToFilter(dto.Predicate, depth + 1, ref nodes)),
 
             "and" => new ReadAndFilter(
                 dto.Expressions is { Count: > 0 }
@@ -159,7 +161,8 @@ public sealed class JsonReadIntentAdapter
             JsonValueKind.Number when value.TryGetInt64(out var integer) => integer,
             JsonValueKind.Number when value.TryGetDecimal(out var decimalValue) => decimalValue,
             JsonValueKind.Array => value.EnumerateArray().Select(item => Normalize(item, depth + 1)).ToArray(),
-            JsonValueKind.Object => value.EnumerateObject().ToDictionary(x => x.Name, x => Normalize(x.Value, depth + 1)),
+            JsonValueKind.Object => value.EnumerateObject()
+                .ToDictionary(x => x.Name, x => Normalize(x.Value, depth + 1)),
             _ => throw Invalid($"Unsupported JSON value kind '{value.ValueKind}'.")
         };
     }

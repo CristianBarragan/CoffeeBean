@@ -27,6 +27,7 @@ public sealed class InMemoryApprovalStore : IApprovalStore
         {
             _requests[request.ApprovalId] = request;
         }
+
         return request;
     }
 

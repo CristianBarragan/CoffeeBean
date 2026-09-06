@@ -16,7 +16,8 @@ public sealed record SqlPlan(
     SqlPaginationPlan? Pagination = null,
     IReadOnlyList<SqlAuthorizationPredicate>? Authorization = null) : ProviderPlan("sql")
 {
-    public IReadOnlyList<Foundgine.Providers.Storage.Sql.Query.SqlParameterBinding> EffectiveParameters => Parameters ?? [];
+    public IReadOnlyList<Foundgine.Providers.Storage.Sql.Query.SqlParameterBinding> EffectiveParameters =>
+        Parameters ?? [];
 }
 
 public sealed record SqlColumnBinding(
@@ -42,7 +43,6 @@ public sealed record SqlCursorBinding(
     FieldId FieldId,
     Type ClrType,
     SemanticSortDirection Direction);
-
 
 /// <summary>
 /// Authorization predicates carried into the SQL provider plan. The predicate

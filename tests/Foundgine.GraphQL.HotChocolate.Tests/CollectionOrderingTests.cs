@@ -28,17 +28,17 @@ public sealed class CollectionOrderingTests
 
         var adapter = new HotChocolateSemanticAdapter(model);
         var request = adapter.Adapt("""
-            query {
-              customer(order: {
-                accounts: {
-                  _count: DESC
-                  balance: { max: ASC }
-                }
-              }) {
-                id
-              }
-            }
-            """);
+                                    query {
+                                      customer(order: {
+                                        accounts: {
+                                          _count: DESC
+                                          balance: { max: ASC }
+                                        }
+                                      }) {
+                                        id
+                                      }
+                                    }
+                                    """);
 
         Assert.Equal(2, request.Options!.EffectiveOrder.Count);
         Assert.Equal(SemanticOrderAggregate.Count, request.Options.EffectiveOrder[0].Aggregate);

@@ -146,7 +146,8 @@ public sealed class ExecutionRowCapabilityBoundaryTests
             new ColumnReference(Account, new ColumnId(2))));
 
         var data = new InMemoryDataSet()
-            .Add(new InMemoryRow(Customer, new Dictionary<FieldId, object?> { [CustomerId] = 1, [CustomerName] = "Alice" }))
+            .Add(new InMemoryRow(Customer,
+                new Dictionary<FieldId, object?> { [CustomerId] = 1, [CustomerName] = "Alice" }))
             .Add(new InMemoryRow(Account, new Dictionary<FieldId, object?>
             {
                 [AccountId] = 100,

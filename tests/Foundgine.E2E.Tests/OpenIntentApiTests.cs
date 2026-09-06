@@ -95,12 +95,24 @@ public sealed class OpenIntentApiTests
     {
         public SemanticAuthorizationCapabilities DescribeCapabilities() => throw new NotSupportedException();
         public SemanticCapabilityContract DescribeCapabilityContract() => throw new NotSupportedException();
-        public SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security) => throw new NotSupportedException();
+
+        public SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security) =>
+            throw new NotSupportedException();
+
         public SemanticVersionSet DescribeVersionSet() => throw new NotSupportedException();
         public DryRunResult DryRun(SemanticRequest request) => throw new NotSupportedException();
-        public PlanApproval ApprovePlan(SemanticRequest request, string approvedBy) => throw new NotSupportedException();
-        public Task<ExecutionResult> ExecuteApprovedAsync(PlanApproval approval, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<ExecutionResult> ExecuteAsync(SemanticRequest request, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<ExecutionResult> ExecuteAsync(Foundgine.Core.Semantic.Intent.ReadIntent intent, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
+        public PlanApproval ApprovePlan(SemanticRequest request, string approvedBy) =>
+            throw new NotSupportedException();
+
+        public Task<ExecutionResult> ExecuteApprovedAsync(PlanApproval approval, ExecutionContext? context = null,
+            CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
+        public Task<ExecutionResult> ExecuteAsync(SemanticRequest request, ExecutionContext? context = null,
+            CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
+        public Task<ExecutionResult> ExecuteAsync(Foundgine.Core.Semantic.Intent.ReadIntent intent,
+            ExecutionContext? context = null, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 }

@@ -91,7 +91,3 @@ public static class SemanticModelDiscovery
     public static SemanticModelBuilder FromMetadata(this IMetadataCatalog metadata) =>
         new SemanticModelBuilder().Import(metadata.Discover());
 }
-
-
-
-

@@ -16,7 +16,8 @@ public sealed class SemanticIdentityTests
         Assert.Equal(StorageEntityId.Create("public.customers"), StorageEntityId.Create("public.customers"));
         Assert.Equal(ModelId.Create("CustomerView"), ModelId.Create("CustomerView"));
         Assert.Equal(ConnectionId.Create("CustomerView", "Customer"), ConnectionId.Create("CustomerView", "Customer"));
-        Assert.Equal(AuthorizationId.Create("CustomerPolicy", "CanRead"), AuthorizationId.Create("CustomerPolicy", "CanRead"));
+        Assert.Equal(AuthorizationId.Create("CustomerPolicy", "CanRead"),
+            AuthorizationId.Create("CustomerPolicy", "CanRead"));
     }
 
     [Fact]

@@ -10,7 +10,7 @@ public sealed class SecurityCapabilityCompositionTests
     [Fact]
     public void Composition_requires_every_capability_to_be_independently_authorized()
     {
-        var warrant = Warrant([new CapabilityGrant("Customer.read", "read", ["customer/*"]) ]);
+        var warrant = Warrant([new CapabilityGrant("Customer.read", "read", ["customer/*"])]);
         var customer = Capability("Customer.read", "read");
         var order = Capability("Order.read", "read");
 
@@ -25,12 +25,12 @@ public sealed class SecurityCapabilityCompositionTests
     public void Composition_never_unions_authority_across_tenants()
     {
         var warrant = Warrant([
-            new CapabilityGrant("Customer.read", "read", ["customer/*"]),
-            new CapabilityGrant("Order.read", "read", ["order/*"])
-        ]) with
-        {
-            Constraints = new SecurityWarrantConstraints(allowedTenants: ["tenant-1"])
-        };
+                new CapabilityGrant("Customer.read", "read", ["customer/*"]),
+                new CapabilityGrant("Order.read", "read", ["order/*"])
+            ]) with
+            {
+                Constraints = new SecurityWarrantConstraints(allowedTenants: ["tenant-1"])
+            };
 
         var result = SecurityCapabilityComposition.Validate(
             [Capability("Customer.read", "read"), Capability("Order.read", "read")],
@@ -74,7 +74,8 @@ public sealed class SecurityCapabilityCompositionTests
         };
 
         var result = SecurityCapabilityComposition.Validate(
-            [Capability("Customer.read", "read")], warrant, "agent", "foundgine", null, "customer/*", ["Id", "Balance"]);
+            [Capability("Customer.read", "read")], warrant, "agent", "foundgine", null, "customer/*",
+            ["Id", "Balance"]);
 
         Assert.False(result.IsSatisfied);
         Assert.Contains("field", result.FailureReason!, StringComparison.OrdinalIgnoreCase);

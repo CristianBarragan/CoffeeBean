@@ -89,7 +89,8 @@ public sealed class AuthorizationGoldenPathTests
                 : null;
     }
 
-    private sealed class CapturingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class CapturingCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
@@ -97,15 +98,10 @@ public sealed class AuthorizationGoldenPathTests
         public ExecutionIR? IR { get; private set; }
 
         public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-
             new(
-
                 plan.Provider,
-
                 ir.RequiredSecurityInvariants,
-
                 ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
-
                 Array.Empty<string>());
 
 

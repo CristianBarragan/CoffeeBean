@@ -48,7 +48,6 @@ internal static class SemanticOperationContractValidator
             if (node.ViaConnection is not null)
                 throw new InvalidOperationException(
                     $"Semantic node {node.Id} cannot specify both a relationship and a connection.");
-
         }
 
         foreach (var field in node.Fields.Concat(node.RequiredFields).Distinct())
@@ -129,6 +128,7 @@ internal static class SemanticOperationContractValidator
                 var relationship = EnsureRelationship(entity, relationshipId);
                 entity = contract.Get(relationship.Target);
             }
+
             EnsureField(entity, term.Field, "order");
         }
     }
@@ -145,4 +145,3 @@ internal static class SemanticOperationContractValidator
                 $"Semantic operation references unknown {context} field '{id}' on '{entity.Name}'.");
     }
 }
-

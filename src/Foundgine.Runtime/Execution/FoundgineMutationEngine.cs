@@ -145,7 +145,6 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
             resultFingerprint,
             approval?.ApprovalId,
             approval?.ApprovedBy));
-
     }
 
     private void ValidateWarrant(SemanticMutationRequest request)
@@ -155,7 +154,8 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
             return;
 
         if (_warrantKeyResolver is null)
-            throw new InvalidOperationException("A security warrant was supplied, but no warrant key resolver is configured.");
+            throw new InvalidOperationException(
+                "A security warrant was supplied, but no warrant key resolver is configured.");
 
         SecurityWarrantVerifier.Verify(
             security.Warrant,
@@ -189,7 +189,6 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
 
             ValidateWarrantAllowedFields(operation, security);
         }
-
     }
 
 
@@ -238,14 +237,14 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
 
             case SemanticAndFilter and:
                 foreach (var expression in and.Expressions)
-                    foreach (var name in FilterFields(expression, entity))
-                        yield return name;
+                foreach (var name in FilterFields(expression, entity))
+                    yield return name;
                 yield break;
 
             case SemanticOrFilter or:
                 foreach (var expression in or.Expressions)
-                    foreach (var name in FilterFields(expression, entity))
-                        yield return name;
+                foreach (var name in FilterFields(expression, entity))
+                    yield return name;
                 yield break;
 
             default:
@@ -255,7 +254,6 @@ public sealed class FoundgineMutationEngine : IFoundgineMutations
 
     private void ConsumeWarrantReplay(SecurityExecutionContext security)
     {
-
         if (_warrantReplayStore is null)
             throw new InvalidOperationException("Executing a warrant-backed mutation requires a warrant replay store.");
 

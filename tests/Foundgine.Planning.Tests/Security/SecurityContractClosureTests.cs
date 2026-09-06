@@ -72,5 +72,3 @@ public sealed class SecurityContractClosureTests
 
     private sealed record UnprovedPlan() : ProviderPlan("test");
 }
-
-

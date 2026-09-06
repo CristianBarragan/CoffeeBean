@@ -11,17 +11,20 @@ var data = SupplyChainData.Seed();
 var auth = new AuthorizationContext("tenant-a", new HashSet<WarehouseId> { new(1), new(2) }, true, true);
 
 Console.WriteLine($"Semantic entities: {semanticModel.Entities.Count}");
-Console.WriteLine($"Products: {data.Products.Count}; suppliers: {data.Suppliers.Count}; warehouses: {data.Warehouses.Count}");
+Console.WriteLine(
+    $"Products: {data.Products.Count}; suppliers: {data.Suppliers.Count}; warehouses: {data.Warehouses.Count}");
 Console.WriteLine();
 
 Console.WriteLine("01 — Recursive supplier risk");
 foreach (var x in SupplyChainScenarios.RecursiveSupplierRisk(data, new ProductId(1), auth))
-    Console.WriteLine($"  Product={x.ProductId.Value} Supplier={x.SupplierId.Value} Depth={x.Depth} Cycle={x.CycleDetected}");
+    Console.WriteLine(
+        $"  Product={x.ProductId.Value} Supplier={x.SupplierId.Value} Depth={x.Depth} Cycle={x.CycleDetected}");
 
 Console.WriteLine();
 Console.WriteLine("02 — Fulfillment planning (14-day horizon)");
-foreach (var x in SupplyChainScenarios.FulfillmentPlanning(data, new DateOnly(2026,8,27), auth))
-    Console.WriteLine($"  {x.Sku}: demand={x.Demand} available={x.Available} inbound={x.ProjectedInbound} shortage={x.ProjectedShortage}");
+foreach (var x in SupplyChainScenarios.FulfillmentPlanning(data, new DateOnly(2026, 8, 27), auth))
+    Console.WriteLine(
+        $"  {x.Sku}: demand={x.Demand} available={x.Available} inbound={x.ProjectedInbound} shortage={x.ProjectedShortage}");
 
 Console.WriteLine();
 Console.WriteLine("03 — Adversarial invariants");

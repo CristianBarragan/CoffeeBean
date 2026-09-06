@@ -15,9 +15,9 @@ public sealed class GraphQLOperationTests
         var adapter = new HotChocolateSemanticAdapter(model);
 
         var ex = Assert.Throws<InvalidOperationException>(() => adapter.Adapt("""
-            query CustomerQuery { customer { id } }
-            query OtherQuery { customer { name } }
-            """));
+                                                                              query CustomerQuery { customer { id } }
+                                                                              query OtherQuery { customer { name } }
+                                                                              """));
 
         Assert.Contains("multiple operations", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -29,9 +29,9 @@ public sealed class GraphQLOperationTests
         var adapter = new HotChocolateSemanticAdapter(model);
 
         var request = adapter.Adapt("""
-            query CustomerQuery { customer { id } }
-            query OtherQuery { customer { name } }
-            """, null, "OtherQuery");
+                                    query CustomerQuery { customer { id } }
+                                    query OtherQuery { customer { name } }
+                                    """, null, "OtherQuery");
 
         Assert.Single(request.Selections);
         Assert.Equal(new FieldId(2), request.Selections[0].Field);
@@ -42,8 +42,8 @@ public sealed class GraphQLOperationTests
     {
         var model = BuildModel();
         var result = new HotChocolateSemanticAdapter(model).TryAdapt("""
-            query CustomerQuery { customer { id } }
-            """, null, "MissingQuery");
+                                                                     query CustomerQuery { customer { id } }
+                                                                     """, null, "MissingQuery");
 
         Assert.False(result.Succeeded);
         var error = Assert.Single(result.Errors);
@@ -58,9 +58,9 @@ public sealed class GraphQLOperationTests
         var adapter = new HotChocolateMutationAdapter(model, metadata);
 
         var intent = adapter.Adapt("""
-            mutation CreateCustomer { createCustomer(input: { name: "Ada" }) { id } }
-            mutation UpdateCustomer { updateCustomer(input: { name: "Grace" }, where: { id: { eq: 1 } }) { id } }
-            """, null, "UpdateCustomer");
+                                   mutation CreateCustomer { createCustomer(input: { name: "Ada" }) { id } }
+                                   mutation UpdateCustomer { updateCustomer(input: { name: "Grace" }, where: { id: { eq: 1 } }) { id } }
+                                   """, null, "UpdateCustomer");
 
         Assert.Equal(Foundgine.Core.Semantic.Planning.Mutation.MutationKind.Update, intent.Mutation.Kind);
     }
@@ -70,9 +70,9 @@ public sealed class GraphQLOperationTests
     {
         var (model, metadata) = BuildCustomer();
         var result = new HotChocolateMutationAdapter(model, metadata).TryAdapt("""
-            mutation CreateCustomer { createCustomer(input: { name: "Ada" }) { id } }
-            mutation UpdateCustomer { updateCustomer(input: { name: "Grace" }, where: { id: { eq: 1 } }) { id } }
-            """, null, "UpdateCustomer");
+                                                                               mutation CreateCustomer { createCustomer(input: { name: "Ada" }) { id } }
+                                                                               mutation UpdateCustomer { updateCustomer(input: { name: "Grace" }, where: { id: { eq: 1 } }) { id } }
+                                                                               """, null, "UpdateCustomer");
 
         Assert.True(result.Succeeded);
         Assert.Equal(Foundgine.Core.Semantic.Planning.Mutation.MutationKind.Update, result.Data!.Mutation.Kind);
@@ -99,9 +99,11 @@ public sealed class GraphQLOperationTests
         var registry = new MetadataRegistry();
         registry.Register(new EntityMetadata(customer, "Customer",
             [new ColumnMetadata(new ColumnId(1), "Id"), new ColumnMetadata(new ColumnId(2), "Name")],
-            Fields: [
+            Fields:
+            [
                 new FieldMetadata(new FieldId(1), "Id", typeof(long), new ColumnReference(customer, new ColumnId(1))),
-                new FieldMetadata(new FieldId(2), "Name", typeof(string), new ColumnReference(customer, new ColumnId(2)))
+                new FieldMetadata(new FieldId(2), "Name", typeof(string),
+                    new ColumnReference(customer, new ColumnId(2)))
             ],
             PrimaryKey: new ColumnReference(customer, new ColumnId(1))));
 

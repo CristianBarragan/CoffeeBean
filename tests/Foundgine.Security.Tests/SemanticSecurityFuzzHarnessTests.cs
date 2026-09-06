@@ -162,7 +162,9 @@ public sealed class SemanticSecurityFuzzHarnessTests
     {
         public override bool CanAccessEntity(EntityId entityId) => entityId.Value % 2 == 0;
         public override bool CanAccessField(EntityId entityId, FieldId fieldId) => fieldId.Value % 2 == 0;
-        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId) => relationshipId.Value % 2 == 0;
+
+        public override bool CanAccessRelationship(EntityId sourceEntityId, RelationshipId relationshipId) =>
+            relationshipId.Value % 2 == 0;
     }
 
     private sealed class PredicatePolicy : AllowAllSemanticAuthorizationPolicy

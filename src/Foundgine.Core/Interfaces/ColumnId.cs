@@ -11,7 +11,6 @@ public readonly record struct ColumnId(ulong Value)
         new(SemanticIdentity.Hash(SemanticIdentity.ColumnKey(storageName, columnName)));
 }
 
-
 public sealed class ColumnIdJsonConverter : JsonConverter<ColumnId>
 {
     public override ColumnId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -32,7 +31,8 @@ public sealed class ColumnIdJsonConverter : JsonConverter<ColumnId>
     public override void Write(Utf8JsonWriter writer, ColumnId value, JsonSerializerOptions options) =>
         writer.WriteNumberValue(value.Value);
 
-    public override ColumnId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+    public override ColumnId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert,
+        JsonSerializerOptions options) =>
         new(ulong.Parse(reader.GetString()!));
 
     public override void WriteAsPropertyName(Utf8JsonWriter writer, ColumnId value, JsonSerializerOptions options) =>

@@ -23,8 +23,8 @@ public sealed record ExecutionIR(
         ArgumentNullException.ThrowIfNull(plan);
 
         var binding = plan.AuthorizationBinding
-            ?? throw new InvalidOperationException(
-                "An executable plan must carry authorization provenance.");
+                      ?? throw new InvalidOperationException(
+                          "An executable plan must carry authorization provenance.");
 
         return new ExecutionIR(
             ExecutionIRNode.From(plan.Root),

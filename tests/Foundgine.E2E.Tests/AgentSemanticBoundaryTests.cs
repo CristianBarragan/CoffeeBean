@@ -28,10 +28,12 @@ public sealed class AgentSemanticBoundaryTests
 
         var intent = new ReadIntent(
             RootEntity: "Customer",
-            Selections: [
+            Selections:
+            [
                 new ReadSelection(Field: "Id"),
                 new ReadSelection(Field: "Name"),
-                new ReadSelection(Relationship: "Transactions", Children: [
+                new ReadSelection(Relationship: "Transactions", Children:
+                [
                     new ReadSelection(Field: "Id"),
                     new ReadSelection(Field: "Amount")
                 ])
@@ -84,4 +86,3 @@ public sealed class AgentSemanticBoundaryTests
             entityId != account || fieldId != new FieldId(2);
     }
 }
-

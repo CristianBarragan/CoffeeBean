@@ -15,4 +15,3 @@ public sealed record GraphQLResultShape(
 public sealed record GraphQLQueryAdaptation(
     Foundgine.Core.Semantic.SemanticRequest Request,
     GraphQLResultShape Result);
-

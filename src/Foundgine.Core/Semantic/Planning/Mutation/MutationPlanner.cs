@@ -67,6 +67,7 @@ public sealed class MutationPlanner
                         $"Semantic conflict field '{field.Value}' is not mapped on '{entity.Name}'.");
                 conflictColumns.Add(column.Value);
             }
+
             conflicts = conflictColumns;
         }
 
@@ -209,12 +210,12 @@ public sealed class MutationPlanner
         ValidateFilter(intent.Filter, entity);
 
         var returnFields = intent.ReturnFields?.ToArray()
-            ?? (intent.Kind == MutationKind.Delete
-                ? Array.Empty<FieldId>()
-                : entity.Fields
-                    .Where(f => f.Value is not null)
-                    .Select(f => f.Key)
-                    .ToArray());
+                           ?? (intent.Kind == MutationKind.Delete
+                               ? Array.Empty<FieldId>()
+                               : entity.Fields
+                                   .Where(f => f.Value is not null)
+                                   .Select(f => f.Key)
+                                   .ToArray());
 
         foreach (var field in returnFields)
         {
@@ -224,13 +225,15 @@ public sealed class MutationPlanner
         }
 
         return new MutationPlan(
-            [new MutationOperation(
+        [
+            new MutationOperation(
                 entity,
                 intent.Kind,
                 intent.Fields,
                 intent.Filter,
                 null,
-                returnFields)]);
+                returnFields)
+        ]);
     }
 
     public MutationPlan Plan(UpsertIntent intent)
@@ -250,7 +253,7 @@ public sealed class MutationPlanner
         }
 
         var conflicts = intent.ConflictColumns?.ToArray()
-            ?? (entity.PrimaryKeyColumn is { } pk ? [pk] : Array.Empty<ColumnId>());
+                        ?? (entity.PrimaryKeyColumn is { } pk ? [pk] : Array.Empty<ColumnId>());
 
         if (conflicts.Length == 0)
             throw new InvalidOperationException(
@@ -264,10 +267,10 @@ public sealed class MutationPlanner
         }
 
         var returnFields = intent.ReturnFields?.ToArray()
-            ?? entity.Fields
-                .Where(f => f.Value is not null)
-                .Select(f => f.Key)
-                .ToArray();
+                           ?? entity.Fields
+                               .Where(f => f.Value is not null)
+                               .Select(f => f.Key)
+                               .ToArray();
 
         foreach (var field in returnFields)
         {
@@ -410,8 +413,8 @@ public sealed class MutationPlanner
                     $"Relationship '{relationship.Name}' does not map distinct parent and child entities.");
 
             var primaryKey = parent.Entity.PrimaryKeyColumn
-                ?? throw new InvalidOperationException(
-                    $"Parent entity '{parent.Entity.Name}' requires a primary key for nested mutation propagation.");
+                             ?? throw new InvalidOperationException(
+                                 $"Parent entity '{parent.Entity.Name}' requires a primary key for nested mutation propagation.");
 
             if (primaryKey != parentColumn)
                 throw new InvalidOperationException(

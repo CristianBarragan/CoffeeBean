@@ -45,7 +45,8 @@ public sealed class CompoundCursorPaginationTests
             after: firstResult.PageInfo.EndCursor);
 
         var secondPlan = Compile(model, metadata, second);
-        var secondResult = await provider.ExecuteAsync(secondPlan, PaginationExecutionContext.Create(2, firstResult.PageInfo.EndCursor));
+        var secondResult = await provider.ExecuteAsync(secondPlan,
+            PaginationExecutionContext.Create(2, firstResult.PageInfo.EndCursor));
 
         var rows = secondResult.Rows;
         Assert.Equal(2, rows.Count);
@@ -133,12 +134,12 @@ public sealed class CompoundCursorPaginationTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
-            INSERT INTO "Customer" VALUES (1, 'Alice');
-            INSERT INTO "Customer" VALUES (2, 'Bob');
-            INSERT INTO "Customer" VALUES (3, 'Bob');
-            INSERT INTO "Customer" VALUES (4, 'Carol');
-            """;
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
+                              INSERT INTO "Customer" VALUES (1, 'Alice');
+                              INSERT INTO "Customer" VALUES (2, 'Bob');
+                              INSERT INTO "Customer" VALUES (3, 'Bob');
+                              INSERT INTO "Customer" VALUES (4, 'Carol');
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 
@@ -146,13 +147,12 @@ public sealed class CompoundCursorPaginationTests
     {
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
-            INSERT INTO "Customer" VALUES (1, 'Alice');
-            INSERT INTO "Customer" VALUES (2, 'Bob');
-            INSERT INTO "Customer" VALUES (3, 'Bob');
-            INSERT INTO "Customer" VALUES (4, 'Carol');
-            """;
+                              CREATE TABLE "Customer" ("Id" INTEGER PRIMARY KEY, "Name" TEXT NOT NULL);
+                              INSERT INTO "Customer" VALUES (1, 'Alice');
+                              INSERT INTO "Customer" VALUES (2, 'Bob');
+                              INSERT INTO "Customer" VALUES (3, 'Bob');
+                              INSERT INTO "Customer" VALUES (4, 'Carol');
+                              """;
         await command.ExecuteNonQueryAsync();
     }
 }
-

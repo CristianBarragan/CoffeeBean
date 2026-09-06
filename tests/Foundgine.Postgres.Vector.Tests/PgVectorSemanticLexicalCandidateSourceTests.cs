@@ -19,8 +19,8 @@ public sealed class PgVectorSemanticLexicalCandidateSourceTests
     [Fact]
     public void DistanceOperator_rejects_an_undefined_distance_value()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => PgVectorSemanticLexicalCandidateSource.DistanceOperator((PgVectorDistance)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            PgVectorSemanticLexicalCandidateSource.DistanceOperator((PgVectorDistance)99));
     }
 
     [Theory]
@@ -61,15 +61,15 @@ public sealed class PgVectorSemanticLexicalCandidateSourceTests
     [Fact]
     public void ToScore_rejects_an_undefined_distance_value()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => PgVectorSemanticLexicalCandidateSource.ToScore(0.1, (PgVectorDistance)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            PgVectorSemanticLexicalCandidateSource.ToScore(0.1, (PgVectorDistance)99));
     }
 
     [Fact]
     public void Constructor_throws_when_data_source_is_null()
     {
-        Assert.Throws<ArgumentNullException>(
-            () => new PgVectorSemanticLexicalCandidateSource(null!, new StubEmbeddingGenerator()));
+        Assert.Throws<ArgumentNullException>(() =>
+            new PgVectorSemanticLexicalCandidateSource(null!, new StubEmbeddingGenerator()));
     }
 
     [Fact]
@@ -79,8 +79,7 @@ public sealed class PgVectorSemanticLexicalCandidateSourceTests
         // exercises the guard clause without requiring a live PostgreSQL server.
         using var dataSource = new NpgsqlDataSourceBuilder("Host=localhost;Database=unused").Build();
 
-        Assert.Throws<ArgumentNullException>(
-            () => new PgVectorSemanticLexicalCandidateSource(dataSource, null!));
+        Assert.Throws<ArgumentNullException>(() => new PgVectorSemanticLexicalCandidateSource(dataSource, null!));
     }
 
     [Fact]

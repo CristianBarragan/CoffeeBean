@@ -11,12 +11,17 @@ public sealed class SecurityInvariantRegistryTests
     [Fact]
     public void Registry_contains_canonical_invariants()
     {
-        Assert.Contains(SecurityInvariantIds.AuthorizationRequired, SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
-        Assert.Contains(SecurityInvariantIds.RuntimeAuthorization, SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
-        Assert.Contains(SecurityInvariantIds.TenantIsolation, SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
-        Assert.Contains(SecurityInvariantIds.PlanCacheContextIsolation, SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
+        Assert.Contains(SecurityInvariantIds.AuthorizationRequired,
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
+        Assert.Contains(SecurityInvariantIds.RuntimeAuthorization,
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
+        Assert.Contains(SecurityInvariantIds.TenantIsolation,
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
+        Assert.Contains(SecurityInvariantIds.PlanCacheContextIsolation,
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
         Assert.Contains(SecurityInvariantIds.AtomicMutation, SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
-        Assert.Contains(SecurityInvariantIds.ExecutionEvidenceRequired, SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
+        Assert.Contains(SecurityInvariantIds.ExecutionEvidenceRequired,
+            SecurityInvariantRegistry.AllInvariants.Select(x => x.Id));
     }
 
     [Fact]

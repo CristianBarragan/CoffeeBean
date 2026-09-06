@@ -61,7 +61,7 @@ public sealed class SqlMutationCompiler
     {
         var entity = _metadata.GetEntity(op.Entity.Id);
         var conflicts = op.ConflictColumns?.ToArray()
-            ?? (entity.PrimaryKey is { } pk ? [pk.ColumnId] : Array.Empty<ColumnId>());
+                        ?? (entity.PrimaryKey is { } pk ? [pk.ColumnId] : Array.Empty<ColumnId>());
         if (conflicts.Length == 0)
             throw new InvalidOperationException($"Upsert '{entity.Name}' has no conflict identity.");
 
@@ -69,8 +69,8 @@ public sealed class SqlMutationCompiler
         var columnNames = fields.Select(f => ResolveColumn(entity, f.Column)).ToArray();
         var sb = new StringBuilder();
         sb.Append("INSERT INTO ")
-          .Append(Table(entity.EffectiveStorageName))
-          .Append(" (").Append(string.Join(", ", columnNames.Select(Q))).Append(") VALUES (");
+            .Append(Table(entity.EffectiveStorageName))
+            .Append(" (").Append(string.Join(", ", columnNames.Select(Q))).Append(") VALUES (");
 
         var parameters = new List<SqlParameterBinding>();
         for (var i = 0; i < fields.Length; i++)
@@ -78,11 +78,14 @@ public sealed class SqlMutationCompiler
             if (i > 0) sb.Append(", ");
             var name = "p" + i;
             sb.Append("@").Append(name);
-            parameters.Add(new SqlParameterBinding(name, fields[i].Value, fields[i].Source, ClrType: entity.EffectiveFields.First(f => f.Column is { } c && c.ColumnId == fields[i].Column).ClrType));
+            parameters.Add(new SqlParameterBinding(name, fields[i].Value, fields[i].Source,
+                ClrType: entity.EffectiveFields.First(f => f.Column is { } c && c.ColumnId == fields[i].Column)
+                    .ClrType));
         }
+
         sb.Append(") ON CONFLICT (")
-          .Append(string.Join(", ", conflicts.Select(c => Q(ResolveColumn(entity, c)))))
-          .Append(") ");
+            .Append(string.Join(", ", conflicts.Select(c => Q(ResolveColumn(entity, c)))))
+            .Append(") ");
 
         var updates = fields
             .Where(f => !conflicts.Contains(f.Column))
@@ -126,10 +129,10 @@ public sealed class SqlMutationCompiler
                 if (i > 0) sb.Append(" OR ");
                 var column = ResolveColumn(entity, updates[i].Column);
                 sb.Append(Table(entity.EffectiveStorageName))
-                  .Append('.')
-                  .Append(Q(column))
-                  .Append(" IS DISTINCT FROM EXCLUDED.")
-                  .Append(Q(column));
+                    .Append('.')
+                    .Append(Q(column))
+                    .Append(" IS DISTINCT FROM EXCLUDED.")
+                    .Append(Q(column));
             }
 
             if (canFallback)
@@ -140,8 +143,8 @@ public sealed class SqlMutationCompiler
                 {
                     if (i > 0) fallback.Append(", ");
                     var field = entity.EffectiveFields.FirstOrDefault(f => f.Id == op.ReturnFields[i])
-                        ?? throw new InvalidOperationException(
-                            $"Unknown return field '{op.ReturnFields[i]}'.");
+                                ?? throw new InvalidOperationException(
+                                    $"Unknown return field '{op.ReturnFields[i]}'.");
                     var column = ResolveColumn(entity, field.Column!.ColumnId);
                     var resultName = "r_" + field.Id.Value;
                     fallback.Append(Table(entity.EffectiveStorageName))
@@ -179,16 +182,19 @@ public sealed class SqlMutationCompiler
         var fields = op.Fields.ToArray();
         var sb = new StringBuilder("INSERT INTO ");
         sb.Append(Table(entity.EffectiveStorageName)).Append(" (")
-          .Append(string.Join(", ", fields.Select(f => Q(ResolveColumn(entity, f.Column)))))
-          .Append(") VALUES (");
+            .Append(string.Join(", ", fields.Select(f => Q(ResolveColumn(entity, f.Column)))))
+            .Append(") VALUES (");
         var parameters = new List<SqlParameterBinding>();
         for (var i = 0; i < fields.Length; i++)
         {
             if (i > 0) sb.Append(", ");
             var name = "p" + i;
             sb.Append("@").Append(name);
-            parameters.Add(new SqlParameterBinding(name, fields[i].Value, fields[i].Source, ClrType: entity.EffectiveFields.First(f => f.Column is { } c && c.ColumnId == fields[i].Column).ClrType));
+            parameters.Add(new SqlParameterBinding(name, fields[i].Value, fields[i].Source,
+                ClrType: entity.EffectiveFields.First(f => f.Column is { } c && c.ColumnId == fields[i].Column)
+                    .ClrType));
         }
+
         sb.Append(')');
         AppendReturning(sb, entity, op.ReturnFields, out var returns);
         return new SqlMutationPlan(sb.ToString(), parameters, returns);
@@ -206,12 +212,15 @@ public sealed class SqlMutationCompiler
             if (i > 0) sb.Append(", ");
             var name = "p" + i;
             sb.Append(Q(ResolveColumn(entity, op.Fields[i].Column))).Append(" = @").Append(name);
-            parameters.Add(new SqlParameterBinding(name, op.Fields[i].Value, op.Fields[i].Source, ClrType: entity.EffectiveFields.First(f => f.Column is { } c && c.ColumnId == op.Fields[i].Column).ClrType));
+            parameters.Add(new SqlParameterBinding(name, op.Fields[i].Value, op.Fields[i].Source,
+                ClrType: entity.EffectiveFields.First(f => f.Column is { } c && c.ColumnId == op.Fields[i].Column)
+                    .ClrType));
         }
+
         var alias = "t0";
         sb.Append(" WHERE ");
         var where = SemanticQuerySqlWriter.WriteWhere(op.Filter, entity, alias, parameters, _metadata)
-            ?? throw new InvalidOperationException("Update filter produced no SQL.");
+                    ?? throw new InvalidOperationException("Update filter produced no SQL.");
         // SQLite accepts the table without an alias here; compile the filter against the table name.
         where = where.Replace("\"t0\".", Table(entity.EffectiveStorageName) + ".", StringComparison.Ordinal);
         sb.Append(where);
@@ -225,7 +234,7 @@ public sealed class SqlMutationCompiler
         var entity = _metadata.GetEntity(op.Entity.Id);
         var parameters = new List<SqlParameterBinding>();
         var where = SemanticQuerySqlWriter.WriteWhere(op.Filter, entity, "t0", parameters, _metadata)
-            ?? throw new InvalidOperationException("Delete filter produced no SQL.");
+                    ?? throw new InvalidOperationException("Delete filter produced no SQL.");
         where = where.Replace("\"t0\".", Table(entity.EffectiveStorageName) + ".", StringComparison.Ordinal);
         var sql = $"DELETE FROM {Table(entity.EffectiveStorageName)} WHERE {where}";
         return new SqlMutationPlan(sql, parameters, []);
@@ -247,12 +256,13 @@ public sealed class SqlMutationCompiler
         {
             if (i > 0) sb.Append(", ");
             var field = entity.EffectiveFields.FirstOrDefault(f => f.Id == requested[i])
-                ?? throw new InvalidOperationException($"Unknown return field '{requested[i]}'.");
+                        ?? throw new InvalidOperationException($"Unknown return field '{requested[i]}'.");
             var column = ResolveColumn(entity, field.Column!.ColumnId);
             var resultName = "r_" + field.Id.Value;
             sb.Append(Q(column)).Append(" AS ").Append(Q(resultName));
             result.Add(new MutationReturnBinding(field.Id, resultName));
         }
+
         bindings = result;
     }
 
@@ -261,12 +271,14 @@ public sealed class SqlMutationCompiler
         ?? throw new InvalidOperationException($"Column '{id.Value}' is not registered on '{entity.Name}'.");
 
     private static string ResolveColumn(EntityMetadata entity, FieldMetadata field) =>
-        field.Column is { } reference ? ResolveColumn(entity, reference.ColumnId)
-        : throw new InvalidOperationException($"Field '{field.Name}' has no storage column mapping.");
+        field.Column is { } reference
+            ? ResolveColumn(entity, reference.ColumnId)
+            : throw new InvalidOperationException($"Field '{field.Name}' has no storage column mapping.");
 
     private static string Q(string identifier) =>
         "\"" + identifier.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
 
     private static string Table(string storageName) =>
-        string.Join(".", storageName.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(Q));
+        string.Join(".",
+            storageName.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(Q));
 }

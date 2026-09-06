@@ -1,4 +1,5 @@
 namespace Foundgine.Providers.Storage.Sql.Mutation.Postgres;
+
 using Foundgine.Core.Execution.Mutation;
 
 /// <summary>

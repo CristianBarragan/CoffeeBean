@@ -71,11 +71,13 @@ public sealed class PostgresTransferFundsExecutor
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
-        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
+        await using var transaction =
+            await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
         try
         {
             await AdvisoryLockAsync(connection, transaction, command.IdempotencyKey, cancellationToken);
-            var existing = await FindIdempotencyAsync(connection, transaction, command.IdempotencyKey, cancellationToken);
+            var existing =
+                await FindIdempotencyAsync(connection, transaction, command.IdempotencyKey, cancellationToken);
             if (existing is not null)
             {
                 EnsureReplayMatches(existing, actorId, tenantId, command);
@@ -99,7 +101,8 @@ public sealed class PostgresTransferFundsExecutor
                 authorization,
                 _authorize(actorId, source, destination));
             executionBinding.ValidateAgainst(actorId, tenantId, command, authorization);
-            EnsureAuthorizationEvidenceMatchesStore(authorization, authorizationContext, _authorizationContextStore is not null);
+            EnsureAuthorizationEvidenceMatchesStore(authorization, authorizationContext,
+                _authorizationContextStore is not null);
 
             var transferId = Guid.NewGuid();
             var sourceBalance = source.Balance - command.Amount;
@@ -113,9 +116,11 @@ public sealed class PostgresTransferFundsExecutor
             executionBinding.ValidateAgainst(actorId, tenantId, command, commitAuthorization);
             var currentAuthorizationContext = await LoadAuthorizationContextForUpdateAsync(
                 connection, transaction, actorId, tenantId, cancellationToken);
-            EnsureAuthorizationEvidenceMatchesStore(authorization, currentAuthorizationContext, _authorizationContextStore is not null);
+            EnsureAuthorizationEvidenceMatchesStore(authorization, currentAuthorizationContext,
+                _authorizationContextStore is not null);
             await transaction.CommitAsync(cancellationToken);
-            return new(transferId, sourceBalance, destinationBalance, false, authorization.Version, authorization.Fingerprint);
+            return new(transferId, sourceBalance, destinationBalance, false, authorization.Version,
+                authorization.Fingerprint);
         }
         catch
         {
@@ -137,7 +142,8 @@ public sealed class PostgresTransferFundsExecutor
             throw new InvalidOperationException("A transfer batch cannot contain duplicate idempotency keys.");
 
         await using var connection = await _dataSource.OpenConnectionAsync(cancellationToken);
-        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
+        await using var transaction =
+            await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
         try
         {
             var prepared = await PrepareBatchAsync(connection, transaction, commands, cancellationToken);
@@ -201,11 +207,14 @@ public sealed class PostgresTransferFundsExecutor
                 EnsureAuthorizationEvidenceMatches(
                     authorization,
                     _authorize(actorId, source, destination));
-                EnsureAuthorizationEvidenceMatchesStore(authorization, authorizationContext, _authorizationContextStore is not null);
+                EnsureAuthorizationEvidenceMatchesStore(authorization, authorizationContext,
+                    _authorizationContextStore is not null);
                 authorizations[j] = authorization;
 
-                outgoing[command.SourceAccountId] = outgoing.GetValueOrDefault(command.SourceAccountId) + command.Amount;
-                incoming[command.DestinationAccountId] = incoming.GetValueOrDefault(command.DestinationAccountId) + command.Amount;
+                outgoing[command.SourceAccountId] =
+                    outgoing.GetValueOrDefault(command.SourceAccountId) + command.Amount;
+                incoming[command.DestinationAccountId] =
+                    incoming.GetValueOrDefault(command.DestinationAccountId) + command.Amount;
                 transferIds[j] = Guid.NewGuid();
             }
 
@@ -240,7 +249,8 @@ public sealed class PostgresTransferFundsExecutor
                 keys[j] = command.IdempotencyKey;
                 transferIdArray[j] = transferIds[j];
                 sourceBalances[j] = source.Balance - outgoing[source.Id] + incoming.GetValueOrDefault(source.Id);
-                destinationBalances[j] = destination.Balance - outgoing.GetValueOrDefault(destination.Id) + incoming.GetValueOrDefault(destination.Id);
+                destinationBalances[j] = destination.Balance - outgoing.GetValueOrDefault(destination.Id) +
+                                         incoming.GetValueOrDefault(destination.Id);
             }
 
             for (var j = 0; j < newIndexes.Count; j++)
@@ -256,7 +266,8 @@ public sealed class PostgresTransferFundsExecutor
             }
 
             await ApplyBatchMutationCteAsync(connection, transaction, actorId, tenantId,
-                sources, destinations, amounts, keys, transferIdArray, sourceBalances, destinationBalances, cancellationToken);
+                sources, destinations, amounts, keys, transferIdArray, sourceBalances, destinationBalances,
+                cancellationToken);
             _faultInjector?.Invoke(PostgresTransferFundsFaultPoint.AfterBatchMutationBeforeCommit);
             _faultInjector?.Invoke(PostgresTransferFundsFaultPoint.BeforeBatchAuthorizationCommitCheck);
 
@@ -272,8 +283,10 @@ public sealed class PostgresTransferFundsExecutor
                 EnsureAuthorizationEvidenceMatches(authorizations[j], commitAuthorization);
                 AuthorizationExecutionBinding.Create(actorId, tenantId, command, authorizations[j])
                     .ValidateAgainst(actorId, tenantId, command, commitAuthorization);
-                EnsureAuthorizationEvidenceMatchesStore(authorizations[j], currentAuthorizationContext, _authorizationContextStore is not null);
-                results[index] = new(transferIds[j], sourceBalances[j], destinationBalances[j], false, authorizations[j].Version, authorizations[j].Fingerprint);
+                EnsureAuthorizationEvidenceMatchesStore(authorizations[j], currentAuthorizationContext,
+                    _authorizationContextStore is not null);
+                results[index] = new(transferIds[j], sourceBalances[j], destinationBalances[j], false,
+                    authorizations[j].Version, authorizations[j].Fingerprint);
             }
 
             await transaction.CommitAsync(cancellationToken);
@@ -301,44 +314,44 @@ public sealed class PostgresTransferFundsExecutor
         var keys = commands.Select(x => x.IdempotencyKey).ToArray();
 
         const string lockSql = """
-            WITH input AS (
-                SELECT *
-                FROM unnest(
-                    @source_ids::uuid[],
-                    @destination_ids::uuid[],
-                    @keys::text[]
-                ) AS t(source_id, destination_id, idempotency_key)
-            ),
-            lock_keys AS MATERIALIZED (
-                SELECT idempotency_key,
-                       pg_advisory_xact_lock(hashtextextended(idempotency_key, 0))
-                FROM input
-                ORDER BY idempotency_key
-            ),
-            account_ids AS (
-                SELECT source_id AS id FROM input
-                UNION
-                SELECT destination_id FROM input
-            ),
-            locked_accounts AS MATERIALIZED (
-                SELECT a.*
-                FROM banking.bank_account a
-                JOIN account_ids ids ON ids.id = a.id
-                ORDER BY a.id
-                FOR UPDATE
-            )
-            SELECT a.id, a.tenant_id, a.owner_id, a.balance, a.pending_transactions,
-                   a.regulatory_hold, a.daily_transferred, a.daily_limit, a.is_frozen
-            FROM locked_accounts a
-            CROSS JOIN (SELECT count(*) AS locked FROM lock_keys) lk
-            ORDER BY a.id;
+                               WITH input AS (
+                                   SELECT *
+                                   FROM unnest(
+                                       @source_ids::uuid[],
+                                       @destination_ids::uuid[],
+                                       @keys::text[]
+                                   ) AS t(source_id, destination_id, idempotency_key)
+                               ),
+                               lock_keys AS MATERIALIZED (
+                                   SELECT idempotency_key,
+                                          pg_advisory_xact_lock(hashtextextended(idempotency_key, 0))
+                                   FROM input
+                                   ORDER BY idempotency_key
+                               ),
+                               account_ids AS (
+                                   SELECT source_id AS id FROM input
+                                   UNION
+                                   SELECT destination_id FROM input
+                               ),
+                               locked_accounts AS MATERIALIZED (
+                                   SELECT a.*
+                                   FROM banking.bank_account a
+                                   JOIN account_ids ids ON ids.id = a.id
+                                   ORDER BY a.id
+                                   FOR UPDATE
+                               )
+                               SELECT a.id, a.tenant_id, a.owner_id, a.balance, a.pending_transactions,
+                                      a.regulatory_hold, a.daily_transferred, a.daily_limit, a.is_frozen
+                               FROM locked_accounts a
+                               CROSS JOIN (SELECT count(*) AS locked FROM lock_keys) lk
+                               ORDER BY a.id;
 
-            SELECT actor_id, tenant_id, source_account_id, destination_account_id, amount,
-                   transfer_id, source_balance, destination_balance, idempotency_key
-            FROM banking.transfer_idempotency
-            WHERE idempotency_key = ANY(@keys::text[])
-            ORDER BY idempotency_key;
-            """;
+                               SELECT actor_id, tenant_id, source_account_id, destination_account_id, amount,
+                                      transfer_id, source_balance, destination_balance, idempotency_key
+                               FROM banking.transfer_idempotency
+                               WHERE idempotency_key = ANY(@keys::text[])
+                               ORDER BY idempotency_key;
+                               """;
 
         await using var command = new NpgsqlCommand(lockSql, connection, transaction);
         command.Parameters.AddWithValue("source_ids", sourceIds);
@@ -352,9 +365,12 @@ public sealed class PostgresTransferFundsExecutor
         {
             accounts[reader.GetGuid(0)] = new BankAccount(
                 reader.GetGuid(0), reader.GetInt32(1), reader.GetGuid(2), reader.GetDecimal(3),
-                reader.GetDecimal(4), reader.GetDecimal(5), reader.GetDecimal(6), reader.GetDecimal(7), reader.GetBoolean(8));
+                reader.GetDecimal(4), reader.GetDecimal(5), reader.GetDecimal(6), reader.GetDecimal(7),
+                reader.GetBoolean(8));
         }
-        if (!await reader.NextResultAsync(ct)) throw new InvalidOperationException("Batch preparation did not return idempotency rows.");
+
+        if (!await reader.NextResultAsync(ct))
+            throw new InvalidOperationException("Batch preparation did not return idempotency rows.");
         while (await reader.ReadAsync(ct))
         {
             existing[reader.GetString(8)] = new IdempotencyRow(
@@ -369,6 +385,7 @@ public sealed class PostgresTransferFundsExecutor
             if (!accounts.ContainsKey(commandItem.DestinationAccountId))
                 throw new InvalidOperationException($"Account '{commandItem.DestinationAccountId}' was not found.");
         }
+
         return new(accounts, existing);
     }
 
@@ -378,51 +395,51 @@ public sealed class PostgresTransferFundsExecutor
         decimal[] sourceBalances, decimal[] destinationBalances, CancellationToken ct)
     {
         const string sql = """
-            WITH input AS (
-                SELECT *
-                FROM unnest(
-                    @sources::uuid[], @destinations::uuid[], @amounts::numeric[], @keys::text[],
-                    @transfer_ids::uuid[], @source_balances::numeric[], @destination_balances::numeric[]
-                ) AS t(source_id, destination_id, amount, idempotency_key, transfer_id, source_balance, destination_balance)
-            ),
-            outgoing AS (
-                SELECT source_id AS account_id, SUM(amount) AS amount
-                FROM input GROUP BY source_id
-            ),
-            incoming AS (
-                SELECT destination_id AS account_id, SUM(amount) AS amount
-                FROM input GROUP BY destination_id
-            ),
-            account_update AS (
-                UPDATE banking.bank_account a
-                SET balance = a.balance - COALESCE(o.amount, 0) + COALESCE(i.amount, 0),
-                    daily_transferred = a.daily_transferred + COALESCE(o.amount, 0)
-                FROM outgoing o
-                FULL OUTER JOIN incoming i ON i.account_id = o.account_id
-                WHERE a.id = COALESCE(o.account_id, i.account_id)
-                RETURNING a.id
-            ),
-            idempotency_insert AS (
-                INSERT INTO banking.transfer_idempotency
-                    (idempotency_key, actor_id, tenant_id, source_account_id,
-                     destination_account_id, amount, transfer_id, source_balance, destination_balance)
-                SELECT idempotency_key, @actor, @tenant, source_id, destination_id,
-                       amount, transfer_id, source_balance, destination_balance
-                FROM input
-                RETURNING transfer_id, idempotency_key
-            ),
-            audit_insert AS (
-                INSERT INTO banking.transfer_audit
-                    (transfer_id, action, actor_id, tenant_id, source_account_id,
-                     destination_account_id, amount)
-                SELECT i.transfer_id, 'transferFunds', @actor, @tenant,
-                       i.source_id, i.destination_id, i.amount
-                FROM input i
-                JOIN idempotency_insert x ON x.transfer_id = i.transfer_id
-                RETURNING id
-            )
-            SELECT count(*) FROM account_update;
-            """;
+                           WITH input AS (
+                               SELECT *
+                               FROM unnest(
+                                   @sources::uuid[], @destinations::uuid[], @amounts::numeric[], @keys::text[],
+                                   @transfer_ids::uuid[], @source_balances::numeric[], @destination_balances::numeric[]
+                               ) AS t(source_id, destination_id, amount, idempotency_key, transfer_id, source_balance, destination_balance)
+                           ),
+                           outgoing AS (
+                               SELECT source_id AS account_id, SUM(amount) AS amount
+                               FROM input GROUP BY source_id
+                           ),
+                           incoming AS (
+                               SELECT destination_id AS account_id, SUM(amount) AS amount
+                               FROM input GROUP BY destination_id
+                           ),
+                           account_update AS (
+                               UPDATE banking.bank_account a
+                               SET balance = a.balance - COALESCE(o.amount, 0) + COALESCE(i.amount, 0),
+                                   daily_transferred = a.daily_transferred + COALESCE(o.amount, 0)
+                               FROM outgoing o
+                               FULL OUTER JOIN incoming i ON i.account_id = o.account_id
+                               WHERE a.id = COALESCE(o.account_id, i.account_id)
+                               RETURNING a.id
+                           ),
+                           idempotency_insert AS (
+                               INSERT INTO banking.transfer_idempotency
+                                   (idempotency_key, actor_id, tenant_id, source_account_id,
+                                    destination_account_id, amount, transfer_id, source_balance, destination_balance)
+                               SELECT idempotency_key, @actor, @tenant, source_id, destination_id,
+                                      amount, transfer_id, source_balance, destination_balance
+                               FROM input
+                               RETURNING transfer_id, idempotency_key
+                           ),
+                           audit_insert AS (
+                               INSERT INTO banking.transfer_audit
+                                   (transfer_id, action, actor_id, tenant_id, source_account_id,
+                                    destination_account_id, amount)
+                               SELECT i.transfer_id, 'transferFunds', @actor, @tenant,
+                                      i.source_id, i.destination_id, i.amount
+                               FROM input i
+                               JOIN idempotency_insert x ON x.transfer_id = i.transfer_id
+                               RETURNING id
+                           )
+                           SELECT count(*) FROM account_update;
+                           """;
 
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("actor", actorId);
@@ -519,11 +536,14 @@ public sealed class PostgresTransferFundsExecutor
     {
         ArgumentNullException.ThrowIfNull(command);
         if (command.Amount <= 0) throw new InvalidOperationException("Transfer amount must be greater than zero.");
-        if (string.IsNullOrWhiteSpace(command.IdempotencyKey)) throw new InvalidOperationException("Idempotency key is required.");
-        if (command.SourceAccountId == command.DestinationAccountId) throw new InvalidOperationException("Source and destination accounts must differ.");
+        if (string.IsNullOrWhiteSpace(command.IdempotencyKey))
+            throw new InvalidOperationException("Idempotency key is required.");
+        if (command.SourceAccountId == command.DestinationAccountId)
+            throw new InvalidOperationException("Source and destination accounts must differ.");
     }
 
-    private static void ValidateExecution(Guid actorId, int tenantId, BankAccount source, BankAccount destination, decimal amount)
+    private static void ValidateExecution(Guid actorId, int tenantId, BankAccount source, BankAccount destination,
+        decimal amount)
     {
         if (source.TenantId != tenantId || destination.TenantId != tenantId)
             throw new InvalidOperationException("Tenant boundary violation.");
@@ -538,77 +558,106 @@ public sealed class PostgresTransferFundsExecutor
             throw new InvalidOperationException("Insufficient available funds.");
     }
 
-    private static async Task AdvisoryLockAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, string key, CancellationToken ct)
+    private static async Task AdvisoryLockAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, string key,
+        CancellationToken ct)
     {
-        await using var command = new NpgsqlCommand("SELECT pg_advisory_xact_lock(hashtextextended(@key, 0));", connection, transaction);
+        await using var command = new NpgsqlCommand("SELECT pg_advisory_xact_lock(hashtextextended(@key, 0));",
+            connection, transaction);
         command.Parameters.AddWithValue("key", key);
         await command.ExecuteNonQueryAsync(ct);
     }
 
-    private static async Task<Dictionary<Guid, BankAccount>> LoadAccountsForUpdateAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid[] ids, CancellationToken ct)
+    private static async Task<Dictionary<Guid, BankAccount>> LoadAccountsForUpdateAsync(NpgsqlConnection connection,
+        NpgsqlTransaction transaction, Guid[] ids, CancellationToken ct)
     {
         const string sql = """
-            SELECT id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold,
-                   daily_transferred, daily_limit, is_frozen
-            FROM banking.bank_account
-            WHERE id = ANY(@ids::uuid[])
-            ORDER BY id
-            FOR UPDATE;
-            """;
+                           SELECT id, tenant_id, owner_id, balance, pending_transactions, regulatory_hold,
+                                  daily_transferred, daily_limit, is_frozen
+                           FROM banking.bank_account
+                           WHERE id = ANY(@ids::uuid[])
+                           ORDER BY id
+                           FOR UPDATE;
+                           """;
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("ids", ids.Distinct().ToArray());
         await using var reader = await command.ExecuteReaderAsync(ct);
         var result = new Dictionary<Guid, BankAccount>();
         while (await reader.ReadAsync(ct))
-            result[reader.GetGuid(0)] = new(reader.GetGuid(0), reader.GetInt32(1), reader.GetGuid(2), reader.GetDecimal(3), reader.GetDecimal(4), reader.GetDecimal(5), reader.GetDecimal(6), reader.GetDecimal(7), reader.GetBoolean(8));
+            result[reader.GetGuid(0)] = new(reader.GetGuid(0), reader.GetInt32(1), reader.GetGuid(2),
+                reader.GetDecimal(3), reader.GetDecimal(4), reader.GetDecimal(5), reader.GetDecimal(6),
+                reader.GetDecimal(7), reader.GetBoolean(8));
         return result;
     }
 
-    private static async Task<IdempotencyRow?> FindIdempotencyAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, string key, CancellationToken ct)
+    private static async Task<IdempotencyRow?> FindIdempotencyAsync(NpgsqlConnection connection,
+        NpgsqlTransaction transaction, string key, CancellationToken ct)
     {
         const string sql = """
-            SELECT actor_id, tenant_id, source_account_id, destination_account_id, amount,
-                   transfer_id, source_balance, destination_balance
-            FROM banking.transfer_idempotency WHERE idempotency_key = @key;
-            """;
+                           SELECT actor_id, tenant_id, source_account_id, destination_account_id, amount,
+                                  transfer_id, source_balance, destination_balance
+                           FROM banking.transfer_idempotency WHERE idempotency_key = @key;
+                           """;
         await using var command = new NpgsqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("key", key);
         await using var reader = await command.ExecuteReaderAsync(ct);
         if (!await reader.ReadAsync(ct)) return null;
-        return new(reader.GetGuid(0), reader.GetInt32(1), reader.GetGuid(2), reader.GetGuid(3), reader.GetDecimal(4), reader.GetGuid(5), reader.GetDecimal(6), reader.GetDecimal(7));
+        return new(reader.GetGuid(0), reader.GetInt32(1), reader.GetGuid(2), reader.GetGuid(3), reader.GetDecimal(4),
+            reader.GetGuid(5), reader.GetDecimal(6), reader.GetDecimal(7));
     }
 
-    private static async Task ApplyMutationCteAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, BankAccount source, BankAccount destination, TransferFundsCommand command, Guid actorId, int tenantId, Guid transferId, decimal sourceBalance, decimal destinationBalance, CancellationToken ct)
+    private static async Task ApplyMutationCteAsync(NpgsqlConnection connection, NpgsqlTransaction transaction,
+        BankAccount source, BankAccount destination, TransferFundsCommand command, Guid actorId, int tenantId,
+        Guid transferId, decimal sourceBalance, decimal destinationBalance, CancellationToken ct)
     {
         const string sql = """
-            WITH source_update AS (
-                UPDATE banking.bank_account SET balance = balance - @amount, daily_transferred = daily_transferred + @amount WHERE id = @source RETURNING id
-            ), destination_update AS (
-                UPDATE banking.bank_account SET balance = balance + @amount WHERE id = @destination RETURNING id
-            ), idempotency_insert AS (
-                INSERT INTO banking.transfer_idempotency
-                    (idempotency_key, actor_id, tenant_id, source_account_id, destination_account_id, amount, transfer_id, source_balance, destination_balance)
-                SELECT @key, @actor, @tenant, @source, @destination, @amount, @transfer, @source_balance, @destination_balance
-                FROM source_update CROSS JOIN destination_update RETURNING transfer_id
-            ), audit_insert AS (
-                INSERT INTO banking.transfer_audit
-                    (transfer_id, action, actor_id, tenant_id, source_account_id, destination_account_id, amount)
-                SELECT transfer_id, 'transferFunds', @actor, @tenant, @source, @destination, @amount FROM idempotency_insert RETURNING id
-            ) SELECT transfer_id FROM idempotency_insert;
-            """;
+                           WITH source_update AS (
+                               UPDATE banking.bank_account SET balance = balance - @amount, daily_transferred = daily_transferred + @amount WHERE id = @source RETURNING id
+                           ), destination_update AS (
+                               UPDATE banking.bank_account SET balance = balance + @amount WHERE id = @destination RETURNING id
+                           ), idempotency_insert AS (
+                               INSERT INTO banking.transfer_idempotency
+                                   (idempotency_key, actor_id, tenant_id, source_account_id, destination_account_id, amount, transfer_id, source_balance, destination_balance)
+                               SELECT @key, @actor, @tenant, @source, @destination, @amount, @transfer, @source_balance, @destination_balance
+                               FROM source_update CROSS JOIN destination_update RETURNING transfer_id
+                           ), audit_insert AS (
+                               INSERT INTO banking.transfer_audit
+                                   (transfer_id, action, actor_id, tenant_id, source_account_id, destination_account_id, amount)
+                               SELECT transfer_id, 'transferFunds', @actor, @tenant, @source, @destination, @amount FROM idempotency_insert RETURNING id
+                           ) SELECT transfer_id FROM idempotency_insert;
+                           """;
         await using var commandDb = new NpgsqlCommand(sql, connection, transaction);
-        commandDb.Parameters.AddWithValue("key", command.IdempotencyKey); commandDb.Parameters.AddWithValue("actor", actorId); commandDb.Parameters.AddWithValue("tenant", tenantId); commandDb.Parameters.AddWithValue("source", source.Id); commandDb.Parameters.AddWithValue("destination", destination.Id); commandDb.Parameters.AddWithValue("amount", command.Amount); commandDb.Parameters.AddWithValue("transfer", transferId); commandDb.Parameters.AddWithValue("source_balance", sourceBalance); commandDb.Parameters.AddWithValue("destination_balance", destinationBalance);
+        commandDb.Parameters.AddWithValue("key", command.IdempotencyKey);
+        commandDb.Parameters.AddWithValue("actor", actorId);
+        commandDb.Parameters.AddWithValue("tenant", tenantId);
+        commandDb.Parameters.AddWithValue("source", source.Id);
+        commandDb.Parameters.AddWithValue("destination", destination.Id);
+        commandDb.Parameters.AddWithValue("amount", command.Amount);
+        commandDb.Parameters.AddWithValue("transfer", transferId);
+        commandDb.Parameters.AddWithValue("source_balance", sourceBalance);
+        commandDb.Parameters.AddWithValue("destination_balance", destinationBalance);
         var returnedTransferId = await commandDb.ExecuteScalarAsync(ct);
-        if (returnedTransferId is not Guid actualTransferId || actualTransferId != transferId) throw new InvalidOperationException("PostgreSQL mutation did not return the expected transfer identity.");
+        if (returnedTransferId is not Guid actualTransferId || actualTransferId != transferId)
+            throw new InvalidOperationException("PostgreSQL mutation did not return the expected transfer identity.");
     }
 
-    private static void EnsureReplayMatches(IdempotencyRow row, Guid actorId, int tenantId, TransferFundsCommand command)
+    private static void EnsureReplayMatches(IdempotencyRow row, Guid actorId, int tenantId,
+        TransferFundsCommand command)
     {
-        if (row.ActorId != actorId || row.TenantId != tenantId || row.SourceAccountId != command.SourceAccountId || row.DestinationAccountId != command.DestinationAccountId || row.Amount != command.Amount)
-            throw new InvalidOperationException("The idempotency key is already bound to a different transfer request.");
+        if (row.ActorId != actorId || row.TenantId != tenantId || row.SourceAccountId != command.SourceAccountId ||
+            row.DestinationAccountId != command.DestinationAccountId || row.Amount != command.Amount)
+            throw new InvalidOperationException(
+                "The idempotency key is already bound to a different transfer request.");
     }
 
-    private sealed record IdempotencyRow(Guid ActorId, int TenantId, Guid SourceAccountId, Guid DestinationAccountId, decimal Amount, Guid TransferId, decimal SourceBalance, decimal DestinationBalance);
+    private sealed record IdempotencyRow(
+        Guid ActorId,
+        int TenantId,
+        Guid SourceAccountId,
+        Guid DestinationAccountId,
+        decimal Amount,
+        Guid TransferId,
+        decimal SourceBalance,
+        decimal DestinationBalance);
 }
 
 public sealed record PostgresTransferFundsExecutionResult(

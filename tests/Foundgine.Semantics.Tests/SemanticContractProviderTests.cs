@@ -34,5 +34,3 @@ public sealed class SemanticContractProviderTests
         Assert.DoesNotContain(typeof(SemanticModelBuilder), members);
     }
 }
-
-

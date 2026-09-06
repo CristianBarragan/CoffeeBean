@@ -95,8 +95,10 @@ public static class SemanticCapabilityContractDiscovery
         var capabilities = discovered.Entities
             .Select(entity => entity with
             {
-                Read = PreservePredicate(entity.Read, policy.GetPredicate(entity.EntityId, AuthorizationOperation.Read)),
-                Write = PreservePredicate(entity.Write, policy.GetPredicate(entity.EntityId, AuthorizationOperation.Write))
+                Read = PreservePredicate(entity.Read,
+                    policy.GetPredicate(entity.EntityId, AuthorizationOperation.Read)),
+                Write = PreservePredicate(entity.Write,
+                    policy.GetPredicate(entity.EntityId, AuthorizationOperation.Write))
             })
             .SelectMany(entity => BuildCapabilities(model, entity, policy))
             .OrderBy(capability => capability.Id, StringComparer.Ordinal)
@@ -154,9 +156,12 @@ public static class SemanticCapabilityContractDiscovery
             Inputs: BuildWriteInputs(model, entity),
             Constraints: BuildWriteConstraints(),
             Effects: entity.Write.IsAllowed
-                ? [new SemanticCapabilityEffect(
-                    "data.write",
-                    $"May modify {entity.Name} data when execution-time authorization permits it.")]
+                ?
+                [
+                    new SemanticCapabilityEffect(
+                        "data.write",
+                        $"May modify {entity.Name} data when execution-time authorization permits it.")
+                ]
                 : [],
             Fields: entity.Fields
                 .Where(x => x.Write.IsAllowed)
@@ -199,7 +204,8 @@ public static class SemanticCapabilityContractDiscovery
             };
         }
 
-        foreach (var traversal in model.Traversals.Where(x => x.Source == entity.EntityId && TraversalIsReadable(model, x, policy)))
+        foreach (var traversal in model.Traversals.Where(x =>
+                     x.Source == entity.EntityId && TraversalIsReadable(model, x, policy)))
         {
             yield return new SemanticCapability(
                 Id: $"{entity.Name}.{traversal.Name}.traverse",
@@ -207,9 +213,12 @@ public static class SemanticCapabilityContractDiscovery
                 TargetEntityId: traversal.Target,
                 Access: AuthorizationDecision.Allowed,
                 Inputs: [],
-                Constraints: [new SemanticCapabilityConstraint(
-                    "semantic-path",
-                    $"Logical traversal expands through relationship path {string.Join(" -> ", traversal.Path.Select(x => x.Value))}; every hop remains subject to execution-time authorization.")],
+                Constraints:
+                [
+                    new SemanticCapabilityConstraint(
+                        "semantic-path",
+                        $"Logical traversal expands through relationship path {string.Join(" -> ", traversal.Path.Select(x => x.Value))}; every hop remains subject to execution-time authorization.")
+                ],
                 Effects: [],
                 Fields: [],
                 Relationships: [])
@@ -231,7 +240,8 @@ public static class SemanticCapabilityContractDiscovery
         foreach (var relationshipId in traversal.Path)
         {
             var relationship = current.Relationships.FirstOrDefault(x => x.Id == relationshipId);
-            if (relationship is null || !policy.GetRelationshipAccess(current.Id, relationship.Id, AuthorizationOperation.Read).IsAllowed)
+            if (relationship is null || !policy
+                    .GetRelationshipAccess(current.Id, relationship.Id, AuthorizationOperation.Read).IsAllowed)
                 return false;
 
             current = model.Get(relationship.Target);
@@ -262,16 +272,19 @@ public static class SemanticCapabilityContractDiscovery
                 },
                 "update" => new[]
                 {
-                    new SemanticCapabilityConstraint("target-selection", "A target filter or equivalent identity selection is required."),
+                    new SemanticCapabilityConstraint("target-selection",
+                        "A target filter or equivalent identity selection is required."),
                     new SemanticCapabilityConstraint("writable-fields", "Every supplied field must be writable.")
                 },
                 "delete" => new[]
                 {
-                    new SemanticCapabilityConstraint("target-selection", "A target filter or equivalent identity selection is required.")
+                    new SemanticCapabilityConstraint("target-selection",
+                        "A target filter or equivalent identity selection is required.")
                 },
                 "upsert" => new[]
                 {
-                    new SemanticCapabilityConstraint("conflict-key", "A conflict key or equivalent identity must determine the upsert target."),
+                    new SemanticCapabilityConstraint("conflict-key",
+                        "A conflict key or equivalent identity must determine the upsert target."),
                     new SemanticCapabilityConstraint("writable-fields", "Every supplied field must be writable.")
                 },
                 _ => Array.Empty<SemanticCapabilityConstraint>()
@@ -287,14 +300,17 @@ public static class SemanticCapabilityContractDiscovery
 
             yield return new SemanticCapability(
                 Id: $"{entity.Name}.{action}",
-                Name: $"{action switch { "create" => "Create", "update" => "Update", "delete" => "Delete", "upsert" => "Upsert", _ => action }} {entity.Name}",
+                Name:
+                $"{action switch { "create" => "Create", "update" => "Update", "delete" => "Delete", "upsert" => "Upsert", _ => action }} {entity.Name}",
                 TargetEntityId: entity.EntityId,
                 Access: entity.Write,
                 Inputs: action == "delete" ? [] : BuildWriteInputs(model, entity),
                 Constraints: constraints,
                 Effects: effects,
-                Fields: entity.Fields.Where(x => x.Write.IsAllowed).Select(x => x.Name).OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray(),
-                Relationships: entity.Relationships.Where(x => x.Write.IsAllowed).Select(x => x.Name).OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray())
+                Fields: entity.Fields.Where(x => x.Write.IsAllowed).Select(x => x.Name)
+                    .OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray(),
+                Relationships: entity.Relationships.Where(x => x.Write.IsAllowed).Select(x => x.Name)
+                    .OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray())
             {
                 Operation = action,
                 HasSideEffects = entity.Write.IsAllowed,

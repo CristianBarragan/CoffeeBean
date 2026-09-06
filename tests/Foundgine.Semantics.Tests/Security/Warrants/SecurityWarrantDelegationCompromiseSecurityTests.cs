@@ -17,8 +17,10 @@ public sealed class SecurityWarrantDelegationCompromiseSecurityTests
 
         store.Compromise(childA, now, compromisedIssuer: childA.Issuer);
 
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(childA, store, now));
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(grandchildA, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(childA, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(grandchildA, store, now));
         SecurityWarrantDelegationCompromiseGuard.Validate(childB, store, now);
     }
 
@@ -33,9 +35,12 @@ public sealed class SecurityWarrantDelegationCompromiseSecurityTests
 
         store.Compromise(root, now, compromisedKeyId: root.KeyId);
 
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(root, store, now));
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(child, store, now));
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(grandchild, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(root, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(child, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(grandchild, store, now));
     }
 
     [Fact]
@@ -65,7 +70,8 @@ public sealed class SecurityWarrantDelegationCompromiseSecurityTests
 
         store.Compromise(childA, now, compromisedKeyId: childA.KeyId);
 
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(childA, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(childA, store, now));
         SecurityWarrantDelegationCompromiseGuard.Validate(childB, store, now);
     }
 
@@ -96,7 +102,8 @@ public sealed class SecurityWarrantDelegationCompromiseSecurityTests
 
         Assert.Equal(first, second);
         Assert.True(store.CurrentSequence >= second.Sequence);
-        Assert.Throws<InvalidOperationException>(() => SecurityWarrantDelegationCompromiseGuard.Validate(root, store, now));
+        Assert.Throws<InvalidOperationException>(() =>
+            SecurityWarrantDelegationCompromiseGuard.Validate(root, store, now));
     }
 
     private static SecurityWarrant Child(SecurityWarrant parent, string id, string subject) => parent with

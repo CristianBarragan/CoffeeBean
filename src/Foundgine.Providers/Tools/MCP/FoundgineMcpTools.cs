@@ -53,9 +53,9 @@ public sealed class FoundgineMcpTools
                 nameof(securityContextFactory));
 
         _securityContextProvider = securityContextProvider
-            ?? (securityContextFactory is not null
-                ? new DelegateSecurityExecutionContextProvider(securityContextFactory)
-                : new DelegateSecurityExecutionContextProvider(() => null));
+                                   ?? (securityContextFactory is not null
+                                       ? new DelegateSecurityExecutionContextProvider(securityContextFactory)
+                                       : new DelegateSecurityExecutionContextProvider(() => null));
     }
 
     /// <summary>
@@ -63,7 +63,8 @@ public sealed class FoundgineMcpTools
     /// current caller. Discovery does not grant authorization.
     /// </summary>
     [McpServerTool(Name = "foundgine_capabilities")]
-    [Description("Discover the Foundgine semantic capability contract available to the current caller. Discovery is descriptive; authorization is re-evaluated during execution.")]
+    [Description(
+        "Discover the Foundgine semantic capability contract available to the current caller. Discovery is descriptive; authorization is re-evaluated during execution.")]
     public string DescribeCapabilities()
     {
         var security = _securityContextProvider.RequireSecurityExecutionContext(
@@ -79,9 +80,12 @@ public sealed class FoundgineMcpTools
     /// Authentication, tenant and authorization context remain host-owned.
     /// </summary>
     [McpServerTool(Name = "foundgine_query")]
-    [Description("Execute a provider-neutral Foundgine read intent as JSON. Use only entities, fields and relationships from foundgine_capabilities. Never supply tenant, identity, authorization predicates, SQL, provider or connection details.")]
+    [Description(
+        "Execute a provider-neutral Foundgine read intent as JSON. Use only entities, fields and relationships from foundgine_capabilities. Never supply tenant, identity, authorization predicates, SQL, provider or connection details.")]
     public async Task<string> ExecuteQueryAsync(
-        [Description("JSON read intent containing rootEntity, selections, and optional filter/order/limit/offset/after. Do not include authentication, tenant or authorization context.")] string intentJson,
+        [Description(
+            "JSON read intent containing rootEntity, selections, and optional filter/order/limit/offset/after. Do not include authentication, tenant or authorization context.")]
+        string intentJson,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(intentJson))

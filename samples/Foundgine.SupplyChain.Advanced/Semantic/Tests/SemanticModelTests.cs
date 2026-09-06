@@ -40,8 +40,10 @@ public sealed class SemanticModelTests
         Assert.Contains(product.EffectiveAliases, a => a.Name == "Item");
         Assert.Contains(product.EffectiveAliases, a => a.Name == "Item2");
         Assert.Contains(product.Fields.Single(x => x.Name == "Sku").EffectiveAliases, a => a.Name == "PartNumber");
-        Assert.Contains(product.Fields.Single(x => x.Name == "Sku").EffectiveConstraints, c => c.Kind == SemanticConstraintKind.Pattern);
-        Assert.True(product.Fields.Single(x => x.Name == "SafetyStock").Capabilities.HasFlag(SemanticFieldCapabilities.Writable));
+        Assert.Contains(product.Fields.Single(x => x.Name == "Sku").EffectiveConstraints,
+            c => c.Kind == SemanticConstraintKind.Pattern);
+        Assert.True(product.Fields.Single(x => x.Name == "SafetyStock").Capabilities
+            .HasFlag(SemanticFieldCapabilities.Writable));
         Assert.Contains(product.Relationships, r => r.Name == "components" && r.Target == component.Id);
         Assert.Contains(component.Relationships, r => r.Name == "componentProduct" && r.Target == product.Id);
 
@@ -82,9 +84,14 @@ public sealed class MetadataBackedAuthoringTests
 
         Assert.Equal("shipments", traversal.Name);
         Assert.Equal(3, traversal.Path.Count);
-        Assert.Equal("purchaseOrderLines", model.Get(SupplyChainSemanticModel.Product).Relationships.Single(x => x.Id == traversal.Path[0]).Name);
-        Assert.Equal("purchaseOrder", model.Get(SupplyChainSemanticModel.PurchaseOrderLine).Relationships.Single(x => x.Id == traversal.Path[1]).Name);
-        Assert.Equal("shipments", model.Get(SupplyChainSemanticModel.PurchaseOrder).Relationships.Single(x => x.Id == traversal.Path[2]).Name);
+        Assert.Equal("purchaseOrderLines",
+            model.Get(SupplyChainSemanticModel.Product).Relationships.Single(x => x.Id == traversal.Path[0]).Name);
+        Assert.Equal("purchaseOrder",
+            model.Get(SupplyChainSemanticModel.PurchaseOrderLine).Relationships.Single(x => x.Id == traversal.Path[1])
+                .Name);
+        Assert.Equal("shipments",
+            model.Get(SupplyChainSemanticModel.PurchaseOrder).Relationships.Single(x => x.Id == traversal.Path[2])
+                .Name);
     }
 
 

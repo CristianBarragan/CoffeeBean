@@ -92,8 +92,10 @@ public sealed class SemanticLexicalResolver
         if (maxTokens is < 1 or > 256) throw new ArgumentOutOfRangeException(nameof(maxTokens));
         if (maxPathsExplored is < 1 or > 1_000_000) throw new ArgumentOutOfRangeException(nameof(maxPathsExplored));
         if (timeout is { } t && t <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeout));
-        if (retrievalTimeout is { } rt && rt <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(retrievalTimeout));
-        if (minimumAliasWeight is { } maw && maw is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(minimumAliasWeight));
+        if (retrievalTimeout is { } rt && rt <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(retrievalTimeout));
+        if (minimumAliasWeight is { } maw && maw is < 1 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(minimumAliasWeight));
         _candidateLimit = candidateLimit;
         _maxBridgeHops = maxBridgeHops;
         _ambiguityThreshold = ambiguityThreshold;
@@ -120,10 +122,12 @@ public sealed class SemanticLexicalResolver
         var decision = Ground(expression, cancellationToken);
 
         if (decision.Outcome == GroundingOutcome.Unresolved)
-            return new(SemanticLexicalResolutionOutcome.Unresolved, [], 0, null, decision.Reason, decision.RootCandidates);
+            return new(SemanticLexicalResolutionOutcome.Unresolved, [], 0, null, decision.Reason,
+                decision.RootCandidates);
 
         if (decision.Outcome == GroundingOutcome.BudgetExceeded)
-            return new(SemanticLexicalResolutionOutcome.BudgetExceeded, [], 0, null, decision.Reason, decision.RootCandidates);
+            return new(SemanticLexicalResolutionOutcome.BudgetExceeded, [], 0, null, decision.Reason,
+                decision.RootCandidates);
 
         var leading = decision.Committed ?? decision.CompetingInterpretations[0];
         var outcome = decision.Outcome == GroundingOutcome.RequiresClarification
@@ -620,35 +624,41 @@ public sealed class SemanticLexicalResolver
         {
             SemanticLexicalCandidateKind.Entity or SemanticLexicalCandidateKind.Node
                 when candidate.EntityId is not null && _contract.TryGet(candidate.EntityId.Value, out _) =>
-                    new(candidate.EntityId.Value, candidate.EntityId.Value, [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
+                new(candidate.EntityId.Value, candidate.EntityId.Value,
+                    [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
 
             SemanticLexicalCandidateKind.Relationship
                 when candidate.SourceEntityId is not null && candidate.TargetEntityId is not null &&
                      _contract.TryGet(candidate.SourceEntityId.Value, out _) &&
                      _contract.TryGet(candidate.TargetEntityId.Value, out _) =>
-                    new(candidate.SourceEntityId.Value, candidate.TargetEntityId.Value, [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
+                new(candidate.SourceEntityId.Value, candidate.TargetEntityId.Value,
+                    [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
 
             SemanticLexicalCandidateKind.Traversal
                 when candidate.SourceEntityId is not null && candidate.TargetEntityId is not null &&
                      _contract.TryGet(candidate.SourceEntityId.Value, out _) &&
                      _contract.TryGet(candidate.TargetEntityId.Value, out _) =>
-                    new(candidate.SourceEntityId.Value, candidate.TargetEntityId.Value, [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
+                new(candidate.SourceEntityId.Value, candidate.TargetEntityId.Value,
+                    [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
 
             SemanticLexicalCandidateKind.Field or SemanticLexicalCandidateKind.Value
                 when candidate.EntityId is not null && _contract.TryGet(candidate.EntityId.Value, out _) =>
-                    new(candidate.EntityId.Value, candidate.EntityId.Value, [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
+                new(candidate.EntityId.Value, candidate.EntityId.Value,
+                    [new SemanticLexicalStep(token, candidate, candidate.Score, [])], candidate.Score),
 
             _ => null
         };
     }
 
-    private IReadOnlyList<Transition> ResolveTransition(SearchState state, SemanticLexicalCandidate candidate, SearchBudget budget)
+    private IReadOnlyList<Transition> ResolveTransition(SearchState state, SemanticLexicalCandidate candidate,
+        SearchBudget budget)
     {
         var owner = candidate.Kind switch
         {
             SemanticLexicalCandidateKind.Entity or SemanticLexicalCandidateKind.Node => candidate.EntityId,
             SemanticLexicalCandidateKind.Field or SemanticLexicalCandidateKind.Value => candidate.EntityId,
-            SemanticLexicalCandidateKind.Relationship or SemanticLexicalCandidateKind.Traversal => candidate.SourceEntityId,
+            SemanticLexicalCandidateKind.Relationship or SemanticLexicalCandidateKind.Traversal => candidate
+                .SourceEntityId,
             _ => null
         };
 
@@ -673,7 +683,8 @@ public sealed class SemanticLexicalResolver
     /// (total search work shared with the outer DFS) — a permissive candidate
     /// source cannot turn a shallow-looking search into unbounded work just
     /// because the underlying entity graph is densely connected.</summary>
-    private IReadOnlyList<SemanticLexicalCandidate> FindPath(EntityId source, EntityId target, int maxHops, SearchBudget budget)
+    private IReadOnlyList<SemanticLexicalCandidate> FindPath(EntityId source, EntityId target, int maxHops,
+        SearchBudget budget)
     {
         if (source == target) return [];
 

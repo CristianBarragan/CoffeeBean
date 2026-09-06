@@ -93,24 +93,24 @@ public sealed class SupplyChainGraphSimilarityRetrievalTests
             await load.ExecuteNonQueryAsync();
 
         await using (var extension = new NpgsqlCommand(
-            "CREATE EXTENSION IF NOT EXISTS age;",
-            connection))
+                         "CREATE EXTENSION IF NOT EXISTS age;",
+                         connection))
             await extension.ExecuteNonQueryAsync();
 
         await using (var searchPath = new NpgsqlCommand(
-            """SET search_path = ag_catalog, "$user", public;""",
-            connection))
+                         """SET search_path = ag_catalog, "$user", public;""",
+                         connection))
             await searchPath.ExecuteNonQueryAsync();
 
         await using (var dropGraph = new NpgsqlCommand(
-            "SELECT drop_graph('foundgine', true) " +
-            "WHERE EXISTS (SELECT 1 FROM ag_graph WHERE name = 'foundgine');",
-            connection))
+                         "SELECT drop_graph('foundgine', true) " +
+                         "WHERE EXISTS (SELECT 1 FROM ag_graph WHERE name = 'foundgine');",
+                         connection))
             await dropGraph.ExecuteNonQueryAsync();
 
         await using (var createGraph = new NpgsqlCommand(
-            "SELECT create_graph('foundgine');",
-            connection))
+                         "SELECT create_graph('foundgine');",
+                         connection))
             await createGraph.ExecuteNonQueryAsync();
 
         const string cypher =

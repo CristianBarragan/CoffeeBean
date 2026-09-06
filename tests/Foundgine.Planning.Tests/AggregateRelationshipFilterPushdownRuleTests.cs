@@ -21,7 +21,8 @@ public sealed class AggregateRelationshipFilterPushdownRuleTests
             new SemanticRelationshipFilter(
                 relationship,
                 SemanticRelationshipQuantifier.Some,
-                predicate)]);
+                predicate)
+        ]);
 
         var plan = CreatePlan(filter);
         var optimized = new AggregateRelationshipFilterPushdownRule().Apply(plan);
@@ -45,7 +46,8 @@ public sealed class AggregateRelationshipFilterPushdownRuleTests
         var original = CreatePlan(new SemanticAndFilter([
             new SemanticAggregateFilter(relationship, SemanticFilterAggregate.Count, null,
                 SemanticAggregateFilterOperator.Gt, 0),
-            new SemanticRelationshipFilter(relationship, SemanticRelationshipQuantifier.Some, predicate)]));
+            new SemanticRelationshipFilter(relationship, SemanticRelationshipQuantifier.Some, predicate)
+        ]));
 
         var optimized = new AggregateRelationshipFilterPushdownRule().Apply(original);
 
@@ -62,9 +64,12 @@ public sealed class AggregateRelationshipFilterPushdownRuleTests
         var plan = CreatePlan(new SemanticAndFilter([
             new SemanticAggregateFilter(relationship, SemanticFilterAggregate.Count, null,
                 SemanticAggregateFilterOperator.Gt, 0),
-            new SemanticRelationshipFilter(relationship, SemanticRelationshipQuantifier.Some, predicate)]));
+            new SemanticRelationshipFilter(relationship, SemanticRelationshipQuantifier.Some, predicate)
+        ]));
 
-        var result = new SemanticPlanOptimizer([new AggregateRelationshipFilterPushdownRule(), new AggregateCardinalityOptimizationRule()]).Optimize(plan);
+        var result = new SemanticPlanOptimizer([
+            new AggregateRelationshipFilterPushdownRule(), new AggregateCardinalityOptimizationRule()
+        ]).Optimize(plan);
 
         Assert.True(result.SemanticProof.IsSatisfied);
         var aggregate = Assert.IsType<SemanticAggregateFilter>(result.Plan.Root.QueryOptions!.Filter);
@@ -79,7 +84,8 @@ public sealed class AggregateRelationshipFilterPushdownRuleTests
         var plan = CreatePlan(new SemanticAndFilter([
             new SemanticAggregateFilter(relationship, SemanticFilterAggregate.Count, null,
                 SemanticAggregateFilterOperator.Gt, 0),
-            new SemanticRelationshipFilter(relationship, SemanticRelationshipQuantifier.Some, predicate)]));
+            new SemanticRelationshipFilter(relationship, SemanticRelationshipQuantifier.Some, predicate)
+        ]));
 
         var result = new SemanticPlanOptimizer().Optimize(plan);
 
@@ -102,7 +108,8 @@ public sealed class AggregateRelationshipFilterPushdownRuleTests
             new SemanticAggregateFilter(relationship, SemanticFilterAggregate.Count, null,
                 SemanticAggregateFilterOperator.Gt, 1),
             new SemanticRelationshipFilter(relationship, SemanticRelationshipQuantifier.Some,
-                new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.Eq, "open"))]);
+                new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.Eq, "open"))
+        ]);
 
         var optimized = new AggregateRelationshipFilterPushdownRule().Apply(CreatePlan(filter));
 
@@ -122,7 +129,8 @@ public sealed class AggregateRelationshipFilterPushdownRuleTests
         var filter = new SemanticAndFilter([
             new SemanticAggregateFilter(relationship, SemanticFilterAggregate.Count, null, op, value),
             new SemanticRelationshipFilter(relationship, SemanticRelationshipQuantifier.Some,
-                new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.Eq, "open"))]);
+                new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.Eq, "open"))
+        ]);
 
         var optimized = new AggregateRelationshipFilterPushdownRule().Apply(CreatePlan(filter));
 
@@ -136,7 +144,8 @@ public sealed class AggregateRelationshipFilterPushdownRuleTests
             new SemanticAggregateFilter(new RelationshipId(10), SemanticFilterAggregate.Count, null,
                 SemanticAggregateFilterOperator.Gt, 0),
             new SemanticRelationshipFilter(new RelationshipId(11), SemanticRelationshipQuantifier.Some,
-                new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.Eq, "open"))]);
+                new SemanticFieldFilter(new FieldId(3), SemanticFilterOperator.Eq, "open"))
+        ]);
 
         var optimized = new AggregateRelationshipFilterPushdownRule().Apply(CreatePlan(filter));
 
@@ -152,7 +161,8 @@ public sealed class AggregateRelationshipFilterPushdownRuleTests
             new SemanticAggregateFilter(relationship, SemanticFilterAggregate.Count, null,
                 SemanticAggregateFilterOperator.Gt, 0, existing),
             new SemanticRelationshipFilter(relationship, SemanticRelationshipQuantifier.Some,
-                new SemanticFieldFilter(new FieldId(4), SemanticFilterOperator.Eq, "active"))]);
+                new SemanticFieldFilter(new FieldId(4), SemanticFilterOperator.Eq, "active"))
+        ]);
 
         var optimized = new AggregateRelationshipFilterPushdownRule().Apply(CreatePlan(filter));
 

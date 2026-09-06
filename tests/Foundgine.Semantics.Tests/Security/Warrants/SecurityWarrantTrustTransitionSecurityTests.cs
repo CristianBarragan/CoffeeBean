@@ -14,7 +14,8 @@ public sealed class SecurityWarrantTrustTransitionSecurityTests
         var child = Child(parent);
         store.Set(Trust("service-a"));
 
-        var snapshot = SecurityWarrantDelegationTrustTransition.ValidateAndCapture(parent, child, store, now, "tenant-a");
+        var snapshot =
+            SecurityWarrantDelegationTrustTransition.ValidateAndCapture(parent, child, store, now, "tenant-a");
         store.Set(Trust("service-a", canDelegate: false));
 
         Assert.Throws<InvalidOperationException>(() =>
@@ -30,7 +31,8 @@ public sealed class SecurityWarrantTrustTransitionSecurityTests
         var child = Child(parent, keyId: "key-v1");
         store.Set(Trust("service-a", "key-v1"));
 
-        var snapshot = SecurityWarrantDelegationTrustTransition.ValidateAndCapture(parent, child, store, now, "tenant-a");
+        var snapshot =
+            SecurityWarrantDelegationTrustTransition.ValidateAndCapture(parent, child, store, now, "tenant-a");
         store.Set(Trust("service-a", "key-v2"));
 
         Assert.Throws<InvalidOperationException>(() =>
@@ -92,7 +94,8 @@ public sealed class SecurityWarrantTrustTransitionSecurityTests
     private static DelegationIssuerTrust Trust(string issuer, string keyId = "child-key", bool canDelegate = true) =>
         new(issuer, new HashSet<string>([keyId]), canDelegate, "api", new HashSet<string>(["tenant-a"]));
 
-    private static SecurityWarrant Create(string id, string issuer, string subject, string keyId = "root-key", DateTimeOffset? now = null)
+    private static SecurityWarrant Create(string id, string issuer, string subject, string keyId = "root-key",
+        DateTimeOffset? now = null)
     {
         var t = now ?? DateTimeOffset.UtcNow;
         return new SecurityWarrant(
@@ -101,7 +104,8 @@ public sealed class SecurityWarrantTrustTransitionSecurityTests
             t.AddMinutes(-1), t.AddMinutes(10), $"nonce-{id}", keyId, null, []);
     }
 
-    private static SecurityWarrant Child(SecurityWarrant parent, string subject = "service-b", string keyId = "child-key") =>
+    private static SecurityWarrant Child(SecurityWarrant parent, string subject = "service-b",
+        string keyId = "child-key") =>
         parent with
         {
             Id = "child", Issuer = parent.Subject, Subject = subject, KeyId = keyId,

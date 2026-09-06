@@ -67,4 +67,3 @@ public sealed class SemanticOperationAlgebraStep30Tests
         Assert.Same(predicate, SemanticPredicateAlgebra.Or(predicate));
     }
 }
-

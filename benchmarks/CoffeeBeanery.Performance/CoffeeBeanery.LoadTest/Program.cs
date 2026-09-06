@@ -5,43 +5,43 @@ using System.Text;
 using System.Text.Json;
 
 const string query = """
-query Top50Customers {
-  customer(first: 50) {
-    id
-    customerKey
-    firstName
-    lastName
-    fullName
-    customerBankingRelationship {
-      id
-      customerBankingRelationshipKey
-      contract {
-        id
-        contractKey
-        amount
-        transaction {
-          id
-          transactionKey
-          amount
-          balance
-        }
-      }
-    }
-  }
-}
-""";
+                     query Top50Customers {
+                       customer(first: 50) {
+                         id
+                         customerKey
+                         firstName
+                         lastName
+                         fullName
+                         customerBankingRelationship {
+                           id
+                           customerBankingRelationshipKey
+                           contract {
+                             id
+                             contractKey
+                             amount
+                             transaction {
+                               id
+                               transactionKey
+                               amount
+                               balance
+                             }
+                           }
+                         }
+                       }
+                     }
+                     """;
 
 const string mutation = """
-mutation UpsertCustomer($input: CustomerInput!) {
-  upsertCustomer(input: $input, onConflict: ["CustomerKey"]) {
-    id
-    customerKey
-    firstName
-    lastName
-    fullName
-  }
-}
-""";
+                        mutation UpsertCustomer($input: CustomerInput!) {
+                          upsertCustomer(input: $input, onConflict: ["CustomerKey"]) {
+                            id
+                            customerKey
+                            firstName
+                            lastName
+                            fullName
+                          }
+                        }
+                        """;
 
 var duration = GetInt("BENCHMARK_DURATION_SECONDS", 10);
 var warmup = GetInt("BENCHMARK_WARMUP_SECONDS", 3);
@@ -124,9 +124,10 @@ foreach (var operation in new[]
 
     foreach (var target in targets)
     {
-        var operationBatchSizes = operation is BenchmarkOperation.MutationWholeGraph or BenchmarkOperation.MutationThenQuery
-            ? batchSizes
-            : new[] { 1 };
+        var operationBatchSizes =
+            operation is BenchmarkOperation.MutationWholeGraph or BenchmarkOperation.MutationThenQuery
+                ? batchSizes
+                : new[] { 1 };
 
         foreach (var batchSize in operationBatchSizes)
         {
@@ -156,9 +157,9 @@ foreach (var operation in new[]
                     $"timeouts={warmupResult.Timeouts}, " +
                     $"cancelled={warmupResult.Cancelled}");
 
-            // Warm-up is diagnostic. A slow/erroring warm-up request must
-            // not prevent the actual measurement from running as long as
-            // at least one request completed successfully.
+                // Warm-up is diagnostic. A slow/erroring warm-up request must
+                // not prevent the actual measurement from running as long as
+                // at least one request completed successfully.
                 if (warmupResult.Errors != 0 || warmupResult.Timeouts != 0)
                 {
                     Console.WriteLine(
@@ -626,6 +627,7 @@ static object BuildMutationBatch(int batchSize)
             .Append(" }, onConflict: [\"CustomerKey\"]) { id customerKey firstName lastName fullName }")
             .AppendLine();
     }
+
     sb.AppendLine("}");
     return new { query = sb.ToString(), operationName = "BenchmarkUpsertBatch" };
 }
@@ -647,16 +649,30 @@ static Guid DeterministicGuid(string prefix, int value) =>
         $"coffee-beanery/{prefix}/{value}");
 
 
-static async Task<DockerMetrics> SampleDockerMetricsAsync(string container, CancellationToken cancellationToken, Stopwatch phase, TimeSpan duration)
+static async Task<DockerMetrics> SampleDockerMetricsAsync(string container, CancellationToken cancellationToken,
+    Stopwatch phase, TimeSpan duration)
 {
     var cpu = new List<double>();
     var mem = new List<double>();
     while (!cancellationToken.IsCancellationRequested && phase.Elapsed < duration + TimeSpan.FromSeconds(2))
     {
         var sample = await ReadDockerStatsAsync(container);
-        if (sample is not null) { cpu.Add(sample.Value.CpuPercent); mem.Add(sample.Value.MemoryMb); }
-        try { await Task.Delay(500, cancellationToken); } catch (OperationCanceledException) { break; }
+        if (sample is not null)
+        {
+            cpu.Add(sample.Value.CpuPercent);
+            mem.Add(sample.Value.MemoryMb);
+        }
+
+        try
+        {
+            await Task.Delay(500, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            break;
+        }
     }
+
     return new DockerMetrics(
         cpu.Count == 0 ? 0 : cpu.Average(),
         cpu.Count == 0 ? 0 : cpu.Max(),
@@ -668,20 +684,25 @@ static async Task<DockerMetrics> SampleDockerMetricsAsync(string container, Canc
 static async Task<(double CpuPercent, double MemoryMb)?> ReadDockerStatsAsync(string container)
 {
     var psi = new ProcessStartInfo("docker", $"stats --no-stream --format \"{{.CPUPerc}};{{.MemUsage}}\" {container}")
-    { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
+        { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
     using var process = Process.Start(psi);
     if (process is null) return null;
     var output = (await process.StandardOutput.ReadToEndAsync()).Trim();
     await process.WaitForExitAsync();
     if (string.IsNullOrWhiteSpace(output)) return null;
     var parts = output.Split(';', 2);
-    if (parts.Length != 2 || !double.TryParse(parts[0].TrimEnd('%'), NumberStyles.Float, CultureInfo.InvariantCulture, out var cpu)) return null;
+    if (parts.Length != 2 || !double.TryParse(parts[0].TrimEnd('%'), NumberStyles.Float, CultureInfo.InvariantCulture,
+            out var cpu)) return null;
     var memText = parts[1].Split('/', 2)[0].Trim();
-    var multiplier = memText.EndsWith("GiB", StringComparison.OrdinalIgnoreCase) ? 1024 : memText.EndsWith("KiB", StringComparison.OrdinalIgnoreCase) ? 1.0/1024 : 1;
-    var numeric = memText.Replace("GiB", "", StringComparison.OrdinalIgnoreCase).Replace("MiB", "", StringComparison.OrdinalIgnoreCase).Replace("KiB", "", StringComparison.OrdinalIgnoreCase).Replace("B", "", StringComparison.OrdinalIgnoreCase).Trim();
+    var multiplier = memText.EndsWith("GiB", StringComparison.OrdinalIgnoreCase) ? 1024 :
+        memText.EndsWith("KiB", StringComparison.OrdinalIgnoreCase) ? 1.0 / 1024 : 1;
+    var numeric = memText.Replace("GiB", "", StringComparison.OrdinalIgnoreCase)
+        .Replace("MiB", "", StringComparison.OrdinalIgnoreCase).Replace("KiB", "", StringComparison.OrdinalIgnoreCase)
+        .Replace("B", "", StringComparison.OrdinalIgnoreCase).Trim();
     if (!double.TryParse(numeric, NumberStyles.Float, CultureInfo.InvariantCulture, out var mem)) return null;
     if (memText.Contains("MiB", StringComparison.OrdinalIgnoreCase)) multiplier = 1;
-    if (memText.Contains("B", StringComparison.OrdinalIgnoreCase) && !memText.Contains("iB", StringComparison.OrdinalIgnoreCase)) multiplier = 1.0 / (1024 * 1024);
+    if (memText.Contains("B", StringComparison.OrdinalIgnoreCase) &&
+        !memText.Contains("iB", StringComparison.OrdinalIgnoreCase)) multiplier = 1.0 / (1024 * 1024);
     return (cpu, mem * multiplier);
 }
 
@@ -771,7 +792,8 @@ static string BuildMarkdownReport(
     sb.AppendLine();
     sb.AppendLine("## Results");
     sb.AppendLine();
-    sb.AppendLine("| Operation | Target | Concurrency | Batch | RPS | Logical/s | p50 | p95 | p99 | CPU avg/max | MEM avg/max/end | Errors |");
+    sb.AppendLine(
+        "| Operation | Target | Concurrency | Batch | RPS | Logical/s | p50 | p95 | p99 | CPU avg/max | MEM avg/max/end | Errors |");
     sb.AppendLine("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|");
 
     foreach (var r in report.Results)
@@ -820,10 +842,3 @@ static string BuildMarkdownReport(
 
     return sb.ToString();
 }
-
-
-
-
-
-
-

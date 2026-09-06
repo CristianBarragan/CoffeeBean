@@ -24,7 +24,8 @@ public sealed class EvidenceTests
 
         await using (var command = connection.CreateCommand())
         {
-            command.CommandText = "CREATE TABLE contracts (id INTEGER NOT NULL, contract_type INTEGER NOT NULL, tenant_id INTEGER NOT NULL);";
+            command.CommandText =
+                "CREATE TABLE contracts (id INTEGER NOT NULL, contract_type INTEGER NOT NULL, tenant_id INTEGER NOT NULL);";
             await command.ExecuteNonQueryAsync();
             command.CommandText = "INSERT INTO contracts (id, contract_type, tenant_id) VALUES (1, 0, 7), (2, 1, 9);";
             await command.ExecuteNonQueryAsync();
@@ -85,7 +86,8 @@ public sealed class EvidenceTests
         await connection.OpenAsync();
         await using (var command = connection.CreateCommand())
         {
-            command.CommandText = "CREATE TABLE contracts (id INTEGER NOT NULL, contract_type INTEGER NOT NULL, tenant_id INTEGER NOT NULL);";
+            command.CommandText =
+                "CREATE TABLE contracts (id INTEGER NOT NULL, contract_type INTEGER NOT NULL, tenant_id INTEGER NOT NULL);";
             await command.ExecuteNonQueryAsync();
         }
 
@@ -129,21 +131,17 @@ public sealed class EvidenceTests
         Assert.False(string.IsNullOrWhiteSpace(result.Receipt.ResultFingerprint));
     }
 
-    private sealed class CapturingEvidenceCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler, IProviderSecurityConformanceEvaluator
+    private sealed class CapturingEvidenceCompiler : IProviderPlanCompiler, ISecurityInvariantProviderCompiler,
+        IProviderSecurityConformanceEvaluator
     {
         public IReadOnlyCollection<string> PreservedSecurityInvariants =>
             SecurityInvariantRegistry.AllInvariants.Select(x => x.Id).ToArray();
 
         public ProviderSecurityConformanceResult Evaluate(ExecutionIR ir, ProviderPlan plan) =>
-
             new(
-
                 plan.Provider,
-
                 ir.RequiredSecurityInvariants,
-
                 ir.RequiredSecurityInvariants.Where(PreservedSecurityInvariants.Contains).ToArray(),
-
                 Array.Empty<string>());
 
 
@@ -167,5 +165,4 @@ public sealed class EvidenceTests
     }
 
     private sealed record TestProviderPlan() : ProviderPlan("test");
-
 }

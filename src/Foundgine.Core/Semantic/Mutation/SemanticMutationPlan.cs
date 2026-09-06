@@ -34,4 +34,3 @@ public sealed record SemanticMutationDependencyPlan(
     FieldId SourceField,
     FieldId TargetField,
     RelationshipId? Relationship = null);
-

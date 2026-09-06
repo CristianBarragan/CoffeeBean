@@ -60,7 +60,8 @@ public sealed class ProviderSecurityConformanceMatrix
     public ProviderSecurityConformanceProfile Get(string provider) =>
         _profiles.TryGetValue(provider, out var profile)
             ? profile
-            : throw new KeyNotFoundException($"Provider '{provider}' is not registered in the security conformance matrix.");
+            : throw new KeyNotFoundException(
+                $"Provider '{provider}' is not registered in the security conformance matrix.");
 
     public SecurityInvariantAttestation Evaluate(string provider, IEnumerable<string> requiredInvariants) =>
         Get(provider).Evaluate(requiredInvariants);
@@ -87,7 +88,9 @@ public static class FoundgineProviderSecurityProfiles
             SecurityInvariantIds.ParameterizedValues,
             SecurityInvariantIds.PlanCacheContextIsolation
         ],
-        ["Suitable for semantic/query security testing; consequential PostgreSQL transaction guarantees are not inferred."]);
+        [
+            "Suitable for semantic/query security testing; consequential PostgreSQL transaction guarantees are not inferred."
+        ]);
 
     public static ProviderSecurityConformanceProfile Sql => new(
         "sql",
@@ -99,7 +102,9 @@ public static class FoundgineProviderSecurityProfiles
             SecurityInvariantIds.ParameterizedValues,
             SecurityInvariantIds.PlanCacheContextIsolation
         ],
-        ["Generic SQL preserves query-level guarantees; mutation guarantees require a provider-specific execution contract."]);
+        [
+            "Generic SQL preserves query-level guarantees; mutation guarantees require a provider-specific execution contract."
+        ]);
 
     public static ProviderSecurityConformanceProfile PostgresTransferFunds => new(
         "postgres-transfer-funds",
@@ -115,5 +120,7 @@ public static class FoundgineProviderSecurityProfiles
             SecurityInvariantIds.AuditRequired,
             SecurityInvariantIds.ExecutionEvidenceRequired
         ],
-        ["High-assurance TransferFunds provider; transaction and concurrency guarantees are backed by PostgreSQL integration tests."]);
+        [
+            "High-assurance TransferFunds provider; transaction and concurrency guarantees are backed by PostgreSQL integration tests."
+        ]);
 }

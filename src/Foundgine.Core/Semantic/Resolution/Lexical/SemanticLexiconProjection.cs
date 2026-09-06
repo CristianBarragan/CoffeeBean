@@ -63,7 +63,8 @@ public static class SemanticLexiconProjection
                 $"{contract.Get(traversal.Source).Name} {traversal.Name} {contract.Get(traversal.Target).Name}",
                 SourceEntityId: traversal.Source,
                 TargetEntityId: traversal.Target,
-                Description: $"Logical traversal from {contract.Get(traversal.Source).Name} to {contract.Get(traversal.Target).Name}."));
+                Description:
+                $"Logical traversal from {contract.Get(traversal.Source).Name} to {contract.Get(traversal.Target).Name}."));
         }
 
         return entries;

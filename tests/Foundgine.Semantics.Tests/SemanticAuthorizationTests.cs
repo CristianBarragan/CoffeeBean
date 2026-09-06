@@ -9,7 +9,6 @@ namespace Foundgine.Core.Semantic.Tests;
 
 public sealed class SemanticAuthorizationTests
 {
-
     [Fact]
     public void Contract_aware_authorization_accepts_operation_from_same_contract()
     {
@@ -32,8 +31,8 @@ public sealed class SemanticAuthorizationTests
             new SemanticRequestResolver(contract).Resolve(request));
         operation = operation with { Root = operation.Root with { EntityId = new EntityId(999) } };
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(contract, operation));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(contract, operation));
 
         Assert.Contains("999", ex.Message);
     }
@@ -54,8 +53,8 @@ public sealed class SemanticAuthorizationTests
             }
         };
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(contract, operation));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            new SemanticAuthorizer(new AllowAllSemanticAuthorizationPolicy()).Authorize(contract, operation));
 
         Assert.Contains("targets", ex.Message);
         Assert.Equal(account, child.EntityId);
@@ -151,13 +150,14 @@ public sealed class SemanticAuthorizationTests
 
         var resolved = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
 
-        var ex = Assert.Throws<SemanticAuthorizationException>(
-            () => new SemanticAuthorizer(new DenyCustomerPolicy()).Authorize(resolved));
+        var ex = Assert.Throws<SemanticAuthorizationException>(() =>
+            new SemanticAuthorizer(new DenyCustomerPolicy()).Authorize(resolved));
 
         Assert.Contains("Access denied", ex.Message);
     }
 
-    private static (SemanticModel Model, SemanticRequest Request, EntityId Customer, EntityId Account, EntityId Transaction)
+    private static (SemanticModel Model, SemanticRequest Request, EntityId Customer, EntityId Account, EntityId
+        Transaction)
         CreateBankingRequest()
     {
         var customer = new EntityId(1);
@@ -329,4 +329,3 @@ public sealed class SemanticAuthorizationCapabilityTests
                 : null;
     }
 }
-

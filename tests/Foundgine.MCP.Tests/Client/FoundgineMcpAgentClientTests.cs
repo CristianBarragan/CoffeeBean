@@ -20,7 +20,8 @@ public sealed class FoundgineMcpAgentClientTests
             if (body.Contains("foundgine_capabilities", StringComparison.Ordinal))
                 return RpcToolResult(new SemanticCapabilityContract(1, [
                     new("Customer.read", "Read Customer", new Foundgine.Core.Abstractions.EntityId(1),
-                        Foundgine.Core.Abstractions.AuthorizationDecision.Allowed, [], [], [], ["Id", "Name"], ["Transactions"])
+                        Foundgine.Core.Abstractions.AuthorizationDecision.Allowed, [], [], [], ["Id", "Name"],
+                        ["Transactions"])
                 ]));
 
             Assert.Contains("foundgine_query", body, StringComparison.Ordinal);
@@ -64,7 +65,8 @@ public sealed class FoundgineMcpAgentClientTests
     {
         var handler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"message\":\"denied\"}}", Encoding.UTF8, "application/json")
+            Content = new StringContent("{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"message\":\"denied\"}}",
+                Encoding.UTF8, "application/json")
         });
         using var http = new HttpClient(handler) { BaseAddress = new Uri("http://localhost") };
         var client = new FoundgineMcpAgentClient(http);
@@ -78,7 +80,8 @@ public sealed class FoundgineMcpAgentClientTests
     private static HttpResponseMessage RpcToolResult(object value, bool sse = false)
     {
         var nested = System.Text.Json.JsonSerializer.Serialize(value);
-        var rpc = $"{{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{{\"content\":[{{\"type\":\"text\",\"text\":{System.Text.Json.JsonSerializer.Serialize(nested)}}}]}}}}";
+        var rpc =
+            $"{{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{{\"content\":[{{\"type\":\"text\",\"text\":{System.Text.Json.JsonSerializer.Serialize(nested)}}}]}}}}";
         var body = sse ? $"event: message\ndata: {rpc}\n\n" : rpc;
         return new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -88,7 +91,8 @@ public sealed class FoundgineMcpAgentClientTests
 
     private sealed class RecordingHandler(Func<HttpRequestMessage, HttpResponseMessage> handler) : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
             Task.FromResult(handler(request));
     }
 }

@@ -43,8 +43,10 @@ internal static class SqlAuthorizationWriter
         AuthorizationPredicateKind.NotEqual => Binary(node, "<>", resource, resourceAlias, parameters, ref counter),
         AuthorizationPredicateKind.And => Binary(node, "AND", resource, resourceAlias, parameters, ref counter),
         AuthorizationPredicateKind.Or => Binary(node, "OR", resource, resourceAlias, parameters, ref counter),
-        AuthorizationPredicateKind.Not => $"NOT ({WriteRequired(node.Left, resource, resourceAlias, parameters, ref counter)})",
-        _ => throw new NotSupportedException($"Authorization predicate '{node.Kind}' is not supported by the SQL provider.")
+        AuthorizationPredicateKind.Not =>
+            $"NOT ({WriteRequired(node.Left, resource, resourceAlias, parameters, ref counter)})",
+        _ => throw new NotSupportedException(
+            $"Authorization predicate '{node.Kind}' is not supported by the SQL provider.")
     };
 
     private static string WriteMember(
@@ -60,11 +62,14 @@ internal static class SqlAuthorizationWriter
             var name = node.Name ?? throw new InvalidOperationException("Resource member has no name.");
             var field = resource.EffectiveFields.FirstOrDefault(x => x.Name == name);
             if (field?.Column is null)
-                throw new InvalidOperationException($"Authorization resource member '{resource.Name}.{name}' has no storage column mapping.");
+                throw new InvalidOperationException(
+                    $"Authorization resource member '{resource.Name}.{name}' has no storage column mapping.");
 
             var column = resource.Columns.FirstOrDefault(x => x.Id == field.Column.ColumnId)
-                ?? throw new InvalidOperationException($"Authorization resource member '{resource.Name}.{name}' references a missing column.");
-            return $"{SqlCompiler.QuoteIdentifier(resourceAlias)}.{SqlCompiler.QuoteIdentifier(column.EffectiveStorageName)}";
+                         ?? throw new InvalidOperationException(
+                             $"Authorization resource member '{resource.Name}.{name}' references a missing column.");
+            return
+                $"{SqlCompiler.QuoteIdentifier(resourceAlias)}.{SqlCompiler.QuoteIdentifier(column.EffectiveStorageName)}";
         }
 
         if (target.Kind == AuthorizationPredicateKind.ContextParameter)
@@ -77,7 +82,8 @@ internal static class SqlAuthorizationWriter
             return "@" + name;
         }
 
-        throw new NotSupportedException("Only direct resource and context member access is supported by the SQL authorization provider.");
+        throw new NotSupportedException(
+            "Only direct resource and context member access is supported by the SQL authorization provider.");
     }
 
     private static string Binary(

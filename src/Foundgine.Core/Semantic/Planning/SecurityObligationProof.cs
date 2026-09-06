@@ -17,10 +17,10 @@ public sealed record SecurityObligationProof(
     IReadOnlyList<string> Violations)
 {
     public bool IsSatisfied => Violations.Count == 0 &&
-        Obligations.OrderBy(x => x, StringComparer.Ordinal)
-            .SequenceEqual(
-                Preserved.Concat(NotRequired).OrderBy(x => x, StringComparer.Ordinal),
-                StringComparer.Ordinal);
+                               Obligations.OrderBy(x => x, StringComparer.Ordinal)
+                                   .SequenceEqual(
+                                       Preserved.Concat(NotRequired).OrderBy(x => x, StringComparer.Ordinal),
+                                       StringComparer.Ordinal);
 
     public static SecurityObligationProof Create(
         IPlanRewriteRule rule,

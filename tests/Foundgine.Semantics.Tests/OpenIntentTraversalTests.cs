@@ -28,9 +28,11 @@ public sealed class OpenIntentTraversalTests
         var model = BuildModel();
         var intent = new ReadIntent(
             "Customer",
-            [new ReadSelection(
-                Relationship: "transactions",
-                Children: [new ReadSelection(Field: "Amount")])]);
+            [
+                new ReadSelection(
+                    Relationship: "transactions",
+                    Children: [new ReadSelection(Field: "Amount")])
+            ]);
 
         var request = new ReadIntentCompiler(model).Compile(intent);
         var graph = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(request);
@@ -53,9 +55,11 @@ public sealed class OpenIntentTraversalTests
         var snapshot = model.Freeze().CreateSnapshot();
         var intent = new ReadIntent(
             "Customer",
-            [new ReadSelection(
-                Relationship: "transactions",
-                Children: [new ReadSelection(Field: "Amount")])]);
+            [
+                new ReadSelection(
+                    Relationship: "transactions",
+                    Children: [new ReadSelection(Field: "Amount")])
+            ]);
 
         var dynamicGraph = new ReadIntentCompiler(snapshot).CompileOperationGraph(intent);
         var typedRequest = new ReadIntentCompiler(snapshot).Compile(intent);
@@ -79,9 +83,11 @@ public sealed class OpenIntentTraversalTests
         var snapshot = model.Freeze().CreateSnapshot();
         var intent = new ReadIntent(
             "Customer",
-            [new ReadSelection(
-                Relationship: "transactions",
-                Children: [new ReadSelection(Field: "Amount")])]);
+            [
+                new ReadSelection(
+                    Relationship: "transactions",
+                    Children: [new ReadSelection(Field: "Amount")])
+            ]);
 
         var graph = new ReadIntentCompiler(snapshot).CompileOperationGraph(intent);
         var planner = new Foundgine.Core.Semantic.Planning.Planner();
@@ -104,8 +110,13 @@ public sealed class OpenIntentTraversalTests
 
         foreach (var child in node.Children)
         {
-            try { return FindPlanNode(child, entityId); }
-            catch (Xunit.Sdk.XunitException) { }
+            try
+            {
+                return FindPlanNode(child, entityId);
+            }
+            catch (Xunit.Sdk.XunitException)
+            {
+            }
         }
 
         throw new Xunit.Sdk.XunitException($"Entity '{entityId}' was not found in the plan.");
@@ -117,9 +128,11 @@ public sealed class OpenIntentTraversalTests
         var model = BuildModel();
         var request = new ReadIntent(
             "Customer",
-            [new ReadSelection(
-                Relationship: "transactions",
-                Children: [new ReadSelection(Field: "Amount")])]);
+            [
+                new ReadSelection(
+                    Relationship: "transactions",
+                    Children: [new ReadSelection(Field: "Amount")])
+            ]);
 
         var graph = new SemanticRequestResolver(model.Freeze().CreateSnapshot()).Resolve(
             new ReadIntentCompiler(model).Compile(request));
@@ -164,10 +177,14 @@ public sealed class OpenIntentTraversalTests
             .Entity(Customer, "Customer", e => e.Identity(CustomerId, "Id"))
             .Entity(CustomerRelationship, "CustomerRelationship", e => e.Identity(new FieldId(3), "Id"))
             .Entity(Contract, "Contract", e => e.Identity(new FieldId(4), "Id"))
-            .Entity(Transaction, "Transaction", e => e.Identity(new FieldId(5), "Id").Field(TransactionAmount, "Amount", typeof(decimal)))
-            .Relationship<CustomerModel, CustomerRelationshipModel>(Customer, CustomerRelationships, "relationships", x => x.Id, CustomerRelationship, x => x.CustomerId, RelationshipCardinality.Many)
-            .Relationship<CustomerRelationshipModel, ContractModel>(CustomerRelationship, RelationshipContract, "contract", x => x.ContractId, Contract, x => x.Id, RelationshipCardinality.One)
-            .Relationship<ContractModel, TransactionModel>(Contract, ContractTransactions, "transactions", x => x.Id, Transaction, x => x.ContractId, RelationshipCardinality.Many)
+            .Entity(Transaction, "Transaction",
+                e => e.Identity(new FieldId(5), "Id").Field(TransactionAmount, "Amount", typeof(decimal)))
+            .Relationship<CustomerModel, CustomerRelationshipModel>(Customer, CustomerRelationships, "relationships",
+                x => x.Id, CustomerRelationship, x => x.CustomerId, RelationshipCardinality.Many)
+            .Relationship<CustomerRelationshipModel, ContractModel>(CustomerRelationship, RelationshipContract,
+                "contract", x => x.ContractId, Contract, x => x.Id, RelationshipCardinality.One)
+            .Relationship<ContractModel, TransactionModel>(Contract, ContractTransactions, "transactions", x => x.Id,
+                Transaction, x => x.ContractId, RelationshipCardinality.Many)
             .Traversal(Customer, "payments", CustomerRelationships, RelationshipContract, ContractTransactions)
             .Build();
 
@@ -199,15 +216,21 @@ public sealed class OpenIntentTraversalTests
         .Entity(Transaction, "Transaction", e => e
             .Identity(new FieldId(5), "Id")
             .Field(TransactionAmount, "Amount", typeof(decimal)))
-        .Relationship<CustomerModel, CustomerRelationshipModel>(Customer, CustomerRelationships, "relationships", x => x.Id, CustomerRelationship, x => x.CustomerId, RelationshipCardinality.Many)
-        .Relationship<CustomerRelationshipModel, ContractModel>(CustomerRelationship, RelationshipContract, "contract", x => x.ContractId, Contract, x => x.Id, RelationshipCardinality.One)
-        .Relationship<ContractModel, TransactionModel>(Contract, ContractTransactions, "transactions", x => x.Id, Transaction, x => x.ContractId, RelationshipCardinality.Many)
+        .Relationship<CustomerModel, CustomerRelationshipModel>(Customer, CustomerRelationships, "relationships",
+            x => x.Id, CustomerRelationship, x => x.CustomerId, RelationshipCardinality.Many)
+        .Relationship<CustomerRelationshipModel, ContractModel>(CustomerRelationship, RelationshipContract, "contract",
+            x => x.ContractId, Contract, x => x.Id, RelationshipCardinality.One)
+        .Relationship<ContractModel, TransactionModel>(Contract, ContractTransactions, "transactions", x => x.Id,
+            Transaction, x => x.ContractId, RelationshipCardinality.Many)
         .Traversal(Customer, "transactions", CustomerRelationships, RelationshipContract, ContractTransactions)
         .Build();
 
     private sealed record CustomerModel(int Id);
+
     private sealed record CustomerRelationshipModel(int Id, int CustomerId, int ContractId);
+
     private sealed record ContractModel(int Id);
+
     private sealed record TransactionModel(int Id, int ContractId, decimal Amount);
 
     private sealed class DenyContractPolicy : AllowAllSemanticAuthorizationPolicy
@@ -215,4 +238,3 @@ public sealed class OpenIntentTraversalTests
         public override bool CanAccessEntity(EntityId entityId) => entityId != Contract;
     }
 }
-

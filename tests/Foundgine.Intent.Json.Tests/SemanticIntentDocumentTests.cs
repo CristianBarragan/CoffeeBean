@@ -12,7 +12,8 @@ public sealed class SemanticIntentDocumentTests
     {
         var customer = new EntityId(1);
         var model = new SemanticModelBuilder()
-            .Entity(customer, "Customer", e => e.Identity(new FieldId(1), "Id").Field(new FieldId(2), "Name", typeof(string)))
+            .Entity(customer, "Customer",
+                e => e.Identity(new FieldId(1), "Id").Field(new FieldId(2), "Name", typeof(string)))
             .Build();
         var contract = model.Freeze().CreateSnapshot();
         var compiler = new ReadIntentCompiler(contract);
@@ -34,7 +35,8 @@ public sealed class SemanticIntentDocumentTests
             .Entity(customer, "Customer", e => e.Identity(new FieldId(1), "Id"))
             .Build();
         var compiler = new ReadIntentCompiler(model.Freeze().CreateSnapshot());
-        var document = new SemanticIntentDocument("sha256:stale", new ReadIntent("Customer", [new ReadSelection("Id")]));
+        var document =
+            new SemanticIntentDocument("sha256:stale", new ReadIntent("Customer", [new ReadSelection("Id")]));
 
         var ex = Assert.Throws<InvalidOperationException>(() => compiler.ResolveDocument(document));
         Assert.Contains("bound to contract", ex.Message);
@@ -46,13 +48,17 @@ public sealed class SemanticIntentDocumentTests
         var customer = new EntityId(1);
         var order = new EntityId(2);
         var model = new SemanticModelBuilder()
-            .Entity(customer, "Customer", e => e.Identity(new FieldId(1), "Id").Relationship(new RelationshipId(1), "Orders", order, RelationshipCardinality.Many))
-            .Entity(order, "Order", e => e.Identity(new FieldId(1), "Id").Field(new FieldId(2), "OrderDate", typeof(DateTime)))
+            .Entity(customer, "Customer",
+                e => e.Identity(new FieldId(1), "Id")
+                    .Relationship(new RelationshipId(1), "Orders", order, RelationshipCardinality.Many))
+            .Entity(order, "Order",
+                e => e.Identity(new FieldId(1), "Id").Field(new FieldId(2), "OrderDate", typeof(DateTime)))
             .Build();
         var compiler = new ReadIntentCompiler(model.Freeze().CreateSnapshot());
         var intent = new ReadIntent("Customer", [
             new ReadSelection("Id"),
-            new ReadSelection(null, "Orders", [new ReadSelection("OrderDate")])]);
+            new ReadSelection(null, "Orders", [new ReadSelection("OrderDate")])
+        ]);
 
         var direct = compiler.CompileOperationGraph(intent);
         var document = compiler.CreateDocument(intent);

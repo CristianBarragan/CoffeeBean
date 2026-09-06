@@ -80,7 +80,8 @@ public sealed class M175ProviderAttackTests
         var ir = Foundgine.Testing.ExecutionIRTestFactory.Create(
             new ExecutionIRNode(1, ExecutionOperation.Scan, new EntityId(1), [new FieldId(1)], null, null, [], null),
             [SecurityInvariantIds.ParameterizedValues]);
-        var result = SqlSecurityConformance.Verify(ir, new SqlPlan("SELECT id FROM customer WHERE amount = @p0", [], [new SqlParameterBinding("", 42)]));
+        var result = SqlSecurityConformance.Verify(ir,
+            new SqlPlan("SELECT id FROM customer WHERE amount = @p0", [], [new SqlParameterBinding("", 42)]));
         Assert.False(result.IsSatisfied);
         Assert.Contains(result.Violations, x => x.Contains("parameter", StringComparison.OrdinalIgnoreCase));
     }
@@ -112,5 +113,3 @@ public sealed class M175ProviderAttackTests
         Assert.Contains(result.Violations, x => x.Contains("embedded", StringComparison.Ordinal));
     }
 }
-
-

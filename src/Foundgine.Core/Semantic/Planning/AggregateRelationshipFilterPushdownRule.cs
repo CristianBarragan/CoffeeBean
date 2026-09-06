@@ -105,134 +105,134 @@ public sealed class AggregateRelationshipFilterPushdownRule : IPlanRewriteRule
     }
 
     private static SemanticFilterExpression RewriteFilter(
-    SemanticFilterExpression filter,
-    ref bool changed)
-{
-    switch (filter)
+        SemanticFilterExpression filter,
+        ref bool changed)
     {
-        case SemanticAndFilter and:
+        switch (filter)
         {
-            var expressions = and.Expressions.ToArray();
-
-            for (var i = 0; i < expressions.Length; i++)
+            case SemanticAndFilter and:
             {
-                if (expressions[i] is not SemanticAggregateFilter aggregate ||
-                    !IsEligibleCountExists(aggregate) ||
-                    aggregate.Predicate is not null)
-                {
-                    continue;
-                }
+                var expressions = and.Expressions.ToArray();
 
-                for (var j = 0; j < expressions.Length; j++)
+                for (var i = 0; i < expressions.Length; i++)
                 {
-                    if (i == j ||
-                        expressions[j] is not SemanticRelationshipFilter relationship ||
-                        relationship.Quantifier != SemanticRelationshipQuantifier.Some ||
-                        relationship.Relationship != aggregate.Relationship)
+                    if (expressions[i] is not SemanticAggregateFilter aggregate ||
+                        !IsEligibleCountExists(aggregate) ||
+                        aggregate.Predicate is not null)
                     {
                         continue;
                     }
 
-                    var rewrittenAggregate = aggregate with
+                    for (var j = 0; j < expressions.Length; j++)
                     {
-                        Predicate = relationship.Predicate
-                    };
-
-                    var remaining = new List<SemanticFilterExpression>(
-                        expressions.Length - 1);
-
-                    for (var k = 0; k < expressions.Length; k++)
-                    {
-                        if (k == i)
+                        if (i == j ||
+                            expressions[j] is not SemanticRelationshipFilter relationship ||
+                            relationship.Quantifier != SemanticRelationshipQuantifier.Some ||
+                            relationship.Relationship != aggregate.Relationship)
                         {
-                            remaining.Add(rewrittenAggregate);
+                            continue;
                         }
-                        else if (k != j)
+
+                        var rewrittenAggregate = aggregate with
                         {
-                            remaining.Add(expressions[k]);
+                            Predicate = relationship.Predicate
+                        };
+
+                        var remaining = new List<SemanticFilterExpression>(
+                            expressions.Length - 1);
+
+                        for (var k = 0; k < expressions.Length; k++)
+                        {
+                            if (k == i)
+                            {
+                                remaining.Add(rewrittenAggregate);
+                            }
+                            else if (k != j)
+                            {
+                                remaining.Add(expressions[k]);
+                            }
                         }
+
+                        changed = true;
+
+                        return remaining.Count switch
+                        {
+                            0 => throw new InvalidOperationException(
+                                "Aggregate pushdown produced an empty AND expression."),
+
+                            1 => remaining[0],
+
+                            _ => new SemanticAndFilter(remaining)
+                        };
                     }
-
-                    changed = true;
-
-                    return remaining.Count switch
-                    {
-                        0 => throw new InvalidOperationException(
-                            "Aggregate pushdown produced an empty AND expression."),
-
-                        1 => remaining[0],
-
-                        _ => new SemanticAndFilter(remaining)
-                    };
                 }
+
+                var nested = new SemanticFilterExpression[expressions.Length];
+                var nodeChanged = false;
+
+                for (var i = 0; i < expressions.Length; i++)
+                {
+                    var rewritten = RewriteFilter(
+                        expressions[i],
+                        ref changed);
+
+                    nested[i] = rewritten;
+
+                    if (!ReferenceEquals(rewritten, expressions[i]))
+                        nodeChanged = true;
+                }
+
+                if (!nodeChanged)
+                    return filter;
+
+                changed = true;
+                return new SemanticAndFilter(nested);
             }
 
-            var nested = new SemanticFilterExpression[expressions.Length];
-            var nodeChanged = false;
-
-            for (var i = 0; i < expressions.Length; i++)
+            case SemanticOrFilter or:
             {
-                var rewritten = RewriteFilter(
-                    expressions[i],
+                var expressions = or.Expressions.ToArray();
+                var nested = new SemanticFilterExpression[expressions.Length];
+                var nodeChanged = false;
+
+                for (var i = 0; i < expressions.Length; i++)
+                {
+                    var rewritten = RewriteFilter(
+                        expressions[i],
+                        ref changed);
+
+                    nested[i] = rewritten;
+
+                    if (!ReferenceEquals(rewritten, expressions[i]))
+                        nodeChanged = true;
+                }
+
+                if (!nodeChanged)
+                    return filter;
+
+                changed = true;
+                return new SemanticOrFilter(nested);
+            }
+
+            case SemanticRelationshipFilter relationship:
+            {
+                var predicate = RewriteFilter(
+                    relationship.Predicate,
                     ref changed);
 
-                nested[i] = rewritten;
+                if (ReferenceEquals(predicate, relationship.Predicate))
+                    return filter;
 
-                if (!ReferenceEquals(rewritten, expressions[i]))
-                    nodeChanged = true;
+                return relationship with
+                {
+                    Predicate = predicate
+                };
             }
 
-            if (!nodeChanged)
+            default:
                 return filter;
-
-            changed = true;
-            return new SemanticAndFilter(nested);
         }
-
-        case SemanticOrFilter or:
-        {
-            var expressions = or.Expressions.ToArray();
-            var nested = new SemanticFilterExpression[expressions.Length];
-            var nodeChanged = false;
-
-            for (var i = 0; i < expressions.Length; i++)
-            {
-                var rewritten = RewriteFilter(
-                    expressions[i],
-                    ref changed);
-
-                nested[i] = rewritten;
-
-                if (!ReferenceEquals(rewritten, expressions[i]))
-                    nodeChanged = true;
-            }
-
-            if (!nodeChanged)
-                return filter;
-
-            changed = true;
-            return new SemanticOrFilter(nested);
-        }
-
-        case SemanticRelationshipFilter relationship:
-        {
-            var predicate = RewriteFilter(
-                relationship.Predicate,
-                ref changed);
-
-            if (ReferenceEquals(predicate, relationship.Predicate))
-                return filter;
-
-            return relationship with
-            {
-                Predicate = predicate
-            };
-        }
-
-        default:
-            return filter;
     }
-}
 
     private static bool ContainsEligible(SemanticPlanNode node)
     {
@@ -246,7 +246,8 @@ public sealed class AggregateRelationshipFilterPushdownRule : IPlanRewriteRule
         {
             SemanticAndFilter and =>
                 and.Expressions.OfType<SemanticAggregateFilter>().Any(IsEligibleCountExists) &&
-                and.Expressions.OfType<SemanticRelationshipFilter>().Any(r => r.Quantifier == SemanticRelationshipQuantifier.Some),
+                and.Expressions.OfType<SemanticRelationshipFilter>()
+                    .Any(r => r.Quantifier == SemanticRelationshipQuantifier.Some),
             SemanticRelationshipFilter relationship => ContainsEligible(relationship.Predicate),
             SemanticOrFilter or => or.Expressions.Any(ContainsEligible),
             _ => false
@@ -254,7 +255,8 @@ public sealed class AggregateRelationshipFilterPushdownRule : IPlanRewriteRule
 
     private static bool IsEligibleCountExists(SemanticAggregateFilter aggregate)
     {
-        if (aggregate.Aggregate != SemanticFilterAggregate.Count || aggregate.Field is not null || aggregate.Predicate is not null)
+        if (aggregate.Aggregate != SemanticFilterAggregate.Count || aggregate.Field is not null ||
+            aggregate.Predicate is not null)
             return false;
 
         return AggregateExecutionStrategyResolver.Resolve(aggregate.Operator, aggregate.Value) ==

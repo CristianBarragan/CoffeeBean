@@ -15,7 +15,6 @@ public readonly record struct EntityId(ulong Value)
         new(SemanticIdentity.Hash(SemanticIdentity.EntityKey(semanticName)));
 }
 
-
 public sealed class EntityIdJsonConverter : JsonConverter<EntityId>
 {
     public override EntityId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -36,7 +35,8 @@ public sealed class EntityIdJsonConverter : JsonConverter<EntityId>
     public override void Write(Utf8JsonWriter writer, EntityId value, JsonSerializerOptions options) =>
         writer.WriteNumberValue(value.Value);
 
-    public override EntityId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+    public override EntityId ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert,
+        JsonSerializerOptions options) =>
         new(ulong.Parse(reader.GetString()!));
 
     public override void WriteAsPropertyName(Utf8JsonWriter writer, EntityId value, JsonSerializerOptions options) =>

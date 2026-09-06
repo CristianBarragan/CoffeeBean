@@ -25,6 +25,7 @@ public sealed class SupplyChainDataFixtureTests
                     if (visited.Add(child)) stack.Push(child);
                 }
             }
+
             return false;
         }
 

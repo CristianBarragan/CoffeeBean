@@ -4,7 +4,9 @@ namespace CoffeeBeanery.Database;
 
 public sealed class BankingEntityContext : DbContext
 {
-    public BankingEntityContext(DbContextOptions<BankingEntityContext> options) : base(options) { }
+    public BankingEntityContext(DbContextOptions<BankingEntityContext> options) : base(options)
+    {
+    }
 
     public DbSet<CustomerCustomerRelationship> CustomerCustomerRelationship => Set<CustomerCustomerRelationship>();
     public DbSet<Customer> Customer => Set<Customer>();

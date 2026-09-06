@@ -43,30 +43,40 @@ public sealed class FoundgineHotChocolateQueryExecutorTests
 
         public SemanticAuthorizationCapabilities DescribeCapabilities() => throw new NotImplementedException();
         public SemanticCapabilityContract DescribeCapabilityContract() => throw new NotImplementedException();
-        public SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security) => throw new NotImplementedException();
+
+        public SemanticCapabilityContract DescribeCapabilityContract(SecurityExecutionContext security) =>
+            throw new NotImplementedException();
+
         public SemanticVersionSet DescribeVersionSet() => throw new NotImplementedException();
         public Foundgine.Runtime.DryRunResult DryRun(SemanticRequest request) => throw new NotImplementedException();
-        public Foundgine.Runtime.PlanApproval ApprovePlan(SemanticRequest request, string approvedBy) => throw new NotImplementedException();
-        public Task<ExecutionResult> ExecuteApprovedAsync(Foundgine.Runtime.PlanApproval approval, ExecutionContext? context = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 
-        public Task<ExecutionResult> ExecuteAsync(SemanticRequest request, ExecutionContext? context = null, CancellationToken cancellationToken = default)
+        public Foundgine.Runtime.PlanApproval ApprovePlan(SemanticRequest request, string approvedBy) =>
+            throw new NotImplementedException();
+
+        public Task<ExecutionResult> ExecuteApprovedAsync(Foundgine.Runtime.PlanApproval approval,
+            ExecutionContext? context = null, CancellationToken cancellationToken = default) =>
+            throw new NotImplementedException();
+
+        public Task<ExecutionResult> ExecuteAsync(SemanticRequest request, ExecutionContext? context = null,
+            CancellationToken cancellationToken = default)
         {
             ReceivedRequest = request;
             return Task.FromResult(ResultToReturn);
         }
 
-        public Task<ExecutionResult> ExecuteAsync(Foundgine.Core.Semantic.Intent.ReadIntent intent, ExecutionContext? context = null, CancellationToken cancellationToken = default) =>
+        public Task<ExecutionResult> ExecuteAsync(Foundgine.Core.Semantic.Intent.ReadIntent intent,
+            ExecutionContext? context = null, CancellationToken cancellationToken = default) =>
             throw new NotImplementedException();
     }
 
     private const string Query = """
-        query {
-          customer {
-            id
-            name
-          }
-        }
-        """;
+                                 query {
+                                   customer {
+                                     id
+                                     name
+                                   }
+                                 }
+                                 """;
 
     [Fact]
     public async Task ExecuteAsync_throws_when_no_security_context_is_established()
@@ -76,8 +86,7 @@ public sealed class FoundgineHotChocolateQueryExecutorTests
             new HotChocolateSemanticAdapter(BuildModel()),
             new FixedProvider(null));
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => executor.ExecuteAsync(Query));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => executor.ExecuteAsync(Query));
     }
 
     [Fact]

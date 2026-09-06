@@ -36,18 +36,20 @@ internal static class SemanticAuthorizationContractValidator
             throw new InvalidOperationException($"Root semantic node {node.Id} cannot specify a parent edge.");
 
         if (!isRoot && node.ViaRelationship is null && node.ViaConnection is null)
-            throw new InvalidOperationException($"Non-root semantic node {node.Id} must specify the relationship or connection used to reach it.");
+            throw new InvalidOperationException(
+                $"Non-root semantic node {node.Id} must specify the relationship or connection used to reach it.");
 
         if (node.ViaRelationship is { } relationshipId)
         {
             if (node.ViaConnection is not null)
-                throw new InvalidOperationException($"Semantic node {node.Id} cannot specify both a relationship and a connection.");
+                throw new InvalidOperationException(
+                    $"Semantic node {node.Id} cannot specify both a relationship and a connection.");
 
             if (parent is not null)
             {
                 var relationship = parent.Relationships.FirstOrDefault(x => x.Id == relationshipId)
-                    ?? throw new InvalidOperationException(
-                        $"Semantic operation node {node.Id} references relationship '{relationshipId}' not declared on '{parent.Name}'.");
+                                   ?? throw new InvalidOperationException(
+                                       $"Semantic operation node {node.Id} references relationship '{relationshipId}' not declared on '{parent.Name}'.");
 
                 if (relationship.Target != node.EntityId)
                     throw new InvalidOperationException(

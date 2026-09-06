@@ -54,8 +54,8 @@ public static class GraphQLMutationSemanticConverter
 
                 var parentSchema = schema.GetEntity(operations[parent].Entity);
                 var primaryKeyColumn = parentSchema.PrimaryKeyColumn
-                    ?? throw new InvalidOperationException(
-                        $"Parent entity '{parentSchema.Name}' requires a primary key for nested mutation propagation.");
+                                       ?? throw new InvalidOperationException(
+                                           $"Parent entity '{parentSchema.Name}' requires a primary key for nested mutation propagation.");
 
                 if (primaryKeyColumn != relationship.SourceColumn)
                     throw new InvalidOperationException(
@@ -94,7 +94,8 @@ public static class GraphQLMutationSemanticConverter
                 operation = operation with
                 {
                     Fields = fields,
-                    Dependencies = [
+                    Dependencies =
+                    [
                         .. operation.Dependencies,
                         new SemanticMutationDependency(
                             parent,
@@ -147,7 +148,7 @@ public static class GraphQLMutationSemanticConverter
                 entity.Id,
                 fields,
                 upsert.ConflictColumns?.Select(ToFieldId).ToArray()
-                    ?? Array.Empty<FieldId>(),
+                ?? Array.Empty<FieldId>(),
                 upsert.ReturnFields),
             _ => throw new NotSupportedException()
         };

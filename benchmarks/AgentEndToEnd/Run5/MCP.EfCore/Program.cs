@@ -8,7 +8,7 @@ using ModelContextProtocol.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 var cs = builder.Configuration["BankingConnectionString"]
-    ?? throw new InvalidOperationException("BankingConnectionString is not configured.");
+         ?? throw new InvalidOperationException("BankingConnectionString is not configured.");
 
 builder.Services.AddDbContext<BankingDbContext>(options => options.UseNpgsql(cs));
 builder.Services.AddSingleton<IBankAuthorization, OwnershipAuthorization>();
@@ -42,7 +42,8 @@ public sealed class TransferFundsMcpTools
     public TransferFundsMcpTools(EfTransferFundsService service) => _service = service;
 
     [McpServerTool(Name = "transfer_funds")]
-    [Description("Execute the high-assurance Foundgine TransferFunds capability through the EF Core execution boundary. Authorization and security invariants are re-evaluated at execution time; the account-balance mutation is a single atomic predicated UPDATE, so the row lock happens inside PostgreSQL rather than via a separate SELECT ... FOR UPDATE.")]
+    [Description(
+        "Execute the high-assurance Foundgine TransferFunds capability through the EF Core execution boundary. Authorization and security invariants are re-evaluated at execution time; the account-balance mutation is a single atomic predicated UPDATE, so the row lock happens inside PostgreSQL rather than via a separate SELECT ... FOR UPDATE.")]
     public async Task<string> TransferFundsAsync(
         Guid actorId,
         int tenantId,

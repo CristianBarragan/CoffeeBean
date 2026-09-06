@@ -11,16 +11,16 @@ public partial class CustomerCustomerRelationship : Process
     {
         Schema = CoffeeBeanery.Database.Schema.Banking;
     }
-    
+
     public int Id { get; set; }
-    
+
     public Guid? CustomerCustomerRelationshipKey { get; set; }
-    
+
     public int? OuterCustomerId { get; set; }
     public Customer? OuterCustomer { get; set; }
-    
+
     public int? InnerCustomerId { get; set; }
-    
+
     public Customer? InnerCustomer { get; set; }
 
     public CustomerCustomerRelationshipType? CustomerCustomerRelationshipType { get; set; }

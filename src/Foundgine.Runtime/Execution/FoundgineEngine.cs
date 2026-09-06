@@ -34,7 +34,11 @@ public sealed class FoundgineEngine : IFoundgine
     private readonly ISecurityWarrantReplayStore? _warrantReplayStore;
     private readonly SecurityResourceLimits _securityResourceLimits;
     private readonly IExecutionAuthorizationRevalidator _executionAuthorizationRevalidator;
-    private readonly Func<SemanticAuthorizationEvidence, CancellationToken, ValueTask<ExecutionAuthorizationAuthorityState?>>? _executionAuthorizationAuthorityResolver;
+
+    private readonly
+        Func<SemanticAuthorizationEvidence, CancellationToken, ValueTask<ExecutionAuthorizationAuthorityState?>>?
+        _executionAuthorizationAuthorityResolver;
+
     private readonly string _cacheNamespace = Guid.NewGuid().ToString("N");
 
     internal FoundgineEngine(
@@ -61,7 +65,8 @@ public sealed class FoundgineEngine : IFoundgine
         _expectedWarrantIssuer = options.ExpectedWarrantIssuer;
         _warrantReplayStore = options.WarrantReplayStore;
         _securityResourceLimits = options.SecurityResourceLimits ?? new SecurityResourceLimits();
-        _executionAuthorizationRevalidator = options.ExecutionAuthorizationRevalidator ?? new SemanticExecutionAuthorizationRevalidator();
+        _executionAuthorizationRevalidator = options.ExecutionAuthorizationRevalidator ??
+                                             new SemanticExecutionAuthorizationRevalidator();
         _executionAuthorizationAuthorityResolver = options.ExecutionAuthorizationAuthorityResolver;
         _securityResourceLimits.Validate();
     }
@@ -167,7 +172,8 @@ public sealed class FoundgineEngine : IFoundgine
         var graph = new SemanticRequestResolver(_contract).Resolve(request);
         var semanticOperation = SemanticOperationCompiler.Compile(graph);
         ValidateWarrant(request, semanticOperation, consumeReplay: false);
-        var authorization = new SemanticAuthorizer(_authorizationPolicy).AuthorizeWithEvidence(_contract, semanticOperation);
+        var authorization =
+            new SemanticAuthorizer(_authorizationPolicy).AuthorizeWithEvidence(_contract, semanticOperation);
         authorization.EnsureMatches(_contract);
         var authorizedOperation = authorization.Operation;
         var plan = BuildSecuredPlan(authorization);
@@ -214,7 +220,8 @@ public sealed class FoundgineEngine : IFoundgine
         var graph = new SemanticRequestResolver(_contract).Resolve(approval.Request);
         var semanticOperation = SemanticOperationCompiler.Compile(graph);
         ValidateWarrant(approval.Request, semanticOperation, consumeReplay: true);
-        var authorization = new SemanticAuthorizer(_authorizationPolicy).AuthorizeWithEvidence(_contract, semanticOperation);
+        var authorization =
+            new SemanticAuthorizer(_authorizationPolicy).AuthorizeWithEvidence(_contract, semanticOperation);
         authorization.EnsureMatches(_contract);
         var authorizedOperation = authorization.Operation;
         var plan = BuildSecuredPlan(authorization);
@@ -266,7 +273,8 @@ public sealed class FoundgineEngine : IFoundgine
         var graph = new SemanticRequestResolver(_contract).Resolve(request);
         var semanticOperation = SemanticOperationCompiler.Compile(graph);
         ValidateWarrant(request, semanticOperation, consumeReplay: true);
-        var authorization = new SemanticAuthorizer(_authorizationPolicy).AuthorizeWithEvidence(_contract, semanticOperation);
+        var authorization =
+            new SemanticAuthorizer(_authorizationPolicy).AuthorizeWithEvidence(_contract, semanticOperation);
         authorization.EnsureMatches(_contract);
         var authorizedOperation = authorization.Operation;
         var plan = BuildSecuredPlan(authorization);
@@ -288,6 +296,7 @@ public sealed class FoundgineEngine : IFoundgine
             cancellationToken,
             authorizationEvidence: authorization.Evidence);
     }
+
     private string BuildProviderPlanCacheKey(
         SemanticPlan plan,
         SecurityExecutionContext? security)
@@ -420,8 +429,8 @@ public sealed class FoundgineEngine : IFoundgine
                 "Executable semantic plans require authorization evidence bound to the same semantic contract.");
 
         var binding = plan.AuthorizationBinding
-            ?? throw new InvalidOperationException(
-                "Executable semantic plans require an authorization binding.");
+                      ?? throw new InvalidOperationException(
+                          "Executable semantic plans require an authorization binding.");
         binding.EnsureMatches(_contract, authorizationEvidence);
 
         // Final authorization check immediately before provider execution. This is
@@ -503,5 +512,4 @@ public sealed class FoundgineEngine : IFoundgine
 
         return new ExecutionContext(values);
     }
-
 }

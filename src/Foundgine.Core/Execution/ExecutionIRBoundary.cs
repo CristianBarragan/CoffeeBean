@@ -20,14 +20,15 @@ public static class ExecutionIRBoundary
         ArgumentNullException.ThrowIfNull(evidence);
 
         var binding = ir.AuthorizationBinding
-            ?? throw new InvalidOperationException(
-                "Execution IR is missing authorization provenance.");
+                      ?? throw new InvalidOperationException(
+                          "Execution IR is missing authorization provenance.");
 
         if (!string.Equals(binding.ContractFingerprint, contract.ContractFingerprint, StringComparison.Ordinal))
             throw new InvalidOperationException(
                 "Execution IR belongs to a different semantic contract.");
 
-        if (!string.Equals(binding.AuthorizationFingerprint, evidence.AuthorizationFingerprint, StringComparison.Ordinal))
+        if (!string.Equals(binding.AuthorizationFingerprint, evidence.AuthorizationFingerprint,
+                StringComparison.Ordinal))
             throw new InvalidOperationException(
                 "Execution IR belongs to a different authorization decision.");
 
@@ -40,8 +41,8 @@ public static class ExecutionIRBoundary
         ArgumentNullException.ThrowIfNull(providerPlan);
 
         var binding = ir.AuthorizationBinding
-            ?? throw new InvalidOperationException(
-                "Execution IR is missing authorization provenance.");
+                      ?? throw new InvalidOperationException(
+                          "Execution IR is missing authorization provenance.");
 
         providerPlan.BindAuthorization(binding);
     }

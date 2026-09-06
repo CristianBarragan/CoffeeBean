@@ -135,5 +135,6 @@ public sealed class AggregateRewriteProofTests
     }
 
     private static SemanticPlan CreatePlan(FieldId? field = null) =>
-        new(new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [field ?? new FieldId(1)], null, null, []));
+        new(new SemanticPlanNode(1, ExecutionOperation.Scan, new EntityId(1), [field ?? new FieldId(1)], null, null,
+            []));
 }

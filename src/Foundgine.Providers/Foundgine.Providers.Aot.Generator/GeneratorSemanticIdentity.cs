@@ -82,4 +82,3 @@ internal static class GeneratorSemanticIdentity
     private static string Pair(string left, string right) =>
         Normalize(left, nameof(left)) + "." + Normalize(right, nameof(right));
 }
-
