@@ -250,6 +250,86 @@ Every new transport/provider should have adversarial tests proving that it canno
 4. drop a required security predicate;
 5. execute a plan without required provider security conformance.
 
+## Red-team pentest results (Advanced Supply Chain sample)
+
+This section records the outcome of a live adversarial run of `Foundgine.RedTeam`
+against the running `Foundgine.SupplyChain.Advanced` sample, exercising both the
+semantic authorization API (port `4432`) and the execution/tool-calling API
+(port `4422`) over MCP's Streamable HTTP transport.
+
+### Harness notes
+
+Two harness defects were found and fixed before the run produced a usable signal:
+
+| Issue | Symptom | Fix |
+|---|---|---|
+| Missing `using System.Diagnostics;` | Build failed with `CS0103: The name 'Stopwatch' does not exist in the current context` at the two timing calls in `Program.cs` | Added the missing `using` directive |
+| Missing MCP `Accept` header | Every attack request returned `406 Not Acceptable: Client must accept both application/json and text/event-stream` before reaching authorization logic — the run produced no real signal | Added `application/json` and `text/event-stream` to `HttpClient.DefaultRequestHeaders.Accept` when the client is constructed |
+
+Neither defect was in the product under test — both were in the red-team client itself.
+They're documented here because a broken harness that fails closed (build error) or
+fails uninformative (uniform 406s) can look superficially like "everything is secure"
+if the results aren't inspected carefully.
+
+### Run summary
+
+After both fixes, 18 attack attempts were sent across the two surfaces. All reached
+the MCP endpoint (HTTP 200 at the transport layer) and were evaluated by the
+JSON-RPC/authorization layer underneath:
+
+| Surface | Target | Requests | Legitimate baseline succeeded | Adversarial attempts blocked |
+|---|---|---:|---:|---:|
+| Semantic authorization API | `http://127.0.0.1:4432/` | 11 | 1/1 | 10/10 |
+| Execution API | `http://127.0.0.1:4422/` | 7 | 1/1 | 5/5 (1 unauthenticated baseline also blocked) |
+
+### Attacks attempted and outcome
+
+**Semantic authorization API**
+
+| Attack | Result |
+|---|---|
+| Authenticated capability discovery (baseline) | Succeeded — capability document returned, all entity/field access correctly marked `Denied` where policy disallows it |
+| Cross-tenant policy probe | Denied |
+| Named operation escalation | Denied |
+| Identity claim spoofing | Rejected — server error explicitly states claims cannot assert identity/privilege directly; identity comes only from actor/token authentication |
+| Entity write escalation | Denied |
+| Wrong-token authentication bypass | Failed before reaching the tool (auth rejected) |
+| Relationship authorization escalation | Denied |
+| Sensitive field authorization probe | Denied |
+| Unknown actor authentication | Failed before reaching the tool (auth rejected) |
+| Claim boundary manipulation (attempted `scope: *` widening) | Denied — the widened claim was explicitly rejected, not silently narrowed |
+
+**Execution API**
+
+| Attack | Result |
+|---|---|
+| Authenticated execution baseline | Succeeded — legitimate product lookup returned data |
+| Cross-customer order access | Blocked — tool invocation errored rather than returning another customer's order |
+| Customer → warehouse capability escalation (`update_inventory`) | Blocked |
+| Customer shipment write escalation (`create_shipment`) | Blocked |
+| Customer supplier enumeration (`list_suppliers`) | Blocked |
+| Unknown actor authorization (`update_inventory`) | Blocked |
+
+### Assessment
+
+Across both surfaces, only the two intentionally-legitimate baseline calls returned
+data; every cross-tenant, role-spoofing, claim-widening, and unauthenticated-actor
+attempt was denied or errored out before reaching the underlying operation. This is
+consistent with the security invariants described earlier in this document —
+in particular that retrieval/capability discovery is advisory only, that claims
+cannot self-assert identity or privilege, and that authorization is re-evaluated
+for the actual request rather than trusted from discovery.
+
+One gap worth tracking: the execution API's blocked calls surface as a generic
+`"An error occurred invoking '<tool>'."` MCP error rather than an explicit,
+structured denial like the semantic API's `{"result":{"allowed":false,"kind":"Denied"}}`.
+Functionally both block the attack, but the execution API's generic error message
+does not by itself distinguish "blocked by authorization" from "blocked by an
+unrelated bug," which weakens audit signal. Recommended follow-up: have the
+execution API's tool-invocation errors carry the same explicit denial shape used
+by the semantic API, and confirm via server-side logs which exception path each
+of the five blocked execution calls above actually took.
+
 ---
 
 Next: [Runtime](RUNTIME.md)
