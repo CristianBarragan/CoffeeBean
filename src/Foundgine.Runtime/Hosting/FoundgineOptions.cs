@@ -5,6 +5,7 @@ using Foundgine.Core.Abstractions;
 using Foundgine.Core.Semantic.Metadata;
 using Foundgine.Core.Semantic.Security.Warrants;
 using Foundgine.Core.Semantic.Security.Execution;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Foundgine.Runtime;
 
@@ -98,4 +99,53 @@ public sealed class FoundgineOptions
     public IMutationSchema? MutationSchema { get; set; }
 
     public Foundgine.Core.Execution.Mutation.IMutationBatchExecutionProvider? MutationProvider { get; set; }
+
+    private readonly List<Type> _enabledCapabilityOrder = [];
+    private readonly Dictionary<Type, Action<FoundgineCapabilityContext>> _enabledCapabilities = [];
+
+    /// <summary>
+    /// The capability marker types currently enabled, in <see cref="Enable{T}"/> call order.
+    /// No optional capabilities are enabled by default; applications opt into them explicitly.
+    /// </summary>
+    public IReadOnlyList<Type> EnabledCapabilities => _enabledCapabilityOrder;
+
+    /// <summary>
+    /// Enables an optional capability: <c>T.Configure</c> runs once, during <c>AddFoundgine</c>, after this
+    /// <c>configure</c> delegate returns. Calling <c>Enable&lt;T&gt;()</c> again for an already-enabled
+    /// T moves it to the end of the application order but does not run <c>Configure</c> twice.
+    /// </summary>
+    public FoundgineOptions Enable<T>() where T : IFoundgineCapability
+    {
+        var type = typeof(T);
+        _enabledCapabilityOrder.Remove(type);
+        _enabledCapabilityOrder.Add(type);
+        _enabledCapabilities[type] = T.Configure;
+        return this;
+    }
+
+    /// <summary>
+    /// Disables a previously (or default-) enabled capability. A no-op if it was never enabled.
+    /// </summary>
+    public FoundgineOptions Disable<T>() where T : IFoundgineCapability
+    {
+        var type = typeof(T);
+        _enabledCapabilityOrder.Remove(type);
+        _enabledCapabilities.Remove(type);
+        return this;
+    }
+
+    /// <summary>Whether <typeparamref name="T"/> is currently enabled.</summary>
+    public bool IsEnabled<T>() where T : IFoundgineCapability => _enabledCapabilities.ContainsKey(typeof(T));
+
+    /// <summary>
+    /// Runs every enabled capability's <c>Configure</c>, in <see cref="Enable{T}"/> order. Called by
+    /// <see cref="FoundgineServiceCollectionExtensions.AddFoundgine(IServiceCollection, Action{FoundgineOptions})"/>
+    /// right after the host's <c>configure</c> delegate returns.
+    /// </summary>
+    internal void ApplyCapabilities(IServiceCollection services)
+    {
+        var context = new FoundgineCapabilityContext(this, services);
+        foreach (var type in _enabledCapabilityOrder)
+            _enabledCapabilities[type](context);
+    }
 }

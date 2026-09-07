@@ -817,7 +817,7 @@ builder.Services.AddSingleton<SemanticSqlQueryExecutor>();
 builder.Services.AddScoped<ISupplyChainQueries, SupplyChainQueryRepository>();
 builder.Services.AddScoped<ISupplyChainMutations, SupplyChainMutationRepository>();
 
-builder.Services.AddFoundgineMcp(() => new Foundgine.Core.Execution.ExecutionContext());
+builder.Services.AddFoundgineMcp();
 builder.Services.AddMcpServer().WithHttpTransport(o => o.Stateless = true).WithTools<SupplyChainMcpTools>();
 
 var app = builder.Build();

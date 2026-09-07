@@ -1,36 +1,22 @@
-using Foundgine.Core.Semantic.Metadata;
-using Foundgine.Core.Semantic.Planning;
+using Foundgine.SupplyChain;
 using Foundgine.SupplyChain.Application;
-using Foundgine.SupplyChain.Infrastructure.Mutations;
-using Foundgine.SupplyChain.Infrastructure.Queries;
-using Foundgine.Generated;
 using ModelContextProtocol.Server;
 using Foundgine.Providers.Tools.MCP;
+using Foundgine.Runtime;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var cs = builder.Configuration["SupplyChainConnectionString"]
-         ?? Environment.GetEnvironmentVariable("SupplyChainConnectionString")
-         ?? throw new InvalidOperationException("SupplyChainConnectionString is required.");
-
 // --- everything the old Application/DependencyInjection.cs + Infrastructure/DependencyInjection.cs
 //     did, in one place, since there's only one project to wire up now. ---
-builder.Services.AddSingleton<ICapabilityAuthorizer, SupplyChainAuthorizer>();
-builder.Services.AddScoped<SupplyChainApplication>();
+builder.Services.AddFoundgine(options =>
+{
+    // Starter path: only the domain model + core Foundgine execution boundary.
+    // Optional capabilities are deliberately opt-in.
+    options.UseSupplyChainDomain();
+});
 
-builder.Services.AddSingleton(NpgsqlDataSource.Create(cs));
-// GeneratedMetadata.Registry is emitted by the AOT generator directly from
-// Domain/Models.cs + Domain/StorageModels.cs + Domain/Mappings.cs - it
-// already implements IMetadataProvider, so there is nothing to wrap here.
-builder.Services.AddSingleton<IMetadataProvider>(GeneratedMetadata.Registry);
-builder.Services.AddSingleton(GeneratedMetadata.Registry);
-builder.Services.AddSingleton<Planner>();
-builder.Services.AddSingleton<SemanticSqlQueryExecutor>();
-builder.Services.AddScoped<ISupplyChainQueries, SupplyChainQueryRepository>();
-builder.Services.AddScoped<ISupplyChainMutations, SupplyChainMutationRepository>();
-
-builder.Services.AddFoundgineMcp(() => new Foundgine.Core.Execution.ExecutionContext());
+builder.Services.AddFoundgineMcp();
 builder.Services.AddMcpServer().WithHttpTransport(o => o.Stateless = true).WithTools<SupplyChainMcpTools>();
 
 var app = builder.Build();
